@@ -29,6 +29,40 @@ export const AuditLogModel = z.union([
     }),
   }),
   z.object({
+    eventType: z.literal('SCIM_USER_CREATED'),
+    metadata: z.object({
+      userId: z.string().uuid(),
+      externalId: z.string(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('SCIM_USER_UPDATED'),
+    metadata: z.object({
+      userId: z.string().uuid(),
+      updatedFields: z.string(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('SCIM_GROUP_CREATED'),
+    metadata: z.object({
+      groupId: z.string().uuid(),
+      externalId: z.string().nullable(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('SCIM_GROUP_UPDATED'),
+    metadata: z.object({
+      groupId: z.string().uuid(),
+      updatedFields: z.string(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('SCIM_GROUP_DELETED'),
+    metadata: z.object({
+      groupId: z.string().uuid(),
+    }),
+  }),
+  z.object({
     eventType: z.literal('ORGANIZATION_POLICY_UPDATED'),
     metadata: z.object({
       allowOverrides: z.boolean(),

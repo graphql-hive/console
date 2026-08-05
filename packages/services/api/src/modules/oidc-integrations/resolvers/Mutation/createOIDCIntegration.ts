@@ -14,6 +14,7 @@ export const createOIDCIntegration: NonNullable<
     userinfoEndpoint: input.userinfoEndpoint,
     authorizationEndpoint: input.authorizationEndpoint,
     additionalScopes: input.additionalScopes,
+    userIdClaim: input.userIdClaim ?? null,
   });
 
   if (result.type === 'ok') {
@@ -39,6 +40,7 @@ export const createOIDCIntegration: NonNullable<
         userinfoEndpoint: result.fieldErrors?.userinfoEndpoint,
         authorizationEndpoint: result.fieldErrors?.authorizationEndpoint,
         additionalScopes: result.fieldErrors?.additionalScopes,
+        userIdClaim: result.fieldErrors?.userIdClaim,
       },
     },
   };

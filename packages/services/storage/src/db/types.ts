@@ -7,7 +7,7 @@
  *
  */
 
-export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
+export type alert_channel_type = 'DISCORD' | 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
 export type hive_subgraph_log_type = 'added' | 'changed' | 'removed' | 'unchanged';
@@ -160,6 +160,33 @@ export interface graphile_worker_deduplication {
   task_name: string;
 }
 
+export interface group_members {
+  created_at: Date | null;
+  group_id: string | null;
+  id: string;
+  organization_id: string | null;
+  user_id: string | null;
+}
+
+export interface group_role_assignments {
+  assigned_resources: any | null;
+  created_at: Date | null;
+  group_id: string | null;
+  id: string;
+  organization_id: string | null;
+  role_id: string | null;
+}
+
+export interface groups {
+  created_at: Date | null;
+  disabled_at: Date | null;
+  display_name: string | null;
+  external_id: string | null;
+  id: string;
+  last_updated_at: Date | null;
+  organization_id: string | null;
+}
+
 export interface metric_alert_incidents {
   current_value: number;
   id: string;
@@ -247,11 +274,14 @@ export interface oidc_integrations {
   id: string;
   linked_organization_id: string;
   oauth_api_url: string | null;
+  oidc_for_verified_domains_required: boolean | null;
   oidc_user_access_only: boolean;
   oidc_user_join_only: boolean;
   require_invitation: boolean;
   token_endpoint: string | null;
   updated_at: Date;
+  user_id_claim: string | null;
+  user_provisioning_required: boolean | null;
   userinfo_endpoint: string | null;
 }
 
@@ -569,13 +599,17 @@ export interface tokens {
 
 export interface users {
   created_at: Date;
+  deactivated_at: Date | null;
   display_name: string;
   email: string;
   external_auth_user_id: string | null;
+  external_id: string | null;
   full_name: string;
   id: string;
   is_admin: boolean | null;
+  last_updated_at: Date | null;
   oidc_integration_id: string | null;
+  provisioned_by_organization_id: string | null;
   supertoken_user_id: string | null;
   zendesk_user_id: string | null;
 }
@@ -616,6 +650,9 @@ export interface DBTables {
   document_preflight_scripts: document_preflight_scripts;
   email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
+  group_members: group_members;
+  group_role_assignments: group_role_assignments;
+  groups: groups;
   metric_alert_incidents: metric_alert_incidents;
   metric_alert_notifications_sent: metric_alert_notifications_sent;
   metric_alert_rule_channels: metric_alert_rule_channels;

@@ -25,8 +25,9 @@ export { HttpClient } from './modules/shared/providers/http-client';
 export { OperationsManager } from './modules/operations/providers/operations-manager';
 export { OperationsReader } from './modules/operations/providers/operations-reader';
 export { ClickHouse, sql } from './modules/operations/providers/clickhouse-client';
+export { AuditLogRecorder } from './modules/audit-logs/providers/audit-log-recorder';
+export type { AuditLogSchemaEvent } from './modules/audit-logs/providers/audit-logs-types';
 export { reservedOrganizationSlugs as reservedOrganizationNames } from './modules/organization/providers/organization-config';
-export { CryptoProvider } from './modules/shared/providers/crypto';
 export {
   OrganizationAccessScope,
   ProjectAccessScope,

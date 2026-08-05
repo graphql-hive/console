@@ -6,8 +6,9 @@ import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import 'reflect-metadata';
 import formDataPlugin from '@fastify/formbody';
 import {
+  ClickHouse,
   createRegistry,
-  CryptoProvider,
+  HttpClient,
   LogFn,
   Logger,
   OrganizationMemberRoles,
@@ -17,6 +18,7 @@ import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
 import { createDefaultCredentialProvider } from '@hive/api/modules/cdn/providers/aws';
+import { OIDCIntegrationConfig } from '@hive/api/modules/oidc-integrations/providers/oidc-integration-config';
 import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -26,12 +28,14 @@ import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader'
 import { AwsClient } from '@hive/cdn-script/aws';
 import { createIsAppDeploymentActive } from '@hive/cdn-script/is-app-deployment-active';
 import { createIsKeyValid } from '@hive/cdn-script/key-validation';
-import { createConnectionString } from '@hive/postgres';
+import { createConnectionStringProvider } from '@hive/postgres';
 import { createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
   createRedisClient,
   createServer,
+  Encryptor,
+  generateRdsIamAuthToken,
   registerShutdown,
   registerTRPC,
   reportReadiness,
@@ -49,6 +53,7 @@ import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/sup
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
 import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
 import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
+import { TargetTokenCache } from '../../api/src/modules/token/providers/target-token-cache';
 import { internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
 import { env } from './environment';
@@ -56,7 +61,9 @@ import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
+import { createSCIMPlugin } from './scim';
 import { registerSupertokensAtHome } from './supertokens-at-home';
+import { WorkloadIdentityFederationProvider } from './workload-identity-federation';
 
 class CorsError extends Error {
   constructor() {
@@ -165,12 +172,36 @@ export async function main() {
     };
   });
 
+  const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+    ? () =>
+        generateRdsIamAuthToken(
+          {
+            region: env.postgres.awsRegion ?? '',
+            hostname: env.postgres.host,
+            port: env.postgres.port,
+            username: env.postgres.user,
+          },
+          server.log.child({ source: 'RdsIamAuthTokenGenerator' }),
+        )
+    : undefined;
+
   const storage = await createPostgreSQLStorage(
-    createConnectionString(env.postgres),
+    createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
     10,
     tracing ? [tracing.instrumentSlonik()] : [],
   );
   const taskScheduler = new TaskScheduler(storage.pool);
+
+  const workloadIdentityFederation = env.oidcWorkloadFederation
+    ? new WorkloadIdentityFederationProvider(
+        env.oidcWorkloadFederation.tokenFilePath,
+        server.log.child({ source: 'WorkloadIdentityFederation' }),
+      )
+    : null;
+
+  if (workloadIdentityFederation) {
+    await workloadIdentityFederation.start();
+  }
 
   const redis = await createRedisClient(env.redis, {
     logger: server.log.child({ source: 'Redis' }),
@@ -194,6 +225,7 @@ export async function main() {
       await server.close();
       server.log.info('Stopping Storage handler...');
       await storage.destroy();
+      workloadIdentityFederation?.stop();
       server.log.info('Shutdown complete.');
     },
   });
@@ -269,9 +301,6 @@ export async function main() {
             rateLimit: env.supertokens.rateLimit,
           }
         : null,
-      tokens: {
-        endpoint: env.hiveServices.tokens.endpoint,
-      },
       commerce: {
         endpoint: env.hiveServices.commerce ? env.hiveServices.commerce.endpoint : null,
         billingEnabled: env.hiveServices.commerce ? env.hiveServices.commerce.billing : false,
@@ -353,7 +382,7 @@ export async function main() {
             },
           }
         : {},
-      organizationOIDC: env.organizationOIDC,
+      oidcIntegrationConfig: new OIDCIntegrationConfig(env.organizationOIDC, env.organizationSCIM),
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
@@ -407,9 +436,7 @@ export async function main() {
           (logger: Logger) =>
             new TargetAccessTokenStrategy({
               logger,
-              tokensConfig: {
-                endpoint: env.hiveServices.tokens.endpoint,
-              },
+              cache: registry.injector.get(TargetTokenCache),
             }),
         ],
       }),
@@ -450,7 +477,7 @@ export async function main() {
       operationName: 'readiness',
     });
 
-    const crypto = new CryptoProvider(env.encryptionSecret);
+    const crypto = new Encryptor(env.encryptionSecret);
 
     function broadcastLog(oidcId: string, message: string) {
       pubSub.publish('oidcIntegrationLogs', oidcId, {
@@ -535,12 +562,14 @@ export async function main() {
     await registerSupertokensAtHome(
       server,
       storage,
+      registry.injector.get(OIDCIntegrationStore),
       registry.injector.get(TaskScheduler),
-      registry.injector.get(CryptoProvider),
+      registry.injector.get(Encryptor),
       registry.injector.get(RedisRateLimiter),
       registry.injector.get(OAuthCache),
       broadcastLog,
       env.supertokens.secrets,
+      workloadIdentityFederation,
     );
 
     if (env.cdn.providers.api !== null) {
@@ -628,6 +657,20 @@ export async function main() {
           void reply.send(textResponse);
         },
       });
+    }
+
+    if (env.organizationSCIM) {
+      logger.debug('register scim routes');
+      const scimPlugin = createSCIMPlugin(
+        authN,
+        storage.pool,
+        storage,
+        registry.injector.get(OIDCIntegrationStore),
+        registry.injector.get(RedisRateLimiter),
+        new ClickHouse(env.clickhouse, new HttpClient(), logger),
+        env.graphql.origin + '/scim/v2',
+      );
+      await server.register(scimPlugin, { prefix: '/scim/v2' });
     }
 
     if (env.exposeMemoryUtils) {

@@ -1,5 +1,31 @@
 # @graphql-hive/core
 
+## 0.22.1
+
+### Patch Changes
+
+- [#8308](https://github.com/graphql-hive/console/pull/8308)
+  [`3dbda7d`](https://github.com/graphql-hive/console/commit/3dbda7dbe895173578cc4c452a85ef6c2ce07383)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix usage collector error catching.
+
+  When async event collection fails, the error is now caught internally and logged rather than
+  leaking an unhandled promise rejection that would crash the node application.
+
+## 0.22.0
+
+### Minor Changes
+
+- [#8062](https://github.com/graphql-hive/console/pull/8062)
+  [`8270cac`](https://github.com/graphql-hive/console/commit/8270cac6516b20454914ee39d189e8c943487834)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add a new experimental config option that allows
+  sending additional metrics (errors and resolution counts) to Hive Console.
+
+### Patch Changes
+
+- [#8291](https://github.com/graphql-hive/console/pull/8291)
+  [`ee8af3e`](https://github.com/graphql-hive/console/commit/ee8af3edcb06f4d59b742cf2c8f2f99167bb52a0)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Use npm trusted publishing.
+
 ## 0.21.1
 
 ### Patch Changes

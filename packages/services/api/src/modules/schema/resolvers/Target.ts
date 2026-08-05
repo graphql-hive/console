@@ -12,6 +12,7 @@ export const Target: Pick<
   | 'activeContracts'
   | 'baseSchema'
   | 'contracts'
+  | 'fieldLevelMetricsDisplayState'
   | 'hasCollectedSubscriptionOperations'
   | 'hasSchema'
   | 'latestSchemaVersion'
@@ -121,6 +122,12 @@ export const Target: Pick<
       targetId: target.id,
       projectId: target.projectId,
       organizationId: target.orgId,
+    });
+  },
+  fieldLevelMetricsDisplayState: async (target, _, { injector }) => {
+    return injector.get(OperationsManager).fieldLevelMetricsDisplayState({
+      organizationId: target.orgId,
+      targetId: target.id,
     });
   },
 };

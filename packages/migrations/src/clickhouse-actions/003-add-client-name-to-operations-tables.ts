@@ -97,7 +97,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
 
   // Run the rest of the migration only for self-hosted instances, not for Cloud.
   if (hiveCloudEnvironment === 'prod') {
-    console.log('Detected GraphQL Hive Cloud. Skipping the rest of the migration.');
+    console.log('Detected Hive Console Cloud. Skipping the rest of the migration.');
     // You need to run these two queries and then execute all the statements they output
 
     // SELECT
@@ -187,7 +187,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
     return;
   }
 
-  console.log('Detected self-hosted version of GraphQL Hive. Running the rest of the migration.');
+  console.log('Detected self-hosted version of Hive Console. Running the rest of the migration.');
 
   // Copy data
   await exec(`
@@ -209,7 +209,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       SELECT
         fromUnixTimestamp(
           if(
-            minMerge(timestamp) > 0, 
+            minMerge(timestamp) > 0,
             minMerge(timestamp),
             toUnixTimestamp(now())
           )
@@ -254,7 +254,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       SELECT
         fromUnixTimestamp(
           if(
-            minMerge(timestamp) > 0, 
+            minMerge(timestamp) > 0,
             minMerge(timestamp),
             toUnixTimestamp(now())
           )

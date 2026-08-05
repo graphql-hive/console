@@ -277,7 +277,7 @@ const OrganizationSettingsContent = (props: {
                 description={
                   <>
                     <CardDescription>
-                      This is your organization's URL namespace on GraphQL Hive. Changing it{' '}
+                      This is your organization's URL namespace on Hive Console. Changing it{' '}
                       <span className="font-bold">will</span> invalidate any existing links to your
                       organization.
                     </CardDescription>
@@ -647,7 +647,7 @@ function SettingsPageContent(props: {
     if (currentOrganization?.viewerCanManageOIDCIntegration) {
       pages.push({
         key: 'sso',
-        title: 'Single Sign On',
+        title: 'SSO / SCIM',
       });
     }
 

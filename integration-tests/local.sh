@@ -23,13 +23,14 @@ export BRANCH_NAME="local"
 export BUILD_TYPE=""
 export DOCKER_TAG=":local"
 export DOCKER_REGISTRY=""
+export NODE_VERSION_TAG=":$(< ../.node-version)-slim"
 
 echo "📦 Building local Docker images..."
 cd ..
 docker buildx bake -f docker/docker.hcl integration-tests --load
 
 echo "⬆️ Running all local containers..."
-docker compose -f ./docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env up -d --wait
+docker compose -f ./docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env up -d --build --wait
 
 echo "✅ Integration tests environment is ready. To run tests now, use:"
 echo ""

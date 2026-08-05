@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 import stringify from 'fast-json-stable-stringify';
-import { TimeoutError } from 'p-timeout';
 import type { Redis, ServiceLogger } from '@hive/service-common';
 import { compositionCacheValueSizeBytes, schemaCompositionCounter } from './metrics';
+
+class TimeoutError extends Error {}
 
 function createChecksum<TInput>(input: TInput): string {
   return createHash('sha256').update(stringify(input)).digest('hex');

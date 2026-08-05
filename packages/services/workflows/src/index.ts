@@ -1,11 +1,13 @@
 import { run } from 'graphile-worker';
 import { Logger } from '@graphql-hive/logger';
-import { createPostgresDatabasePool } from '@hive/postgres';
+import { createConnectionStringProvider, createPostgresDatabasePool } from '@hive/postgres';
 import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
   createRedisClient,
   createServer,
+  Encryptor,
+  generateRdsIamAuthToken,
   registerShutdown,
   reportReadiness,
   sentryInit,
@@ -59,13 +61,29 @@ const modules = await Promise.all([
   import('./tasks/evaluate-metric-alert-rules.js'),
   import('./tasks/send-metric-alert-channel-notification.js'),
   import('./tasks/purge-expired-alert-state-log.js'),
+  import('./tasks/purge-target-tokens.js'),
+  import('./tasks/flush-target-token-last-used.js'),
 ]);
 
+const logger = new Logger({ level: env.log.level });
+
+const rdsIamTokenGenerator = env.postgres.awsIamAuthEnabled
+  ? () =>
+      generateRdsIamAuthToken(
+        {
+          region: env.postgres.awsRegion ?? '',
+          hostname: env.postgres.host,
+          port: env.postgres.port,
+          username: env.postgres.user,
+        },
+        logger.child({ source: 'RdsIamAuthTokenGenerator' }),
+      )
+  : undefined;
+
 const pg = await createPostgresDatabasePool({
-  connectionParameters: env.postgres.connectionString,
+  connectionParameters: createConnectionStringProvider(env.postgres, rdsIamTokenGenerator),
   additionalInterceptors: tracing ? [tracing.instrumentSlonik()] : [],
 });
-const logger = new Logger({ level: env.log.level });
 
 logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
 
@@ -74,6 +92,8 @@ logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
 // configured. Otherwise the task would silently bail every minute. The
 // state-log purge task only touches Postgres so it stays unconditional.
 const crontabLines: string[] = [
+  '# Flush target token last-used dates every minute',
+  '* * * * * flushTargetTokenLastUsed',
   '# Purge expired schema checks every Sunday at 10:00AM',
   '0 10 * * 0 purgeExpiredSchemaChecks',
   '# Every day at 3:00 AM',
@@ -129,17 +149,28 @@ const clickhouse = env.clickhouse
   ? new ClickHouseClient(env.clickhouse, logger.child({ source: 'ClickHouse' }))
   : null;
 
+const encryptor = env.encryptionSecret ? new Encryptor(env.encryptionSecret) : null;
+if (!encryptor) {
+  logger.warn(
+    'ENCRYPTION_SECRET not configured — Slack metric alert notifications will be skipped. ' +
+      'Set it to the same value as the API service to enable.',
+  );
+}
+
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
   pg,
   clickhouse,
   requestBroker: env.requestBroker,
+  redis,
   schema: schemaProvider({
     logger,
     schemaServiceUrl: env.schema.serviceUrl,
   }),
   pubSub,
+  webAppUrl: env.webAppUrl,
+  crypto: encryptor,
 };
 
 server.route({

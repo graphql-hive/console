@@ -1,4 +1,4 @@
-import { Folder, RuleGroup } from '@lbrlabs/pulumi-grafana';
+import { alerting, oss } from '@pulumiverse/grafana';
 
 /**
  * Provisions Grafana alert rules that target the Prometheus metrics exposed by
@@ -17,17 +17,14 @@ import { Folder, RuleGroup } from '@lbrlabs/pulumi-grafana';
 export function deployGrafanaAlerts(envName: string) {
   // Separate folder from dashboards keeps the alerts list scoped and makes it
   // clear what's machine-managed vs. operator-edited.
-  const folder = new Folder('grafana-hive-alerts-folder', {
+  const folder = new oss.Folder('grafana-hive-alerts-folder', {
     title: `Hive Alerts (${envName})`,
+    uid: 'hive-alerts',
   });
 
   // Single rule group for the metric-alerts feature; evaluation interval
   // matches the cron that produces the underlying metrics (every minute).
-  // `orgId: 1` is the default "Main Org" — Folder and Dashboard fall back to
-  // the provider's configured org when omitted, but RuleGroup validates the
-  // property at construct time and throws if missing.
-  const ruleGroup = new RuleGroup('metric-alerts-evaluator', {
-    orgId: '1',
+  const ruleGroup = new alerting.RuleGroup('metric-alerts-evaluator', {
     folderUid: folder.uid,
     name: 'metric-alerts-evaluator',
     intervalSeconds: 60,

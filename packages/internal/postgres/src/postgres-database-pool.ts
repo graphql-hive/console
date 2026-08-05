@@ -11,7 +11,11 @@ import {
 import { createQueryLoggingInterceptor } from 'slonik-interceptor-query-logging';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
-import { createConnectionString, type PostgresConnectionParamaters } from './connection-string';
+import {
+  createConnectionString,
+  type ConnectionStringProvider,
+  type PostgresConnectionParamaters,
+} from './connection-string';
 import { PgPoolBridge } from './pg-pool-bridge';
 
 const tracer = trace.getTracer('storage');
@@ -46,6 +50,10 @@ export interface CommonQueryMethods {
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<null | StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>;
+  transaction<T = void>(
+    name: string,
+    handler: (methods: CommonQueryMethods) => Promise<T>,
+  ): Promise<T>;
 }
 
 export class PostgresDatabasePool implements CommonQueryMethods {
@@ -140,6 +148,31 @@ export class PostgresDatabasePool implements CommonQueryMethods {
             maybeOneFirst: methods.maybeOneFirst,
             anyFirst: methods.anyFirst,
             one: methods.one,
+            transaction<T>(name: string, handler: (methods: CommonQueryMethods) => Promise<T>) {
+              // We just mark this as a virtual transaction, it still runs as part of the current one.
+              const span = tracer.startSpan(`Virtual PG Transaction: ${name}`, {
+                kind: SpanKind.INTERNAL,
+              });
+
+              try {
+                return context.with(trace.setSpan(context.active(), span), async () => {
+                  return handler(this);
+                });
+              } catch (err) {
+                span.setAttribute('error', 'true');
+
+                if (err instanceof Error) {
+                  span.setAttribute('error.type', err.name);
+                  span.setAttribute('error.message', err.message);
+                  span.setStatus({
+                    code: SpanStatusCode.ERROR,
+                    message: err.message,
+                  });
+                }
+
+                throw err;
+              }
+            },
           });
         } catch (err) {
           span.setAttribute('error', 'true');
@@ -177,16 +210,21 @@ const typeParsers = [
 ];
 
 export async function createPostgresDatabasePool(args: {
-  connectionParameters: PostgresConnectionParamaters | string;
+  /** A static connection string, PostgresConnectionParamaters, or a ConnectionStringProvider that generates a fresh token per connection. */
+  connectionParameters: PostgresConnectionParamaters | string | ConnectionStringProvider;
   maximumPoolSize?: number;
   additionalInterceptors?: Interceptor[];
   statementTimeout?: number;
 }) {
-  const connectionString =
-    typeof args.connectionParameters === 'string'
+  const isProvider = typeof args.connectionParameters === 'function';
+
+  const connectionStringOrProvider: string | (() => Promise<string>) = isProvider
+    ? (args.connectionParameters as ConnectionStringProvider)
+    : typeof args.connectionParameters === 'string'
       ? args.connectionParameters
-      : createConnectionString(args.connectionParameters);
-  const pool = await createPool(connectionString, {
+      : createConnectionString(args.connectionParameters as PostgresConnectionParamaters);
+
+  const pool = await createPool(connectionStringOrProvider, {
     interceptors: dbInterceptors.concat(args.additionalInterceptors ?? []),
     typeParsers,
     captureStackTrace: false,

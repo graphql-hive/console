@@ -1,10 +1,19 @@
 import { ReactElement, useState } from 'react';
 import { AlertOctagonIcon, BugPlayIcon, CheckIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/base/card/card';
 import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import * as Table from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -30,6 +39,8 @@ const UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation = graphql(`
           oidcUserJoinOnly
           oidcUserAccessOnly
           requireInvitation
+          oidcForVerifiedDomainsRequired
+          userProvisioningRequired
         }
       }
       error {
@@ -53,6 +64,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           clientId
           clientSecretPreview
           additionalScopes
+          userIdClaim
         }
       }
       error {
@@ -79,6 +91,7 @@ const OIDCIntegrationConfiguration_OIDCIntegration = graphql(`
     authorizationEndpoint
     tokenEndpoint
     userinfoEndpoint
+    userIdClaim
     clientId
     clientSecretPreview
     additionalScopes
@@ -86,32 +99,15 @@ const OIDCIntegrationConfiguration_OIDCIntegration = graphql(`
       id
       ...OIDCDefaultRoleSelector_MemberRoleFragment
     }
-    defaultResourceAssignment {
-      ...OIDCDefaultResourceSelector_ResourceAssignmentFragment
-    }
     ...OIDCDomainConfiguration_OIDCIntegrationFragment
+    ...OIDCAccessSettings_OIDCIntegrationFragment
   }
 `);
 
 const OIDCIntegrationConfiguration_Organization = graphql(`
   fragment OIDCIntegrationConfiguration_Organization on Organization {
     id
-    me {
-      id
-      role {
-        id
-        name
-      }
-    }
-    memberRoles {
-      edges {
-        node {
-          id
-          ...OIDCDefaultRoleSelector_MemberRoleFragment
-        }
-      }
-    }
-    ...OIDCDefaultResourceSelector_OrganizationFragment
+    ...OIDCAccessSettings_OrganizationFragment
   }
 `);
 
@@ -133,7 +129,6 @@ export function OIDCIntegrationConfiguration(props: {
     OIDCIntegrationConfiguration_OIDCIntegration,
     props.oidcIntegration,
   );
-  const isAdmin = organization?.me?.role.name === 'Admin';
   const { toast } = useToast();
   const [oidcRestrictionsMutation, oidcRestrictionsMutate] = useMutation(
     UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation,
@@ -144,7 +139,12 @@ export function OIDCIntegrationConfiguration(props: {
   const [modalState, setModalState] = useState(ModalState.closed);
 
   const onOidcRestrictionChange = async (
-    name: 'oidcUserJoinOnly' | 'oidcUserAccessOnly' | 'requireInvitation',
+    name:
+      | 'oidcUserJoinOnly'
+      | 'oidcUserAccessOnly'
+      | 'requireInvitation'
+      | 'oidcForVerifiedDomainsRequired'
+      | 'userProvisioningRequired',
     value: boolean,
   ) => {
     if (oidcRestrictionsMutation.fetching) {
@@ -176,6 +176,12 @@ export function OIDCIntegrationConfiguration(props: {
             requireInvitation: value
               ? 'Only invited users can now access the organization.'
               : 'Access to the organization is no longer restricted to invited users.',
+            oidcForVerifiedDomainsRequired: value
+              ? 'OIDC login is now required for verified domains.'
+              : 'Other login methods are now allowed for verified domains.',
+            userProvisioningRequired: value
+              ? 'Users must now be provisioned via SCIM before signing in with OIDC.'
+              : 'User s can now be provisioned when signing in with OIDC.',
           }[name],
         });
       } else {
@@ -294,7 +300,7 @@ export function OIDCIntegrationConfiguration(props: {
             </Table.TableRow>
             <Table.TableRow>
               <Table.TableCell className="font-medium">Client ID</Table.TableCell>
-              <Table.TableCell>{oidcIntegration.clientId}</Table.TableCell>
+              <Table.TableCell className="font-mono">{oidcIntegration.clientId}</Table.TableCell>
             </Table.TableRow>
             <Table.TableRow>
               <Table.TableCell className="font-medium">Client Secret</Table.TableCell>
@@ -303,100 +309,51 @@ export function OIDCIntegrationConfiguration(props: {
               </Table.TableCell>
             </Table.TableRow>
             <Table.TableRow>
-              <Table.TableCell className="font-medium">Additional Scopes</Table.TableCell>
-              <Table.TableCell>{oidcIntegration.additionalScopes.join(' ')}</Table.TableCell>
+              <Table.TableCell className="font-medium">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>User ID Claim</TooltipTrigger>
+                    <TooltipContent className="text-xs">
+                      The claim that should be used to uniquely identify an user.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Table.TableCell>
+              <Table.TableCell className="font-mono">
+                {oidcIntegration.userIdClaim ?? <span className="text-neutral-10">none set</span>}
+              </Table.TableCell>
+            </Table.TableRow>
+            <Table.TableRow>
+              <Table.TableCell className="font-medium">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>Additional Scopes</TooltipTrigger>
+                    <TooltipContent className="text-xs">
+                      Additional scopes that are requested from the OIDC provider.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Table.TableCell>
+              <Table.TableCell>
+                {oidcIntegration.additionalScopes.length ? (
+                  <span className="font-mono">{oidcIntegration.additionalScopes.join(' ')}</span>
+                ) : (
+                  <span className="text-neutral-8">none</span>
+                )}
+              </Table.TableCell>
             </Table.TableRow>
           </Table.TableBody>
         </Table.Table>
       </div>
-      <OIDCDomainConfiguration oidcIntegration={oidcIntegration} />
-      <div className="space-y-2">
-        <Heading size="lg">Access Settings</Heading>
-        <div className="space-y-5">
-          <div className="flex items-center justify-between space-x-4">
-            <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-              <p>Require OIDC to Join</p>
-              <p className="text-neutral-10 text-xs font-normal leading-snug">
-                Restricts new accounts joining the organization to be authenticated via OIDC.
-                <br />
-                <span className="font-bold">Existing non-OIDC members will keep their access.</span>
-              </p>
-            </div>
-            <Switch
-              checked={oidcIntegration.oidcUserJoinOnly}
-              onCheckedChange={checked => onOidcRestrictionChange('oidcUserJoinOnly', checked)}
-              disabled={oidcRestrictionsMutation.fetching}
-            />
-          </div>
-          <div className="flex items-center justify-between space-x-4">
-            <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-              <p>Require OIDC to Access</p>
-              <p className="text-neutral-10 text-xs font-normal leading-snug">
-                Prompt users to authenticate with OIDC before accessing the organization.
-                <br />
-                <span className="font-bold">
-                  Existing users without OIDC credentials will not be able to access the
-                  organization.
-                </span>
-              </p>
-            </div>
-            <Switch
-              checked={oidcIntegration.oidcUserAccessOnly}
-              onCheckedChange={checked => onOidcRestrictionChange('oidcUserAccessOnly', checked)}
-              disabled={oidcRestrictionsMutation.fetching}
-            />
-          </div>
-          <div className="flex items-center justify-between space-x-4">
-            <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-              <p>Require Invitation to Join</p>
-              <p className="text-neutral-10 text-xs font-normal leading-snug">
-                Restricts only invited OIDC accounts to join the organization.
-              </p>
-            </div>
-            <Switch
-              checked={oidcIntegration.requireInvitation}
-              data-cy="oidc-require-invitation-toggle"
-              onCheckedChange={checked => onOidcRestrictionChange('requireInvitation', checked)}
-              disabled={oidcRestrictionsMutation.fetching}
-            />
-          </div>
-          <div
-            className={cn(
-              'space-y-1 text-sm font-medium leading-none',
-              isAdmin ? null : 'cursor-not-allowed',
-            )}
-          >
-            <p>Default Member Role</p>
-            <div className="flex items-start justify-between space-x-4">
-              <div className="flex basis-2/3 flex-col md:basis-1/2">
-                <p className="text-neutral-10 text-xs font-normal leading-snug">
-                  This role is assigned to new members who sign in via OIDC.{' '}
-                  <span className="font-medium">
-                    Only members with the Admin role can modify it.
-                  </span>
-                </p>
-              </div>
-              <div className="flex min-w-[150px] basis-1/3 md:basis-1/2">
-                <OIDCDefaultRoleSelector
-                  className="w-full"
-                  disabled={!isAdmin}
-                  oidcIntegrationId={oidcIntegration.id}
-                  defaultRole={oidcIntegration.defaultMemberRole}
-                  memberRoles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="mt-2">
-          <OIDCDefaultResourceSelector
-            oidcIntegrationId={oidcIntegration.id}
-            organization={organization}
-            resourceAssignment={oidcIntegration.defaultResourceAssignment ?? {}}
-            disabled={!isAdmin}
-          />
-        </div>
-      </div>
+      <OIDCDomainConfiguration
+        oidcIntegration={oidcIntegration}
+        onRestrictionChange={onOidcRestrictionChange}
+      />
+      <OIDCAccessSettings
+        oidcIntegration={oidcIntegration}
+        organization={organization}
+        onRestrictionChange={onOidcRestrictionChange}
+      />
       <div className="space-y-2">
         <Heading size="lg">Remove OIDC Provider</Heading>
         <p>Completly disconnect the OIDC provider and all configuration.</p>
@@ -409,6 +366,7 @@ export function OIDCIntegrationConfiguration(props: {
           onClose={() => setModalState(ModalState.closed)}
           initialValues={{
             additionalScopes: oidcIntegration.additionalScopes.join(' '),
+            userIdClaim: oidcIntegration.userIdClaim ?? '',
             clientId: oidcIntegration.clientId,
             authorizationEndpoint: oidcIntegration.authorizationEndpoint,
             tokenEndpoint: oidcIntegration.tokenEndpoint,
@@ -421,6 +379,7 @@ export function OIDCIntegrationConfiguration(props: {
                 oidcIntegrationId: oidcIntegration.id,
                 clientId: args.clientId || undefined,
                 clientSecret: args.clientSecret || undefined,
+                userIdClaim: args.userIdClaim || undefined,
                 additionalScopes: args.additionalScopes?.trim()
                   ? args.additionalScopes.trim().split(' ')
                   : undefined,
@@ -481,11 +440,13 @@ const OIDCDomainConfiguration_OIDCIntegrationFragment = graphql(`
       verifiedAt
       ...OIDCRegisteredDomainSheet_RegisteredDomain
     }
+    oidcForVerifiedDomainsRequired
   }
 `);
 
 function OIDCDomainConfiguration(props: {
   oidcIntegration: FragmentType<typeof OIDCDomainConfiguration_OIDCIntegrationFragment>;
+  onRestrictionChange: (name: 'oidcForVerifiedDomainsRequired', value: boolean) => void;
 }) {
   const oidcIntegration = useFragment(
     OIDCDomainConfiguration_OIDCIntegrationFragment,
@@ -505,85 +466,113 @@ function OIDCDomainConfiguration(props: {
   );
 
   return (
-    <div className="space-y-2">
-      <div className="flex">
-        <Heading size="lg">Registered Domains</Heading>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                data-button-add-new-domain
-                size="icon-sm"
-                className="ml-auto"
-                onClick={() => setState({ type: 'create' })}
-              >
-                <PlusIcon size="12" />{' '}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Add new domain</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      <p>Verify domain ownership to skip mandatory email confirmation for organization members.</p>
-      <Table.Table>
-        <Table.TableHeader>
-          <Table.TableRow>
-            <Table.TableHead>Domain</Table.TableHead>
-            <Table.TableHead>Status</Table.TableHead>
-            <Table.TableHead />
-          </Table.TableRow>
-        </Table.TableHeader>
-        <Table.TableBody>
-          {oidcIntegration.registeredDomains.map(domain => (
-            <Table.TableRow key={domain.id}>
-              <Table.TableCell className="font-mono font-medium">
-                {domain.domainName}
-              </Table.TableCell>
-              <Table.TableCell>
-                {domain.verifiedAt ? (
-                  <>
-                    Verified <CheckIcon size="12" className="inline-block" />
-                  </>
-                ) : (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <div className="flex">
+          <Heading size="lg">Registered Domains</Heading>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  data-button-add-new-domain
+                  size="icon-sm"
+                  className="ml-auto"
+                  onClick={() => setState({ type: 'create' })}
+                >
+                  <PlusIcon size="12" />{' '}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Add new domain</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <p>
+          Verify domain ownership to skip mandatory email confirmation for organization members.
+        </p>
+        <Table.Table>
+          <Table.TableHeader>
+            <Table.TableRow>
+              <Table.TableHead>Domain</Table.TableHead>
+              <Table.TableHead>Status</Table.TableHead>
+              <Table.TableHead />
+            </Table.TableRow>
+          </Table.TableHeader>
+          <Table.TableBody>
+            {oidcIntegration.registeredDomains.map(domain => (
+              <Table.TableRow key={domain.id}>
+                <Table.TableCell className="font-mono font-medium">
+                  {domain.domainName}
+                </Table.TableCell>
+                <Table.TableCell>
+                  {domain.verifiedAt ? (
+                    <>
+                      Verified <CheckIcon size="12" className="inline-block" />
+                    </>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip delayDuration={0} disableHoverableContent>
+                        <TooltipTrigger>
+                          Pending <AlertOctagonIcon size="12" className="inline-block" />
+                        </TooltipTrigger>
+                        <TooltipContent className="text-xs">
+                          The domain ownership challenge has not been completed.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </Table.TableCell>
+                <Table.TableCell className="text-right">
                   <TooltipProvider>
                     <Tooltip delayDuration={0} disableHoverableContent>
-                      <TooltipTrigger>
-                        Pending <AlertOctagonIcon size="12" className="inline-block" />
-                      </TooltipTrigger>
-                      <TooltipContent className="text-xs">
-                        The domain ownership challenge has not been completed.
-                      </TooltipContent>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={() =>
+                          setState({
+                            domainId: domain.id,
+                            type: 'manage',
+                          })
+                        }
+                        className="ml-auto"
+                      >
+                        <SettingsIcon size="10" />
+                      </Button>
+                      <TooltipContent className="text-xs">Manage</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                )}
-              </Table.TableCell>
-              <Table.TableCell className="text-right">
-                <TooltipProvider>
-                  <Tooltip delayDuration={0} disableHoverableContent>
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() =>
-                        setState({
-                          domainId: domain.id,
-                          type: 'manage',
-                        })
-                      }
-                      className="ml-auto"
-                    >
-                      <SettingsIcon size="10" />
-                    </Button>
-                    <TooltipContent className="text-xs">Manage</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Table.TableCell>
-            </Table.TableRow>
-          ))}
-        </Table.TableBody>
-        {oidcIntegration.registeredDomains.length === 0 && (
-          <Table.TableCaption>No Domains registered</Table.TableCaption>
-        )}
-      </Table.Table>
+                </Table.TableCell>
+              </Table.TableRow>
+            ))}
+          </Table.TableBody>
+          {oidcIntegration.registeredDomains.length === 0 && (
+            <Table.TableCaption>No Domains registered</Table.TableCaption>
+          )}
+        </Table.Table>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle title="Domain Settings" />
+          <CardDescription description="Settings for the verified domains." />
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between space-x-4">
+            <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+              <p>Require OIDC Login</p>
+              <p className="max-w-[500px] text-xs font-normal leading-snug">
+                Enforce sign in/up through OIDC for verified domains. Any other login method will be
+                blocked. Organization administrators are excluded.
+              </p>
+            </div>
+            <Switch
+              checked={oidcIntegration.oidcForVerifiedDomainsRequired}
+              data-cy="oidc-require-verified-domain-login-toggle"
+              onCheckedChange={checked =>
+                props.onRestrictionChange('oidcForVerifiedDomainsRequired', checked)
+              }
+            />
+          </div>
+        </CardContent>
+      </Card>
       {state && (
         <OIDCRegisteredDomainSheet
           key={state.type}
@@ -602,6 +591,268 @@ function OIDCDomainConfiguration(props: {
           }
         />
       )}
+    </div>
+  );
+}
+
+const OIDCAccessSettings_OIDCIntegrationFragment = graphql(`
+  fragment OIDCAccessSettings_OIDCIntegrationFragment on OIDCIntegration {
+    id
+    oidcUserJoinOnly
+    oidcUserAccessOnly
+    requireInvitation
+    userProvisioningRequired
+    defaultMemberRole {
+      id
+      ...OIDCDefaultRoleSelector_MemberRoleFragment
+    }
+    defaultResourceAssignment {
+      ...OIDCDefaultResourceSelector_ResourceAssignmentFragment
+    }
+  }
+`);
+
+const OIDCAccessSettings_OrganizationFragment = graphql(`
+  fragment OIDCAccessSettings_OrganizationFragment on Organization {
+    id
+    me {
+      id
+      role {
+        id
+        name
+      }
+    }
+    memberRoles {
+      edges {
+        node {
+          id
+          ...OIDCDefaultRoleSelector_MemberRoleFragment
+        }
+      }
+    }
+    viewerCanManageSCIM
+    ...OIDCDefaultResourceSelector_OrganizationFragment
+  }
+`);
+
+function OIDCAccessSettings(props: {
+  oidcIntegration: FragmentType<typeof OIDCAccessSettings_OIDCIntegrationFragment>;
+  organization: FragmentType<typeof OIDCAccessSettings_OrganizationFragment>;
+  onRestrictionChange: (
+    name:
+      | 'oidcUserJoinOnly'
+      | 'oidcUserAccessOnly'
+      | 'requireInvitation'
+      | 'userProvisioningRequired',
+    value: boolean,
+  ) => void;
+}) {
+  const organization = useFragment(OIDCAccessSettings_OrganizationFragment, props.organization);
+  const oidcIntegration = useFragment(
+    OIDCAccessSettings_OIDCIntegrationFragment,
+    props.oidcIntegration,
+  );
+  const isAdmin = organization?.me?.role.name === 'Admin';
+  const isSCIMProvisioningEnabled =
+    organization.viewerCanManageSCIM && oidcIntegration.userProvisioningRequired;
+
+  return (
+    <div>
+      <Heading>User Provisioning</Heading>
+      <div className="mt-2 space-y-4 rounded-lg border p-6">
+        <RadioGroup
+          value={isSCIMProvisioningEnabled ? 'scim' : 'oidc'}
+          onValueChange={value =>
+            props.onRestrictionChange('userProvisioningRequired', value === 'scim' ? true : false)
+          }
+          className="flex gap-4"
+        >
+          <Card
+            variant={!isSCIMProvisioningEnabled ? 'selected' : 'selectable'}
+            onClick={() => props.onRestrictionChange('userProvisioningRequired', false)}
+          >
+            <CardContent variant="selection">
+              <RadioGroupItem value="oidc" id="oidc-mode" className="mt-0.5" />
+              <div className="flex-1">
+                <Label htmlFor="oidc-mode" className="cursor-pointer text-base font-medium">
+                  Managed via OIDC
+                </Label>
+                <p className="mt-1 text-sm">
+                  Provision users and control user access through OIDC authentication. Configure
+                  join and access requirements with customizable default roles.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {organization.viewerCanManageSCIM ? (
+            <Card
+              variant={isSCIMProvisioningEnabled ? 'selected' : 'selectable'}
+              onClick={() => props.onRestrictionChange('userProvisioningRequired', true)}
+            >
+              <CardContent variant="selection">
+                <RadioGroupItem value="scim" id="scim-mode" className="mt-0.5" />
+                <div className="flex-1">
+                  <Label htmlFor="scim-mode" className="cursor-pointer text-base font-medium">
+                    Managed via SCIM
+                  </Label>
+                  <p className="mt-1 text-sm">
+                    Users and groups are synced via SCIM. Roles and permissions are assigned to
+                    groups via role mappings.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+        </RadioGroup>
+        {isSCIMProvisioningEnabled ? (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle title="SCIM Provision Defaults" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between space-x-4">
+                    <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                      <p>Organization access restricted to (active) provisioned users</p>
+                      <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                        Only (active) users provisioned via SCIM can access the organization.
+                        <br />
+                        <span className="font-bold">
+                          Organization administrators are excluded from this restriction.
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between space-x-4">
+                    <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                      <p>Sync groups via SCIM</p>
+                      <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                        Groups are provisioned and updated via SCIM.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between space-x-4">
+                    <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                      <p>Sync users via SCIM</p>
+                      <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                        Users are provisioned and updated via SCIM.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between space-x-4">
+                    <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                      <p>Assign permissions via groups</p>
+                      <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                        Assign role mappings to groups to grant permissions to group members.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle title="OIDC Provision Settings" />
+              <CardDescription description="Customize the provision behaviour vor OIDC." />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-5">
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                    <p>Require OIDC to Join</p>
+                    <p className="text-neutral-10 text-xs font-normal leading-snug">
+                      Restricts new accounts joining the organization to be authenticated via OIDC.
+                      <br />
+                      <span className="font-bold">
+                        Existing non-OIDC members will keep their access.
+                      </span>
+                    </p>
+                  </div>
+                  <Switch
+                    checked={oidcIntegration.oidcUserJoinOnly}
+                    onCheckedChange={checked =>
+                      props.onRestrictionChange('oidcUserJoinOnly', checked)
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                    <p>Require OIDC to Access</p>
+                    <p className="text-neutral-10 text-xs font-normal leading-snug">
+                      Prompt users to authenticate with OIDC before accessing the organization.
+                      <br />
+                      <span className="font-bold">
+                        Existing users without OIDC credentials will not be able to access the
+                        organization.
+                      </span>
+                    </p>
+                  </div>
+                  <Switch
+                    checked={oidcIntegration.oidcUserAccessOnly}
+                    onCheckedChange={checked =>
+                      props.onRestrictionChange('oidcUserAccessOnly', checked)
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                    <p>Require Invitation to Join</p>
+                    <p className="text-neutral-10 text-xs font-normal leading-snug">
+                      Restricts only invited OIDC accounts to join the organization.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={oidcIntegration.requireInvitation}
+                    data-cy="oidc-require-invitation-toggle"
+                    onCheckedChange={checked =>
+                      props.onRestrictionChange('requireInvitation', checked)
+                    }
+                  />
+                </div>
+                <div
+                  className={cn(
+                    'space-y-1 text-sm font-medium leading-none',
+                    isAdmin ? null : 'cursor-not-allowed',
+                  )}
+                >
+                  <p>Default Member Role</p>
+                  <div className="flex items-start justify-between space-x-4">
+                    <div className="flex basis-2/3 flex-col md:basis-1/2">
+                      <p className="text-neutral-10 text-xs font-normal leading-snug">
+                        This role is assigned to new members who sign in via OIDC.{' '}
+                        <span className="font-medium">
+                          Only members with the Admin role can modify it.
+                        </span>
+                      </p>
+                    </div>
+                    <div className="flex min-w-[150px] basis-1/3 md:basis-1/2">
+                      <OIDCDefaultRoleSelector
+                        className="w-full"
+                        disabled={!isAdmin}
+                        oidcIntegrationId={oidcIntegration.id}
+                        defaultRole={oidcIntegration.defaultMemberRole}
+                        memberRoles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-2">
+                <OIDCDefaultResourceSelector
+                  oidcIntegrationId={oidcIntegration.id}
+                  organization={organization}
+                  resourceAssignment={oidcIntegration.defaultResourceAssignment ?? {}}
+                  disabled={!isAdmin}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

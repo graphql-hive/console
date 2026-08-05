@@ -927,7 +927,7 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div className="space-y-2">
                         {!events.length ? (
                           <div className="text-neutral-8 text-sm">
-                            No events occured during this trace.
+                            No events occurred during this trace.
                           </div>
                         ) : (
                           events.map(event => (

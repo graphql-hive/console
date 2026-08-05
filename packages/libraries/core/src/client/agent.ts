@@ -126,9 +126,11 @@ export function createAgent<TEvent>(
     if (event instanceof Promise) {
       const promise = captureAsync(event);
       inProgressCaptures.push(promise);
-      void promise.finally(() => {
-        inProgressCaptures = inProgressCaptures.filter(p => p !== promise);
-      });
+      void promise
+        .catch(e => logger.error('Failed to capture async event (error=%o)', e))
+        .finally(() => {
+          inProgressCaptures = inProgressCaptures.filter(p => p !== promise);
+        });
     } else {
       captureSync(event);
     }
@@ -227,7 +229,7 @@ export function createAgent<TEvent>(
     }
 
     if (inProgressCaptures.length) {
-      await Promise.all(inProgressCaptures);
+      await Promise.allSettled(inProgressCaptures);
     }
 
     await send({

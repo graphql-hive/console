@@ -186,7 +186,7 @@ export function CreateAccessTokenSheetContent(
       if (error.message) {
         toast({
           variant: 'destructive',
-          title: 'An error occured',
+          title: 'An error occurred',
           description: error.message,
         });
       }
@@ -195,7 +195,7 @@ export function CreateAccessTokenSheetContent(
     if (result.error) {
       toast({
         variant: 'destructive',
-        title: 'An error occured',
+        title: 'An error occurred',
         description: 'Something went wrong. Try again later.',
       });
       return;

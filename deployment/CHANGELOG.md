@@ -1,5 +1,186 @@
 # hive
 
+## 11.10.0
+
+### Minor Changes
+
+- [#8184](https://github.com/graphql-hive/console/pull/8184)
+  [`4540184`](https://github.com/graphql-hive/console/commit/4540184353ce927d41296f75113a7bce334b28bb)
+  Thanks [@ben-m-klein](https://github.com/ben-m-klein)! - Add Discord as a first-class alert
+  channel with Discord webhook formatting for alert notifications.
+
+### Patch Changes
+
+- [#8301](https://github.com/graphql-hive/console/pull/8301)
+  [`df4ba0c`](https://github.com/graphql-hive/console/commit/df4ba0c2896b3d6683493dd4e225f6b5dae4e195)
+  Thanks [@overpod](https://github.com/overpod)! - Add `EMAIL_PROVIDER_SMTP_IGNORE_TLS` environment
+  variable for the `smtp` email provider.
+
+  Set it to `1` to never use STARTTLS, even when the SMTP server advertises support for it. This
+  allows sending emails through servers without working TLS support. The variable is opt-in and
+  defaults to `0`, so existing deployments keep their current behaviour.
+
+- [#8296](https://github.com/graphql-hive/console/pull/8296)
+  [`e239df7`](https://github.com/graphql-hive/console/commit/e239df71d4981f4a4acda865dd19a79eaf91bbe4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - cleanup old unused database tables
+
+- [#8305](https://github.com/graphql-hive/console/pull/8305)
+  [`dee12d9`](https://github.com/graphql-hive/console/commit/dee12d9aa030ac3da5d6c87ea8d85bfc7276c3ab)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Add `ENCRYPTION_SECRET`
+  environment variable to the `workflows` service.
+
+  The service needs it to decrypt the Slack token stored by the API service when it dispatches
+  metric-alert notifications. Set it to the same value as `ENCRYPTION_SECRET` on the server and
+  schema services, otherwise the token cannot be decrypted and Slack notifications fail.
+
+  The variable is optional, so existing deployments keep booting after an upgrade. When it is not
+  set the service starts normally and every other task keeps running, but Slack metric-alert
+  notifications are skipped.
+
+## 11.9.0
+
+### Minor Changes
+
+- [#8062](https://github.com/graphql-hive/console/pull/8062)
+  [`8270cac`](https://github.com/graphql-hive/console/commit/8270cac6516b20454914ee39d189e8c943487834)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add a new experimental config option that allows
+  sending additional metrics (errors and resolution counts) to Hive Console.
+
+### Patch Changes
+
+- [#8291](https://github.com/graphql-hive/console/pull/8291)
+  [`ee8af3e`](https://github.com/graphql-hive/console/commit/ee8af3edcb06f4d59b742cf2c8f2f99167bb52a0)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update to Node.js `24.18.1`.
+
+## 11.8.0
+
+### Minor Changes
+
+- [#8084](https://github.com/graphql-hive/console/pull/8084)
+  [`43d7cb3`](https://github.com/graphql-hive/console/commit/43d7cb3555d80e0e2fcbf6a9cae030fd015afcf8)
+  Thanks [@mish-elle](https://github.com/mish-elle)! - Add opt-in AWS RDS IAM authentication for
+  PostgreSQL connections. When enabled, services authenticate to RDS/Aurora using short-lived IAM
+  tokens (SigV4) instead of static passwords.
+
+  ### New environment variables
+
+  | Variable                        | Services                                               | Description                                                            |
+  | ------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------- |
+  | `AWS_REGION`                    | server, commerce, tokens, usage, workflows, migrations | Default AWS region for the service for all AWS connections.            |
+  | `POSTGRES_AWS_IAM_AUTH_ENABLED` | server, commerce, tokens, usage, workflows, migrations | Set to `1` to enable RDS IAM authentication.                           |
+  | `POSTGRES_AWS_REGION`           | server, commerce, tokens, usage, workflows, migrations | AWS region of the RDS instance. Falls back to `AWS_REGION` if not set. |
+
+  ### To enable
+
+  - `POSTGRES_SSL=1` must be set (RDS IAM requires TLS).
+  - `POSTGRES_AWS_REGION` or `AWS_REGION` must be set.
+  - The pod/instance must have AWS credentials available (e.g. IRSA, EKS Pod Identity, instance
+    profile) with `rds-db:connect` permission for the configured `POSTGRES_USER`.
+
+- [#8272](https://github.com/graphql-hive/console/pull/8272)
+  [`b695a80`](https://github.com/graphql-hive/console/commit/b695a80235c3abfa219ca0578acad33e3f567f09)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Remove the `tokens` service. Adjust the `server`
+  and `usage` services to resolve the legacy target access tokens directly from redis and postgres.
+
+  In order to update to this version remove the `tokens` entry within your docker compose file.
+
+  ```diff
+  -     tokens:
+  -       image: '${DOCKER_REGISTRY}tokens${DOCKER_TAG}'
+  -       # ...
+  ```
+
+  Then, make sure the `usage` service depends on the `db` container to be healthy.
+
+  ```diff
+       usage:
+         # ...
+         depends_on:
+  -        tokens:
+  +        db:
+             condition: service_healthy
+  ```
+
+### Patch Changes
+
+- [#8287](https://github.com/graphql-hive/console/pull/8287)
+  [`a0092fc`](https://github.com/graphql-hive/console/commit/a0092fc7a9e25f70a7a4d9883a84765f7ebc88ea)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alert notifications now
+  link back to the alert rule in Hive Console. Slack and Microsoft Teams messages gain a "View alert
+  in Hive" link, and the webhook payload gains a `url` field pointing at the same page.
+
+  Self-hosted deployments need to set `WEB_APP_URL` on the workflows service to enable it:
+
+  ```env
+  WEB_APP_URL=https://your-hive-console-url
+  ```
+
+  The variable is optional. When it is unset, notifications are sent exactly as before, without the
+  link, and the webhook payload's `url` is `null`.
+
+## 11.7.2
+
+### Patch Changes
+
+- [#8166](https://github.com/graphql-hive/console/pull/8166)
+  [`b1f17e2`](https://github.com/graphql-hive/console/commit/b1f17e2321e7e777d7e9fa2942460433a03f20b9)
+  Thanks [@AreebEhsan](https://github.com/AreebEhsan)! - Include contract changes in the GitHub CI
+  schema-check summary. Previously, a `schema:check --github` run on a composite/federation project
+  that changed only a contract (while the core composed schema was unchanged) was reported as "No
+  changes". The summary now reports the changed contracts and their changes, and "No changes" is
+  only shown when neither the core schema nor any contract changed.
+
+- [#8275](https://github.com/graphql-hive/console/pull/8275)
+  [`e967f76`](https://github.com/graphql-hive/console/commit/e967f7681933b035c88ad9323dde17e9a372bd69)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade `@theguild/federation-composition` to
+  support oneOf directive in public sdl
+
+  https://github.com/graphql-hive/federation-composition/releases/tag/v0.23.3
+
+- [#8268](https://github.com/graphql-hive/console/pull/8268)
+  [`7d21f6c`](https://github.com/graphql-hive/console/commit/7d21f6cbdace67df0041fdb77e683143e06e4076)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-mv8w-475r-vwqw](https://github.com/advisories/GHSA-mv8w-475r-vwqw).
+
+- [#8268](https://github.com/graphql-hive/console/pull/8268)
+  [`7d21f6c`](https://github.com/graphql-hive/console/commit/7d21f6cbdace67df0041fdb77e683143e06e4076)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-8pvw-jcv7-9cmj](https://github.com/advisories/GHSA-8pvw-jcv7-9cmj) and
+  [GHSA-83w8-p2f5-377r](https://github.com/advisories/GHSA-83w8-p2f5-377r).
+
+- [#8256](https://github.com/graphql-hive/console/pull/8256)
+  [`0727b91`](https://github.com/graphql-hive/console/commit/0727b916b12b4e3c10e032d1ad6877519307c2ca)
+  Thanks [@jdolle](https://github.com/jdolle)! - Track schema composition worker memory usage; add
+  to schema service dashboard
+
+- [#8262](https://github.com/graphql-hive/console/pull/8262)
+  [`3925da7`](https://github.com/graphql-hive/console/commit/3925da717d4a8e532520d25307d8b504b10d54d8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [GHSA-45rx-2jwx-cxfr](https://github.com/advisories/GHSA-45rx-2jwx-cxfr), and
+  [GHSA-c96f-x56v-gq3h](https://github.com/advisories/GHSA-c96f-x56v-gq3h).
+
+- [#7966](https://github.com/graphql-hive/console/pull/7966)
+  [`477bf11`](https://github.com/graphql-hive/console/commit/477bf11f6f242e6e5982a5821a6147342117542a)
+  Thanks [@cosmincatalin](https://github.com/cosmincatalin)! - Add Azure Workload Identity
+  Federation support for OIDC SSO in self-hosted deployments. Enabled organizations use the
+  projected Azure token as a client assertion instead of an OIDC client secret.
+
+  For example, enable federation for an organization with:
+
+  ```env
+  OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER=azure
+  AZURE_FEDERATED_TOKEN_FILE=/var/run/secrets/azure/tokens/azure-identity-token
+  OIDC_WORKLOAD_FEDERATION_ORGANIZATION_IDS=00000000-0000-4000-8000-000000000000
+  ```
+
+  This will effectively override the client secret configured for that organization to use the OIDC
+  provider.
+
+- [#8259](https://github.com/graphql-hive/console/pull/8259)
+  [`359ca59`](https://github.com/graphql-hive/console/commit/359ca5939f0160670981b9e735fa6fe6557fcd93)
+  Thanks [@jdolle](https://github.com/jdolle)! - Optimize memory for composition worker stitching
+  schemas. Don't store or build the schemas if there are stitched errors
+
 ## 11.7.1
 
 ### Patch Changes

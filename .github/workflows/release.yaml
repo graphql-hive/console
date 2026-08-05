@@ -1,0 +1,216 @@
+name: release
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: release-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  id-token: write
+  pull-requests: write
+  contents: write
+  packages: write
+
+jobs:
+  snapshot:
+    if: github.event_name == 'pull_request'
+    uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@v1
+    with:
+      npmTag:
+        ${{ github.event.pull_request.title == 'Upcoming Release Changes' && 'rc' || 'alpha' }}
+      buildScript: build:libraries
+      node-version-file: '.node-version'
+      restoreDeletedChangesets: ${{ github.event.pull_request.title == 'Upcoming Release Changes' }}
+    secrets:
+      githubToken: ${{ secrets.BOT_GITHUB_TOKEN }}
+
+  snapshot-cli-version:
+    if:
+      github.event_name == 'pull_request' && github.event.pull_request.title != 'Upcoming Release
+      Changes'
+    needs: snapshot
+    runs-on: ubuntu-22.04
+    outputs:
+      published: ${{ steps.cli.outputs.published }}
+      version: ${{ steps.cli.outputs.version }}
+    steps:
+      - name: Extract published CLI version
+        if:
+          needs.snapshot.outputs.published && contains(needs.snapshot.outputs.publishedPackages,
+          '"@graphql-hive/cli"')
+        id: cli
+        run: |
+          echo '${{ needs.snapshot.outputs.publishedPackages }}' > cli-ver.json
+          VERSION=$(jq -r '.[] | select(.name | endswith("@graphql-hive/cli")).version' cli-ver.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+  publish-snapshot-docker-cli:
+    needs: snapshot-cli-version
+    if: needs.snapshot-cli-version.outputs.published == 'true'
+    uses: ./.github/workflows/dockerize-cli.yaml
+    with:
+      cliVersion: ${{ needs.snapshot-cli-version.outputs.version }}
+      publishLatest: false
+    secrets: inherit
+
+  stable:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-22.04
+    env:
+      HIVE_TOKEN: ${{ secrets.HIVE_TOKEN }}
+      # AWS_* are used by Oclif CLI
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_S3_ENDPOINT: https://6d5bc18cd8d13babe7ed321adba3d8ae.r2.cloudflarestorage.com
+
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      publishedPackages: ${{ steps.changesets.outputs.publishedPackages }}
+      cliPublish: ${{ steps.cli.outputs.publish }}
+      cliVersion: ${{ steps.cli.outputs.version }}
+      hivePublish: ${{ steps.hive.outputs.publish }}
+      hiveVersion: ${{ steps.hive.outputs.version }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 2
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
+
+      - name: setup environment
+        uses: ./.github/actions/setup
+        with:
+          codegen: false # no need to run because release script will run it anyway
+          actor: release-stable
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      # see https://github.com/changesets/action/issues/523
+      - name: fix gh-api issues with changesets
+        run: |
+          git ls-files | while read -r file; do [ -x "$file" ] && chmod -x "$file" || true; done
+
+      - name: publish stable
+        id: changesets
+        uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
+        with:
+          publish: pnpm release
+          version: pnpm release:version
+          commit: 'chore(release): update monorepo packages versions'
+          title: 'Upcoming Release Changes'
+          commitMode: github-api
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+          PNPM_CONFIG_PROVENANCE: true
+
+      - name: extract published cli version
+        if:
+          steps.changesets.outputs.published && contains(steps.changesets.outputs.publishedPackages,
+          '"@graphql-hive/cli"')
+        id: cli
+        run: |
+          echo '${{steps.changesets.outputs.publishedPackages}}' > cli-ver.json
+          VERSION=`echo $(jq -r '.[] | select(.name | endswith("@graphql-hive/cli")).version' cli-ver.json)`
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "publish=true" >> $GITHUB_OUTPUT
+
+      - name: extract published hive version
+        if:
+          steps.changesets.outputs.published && contains(steps.changesets.outputs.publishedPackages,
+          '"hive"')
+        id: hive
+        run: |
+          echo '${{steps.changesets.outputs.publishedPackages}}' > hive-ver.json
+          VERSION=`echo $(jq -r '.[] | select(.name | endswith("hive")).version' hive-ver.json)`
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "publish=true" >> $GITHUB_OUTPUT
+
+      # Needed for `oclif pack win`
+      - name: Install NSIS
+        run: |
+          sudo apt-get -y install nsis
+
+      - name: pack tarballs
+        if: steps.cli.outputs.publish == 'true'
+        working-directory: packages/libraries/cli
+        run: pnpm oclif:pack
+
+      - name: upload tarballs
+        if: steps.cli.outputs.publish == 'true'
+        working-directory: packages/libraries/cli
+        run: pnpm oclif:upload
+
+      - name: promote tarballs
+        if: steps.cli.outputs.publish == 'true'
+        working-directory: packages/libraries/cli
+        env:
+          VERSION: ${{ steps.cli.outputs.version }}
+        run: pnpm oclif promote --no-xz --sha ${GITHUB_SHA:0:7} --version $VERSION
+
+  stable-changeset-version:
+    needs: stable
+    if: needs.stable.outputs.hivePublish != 'true'
+    uses: ./.github/workflows/changeset-version.yaml
+
+  build:
+    needs:
+      - stable
+      - stable-changeset-version
+    if:
+      always() && needs.stable.result == 'success' && (needs.stable-changeset-version.result ==
+      'success' || needs.stable-changeset-version.result == 'skipped')
+    uses: ./.github/workflows/build-and-dockerize.yaml
+    with:
+      imageTag:
+        # prettier-ignore
+        ${{ needs.stable.outputs.hivePublish == 'true' && needs.stable.outputs.hiveVersion || github.sha }}
+      publishSourceMaps: true
+      publishLatest: ${{ needs.stable.outputs.hivePublish == 'true' }}
+      targets: build
+      uploadJavaScriptArtifacts: true
+      latestVersion:
+        ${{ needs.stable.outputs.hivePublish == 'true' && needs.stable.outputs.hiveVersion ||
+        needs.stable-changeset-version.outputs.version }}
+    secrets: inherit
+
+  publish-stable-docker-cli:
+    needs: stable
+    if: needs.stable.outputs.cliPublish == 'true'
+    uses: ./.github/workflows/dockerize-cli.yaml
+    with:
+      cliVersion: ${{ needs.stable.outputs.cliVersion }}
+      publishLatest: true
+    secrets: inherit
+
+  deploy:
+    name: trigger staging deployment
+    needs: build
+    runs-on: ubuntu-22.04
+    if: ${{ vars.ENABLE_STAGING_DEPLOYMENT == '1' }}
+    steps:
+      - name: Dispatch Deployment
+        run: |
+          curl --request POST \
+            --url 'https://api.github.com/repos/${{ secrets.PRIVATE_REPO_OWNER }}/${{ secrets.PRIVATE_REPO_NAME }}/dispatches' \
+            --header 'Accept: application/vnd.github+json' \
+            --header 'Authorization: Bearer ${{ secrets.GH_PAT }}' \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "event_type": "deploy-staging",
+            "client_payload": {
+              "actor": "${{ github.actor }}",
+              "ref": "${{ github.sha }}",
+              "pulumiRefresh": "true",
+              "hiveAppUsePersistedDocuments": "true"
+            }
+          }'

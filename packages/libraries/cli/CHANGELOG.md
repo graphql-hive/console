@@ -1,5 +1,37 @@
 # @graphql-hive/cli
 
+## 0.61.3
+
+### Patch Changes
+
+- Updated dependencies
+  [[`3dbda7d`](https://github.com/graphql-hive/console/commit/3dbda7dbe895173578cc4c452a85ef6c2ce07383)]:
+  - @graphql-hive/core@0.22.1
+
+## 0.61.2
+
+### Patch Changes
+
+- [#8291](https://github.com/graphql-hive/console/pull/8291)
+  [`ee8af3e`](https://github.com/graphql-hive/console/commit/ee8af3edcb06f4d59b742cf2c8f2f99167bb52a0)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Use npm trusted publishing.
+
+- Updated dependencies
+  [[`8270cac`](https://github.com/graphql-hive/console/commit/8270cac6516b20454914ee39d189e8c943487834),
+  [`ee8af3e`](https://github.com/graphql-hive/console/commit/ee8af3edcb06f4d59b742cf2c8f2f99167bb52a0)]:
+  - @graphql-hive/core@0.22.0
+
+## 0.61.1
+
+### Patch Changes
+
+- [#8275](https://github.com/graphql-hive/console/pull/8275)
+  [`e967f76`](https://github.com/graphql-hive/console/commit/e967f7681933b035c88ad9323dde17e9a372bd69)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade `@theguild/federation-composition` to
+  support oneOf directive in public sdl
+
+  https://github.com/graphql-hive/federation-composition/releases/tag/v0.23.3
+
 ## 0.61.0
 
 ### Minor Changes

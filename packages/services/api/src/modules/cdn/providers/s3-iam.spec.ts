@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AwsClient, createDefaultCredentialProvider, type S3CredentialProvider } from './aws';
 

@@ -23,6 +23,20 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
+export function stringToHiveColor(str: string): string {
+  let hash = 0;
+
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    hash = hash & hash;
+  }
+  const hue = Math.abs(hash) % 360;
+  const saturation = 75;
+  const lightness = 65;
+
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
 function readChartStyles() {
   const s = getComputedStyle(document.documentElement);
   const textColor = s.getPropertyValue('--color-neutral-12').trim();

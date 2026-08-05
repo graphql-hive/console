@@ -1,13 +1,14 @@
 import type { Logger } from '@graphql-hive/logger';
 import type { PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
+import type { Encryptor } from '@hive/service-common';
 import { WebClient } from '@slack/web-api';
 import type { MetricAlertRuleRow } from './metric-alert-evaluator.js';
 import { sendWebhook, type RequestBroker } from './webhooks/send-webhook.js';
 
 export type AlertChannelRow = {
   id: string;
-  type: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK';
+  type: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD';
   name: string;
   slackChannel: string | null;
   webhookEndpoint: string | null;
@@ -15,6 +16,7 @@ export type AlertChannelRow = {
 
 export type NotificationEvent = {
   state: 'firing' | 'resolved';
+  ruleId: string;
   rule: Pick<
     MetricAlertRuleRow,
     | 'organizationId'
@@ -34,17 +36,71 @@ export type NotificationEvent = {
   targetSlug: string;
 };
 
+/**
+ * How a dispatch attempt ended. Only `sent` means the destination actually received
+ * something: `skipped-config` covers a channel that is missing the settings it needs,
+ * `failed-config` a misconfiguration retrying cannot fix (no or wrong ENCRYPTION_SECRET),
+ * and `gave-up` an exhausted retry budget. All three used to be indistinguishable from a
+ * successful send.
+ */
+export type NotificationResult =
+  | { status: 'sent' }
+  | { status: 'skipped-config'; reason: string }
+  | { status: 'failed-config'; reason: string }
+  | { status: 'gave-up' };
+
+/**
+ * Pure mapping from a dispatch result onto what the task records: the span outcome, the
+ * reason (when there is one), and whether the notification actually reached its
+ * destination, which is what gates the `metric_alert_notifications_sent` row.
+ */
+export function summarizeNotificationResult(result: NotificationResult): {
+  outcome: NotificationResult['status'];
+  delivered: boolean;
+  reason: string | null;
+} {
+  switch (result.status) {
+    case 'sent':
+      return { outcome: 'sent', delivered: true, reason: null };
+    case 'skipped-config':
+      return { outcome: 'skipped-config', delivered: false, reason: result.reason };
+    case 'failed-config':
+      return { outcome: 'failed-config', delivered: false, reason: result.reason };
+    case 'gave-up':
+      return { outcome: 'gave-up', delivered: false, reason: 'retries-exhausted' };
+    default: {
+      const exhaustive: never = result;
+      throw new Error(`Unhandled notification result: ${JSON.stringify(exhaustive)}`);
+    }
+  }
+}
+
+/**
+ * Deep link to the rule detail page. Null when the Hive Console URL isn't
+ * configured (`WEB_APP_URL` is optional for the workflows service), in which
+ * case notifications go out without a link.
+ */
+export function buildAlertUrl(webAppUrl: string | null, event: NotificationEvent): string | null {
+  if (!webAppUrl) {
+    return null;
+  }
+
+  return `${webAppUrl}/${event.organizationSlug}/${event.projectSlug}/${event.targetSlug}/alerts/${event.ruleId}`;
+}
+
 export async function sendSlackNotification(args: {
   channel: AlertChannelRow;
   event: NotificationEvent;
   pg: PostgresDatabasePool;
   logger: Logger;
-}) {
+  webAppUrl: string | null;
+  crypto: Encryptor | null;
+}): Promise<NotificationResult> {
   const { channel, event, pg, logger } = args;
 
   if (!channel.slackChannel) {
     logger.warn({ channelId: channel.id }, 'Slack channel name not configured');
-    return;
+    return { status: 'skipped-config', reason: 'no-slack-channel' };
   }
 
   const tokenResult = await pg.maybeOneFirst(psql`
@@ -58,24 +114,54 @@ export async function sendSlackNotification(args: {
       { organizationId: event.rule.organizationId },
       'Slack integration not configured for organization',
     );
-    return;
+    return { status: 'skipped-config', reason: 'no-slack-token' };
   }
 
-  const token = tokenResult as string;
+  if (!args.crypto) {
+    logger.warn(
+      { organizationId: event.rule.organizationId },
+      'ENCRYPTION_SECRET not configured, cannot decrypt the Slack token',
+    );
+    return { status: 'failed-config', reason: 'no-encryption-secret' };
+  }
+
+  let token: string;
+  try {
+    // Written encrypted by the API's SlackIntegrationManager. `possiblyRaw` because rows
+    // predating encryption are still stored in plain text, and the API tolerates them too.
+    token = args.crypto.decrypt(tokenResult as string, true);
+  } catch (error) {
+    // A wrong ENCRYPTION_SECRET can't be fixed by retrying, so this must not throw:
+    // rethrowing would burn the job's whole retry budget on an unfixable error.
+    logger.error(
+      {
+        organizationId: event.rule.organizationId,
+        // Node's crypto errors describe the failure without echoing the input, so this
+        // is safe to log; the token and the ciphertext never are.
+        error: error instanceof Error ? error.message : String(error),
+      },
+      'Failed to decrypt the Slack token, check ENCRYPTION_SECRET matches the API service',
+    );
+    return { status: 'failed-config', reason: 'decrypt-failed' };
+  }
+
   const client = new WebClient(token);
 
   const isFiring = event.state === 'firing';
-  const emoji = isFiring ? ':rotating_light:' : ':white_check_mark:';
   const action = isFiring ? 'triggered' : 'resolved';
-  // `good` is Slack's preset for the resolved state — it renders Slack's own
-  // green. Firing uses the severity hex (prefixed with `#`).
-  const color = isFiring ? `#${severityColor(event.rule.severity)}` : 'good';
+  // Slack renders the named presets (`good`/`warning`/`danger`) as the default
+  // grey bar, so both states pass an explicit hex.
+  const color = `#${isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR}`;
 
   const changeText = formatChangeText(event);
+  const alertUrl = buildAlertUrl(args.webAppUrl, event);
 
   await client.chat.postMessage({
     channel: channel.slackChannel,
-    text: `${emoji} Metric alert ${action}: "${event.rule.name}"`,
+    text: `Metric alert ${action}: "${event.rule.name}"`,
+    // Slack would otherwise attach a preview card for the console link.
+    unfurl_links: false,
+    unfurl_media: false,
     attachments: [
       {
         color,
@@ -89,6 +175,7 @@ export async function sendSlackNotification(args: {
                 `Type: ${event.rule.type} | Severity: ${event.rule.severity}`,
                 changeText,
                 `Target: \`${event.targetSlug}\` in \`${event.projectSlug}\``,
+                ...(alertUrl ? [`<${alertUrl}|View alert in Hive>`] : []),
               ].join('\n'),
             },
           },
@@ -98,6 +185,8 @@ export async function sendSlackNotification(args: {
   });
 
   logger.debug({ channelId: channel.id }, 'Slack notification sent');
+
+  return { status: 'sent' };
 }
 
 export async function sendWebhookNotification(args: {
@@ -108,17 +197,18 @@ export async function sendWebhookNotification(args: {
   idempotencyKey: string;
   attempt: number;
   maxAttempts: number;
-}) {
+  webAppUrl: string | null;
+}): Promise<NotificationResult> {
   const { channel, event, logger } = args;
 
   if (!channel.webhookEndpoint) {
     logger.warn({ channelId: channel.id }, 'Webhook endpoint not configured');
-    return;
+    return { status: 'skipped-config', reason: 'no-webhook-endpoint' };
   }
 
-  const payload = buildWebhookPayload(event);
+  const payload = buildWebhookPayload(event, args.webAppUrl);
 
-  await sendWebhook(logger, args.requestBroker, {
+  const result = await sendWebhook(logger, args.requestBroker, {
     attempt: args.attempt,
     maxAttempts: args.maxAttempts,
     endpoint: channel.webhookEndpoint,
@@ -126,7 +216,13 @@ export async function sendWebhookNotification(args: {
     headers: { 'Idempotency-Key': args.idempotencyKey },
   });
 
+  if (result.status === 'gave-up') {
+    return result;
+  }
+
   logger.debug({ channelId: channel.id }, 'Webhook notification sent');
+
+  return { status: 'sent' };
 }
 
 export async function sendTeamsNotification(args: {
@@ -137,20 +233,21 @@ export async function sendTeamsNotification(args: {
   idempotencyKey: string;
   attempt: number;
   maxAttempts: number;
-}) {
+  webAppUrl: string | null;
+}): Promise<NotificationResult> {
   const { channel, event, logger } = args;
 
   if (!channel.webhookEndpoint) {
     logger.warn({ channelId: channel.id }, 'Teams webhook endpoint not configured');
-    return;
+    return { status: 'skipped-config', reason: 'no-teams-endpoint' };
   }
 
   const isFiring = event.state === 'firing';
-  const emoji = isFiring ? '🔴' : '✅';
   const action = isFiring ? 'triggered' : 'resolved';
   const themeColor = isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR;
 
   const changeText = formatChangeText(event);
+  const alertUrl = buildAlertUrl(args.webAppUrl, event);
 
   const card = {
     '@type': 'MessageCard',
@@ -159,18 +256,18 @@ export async function sendTeamsNotification(args: {
     summary: `Metric alert ${action}: "${event.rule.name}"`,
     sections: [
       {
-        activityTitle: `${emoji} ${event.rule.name} — ${action}`,
+        activityTitle: `${event.rule.name} — ${action}`,
         facts: [
           { name: 'Type', value: event.rule.type },
           { name: 'Severity', value: event.rule.severity },
           { name: 'Target', value: `${event.targetSlug} in ${event.projectSlug}` },
         ],
-        text: changeText,
+        text: alertUrl ? `${changeText}\n\n[View alert in Hive](${alertUrl})` : changeText,
       },
     ],
   };
 
-  await sendWebhook(logger, args.requestBroker, {
+  const result = await sendWebhook(logger, args.requestBroker, {
     attempt: args.attempt,
     maxAttempts: args.maxAttempts,
     endpoint: channel.webhookEndpoint,
@@ -178,7 +275,13 @@ export async function sendTeamsNotification(args: {
     headers: { 'Idempotency-Key': args.idempotencyKey },
   });
 
+  if (result.status === 'gave-up') {
+    return result;
+  }
+
   logger.debug({ channelId: channel.id }, 'Teams notification sent');
+
+  return { status: 'sent' };
 }
 
 /**
@@ -190,13 +293,90 @@ const SEVERITY_COLORS: Record<NotificationEvent['rule']['severity'], string> = {
   CRITICAL: 'c62424',
 };
 /**
- * Resolved-state green for MS Teams. Teams' `themeColor` must be a hex, so it
- * can't use Slack's `good` preset.
+ * Resolved-state green (no leading `#`), shared by Slack and Teams.
  */
 const RESOLVED_COLOR = '2ECC71';
 
 function severityColor(severity: NotificationEvent['rule']['severity']): string {
   return SEVERITY_COLORS[severity] ?? SEVERITY_COLORS.WARNING;
+}
+
+// Discord rejects the whole message if any of these are exceeded. Mirrored in
+// the schema-change adapter (api/modules/alerts/providers/adapters/discord.ts);
+// kept local rather than shared so the two services stay independent.
+const DISCORD_MAX_TITLE_LENGTH = 256;
+const DISCORD_MAX_DESCRIPTION_LENGTH = 4096;
+const DISCORD_MAX_FIELD_VALUE_LENGTH = 1024;
+
+export async function sendDiscordNotification(args: {
+  channel: AlertChannelRow;
+  event: NotificationEvent;
+  requestBroker: RequestBroker | null;
+  logger: Logger;
+  idempotencyKey: string;
+  attempt: number;
+  maxAttempts: number;
+  webAppUrl: string | null;
+}): Promise<NotificationResult> {
+  const { channel, event, logger } = args;
+
+  if (!channel.webhookEndpoint) {
+    logger.warn({ channelId: channel.id }, 'Discord webhook endpoint not configured');
+    return { status: 'skipped-config', reason: 'no-discord-endpoint' };
+  }
+
+  const isFiring = event.state === 'firing';
+  const emoji = isFiring ? '🔴' : '✅';
+  const action = isFiring ? 'triggered' : 'resolved';
+  const color = Number.parseInt(isFiring ? severityColor(event.rule.severity) : RESOLVED_COLOR, 16);
+
+  const changeText = formatChangeText(event);
+  const alertUrl = buildAlertUrl(args.webAppUrl, event);
+  // Appended after truncation so the link survives a long change text.
+  const viewLink = alertUrl ? `\n\n[View alert in Hive](${alertUrl})` : '';
+
+  const payload = {
+    username: 'GraphQL Hive',
+    allowed_mentions: { parse: [] },
+    embeds: [
+      {
+        title: truncate(`${emoji} ${event.rule.name} — ${action}`, DISCORD_MAX_TITLE_LENGTH),
+        // Makes the embed title itself clickable, as in the schema-change adapter.
+        url: alertUrl ?? undefined,
+        color,
+        description:
+          truncate(changeText, DISCORD_MAX_DESCRIPTION_LENGTH - viewLink.length) + viewLink,
+        fields: [
+          { name: 'Type', value: event.rule.type, inline: true },
+          { name: 'Severity', value: event.rule.severity, inline: true },
+          {
+            name: 'Target',
+            value: truncate(
+              `${event.targetSlug} in ${event.projectSlug}`,
+              DISCORD_MAX_FIELD_VALUE_LENGTH,
+            ),
+            inline: false,
+          },
+        ],
+      },
+    ],
+  };
+
+  const result = await sendWebhook(logger, args.requestBroker, {
+    attempt: args.attempt,
+    maxAttempts: args.maxAttempts,
+    endpoint: channel.webhookEndpoint,
+    data: payload,
+    headers: { 'Idempotency-Key': args.idempotencyKey },
+  });
+
+  if (result.status === 'gave-up') {
+    return result;
+  }
+
+  logger.debug({ channelId: channel.id }, 'Discord notification sent');
+
+  return { status: 'sent' };
 }
 
 function formatChangeText(event: NotificationEvent): string {
@@ -225,7 +405,7 @@ function formatChangeText(event: NotificationEvent): string {
   return `${metricLabel}: **${currentValue.toFixed(2)}${unit}** (threshold: ${rule.thresholdValue}${rule.thresholdType === 'PERCENTAGE_CHANGE' ? '%' : unit})`;
 }
 
-function buildWebhookPayload(event: NotificationEvent) {
+export function buildWebhookPayload(event: NotificationEvent, webAppUrl: string | null) {
   const { rule, currentValue, previousValue } = event;
   const changePercent =
     previousValue !== null && previousValue !== 0
@@ -252,5 +432,16 @@ function buildWebhookPayload(event: NotificationEvent) {
     target: { slug: event.targetSlug },
     project: { slug: event.projectSlug },
     organization: { slug: event.organizationSlug },
+    // Always present so the payload shape stays stable; null when the Hive
+    // Console URL isn't configured.
+    url: buildAlertUrl(webAppUrl, event),
   };
+}
+
+function truncate(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return value.slice(0, maxLength - 3) + '...';
 }

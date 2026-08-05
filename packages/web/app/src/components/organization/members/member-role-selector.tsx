@@ -22,35 +22,17 @@ const MemberRoleSelector_OrganizationFragment = graphql(`
   }
 `);
 
-const MemberRoleSelector_MemberFragment = graphql(`
-  fragment MemberRoleSelector_MemberFragment on Member {
-    id
-    role {
-      id
-    }
-    user {
-      id
-    }
-  }
-`);
-
 export function MemberRoleSelector(props: {
   organization: FragmentType<typeof MemberRoleSelector_OrganizationFragment>;
-  member: FragmentType<typeof MemberRoleSelector_MemberFragment>;
-  selectedRoleId: string;
+  selectedRoleId: string | null;
   onSelectRoleId: (roleId: string) => void;
+  currentRoleId: string | null;
 }) {
   const organization = useFragment(MemberRoleSelector_OrganizationFragment, props.organization);
-  const member = useFragment(MemberRoleSelector_MemberFragment, props.member);
   const canAssignRole = organization.viewerCanAssignUserRoles;
   const roles = organization.memberRoles?.edges.map(edge => edge.node) ?? [];
 
   const memberRole = roles.find(role => role.id === props.selectedRoleId);
-
-  if (!memberRole || !member) {
-    console.error('No role or member provided to MemberRoleSelector');
-    return null;
-  }
 
   return (
     <RoleSelector
@@ -62,7 +44,7 @@ export function MemberRoleSelector(props: {
       defaultRole={memberRole}
       disabled={!canAssignRole}
       isRoleActive={role => {
-        const isCurrentRole = role.id === member.id;
+        const isCurrentRole = role.id === props.currentRoleId;
         if (isCurrentRole) {
           return {
             active: false,

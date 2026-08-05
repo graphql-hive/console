@@ -198,6 +198,13 @@ export class OrganizationManager {
     this.logger.debug('Leaving organization (organization=%s)', organizationId);
     const user = await this.session.getViewer();
 
+    if (user.provisionedByOrganizationId !== null) {
+      return {
+        ok: false,
+        message: 'Provisioned users can not leave organizations.',
+      };
+    }
+
     const canLeave = await this.canLeaveOrganization({
       organizationId,
       userId: user.id,
@@ -320,10 +327,18 @@ export class OrganizationManager {
     user: {
       id: string;
       superTokensUserId: string | null;
+      provisionedByOrganizationId: string | null;
     };
   }) {
     const { slug, user } = input;
     this.logger.info('Creating an organization (input=%o)', input);
+
+    if (user.provisionedByOrganizationId !== null) {
+      return {
+        ok: false as const,
+        message: 'Provisioned users can not create organizations.',
+      };
+    }
 
     const result = await this.storage.createOrganization({
       slug,
@@ -676,6 +691,12 @@ export class OrganizationManager {
       throw new Error('Only users can join organizations');
     }
 
+    if (actor.user.provisionedByOrganizationId !== null) {
+      return {
+        message: 'Provisioned users can not join any other organization.',
+      };
+    }
+
     const organization = await this.getOrganizationByInviteCode({
       code,
       user: actor.user,
@@ -756,6 +777,14 @@ export class OrganizationManager {
       };
     }
 
+    if (member.user.provisionedByOrganizationId) {
+      return {
+        error: {
+          message: 'Can not transfer ownership to a provisioned user.',
+        },
+      };
+    }
+
     const organization = await this.getOrganization(selector);
 
     const { code } = await this.storage.createOrganizationTransferRequest({
@@ -824,6 +853,14 @@ export class OrganizationManager {
     });
     const currentUser = await this.session.getViewer();
 
+    if (currentUser.provisionedByOrganizationId) {
+      return {
+        error: {
+          message: 'Can not transfer ownership to a provisioned user.',
+        },
+      };
+    }
+
     await this.auditLog.record({
       eventType: 'ORGANIZATION_TRANSFERRED',
       organizationId: input.organizationId,
@@ -881,6 +918,10 @@ export class OrganizationManager {
 
     if (!currentUserAsMember) {
       throw new Error(`Logged user is not a member of the organization`);
+    }
+
+    if (member.user.provisionedByOrganizationId !== null) {
+      throw new HiveError('Provisioned users can not be removed from organizations.');
     }
 
     await this.storage.deleteOrganizationMember({
@@ -1081,6 +1122,23 @@ export class OrganizationManager {
       throw new Error(`Member is not part of the organization`);
     }
 
+    const user = await this.storage.getUserById({ id: previousMembership.userId });
+
+    if (!user) {
+      return {
+        error: {
+          message: 'The user does not exist.',
+        },
+      };
+    }
+    if (user.provisionedByOrganizationId !== null) {
+      return {
+        error: {
+          message: 'Provisioned users can not be modified.',
+        },
+      };
+    }
+
     const newRole = await this.organizationMemberRoles.findMemberRoleById(args.memberRoleId);
 
     if (!newRole) {
@@ -1122,12 +1180,6 @@ export class OrganizationManager {
       updatedMember: updatedMembership,
       previousMemberRole,
     };
-
-    const user = await this.storage.getUserById({ id: previousMembership.userId });
-
-    if (!user) {
-      throw new Error('User not found.');
-    }
 
     if (result) {
       await this.auditLog.record({
