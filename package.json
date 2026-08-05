@@ -30,6 +30,7 @@
     "docker:build": "NODE_VERSION_TAG=\":$(< .node-version)-slim\" docker buildx bake -f docker/docker.hcl --load build",
     "docker:override-up": "docker compose -f ./docker/docker-compose.override.yml up -d --remove-orphans",
     "env:sync": "tsx scripts/sync-env-files.ts",
+    "foundry": "pnpm --filter @hive/app foundry",
     "generate": "pnpm --filter @hive/storage db:generate && pnpm graphql:generate",
     "graphql:generate": "VERBOSE=1 graphql-codegen --config codegen.mts",
     "graphql:generate:watch": "pnpm graphql:generate --watch",
