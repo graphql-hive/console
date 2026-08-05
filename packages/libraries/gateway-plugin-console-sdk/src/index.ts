@@ -1,8 +1,15 @@
-import { DocumentNode, GraphQLSchema, Kind, responsePathAsArray, type GraphQLError } from 'graphql';
+import {
+  GraphQLSchema,
+  OperationTypeNode,
+  responsePathAsArray,
+  type DocumentNode,
+  type GraphQLError,
+} from 'graphql';
 import { lru } from 'tiny-lru';
 import {
   addHiveTypenames,
   createHive as createHiveClient,
+  getDefinedRootType,
   hideInjectedTypenames,
   isAsyncIterable,
   isHiveClient,
@@ -94,14 +101,16 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
        * This is added in the "onExecute" hook to the entire document. So subgraph
        * calls should also include this field.
        */
-
       const finishSubRequest = collection.subrequest({
         subgraph: subgraphName,
         type: isEntityRequest(executionRequest.document) ? 'ENTITY' : 'ROOT',
         /** @NOTE this field's format supports batched requests, but onSubgraphExecute does not. */
         paths: executionRequest.info?.path
           ? [responsePathAsArray(executionRequest.info.path).join('.')]
-          : [],
+          : getDefinedRootType(
+              subgraphSchema,
+              executionRequest.operationType ?? OperationTypeNode.QUERY,
+            )?.name,
       });
 
       return function onSubgraphExecuteDone({ result }) {
@@ -122,7 +131,7 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
     },
     onParse(parseCtx) {
       return ctx => {
-        if (ctx.result.kind === Kind.DOCUMENT && fieldLevelMetricsEnabled && operationCache) {
+        if (ctx.result.kind === 'document' && fieldLevelMetricsEnabled && operationCache) {
           // We need __typename on every object in the subgraph result so we can
           // resolve abstract types (unions/interfaces) to concrete type coordinates
           // when recording field-level metrics downstream.
