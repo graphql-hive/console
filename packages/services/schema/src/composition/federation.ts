@@ -171,7 +171,7 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
           extractMetadata(typeDefs, name),
         );
         const supergraphDocumentNode =
-          composed.result.sdlDocumentNode ?? parse(composed.result.supergraph);
+          composed.result.supergraphDocumentNode ?? parse(composed.result.supergraph);
         const { resolveImportName } = extractLinkImplementations(supergraphDocumentNode);
         const tagDirectiveName = resolveImportName('https://specs.apollo.dev/tag', '@tag');
         const tagStrategy = createTagDirectiveNameExtractionStrategy(tagDirectiveName);
