@@ -131,7 +131,7 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
     },
     onParse(parseCtx) {
       return ctx => {
-        if (ctx.result.kind === 'document' && fieldLevelMetricsEnabled && operationCache) {
+        if (ctx.result.kind === 'Document' && fieldLevelMetricsEnabled && operationCache) {
           // We need __typename on every object in the subgraph result so we can
           // resolve abstract types (unions/interfaces) to concrete type coordinates
           // when recording field-level metrics downstream.

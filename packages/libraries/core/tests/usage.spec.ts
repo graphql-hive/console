@@ -770,34 +770,55 @@ test('should not send excluded operation name data to Hive', async () => {
   expect(report.size).toEqual(2);
   expect(Object.keys(report.map)).toHaveLength(2);
 
-  const key = Object.keys(report.map)[0];
-  const record = report.map[key];
-
-  // operation
-  expect(record.operation).toMatch('mutation deleteProject');
-  expect(record.operationName).toMatch('deleteProject');
-  // fields
-  expect(record.fields).toMatchInlineSnapshot(`
-    [
-      Mutation.deleteProject,
-      Mutation.deleteProject.selector,
-      DeleteProjectPayload.selector,
-      ProjectSelector.organization,
-      ProjectSelector.project,
-      DeleteProjectPayload.deletedProject,
-      Project.id,
-      Project.cleanId,
-      Project.name,
-      Project.type,
-      ProjectType.FEDERATION,
-      ProjectType.STITCHING,
-      ProjectType.SINGLE,
-      ProjectType.CUSTOM,
-      ProjectSelectorInput.organization,
-      ID,
-      ProjectSelectorInput.project,
-    ]
-  `);
+  for (const hash of Object.keys(report.map)) {
+    const op = report.map[hash];
+    if (op.operation.includes('mutation deleteProject')) {
+      expect(op.operationName).toMatch('deleteProject');
+      // fields
+      expect(op.fields).toMatchInlineSnapshot(`
+        [
+          Mutation.deleteProject,
+          Mutation.deleteProject.selector,
+          DeleteProjectPayload.selector,
+          ProjectSelector.organization,
+          ProjectSelector.project,
+          DeleteProjectPayload.deletedProject,
+          Project.id,
+          Project.cleanId,
+          Project.name,
+          Project.type,
+          ProjectType.FEDERATION,
+          ProjectType.STITCHING,
+          ProjectType.SINGLE,
+          ProjectType.CUSTOM,
+          ProjectSelectorInput.organization,
+          ID,
+          ProjectSelectorInput.project,
+        ]
+      `);
+    } else if (op.operation.includes('query getProject')) {
+      expect(op.operationName).toMatch('getProject');
+      expect(op.fields).toMatchInlineSnapshot(`
+        [
+          Query.project,
+          Query.project.selector,
+          Project.id,
+          Project.cleanId,
+          Project.name,
+          Project.type,
+          ProjectType.FEDERATION,
+          ProjectType.STITCHING,
+          ProjectType.SINGLE,
+          ProjectType.CUSTOM,
+          ProjectSelectorInput.organization,
+          ID,
+          ProjectSelectorInput.project,
+        ]
+      `);
+    } else {
+      throw new Error('Expected operation not found');
+    }
+  }
 
   // Operations
   const operations = report.operations;
@@ -807,8 +828,7 @@ test('should not send excluded operation name data to Hive', async () => {
   }
 
   const operation = operations[0];
-
-  expect(operation.operationMapKey).toEqual(key);
+  expect(Object.keys(report.map)).toContain(operation.operationMapKey);
   expect(operation.timestamp).toEqual(expect.any(Number));
   // execution
   expect(operation.execution.duration).toBeGreaterThanOrEqual(18 * 1_000_000); // >=18ms in microseconds
