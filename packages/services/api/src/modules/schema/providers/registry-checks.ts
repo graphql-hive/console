@@ -334,6 +334,44 @@ export class RegistryChecks {
     } satisfies CheckResult;
   }
 
+  async retrievePreviousVersionSdlWithBaseSchemaOverwrite(args: {
+    previousVersionSchemas: Array<CompositeSchemaInput> | null;
+    base: {
+      serviceName: string;
+      sdl: string;
+    };
+    organization: Organization;
+    project: Project;
+    targetId: string;
+  }) {
+    const override = { sdl: args.base.sdl, serviceName: args.base.serviceName };
+    const schemas = !args.previousVersionSchemas
+      ? [this.helper.createSchemaObject(override)]
+      : args.previousVersionSchemas.map(s =>
+          this.helper.createSchemaObject(
+            s.serviceName === args.base.serviceName
+              ? { sdl: args.base.sdl, serviceName: s.serviceName, serviceUrl: s.serviceUrl }
+              : s,
+          ),
+        );
+
+    const existingSchemaResult = await this.orchestrator.composeAndValidate(
+      CompositionOrchestrator.projectTypeToOrchestratorType(args.project.type),
+      schemas,
+      {
+        external: args.project.externalComposition,
+        native: this.checkProjectNativeFederationSupport(
+          args.targetId,
+          args.project,
+          args.organization,
+        ),
+        contracts: null,
+      },
+    );
+
+    return existingSchemaResult.sdl ?? null;
+  }
+
   /**
    * Retrieve the SDL of the previous schema version.
    * Either by using pre-computed sdl or composing on the fly.

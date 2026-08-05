@@ -884,7 +884,23 @@ export default gql`
   input SchemaCheckInput {
     target: TargetReferenceInput
     service: ID
+    """
+    The schema SDL after applying the proposed change.
+    """
     sdl: String!
+
+    """
+    The schema SDL before applying the proposed change.
+
+    When provided for a distributed schema, Hive composes this service SDL
+    with the other services currently stored in the registry and compares
+    that composition against the composition produced from 'sdl'.
+
+    Intended for checks where the comparison baseline differs from the
+    latest schema stored in the registry, such as GitHub Merge Queue builds.
+    """
+    baseSdl: String
+
     github: GitHubSchemaCheckInput
     meta: SchemaCheckMetaInput
     """

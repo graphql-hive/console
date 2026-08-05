@@ -579,6 +579,7 @@ export class SchemaPublisher {
     const baseSchema = await this.schemaManager.getBaseSchemaForTarget(target);
 
     const sdl = tryPrettifySDL(input.sdl);
+    const baseSdl = input.baseSdl ? tryPrettifySDL(input.baseSdl) : null;
 
     const activeContracts =
       project.type === ProjectType.FEDERATION
@@ -712,6 +713,7 @@ export class SchemaPublisher {
         checkResult = await this.models[project.type].check({
           input: {
             sdl,
+            baseSdl,
             serviceName: input.service,
             serviceUrl: input.url ?? null,
           },
