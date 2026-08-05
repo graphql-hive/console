@@ -1,4 +1,4 @@
-import { parse, print } from 'graphql';
+import { parse } from 'graphql';
 import { composeAndValidate } from '@apollo/federation';
 import { composeFederationV2 } from '../src/lib/compose';
 
