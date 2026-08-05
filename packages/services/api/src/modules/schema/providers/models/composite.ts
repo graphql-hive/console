@@ -1,6 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { DangerousChangeType } from '@hive/api/__generated__/types';
-import { traceFn } from '@hive/service-common';
+import { invariant, traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
 import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
 import {
@@ -61,9 +61,11 @@ export class CompositeModel {
     return await Promise.all(
       args.contracts.map(async (contract, contractIndex) => {
         const contractCompositionResult = contractResults[contractIndex];
-        if (!contractCompositionResult) {
-          throw new Error("Contract result doesn't exist. Inconsistency detected.");
-        }
+
+        invariant(
+          !!contractCompositionResult,
+          "Contract result doesn't exist. Inconsistency detected.",
+        );
 
         return {
           contractId: contract.contract.id,
@@ -124,7 +126,9 @@ export class CompositeModel {
     filterNestedChanges,
   }: {
     input: Pick<CompositeSchemaInput, 'sdl' | 'serviceName'> & {
-      // for a schema check the service url is optional
+      /** The base SDL that should be used instead of teh current services schema. */
+      baseSdl: string | null;
+      /** for a schema check the service url is optional */
       serviceUrl: string | null;
     };
     selector: {
@@ -211,12 +215,35 @@ export class CompositeModel {
         })) ?? null,
     });
 
-    const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: latestComposable,
-      organization,
-      project,
-      targetId: selector.targetId,
-    });
+    let existingPublicSchemaSdl: string | null;
+
+    if (!input.baseSdl) {
+      existingPublicSchemaSdl = await this.checks.retrievePreviousVersionSdl({
+        version: latestComposable,
+        organization,
+        project,
+        targetId: selector.targetId,
+      });
+    } else {
+      this.logger.debug('base service schema provided. composing base sdl');
+      existingPublicSchemaSdl = await this.checks.retrievePreviousVersionSdlWithBaseSchemaOverwrite(
+        {
+          previousVersionSchemas: latest?.schemas ?? null,
+          base: {
+            sdl: input.baseSdl,
+            serviceName: input.serviceName,
+          },
+          organization,
+          project,
+          targetId: selector.targetId,
+        },
+      );
+
+      invariant(
+        existingPublicSchemaSdl === null,
+        'TODO: Fail because breaking-change evaluation is disrupted.',
+      );
+    }
 
     const getAffectedAppDeployments: GetAffectedAppDeployments = schemaCoordinates =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
@@ -225,6 +252,8 @@ export class CompositeModel {
         excludedAppDeploymentNames:
           conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
+
+    invariant(contracts && input.baseSdl, 'TODO: This case needs special handling.');
 
     const contractChecks = await this.getContractChecks({
       contracts,
@@ -242,7 +271,7 @@ export class CompositeModel {
         includeUrlChanges: false,
         filterOutFederationChanges: project.type === ProjectType.FEDERATION,
         approvedChanges,
-        existingSdl: previousVersionSdl,
+        existingSdl: existingPublicSchemaSdl,
         incomingSdl:
           compositionCheck.result?.fullSchemaSdl ?? compositionCheck.reason?.fullSchemaSdl ?? null,
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
