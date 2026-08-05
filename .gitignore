@@ -128,6 +128,9 @@ packages/web/app/src/gql/*.json
 # Changelog
 packages/web/app/src/components/ui/changelog/generated-changelog.ts
 
+# react-foundry
+foundry-nav.gen.d.ts
+
 _redirects
 
 deployment/utils/opentelemetry-collector.types.ts
