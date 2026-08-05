@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from './form';
 
-export const nav: NavPath = 'Base/Form';
+export const nav: NavPath = 'Base/FormControls/Form';
 
 const AlertFormSchema = z.object({
   name: z.string().min(3, 'Alert name must be at least 3 characters.'),

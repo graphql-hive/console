@@ -1,7 +1,7 @@
 import { createPreview, defineControls, type NavPath } from 'react-foundry';
 import { Input } from './input';
 
-export const nav: NavPath = 'Base/Input';
+export const nav: NavPath = 'Base/Primitives/Input';
 
 export const Default = createPreview(() => <Input placeholder="Enter alert name" />);
 

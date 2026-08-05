@@ -1,7 +1,7 @@
 import { createPreview, type NavPath } from 'react-foundry';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './accordion';
 
-export const nav: NavPath = 'Base/Accordion';
+export const nav: NavPath = 'Base/Primitives/Accordion';
 
 export const Default = createPreview(() => (
   <div className="w-96">

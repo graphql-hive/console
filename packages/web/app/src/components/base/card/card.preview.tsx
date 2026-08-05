@@ -1,7 +1,7 @@
 import { createPreview, defineControls, type NavPath } from 'react-foundry';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
 
-export const nav: NavPath = 'Base/Card';
+export const nav: NavPath = 'Base/Primitives/Card';
 
 export const Default = createPreview(() => (
   <Card>

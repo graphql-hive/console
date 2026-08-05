@@ -1,7 +1,7 @@
 import { createPreview, defineControls, type NavPath } from 'react-foundry';
 import { Badge } from './badge';
 
-export const nav: NavPath = 'Base/Badge';
+export const nav: NavPath = 'Base/Primitives/Badge';
 
 export const Variants = createPreview(() => (
   <div className="flex items-center gap-3">

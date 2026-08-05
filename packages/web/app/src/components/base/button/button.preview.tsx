@@ -2,7 +2,7 @@ import { ChevronDown, Copy, ListFilter, Plus, RefreshCw, X } from 'lucide-react'
 import { createPreview, defineControls, type NavPath } from 'react-foundry';
 import { Button } from './button';
 
-export const nav: NavPath = 'Base/Button';
+export const nav: NavPath = 'Base/Primitives/Button';
 
 export const Variants = createPreview(() => (
   <div className="flex flex-wrap items-center gap-4">

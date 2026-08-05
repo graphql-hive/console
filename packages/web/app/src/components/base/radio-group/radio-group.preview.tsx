@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { RadioGroup, RadioItem } from './radio-group';
 
-export const nav: NavPath = 'Base/RadioGroup';
+export const nav: NavPath = 'Base/FormControls/RadioGroup';
 
 export const Default = createPreview(() => {
   const [value, setValue] = useState('7d');
