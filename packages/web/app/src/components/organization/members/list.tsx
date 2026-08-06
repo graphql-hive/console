@@ -14,6 +14,7 @@ import { IconType } from 'react-icons/lib';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
+import { CopyChip } from '@/components/base/copy-chip/copy-chip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -164,6 +165,7 @@ const OrganizationMemberRow_MemberFragment = graphql(`
       email
       provisionInfo {
         isDisabled
+        externalId
       }
     }
     authProviders {
@@ -286,7 +288,15 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                     <TooltipTrigger>
                       <ShieldCheck className="size-4" />
                     </TooltipTrigger>
-                    <TooltipContent className="text-xs">Provisioned via SCIM</TooltipContent>
+                    <TooltipContent className="text-xs">
+                      <div>Provisioned via SCIM</div>
+                      <div>
+                        External ID:{' '}
+                        <span className="font-mono">
+                          <CopyChip value={member.user.provisionInfo.externalId} />
+                        </span>
+                      </div>
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               ) : null}

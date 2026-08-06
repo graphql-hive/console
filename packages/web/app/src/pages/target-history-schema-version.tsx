@@ -3,13 +3,11 @@ import {
   ArrowRight,
   ArrowRightIcon,
   BoxIcon,
-  Check,
   CheckIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   CircleIcon,
   Clock,
-  Copy,
   DownloadIcon,
   ExternalLink,
   FileCode2,
@@ -29,6 +27,7 @@ import {
 } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
+import { CopyChip } from '@/components/base/copy-chip/copy-chip';
 import { NotFoundContent } from '@/components/common/not-found-content';
 import {
   ChangesBlock,
@@ -1022,38 +1021,6 @@ function NoGraphChanges() {
       </div>
       <p className="text-neutral-10 text-xs">There are no public facing changes in the graph.</p>
     </div>
-  );
-}
-
-function CopyChip(props: { value: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function cleanPendingTimer() {
-    if (timeoutRef.current !== null) {
-      clearTimeout(timeoutRef.current);
-    }
-  }
-
-  useEffect(() => cleanPendingTimer, []);
-
-  return (
-    <button
-      onClick={() => {
-        void navigator.clipboard.writeText(props.value);
-        setCopied(true);
-        cleanPendingTimer();
-        timeoutRef.current = setTimeout(() => setCopied(false), 1200);
-      }}
-      className="group inline-flex items-center gap-1.5 rounded-md text-xs"
-    >
-      <span className="truncate">{props.label ?? props.value}</span>
-      {copied ? (
-        <Check className="h-3 w-3" />
-      ) : (
-        <Copy className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
-      )}
-    </button>
   );
 }
 

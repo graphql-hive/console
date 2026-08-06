@@ -4693,22 +4693,15 @@ const MemberModel = z
     ),
     deactivatedAt: z.string().nullable(),
     provisionedByOrganizationId: z.string().nullable(),
+    externalId: z.string().nullable(),
   })
   .transform(row => ({
     id: row.id,
     isOwner: row.isOwner,
-    user: {
-      id: row.id,
-      email: row.email,
-      fullName: row.fullName,
-      displayName: row.displayName,
+    user: UserModel.parse({
+      ...row,
       providers: row.providers.filter((p): p is NonNullable<typeof p> => p != null),
-      superTokensUserId: row.superTokensUserId,
-      isAdmin: row.isAdmin,
-      zendeskId: row.zendeskId,
-      deactivatedAt: row.deactivatedAt,
-      provisionedByOrganizationId: row.provisionedByOrganizationId,
-    },
+    }),
     scopes: (row.scopes as Member['scopes']) || [],
     organization: row.organizationId,
     oidcIntegrationId: row.oidcIntegrationId ?? null,
@@ -4794,7 +4787,7 @@ const OrganizationStatModel = z.object({
   total: z.number(),
 });
 
-export const UserModel = z.object({
+const UserBase = z.object({
   id: z.string(),
   email: z.string(),
   createdAt: z.string(),
@@ -4824,9 +4817,18 @@ export const UserModel = z.object({
         return 'USERNAME_PASSWORD' as const;
       }),
   ),
-  provisionedByOrganizationId: z.string().uuid().nullable(),
-  externalId: z.string().nullable(),
   deactivatedAt: z.string().nullable(),
 });
 
-type UserType = z.TypeOf<typeof UserModel>;
+export const UserModel = z.union([
+  UserBase.extend({
+    provisionedByOrganizationId: z.string().uuid(),
+    externalId: z.string(),
+  }),
+  UserBase.extend({
+    provisionedByOrganizationId: z.null(),
+    externalId: z.string().nullable(),
+  }),
+]);
+
+export type UserType = z.TypeOf<typeof UserModel>;
