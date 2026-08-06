@@ -557,7 +557,9 @@ export function OrganizationMembers(props: {
           <thead className="bg-neutral-3 border-b px-4 py-3 text-sm font-medium">
             <tr>
               <th className="" />
-              <th className="relative select-none py-3 pl-3 text-left text-sm">Member</th>
+              <th className="relative min-w-[450px] select-none py-3 pl-3 text-left text-sm">
+                Member
+              </th>
               <th className="relative w-full select-none py-3 text-center align-middle text-sm font-semibold" />
               <th className="w-12 py-3 text-right text-sm font-semibold" />
             </tr>
