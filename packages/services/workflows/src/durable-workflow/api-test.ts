@@ -1,14 +1,13 @@
 import { z } from 'zod';
-import { defineTask, defineWorkflow } from './kit';
+import { defineTask, defineWorkflow, implementWorkflow } from './kit';
+
+async function loadArtifact(userId: string) {
+  return { userId };
+}
 
 const fetchUser = defineTask({
   name: 'fetch-user',
   version: 1,
-
-  input: z.strictObject({
-    userId: z.string().uuid(),
-  }),
-
   output: z.strictObject({
     id: z.string().uuid(),
     email: z.string().email(),
@@ -18,11 +17,6 @@ const fetchUser = defineTask({
 const fetchOrders = defineTask({
   name: 'fetch-orders',
   version: 1,
-
-  input: z.strictObject({
-    userId: z.string().uuid(),
-  }),
-
   output: z.array(
     z.strictObject({
       id: z.string().uuid(),
@@ -31,7 +25,7 @@ const fetchOrders = defineTask({
   ),
 });
 
-const syncUser = defineWorkflow({
+const SyncUserWorkflow = defineWorkflow({
   name: 'sync-user',
   version: 1,
 
@@ -43,28 +37,34 @@ const syncUser = defineWorkflow({
     userId: z.string().uuid(),
     orderCount: z.number().int().nonnegative(),
   }),
+});
 
-  *run(ctx, input) {
+export const workflow = implementWorkflow(
+  SyncUserWorkflow,
+  async function* ({ context: ctx, input }) {
+    // Regular awaits are executed again on every workflow replay.
+    const artifact = await loadArtifact(input.userId);
+
     const { user, orders } = yield* ctx.all({
       user: ctx.task(fetchUser, {
         id: 'fetch-user',
-        input: {
-          userId: input.userId,
-        },
+        run: async () => ({
+          id: artifact.userId,
+          email: 'user@example.com',
+        }),
       }),
       orders: ctx.task(fetchOrders, {
         id: 'fetch-orders',
-        input: {
-          userId: input.userId,
-        },
+        run: async () => [],
       }),
     });
 
-    const otherUser = yield* ctx.task(fetchUser, {
+    yield* ctx.task(fetchUser, {
       id: 'fetch-user-1',
-      input: {
-        userId: 'foobars',
-      },
+      run: async () => ({
+        id: input.userId,
+        email: 'other-user@example.com',
+      }),
     });
 
     return {
@@ -72,4 +72,4 @@ const syncUser = defineWorkflow({
       orderCount: orders.length,
     };
   },
-});
+);
