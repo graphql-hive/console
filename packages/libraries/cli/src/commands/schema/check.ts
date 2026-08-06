@@ -16,6 +16,7 @@ import {
   UnexpectedError,
 } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
+import { loadSchemaFromGitHistory } from '../../helpers/git-schema-loader';
 import {
   loadSchema,
   minifySchema,
@@ -154,6 +155,11 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
     commit: Flags.string({
       description: 'Associated commit sha',
     }),
+    baseRef: Flags.string({
+      description:
+        'Git commit containing the schema before the current change.\n' +
+        'When provided the file argument must be a file path to a single file that exists within that git sha and the current checked out revision.',
+    }),
     contextId: Flags.string({
       description: 'Context ID for grouping the schema check.',
     }),
@@ -213,7 +219,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         this.logDebug(e);
         throw new MissingEndpointError();
       }
-      const file = args.file;
+      const schemaPointer = args.file;
       try {
         accessToken = this.ensure({
           key: 'registry.accessToken',
@@ -227,11 +233,38 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         throw new MissingRegistryTokenError();
       }
 
-      const rawSdl = await loadSchema('first-federation-then-graphql-introspection', file, {
-        logger: this.logger,
-      }).catch(e => {
-        throw new SchemaFileNotFoundError(file, e);
+      let minifiedBasSdl: string | null = null;
+
+      if (flags.baseRef) {
+        const result = loadSchemaFromGitHistory(schemaPointer, flags.baseRef);
+        if (result.error) {
+          switch (result.error.type) {
+            case 'git':
+              throw new SchemaFileNotFoundError(
+                result.error.path,
+                'Failed to retrieve the base schema from the git history.\n' + result.error.message,
+              );
+            case 'path':
+              throw new SchemaFileNotFoundError(
+                schemaPointer,
+                `When using the '--baseRef' flag, the file path must point to a single file containing the schema SDL.`,
+              );
+          }
+        }
+
+        minifiedBasSdl = minifySchema(result.sdl);
+      }
+
+      const rawSdl = await loadSchema(
+        'first-federation-then-graphql-introspection',
+        schemaPointer,
+        {
+          logger: this.logger,
+        },
+      ).catch(e => {
+        throw new SchemaFileNotFoundError(schemaPointer, e);
       });
+
       const git = await gitInfo(() => {
         // noop
       });
@@ -240,7 +273,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       const author = flags.author || git?.author;
 
       if (typeof rawSdl !== 'string' || rawSdl.length === 0) {
-        throw new SchemaFileEmptyError(file);
+        throw new SchemaFileEmptyError(schemaPointer);
       }
 
       const sdl = minifySchema(rawSdl);
@@ -290,6 +323,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             target,
             url: flags.url,
             schemaProposalId: flags.schemaProposalId,
+            baseSdl: minifiedBasSdl,
           },
         },
         /** Gateway timeout is 60 seconds. */
