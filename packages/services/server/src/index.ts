@@ -659,19 +659,17 @@ export async function main() {
       });
     }
 
-    if (env.organizationSCIM) {
-      logger.debug('register scim routes');
-      const scimPlugin = createSCIMPlugin(
-        authN,
-        storage.pool,
-        storage,
-        registry.injector.get(OIDCIntegrationStore),
-        registry.injector.get(RedisRateLimiter),
-        new ClickHouse(env.clickhouse, new HttpClient(), logger),
-        env.graphql.origin + '/scim/v2',
-      );
-      await server.register(scimPlugin, { prefix: '/scim/v2' });
-    }
+    const scimPlugin = createSCIMPlugin(
+      authN,
+      storage.pool,
+      storage,
+      registry.injector.get(OIDCIntegrationStore),
+      registry.injector.get(RedisRateLimiter),
+      new ClickHouse(env.clickhouse, new HttpClient(), logger),
+      env.graphql.origin + '/scim/v2',
+      env.organizationSCIM,
+    );
+    await server.register(scimPlugin, { prefix: '/scim/v2' });
 
     if (env.exposeMemoryUtils) {
       logger.debug('exposing memory utils endpoints');
