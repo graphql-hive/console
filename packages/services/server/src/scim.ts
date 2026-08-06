@@ -195,6 +195,7 @@ export const createSCIMPlugin =
     rateLimiter: RedisRateLimiter,
     clickHouse: ClickHouse,
     baseUri: string,
+    isSCIMEnabled: boolean,
   ): FastifyPluginAsync =>
   async server => {
     async function authenticateAuthorizeAndResolveOrganizationFromRequest(
@@ -262,7 +263,7 @@ export const createSCIMPlugin =
         }),
       ]);
 
-      if (!organization.featureFlags.scim || !oidcIntegration) {
+      if ((!organization.featureFlags.scim && !isSCIMEnabled) || !oidcIntegration) {
         return {
           type: 'error' as const,
           error: createSCIMError({
