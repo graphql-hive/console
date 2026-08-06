@@ -1,5 +1,24 @@
 # hive
 
+## 11.11.0
+
+### Minor Changes
+
+- [#8319](https://github.com/graphql-hive/console/pull/8319)
+  [`84b28ff`](https://github.com/graphql-hive/console/commit/84b28fff9b9da65e6c423160cf3771850fad621a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve supergraph artifact formatting by reducing
+  excessive whitespace for federation type definitions
+
+### Patch Changes
+
+- [#8321](https://github.com/graphql-hive/console/pull/8321)
+  [`6da8b84`](https://github.com/graphql-hive/console/commit/6da8b84dc868ae64b464021191b04e0d1a9af258)
+  Thanks [@jdolle](https://github.com/jdolle)! - Hide resolutions from insights ui for input types
+
+- [#8328](https://github.com/graphql-hive/console/pull/8328)
+  [`1ca35f6`](https://github.com/graphql-hive/console/commit/1ca35f6baa5f57f44f4382d924425ad897a1f634)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix link to composition compatibility report
+
 ## 11.10.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @graphql-hive/core
 
+## 0.22.2
+
+### Patch Changes
+
+- [#8317](https://github.com/graphql-hive/console/pull/8317)
+  [`658ff6a`](https://github.com/graphql-hive/console/commit/658ff6a644ef76787d1d283a34eab56c03f8ffa5)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - add missing `tslib` dependency.
+
 ## 0.22.1
 
 ### Patch Changes
