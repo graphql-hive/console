@@ -915,6 +915,10 @@ export default gql`
     members.
     """
     searchTerm: String
+    """
+    When true, returns only members whose SCIM account takeover is awaiting approval.
+    """
+    needsProvisioningTakeoverApproval: Boolean = false
   }
 
   type Organization {

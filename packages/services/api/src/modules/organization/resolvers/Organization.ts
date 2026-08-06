@@ -67,6 +67,7 @@ export const Organization: Pick<
         first: args.first ?? null,
         after: args.after ?? null,
         searchTerm: args.filters?.searchTerm ?? null,
+        needsProvisioningTakeoverApproval: args.filters?.needsProvisioningTakeoverApproval ?? null,
       });
   },
   invitations: async (organization, args, { injector }) => {

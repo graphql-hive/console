@@ -1355,7 +1355,12 @@ export class OrganizationManager {
 
   async getPaginatedOrganizationMembersForOrganization(
     organization: Organization,
-    args: { first: number | null; after: string | null; searchTerm: string | null },
+    args: {
+      first: number | null;
+      after: string | null;
+      searchTerm: string | null;
+      needsProvisioningTakeoverApproval: boolean | null;
+    },
   ) {
     await this.session.assertPerformAction({
       action: 'member:describe',

@@ -147,7 +147,12 @@ export class OrganizationMembers {
 
   async getPaginatedOrganizationMembersForOrganization(
     organization: Organization,
-    args: { first: number | null; after: string | null; searchTerm: string | null },
+    args: {
+      first: number | null;
+      after: string | null;
+      searchTerm: string | null;
+      needsProvisioningTakeoverApproval: boolean | null;
+    },
   ) {
     this.logger.debug(
       'Find paginated organization members for organization. (organizationId=%s)',
@@ -165,7 +170,7 @@ export class OrganizationMembers {
       FROM
         "organization_member" AS "om"
       ${
-        searching
+        searching || args.needsProvisioningTakeoverApproval
           ? psql`
             JOIN "users" as "u"
             ON "om"."user_id" = "u"."id"
@@ -188,6 +193,11 @@ export class OrganizationMembers {
             : psql``
         }
         ${searching ? psql`AND "u"."display_name" || ' ' || "u"."email" ILIKE ${'%' + searchTerm + '%'}` : psql``}
+        ${
+          args.needsProvisioningTakeoverApproval
+            ? psql`AND "u"."provisioning_status" = 'pendingAdoption'`
+            : psql``
+        }
       ORDER BY
         "om"."organization_id" DESC
         , "om"."created_at" DESC

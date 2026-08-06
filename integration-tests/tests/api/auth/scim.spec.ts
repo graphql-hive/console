@@ -15,7 +15,9 @@ import {
   updateMe,
   updateMemberRole,
 } from 'testkit/flow';
+import { graphql } from 'testkit/gql';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
+import { execute } from 'testkit/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import z from 'zod';
@@ -29,6 +31,28 @@ import { createScimTestkit } from '../../../testkit/scim';
 import { fetchPermissions } from '../access-tokens/shared';
 
 const baseUrl = await getServiceHost('server', 3001).then(r => `http://${r}`);
+
+const MembersByProvisioningTakeoverApprovalQuery = graphql(`
+  query MembersByProvisioningTakeoverApproval(
+    $organizationId: ID!
+    $needsProvisioningTakeoverApproval: Boolean!
+  ) {
+    organization(reference: { byId: $organizationId }) {
+      members(filters: { needsProvisioningTakeoverApproval: $needsProvisioningTakeoverApproval }) {
+        edges {
+          node {
+            user {
+              id
+              provisionInfo {
+                provisioningStatus
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`);
 
 function newUserValues() {
   return {
@@ -3678,6 +3702,37 @@ test.concurrent(
           WHERE "id" = ${scimUser.body.id}
         `),
       ).toEqual('pendingAdoption');
+
+      const membersNeedingApproval = await execute({
+        document: MembersByProvisioningTakeoverApprovalQuery,
+        variables: {
+          organizationId: org.organization.id,
+          needsProvisioningTakeoverApproval: true,
+        },
+        authToken: owner.ownerToken,
+      }).then(r => r.expectNoGraphQLErrors());
+      expect(
+        membersNeedingApproval.organization?.members.edges.map(edge => edge.node.user),
+      ).toEqual([
+        {
+          id: scimUser.body.id,
+          provisionInfo: {
+            provisioningStatus: 'pendingAdoption',
+          },
+        },
+      ]);
+
+      const membersNotNeedingApproval = await execute({
+        document: MembersByProvisioningTakeoverApprovalQuery,
+        variables: {
+          organizationId: org.organization.id,
+          needsProvisioningTakeoverApproval: false,
+        },
+        authToken: owner.ownerToken,
+      }).then(r => r.expectNoGraphQLErrors());
+      expect(
+        membersNotNeedingApproval.organization?.members.edges.map(edge => edge.node.user.id),
+      ).not.toContain(scimUser.body.id);
 
       const takeoverInput = {
         organization: { byId: org.organization.id },
