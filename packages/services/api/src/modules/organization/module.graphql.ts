@@ -1690,25 +1690,52 @@ export default gql`
     message: String!
   }
 
+  """
+  The lifecycle state of a SCIM-provisioned user.
+  """
+  enum ProvisioningStatus {
+    """
+    SCIM provisioning is active. The user's effective access is derived from SCIM group
+    assignments, and deactivation by the identity provider is enforced.
+    """
+    active
+    """
+    SCIM matched an existing account and the adoption is awaiting confirmation. Until confirmed,
+    the user's existing role assignments remain effective and SCIM deactivation is not enforced.
+    """
+    pendingAdoption
+  }
+
+  """
+  SCIM provisioning information for a user.
+  """
   type MemberProvisionInformation {
+    """
+    Whether the identity provider has deactivated the user. Deactivation is enforced only when
+    provisioningStatus is active.
+    """
     isDisabled: Boolean!
     """
-    The external ID of the member on the identity provider.
+    The current lifecycle state of the user's SCIM provisioning.
+    """
+    provisioningStatus: ProvisioningStatus!
+    """
+    The stable identifier assigned to the user by the identity provider.
     """
     externalId: ID!
   }
 
   extend type Member {
     """
-    The groups the member is part of.
+    The SCIM groups to which the member currently belongs.
     """
     groups: [Group!]!
   }
 
   extend type User {
     """
-    Information about the user if provisioned.
-    The fields value is null if the user is not a provisioned user.
+    SCIM provisioning information for the user, or null when the user is not provisioned through
+    SCIM.
     """
     provisionInfo: MemberProvisionInformation
   }
