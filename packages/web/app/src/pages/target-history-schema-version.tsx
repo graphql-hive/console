@@ -1,4 +1,4 @@
-import { ReactElement, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import {
   ArrowRight,
   ArrowRightIcon,
