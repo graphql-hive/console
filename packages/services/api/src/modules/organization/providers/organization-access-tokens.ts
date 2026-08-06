@@ -386,7 +386,7 @@ export class OrganizationAccessTokens {
     let permissions: ReadonlyArray<string> | null = [];
     let assignedResources: ResourceAssignmentGroup;
 
-    if (viewer.provisionedByOrganizationId === null) {
+    if (viewer.provisioningStatus !== 'active') {
       // Handle permission assignment
       //
       // Must be intersection with the members permissions
@@ -1149,11 +1149,11 @@ export class OrganizationAccessTokens {
           accessToken.userId,
         );
 
-        if (provisionedUser?.deactivatedAt) {
+        if (provisionedUser?.provisioningStatus === 'active' && provisionedUser.deactivatedAt) {
           return [];
         }
 
-        if (!provisionedUser) {
+        if (provisionedUser?.provisioningStatus !== 'active') {
           if (
             !membership.assignedRole.role.permissions.organization.has('personalAccessToken:modify')
           ) {

@@ -37,7 +37,6 @@ function newUserValues() {
     emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
     locale: 'en-US',
     externalId: crypto.randomUUID(),
-    password: 'fq77ZD37',
     active: true,
   };
 }
@@ -79,6 +78,7 @@ describe.concurrent('/Users', () => {
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
       await org.setFeatureFlag('scim', true);
+      const { pool } = await seed.createDbConnection();
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const userEmail = 'marty@' + domain;
@@ -102,7 +102,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
       expect(usersPostResponse.headers.get('content-type')).toBe('application/scim+json');
@@ -127,6 +126,13 @@ describe.concurrent('/Users', () => {
           location: baseUrl + '/scim/v2/Users/' + usersPostResponse.body.id,
         },
       });
+      expect(
+        await pool.oneFirst(psql`
+          SELECT "provisioning_status"
+          FROM "users"
+          WHERE "id" = ${usersPostResponse.body.id}
+        `),
+      ).toEqual('active');
     });
     test.concurrent(
       'create new user without emails infers email from userName',
@@ -192,7 +198,6 @@ describe.concurrent('/Users', () => {
           locale: 'en-US',
           externalId: externalUserId,
           groups: [],
-          password: 'foobars',
           active: true,
         });
 
@@ -246,7 +251,6 @@ describe.concurrent('/Users', () => {
           locale: 'en-US',
           externalId: externalUserId,
           groups: [],
-          password: 'fq77ZD37',
           active: true,
         },
         { expectedStatus: 400 },
@@ -290,7 +294,6 @@ describe.concurrent('/Users', () => {
           locale: 'en-US',
           externalId: externalUserId,
           groups: [],
-          password: 'foobars',
           active: true,
         });
         const conflictUsersPostResponse = await scim.createUser(
@@ -303,7 +306,6 @@ describe.concurrent('/Users', () => {
             locale: 'en-US',
             externalId: externalUserId,
             groups: [],
-            password: 'fq77ZD37',
             active: true,
           },
           { expectedStatus: 409 },
@@ -346,7 +348,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: false,
       });
 
@@ -405,7 +406,6 @@ describe.concurrent('/Users', () => {
             locale: 'en-US',
             externalId: externalUserId,
             groups: [],
-            password: 'fq77ZD37',
             active: true,
           },
           { expectedStatus: 404 },
@@ -448,7 +448,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
 
@@ -461,7 +460,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: false,
       });
       expect(usersPutResponse.body).toEqual({
@@ -507,7 +505,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
 
@@ -520,7 +517,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: false,
       });
       expect(usersPutResponse.body).toMatchObject({
@@ -557,7 +553,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
 
@@ -1068,7 +1063,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
       const usersPatchResponse = await scim.patchUser(
@@ -2438,7 +2432,6 @@ describe.concurrent('/Groups', () => {
         locale: 'en-US',
         externalId: 'userExternalId',
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
       const putResponse = await scim.patchGroup(postResponse.body.id, {
@@ -3417,7 +3410,6 @@ describe.concurrent('provider flows', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
       expect(usersPostResponse.body).toEqual({
@@ -3506,7 +3498,6 @@ describe.concurrent('provider flows', () => {
           locale: 'en-US',
           externalId: externalUserId,
           groups: [],
-          password: 'fq77ZD37',
           active: true,
         });
 
@@ -3627,8 +3618,8 @@ describe.concurrent('provider flows', () => {
 });
 
 test.concurrent(
-  'externalId (sub) conflict with existing OIDC user takes over the user',
-  async () => {
+  'externalId (sub) conflict with existing OIDC user creates a pending adoption',
+  async ({ expect }) => {
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
@@ -3673,11 +3664,19 @@ test.concurrent(
       };
       const scim = createScimTestkit({ baseUrl, headers });
 
-      await scim.createUser({
+      const scimUser = await scim.createUser({
         ...newUserValues(),
         externalId: subOrExternalId,
         emails: [{ primary: true, type: 'work', value: email }],
       });
+
+      expect(
+        await pool.oneFirst(psql`
+          SELECT "provisioning_status"
+          FROM "users"
+          WHERE "id" = ${scimUser.body.id}
+        `),
+      ).toEqual('pendingAdoption');
     } finally {
       await storage.destroy();
     }

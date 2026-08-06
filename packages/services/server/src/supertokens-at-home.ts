@@ -1677,7 +1677,7 @@ export async function registerSupertokensAtHome(
         });
 
         if (organization.featureFlags.scim) {
-          if (maybeHiveUser?.deactivatedAt) {
+          if (maybeHiveUser?.provisioningStatus === 'active' && maybeHiveUser.deactivatedAt) {
             req.log.debug('user is deactivated.');
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',

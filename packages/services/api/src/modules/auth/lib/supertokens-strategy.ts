@@ -68,7 +68,7 @@ export class SuperTokensCookieBasedSession extends Session {
       organizationId,
     );
 
-    if (user.deactivatedAt !== null) {
+    if (user.provisioningStatus === 'active' && user.deactivatedAt !== null) {
       this.logger.debug('User is deactivated. Resolve no permissions.');
       return [];
     }
@@ -149,7 +149,7 @@ export class SuperTokensCookieBasedSession extends Session {
 
     // If the user is provisioned we use the assigned groups for permissions instead of permissions
     // assigned to the user.
-    if (user.provisionedByOrganizationId) {
+    if (user.provisioningStatus === 'active') {
       const groupPolicyStatements =
         await Groups.getAllAuthorizationPolicyStatementFromGroupMembershipsPolicyStatementsForOrganizationMembership(
           this.logger,
