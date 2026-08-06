@@ -942,6 +942,10 @@ export default gql`
       after: String @tag(name: "public")
       filters: MembersFilter
     ): MemberConnection! @tag(name: "public")
+    """
+    Whether any SCIM account takeovers are awaiting manual approval.
+    """
+    hasPendingProvisioningTakeoverApprovals: Boolean!
     invitations(
       first: Int @tag(name: "public")
       after: String @tag(name: "public")

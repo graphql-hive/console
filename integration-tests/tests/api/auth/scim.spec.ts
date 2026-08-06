@@ -38,6 +38,7 @@ const MembersByProvisioningTakeoverApprovalQuery = graphql(`
     $needsProvisioningTakeoverApproval: Boolean!
   ) {
     organization(reference: { byId: $organizationId }) {
+      hasPendingProvisioningTakeoverApprovals
       members(filters: { needsProvisioningTakeoverApproval: $needsProvisioningTakeoverApproval }) {
         edges {
           node {
@@ -3721,6 +3722,9 @@ test.concurrent(
           },
         },
       ]);
+      expect(membersNeedingApproval.organization?.hasPendingProvisioningTakeoverApprovals).toBe(
+        true,
+      );
 
       const membersNotNeedingApproval = await execute({
         document: MembersByProvisioningTakeoverApprovalQuery,
@@ -3766,6 +3770,21 @@ test.concurrent(
           WHERE "id" = ${scimUser.body.id}
         `),
       ).toEqual('active');
+
+      const membersAfterConfirmation = await execute({
+        document: MembersByProvisioningTakeoverApprovalQuery,
+        variables: {
+          organizationId: org.organization.id,
+          needsProvisioningTakeoverApproval: true,
+        },
+        authToken: owner.ownerToken,
+      }).then(r => r.expectNoGraphQLErrors());
+      expect(membersAfterConfirmation.organization).toMatchObject({
+        hasPendingProvisioningTakeoverApprovals: false,
+        members: {
+          edges: [],
+        },
+      });
 
       const repeatedConfirmation = await confirmSCIMAccountTakeover(
         takeoverInput,

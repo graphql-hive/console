@@ -1376,6 +1376,16 @@ export class OrganizationManager {
     );
   }
 
+  async hasPendingProvisioningTakeoverApprovals(organizationId: string) {
+    await this.session.assertPerformAction({
+      action: 'member:describe',
+      organizationId,
+      params: { organizationId },
+    });
+
+    return this.organizationMembers.hasPendingProvisioningTakeoverApprovals(organizationId);
+  }
+
   async getViewerMemberRole(selector: {
     organizationId: string;
   }): Promise<OrganizationMemberRole | null> {

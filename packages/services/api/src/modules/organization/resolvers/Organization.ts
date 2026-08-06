@@ -20,6 +20,7 @@ export const Organization: Pick<
   | 'getStarted'
   | 'group'
   | 'groups'
+  | 'hasPendingProvisioningTakeoverApprovals'
   | 'id'
   | 'invitations'
   | 'me'
@@ -69,6 +70,11 @@ export const Organization: Pick<
         searchTerm: args.filters?.searchTerm ?? null,
         needsProvisioningTakeoverApproval: args.filters?.needsProvisioningTakeoverApproval ?? null,
       });
+  },
+  hasPendingProvisioningTakeoverApprovals: (organization, _args, { injector }) => {
+    return injector
+      .get(OrganizationManager)
+      .hasPendingProvisioningTakeoverApprovals(organization.id);
   },
   invitations: async (organization, args, { injector }) => {
     const invitations = await injector.get(OrganizationManager).getInvitations(organization, {
