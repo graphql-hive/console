@@ -3865,6 +3865,120 @@ test.concurrent(
 );
 
 test.concurrent(
+  'organization admin cannot bypass provisioning enforced by another organization',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const domain =
+      humanId({
+        separator: '',
+        capitalize: false,
+      }) + '.local';
+    const adminEmail = 'admin@' + domain;
+    const admin = await seed.createOwner(true, adminEmail);
+    await admin.createOrg();
+
+    const enforcingOwner = await seed.createOwner();
+    const enforcingOrg = await enforcingOwner.createOrg();
+    await enforcingOrg.setFeatureFlag('scim', true);
+    const oidc = await enforcingOrg.createOIDCIntegration();
+    await oidc.registerFakeDomain(domain);
+    await oidc.createMockServerAndUpdateIntegrationEndpoints({
+      oidcForVerifiedDomainsRequired: true,
+      userProvisioningRequired: true,
+    });
+
+    const response = await fetch(baseUrl + '/auth-api/signin', {
+      method: 'POST',
+      body: JSON.stringify({
+        formFields: [
+          { id: 'email', value: adminEmail },
+          { id: 'password', value: 'ilikebigturtlesandicannotlie47' },
+        ],
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    expect(response.status).toEqual(200);
+    expect(await response.json()).toMatchObject({
+      status: 'SIGN_IN_NOT_ALLOWED',
+    });
+  },
+);
+
+test.concurrent(
+  'organization admin can still sign in via a linked email/password identity if provisioning is enforced',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const domain =
+      humanId({
+        separator: '',
+        capitalize: false,
+      }) + '.local';
+    const ownerEmail = 'admin@' + domain;
+    const owner = await seed.createOwner(true, ownerEmail);
+    const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
+    const oidc = await org.createOIDCIntegration();
+    await oidc.registerFakeDomain(domain);
+    await oidc.createMockServerAndUpdateIntegrationEndpoints({
+      oidcForVerifiedDomainsRequired: true,
+      userProvisioningRequired: true,
+    });
+
+    const { pool } = await seed.createDbConnection();
+    const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
+    const oidcIdentity = await supertokensStore.createOIDCUser({
+      email: ownerEmail,
+      externalId: crypto.randomUUID(),
+      oidcIntegrationId: oidc.oidcIntegration.id,
+    });
+    const storage = await createStorage(seed.getPGConnectionString(), 1);
+
+    try {
+      const linkedUser = await storage.ensureUserExists({
+        email: ownerEmail,
+        firstName: null,
+        lastName: null,
+        oidcIntegration: oidc.oidcIntegration,
+        superTokensUserId: oidcIdentity.userId,
+      });
+      invariant(linkedUser.ok, 'Expected the OIDC identity to be linked to the owner.');
+
+      await pool.query(psql`
+        UPDATE "users"
+        SET "supertoken_user_id" = ${oidcIdentity.userId}
+        WHERE "id" = ${linkedUser.user.id}
+      `);
+
+      const response = await fetch(baseUrl + '/auth-api/signin', {
+        method: 'POST',
+        body: JSON.stringify({
+          formFields: [
+            { id: 'email', value: ownerEmail },
+            { id: 'password', value: 'ilikebigturtlesandicannotlie47' },
+          ],
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      expect(response.status).toEqual(200);
+      expect(await response.json()).toMatchObject({
+        status: 'OK',
+        user: {
+          emails: [ownerEmail],
+        },
+      });
+    } finally {
+      await storage.destroy();
+    }
+  },
+);
+
+test.concurrent(
   'provisioned user leverages groups for deriving the users authorization',
   async ({ expect }) => {
     const seed = initSeed();
