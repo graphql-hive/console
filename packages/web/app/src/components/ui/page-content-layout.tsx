@@ -45,10 +45,8 @@ const PageLayoutContent = forwardRef<HTMLDivElement, PageLayoutContentProps>(
 );
 PageLayoutContent.displayName = 'PageLayoutContent';
 
-const SubPageLayout = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('space-y-2', className)} {...props} />
-  ),
+const SubPageLayout = ({ children }: { children: ReactNode }) => (
+  <div className="space-y-2">{children}</div>
 );
 SubPageLayout.displayName = 'SubPageLayout';
 
