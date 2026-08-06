@@ -222,6 +222,21 @@ export class ProvisionedUsersStore {
     return await trx.maybeOne(query).then(ProvisionedUserModel.parse);
   }
 
+  async confirmPendingAccountTakeover(organizationId: string, userId: string) {
+    const query = psql`
+      UPDATE "users"
+      SET "provisioning_status" = 'active'
+      WHERE
+        "id" = ${userId}
+        AND "provisioned_by_organization_id" = ${organizationId}
+        AND "provisioning_status" = 'pendingAdoption'
+      RETURNING
+        ${userFields}
+    `;
+
+    return await this.pool.maybeOne(query).then(ProvisionedUserModel.nullable().parse);
+  }
+
   async updateUserEmail(
     organizationId: string,
     userId: string,

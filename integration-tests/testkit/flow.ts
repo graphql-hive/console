@@ -6,6 +6,7 @@ import type {
   AddMetricAlertRuleInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
+  ConfirmScimAccountTakeoverInput,
   CreateContractInput,
   CreateMemberRoleInput,
   CreateOrganizationAccessTokenInput,
@@ -2238,6 +2239,36 @@ export function createOIDCIntegration(
               authorizationEndpoint
               additionalScopes
             }
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function confirmSCIMAccountTakeover(
+  input: ConfirmScimAccountTakeoverInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_ConfirmSCIMAccountTakeover($input: ConfirmSCIMAccountTakeoverInput!) {
+        confirmSCIMAccountTakeover(input: $input) {
+          ok {
+            confirmedMember {
+              id
+              user {
+                id
+                provisionInfo {
+                  provisioningStatus
+                }
+              }
+            }
+          }
+          error {
+            message
           }
         }
       }

@@ -48,6 +48,12 @@ export default gql`
     assignMemberRole(input: AssignMemberRoleInput! @tag(name: "public")): AssignMemberRoleResult!
       @tag(name: "public")
     """
+    Confirm the takeover of an existing account and activate SCIM-managed authorization for it.
+    """
+    confirmSCIMAccountTakeover(
+      input: ConfirmSCIMAccountTakeoverInput!
+    ): ConfirmSCIMAccountTakeoverResult!
+    """
     Create a new access token scoped to an organization.
     """
     createOrganizationAccessToken(
@@ -1704,6 +1710,36 @@ export default gql`
     the user's existing role assignments remain effective and SCIM deactivation is not enforced.
     """
     pendingAdoption
+  }
+
+  input ConfirmSCIMAccountTakeoverInput {
+    """
+    The organization managing the user through SCIM.
+    """
+    organization: OrganizationReferenceInput!
+    """
+    The organization member whose pending SCIM account takeover should be confirmed.
+    """
+    member: MemberReferenceInput!
+  }
+
+  type ConfirmSCIMAccountTakeoverResultOk {
+    """
+    The member after the SCIM account takeover has been confirmed.
+    """
+    confirmedMember: Member!
+  }
+
+  type ConfirmSCIMAccountTakeoverResultError {
+    message: String!
+  }
+
+  """
+  @oneOf
+  """
+  type ConfirmSCIMAccountTakeoverResult {
+    ok: ConfirmSCIMAccountTakeoverResultOk
+    error: ConfirmSCIMAccountTakeoverResultError
   }
 
   """

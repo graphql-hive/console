@@ -23,6 +23,7 @@ import { CreateOrUpdateMemberRoleModel } from '../validation';
 import { reservedOrganizationSlugs } from './organization-config';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers } from './organization-members';
+import { ProvisionedUsersStore } from './provisioned-users-store';
 import { ResourceAssignments } from './resource-assignments';
 
 /**
@@ -48,6 +49,7 @@ export class OrganizationManager {
     private taskScheduler: TaskScheduler,
     private organizationMemberRoles: OrganizationMemberRoles,
     private organizationMembers: OrganizationMembers,
+    private provisionedUsersStore: ProvisionedUsersStore,
     private resourceAssignments: ResourceAssignments,
     private inMemoryRateLimiter: InMemoryRateLimiter,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
@@ -1196,6 +1198,68 @@ export class OrganizationManager {
 
     return {
       ok: result,
+    };
+  }
+
+  async confirmSCIMAccountTakeover(args: {
+    organization: GraphQLSchema.OrganizationReferenceInput;
+    userId: string;
+  }) {
+    const { organizationId } = await this.idTranslator.resolveOrganizationReference({
+      reference: args.organization,
+      onError: () => {
+        this.session.raise('member:modify');
+      },
+    });
+
+    await this.session.assertPerformAction({
+      action: 'member:modify',
+      organizationId,
+      params: { organizationId },
+    });
+
+    const confirmedUser = await this.provisionedUsersStore.confirmPendingAccountTakeover(
+      organizationId,
+      args.userId,
+    );
+
+    if (!confirmedUser) {
+      return {
+        error: {
+          message: 'Pending SCIM account takeover not found.',
+        },
+      };
+    }
+
+    const organization = await this.storage.getOrganization({ organizationId });
+    const confirmedMember = await this.organizationMembers.findOrganizationMembership({
+      organization,
+      userId: confirmedUser.id,
+    });
+
+    if (!confirmedMember) {
+      return {
+        error: {
+          message: 'Pending SCIM account takeover not found.',
+        },
+      };
+    }
+
+    this.session.reset();
+
+    await this.auditLog.record({
+      eventType: 'SCIM_USER_UPDATED',
+      organizationId,
+      metadata: {
+        userId: confirmedUser.id,
+        updatedFields: 'provisioningStatus',
+      },
+    });
+
+    return {
+      ok: {
+        confirmedMember,
+      },
     };
   }
 

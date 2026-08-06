@@ -2,6 +2,7 @@ import humanId from 'human-id';
 import {
   addGroupMappingToGroup,
   assignMemberRole,
+  confirmSCIMAccountTakeover,
   createMemberRole,
   createOrganization,
   createPersonalAccessToken,
@@ -3677,6 +3678,51 @@ test.concurrent(
           WHERE "id" = ${scimUser.body.id}
         `),
       ).toEqual('pendingAdoption');
+
+      const takeoverInput = {
+        organization: { byId: org.organization.id },
+        member: { byId: scimUser.body.id },
+      };
+      const unauthorizedErrors = await confirmSCIMAccountTakeover(
+        takeoverInput,
+        accessToken.privateAccessKey,
+      ).then(r => r.expectGraphQLErrors());
+
+      expect(unauthorizedErrors).toMatchObject([
+        {
+          message: `No access (reason: "Missing permission for performing 'member:modify' on resource")`,
+        },
+      ]);
+
+      const confirmation = await confirmSCIMAccountTakeover(takeoverInput, owner.ownerToken).then(
+        r => r.expectNoGraphQLErrors(),
+      );
+
+      expect(confirmation.confirmSCIMAccountTakeover.ok?.confirmedMember.user).toMatchObject({
+        id: scimUser.body.id,
+        provisionInfo: {
+          provisioningStatus: 'active',
+        },
+      });
+      expect(
+        await pool.oneFirst(psql`
+          SELECT "provisioning_status"
+          FROM "users"
+          WHERE "id" = ${scimUser.body.id}
+        `),
+      ).toEqual('active');
+
+      const repeatedConfirmation = await confirmSCIMAccountTakeover(
+        takeoverInput,
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      expect(repeatedConfirmation.confirmSCIMAccountTakeover).toEqual({
+        ok: null,
+        error: {
+          message: 'Pending SCIM account takeover not found.',
+        },
+      });
     } finally {
       await storage.destroy();
     }
