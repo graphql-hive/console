@@ -1,6 +1,5 @@
 import { forwardRef, HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { CardDescription, CardTitle } from './card';
 
 type NavLayoutProps = {
   children: ReactNode;
@@ -63,12 +62,8 @@ type SubPageLayoutHeaderProps = {
 const SubPageLayoutHeader = forwardRef<HTMLDivElement, SubPageLayoutHeaderProps>((props, ref) => {
   const header = (
     <div className="space-y-1.5">
-      <CardTitle>{props.subPageTitle}</CardTitle>
-      {typeof props.description === 'string' ? (
-        <CardDescription>{props.description}</CardDescription>
-      ) : (
-        props.description
-      )}
+      <h3 className="text-neutral-11 text-base font-medium">{props.subPageTitle}</h3>
+      {typeof props.description === 'string' ? <p>{props.description}</p> : props.description}
     </div>
   );
   return (
