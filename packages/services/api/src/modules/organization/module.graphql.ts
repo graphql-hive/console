@@ -1692,6 +1692,10 @@ export default gql`
 
   type MemberProvisionInformation {
     isDisabled: Boolean!
+    """
+    The external ID of the member on the identity provider.
+    """
+    externalId: ID!
   }
 
   extend type Member {

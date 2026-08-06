@@ -20,6 +20,7 @@ export default defineConfig({
             { label: 'Button' },
             { label: 'Card' },
             { label: 'Input' },
+            { label: 'CopyChip' },
           ],
         },
         {

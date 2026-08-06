@@ -275,7 +275,7 @@ export const createSCIMPlugin =
       req.log.debug(
         'sufficient permissions for calling scim endpoint. ' +
           req.routeOptions.method +
-          '' +
+          ' ' +
           req.routeOptions.url,
       );
 
