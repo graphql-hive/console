@@ -126,7 +126,7 @@ export function deployProxy({
         name: 'scim-provisioning',
         path: '/scim/v2',
         customRewrite: '/scim/v2',
-        service: publicGraphQLAPIGateway.service,
+        service: graphql.service,
         requestTimeout: '60s',
         retriable: true,
       },
