@@ -353,11 +353,29 @@ export class ProvisionedUsersStore {
     return await this.pool.oneFirst(query).then(z.number().parse);
   }
 
-  async isUserWithIdAdminOfAnyOrganization(userId: string) {
+  /** Find out whether any supertoken identity linked to the identity is allowed to access the organization. */
+  async isIdentityAdminOfOrganization(superTokensUserId: string, organizationId: string) {
     const query = psql`
       SELECT TRUE as "exists"
-      FROM "organizations"
-      WHERE "user_id" = ${userId}
+      FROM "organizations" "o"
+      WHERE
+        "o"."id" = ${organizationId}
+        AND EXISTS (
+          SELECT 1
+          FROM "users" "u"
+          WHERE
+            "u"."id" = "o"."user_id"
+            AND (
+              "u"."supertoken_user_id" = ${superTokensUserId}
+              OR EXISTS (
+                SELECT 1
+                FROM "users_linked_identities" "uli"
+                WHERE
+                  "uli"."user_id" = "u"."id"
+                  AND "uli"."identity_id" = ${superTokensUserId}
+              )
+            )
+          )
       LIMIT 1
     `;
 
