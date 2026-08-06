@@ -5,35 +5,6 @@ import { getDocsUrl, getProductUpdatesUrl } from '@/lib/docs-url';
 import { cn } from '@/lib/utils';
 import { ExternalLinkIcon } from '@radix-ui/react-icons';
 
-export const DocsNote = ({
-  children,
-  warn,
-  className,
-}: {
-  warn?: boolean;
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  return (
-    <div
-      className={cn(
-        'my-2 flex border-l-2 px-4 py-2',
-        warn ? 'border-neutral-2' : 'border-neutral-12',
-        className,
-      )}
-    >
-      {/* <div className="items-center align-middle pr-2 flex flex-row">
-        {warn ? (
-          <ExclamationTriangleIcon className="text-accent" />
-        ) : (
-          <InfoCircledIcon className="text-current" />
-        )}
-      </div> */}
-      <div className="text-neutral-12 grow align-middle text-sm">{children}</div>
-    </div>
-  );
-};
-
 export const DocsLink = ({
   href,
   children,
