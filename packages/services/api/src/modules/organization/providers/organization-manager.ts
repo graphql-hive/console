@@ -200,7 +200,7 @@ export class OrganizationManager {
     this.logger.debug('Leaving organization (organization=%s)', organizationId);
     const user = await this.session.getViewer();
 
-    if (user.provisionedByOrganizationId !== null) {
+    if (user.provisioningStatus === 'active') {
       return {
         ok: false,
         message: 'Provisioned users can not leave organizations.',
@@ -324,18 +324,11 @@ export class OrganizationManager {
     return this.storage.getOrganizationOwner(selector);
   }
 
-  async createOrganization(input: {
-    slug: string;
-    user: {
-      id: string;
-      superTokensUserId: string | null;
-      provisionedByOrganizationId: string | null;
-    };
-  }) {
+  async createOrganization(input: { slug: string; user: User }) {
     const { slug, user } = input;
     this.logger.info('Creating an organization (input=%o)', input);
 
-    if (user.provisionedByOrganizationId !== null) {
+    if (user.provisioningStatus === 'active') {
       return {
         ok: false as const,
         message: 'Provisioned users can not create organizations.',
@@ -693,7 +686,7 @@ export class OrganizationManager {
       throw new Error('Only users can join organizations');
     }
 
-    if (actor.user.provisionedByOrganizationId !== null) {
+    if (actor.user.provisioningStatus === 'active') {
       return {
         message: 'Provisioned users can not join any other organization.',
       };
@@ -922,7 +915,7 @@ export class OrganizationManager {
       throw new Error(`Logged user is not a member of the organization`);
     }
 
-    if (member.user.provisionedByOrganizationId !== null) {
+    if (member.user.provisioningStatus === 'active') {
       throw new HiveError('Provisioned users can not be removed from organizations.');
     }
 
@@ -1133,7 +1126,7 @@ export class OrganizationManager {
         },
       };
     }
-    if (user.provisionedByOrganizationId !== null) {
+    if (user.provisioningStatus === 'active') {
       return {
         error: {
           message: 'Provisioned users can not be modified.',
