@@ -1,3 +1,4 @@
+import { parse, print } from 'graphql';
 import { z } from 'zod';
 import type {
   Member,
@@ -3086,7 +3087,7 @@ export async function createStorage(
         function insertSdl(hash: string, sdl: string) {
           return trx.any(psql`/* insertToSdlStore */
             INSERT INTO "sdl_store" (id, sdl)
-            VALUES (${hash}, ${sdl})
+            VALUES (${hash}, ${tryPrettifySDL(sdl)})
             ON CONFLICT (id) DO NOTHING;
           `);
         }
@@ -4832,3 +4833,11 @@ export const UserModel = z.union([
 ]);
 
 export type UserType = z.TypeOf<typeof UserModel>;
+
+function tryPrettifySDL(sdl: string): string {
+  try {
+    return print(parse(sdl));
+  } catch {
+    return sdl;
+  }
+}
