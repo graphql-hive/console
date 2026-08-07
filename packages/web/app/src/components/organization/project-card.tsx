@@ -70,7 +70,6 @@ export const ProjectCard = (props: {
       >
         <TooltipProvider>
           <div className="flex items-start gap-x-2">
-            dfdfdf
             <div className="grow">
               <div>
                 <AutoSizer disableHeight>
