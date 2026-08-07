@@ -1,10 +1,10 @@
 import { memo, useEffect, useState } from 'react';
 import {
-  AlertCircle,
   ChevronLeftIcon,
   ChevronRightIcon,
   MoreHorizontalIcon,
   ShieldCheck,
+  TriangleAlert,
   UserLock,
   UserRound,
   UserRoundX,
@@ -210,7 +210,6 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   const member = useFragment(OrganizationMemberRow_MemberFragment, props.member);
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [takeoverOpen, setTakeoverOpen] = useState(false);
   const [deleteMemberState, deleteMember] = useMutation(OrganizationMemberRow_DeleteMember);
   const [confirmTakeoverState, confirmTakeover] = useMutation(
     OrganizationMemberRow_ConfirmSCIMAccountTakeover,
@@ -375,127 +374,133 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
               </div>
             )
           ) : (
-            <MemberRole member={member} organization={organization} />
+            <>
+              {member.viewerCanRemove &&
+                member.user.provisionInfo?.provisioningStatus ===
+                  GraphQLSchema.ProvisioningStatus.PendingAdoption && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button type="button" size="xs" variant="orangeLink" className="mr-2">
+                        <TriangleAlert className="mr-1 size-3" />
+                        SCIM matched this existing account
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Allow SCIM to manage {member.user.displayName}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          SCIM matched <strong>{member.user.email}</strong> to an existing
+                          organization member.
+                        </AlertDialogDescription>
+                        <AlertDialogDescription>
+                          After confirmation, your identity provider will control this user's status
+                          and group-based access. Review the pending SCIM values below to avoid
+                          removing access unintentionally.
+                        </AlertDialogDescription>
+                        <div className="mt-4 space-y-2">
+                          <div className="text-sm">Pending SCIM values</div>
+                          <div className="flex w-fit items-center gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <KeyIcon className="h-3.5 w-3.5" />
+                              <span className="text-xs">
+                                User status:{' '}
+                                {member.user.provisionInfo.isDisabled ? 'Disabled' : 'Active'}
+                              </span>
+                            </div>
+                          </div>
+                          <MemberGroups groups={member.groups ?? []} />
+                        </div>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={confirmTakeoverState.fetching}>
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          variant="destructive"
+                          disabled={confirmTakeoverState.fetching}
+                          onClick={async event => {
+                            event.preventDefault();
+
+                            try {
+                              const result = await confirmTakeover({
+                                input: {
+                                  organization: { byId: organization.id },
+                                  member: { byId: member.user.id },
+                                },
+                              });
+
+                              if (result.error) {
+                                toast({
+                                  variant: 'destructive',
+                                  title: 'Could not enable SCIM management',
+                                  description: result.error.message,
+                                });
+                              } else if (result.data?.confirmSCIMAccountTakeover.error) {
+                                toast({
+                                  variant: 'destructive',
+                                  title: 'Could not enable SCIM management',
+                                  description: result.data.confirmSCIMAccountTakeover.error.message,
+                                });
+                              } else if (result.data?.confirmSCIMAccountTakeover.ok) {
+                                toast({
+                                  title: 'SCIM management enabled',
+                                  description: `${member.user.email} is now managed through SCIM.`,
+                                });
+                                props.refetchMembers({ requestPolicy: 'network-only' });
+                              }
+                            } catch (error) {
+                              console.error(error);
+                              toast({
+                                variant: 'destructive',
+                                title: 'Could not enable SCIM management',
+                                description: error instanceof Error ? error.message : String(error),
+                              });
+                            }
+                          }}
+                        >
+                          {confirmTakeoverState.fetching ? 'Applying...' : 'Allow SCIM management'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              <MemberRole member={member} organization={organization} />
+            </>
           )}
         </td>
-        <td className="py-3 pr-2 text-right text-sm">
+        <td className="py-3 pl-2 pr-3 text-right text-sm">
           {member.viewerCanRemove &&
-            (member.user.provisionInfo ? (
-              member.user.provisionInfo.provisioningStatus ===
-              GraphQLSchema.ProvisioningStatus.PendingAdoption ? (
-                <AlertDialog open={takeoverOpen} onOpenChange={setTakeoverOpen}>
-                  <AlertDialogTrigger title="Review SCIM provisioning conflict">
-                    <AlertCircle size={16} className="ml-2 mt-1.5 text-yellow-500" />
-                    <span className="sr-only">Review SCIM provisioning conflict</span>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Allow SCIM to manage {member.user.displayName}?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        SCIM matched <strong>{member.user.email}</strong> to an existing
-                        organization member.
-                      </AlertDialogDescription>
-                      <AlertDialogDescription>
-                        After confirmation, your identity provider will control this user's status
-                        and group-based access. Review the pending SCIM values below to avoid
-                        removing access unintentionally.
-                      </AlertDialogDescription>
-                      <div className="mt-4 space-y-2">
-                        <div className="text-sm">Pending SCIM values</div>
-                        <div className="flex w-fit items-center gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <KeyIcon className="h-3.5 w-3.5" />
-                            <span className="text-xs">
-                              User status:{' '}
-                              {member.user.provisionInfo.isDisabled ? 'Disabled' : 'Active'}
-                            </span>
-                          </div>
-                        </div>
-                        <MemberGroups groups={member.groups ?? []} />
-                      </div>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={confirmTakeoverState.fetching}>
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        variant="destructive"
-                        disabled={confirmTakeoverState.fetching}
-                        onClick={async event => {
-                          event.preventDefault();
-
-                          try {
-                            const result = await confirmTakeover({
-                              input: {
-                                organization: { byId: organization.id },
-                                member: { byId: member.user.id },
-                              },
-                            });
-
-                            if (result.error) {
-                              toast({
-                                variant: 'destructive',
-                                title: 'Could not enable SCIM management',
-                                description: result.error.message,
-                              });
-                            } else if (result.data?.confirmSCIMAccountTakeover.error) {
-                              toast({
-                                variant: 'destructive',
-                                title: 'Could not enable SCIM management',
-                                description: result.data.confirmSCIMAccountTakeover.error.message,
-                              });
-                            } else if (result.data?.confirmSCIMAccountTakeover.ok) {
-                              toast({
-                                title: 'SCIM management enabled',
-                                description: `${member.user.email} is now managed through SCIM.`,
-                              });
-                              setTakeoverOpen(false);
-                              props.refetchMembers({ requestPolicy: 'network-only' });
-                            }
-                          } catch (error) {
-                            console.error(error);
-                            toast({
-                              variant: 'destructive',
-                              title: 'Could not enable SCIM management',
-                              description: error instanceof Error ? error.message : String(error),
-                            });
-                          }
-                        }}
-                      >
-                        {confirmTakeoverState.fetching ? 'Applying...' : 'Allow SCIM management'}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              ) : (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <ShieldCheck size={16} className="text-neutral-8 ml-2 mt-1.5" />
-                    </TooltipTrigger>
-                    <TooltipContent className="text-xs">
-                      Provisioned users can only be updated via the SCIM endpoints.
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )
+            (member.user.provisionInfo?.provisioningStatus ===
+            GraphQLSchema.ProvisioningStatus.Active ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <ShieldCheck size={16} className="text-neutral-8 ml-2 mt-1.5" />
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">
+                    Provisioned users can only be updated via the SCIM endpoints.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="data-[state=open]:bg-neutral-3 flex size-8 p-0"
-                  >
-                    <MoreHorizontalIcon className="size-4" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[160px]">
-                  <DropdownMenuItem onSelect={() => setOpen(true)}>Delete</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              member.viewerCanRemove && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="data-[state=open]:bg-neutral-3 ml-auto flex p-0"
+                    >
+                      <MoreHorizontalIcon className="size-4" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[160px]">
+                    <DropdownMenuItem onSelect={() => setOpen(true)}>Delete</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )
             ))}
         </td>
       </tr>
