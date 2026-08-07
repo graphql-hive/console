@@ -766,14 +766,14 @@ function OIDCAccessSettings(props: {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogTitle>Require SCIM provisioning?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Enabling this method will lock out all users that were not provisioned via your
-                    identity provider using SCIM.
+                    Users who are not provisioned through SCIM will no longer be able to access this
+                    organization. The organization owner is not affected.
                     <Callout type="warning">
-                      Users that are currently in a conflicting state are excluded. <br /> You can
-                      continue resolving the conflicts after enabling this option. Any new attempts
-                      to login via OIDC without a prior provisioning of the user via SCIM will fail.
+                      Members with unresolved SCIM provisioning conflicts will keep their current
+                      access until you review them. New OIDC users must first be provisioned through
+                      SCIM.
                     </Callout>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -783,7 +783,7 @@ function OIDCAccessSettings(props: {
                     variant="destructive"
                     onClick={() => props.onRestrictionChange('userProvisioningRequired', true)}
                   >
-                    Exclusively manage users via SCIM
+                    Require SCIM provisioning
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -847,17 +847,17 @@ function OIDCAccessSettings(props: {
                           <Tooltip>
                             <TooltipTrigger>
                               <div className="flex text-xs text-yellow-500">
-                                {organization.pendingProvisioningTakeoverApprovalsCount} Conflict
+                                {organization.pendingProvisioningTakeoverApprovalsCount} SCIM
+                                provisioning conflict
                                 {organization.pendingProvisioningTakeoverApprovalsCount === 1
                                   ? ''
-                                  : 's'}{' '}
-                                Detected
+                                  : 's'}
                               </div>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-[250px] space-y-2">
                               <p>
-                                Some users attempted to be provisioned conflict with existing users
-                                in the system.
+                                SCIM provisioning matched existing organization members. Review each
+                                match before allowing SCIM to manage the account.
                               </p>
                               <Link
                                 to="/$organizationSlug/view/members"
@@ -865,7 +865,7 @@ function OIDCAccessSettings(props: {
                                 search={{ page: 'list', showProvisioningConflicts: true }}
                                 className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
                               >
-                                Show and resolve conflicts
+                                Review conflicts
                               </Link>
                             </TooltipContent>
                           </Tooltip>

@@ -358,7 +358,8 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          ) : member.user.provisionInfo ? (
+          ) : member.user.provisionInfo?.provisioningStatus ===
+            GraphQLSchema.ProvisioningStatus.Active ? (
             member.user.provisionInfo.isDisabled ? (
               <TooltipProvider>
                 <Tooltip>
@@ -383,28 +384,32 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
               member.user.provisionInfo.provisioningStatus ===
               GraphQLSchema.ProvisioningStatus.PendingAdoption ? (
                 <AlertDialog open={takeoverOpen} onOpenChange={setTakeoverOpen}>
-                  <AlertDialogTrigger>
+                  <AlertDialogTrigger title="Review SCIM provisioning conflict">
                     <AlertCircle size={16} className="ml-2 mt-1.5 text-yellow-500" />
+                    <span className="sr-only">Review SCIM provisioning conflict</span>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Transfer User to be managed via SCIM</AlertDialogTitle>
+                      <AlertDialogTitle>
+                        Allow SCIM to manage {member.user.displayName}?
+                      </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This user existed in your organization before your identity provider
-                        attempted to provision it via SCIM.
+                        SCIM matched <strong>{member.user.email}</strong> to an existing
+                        organization member.
                       </AlertDialogDescription>
                       <AlertDialogDescription>
-                        Before transfering the user to be managed via SCIM, ensure that users group
-                        membership and status is as desired to avoid an accidential lockout.
+                        After confirmation, your identity provider will control this user's status
+                        and group-based access. Review the pending SCIM values below to avoid
+                        removing access unintentionally.
                       </AlertDialogDescription>
                       <div className="mt-4 space-y-2">
-                        <div className="text-sm">SCIM State</div>
+                        <div className="text-sm">Pending SCIM values</div>
                         <div className="flex w-fit items-center gap-2">
                           <div className="flex items-center gap-1.5">
                             <KeyIcon className="h-3.5 w-3.5" />
                             <span className="text-xs">
-                              Account Status:{' '}
-                              {member.user.provisionInfo.isDisabled ? 'disabled' : 'active'}
+                              User status:{' '}
+                              {member.user.provisionInfo.isDisabled ? 'Disabled' : 'Active'}
                             </span>
                           </div>
                         </div>
@@ -432,19 +437,19 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                             if (result.error) {
                               toast({
                                 variant: 'destructive',
-                                title: 'Failed to confirm SCIM account takeover',
+                                title: 'Could not enable SCIM management',
                                 description: result.error.message,
                               });
                             } else if (result.data?.confirmSCIMAccountTakeover.error) {
                               toast({
                                 variant: 'destructive',
-                                title: 'Failed to confirm SCIM account takeover',
+                                title: 'Could not enable SCIM management',
                                 description: result.data.confirmSCIMAccountTakeover.error.message,
                               });
                             } else if (result.data?.confirmSCIMAccountTakeover.ok) {
                               toast({
-                                title: 'SCIM account takeover confirmed',
-                                description: `${member.user.email} is now managed via SCIM.`,
+                                title: 'SCIM management enabled',
+                                description: `${member.user.email} is now managed through SCIM.`,
                               });
                               setTakeoverOpen(false);
                               props.refetchMembers({ requestPolicy: 'network-only' });
@@ -453,13 +458,13 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                             console.error(error);
                             toast({
                               variant: 'destructive',
-                              title: 'Failed to confirm SCIM account takeover',
+                              title: 'Could not enable SCIM management',
                               description: error instanceof Error ? error.message : String(error),
                             });
                           }
                         }}
                       >
-                        {confirmTakeoverState.fetching ? 'Confirming...' : 'Confirm'}
+                        {confirmTakeoverState.fetching ? 'Applying...' : 'Allow SCIM management'}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -669,7 +674,7 @@ export function OrganizationMembers(props: {
       </SubPageLayoutHeader>
       {search.showProvisioningConflicts && (
         <Callout type="warning">
-          Showing only members with provisioning conflicts.{' '}
+          Showing members with unresolved SCIM provisioning conflicts.{' '}
           <Link
             to="/$organizationSlug/view/members"
             search={{ page: 'list' }}

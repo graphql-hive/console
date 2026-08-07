@@ -320,7 +320,7 @@ export async function createStorage(
             )
             .then(UserModel.nullable().parse);
 
-          if (internalUser && internalUser.provisionedByOrganizationId !== null) {
+          if (internalUser && internalUser.provisioningStatus === 'active') {
             return {
               ok: true,
               user: internalUser,
