@@ -536,22 +536,23 @@ export function OrganizationMembers(props: {
       <SubPageLayoutHeader
         subPageTitle="List of organization members"
         description="Manage the members of your organization and their permissions."
-      >
-        <div className="flex flex-row gap-4">
-          <Input
-            className="w-[220px] grow cursor-text"
-            placeholder="Search by username or email"
-            onChange={handleSearchChange}
-            defaultValue={searchValue}
-          />
-          {organization.viewerCanManageInvitations && (
-            <MemberInvitationButton
-              refetchInvitations={props.refetchMembers}
-              organization={organization}
+        sideContent={
+          <>
+            <Input
+              className="w-[220px] grow cursor-text"
+              placeholder="Search by username or email"
+              onChange={handleSearchChange}
+              defaultValue={searchValue}
             />
-          )}
-        </div>
-      </SubPageLayoutHeader>
+            {organization.viewerCanManageInvitations && (
+              <MemberInvitationButton
+                refetchInvitations={props.refetchMembers}
+                organization={organization}
+              />
+            )}
+          </>
+        }
+      />
       <div className="mt-4 overflow-hidden rounded-lg border">
         <table className="divide-neutral-10/20 w-full table-auto divide-y">
           <thead className="bg-neutral-3 border-b px-4 py-3 text-sm font-medium">

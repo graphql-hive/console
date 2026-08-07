@@ -2,7 +2,6 @@ import { createContext, ReactNode, useContext, useState } from 'react';
 import { TriangleAlertIcon } from 'lucide-react';
 import { useMutation } from 'urql';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import { CheckIcon } from '@/components/ui/icon';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
@@ -172,9 +171,7 @@ export function SaveProposalModal() {
     >
       <SubPageLayoutHeader
         subPageTitle="Proposal Submission"
-        description={
-          <CardDescription className="pb-4">The proposed changes being published.</CardDescription>
-        }
+        description={<p className="pb-4">The proposed changes being published.</p>}
       />
       <Table>
         <THead>

@@ -6,7 +6,6 @@ import { z } from 'zod';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import { DeploymentStatusLabel } from '@/components/ui/deployment-status';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
@@ -290,22 +289,11 @@ function TargetAppsView(props: {
     <div className="flex flex-1 flex-col py-6">
       <SubPageLayoutHeader
         subPageTitle="App Deployments"
-        description={
-          <>
-            <CardDescription>
-              Group your GraphQL operations by app version for app version statistics and persisted
-              operations.
-            </CardDescription>
-            {/* <CardDescription>
-              <DocsLink
-                 href="/schema-registry/app-deployments"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                Learn more about App Deployments
-              </DocsLink>
-            </CardDescription> */}
-          </>
-        }
+        description="Group your GraphQL operations by app version for app version statistics and persisted operations."
+        docsLink={{
+          href: '/schema-registry/app-deployments',
+          text: 'Learn more about App Deployments',
+        }}
       />
       <div className="mt-4" />
       {data.fetching || data.stale ? (

@@ -926,9 +926,8 @@ export function OrganizationMemberRoles(props: {
         <SubPageLayoutHeader
           subPageTitle="List of roles"
           description="Manage the roles that can be assigned to members of this organization."
-        >
-          <OrganizationMemberRoleCreateButton organization={organization} />
-        </SubPageLayoutHeader>
+          sideContent={<OrganizationMemberRoleCreateButton organization={organization} />}
+        />
         <table className="divide-neutral-10/20 w-full table-auto divide-y-[1px]">
           <thead>
             <tr>

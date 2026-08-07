@@ -22,7 +22,6 @@ import { CDNAccessTokens } from '@/components/target/settings/cdn-access-tokens'
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
 import { SchemaContracts } from '@/components/target/settings/schema-contracts';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -31,7 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { DocsLink } from '@/components/ui/docs-note';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { XIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
@@ -147,22 +145,11 @@ function RegistryAccessTokens(props: {
     <SubPageLayout>
       <SubPageLayoutHeader
         subPageTitle="Registry Access Tokens"
-        description={
-          <>
-            <CardDescription>
-              Registry Access Tokens are used to access to Hive Registry and perform actions on your
-              targets/projects. In most cases, this token is used from the Hive CLI.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/targets#registry-access-tokens"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                Learn more about Registry Access Tokens
-              </DocsLink>
-            </CardDescription>
-          </>
-        }
+        description="Registry Access Tokens are used to access to Hive Registry and perform actions on your targets/projects. In most cases, this token is used from the Hive CLI."
+        docsLink={{
+          href: '/schema-registry/management/targets#registry-access-tokens',
+          text: 'Learn more about Registry Access Tokens',
+        }}
       />
       <div className="my-3.5 flex justify-between" data-cy="target-settings-registry-token">
         <Button data-cy="new-button" onClick={toggleModalOpen}>
@@ -256,25 +243,13 @@ const ExtendBaseSchema = (props: {
     <SubPageLayout>
       <SubPageLayoutHeader
         subPageTitle="Extend Your Schema"
-        description={
-          <>
-            <CardDescription>
-              Schema Extensions is pre-defined GraphQL schema that is automatically merged with your
-              published schemas, before being checked and validated.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/targets#schema-extensions"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                You can find more details and examples in the documentation
-              </DocsLink>
-            </CardDescription>
-          </>
-        }
+        description="Schema Extensions is pre-defined GraphQL schema that is automatically merged with your published schemas, before being checked and validated."
+        docsLink={{
+          href: '/schema-registry/management/targets#schema-extensions',
+          text: 'You can find more details and examples in the documentation',
+        }}
       />
       <SchemaEditor
-        theme="vs-dark"
         options={{ readOnly: mutation.fetching }}
         value={baseSchema}
         height={300}
@@ -753,50 +728,45 @@ const BreakingChanges = (props: {
           subPageTitle="Fail Checks for Dangerous Changes"
           description={
             <>
-              <CardDescription className="max-w-[700px]">
+              <p>
                 Dangerous changes are not technically breaking the protocol, but could cause issues
                 for consumers of the schema. Failing schema checks for dangerous changes helps
                 safeguard against these situations by requiring approval for dangerous changes.
-                <br />
-                <br />
-                Before enabling this feature, be sure "contextId" is used on schema checks.
-              </CardDescription>
-              <CardDescription>
-                <DocsLink
-                  href="/schema-registry/management/targets#dangerous-changes"
-                  className="text-neutral-10 hover:text-neutral-11"
-                >
-                  Learn more
-                </DocsLink>
-                <br />
-              </CardDescription>
+              </p>
+              <p>Before enabling this feature, be sure "contextId" is used on schema checks.</p>
             </>
           }
-        >
-          {targetSettings.fetching ? (
-            <Spinner />
-          ) : (
-            <Switch
-              className="shrink-0"
-              checked={considerDangerousAsBreaking}
-              onCheckedChange={async failDiffOnDangerousChange => {
-                await updateTargetDangerousChangeClassification({
-                  input: {
-                    failDiffOnDangerousChange,
-                    target: {
-                      bySelector: {
-                        targetSlug: props.targetSlug,
-                        projectSlug: props.projectSlug,
-                        organizationSlug: props.organizationSlug,
+          docsLink={{
+            href: '/schema-registry/management/targets#dangerous-changes',
+            text: 'Learn more',
+          }}
+          sideContent={
+            targetSettings.fetching ? (
+              <Spinner />
+            ) : (
+              <Switch
+                className="shrink-0"
+                checked={considerDangerousAsBreaking}
+                onCheckedChange={async failDiffOnDangerousChange => {
+                  await updateTargetDangerousChangeClassification({
+                    input: {
+                      failDiffOnDangerousChange,
+                      target: {
+                        bySelector: {
+                          targetSlug: props.targetSlug,
+                          projectSlug: props.projectSlug,
+                          organizationSlug: props.organizationSlug,
+                        },
                       },
                     },
-                  },
-                });
-              }}
-              disabled={dangerousAsBreaking.fetching}
-            />
-          )}
-        </SubPageLayoutHeader>
+                  });
+                }}
+                disabled={dangerousAsBreaking.fetching}
+              />
+            )
+          }
+        />
+
         {dangerousAsBreaking.error && (
           <span className="ml-2 text-red-500">
             {dangerousAsBreaking.error?.graphQLErrors[0]?.message ??
@@ -818,49 +788,39 @@ const BreakingChanges = (props: {
         <SubPageLayout>
           <SubPageLayoutHeader
             subPageTitle="Conditional Breaking Changes"
-            description={
-              <>
-                <CardDescription>
-                  Conditional Breaking Changes can change the behavior of schema checks, based on
-                  real traffic data sent to Hive.
-                </CardDescription>
-                <CardDescription>
-                  <DocsLink
-                    href="/schema-registry/management/targets#conditional-breaking-changes"
-                    className="text-neutral-10 hover:text-neutral-11"
-                  >
-                    Learn more
-                  </DocsLink>
-                </CardDescription>
-              </>
-            }
-          >
-            {targetSettings.fetching ? (
-              <Spinner />
-            ) : (
-              <Switch
-                className="shrink-0"
-                checked={isEnabled}
-                onCheckedChange={async isEnabled => {
-                  await updateValidation({
-                    input: {
-                      target: {
-                        bySelector: {
-                          organizationSlug: props.organizationSlug,
-                          targetSlug: props.targetSlug,
-                          projectSlug: props.projectSlug,
+            description="Conditional Breaking Changes can change the behavior of schema checks, based on real traffic data sent to Hive."
+            docsLink={{
+              href: '/schema-registry/management/targets#conditional-breaking-changes',
+              text: 'Learn more',
+            }}
+            sideContent={
+              targetSettings.fetching ? (
+                <Spinner />
+              ) : (
+                <Switch
+                  className="shrink-0"
+                  checked={isEnabled}
+                  onCheckedChange={async isEnabled => {
+                    await updateValidation({
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: props.organizationSlug,
+                            targetSlug: props.targetSlug,
+                            projectSlug: props.projectSlug,
+                          },
+                        },
+                        conditionalBreakingChangeConfiguration: {
+                          isEnabled,
                         },
                       },
-                      conditionalBreakingChangeConfiguration: {
-                        isEnabled,
-                      },
-                    },
-                  });
-                }}
-                disabled={mutation.fetching}
-              />
-            )}
-          </SubPageLayoutHeader>
+                    });
+                  }}
+                  disabled={mutation.fetching}
+                />
+              )
+            }
+          />
           <div className={clsx('text-neutral-11', !isEnabled && 'pointer-events-none opacity-25')}>
             <div>A schema change is considered as breaking only if it affects more than</div>
             <div className="mx-4 my-2">
@@ -1229,55 +1189,52 @@ const AppDeploymentProtection = (props: {
           subPageTitle="App Deployment Protection"
           description={
             <>
-              <CardDescription>
+              <p>
                 Protect app deployments from being accidentally retired while still in use. When
                 enabled, the CLI will block retirement if the deployment has been active within the
                 specified period or exceeds the traffic threshold.
-              </CardDescription>
-              <CardDescription>
+              </p>
+              <p>
                 Use{' '}
                 <code className="bg-neutral-3 rounded-sm px-1 py-0.5 text-xs">
                   hive app:retire --force
                 </code>{' '}
                 to bypass protection.
-              </CardDescription>
-              <CardDescription>
-                <DocsLink
-                  href="/schema-registry/app-deployments#retire-an-app-deployment"
-                  className="text-neutral-8 hover:text-neutral-10"
-                >
-                  Learn more
-                </DocsLink>
-              </CardDescription>
+              </p>
             </>
           }
-        >
-          {targetSettings.fetching ? (
-            <Spinner />
-          ) : (
-            <Switch
-              className="shrink-0"
-              checked={isEnabled}
-              onCheckedChange={async isEnabled => {
-                await updateProtection({
-                  input: {
-                    target: {
-                      bySelector: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
+          docsLink={{
+            href: '/schema-registry/app-deployments#retire-an-app-deployment',
+            text: 'Learn more',
+          }}
+          sideContent={
+            targetSettings.fetching ? (
+              <Spinner />
+            ) : (
+              <Switch
+                className="shrink-0"
+                checked={isEnabled}
+                onCheckedChange={async isEnabled => {
+                  await updateProtection({
+                    input: {
+                      target: {
+                        bySelector: {
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                          targetSlug: props.targetSlug,
+                        },
+                      },
+                      appDeploymentProtectionConfiguration: {
+                        isEnabled,
                       },
                     },
-                    appDeploymentProtectionConfiguration: {
-                      isEnabled,
-                    },
-                  },
-                });
-              }}
-              disabled={mutation.fetching}
-            />
-          )}
-        </SubPageLayoutHeader>
+                  });
+                }}
+                disabled={mutation.fetching}
+              />
+            )
+          }
+        />
         <div className={clsx('text-neutral-10', !isEnabled && 'pointer-events-none opacity-25')}>
           <div className="space-y-4">
             <div>
@@ -1498,19 +1455,16 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
           <SubPageLayoutHeader
             subPageTitle="Target Slug"
             description={
-              <CardDescription>
+              <p>
                 This is your target's URL namespace on Hive. Changing it{' '}
                 <span className="font-bold">will</span> invalidate any existing links to your
                 target.
-                <br />
-                <DocsLink
-                  className="text-neutral-10 text-sm"
-                  href="/schema-registry/management/targets#change-slug-of-a-target"
-                >
-                  You can read more about it in the documentation
-                </DocsLink>
-              </CardDescription>
+              </p>
             }
+            docsLink={{
+              href: '/schema-registry/management/targets#change-slug-of-a-target',
+              text: 'Read more in the documentation',
+            }}
           />
           <div>
             <FormField
@@ -1615,20 +1569,18 @@ function GraphQLEndpointUrl(props: {
         subPageTitle="GraphQL Endpoint URL"
         description={
           <>
-            <CardDescription>
-              The endpoint url will be used for querying the target from the{' '}
-              <Link
-                to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
-                params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
-                }}
-              >
-                Hive Laboratory
-              </Link>
-              .
-            </CardDescription>
+            The endpoint url will be used for querying the target from the{' '}
+            <Link
+              to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
+              params={{
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              }}
+            >
+              Hive Laboratory
+            </Link>
+            .
           </>
         }
       />
@@ -1699,21 +1651,15 @@ function TargetDelete(props: {
       <SubPageLayoutHeader
         subPageTitle="Delete Target"
         description={
-          <>
-            <CardDescription>
-              Deleting an project also delete all schemas and data associated with it.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/targets#delete-a-target"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                <strong>This action is not reversible!</strong> You can find more information about
-                this process in the documentation
-              </DocsLink>
-            </CardDescription>
-          </>
+          <p>
+            Deleting an project also delete all schemas and data associated with it.{' '}
+            <strong>This action is not reversible!</strong>
+          </p>
         }
+        docsLink={{
+          href: '/schema-registry/management/targets#delete-a-target',
+          text: 'Read more in the documentation',
+        }}
       />
       <Button variant="destructive" onClick={toggleModalOpen}>
         Delete Target
