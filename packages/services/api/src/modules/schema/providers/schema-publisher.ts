@@ -578,7 +578,7 @@ export class SchemaPublisher {
 
     const baseSchema = await this.schemaManager.getBaseSchemaForTarget(target);
 
-    const sdl = tryPrettifySDL(input.sdl);
+    const sdl = input.sdl;
 
     const activeContracts =
       project.type === ProjectType.FEDERATION
@@ -1339,7 +1339,7 @@ export class SchemaPublisher {
             executor: () =>
               this.internalPublish({
                 ...input,
-                sdl: tryPrettifySDL(input.sdl),
+                sdl: input.sdl,
                 checksum,
                 selector,
               }),
@@ -3618,14 +3618,6 @@ function buildGitHubActionCheckName(input: {
   ].filter((val): val is string => typeof val === 'string');
 
   return `GraphQL Hive > schema:check > ${path.join(' > ')}`;
-}
-
-function tryPrettifySDL(sdl: string): string {
-  try {
-    return print(parse(sdl));
-  } catch {
-    return sdl;
-  }
 }
 
 const millisecondsPerDay = 60 * 60 * 24 * 1000;

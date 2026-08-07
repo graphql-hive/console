@@ -1,3 +1,4 @@
+import { parse, print } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
@@ -169,6 +170,7 @@ export class SchemaVersionStore {
       metadata: string | null;
     },
   ) {
+    const sdl = tryPrettifySDL(args.schema);
     const query = psql`/* insertSchemaLog */
       INSERT INTO "schema_log"
         (
@@ -187,7 +189,7 @@ export class SchemaVersionStore {
         lower(${args.service}::text),
         ${args.url}::text,
         ${args.commit}::text,
-        ${args.schema}::text,
+        ${sdl}::text,
         ${args.projectId},
         ${args.metadata},
         'PUSH'
@@ -1791,3 +1793,11 @@ const SchemaLogWithEdgesModel = z.union([
 ]);
 
 export type SchemaLogWithEdges = z.TypeOf<typeof SchemaLogWithEdgesModel>;
+
+function tryPrettifySDL(sdl: string): string {
+  try {
+    return print(parse(sdl));
+  } catch {
+    return sdl;
+  }
+}
