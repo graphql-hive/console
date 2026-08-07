@@ -48,12 +48,7 @@ function Channels(props: {
           Alert Channels are a way to configure <strong>how</strong> you want to receive alerts and
           notifications from Hive.
           <br />
-          <DocsLink
-            className="text-neutral-10 text-sm"
-            href="/schema-registry/management/projects#alert-channels"
-          >
-            Learn more
-          </DocsLink>
+          <DocsLink text="Learn more" href="/schema-registry/management/projects#alert-channels" />
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -117,11 +112,9 @@ function Alerts(props: {
             notifications from Hive.
             <br />
             <DocsLink
-              className="text-neutral-10 text-sm"
+              text="Learn more"
               href="/schema-registry/management/projects#alerts-and-notifications"
-            >
-              Learn more
-            </DocsLink>
+            />
           </CardDescription>
         </CardHeader>
         <CardContent>

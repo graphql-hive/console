@@ -1,73 +1,44 @@
 import { ReactElement } from 'react';
 import { Book, Megaphone } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { getDocsUrl, getProductUpdatesUrl } from '@/lib/docs-url';
-import { cn } from '@/lib/utils';
 import { ExternalLinkIcon } from '@radix-ui/react-icons';
 
-export const DocsLink = ({
-  href,
-  children,
-  icon,
-  className,
-}: {
+export type DocsLinkProps = {
   href: string;
   icon?: ReactElement;
-  children?: React.ReactNode;
-  className?: string;
-}) => {
+  text: string;
+};
+
+export const DocsLink = ({ href, icon, text }: DocsLinkProps) => {
   const fullUrl = href.startsWith('http') ? href : getDocsUrl(href);
 
   return (
-    <Button
-      asChild
-      variant="link"
-      className={cn(
-        'p-0',
-        'whitespace-pre-wrap', // to not lose whitespace between tags due to `display: 'inline-flex'`
-        className,
-      )}
+    <a
+      href={fullUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center whitespace-pre-wrap p-0"
     >
-      <a href={fullUrl} target="_blank" rel="noreferrer">
-        {icon ?? <Book className="mr-2 size-4" />}
-        {children}
-        <ExternalLinkIcon className="inline pl-1" />
-      </a>
-    </Button>
+      {icon ?? <Book className="mr-2 size-4" />}
+      {text}
+      <ExternalLinkIcon className="inline pl-1" />
+    </a>
   );
 };
 
-export const ProductUpdatesLink = ({
-  href,
-  children,
-  icon,
-  className,
-}: {
-  href: string;
-  icon?: ReactElement;
-  children?: React.ReactNode;
-  className?: string;
-}) => {
-  const fullUrl = href.startsWith('http')
-    ? href
-    : href.startsWith('#')
-      ? href
-      : getProductUpdatesUrl(href);
-
-  const isExternal = !href.startsWith('#');
+export const ProductUpdatesLink = ({ href, text }: { href: string; text: string }) => {
+  const fullUrl = href.startsWith('http') ? href : getProductUpdatesUrl(href);
 
   return (
-    <Button variant="link" className={cn('p-0 text-blue-500', className)} asChild>
-      <a
-        href={fullUrl}
-        target={isExternal ? '_blank' : undefined}
-        rel="noreferrer"
-        className="font-medium transition-colors hover:underline"
-      >
-        {icon ?? <Megaphone className="mr-2 size-4" />}
-        {children}
-        {isExternal ? <ExternalLinkIcon className="inline pl-1" /> : null}
-      </a>
-    </Button>
+    <a
+      href={fullUrl}
+      target="'_blank"
+      rel="noreferrer"
+      className="inline-flex items-center p-0 font-medium text-blue-500 transition-colors hover:underline"
+    >
+      <Megaphone className="mr-2 size-4" />
+      {text}
+      <ExternalLinkIcon className="inline pl-1" />
+    </a>
   );
 };

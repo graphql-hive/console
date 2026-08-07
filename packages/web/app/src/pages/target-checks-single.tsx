@@ -305,10 +305,8 @@ function ConditionalBreakingChangesMetadataSection(props: {
         <br />
         <DocsLink
           href="/schema-registry/management/targets#conditional-breaking-changes"
-          className="text-neutral-10 hover:text-neutral-11"
-        >
-          Learn more about conditional breaking changes.
-        </DocsLink>
+          text="Learn more about conditional breaking changes."
+        />
       </div>
     );
   }
@@ -388,10 +386,8 @@ function ConditionalBreakingChangesMetadataSection(props: {
         <br />
         <DocsLink
           href="/schema-registry/management/targets#conditional-breaking-changes"
-          className="text-neutral-10 hover:text-neutral-11"
-        >
-          Learn more about conditional breaking changes.
-        </DocsLink>
+          text="Learn more about conditional breaking changes."
+        />
       </p>
     </div>
   );
