@@ -18,6 +18,8 @@ import {
   DiffEditor as MonacoDiffEditor,
   Editor as MonacoEditor,
 } from '@monaco-editor/react';
+import type { SchemaEditorProps } from '@theguild/editor';
+import { useTheme } from '@/components/theme/theme-provider';
 
 // Use the locally bundled Monaco (via vite-plugin-monaco-editor) instead of CDN
 // to ensure the editor and workers are from the same version.
@@ -26,7 +28,7 @@ loader.config({ monaco });
 export { MonacoDiffEditor };
 export { MonacoEditor };
 
-export const SchemaEditor = lazy(async () => {
+const LazySchemaEditor = lazy(async () => {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   await import('regenerator-runtime/runtime');
@@ -34,4 +36,15 @@ export const SchemaEditor = lazy(async () => {
   return { default: SchemaEditor };
 });
 
-export type { SchemaEditorProps } from '@theguild/editor';
+/**
+ * Defaults Monaco's theme to the app's resolved theme ("vs-light" / "vs-dark"),
+ * so call sites don't each have to wire up `useTheme`. Passing `theme`
+ * explicitly still wins.
+ */
+export function SchemaEditor(props: SchemaEditorProps) {
+  const { resolvedTheme } = useTheme();
+
+  return <LazySchemaEditor theme={`vs-${resolvedTheme}`} {...props} />;
+}
+
+export type { SchemaEditorProps };

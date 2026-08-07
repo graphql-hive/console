@@ -848,7 +848,6 @@ const SchemaPolicyEditor = (props: {
   const errors = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.errors);
   return (
     <SchemaEditor
-      theme="vs-dark"
       options={{
         renderLineHighlightOnlyWhenFocus: true,
         readOnly: true,
