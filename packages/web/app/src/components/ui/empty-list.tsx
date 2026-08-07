@@ -38,7 +38,7 @@ export const EmptyList = ({
       <Heading className="text-center">{title}</Heading>
       <span className="text-neutral-10 text-center text-sm font-medium">{description}</span>
       {children}
-      {docsUrl && <DocsLink href={docsUrl}>Read about it in the documentation</DocsLink>}
+      {docsUrl && <DocsLink href={docsUrl} text="Read more in the documentation" />}
     </Card>
   );
 };

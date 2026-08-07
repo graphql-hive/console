@@ -108,9 +108,7 @@ export function LegacyCompositionSettings(props: {
         <p className="text-neutral-10 text-sm">
           Not recommended. Migrate towards using Native Federation v2.
         </p>
-        <ProductUpdatesLink href="2023-10-10-native-federation-2">
-          Read the announcement!
-        </ProductUpdatesLink>
+        <ProductUpdatesLink href="2023-10-10-native-federation-2" text="Read the announcement!" />
       </div>
 
       <div className="flex flex-row items-center gap-x-2">

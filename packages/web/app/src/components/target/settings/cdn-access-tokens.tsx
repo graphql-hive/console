@@ -4,8 +4,6 @@ import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
-import { DocsLink } from '@/components/ui/docs-note';
 import { Heading } from '@/components/ui/heading';
 import { AlertTriangleIcon, TrashIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -366,22 +364,11 @@ export function CDNAccessTokens(props: {
     <SubPageLayout>
       <SubPageLayoutHeader
         subPageTitle="CDN Access Token"
-        description={
-          <>
-            <CardDescription>
-              CDN Access Tokens are used to access to Hive High-Availability CDN and read your
-              schema artifacts.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/targets#cdn-access-tokens"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                Learn more about CDN Access Tokens
-              </DocsLink>
-            </CardDescription>
-          </>
-        }
+        description="CDN Access Tokens are used to access to Hive High-Availability CDN and read your schema artifacts."
+        docsLink={{
+          href: '/schema-registry/management/targets#cdn-access-tokens',
+          text: 'Learn more about CDN Access Tokens',
+        }}
       />
       <div className="my-3.5 flex justify-between">
         <Button asChild>

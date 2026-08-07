@@ -75,7 +75,7 @@ export function PolicyListItem(props: {
                       <Markdown content={ruleInfo.description} className="text-sm" />
                       <br />
                       {ruleInfo.documentationUrl ? (
-                        <DocsLink href={ruleInfo.documentationUrl}>read more</DocsLink>
+                        <DocsLink href={ruleInfo.documentationUrl} text="read more" />
                       ) : null}
                     </>
                   }

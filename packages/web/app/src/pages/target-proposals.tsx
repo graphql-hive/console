@@ -5,7 +5,6 @@ import { StageFilter } from '@/components/target/proposals/stage-filter';
 import { stageToColor } from '@/components/target/proposals/util';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -106,13 +105,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
         <div className="flex-1">
           <SubPageLayoutHeader
             subPageTitle={<span className="flex items-center">Schema Proposals</span>}
-            description={
-              <>
-                <CardDescription>
-                  Collaborate on schema changes to reduce friction during development.
-                </CardDescription>
-              </>
-            }
+            description="Collaborate on schema changes to reduce friction during development."
           />
         </div>
         <div className="ml-auto mr-0 flex flex-col justify-center">
