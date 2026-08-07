@@ -27,7 +27,7 @@ export const Organization: Pick<
   | 'members'
   | 'name'
   | 'owner'
-  | 'pendingProvisioningTakeoverApprovalsCount'
+  | 'pendingSCIMManagementConfirmationsCount'
   | 'projectForResourceSelector'
   | 'projectsForResourceSelector'
   | 'slug'
@@ -68,13 +68,13 @@ export const Organization: Pick<
         first: args.first ?? null,
         after: args.after ?? null,
         searchTerm: args.filters?.searchTerm ?? null,
-        needsProvisioningTakeoverApproval: args.filters?.needsProvisioningTakeoverApproval ?? null,
+        needsSCIMManagementConfirmation: args.filters?.needsSCIMManagementConfirmation ?? null,
       });
   },
-  pendingProvisioningTakeoverApprovalsCount: (organization, _args, { injector }) => {
+  pendingSCIMManagementConfirmationsCount: (organization, _args, { injector }) => {
     return injector
       .get(OrganizationManager)
-      .getPendingProvisioningTakeoverApprovalsCount(organization.id);
+      .getPendingSCIMManagementConfirmationsCount(organization.id);
   },
   invitations: async (organization, args, { injector }) => {
     const invitations = await injector.get(OrganizationManager).getInvitations(organization, {

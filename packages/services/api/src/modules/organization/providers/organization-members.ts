@@ -151,7 +151,7 @@ export class OrganizationMembers {
       first: number | null;
       after: string | null;
       searchTerm: string | null;
-      needsProvisioningTakeoverApproval: boolean | null;
+      needsSCIMManagementConfirmation: boolean | null;
     },
   ) {
     this.logger.debug(
@@ -170,7 +170,7 @@ export class OrganizationMembers {
       FROM
         "organization_member" AS "om"
       ${
-        searching || args.needsProvisioningTakeoverApproval
+        searching || args.needsSCIMManagementConfirmation
           ? psql`
             JOIN "users" as "u"
             ON "om"."user_id" = "u"."id"
@@ -194,8 +194,8 @@ export class OrganizationMembers {
         }
         ${searching ? psql`AND "u"."display_name" || ' ' || "u"."email" ILIKE ${'%' + searchTerm + '%'}` : psql``}
         ${
-          args.needsProvisioningTakeoverApproval
-            ? psql`AND "u"."provisioning_status" = 'pendingAdoption'`
+          args.needsSCIMManagementConfirmation
+            ? psql`AND "u"."provisioning_status" = 'pendingConfirmation'`
             : psql``
         }
       ORDER BY
@@ -244,7 +244,7 @@ export class OrganizationMembers {
     };
   }
 
-  async getPendingProvisioningTakeoverApprovalsCount(organizationId: string) {
+  async getPendingSCIMManagementConfirmationsCount(organizationId: string) {
     const query = psql`
       SELECT COUNT(*)
       FROM "organization_member" "om"
@@ -252,7 +252,7 @@ export class OrganizationMembers {
       WHERE
         "om"."organization_id" = ${organizationId}
         AND "u"."provisioned_by_organization_id" = ${organizationId}
-        AND "u"."provisioning_status" = 'pendingAdoption'
+        AND "u"."provisioning_status" = 'pendingConfirmation'
     `;
 
     return this.pool.oneFirst(query).then(z.number().int().parse);

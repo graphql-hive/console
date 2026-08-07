@@ -48,11 +48,11 @@ export default gql`
     assignMemberRole(input: AssignMemberRoleInput! @tag(name: "public")): AssignMemberRoleResult!
       @tag(name: "public")
     """
-    Confirm the takeover of an existing account and activate SCIM-managed authorization for it.
+    Confirm that an existing member should be managed through SCIM.
     """
-    confirmSCIMAccountTakeover(
-      input: ConfirmSCIMAccountTakeoverInput!
-    ): ConfirmSCIMAccountTakeoverResult!
+    confirmSCIMManagementForMember(
+      input: ConfirmSCIMManagementForMemberInput!
+    ): ConfirmSCIMManagementForMemberResult!
     """
     Create a new access token scoped to an organization.
     """
@@ -916,9 +916,9 @@ export default gql`
     """
     searchTerm: String
     """
-    When true, returns only members whose SCIM provisioning conflict is awaiting approval.
+    When true, returns only members awaiting confirmation of SCIM management.
     """
-    needsProvisioningTakeoverApproval: Boolean = false
+    needsSCIMManagementConfirmation: Boolean = false
   }
 
   type Organization {
@@ -943,9 +943,9 @@ export default gql`
       filters: MembersFilter
     ): MemberConnection! @tag(name: "public")
     """
-    The number of SCIM provisioning conflicts awaiting manual approval.
+    The number of members awaiting confirmation of SCIM management.
     """
-    pendingProvisioningTakeoverApprovalsCount: Int!
+    pendingSCIMManagementConfirmationsCount: Int!
     invitations(
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
@@ -1717,10 +1717,10 @@ export default gql`
     SCIM matched an existing account and the adoption is awaiting confirmation. Until confirmed,
     the user's existing role assignments remain effective and SCIM deactivation is not enforced.
     """
-    pendingAdoption
+    pendingConfirmation
   }
 
-  input ConfirmSCIMAccountTakeoverInput {
+  input ConfirmSCIMManagementForMemberInput {
     """
     The organization managing the user through SCIM.
     """
@@ -1731,23 +1731,23 @@ export default gql`
     member: MemberReferenceInput!
   }
 
-  type ConfirmSCIMAccountTakeoverResultOk {
+  type ConfirmSCIMManagementForMemberResultOk {
     """
     The member after the SCIM provisioning conflict has been confirmed.
     """
     confirmedMember: Member!
   }
 
-  type ConfirmSCIMAccountTakeoverResultError {
+  type ConfirmSCIMManagementForMemberResultError {
     message: String!
   }
 
   """
   @oneOf
   """
-  type ConfirmSCIMAccountTakeoverResult {
-    ok: ConfirmSCIMAccountTakeoverResultOk
-    error: ConfirmSCIMAccountTakeoverResultError
+  type ConfirmSCIMManagementForMemberResult {
+    ok: ConfirmSCIMManagementForMemberResultOk
+    error: ConfirmSCIMManagementForMemberResultError
   }
 
   """

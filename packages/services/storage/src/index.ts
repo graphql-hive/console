@@ -4694,7 +4694,7 @@ const MemberModel = z
     ),
     deactivatedAt: z.string().nullable(),
     provisionedByOrganizationId: z.string().nullable(),
-    provisioningStatus: z.enum(['pendingAdoption', 'active']).nullable(),
+    provisioningStatus: z.enum(['pendingConfirmation', 'active']).nullable(),
     externalId: z.string().nullable(),
   })
   .transform(row => ({
@@ -4825,7 +4825,7 @@ const UserBase = z.object({
 export const UserModel = z.union([
   UserBase.extend({
     provisionedByOrganizationId: z.string().uuid(),
-    provisioningStatus: z.enum(['pendingAdoption', 'active']),
+    provisioningStatus: z.enum(['pendingConfirmation', 'active']),
     externalId: z.string(),
   }),
   UserBase.extend({

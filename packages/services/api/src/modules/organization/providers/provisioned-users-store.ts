@@ -122,7 +122,7 @@ export class ProvisionedUsersStore {
                 , "provisioned_by_organization_id" = EXCLUDED."provisioned_by_organization_id"
                 , "external_id" = EXCLUDED."external_id"
                 , "deactivated_at" = EXCLUDED."deactivated_at"
-                , "provisioning_status" = 'pendingAdoption'
+                , "provisioning_status" = 'pendingConfirmation'
           RETURNING
             ${userFields}
         `;
@@ -222,14 +222,14 @@ export class ProvisionedUsersStore {
     return await trx.maybeOne(query).then(ProvisionedUserModel.parse);
   }
 
-  async confirmPendingAccountTakeover(organizationId: string, userId: string) {
+  async confirmSCIMManagementForMember(organizationId: string, userId: string) {
     const query = psql`
       UPDATE "users"
       SET "provisioning_status" = 'active'
       WHERE
         "id" = ${userId}
         AND "provisioned_by_organization_id" = ${organizationId}
-        AND "provisioning_status" = 'pendingAdoption'
+        AND "provisioning_status" = 'pendingConfirmation'
       RETURNING
         ${userFields}
     `;
@@ -412,7 +412,7 @@ const ProvisionedUserModel = z.object({
   provisionedByOrganizationId: z.string().uuid(),
   externalId: z.string(),
   deactivatedAt: z.string().nullable(),
-  provisioningStatus: z.enum(['pendingAdoption', 'active']),
+  provisioningStatus: z.enum(['pendingConfirmation', 'active']),
   supertokenUserId: z.string(),
   createdAt: z.string(),
   lastUpdatedAt: z.string().nullable(),

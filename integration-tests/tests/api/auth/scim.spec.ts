@@ -2,7 +2,7 @@ import humanId from 'human-id';
 import {
   addGroupMappingToGroup,
   assignMemberRole,
-  confirmSCIMAccountTakeover,
+  confirmSCIMManagementForMember,
   createMemberRole,
   createOrganization,
   createPersonalAccessToken,
@@ -32,14 +32,14 @@ import { fetchPermissions } from '../access-tokens/shared';
 
 const baseUrl = await getServiceHost('server', 3001).then(r => `http://${r}`);
 
-const MembersByProvisioningTakeoverApprovalQuery = graphql(`
-  query MembersByProvisioningTakeoverApproval(
+const MembersBySCIMManagementConfirmationQuery = graphql(`
+  query MembersBySCIMManagementConfirmation(
     $organizationId: ID!
-    $needsProvisioningTakeoverApproval: Boolean!
+    $needsSCIMManagementConfirmation: Boolean!
   ) {
     organization(reference: { byId: $organizationId }) {
-      pendingProvisioningTakeoverApprovalsCount
-      members(filters: { needsProvisioningTakeoverApproval: $needsProvisioningTakeoverApproval }) {
+      pendingSCIMManagementConfirmationsCount
+      members(filters: { needsSCIMManagementConfirmation: $needsSCIMManagementConfirmation }) {
         edges {
           node {
             user {
@@ -3702,13 +3702,13 @@ test.concurrent(
           FROM "users"
           WHERE "id" = ${scimUser.body.id}
         `),
-      ).toEqual('pendingAdoption');
+      ).toEqual('pendingConfirmation');
 
       const membersNeedingApproval = await execute({
-        document: MembersByProvisioningTakeoverApprovalQuery,
+        document: MembersBySCIMManagementConfirmationQuery,
         variables: {
           organizationId: org.organization.id,
-          needsProvisioningTakeoverApproval: true,
+          needsSCIMManagementConfirmation: true,
         },
         authToken: owner.ownerToken,
       }).then(r => r.expectNoGraphQLErrors());
@@ -3718,19 +3718,17 @@ test.concurrent(
         {
           id: scimUser.body.id,
           provisionInfo: {
-            provisioningStatus: 'pendingAdoption',
+            provisioningStatus: 'pendingConfirmation',
           },
         },
       ]);
-      expect(membersNeedingApproval.organization?.pendingProvisioningTakeoverApprovalsCount).toBe(
-        1,
-      );
+      expect(membersNeedingApproval.organization?.pendingSCIMManagementConfirmationsCount).toBe(1);
 
       const membersNotNeedingApproval = await execute({
-        document: MembersByProvisioningTakeoverApprovalQuery,
+        document: MembersBySCIMManagementConfirmationQuery,
         variables: {
           organizationId: org.organization.id,
-          needsProvisioningTakeoverApproval: false,
+          needsSCIMManagementConfirmation: false,
         },
         authToken: owner.ownerToken,
       }).then(r => r.expectNoGraphQLErrors());
@@ -3738,12 +3736,12 @@ test.concurrent(
         membersNotNeedingApproval.organization?.members.edges.map(edge => edge.node.user.id),
       ).not.toContain(scimUser.body.id);
 
-      const takeoverInput = {
+      const managementInput = {
         organization: { byId: org.organization.id },
         member: { byId: scimUser.body.id },
       };
-      const unauthorizedErrors = await confirmSCIMAccountTakeover(
-        takeoverInput,
+      const unauthorizedErrors = await confirmSCIMManagementForMember(
+        managementInput,
         accessToken.privateAccessKey,
       ).then(r => r.expectGraphQLErrors());
 
@@ -3753,11 +3751,12 @@ test.concurrent(
         },
       ]);
 
-      const confirmation = await confirmSCIMAccountTakeover(takeoverInput, owner.ownerToken).then(
-        r => r.expectNoGraphQLErrors(),
-      );
+      const confirmation = await confirmSCIMManagementForMember(
+        managementInput,
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
 
-      expect(confirmation.confirmSCIMAccountTakeover.ok?.confirmedMember.user).toMatchObject({
+      expect(confirmation.confirmSCIMManagementForMember.ok?.confirmedMember.user).toMatchObject({
         id: scimUser.body.id,
         provisionInfo: {
           provisioningStatus: 'active',
@@ -3772,26 +3771,26 @@ test.concurrent(
       ).toEqual('active');
 
       const membersAfterConfirmation = await execute({
-        document: MembersByProvisioningTakeoverApprovalQuery,
+        document: MembersBySCIMManagementConfirmationQuery,
         variables: {
           organizationId: org.organization.id,
-          needsProvisioningTakeoverApproval: true,
+          needsSCIMManagementConfirmation: true,
         },
         authToken: owner.ownerToken,
       }).then(r => r.expectNoGraphQLErrors());
       expect(membersAfterConfirmation.organization).toMatchObject({
-        pendingProvisioningTakeoverApprovalsCount: 0,
+        pendingSCIMManagementConfirmationsCount: 0,
         members: {
           edges: [],
         },
       });
 
-      const repeatedConfirmation = await confirmSCIMAccountTakeover(
-        takeoverInput,
+      const repeatedConfirmation = await confirmSCIMManagementForMember(
+        managementInput,
         owner.ownerToken,
       ).then(r => r.expectNoGraphQLErrors());
 
-      expect(repeatedConfirmation.confirmSCIMAccountTakeover).toEqual({
+      expect(repeatedConfirmation.confirmSCIMManagementForMember).toEqual({
         ok: null,
         error: {
           message: 'Pending SCIM provisioning conflict not found.',

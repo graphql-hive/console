@@ -1194,7 +1194,7 @@ export class OrganizationManager {
     };
   }
 
-  async confirmSCIMAccountTakeover(args: {
+  async confirmSCIMManagementForMember(args: {
     organization: GraphQLSchema.OrganizationReferenceInput;
     userId: string;
   }) {
@@ -1211,7 +1211,7 @@ export class OrganizationManager {
       params: { organizationId },
     });
 
-    const confirmedUser = await this.provisionedUsersStore.confirmPendingAccountTakeover(
+    const confirmedUser = await this.provisionedUsersStore.confirmSCIMManagementForMember(
       organizationId,
       args.userId,
     );
@@ -1352,7 +1352,7 @@ export class OrganizationManager {
       first: number | null;
       after: string | null;
       searchTerm: string | null;
-      needsProvisioningTakeoverApproval: boolean | null;
+      needsSCIMManagementConfirmation: boolean | null;
     },
   ) {
     await this.session.assertPerformAction({
@@ -1369,14 +1369,14 @@ export class OrganizationManager {
     );
   }
 
-  async getPendingProvisioningTakeoverApprovalsCount(organizationId: string) {
+  async getPendingSCIMManagementConfirmationsCount(organizationId: string) {
     await this.session.assertPerformAction({
       action: 'member:describe',
       organizationId,
       params: { organizationId },
     });
 
-    return this.organizationMembers.getPendingProvisioningTakeoverApprovalsCount(organizationId);
+    return this.organizationMembers.getPendingSCIMManagementConfirmationsCount(organizationId);
   }
 
   async getViewerMemberRole(selector: {

@@ -154,11 +154,11 @@ const OrganizationMemberRow_DeleteMember = graphql(`
   }
 `);
 
-const OrganizationMemberRow_ConfirmSCIMAccountTakeover = graphql(`
-  mutation OrganizationMemberRow_ConfirmSCIMAccountTakeover(
-    $input: ConfirmSCIMAccountTakeoverInput!
+const OrganizationMemberRow_ConfirmSCIMManagementForMember = graphql(`
+  mutation OrganizationMemberRow_ConfirmSCIMManagementForMember(
+    $input: ConfirmSCIMManagementForMemberInput!
   ) {
-    confirmSCIMAccountTakeover(input: $input) {
+    confirmSCIMManagementForMember(input: $input) {
       ok {
         confirmedMember {
           id
@@ -211,8 +211,8 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [deleteMemberState, deleteMember] = useMutation(OrganizationMemberRow_DeleteMember);
-  const [confirmTakeoverState, confirmTakeover] = useMutation(
-    OrganizationMemberRow_ConfirmSCIMAccountTakeover,
+  const [confirmManagementState, confirmManagement] = useMutation(
+    OrganizationMemberRow_ConfirmSCIMManagementForMember,
   );
   return (
     <>
@@ -377,7 +377,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
             <>
               {member.viewerCanRemove &&
                 member.user.provisionInfo?.provisioningStatus ===
-                  GraphQLSchema.ProvisioningStatus.PendingAdoption && (
+                  GraphQLSchema.ProvisioningStatus.PendingConfirmation && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button type="button" size="xs" variant="orangeLink" className="mr-2">
@@ -414,17 +414,17 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                         </div>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel disabled={confirmTakeoverState.fetching}>
+                        <AlertDialogCancel disabled={confirmManagementState.fetching}>
                           Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
                           variant="destructive"
-                          disabled={confirmTakeoverState.fetching}
+                          disabled={confirmManagementState.fetching}
                           onClick={async event => {
                             event.preventDefault();
 
                             try {
-                              const result = await confirmTakeover({
+                              const result = await confirmManagement({
                                 input: {
                                   organization: { byId: organization.id },
                                   member: { byId: member.user.id },
@@ -437,13 +437,14 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                                   title: 'Could not enable SCIM management',
                                   description: result.error.message,
                                 });
-                              } else if (result.data?.confirmSCIMAccountTakeover.error) {
+                              } else if (result.data?.confirmSCIMManagementForMember.error) {
                                 toast({
                                   variant: 'destructive',
                                   title: 'Could not enable SCIM management',
-                                  description: result.data.confirmSCIMAccountTakeover.error.message,
+                                  description:
+                                    result.data.confirmSCIMManagementForMember.error.message,
                                 });
-                              } else if (result.data?.confirmSCIMAccountTakeover.ok) {
+                              } else if (result.data?.confirmSCIMManagementForMember.ok) {
                                 toast({
                                   title: 'SCIM management enabled',
                                   description: `${member.user.email} is now managed through SCIM.`,
@@ -460,7 +461,9 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                             }
                           }}
                         >
-                          {confirmTakeoverState.fetching ? 'Applying...' : 'Allow SCIM management'}
+                          {confirmManagementState.fetching
+                            ? 'Applying...'
+                            : 'Allow SCIM management'}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -586,7 +589,7 @@ const OrganizationMembers_OrganizationFragment = graphql(`
       after: $after
       filters: {
         searchTerm: $searchTerm
-        needsProvisioningTakeoverApproval: $needsProvisioningTakeoverApproval
+        needsSCIMManagementConfirmation: $needsSCIMManagementConfirmation
       }
     ) {
       edges {
@@ -677,7 +680,7 @@ export function OrganizationMembers(props: {
           )}
         </div>
       </SubPageLayoutHeader>
-      {search.showProvisioningConflicts && (
+      {search.showPendingSCIMManagementConfirmations && (
         <Callout type="warning">
           Showing members with unresolved SCIM provisioning conflicts.{' '}
           <Link
@@ -704,7 +707,7 @@ export function OrganizationMembers(props: {
           </thead>
           <tbody className="divide-neutral-10/20 divide-y">
             {members.length === 0 ? (
-              search.showProvisioningConflicts ? (
+              search.showPendingSCIMManagementConfirmations ? (
                 <tr>
                   <td colSpan={4} className="py-16">
                     <div className="flex flex-col items-center justify-center px-4">
@@ -712,7 +715,7 @@ export function OrganizationMembers(props: {
                         No members with provisioning conflict found
                       </h3>
 
-                      {search.showProvisioningConflicts && (
+                      {search.showPendingSCIMManagementConfirmations && (
                         <Link
                           to="/$organizationSlug/view/members"
                           search={{ page: 'list' }}

@@ -6,7 +6,7 @@ import type {
   AddMetricAlertRuleInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
-  ConfirmScimAccountTakeoverInput,
+  ConfirmScimManagementForMemberInput,
   CreateContractInput,
   CreateMemberRoleInput,
   CreateOrganizationAccessTokenInput,
@@ -2248,14 +2248,16 @@ export function createOIDCIntegration(
   });
 }
 
-export function confirmSCIMAccountTakeover(
-  input: ConfirmScimAccountTakeoverInput,
+export function confirmSCIMManagementForMember(
+  input: ConfirmScimManagementForMemberInput,
   authToken: string,
 ) {
   return execute({
     document: graphql(`
-      mutation TestKit_ConfirmSCIMAccountTakeover($input: ConfirmSCIMAccountTakeoverInput!) {
-        confirmSCIMAccountTakeover(input: $input) {
+      mutation TestKit_ConfirmSCIMManagementForMember(
+        $input: ConfirmSCIMManagementForMemberInput!
+      ) {
+        confirmSCIMManagementForMember(input: $input) {
           ok {
             confirmedMember {
               id

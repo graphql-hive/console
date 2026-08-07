@@ -683,7 +683,7 @@ const OIDCAccessSettings_OrganizationFragment = graphql(`
         }
       }
     }
-    pendingProvisioningTakeoverApprovalsCount
+    pendingSCIMManagementConfirmationsCount
     viewerCanManageSCIM
     ...OIDCDefaultResourceSelector_OrganizationFragment
   }
@@ -841,15 +841,15 @@ function OIDCAccessSettings(props: {
                         </Link>
                       </p>
                     </div>
-                    {organization.pendingProvisioningTakeoverApprovalsCount > 0 && (
+                    {organization.pendingSCIMManagementConfirmationsCount > 0 && (
                       <div>
                         <TooltipProvider delayDuration={100}>
                           <Tooltip>
                             <TooltipTrigger>
                               <div className="flex text-xs text-yellow-500">
-                                {organization.pendingProvisioningTakeoverApprovalsCount} SCIM
+                                {organization.pendingSCIMManagementConfirmationsCount} SCIM
                                 provisioning conflict
-                                {organization.pendingProvisioningTakeoverApprovalsCount === 1
+                                {organization.pendingSCIMManagementConfirmationsCount === 1
                                   ? ''
                                   : 's'}
                               </div>
@@ -862,7 +862,10 @@ function OIDCAccessSettings(props: {
                               <Link
                                 to="/$organizationSlug/view/members"
                                 params={{ organizationSlug: organization.slug }}
-                                search={{ page: 'list', showProvisioningConflicts: true }}
+                                search={{
+                                  page: 'list',
+                                  showPendingSCIMManagementConfirmations: true,
+                                }}
                                 className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
                               >
                                 Review conflicts
