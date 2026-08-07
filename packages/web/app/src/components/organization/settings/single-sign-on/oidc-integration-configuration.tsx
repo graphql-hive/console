@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -573,7 +573,7 @@ function OIDCDomainConfiguration(props: {
               <p>Require OIDC Login</p>
               <p className="max-w-[500px] text-xs font-normal leading-snug">
                 Enforce sign in/up through OIDC for verified domains. Any other login method will be
-                blocked. Organization administrators are excluded.
+                blocked. The organization owner is excluded from this restriction.
               </p>
             </div>
             <AlertDialog>
@@ -667,6 +667,7 @@ const OIDCAccessSettings_OIDCIntegrationFragment = graphql(`
 const OIDCAccessSettings_OrganizationFragment = graphql(`
   fragment OIDCAccessSettings_OrganizationFragment on Organization {
     id
+    slug
     me {
       id
       role {
@@ -682,6 +683,7 @@ const OIDCAccessSettings_OrganizationFragment = graphql(`
         }
       }
     }
+    pendingProvisioningTakeoverApprovalsCount
     viewerCanManageSCIM
     ...OIDCDefaultResourceSelector_OrganizationFragment
   }
@@ -803,7 +805,7 @@ function OIDCAccessSettings(props: {
                         Only (active) users provisioned via SCIM can access the organization.
                         <br />
                         <span className="font-bold">
-                          Organization administrators are excluded from this restriction.
+                          The organization owner is excluded from this restriction.
                         </span>
                       </p>
                     </div>
@@ -814,7 +816,9 @@ function OIDCAccessSettings(props: {
                       <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
                         Groups are provisioned and updated via SCIM.{' '}
                         <Link
-                          to="/$organizationSlug/view/members?page=groups"
+                          to="/$organizationSlug/view/members"
+                          params={{ organizationSlug: organization.slug }}
+                          search={{ page: 'groups' }}
                           className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
                         >
                           Manage Groups
@@ -828,13 +832,46 @@ function OIDCAccessSettings(props: {
                       <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
                         Users are provisioned and updated via SCIM.{' '}
                         <Link
-                          to="/$organizationSlug/view/members?page=list"
+                          to="/$organizationSlug/view/members"
+                          params={{ organizationSlug: organization.slug }}
+                          search={{ page: 'list' }}
                           className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
                         >
                           Manage Users
                         </Link>
                       </p>
                     </div>
+                    {organization.pendingProvisioningTakeoverApprovalsCount > 0 && (
+                      <div>
+                        <TooltipProvider delayDuration={100}>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <div className="flex text-xs text-yellow-500">
+                                {organization.pendingProvisioningTakeoverApprovalsCount} Conflict
+                                {organization.pendingProvisioningTakeoverApprovalsCount === 1
+                                  ? ''
+                                  : 's'}{' '}
+                                Detected
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-[250px] space-y-2">
+                              <p>
+                                Some users attempted to be provisioned conflict with existing users
+                                in the system.
+                              </p>
+                              <Link
+                                to="/$organizationSlug/view/members"
+                                params={{ organizationSlug: organization.slug }}
+                                search={{ page: 'list', showProvisioningConflicts: true }}
+                                className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                              >
+                                Show and resolve conflicts
+                              </Link>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center justify-between space-x-4">
                     <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
@@ -842,7 +879,9 @@ function OIDCAccessSettings(props: {
                       <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
                         Assign role mappings to groups to grant permissions to group members.{' '}
                         <Link
-                          to="/$organizationSlug/view/members?page=groups"
+                          to="/$organizationSlug/view/members"
+                          params={{ organizationSlug: organization.slug }}
+                          search={{ page: 'groups' }}
                           className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
                         >
                           Manage Groups

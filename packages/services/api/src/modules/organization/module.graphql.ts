@@ -916,7 +916,7 @@ export default gql`
     """
     searchTerm: String
     """
-    When true, returns only members whose SCIM account takeover is awaiting approval.
+    When true, returns only members whose SCIM provisioning conflict is awaiting approval.
     """
     needsProvisioningTakeoverApproval: Boolean = false
   }
@@ -943,9 +943,9 @@ export default gql`
       filters: MembersFilter
     ): MemberConnection! @tag(name: "public")
     """
-    Whether any SCIM account takeovers are awaiting manual approval.
+    The number of SCIM provisioning conflicts awaiting manual approval.
     """
-    hasPendingProvisioningTakeoverApprovals: Boolean!
+    pendingProvisioningTakeoverApprovalsCount: Int!
     invitations(
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
@@ -1726,14 +1726,14 @@ export default gql`
     """
     organization: OrganizationReferenceInput!
     """
-    The organization member whose pending SCIM account takeover should be confirmed.
+    The organization member whose pending SCIM provisioning conflict should be confirmed.
     """
     member: MemberReferenceInput!
   }
 
   type ConfirmSCIMAccountTakeoverResultOk {
     """
-    The member after the SCIM account takeover has been confirmed.
+    The member after the SCIM provisioning conflict has been confirmed.
     """
     confirmedMember: Member!
   }

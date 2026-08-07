@@ -244,20 +244,18 @@ export class OrganizationMembers {
     };
   }
 
-  async hasPendingProvisioningTakeoverApprovals(organizationId: string) {
+  async getPendingProvisioningTakeoverApprovalsCount(organizationId: string) {
     const query = psql`
-      SELECT EXISTS (
-        SELECT 1
-        FROM "organization_member" "om"
-        INNER JOIN "users" "u" ON "u"."id" = "om"."user_id"
-        WHERE
-          "om"."organization_id" = ${organizationId}
-          AND "u"."provisioned_by_organization_id" = ${organizationId}
-          AND "u"."provisioning_status" = 'pendingAdoption'
-      )
+      SELECT COUNT(*)
+      FROM "organization_member" "om"
+      INNER JOIN "users" "u" ON "u"."id" = "om"."user_id"
+      WHERE
+        "om"."organization_id" = ${organizationId}
+        AND "u"."provisioned_by_organization_id" = ${organizationId}
+        AND "u"."provisioning_status" = 'pendingAdoption'
     `;
 
-    return this.pool.oneFirst(query).then(z.boolean().parse);
+    return this.pool.oneFirst(query).then(z.number().int().parse);
   }
 
   /**

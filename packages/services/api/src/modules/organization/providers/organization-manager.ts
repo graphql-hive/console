@@ -1226,7 +1226,7 @@ export class OrganizationManager {
     if (!confirmedUser) {
       return {
         error: {
-          message: 'Pending SCIM account takeover not found.',
+          message: 'Pending SCIM provisioning conflict not found.',
         },
       };
     }
@@ -1240,7 +1240,7 @@ export class OrganizationManager {
     if (!confirmedMember) {
       return {
         error: {
-          message: 'Pending SCIM account takeover not found.',
+          message: 'Pending SCIM provisioning conflict not found.',
         },
       };
     }
@@ -1376,14 +1376,14 @@ export class OrganizationManager {
     );
   }
 
-  async hasPendingProvisioningTakeoverApprovals(organizationId: string) {
+  async getPendingProvisioningTakeoverApprovalsCount(organizationId: string) {
     await this.session.assertPerformAction({
       action: 'member:describe',
       organizationId,
       params: { organizationId },
     });
 
-    return this.organizationMembers.hasPendingProvisioningTakeoverApprovals(organizationId);
+    return this.organizationMembers.getPendingProvisioningTakeoverApprovalsCount(organizationId);
   }
 
   async getViewerMemberRole(selector: {

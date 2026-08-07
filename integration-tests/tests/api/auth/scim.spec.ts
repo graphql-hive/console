@@ -38,7 +38,7 @@ const MembersByProvisioningTakeoverApprovalQuery = graphql(`
     $needsProvisioningTakeoverApproval: Boolean!
   ) {
     organization(reference: { byId: $organizationId }) {
-      hasPendingProvisioningTakeoverApprovals
+      pendingProvisioningTakeoverApprovalsCount
       members(filters: { needsProvisioningTakeoverApproval: $needsProvisioningTakeoverApproval }) {
         edges {
           node {
@@ -3722,8 +3722,8 @@ test.concurrent(
           },
         },
       ]);
-      expect(membersNeedingApproval.organization?.hasPendingProvisioningTakeoverApprovals).toBe(
-        true,
+      expect(membersNeedingApproval.organization?.pendingProvisioningTakeoverApprovalsCount).toBe(
+        1,
       );
 
       const membersNotNeedingApproval = await execute({
@@ -3780,7 +3780,7 @@ test.concurrent(
         authToken: owner.ownerToken,
       }).then(r => r.expectNoGraphQLErrors());
       expect(membersAfterConfirmation.organization).toMatchObject({
-        hasPendingProvisioningTakeoverApprovals: false,
+        pendingProvisioningTakeoverApprovalsCount: 0,
         members: {
           edges: [],
         },
@@ -3794,7 +3794,7 @@ test.concurrent(
       expect(repeatedConfirmation.confirmSCIMAccountTakeover).toEqual({
         ok: null,
         error: {
-          message: 'Pending SCIM account takeover not found.',
+          message: 'Pending SCIM provisioning conflict not found.',
         },
       });
     } finally {

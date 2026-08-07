@@ -5,7 +5,7 @@ export default {
   noTransaction: true,
   run: ({ psql }) => [
     {
-      name: 'users pending SCIM account takeover index',
+      name: 'users pending SCIM provisioning conflict index',
       query: psql`
         CREATE INDEX CONCURRENTLY IF NOT EXISTS "users_pending_scim_account_takeover"
         ON "users" ("provisioned_by_organization_id", "id")

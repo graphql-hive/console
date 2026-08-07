@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import {
+  AlertCircle,
   ChevronLeftIcon,
   ChevronRightIcon,
   MoreHorizontalIcon,
@@ -24,14 +25,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { KeyIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
@@ -41,6 +45,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
+import { Link } from '@tanstack/react-router';
 import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
@@ -63,7 +68,7 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
-            <div className="flex items-center justify-end gap-1.5">
+            <div className="flex w-fit items-center gap-1.5">
               <UsersIcon className="h-3.5 w-3.5" />
               <span className="text-xs">Groups: none</span>
             </div>
@@ -78,7 +83,7 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
 
   return (
     <TooltipProvider>
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex w-fit items-center gap-2">
         <div className="flex items-center gap-1.5">
           <UsersIcon className="h-3.5 w-3.5" />
           <span className="text-xs">Groups:</span>
@@ -86,16 +91,9 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
 
         <div className="flex flex-wrap items-center gap-1.5">
           {visibleGroups.map(group => (
-            <Tooltip key={group.id}>
-              <TooltipTrigger asChild>
-                <Badge className="cursor-default text-xs">{group.name}</Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  <span className="font-medium">{group.name}</span>
-                </p>
-              </TooltipContent>
-            </Tooltip>
+            <Badge className="cursor-default text-xs" key={group.id}>
+              {group.name}
+            </Badge>
           ))}
           {remainingCount > 0 && (
             <Tooltip>
@@ -156,6 +154,23 @@ const OrganizationMemberRow_DeleteMember = graphql(`
   }
 `);
 
+const OrganizationMemberRow_ConfirmSCIMAccountTakeover = graphql(`
+  mutation OrganizationMemberRow_ConfirmSCIMAccountTakeover(
+    $input: ConfirmSCIMAccountTakeoverInput!
+  ) {
+    confirmSCIMAccountTakeover(input: $input) {
+      ok {
+        confirmedMember {
+          id
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
 const OrganizationMemberRow_MemberFragment = graphql(`
   fragment OrganizationMemberRow_MemberFragment on Member {
     id
@@ -166,6 +181,7 @@ const OrganizationMemberRow_MemberFragment = graphql(`
       provisionInfo {
         isDisabled
         externalId
+        provisioningStatus
       }
     }
     authProviders {
@@ -194,7 +210,11 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   const member = useFragment(OrganizationMemberRow_MemberFragment, props.member);
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [takeoverOpen, setTakeoverOpen] = useState(false);
   const [deleteMemberState, deleteMember] = useMutation(OrganizationMemberRow_DeleteMember);
+  const [confirmTakeoverState, confirmTakeover] = useMutation(
+    OrganizationMemberRow_ConfirmSCIMAccountTakeover,
+  );
   return (
     <>
       <AlertDialog open={open} onOpenChange={setOpen}>
@@ -325,7 +345,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
           </div>
           <h4 className="text-neutral-10 text-xs">{member.user.email}</h4>
         </td>
-        <td className="w-full py-3 text-right text-sm">
+        <td className="w-full py-3 text-right text-sm" align="right">
           {member.isOwner ? (
             <TooltipProvider>
               <Tooltip>
@@ -349,7 +369,9 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                 </Tooltip>
               </TooltipProvider>
             ) : (
-              <MemberGroups groups={member.groups ?? []} />
+              <div className="ml-auto mr-0 w-fit">
+                <MemberGroups groups={member.groups ?? []} />
+              </div>
             )
           ) : (
             <MemberRole member={member} organization={organization} />
@@ -358,16 +380,102 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
         <td className="py-3 pr-2 text-right text-sm">
           {member.viewerCanRemove &&
             (member.user.provisionInfo ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <ShieldCheck size={16} className="text-neutral-8 ml-2 mt-1.5" />
-                  </TooltipTrigger>
-                  <TooltipContent className="text-xs">
-                    Provisioned users can only be updated via the SCIM endpoints.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              member.user.provisionInfo.provisioningStatus ===
+              GraphQLSchema.ProvisioningStatus.PendingAdoption ? (
+                <AlertDialog open={takeoverOpen} onOpenChange={setTakeoverOpen}>
+                  <AlertDialogTrigger>
+                    <AlertCircle size={16} className="ml-2 mt-1.5 text-yellow-500" />
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Transfer User to be managed via SCIM</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This user existed in your organization before your identity provider
+                        attempted to provision it via SCIM.
+                      </AlertDialogDescription>
+                      <AlertDialogDescription>
+                        Before transfering the user to be managed via SCIM, ensure that users group
+                        membership and status is as desired to avoid an accidential lockout.
+                      </AlertDialogDescription>
+                      <div className="mt-4 space-y-2">
+                        <div className="text-sm">SCIM State</div>
+                        <div className="flex w-fit items-center gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <KeyIcon className="h-3.5 w-3.5" />
+                            <span className="text-xs">
+                              Account Status:{' '}
+                              {member.user.provisionInfo.isDisabled ? 'disabled' : 'active'}
+                            </span>
+                          </div>
+                        </div>
+                        <MemberGroups groups={member.groups ?? []} />
+                      </div>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={confirmTakeoverState.fetching}>
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        variant="destructive"
+                        disabled={confirmTakeoverState.fetching}
+                        onClick={async event => {
+                          event.preventDefault();
+
+                          try {
+                            const result = await confirmTakeover({
+                              input: {
+                                organization: { byId: organization.id },
+                                member: { byId: member.user.id },
+                              },
+                            });
+
+                            if (result.error) {
+                              toast({
+                                variant: 'destructive',
+                                title: 'Failed to confirm SCIM account takeover',
+                                description: result.error.message,
+                              });
+                            } else if (result.data?.confirmSCIMAccountTakeover.error) {
+                              toast({
+                                variant: 'destructive',
+                                title: 'Failed to confirm SCIM account takeover',
+                                description: result.data.confirmSCIMAccountTakeover.error.message,
+                              });
+                            } else if (result.data?.confirmSCIMAccountTakeover.ok) {
+                              toast({
+                                title: 'SCIM account takeover confirmed',
+                                description: `${member.user.email} is now managed via SCIM.`,
+                              });
+                              setTakeoverOpen(false);
+                              props.refetchMembers({ requestPolicy: 'network-only' });
+                            }
+                          } catch (error) {
+                            console.error(error);
+                            toast({
+                              variant: 'destructive',
+                              title: 'Failed to confirm SCIM account takeover',
+                              description: error instanceof Error ? error.message : String(error),
+                            });
+                          }
+                        }}
+                      >
+                        {confirmTakeoverState.fetching ? 'Confirming...' : 'Confirm'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              ) : (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <ShieldCheck size={16} className="text-neutral-8 ml-2 mt-1.5" />
+                    </TooltipTrigger>
+                    <TooltipContent className="text-xs">
+                      Provisioned users can only be updated via the SCIM endpoints.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )
             ) : (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -463,7 +571,14 @@ const OrganizationMembers_OrganizationFragment = graphql(`
     owner {
       id
     }
-    members(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
+    members(
+      first: $first
+      after: $after
+      filters: {
+        searchTerm: $searchTerm
+        needsProvisioningTakeoverApproval: $needsProvisioningTakeoverApproval
+      }
+    ) {
       edges {
         node {
           id
@@ -552,6 +667,19 @@ export function OrganizationMembers(props: {
           )}
         </div>
       </SubPageLayoutHeader>
+      {search.showProvisioningConflicts && (
+        <Callout type="warning">
+          Showing only members with provisioning conflicts.{' '}
+          <Link
+            to="/$organizationSlug/view/members"
+            search={{ page: 'list' }}
+            params={{ organizationSlug: organization.slug }}
+            className="text-neutral-1 hover:text-neutral-8"
+          >
+            Show all members
+          </Link>
+        </Callout>
+      )}
       <div className="mt-4 overflow-hidden rounded-lg border">
         <table className="divide-neutral-10/20 w-full table-auto divide-y">
           <thead className="bg-neutral-3 border-b px-4 py-3 text-sm font-medium">
@@ -566,17 +694,42 @@ export function OrganizationMembers(props: {
           </thead>
           <tbody className="divide-neutral-10/20 divide-y">
             {members.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-16">
-                  <div className="flex flex-col items-center justify-center px-4">
-                    <h3 className="text-neutral-11 mb-2 text-lg font-semibold">No members found</h3>
+              search.showProvisioningConflicts ? (
+                <tr>
+                  <td colSpan={4} className="py-16">
+                    <div className="flex flex-col items-center justify-center px-4">
+                      <h3 className="text-neutral-11 mb-2 text-lg font-semibold">
+                        No members with provisioning conflict found
+                      </h3>
 
-                    <p className="text-neutral-10 max-w-sm text-center text-sm">
-                      {`No results for "${searchValue}". Try adjusting your search term.`}
-                    </p>
-                  </div>
-                </td>
-              </tr>
+                      {search.showProvisioningConflicts && (
+                        <Link
+                          to="/$organizationSlug/view/members"
+                          search={{ page: 'list' }}
+                          params={{ organizationSlug: organization.slug }}
+                          className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                        >
+                          Show all members
+                        </Link>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <tr>
+                  <td colSpan={4} className="py-16">
+                    <div className="flex flex-col items-center justify-center px-4">
+                      <h3 className="text-neutral-11 mb-2 text-lg font-semibold">
+                        No members found
+                      </h3>
+
+                      <p className="text-neutral-10 max-w-sm text-center text-sm">
+                        {`No results for "${searchValue}". Try adjusting your search term.`}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )
             ) : (
               members.map(node => (
                 <OrganizationMemberRow
