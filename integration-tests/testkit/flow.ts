@@ -6,6 +6,7 @@ import type {
   AddMetricAlertRuleInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
+  ConfirmScimManagementForMemberInput,
   CreateContractInput,
   CreateMemberRoleInput,
   CreateOrganizationAccessTokenInput,
@@ -2238,6 +2239,38 @@ export function createOIDCIntegration(
               authorizationEndpoint
               additionalScopes
             }
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function confirmSCIMManagementForMember(
+  input: ConfirmScimManagementForMemberInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_ConfirmSCIMManagementForMember(
+        $input: ConfirmSCIMManagementForMemberInput!
+      ) {
+        confirmSCIMManagementForMember(input: $input) {
+          ok {
+            confirmedMember {
+              id
+              user {
+                id
+                provisionInfo {
+                  provisioningStatus
+                }
+              }
+            }
+          }
+          error {
+            message
           }
         }
       }
