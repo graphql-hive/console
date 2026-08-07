@@ -129,7 +129,6 @@ export const runPGMigrations = async (args: { slonik: PostgresDatabasePool; runT
       import('./actions/2026.06.01T00-00-00.scim-user-indices'),
       import('./actions/2026.06.11T00-00-00.oidc-integration-user-id-claim'),
       import('./actions/2026.08.06T00-00-00.scim-provisioning-status'),
-      import('./actions/2026.08.07T00-00-00.scim-pending-takeover-index'),
-      import('./actions/2026.08.07T01-00-00.scim-pending-confirmation'),
+      import('./actions/2026.08.07T00-00-00.scim-pending-confirmation-index'),
     ]),
   });

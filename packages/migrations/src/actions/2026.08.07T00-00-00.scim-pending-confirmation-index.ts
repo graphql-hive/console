@@ -7,9 +7,9 @@ export default {
     {
       name: 'users pending SCIM provisioning conflict index',
       query: psql`
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS "users_pending_scim_account_takeover"
+        CREATE INDEX CONCURRENTLY IF NOT EXISTS "users_pending_scim_management_confirmation"
         ON "users" ("provisioned_by_organization_id", "id")
-        WHERE "provisioning_status" = 'pendingAdoption'
+        WHERE "provisioning_status" = 'pendingConfirmation'
       `,
     },
   ],
