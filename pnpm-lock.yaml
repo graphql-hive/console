@@ -1485,7 +1485,7 @@ importers:
     devDependencies:
       '@graphql-eslint/eslint-plugin':
         specifier: 3.20.1
-        version: 3.20.1(patch_hash=92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb)(@babel/core@7.29.7)(@types/node@24.13.3)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
+        version: 3.20.1(patch_hash=92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb)(@babel/core@7.29.7)(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -2376,8 +2376,8 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
       react-foundry:
-        specifier: 0.0.10
-        version: 0.0.10(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3)
+        specifier: 0.0.11
+        version: 0.0.11(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3)
       react-helmet-async:
         specifier: 2.0.5
         version: 2.0.5(react@18.3.1)
@@ -17073,8 +17073,8 @@ packages:
   react-fast-compare@3.2.2:
     resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
 
-  react-foundry@0.0.10:
-    resolution: {integrity: sha512-MKEtyOJwgafQXqOOZ/esiH8ohhod2VQ6pLCrrmy9Bzi25LIc6upzV3BiK9clguThP3BKRE2Z8U2NZCr0tlRSvA==}
+  react-foundry@0.0.11:
+    resolution: {integrity: sha512-SUD7eXU5GPsfIiAClEb2sYN/q166lFV9C+d6V98JwEncolR8QhP89FdLT1KS+aFp9MSaaWjyC0G7nninPidztA==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -22271,6 +22271,29 @@ snapshots:
       fast-glob: 3.3.3
       graphql: 16.9.0
       graphql-config: 4.5.0(@types/node@24.13.3)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
+      graphql-depth-limit: 1.1.0(graphql@16.9.0)
+      lodash.lowercase: 4.3.0
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/node'
+      - bufferutil
+      - cosmiconfig-toml-loader
+      - encoding
+      - supports-color
+      - utf-8-validate
+
+  '@graphql-eslint/eslint-plugin@3.20.1(patch_hash=92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb)(@babel/core@7.29.7)(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)':
+    dependencies:
+      '@babel/code-frame': 7.29.7
+      '@graphql-tools/code-file-loader': 7.3.23(@babel/core@7.29.7)(graphql@16.9.0)
+      '@graphql-tools/graphql-tag-pluck': 7.5.2(@babel/core@7.29.7)(graphql@16.9.0)
+      '@graphql-tools/utils': 9.2.1(graphql@16.9.0)
+      chalk: 4.1.2
+      debug: 4.4.3(supports-color@8.1.1)
+      fast-glob: 3.3.3
+      graphql: 16.9.0
+      graphql-config: 4.5.0(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
       graphql-depth-limit: 1.1.0(graphql@16.9.0)
       lodash.lowercase: 4.3.0
       tslib: 2.8.1
@@ -39073,7 +39096,7 @@ snapshots:
 
   react-fast-compare@3.2.2: {}
 
-  react-foundry@0.0.10(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3):
+  react-foundry@0.0.11(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3):
     dependencies:
       '@vitejs/plugin-react': 6.0.3(vite@8.1.5(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       axe-core: 4.11.0
