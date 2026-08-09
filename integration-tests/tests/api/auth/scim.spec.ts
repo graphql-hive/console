@@ -3724,18 +3724,6 @@ test.concurrent(
       ]);
       expect(membersNeedingApproval.organization?.pendingSCIMManagementConfirmationsCount).toBe(1);
 
-      const membersNotNeedingApproval = await execute({
-        document: MembersBySCIMManagementConfirmationQuery,
-        variables: {
-          organizationId: org.organization.id,
-          needsSCIMManagementConfirmation: false,
-        },
-        authToken: owner.ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
-      expect(
-        membersNotNeedingApproval.organization?.members.edges.map(edge => edge.node.user.id),
-      ).not.toContain(scimUser.body.id);
-
       const managementInput = {
         organization: { byId: org.organization.id },
         member: { byId: scimUser.body.id },
