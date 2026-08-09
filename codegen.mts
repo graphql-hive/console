@@ -67,6 +67,9 @@ const config: CodegenConfig = {
       config: {
         enumType: 'native',
         scalars: {
+          ID: 'string',
+          DateTime64: 'string',
+          JSONObject: 'Record<string,unknown>',
           DateTime: 'string',
           Date: 'string',
           SafeInt: 'number',
