@@ -1,5 +1,4 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { OrganizationReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import { z } from 'zod';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { OrganizationInvitationTask } from '@hive/workflows/tasks/organization-invitation';
@@ -58,7 +57,9 @@ export class OrganizationManager {
     this.logger = logger.child({ source: 'OrganizationManager' });
   }
 
-  async getOrganizationByReference(reference: OrganizationReferenceInput): Promise<Organization> {
+  async getOrganizationByReference(
+    reference: GraphQLSchema.OrganizationReferenceInput,
+  ): Promise<Organization> {
     const selector = await this.idTranslator.resolveOrganizationReference({
       reference,
       onError: () => {
