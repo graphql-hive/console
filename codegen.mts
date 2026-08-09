@@ -93,6 +93,7 @@ const config: CodegenConfig = {
       documents: ['./packages/libraries/cli/src/(commands|helpers)/**/*.ts'],
       preset: 'client',
       config: {
+        enumType: 'native',
         useTypeImports: true,
       },
     },
@@ -109,6 +110,7 @@ const config: CodegenConfig = {
       documents: ['./integration-tests/(testkit|tests)/**/*.ts'],
       preset: 'client',
       config: {
+        enumType: 'native',
         scalars: {
           DateTime: 'string',
           Date: 'string',
