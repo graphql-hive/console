@@ -53,7 +53,7 @@ module.exports = {
     'packages/libraries/cli/src/gql/**/*',
     'packages/services/storage/src/db/types.ts',
     'packages/web/app/src/gql/**/*',
-    'codegen.cjs',
+    'codegen.mts',
     'tsup',
     'packages/libraries/render-laboratory/src/laboratory.ts',
     'packages/web/app/vite.config.ts',
