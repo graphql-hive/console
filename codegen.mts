@@ -65,6 +65,7 @@ const config: CodegenConfig = {
       documents: ['./packages/web/app/src/(components|lib|pages|server)/**/*.ts(x)?'],
       preset: 'client',
       config: {
+        enumType: 'native',
         scalars: {
           DateTime: 'string',
           Date: 'string',
