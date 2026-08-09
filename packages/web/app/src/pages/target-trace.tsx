@@ -529,7 +529,7 @@ function SpanNode(props: SpanNodeProps) {
               <div
                 className={cn('truncate text-xs', isDimmed ? 'text-neutral-8' : 'text-neutral-10')}
               >
-                {span.spanAttributes['hive.gateway.upstream.subgraph.name']}
+                {span.spanAttributes['hive.gateway.upstream.subgraph.name'] as ReactNode}
               </div>
             ) : null}
           </div>
@@ -695,7 +695,9 @@ function SpanNode(props: SpanNodeProps) {
               const uchildSpan = useFragment(SpanFragment, childSpan.span);
 
               const serviceName: string | null =
-                uchildSpan.spanAttributes['hive.gateway.upstream.subgraph.name'] ??
+                (uchildSpan.spanAttributes['hive.gateway.upstream.subgraph.name'] as
+                  | string
+                  | undefined) ??
                 props.serviceName ??
                 null;
 
@@ -972,7 +974,7 @@ export function TraceSheet(props: TraceSheetProps) {
                           fontSize: 10,
                           minimap: { enabled: false },
                         }}
-                        code={rootSpanUnmasked.spanAttributes['graphql.document']}
+                        code={rootSpanUnmasked.spanAttributes['graphql.document'] as string}
                       />
                     </div>
                   ) : null}
@@ -1570,7 +1572,7 @@ function SpanSheet(props: SpanSheetProps) {
                     </div>
                   </div>
                 </TabButton>
-                {span.spanAttributes['graphql.document'] && (
+                {(span.spanAttributes['graphql.document'] as string) && (
                   <TabButton
                     isActive={activeView === 'operation'}
                     onClick={() => setActiveView('operation')}
@@ -1635,9 +1637,16 @@ function SpanSheet(props: SpanSheetProps) {
                         return (
                           <div className="mb-2" key={`${event.name}_${event.date}_${index}`}>
                             <ExceptionTeaser
-                              type={event.attributes['exception.type'] ?? ''}
-                              message={event.attributes['exception.message'] ?? ''}
-                              stacktrace={event.attributes['exception.stacktrace'] ?? ''}
+                              type={
+                                (event.attributes['exception.type'] as string | undefined) ?? ''
+                              }
+                              message={
+                                (event.attributes['exception.message'] as string | undefined) ?? ''
+                              }
+                              stacktrace={
+                                (event.attributes['exception.stacktrace'] as string | undefined) ??
+                                ''
+                              }
                               name={event.name}
                             />
                           </div>
@@ -1659,7 +1668,7 @@ function SpanSheet(props: SpanSheetProps) {
                     fontSize: 10,
                     minimap: { enabled: false },
                   }}
-                  code={span.spanAttributes['graphql.document']}
+                  code={span.spanAttributes['graphql.document'] as string}
                 />
               )}
             </div>
