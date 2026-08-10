@@ -237,7 +237,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         throw new MissingRegistryTokenError();
       }
 
-      let minifiedBasSdl: string | null = null;
+      let minifiedBaseSdl: string | null = null;
 
       if (flags.base) {
         const basePointer = flags.base;
@@ -274,7 +274,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           }
         }
 
-        minifiedBasSdl = minifySchema(result.sdl);
+        minifiedBaseSdl = minifySchema(result.sdl);
       }
 
       const rawSdl = await loadSchema(
@@ -345,7 +345,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             target,
             url: flags.url,
             schemaProposalId: flags.schemaProposalId,
-            baseSdl: minifiedBasSdl,
+            baseSdl: minifiedBaseSdl,
           },
         },
         /** Gateway timeout is 60 seconds. */
