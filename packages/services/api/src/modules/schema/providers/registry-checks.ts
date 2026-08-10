@@ -334,28 +334,36 @@ export class RegistryChecks {
     } satisfies CheckResult;
   }
 
-  async retrievePreviousVersionSdlWithBaseSchemaOverwrite(args: {
-    previousVersionSchemas: Array<CompositeSchemaInput> | null;
-    base: {
+  async composeServiceSchemasWithServiceOverwrite(args: {
+    serviceSchemas: Array<CompositeSchemaInput> | null;
+    serviceOverwrite: {
       serviceName: string;
       sdl: string;
     };
+    contracts: ContractsInputType | null;
     organization: Organization;
     project: Project;
     targetId: string;
   }) {
-    const override = { sdl: args.base.sdl, serviceName: args.base.serviceName };
-    const schemas = !args.previousVersionSchemas
+    const override = {
+      sdl: args.serviceOverwrite.sdl,
+      serviceName: args.serviceOverwrite.serviceName,
+    };
+    const schemas = !args.serviceSchemas
       ? [this.helper.createSchemaObject(override)]
-      : args.previousVersionSchemas.map(s =>
+      : args.serviceSchemas.map(s =>
           this.helper.createSchemaObject(
-            s.serviceName === args.base.serviceName
-              ? { sdl: args.base.sdl, serviceName: s.serviceName, serviceUrl: s.serviceUrl }
+            s.serviceName === args.serviceOverwrite.serviceName
+              ? {
+                  sdl: args.serviceOverwrite.sdl,
+                  serviceName: s.serviceName,
+                  serviceUrl: s.serviceUrl,
+                }
               : s,
           ),
         );
 
-    const existingSchemaResult = await this.orchestrator.composeAndValidate(
+    return await this.orchestrator.composeAndValidate(
       CompositionOrchestrator.projectTypeToOrchestratorType(args.project.type),
       schemas,
       {
@@ -365,11 +373,9 @@ export class RegistryChecks {
           args.project,
           args.organization,
         ),
-        contracts: null,
+        contracts: args.contracts,
       },
     );
-
-    return existingSchemaResult.sdl ?? null;
   }
 
   /**

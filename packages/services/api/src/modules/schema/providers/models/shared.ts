@@ -407,7 +407,10 @@ export function buildSchemaCheckFailureState(args: {
 
 export type ContractInput = {
   contract: Contract;
-  latestValidVersion: ValidContractVersion | null;
+  latestValidVersion: Pick<
+    ValidContractVersion,
+    'contractName' | 'compositeSchemaSdl' | 'supergraphSdl'
+  > | null;
 };
 
 export function isContractChecksSuccessful(input: ContractCheckInput): input is {

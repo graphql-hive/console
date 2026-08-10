@@ -6,6 +6,7 @@ import {
 import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
+import { checkSchema } from '../../../testkit/flow';
 import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
@@ -2018,6 +2019,177 @@ describe.concurrent(
     });
   },
 );
+
+describe.concurrent('schema check with a base service schema', () => {
+  test.concurrent(
+    'compares the proposed schema against the provided base SDL',
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const token = await createTargetAccessToken({});
+
+      await token
+        .publishSchema({
+          service: 'products',
+          url: 'http://products.local',
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+            type Query {
+              product: Product
+            }
+
+            type Product @key(fields: "id") {
+              id: ID!
+              stable: String
+              registryOnly: String
+            }
+          `,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      await token
+        .publishSchema({
+          service: 'reviews',
+          url: 'http://reviews.local',
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+            type Query {
+              review: String
+            }
+          `,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const result = await checkSchema(
+        {
+          service: 'products',
+          baseSdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+            type Query {
+              product: Product
+            }
+
+            type Product @key(fields: "id") {
+              id: ID!
+              stable: String
+              baseOnly: String
+            }
+          `,
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+            type Query {
+              product: Product
+            }
+
+            type Product @key(fields: "id") {
+              id: ID!
+              stable: String
+            }
+          `,
+        },
+        token.secret,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      // registryOnly being removed does not show up!
+      expect(result.schemaCheck).toMatchObject({
+        __typename: 'SchemaCheckError',
+        valid: false,
+        changes: {
+          nodes: [
+            {
+              criticality: 'Breaking',
+              message: "Field 'baseOnly' was removed from object type 'Product'",
+            },
+          ],
+          total: 1,
+        },
+      });
+    },
+  );
+
+  test.concurrent('fails when the provided base SDL cannot be composed', async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const token = await createTargetAccessToken({});
+
+    await token
+      .publishSchema({
+        service: 'products',
+        url: 'http://products.local',
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+          type Query {
+            product: Product
+          }
+
+          type Product @key(fields: "id") {
+            id: ID!
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const result = await checkSchema(
+      {
+        service: 'products',
+        baseSdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+          type Query {
+            product: Product
+          }
+
+          type Product @key(fields: "missing") {
+            id: ID!
+          }
+        `,
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+          type Query {
+            product: Product
+          }
+
+          type Product @key(fields: "id") {
+            id: ID!
+            name: String
+          }
+        `,
+      },
+      token.secret,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.schemaCheck).toMatchObject({
+      __typename: 'SchemaCheckError',
+      valid: false,
+      errors: {
+        nodes: [{ message: 'Base supergraph composition failed.' }],
+        total: 1,
+      },
+    });
+  });
+});
 
 test.concurrent(
   'checking an invalid schema fails due to validation errors (deprecated non-nullable input field)',

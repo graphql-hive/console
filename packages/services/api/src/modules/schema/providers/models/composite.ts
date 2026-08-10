@@ -1,7 +1,8 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { DangerousChangeType } from '@hive/api/__generated__/types';
+import type { ContractsInputType } from '@hive/schema';
 import { invariant, traceFn } from '@hive/service-common';
-import { SchemaChangeType } from '@hive/storage';
+import { SchemaChangeType, SchemaCompositionError } from '@hive/storage';
 import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
 import {
   GetAffectedAppDeployments,
@@ -197,25 +198,28 @@ export class CompositeModel {
       };
     }
 
+    const contractCompositionInput: ContractsInputType | null =
+      contracts?.map(({ contract }) => ({
+        id: contract.id,
+        filter: {
+          exclude: contract.excludeTags,
+          include: contract.includeTags,
+          removeUnreachableTypesFromPublicApiSchema:
+            contract.removeUnreachableTypesFromPublicApiSchema,
+        },
+      })) ?? null;
+
     const compositionCheck = await this.checks.composition({
       targetId: selector.targetId,
       project,
       organization,
       schemas,
       baseSchema,
-      contracts:
-        contracts?.map(({ contract }) => ({
-          id: contract.id,
-          filter: {
-            exclude: contract.excludeTags,
-            include: contract.includeTags,
-            removeUnreachableTypesFromPublicApiSchema:
-              contract.removeUnreachableTypesFromPublicApiSchema,
-          },
-        })) ?? null,
+      contracts: contractCompositionInput,
     });
 
     let existingPublicSchemaSdl: string | null;
+    let existingContracts = contracts;
 
     if (!input.baseSdl) {
       existingPublicSchemaSdl = await this.checks.retrievePreviousVersionSdl({
@@ -226,23 +230,103 @@ export class CompositeModel {
       });
     } else {
       this.logger.debug('base service schema provided. composing base sdl');
-      existingPublicSchemaSdl = await this.checks.retrievePreviousVersionSdlWithBaseSchemaOverwrite(
-        {
-          previousVersionSchemas: latest?.schemas ?? null,
-          base: {
-            sdl: input.baseSdl,
-            serviceName: input.serviceName,
-          },
-          organization,
-          project,
-          targetId: selector.targetId,
+      const result = await this.checks.composeServiceSchemasWithServiceOverwrite({
+        serviceSchemas: latest?.schemas ?? null,
+        serviceOverwrite: {
+          sdl: input.baseSdl,
+          serviceName: input.serviceName,
         },
-      );
+        organization,
+        project,
+        targetId: selector.targetId,
+        contracts: contractCompositionInput,
+      });
 
-      invariant(
-        existingPublicSchemaSdl !== null,
-        'TODO: Fail because breaking-change evaluation is disrupted.',
-      );
+      if (result.errors.length || !result.sdl) {
+        this.logger.debug(
+          'base supergraph composition failed. Fail schema check as we cannot construct a diff.',
+        );
+        return {
+          conclusion: SchemaCheckConclusion.Failure,
+          state: {
+            composition: {
+              errors: [
+                {
+                  message: 'Base supergraph composition failed.',
+                  source: 'composition',
+                },
+              ],
+              compositeSchemaSDL: null,
+              supergraphSDL: null,
+            },
+            schemaChanges: null,
+            contracts: null,
+            schemaPolicy: null,
+          },
+        };
+      }
+
+      existingPublicSchemaSdl = result.sdl;
+
+      if (result.contracts?.length) {
+        const contractErrors: Array<SchemaCompositionError> = [];
+        const newExistingContracts: typeof contracts = [];
+
+        for (const [index, contract] of result.contracts.entries()) {
+          if (contract.errors.length) {
+            contractErrors.push(...contract.errors);
+            this.logger.debug(
+              'Base supergraph composition failed for contract. (contractId=%s).',
+              contract.id,
+            );
+          }
+          if (contractErrors.length) {
+            continue;
+          }
+
+          const existingContract = existingContracts?.at(index);
+          invariant(!!existingContract, 'There should be a previous contract');
+          invariant(!!contract.supergraph, 'There should be a supergraph if there is no errors');
+          invariant(!!contract.sdl, 'There should be a public schema if there is no errors');
+
+          newExistingContracts.push({
+            approvedChanges: existingContract.approvedChanges,
+            contract: existingContract.contract,
+            latestValidVersion: {
+              compositeSchemaSdl: contract.sdl,
+              supergraphSdl: contract.supergraph,
+              contractName: existingContract.contract.contractName,
+            },
+          });
+        }
+
+        if (contractErrors.length) {
+          this.logger.debug(
+            'One or more base supergraph compositions failed for contracts. Fail check as we cannot construct a diff.',
+          );
+
+          return {
+            conclusion: SchemaCheckConclusion.Failure,
+            state: {
+              composition: {
+                errors: [
+                  {
+                    message: 'Base supergraph composition of contracts failed.',
+                    source: 'composition',
+                  },
+                ],
+                compositeSchemaSDL: null,
+                supergraphSDL: null,
+              },
+              schemaChanges: null,
+              contracts: null,
+              schemaPolicy: null,
+            },
+          };
+        }
+
+        existingContracts = newExistingContracts;
+      }
     }
 
     const getAffectedAppDeployments: GetAffectedAppDeployments = schemaCoordinates =>
@@ -253,10 +337,8 @@ export class CompositeModel {
           conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
 
-    invariant(!contracts?.length || !input.baseSdl, 'TODO: This case needs special handling.');
-
     const contractChecks = await this.getContractChecks({
-      contracts,
+      contracts: existingContracts,
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
       failDiffOnDangerousChange,
