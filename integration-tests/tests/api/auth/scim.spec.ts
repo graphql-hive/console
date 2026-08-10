@@ -161,6 +161,45 @@ describe.concurrent('/Users', () => {
       ).toEqual('active');
     });
     test.concurrent(
+      're-creating an active provisioned user fails and preserves its provisioning status',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
+        const { pool } = await seed.createDbConnection();
+        const { registerFakeDomain } = await org.createOIDCIntegration();
+        const domain = await registerFakeDomain();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['scim:provision'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scim = createScimTestkit({
+          baseUrl,
+          headers: {
+            'Content-Type': 'application/scim+json',
+            Authorization: 'Bearer ' + accessToken.privateAccessKey,
+          },
+        });
+        const externalId = crypto.randomUUID();
+        const email = 'marty.mcfly@' + domain;
+        const user = {
+          ...newUserValues(),
+          userName: email,
+          emails: [{ primary: true, value: email, type: 'work' }],
+          externalId,
+        };
+        const createdUser = await scim.createUser(user);
+
+        const recreateResponse = await scim.createUser(user, { expectedStatus: 409 });
+
+        expect(recreateResponse.body).toMatchObject({
+          detail: 'A user with the same external id already exists.',
+          status: 409,
+        });
+      },
+    );
+    test.concurrent(
       'create new user without emails infers email from userName',
       async ({ expect }) => {
         const seed = initSeed();
