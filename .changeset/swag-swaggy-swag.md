@@ -16,3 +16,14 @@ hive schema:check \
   --contextId "hive-console#67" \
   schema.graphqls
 ```
+
+Example using the GitHub integration:
+
+```sh
+hive schema:check \
+  --target the-guild/hive-console/development \
+  --base 43e728ea9:schema.graphqls \
+  --service products \
+  --github \
+  schema.graphqls
+```
