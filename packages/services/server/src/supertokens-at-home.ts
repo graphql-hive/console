@@ -101,25 +101,24 @@ export async function registerSupertokensAtHome(
       };
     }
 
-    if (user) {
-      const hiveUser = await storage.getUserBySuperTokenId({ superTokensUserId: user.userId });
+    if (!user) {
+      return {
+        type: 'error' as const,
+      };
+    }
 
-      if (hiveUser) {
-        const usersStore = new ProvisionedUsersStore(storage.pool);
-        const isUserAdminOfAnyOrganization = await usersStore.isUserWithIdAdminOfAnyOrganization(
-          hiveUser.id,
-        );
+    const isUserAdminOfOrganization = await new ProvisionedUsersStore(
+      storage.pool,
+    ).isIdentityAdminOfOrganization(user.userId, oidcIntegration.linkedOrganizationId);
 
-        if (isUserAdminOfAnyOrganization) {
-          return {
-            type: 'success' as const,
-          };
-        }
-      }
+    if (!isUserAdminOfOrganization) {
+      return {
+        type: 'error' as const,
+      };
     }
 
     return {
-      type: 'error' as const,
+      type: 'success' as const,
     };
   }
 
@@ -1678,7 +1677,7 @@ export async function registerSupertokensAtHome(
         });
 
         if (organization.featureFlags.scim) {
-          if (maybeHiveUser?.deactivatedAt) {
+          if (maybeHiveUser?.provisioningStatus === 'active' && maybeHiveUser.deactivatedAt) {
             req.log.debug('user is deactivated.');
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
