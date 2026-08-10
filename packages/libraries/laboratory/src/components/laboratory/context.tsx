@@ -48,6 +48,7 @@ type LaboratoryContextState = LaboratoryCollectionsState &
   LaboratoryTestState & {
     isFullScreen?: boolean;
     enableFullScreen?: boolean;
+    enableDocs?: boolean;
     theme?: 'light' | 'dark';
   };
 type LaboratoryContextActions = LaboratoryCollectionsActions &
@@ -144,6 +145,12 @@ export interface LaboratoryApi {
   isFullScreen?: boolean;
   /** Show the full screen control. Off for hosts that already fill the viewport. */
   enableFullScreen?: boolean;
+  /**
+   * Show the schema documentation pane. Off unless explicitly enabled. Also decides
+   * whether introspection asks for descriptions, so a host passing
+   * `defaultSchemaIntrospection` must build that with descriptions itself.
+   */
+  enableDocs?: boolean;
   goToFullScreen?: () => void;
   exitFullScreen?: () => void;
   defaultPreflight?: LaboratoryPreflight | null;

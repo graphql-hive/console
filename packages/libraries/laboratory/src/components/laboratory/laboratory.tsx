@@ -505,6 +505,7 @@ export const Laboratory = (
       | 'theme'
       | 'defaultSchemaIntrospection'
       | 'enableFullScreen'
+      | 'enableDocs'
     >
   >,
 ) => {
@@ -696,6 +697,7 @@ export const Laboratory = (
           exitFullScreen={exitFullScreen}
           isFullScreen={isFullScreen}
           enableFullScreen={props.enableFullScreen !== false}
+          enableDocs={props.enableDocs === true}
           checkPermissions={checkPermissions}
         >
           <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>

@@ -27,7 +27,6 @@ const mapGraphiQLOptionsToLaboratoryProps = (opts?: GraphiQLOptions): Laboratory
       },
       introspection: {
         method: opts.method,
-        schemaDescription: opts.schemaDescription,
       },
     },
   } satisfies LaboratoryProps;
