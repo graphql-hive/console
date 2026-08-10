@@ -2,6 +2,7 @@ import humanId from 'human-id';
 import {
   addGroupMappingToGroup,
   assignMemberRole,
+  confirmSCIMManagementForMember,
   createMemberRole,
   createOrganization,
   createPersonalAccessToken,
@@ -14,7 +15,9 @@ import {
   updateMe,
   updateMemberRole,
 } from 'testkit/flow';
+import { graphql } from 'testkit/gql';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
+import { execute } from 'testkit/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import z from 'zod';
@@ -29,6 +32,29 @@ import { fetchPermissions } from '../access-tokens/shared';
 
 const baseUrl = await getServiceHost('server', 3001).then(r => `http://${r}`);
 
+const MembersBySCIMManagementConfirmationQuery = graphql(`
+  query MembersBySCIMManagementConfirmation(
+    $organizationId: ID!
+    $needsSCIMManagementConfirmation: Boolean!
+  ) {
+    organization(reference: { byId: $organizationId }) {
+      pendingSCIMManagementConfirmationsCount
+      members(filters: { needsSCIMManagementConfirmation: $needsSCIMManagementConfirmation }) {
+        edges {
+          node {
+            user {
+              id
+              provisionInfo {
+                provisioningStatus
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
 function newUserValues() {
   return {
     schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
@@ -37,7 +63,6 @@ function newUserValues() {
     emails: [{ primary: true, value: 'marty@mcfly.dev', type: 'work' }],
     locale: 'en-US',
     externalId: crypto.randomUUID(),
-    password: 'fq77ZD37',
     active: true,
   };
 }
@@ -79,6 +104,7 @@ describe.concurrent('/Users', () => {
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
       await org.setFeatureFlag('scim', true);
+      const { pool } = await seed.createDbConnection();
       const { registerFakeDomain } = await org.createOIDCIntegration();
       const domain = await registerFakeDomain();
       const userEmail = 'marty@' + domain;
@@ -102,7 +128,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
       expect(usersPostResponse.headers.get('content-type')).toBe('application/scim+json');
@@ -127,7 +152,53 @@ describe.concurrent('/Users', () => {
           location: baseUrl + '/scim/v2/Users/' + usersPostResponse.body.id,
         },
       });
+      expect(
+        await pool.oneFirst(psql`
+          SELECT "provisioning_status"
+          FROM "users"
+          WHERE "id" = ${usersPostResponse.body.id}
+        `),
+      ).toEqual('active');
     });
+    test.concurrent(
+      're-creating an active provisioned user fails and preserves its provisioning status',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
+        const { pool } = await seed.createDbConnection();
+        const { registerFakeDomain } = await org.createOIDCIntegration();
+        const domain = await registerFakeDomain();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['scim:provision'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scim = createScimTestkit({
+          baseUrl,
+          headers: {
+            'Content-Type': 'application/scim+json',
+            Authorization: 'Bearer ' + accessToken.privateAccessKey,
+          },
+        });
+        const externalId = crypto.randomUUID();
+        const email = 'marty.mcfly@' + domain;
+        const user = {
+          ...newUserValues(),
+          userName: email,
+          emails: [{ primary: true, value: email, type: 'work' }],
+          externalId,
+        };
+        const createdUser = await scim.createUser(user);
+
+        const recreateResponse = await scim.createUser(user, { expectedStatus: 409 });
+
+        expect(recreateResponse.body).toMatchObject({
+          detail: 'A user with the same external id already exists.',
+          status: 409,
+        });
+      },
+    );
     test.concurrent(
       'create new user without emails infers email from userName',
       async ({ expect }) => {
@@ -192,7 +263,6 @@ describe.concurrent('/Users', () => {
           locale: 'en-US',
           externalId: externalUserId,
           groups: [],
-          password: 'foobars',
           active: true,
         });
 
@@ -246,7 +316,6 @@ describe.concurrent('/Users', () => {
           locale: 'en-US',
           externalId: externalUserId,
           groups: [],
-          password: 'fq77ZD37',
           active: true,
         },
         { expectedStatus: 400 },
@@ -290,7 +359,6 @@ describe.concurrent('/Users', () => {
           locale: 'en-US',
           externalId: externalUserId,
           groups: [],
-          password: 'foobars',
           active: true,
         });
         const conflictUsersPostResponse = await scim.createUser(
@@ -303,7 +371,6 @@ describe.concurrent('/Users', () => {
             locale: 'en-US',
             externalId: externalUserId,
             groups: [],
-            password: 'fq77ZD37',
             active: true,
           },
           { expectedStatus: 409 },
@@ -346,7 +413,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: false,
       });
 
@@ -405,7 +471,6 @@ describe.concurrent('/Users', () => {
             locale: 'en-US',
             externalId: externalUserId,
             groups: [],
-            password: 'fq77ZD37',
             active: true,
           },
           { expectedStatus: 404 },
@@ -448,7 +513,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
 
@@ -461,7 +525,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: false,
       });
       expect(usersPutResponse.body).toEqual({
@@ -507,7 +570,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
 
@@ -520,7 +582,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: false,
       });
       expect(usersPutResponse.body).toMatchObject({
@@ -557,7 +618,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
 
@@ -1068,7 +1128,6 @@ describe.concurrent('/Users', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
       const usersPatchResponse = await scim.patchUser(
@@ -2438,7 +2497,6 @@ describe.concurrent('/Groups', () => {
         locale: 'en-US',
         externalId: 'userExternalId',
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
       const putResponse = await scim.patchGroup(postResponse.body.id, {
@@ -3417,7 +3475,6 @@ describe.concurrent('provider flows', () => {
         locale: 'en-US',
         externalId: externalUserId,
         groups: [],
-        password: 'fq77ZD37',
         active: true,
       });
       expect(usersPostResponse.body).toEqual({
@@ -3506,7 +3563,6 @@ describe.concurrent('provider flows', () => {
           locale: 'en-US',
           externalId: externalUserId,
           groups: [],
-          password: 'fq77ZD37',
           active: true,
         });
 
@@ -3627,8 +3683,8 @@ describe.concurrent('provider flows', () => {
 });
 
 test.concurrent(
-  'externalId (sub) conflict with existing OIDC user takes over the user',
-  async () => {
+  'externalId (sub) conflict with existing OIDC user creates a pending adoption',
+  async ({ expect }) => {
     const seed = initSeed();
     const owner = await seed.createOwner();
     const org = await owner.createOrg();
@@ -3673,10 +3729,99 @@ test.concurrent(
       };
       const scim = createScimTestkit({ baseUrl, headers });
 
-      await scim.createUser({
+      const scimUser = await scim.createUser({
         ...newUserValues(),
         externalId: subOrExternalId,
         emails: [{ primary: true, type: 'work', value: email }],
+      });
+
+      expect(
+        await pool.oneFirst(psql`
+          SELECT "provisioning_status"
+          FROM "users"
+          WHERE "id" = ${scimUser.body.id}
+        `),
+      ).toEqual('pendingConfirmation');
+
+      const membersNeedingApproval = await execute({
+        document: MembersBySCIMManagementConfirmationQuery,
+        variables: {
+          organizationId: org.organization.id,
+          needsSCIMManagementConfirmation: true,
+        },
+        authToken: owner.ownerToken,
+      }).then(r => r.expectNoGraphQLErrors());
+      expect(
+        membersNeedingApproval.organization?.members.edges.map(edge => edge.node.user),
+      ).toEqual([
+        {
+          id: scimUser.body.id,
+          provisionInfo: {
+            provisioningStatus: 'pendingConfirmation',
+          },
+        },
+      ]);
+      expect(membersNeedingApproval.organization?.pendingSCIMManagementConfirmationsCount).toBe(1);
+
+      const managementInput = {
+        organization: { byId: org.organization.id },
+        member: { byId: scimUser.body.id },
+      };
+      const unauthorizedErrors = await confirmSCIMManagementForMember(
+        managementInput,
+        accessToken.privateAccessKey,
+      ).then(r => r.expectGraphQLErrors());
+
+      expect(unauthorizedErrors).toMatchObject([
+        {
+          message: `No access (reason: "Missing permission for performing 'member:modify' on resource")`,
+        },
+      ]);
+
+      const confirmation = await confirmSCIMManagementForMember(
+        managementInput,
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      expect(confirmation.confirmSCIMManagementForMember.ok?.confirmedMember.user).toMatchObject({
+        id: scimUser.body.id,
+        provisionInfo: {
+          provisioningStatus: 'active',
+        },
+      });
+      expect(
+        await pool.oneFirst(psql`
+          SELECT "provisioning_status"
+          FROM "users"
+          WHERE "id" = ${scimUser.body.id}
+        `),
+      ).toEqual('active');
+
+      const membersAfterConfirmation = await execute({
+        document: MembersBySCIMManagementConfirmationQuery,
+        variables: {
+          organizationId: org.organization.id,
+          needsSCIMManagementConfirmation: true,
+        },
+        authToken: owner.ownerToken,
+      }).then(r => r.expectNoGraphQLErrors());
+      expect(membersAfterConfirmation.organization).toMatchObject({
+        pendingSCIMManagementConfirmationsCount: 0,
+        members: {
+          edges: [],
+        },
+      });
+
+      const repeatedConfirmation = await confirmSCIMManagementForMember(
+        managementInput,
+        owner.ownerToken,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      expect(repeatedConfirmation.confirmSCIMManagementForMember).toEqual({
+        ok: null,
+        error: {
+          message: 'Pending SCIM provisioning conflict not found.',
+        },
       });
     } finally {
       await storage.destroy();
@@ -3861,6 +4006,120 @@ test.concurrent(
         emails: [ownerEmail],
       },
     });
+  },
+);
+
+test.concurrent(
+  'organization admin cannot bypass provisioning enforced by another organization',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const domain =
+      humanId({
+        separator: '',
+        capitalize: false,
+      }) + '.local';
+    const adminEmail = 'admin@' + domain;
+    const admin = await seed.createOwner(true, adminEmail);
+    await admin.createOrg();
+
+    const enforcingOwner = await seed.createOwner();
+    const enforcingOrg = await enforcingOwner.createOrg();
+    await enforcingOrg.setFeatureFlag('scim', true);
+    const oidc = await enforcingOrg.createOIDCIntegration();
+    await oidc.registerFakeDomain(domain);
+    await oidc.createMockServerAndUpdateIntegrationEndpoints({
+      oidcForVerifiedDomainsRequired: true,
+      userProvisioningRequired: true,
+    });
+
+    const response = await fetch(baseUrl + '/auth-api/signin', {
+      method: 'POST',
+      body: JSON.stringify({
+        formFields: [
+          { id: 'email', value: adminEmail },
+          { id: 'password', value: 'ilikebigturtlesandicannotlie47' },
+        ],
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    expect(response.status).toEqual(200);
+    expect(await response.json()).toMatchObject({
+      status: 'SIGN_IN_NOT_ALLOWED',
+    });
+  },
+);
+
+test.concurrent(
+  'organization admin can still sign in via a linked email/password identity if provisioning is enforced',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const domain =
+      humanId({
+        separator: '',
+        capitalize: false,
+      }) + '.local';
+    const ownerEmail = 'admin@' + domain;
+    const owner = await seed.createOwner(true, ownerEmail);
+    const org = await owner.createOrg();
+    await org.setFeatureFlag('scim', true);
+    const oidc = await org.createOIDCIntegration();
+    await oidc.registerFakeDomain(domain);
+    await oidc.createMockServerAndUpdateIntegrationEndpoints({
+      oidcForVerifiedDomainsRequired: true,
+      userProvisioningRequired: true,
+    });
+
+    const { pool } = await seed.createDbConnection();
+    const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
+    const oidcIdentity = await supertokensStore.createOIDCUser({
+      email: ownerEmail,
+      externalId: crypto.randomUUID(),
+      oidcIntegrationId: oidc.oidcIntegration.id,
+    });
+    const storage = await createStorage(seed.getPGConnectionString(), 1);
+
+    try {
+      const linkedUser = await storage.ensureUserExists({
+        email: ownerEmail,
+        firstName: null,
+        lastName: null,
+        oidcIntegration: oidc.oidcIntegration,
+        superTokensUserId: oidcIdentity.userId,
+      });
+      invariant(linkedUser.ok, 'Expected the OIDC identity to be linked to the owner.');
+
+      await pool.query(psql`
+        UPDATE "users"
+        SET "supertoken_user_id" = ${oidcIdentity.userId}
+        WHERE "id" = ${linkedUser.user.id}
+      `);
+
+      const response = await fetch(baseUrl + '/auth-api/signin', {
+        method: 'POST',
+        body: JSON.stringify({
+          formFields: [
+            { id: 'email', value: ownerEmail },
+            { id: 'password', value: 'ilikebigturtlesandicannotlie47' },
+          ],
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      expect(response.status).toEqual(200);
+      expect(await response.json()).toMatchObject({
+        status: 'OK',
+        user: {
+          emails: [ownerEmail],
+        },
+      });
+    } finally {
+      await storage.destroy();
+    }
   },
 );
 

@@ -320,7 +320,7 @@ export async function createStorage(
             )
             .then(UserModel.nullable().parse);
 
-          if (internalUser && internalUser.provisionedByOrganizationId !== null) {
+          if (internalUser && internalUser.provisioningStatus === 'active') {
             return {
               ok: true,
               user: internalUser,
@@ -4395,6 +4395,7 @@ export const userFields = (user: TaggedTemplateLiteralInvocation) => psql`
   , ${user}"oidc_integration_id" AS "oidcIntegrationId"
   , ${user}"zendesk_user_id" AS "zendeskId"
   , ${user}"provisioned_by_organization_id" AS "provisionedByOrganizationId"
+  , ${user}"provisioning_status" AS "provisioningStatus"
   , ${user}"external_id" AS "externalId"
   , to_json(${user}"deactivated_at") AS "deactivatedAt"
   , (
@@ -4693,6 +4694,7 @@ const MemberModel = z
     ),
     deactivatedAt: z.string().nullable(),
     provisionedByOrganizationId: z.string().nullable(),
+    provisioningStatus: z.enum(['pendingConfirmation', 'active']).nullable(),
     externalId: z.string().nullable(),
   })
   .transform(row => ({
@@ -4823,10 +4825,12 @@ const UserBase = z.object({
 export const UserModel = z.union([
   UserBase.extend({
     provisionedByOrganizationId: z.string().uuid(),
+    provisioningStatus: z.enum(['pendingConfirmation', 'active']),
     externalId: z.string(),
   }),
   UserBase.extend({
     provisionedByOrganizationId: z.null(),
+    provisioningStatus: z.null(),
     externalId: z.string().nullable(),
   }),
 ]);

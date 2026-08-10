@@ -52,7 +52,7 @@ const Callout = React.forwardRef<
       >
         {emoji}
       </div>
-      <div className="w-full min-w-0 leading-7">{children}</div>
+      <div>{children}</div>
     </div>
   );
 });
