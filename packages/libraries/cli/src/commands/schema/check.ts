@@ -16,7 +16,10 @@ import {
   UnexpectedError,
 } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
-import { loadSchemaFromGitHistory } from '../../helpers/git-schema-loader';
+import {
+  loadSchemaFromGitHistory,
+  parseBaseGitFileReference,
+} from '../../helpers/git-schema-loader';
 import {
   loadSchema,
   minifySchema,
@@ -155,10 +158,11 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
     commit: Flags.string({
       description: 'Associated commit sha',
     }),
-    baseRef: Flags.string({
+    base: Flags.string({
       description:
-        'Git commit containing the schema before the current change.\n' +
-        'When provided the file argument must be a file path to a single file that exists within that git sha and the current checked out revision.',
+        'File containing the schema before the current change.\n' +
+        'Base schema to compare against. Accepts a local file path or a file at a' +
+        'Git revision using `<revision>:<path>`.',
     }),
     contextId: Flags.string({
       description: 'Context ID for grouping the schema check.',
@@ -235,9 +239,27 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
 
       let minifiedBasSdl: string | null = null;
 
-      if (flags.baseRef) {
-        const result = loadSchemaFromGitHistory(schemaPointer, flags.baseRef);
-        if (result.error) {
+      if (flags.base) {
+        const basePointer = flags.base;
+        const gitResult = parseBaseGitFileReference(basePointer);
+        const result =
+          gitResult.status === 'error'
+            ? await loadSchema('first-federation-then-graphql-introspection', basePointer, {
+                logger: this.logger,
+              })
+                .catch(() => {
+                  throw new SchemaFileNotFoundError(
+                    basePointer,
+                    'Failed to retrieve the base schema from ' + basePointer,
+                  );
+                })
+                .then(sdl => ({
+                  status: 'ok' as const,
+                  sdl,
+                }))
+            : loadSchemaFromGitHistory(gitResult.filePath, gitResult.commit);
+
+        if (result.status === 'error') {
           switch (result.error.type) {
             case 'git':
               throw new SchemaFileNotFoundError(

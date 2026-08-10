@@ -5,19 +5,7 @@ function isGlobPath(path: string) {
   return globPattern.test(path);
 }
 
-const filePathPattern = 'file://';
-
 function parseSingleLocalFilePath(schemaPointer: string) {
-  if (schemaPointer.includes('://') && !schemaPointer.startsWith(filePathPattern)) {
-    return {
-      status: 'error' as const,
-      error: {
-        type: 'path' as const,
-        message: 'URL is not a local path.',
-      },
-    };
-  }
-
   if (isGlobPath(schemaPointer)) {
     return {
       status: 'error' as const,
@@ -30,9 +18,7 @@ function parseSingleLocalFilePath(schemaPointer: string) {
 
   return {
     status: 'ok' as const,
-    path: schemaPointer.startsWith(filePathPattern)
-      ? schemaPointer.substring(0, filePathPattern.length)
-      : schemaPointer,
+    path: schemaPointer,
   };
 }
 
@@ -60,11 +46,26 @@ function loadGitFile(commit: string, path: string) {
   }
 }
 
-export function loadSchemaFromGitHistory(schemaPointer: string, commit: string) {
-  const pathResult = parseSingleLocalFilePath(schemaPointer);
+export function loadSchemaFromGitHistory(filePointer: string, commit: string) {
+  const pathResult = parseSingleLocalFilePath(filePointer);
   if (pathResult.error) {
     return pathResult;
   }
   const fileResult = loadGitFile(commit, pathResult.path);
   return fileResult;
+}
+
+export function parseBaseGitFileReference(schemaPointer: string) {
+  const [maybeCommit, maybeFilePath, ...rest] = schemaPointer.split(':');
+  if (!maybeCommit || !maybeFilePath || rest.length) {
+    return {
+      status: 'error' as const,
+    };
+  }
+
+  return {
+    status: 'ok' as const,
+    commit: maybeCommit,
+    filePath: maybeFilePath,
+  };
 }
