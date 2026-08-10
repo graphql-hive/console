@@ -113,7 +113,7 @@ export class GroupMemberStore {
         "organization_id" = ${organizationId}
         AND "group_id" = ANY(${psql.array(groupIds, 'uuid')})
     `);
-    const records =  z.array(GroupMemberModel).parse(result);
+    const records = z.array(GroupMemberModel).parse(result);
     const groupMembersByGroupId = new Map<string, Array<GroupMember>>();
     for (const groupMember of records) {
       const members = groupMembersByGroupId.get(groupMember.groupId) ?? [];
@@ -121,7 +121,7 @@ export class GroupMemberStore {
       groupMembersByGroupId.set(groupMember.groupId, members);
     }
 
-    return groupMembersByGroupId
+    return groupMembersByGroupId;
   }
 
   async addGroupMembersToGroupByOrganizationIdAndGroupId(
