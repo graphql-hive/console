@@ -37,6 +37,9 @@ export const renderLaboratory = (el: HTMLElement, props: LaboratoryProps) => {
   return ReactDOM.createRoot(el).render(
     <Laboratory
       theme="dark"
+      // Standalone embedders have no other schema reference, so docs are on by
+      // default here. Spread last, `props` still wins.
+      enableDocs
       defaultEndpoint={
         getLocalStorage('endpoint') ?? window.location.origin + window.location.pathname
       }
