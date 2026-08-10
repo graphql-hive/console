@@ -65,6 +65,42 @@ const Row = (props: { onClick?: () => void; children: React.ReactNode; className
   </Button>
 );
 
+/**
+ * Descriptions are plain text here rather than markdown: the row is a button, and
+ * a rendered link inside one is both invalid and unclickable. The field view shows
+ * the full markdown.
+ */
+const FieldRow = (props: {
+  name: string;
+  type: unknown;
+  description?: string | null;
+  isDeprecated?: boolean;
+  onClick: () => void;
+}) => (
+  <Button
+    variant="ghost"
+    size="sm"
+    onClick={props.onClick}
+    className="h-auto w-full flex-col items-start gap-0.5 px-2 py-1.5 text-xs font-normal"
+  >
+    <div className="flex w-full items-center gap-1">
+      <span className="text-rose-400">{props.name}</span>
+      <span className="text-muted-foreground">:</span>
+      <GraphQLType type={props.type as never} />
+      {props.isDeprecated ? (
+        <Badge variant="outline" className="text-muted-foreground ml-auto">
+          Deprecated
+        </Badge>
+      ) : null}
+    </div>
+    {props.description ? (
+      <span className="text-muted-foreground line-clamp-2 whitespace-normal text-left">
+        {props.description}
+      </span>
+    ) : null}
+  </Button>
+);
+
 const TypeRow = (props: { type: unknown; onNavigate: (name: string) => void }) => {
   const named = namedTypeOf(props.type);
 
@@ -90,9 +126,7 @@ const ArgumentRow = (props: { arg: GraphQLArgument; onNavigate: (name: string) =
       )}
     </div>
     <Description description={props.arg.description} />
-    {props.arg.deprecationReason ? (
-      <DeprecationBadge reason={props.arg.deprecationReason} />
-    ) : null}
+    {props.arg.deprecationReason ? <DeprecationBadge reason={props.arg.deprecationReason} /> : null}
   </div>
 );
 
@@ -163,18 +197,21 @@ export const Docs = () => {
     }
 
     const roots = [
-      { label: 'Query', type: schema.getQueryType() },
-      { label: 'Mutation', type: schema.getMutationType() },
-      { label: 'Subscription', type: schema.getSubscriptionType() },
+      { label: 'query', type: schema.getQueryType() },
+      { label: 'mutation', type: schema.getMutationType() },
+      { label: 'subscription', type: schema.getSubscriptionType() },
     ].filter(root => root.type);
 
     return (
       <Section title="Root types">
         {roots.map(root => (
-          <Row key={root.label} onClick={() => goToType(root.type!.name)}>
-            <span className="text-muted-foreground">{root.label}:</span>
-            <span className="text-amber-400">{root.type!.name}</span>
-          </Row>
+          <FieldRow
+            key={root.label}
+            name={root.label}
+            type={root.type!}
+            description={root.type!.description}
+            onClick={() => goToType(root.type!.name)}
+          />
         ))}
       </Section>
     );
@@ -190,16 +227,14 @@ export const Docs = () => {
         sections.push(
           <Section key="fields" title="Fields">
             {fields.map(field => (
-              <Row key={field.name} onClick={() => goToField(type.name, field.name)}>
-                <span className="text-rose-400">{field.name}</span>
-                <span className="text-muted-foreground">:</span>
-                <GraphQLType type={field.type} />
-                {'deprecationReason' in field && field.deprecationReason ? (
-                  <Badge variant="outline" className="text-muted-foreground ml-auto">
-                    Deprecated
-                  </Badge>
-                ) : null}
-              </Row>
+              <FieldRow
+                key={field.name}
+                name={field.name}
+                type={field.type}
+                description={field.description}
+                isDeprecated={!!field.deprecationReason}
+                onClick={() => goToField(type.name, field.name)}
+              />
             ))}
           </Section>,
         );
@@ -223,7 +258,7 @@ export const Docs = () => {
     }
 
     if (isUnionType(type) || isInterfaceType(type)) {
-      const possible = isUnionType(type) ? type.getTypes() : schema?.getPossibleTypes(type) ?? [];
+      const possible = isUnionType(type) ? type.getTypes() : (schema?.getPossibleTypes(type) ?? []);
 
       if (possible.length > 0) {
         sections.push(

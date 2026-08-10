@@ -1,6 +1,7 @@
 import {
   ReactNode,
   useCallback,
+  useEffect,
   useInsertionEffect,
   useLayoutEffect,
   useMemo,
@@ -15,6 +16,7 @@ import * as z from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useCollections } from '../../lib/collections';
 import { useDocs } from '../../lib/docs';
+import { registerDocsHover } from '../../lib/docs-hover';
 import { ensureDocumentFontFaces } from '../../lib/document-styles';
 import { useEndpoint } from '../../lib/endpoint';
 import { useEnv } from '../../lib/env';
@@ -60,7 +62,6 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resi
 import { Toaster } from '../ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { Collections } from './collections';
-import { Docs } from './docs';
 import { Command } from './command';
 import {
   LaboratoryPermission,
@@ -69,6 +70,7 @@ import {
   useLaboratory,
   type LaboratoryApi,
 } from './context';
+import { Docs } from './docs';
 import { Env } from './env';
 import { History } from './history';
 import { HistoryItem } from './history-item';
@@ -228,9 +230,27 @@ const LaboratoryContent = () => {
     activePanel,
     setActivePanel,
     enableDocs,
+    openDocs,
+    schema,
   } = useLaboratory();
   const laboratory = useLaboratory();
   const [commandOpen, setCommandOpen] = useState(false);
+
+  // Read through a ref so a schema poll does not tear down and re-register the
+  // provider, which would drop an open hover.
+  const schemaRef = useRef(schema);
+  schemaRef.current = schema;
+
+  useEffect(() => {
+    if (!enableDocs) {
+      return;
+    }
+
+    return registerDocsHover({
+      getSchema: () => schemaRef.current ?? null,
+      openDocs,
+    });
+  }, [enableDocs, openDocs]);
 
   const contentNode = useMemo(() => {
     switch (activeTab?.type) {

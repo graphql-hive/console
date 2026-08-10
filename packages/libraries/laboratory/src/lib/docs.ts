@@ -1,6 +1,20 @@
 import { useCallback, useState } from 'react';
+import {
+  getNamedType,
+  isInterfaceType,
+  isObjectType,
+  type GraphQLField,
+  type GraphQLNamedType,
+  type GraphQLSchema,
+} from 'graphql';
 
-export type LaboratoryActivePanel = 'collections' | 'history' | 'docs' | 'tests' | 'settings' | null;
+export type LaboratoryActivePanel =
+  | 'collections'
+  | 'history'
+  | 'docs'
+  | 'tests'
+  | 'settings'
+  | null;
 
 /**
  * Targets are held by name rather than by schema object: a poll or an endpoint
@@ -10,6 +24,52 @@ export type LaboratoryActivePanel = 'collections' | 'history' | 'docs' | 'tests'
 export type LaboratoryDocsTarget =
   | { kind: 'type'; name: string }
   | { kind: 'field'; typeName: string; fieldName: string };
+
+/**
+ * Builder rows identify a field by its dotted path from an operation root
+ * (`query.me.id`), which carries no parent type. Walking it back to one is what
+ * lets a row open the field it actually represents rather than its return type.
+ */
+export const docsTargetFromPath = (
+  path: string[],
+  schema: GraphQLSchema | null,
+): LaboratoryDocsTarget | null => {
+  const [operation, ...segments] = path;
+
+  if (!schema || segments.length === 0) {
+    return null;
+  }
+
+  let type: GraphQLNamedType | null | undefined =
+    operation === 'query'
+      ? schema.getQueryType()
+      : operation === 'mutation'
+        ? schema.getMutationType()
+        : operation === 'subscription'
+          ? schema.getSubscriptionType()
+          : null;
+
+  for (let i = 0; i < segments.length; i++) {
+    if (!type || (!isObjectType(type) && !isInterfaceType(type))) {
+      return null;
+    }
+
+    const parentName = type.name;
+    const field: GraphQLField<unknown, unknown> | undefined = type.getFields()[segments[i]];
+
+    if (!field) {
+      return null;
+    }
+
+    if (i === segments.length - 1) {
+      return { kind: 'field', typeName: parentName, fieldName: field.name };
+    }
+
+    type = getNamedType(field.type);
+  }
+
+  return null;
+};
 
 export interface LaboratoryDocsState {
   activePanel: LaboratoryActivePanel;

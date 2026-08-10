@@ -1,6 +1,63 @@
 // @vitest-environment happy-dom
+import { buildSchema } from 'graphql';
 import { act, renderHook } from '@testing-library/react';
-import { useDocs } from './docs';
+import { docsTargetFromPath, useDocs } from './docs';
+
+const schema = buildSchema(`
+  interface Node { id: ID! }
+  type Address { city: String }
+  type Profile implements Node { id: ID!, address: Address }
+  type User implements Node { id: ID!, profile: Profile }
+  type Query { me: User }
+  type Mutation { signIn: User }
+`);
+
+describe('docsTargetFromPath', () => {
+  it('resolves a root field to its operation type', () => {
+    expect(docsTargetFromPath(['query', 'me'], schema)).toEqual({
+      kind: 'field',
+      typeName: 'Query',
+      fieldName: 'me',
+    });
+  });
+
+  it('resolves a nested field to its immediate parent type', () => {
+    expect(docsTargetFromPath(['query', 'me', 'profile', 'address'], schema)).toEqual({
+      kind: 'field',
+      typeName: 'Profile',
+      fieldName: 'address',
+    });
+  });
+
+  it('walks through interfaces', () => {
+    expect(docsTargetFromPath(['query', 'me', 'profile', 'id'], schema)).toEqual({
+      kind: 'field',
+      typeName: 'Profile',
+      fieldName: 'id',
+    });
+  });
+
+  it('resolves mutation roots', () => {
+    expect(docsTargetFromPath(['mutation', 'signIn'], schema)).toEqual({
+      kind: 'field',
+      typeName: 'Mutation',
+      fieldName: 'signIn',
+    });
+  });
+
+  it('returns null for an unknown field', () => {
+    expect(docsTargetFromPath(['query', 'nope'], schema)).toBeNull();
+  });
+
+  it('returns null for an operation the schema does not define', () => {
+    expect(docsTargetFromPath(['subscription', 'anything'], schema)).toBeNull();
+  });
+
+  it('returns null without a schema or a field segment', () => {
+    expect(docsTargetFromPath(['query', 'me'], null)).toBeNull();
+    expect(docsTargetFromPath(['query'], schema)).toBeNull();
+  });
+});
 
 describe('useDocs', () => {
   it('starts on the root view', () => {

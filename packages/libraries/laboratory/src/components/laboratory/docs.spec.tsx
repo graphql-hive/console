@@ -15,7 +15,11 @@ const schema = buildSchema(`
     id: ID!
     displayName: String
   }
-  type Query { me: User }
+  type Query {
+    "The currently authenticated user."
+    me: User
+    anonymous: String
+  }
 `);
 
 const mount = (state: Record<string, unknown>) => {
@@ -35,7 +39,23 @@ describe('Docs', () => {
   it('lists the root operation types when the stack is empty', () => {
     mount({});
 
-    expect(screen.getByText('Query')).toBeDefined();
+    expect(screen.getByText('query')).toBeDefined();
+    expect(screen.getByText('Root types')).toBeDefined();
+  });
+
+  // Without this the type view is a bare list of names, which reads as "descriptions
+  // are broken" even when the schema has them.
+  it('shows field descriptions inline in the type view, without clicking through', () => {
+    mount({ docsNavStack: [{ kind: 'type', name: 'Query' }] });
+
+    expect(screen.getByText('The currently authenticated user.')).toBeDefined();
+  });
+
+  it('omits the inline description for fields that have none', () => {
+    mount({ docsNavStack: [{ kind: 'type', name: 'Query' }] });
+
+    expect(screen.getByText('anonymous')).toBeDefined();
+    expect(screen.queryByText('undefined')).toBeNull();
   });
 
   it('renders a description when the field has one', () => {

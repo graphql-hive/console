@@ -707,6 +707,9 @@ importers:
       dompurify:
         specifier: 3.4.12
         version: 3.4.12
+      graphql-language-service:
+        specifier: ^5.5.0
+        version: 5.5.0(graphql@16.14.2)
       radix-ui:
         specifier: ^1.4.3
         version: 1.4.3(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -18476,10 +18479,6 @@ packages:
   toucan-js@4.1.0:
     resolution: {integrity: sha512-KaD6yfjFuOiFfKccvJ95EICwxus+g2mfPUHyxfPCq7yzsEg5Qi2wpym0cxsZI7oS4t3S7/HwL1v+2TW5/pGAUA==}
 
-  tough-cookie@6.0.0:
-    resolution: {integrity: sha512-kXuRi1mtaKMrsLUxz3sQYvVl37B0Ns6MzfrtV5DvJceE9bPyspOqk9xxv7XbZWcfLWbFmm997vl83qUWVJA64w==}
-    engines: {node: '>=16'}
-
   tough-cookie@6.0.2:
     resolution: {integrity: sha512-exgYmnmL/sJpR3upZfXG5PoatXQii55xAiXGXzY+sROLZ/Y+SLcp9PgJNI9Vz37HpQ74WvDcLT8eqm+kV3FzrA==}
     engines: {node: '>=16'}
@@ -22216,7 +22215,7 @@ snapshots:
       framer-motion: 10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       get-value: 3.0.1
       graphql: 16.9.0
-      graphql-language-service: 5.3.0(graphql@16.9.0)
+      graphql-language-service: 5.5.0(graphql@16.9.0)
       markdown-it: 14.2.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -38119,7 +38118,7 @@ snapshots:
       rettime: 0.7.0
       statuses: 2.0.2
       strict-event-emitter: 0.5.1
-      tough-cookie: 6.0.0
+      tough-cookie: 6.0.2
       type-fest: 5.4.2
       until-async: 3.0.2
       yargs: 17.7.2
@@ -38145,7 +38144,7 @@ snapshots:
       rettime: 0.7.0
       statuses: 2.0.2
       strict-event-emitter: 0.5.1
-      tough-cookie: 6.0.0
+      tough-cookie: 6.0.2
       type-fest: 5.4.2
       until-async: 3.0.2
       yargs: 17.7.2
@@ -40854,11 +40853,6 @@ snapshots:
       '@sentry/core': 8.9.2
       '@sentry/types': 8.9.2
       '@sentry/utils': 8.9.2
-
-  tough-cookie@6.0.0:
-    dependencies:
-      tldts: 7.0.19
-    optional: true
 
   tough-cookie@6.0.2:
     dependencies:

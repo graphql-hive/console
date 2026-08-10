@@ -12,10 +12,11 @@ import {
 
 const mapGraphiQLOptionsToLaboratoryProps = (opts?: GraphiQLOptions): LaboratoryProps => {
   if (!opts) {
-    return {};
+    return { enableDocs: true };
   }
 
   return {
+    enableDocs: true,
     defaultSettings: {
       fetch: {
         credentials: opts.credentials ?? 'same-origin',
