@@ -86,7 +86,7 @@ export class OrganizationAccessTokensCache {
         accessToken.userId,
       );
 
-      if (provisionedUser?.deactivatedAt) {
+      if (provisionedUser?.provisioningStatus === 'active' && provisionedUser.deactivatedAt) {
         logger.debug('user is disabled');
         return null;
       }
@@ -102,7 +102,7 @@ export class OrganizationAccessTokensCache {
         return null;
       }
 
-      if (provisionedUser) {
+      if (provisionedUser?.provisioningStatus === 'active') {
         const mappings = await Groups.getAllGroupMembershipsWithRoleForOrganizationMembership(
           logger,
           this.pool,

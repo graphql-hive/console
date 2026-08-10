@@ -610,6 +610,7 @@ export interface users {
   last_updated_at: Date | null;
   oidc_integration_id: string | null;
   provisioned_by_organization_id: string | null;
+  provisioning_status: string | null;
   supertoken_user_id: string | null;
   zendesk_user_id: string | null;
 }
