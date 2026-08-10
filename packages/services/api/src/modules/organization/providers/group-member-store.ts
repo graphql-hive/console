@@ -102,6 +102,28 @@ export class GroupMemberStore {
     return z.array(GroupMemberModel).parse(result);
   }
 
+  async getGroupMembersForOrganizationIdAndGroupIds(
+    organizationId: string,
+    groupIds: Array<string>,
+  ) {
+    const result = await this.pool.any(psql`
+      SELECT ${groupMemberFields}
+      FROM "group_members"
+      WHERE
+        "organization_id" = ${organizationId}
+        AND "group_id" = ANY(${psql.array(groupIds, 'uuid')})
+    `);
+    const records =  z.array(GroupMemberModel).parse(result);
+    const groupMembersByGroupId = new Map<string, Array<GroupMember>>();
+    for (const groupMember of records) {
+      const members = groupMembersByGroupId.get(groupMember.groupId) ?? [];
+      members.push(groupMember);
+      groupMembersByGroupId.set(groupMember.groupId, members);
+    }
+
+    return groupMembersByGroupId
+  }
+
   async addGroupMembersToGroupByOrganizationIdAndGroupId(
     organizationId: string,
     groupId: string,

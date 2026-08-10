@@ -2922,6 +2922,67 @@ describe.concurrent('/Groups', () => {
     });
   });
   describe.concurrent('GET', () => {
+    test.concurrent(
+      'lists members by default and excludes them when requested',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const owner = await seed.createOwner();
+        const org = await owner.createOrg();
+        await org.setFeatureFlag('scim', true);
+        const oidc = await org.createOIDCIntegration();
+        const domain = await oidc.registerFakeDomain();
+        const accessToken = await org.createOrganizationAccessToken({
+          permissions: ['scim:provision'],
+          resources: { mode: ResourceAssignmentModeType.Granular },
+        });
+        const scim = createScimTestkit({
+          baseUrl,
+          headers: {
+            'Content-Type': 'application/scim+json',
+            Authorization: 'Bearer ' + accessToken.privateAccessKey,
+          },
+        });
+        const user = await scim
+          .createUser({
+            ...newUserValues(),
+            emails: [{ primary: true, type: 'work', value: 'listed-member@' + domain }],
+          })
+          .then(response => response.body);
+        const group = await scim
+          .createGroup({
+            ...newGroupValues(),
+            displayName: 'Group with listed member',
+            members: [{ value: user.id }],
+          })
+          .then(response => response.body);
+        const expectedMembers = [
+          {
+            value: user.id,
+            $ref: baseUrl + '/scim/v2/Users/' + user.id,
+          },
+        ];
+
+        const listResponse = await scim.listGroups();
+        expect(listResponse.body.Resources).toContainEqual(
+          expect.objectContaining({ id: group.id, members: expectedMembers }),
+        );
+
+        const filteredResponse = await scim.listGroups({
+          filter: `id eq "${group.id}"`,
+        });
+        expect(filteredResponse.body.Resources[0]?.members).toEqual(expectedMembers);
+
+        const excludedListResponse = await scim.listGroups({ excludedAttributes: 'members' });
+        expect(excludedListResponse.body.Resources[0]).not.toHaveProperty('members');
+
+        const excludedFilteredResponse = await scim.listGroups({
+          filter: `id eq "${group.id}"`,
+          excludedAttributes: 'members',
+        });
+        expect(excludedFilteredResponse.body.Resources[0]).not.toHaveProperty('members');
+      },
+    );
+
     test.concurrent('excludes members when requested', async ({ expect }) => {
       const seed = initSeed();
       const owner = await seed.createOwner();
