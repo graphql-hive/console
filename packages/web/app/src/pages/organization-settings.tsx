@@ -11,7 +11,6 @@ import { PersonalAccessTokensSubPage } from '@/components/organization/settings/
 import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { DocsLink } from '@/components/ui/docs-note';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
@@ -275,22 +273,16 @@ const OrganizationSettingsContent = (props: {
               <SubPageLayoutHeader
                 subPageTitle="Organization Slug"
                 description={
-                  <>
-                    <CardDescription>
-                      This is your organization's URL namespace on Hive Console. Changing it{' '}
-                      <span className="font-bold">will</span> invalidate any existing links to your
-                      organization.
-                    </CardDescription>
-                    <CardDescription>
-                      <DocsLink
-                        className="text-neutral-10 text-sm"
-                        href="/schema-registry/management/organizations#change-slug-of-organization"
-                      >
-                        You can read more about it in the documentation
-                      </DocsLink>
-                    </CardDescription>
-                  </>
+                  <p>
+                    This is your organization's URL namespace on Hive Console. Changing it{' '}
+                    <span className="font-bold">will invalidate</span> any existing links to your
+                    organization.
+                  </p>
                 }
+                docsLink={{
+                  href: '/schema-registry/management/organizations#change-slug-of-organization',
+                  text: 'Read more in the documentation',
+                }}
               />
               <FormField
                 control={slugForm.control}
@@ -321,21 +313,11 @@ const OrganizationSettingsContent = (props: {
         <SubPageLayout>
           <SubPageLayoutHeader
             subPageTitle="Slack Integration"
-            description={
-              <>
-                <CardDescription>
-                  Link your Hive organization with Slack for schema change notifications.
-                </CardDescription>
-                <CardDescription>
-                  <DocsLink
-                    className="text-neutral-10 text-sm"
-                    href="/schema-registry/management/organizations#slack"
-                  >
-                    Learn more.
-                  </DocsLink>
-                </CardDescription>
-              </>
-            }
+            description="Link your Hive organization with Slack for schema change notifications."
+            docsLink={{
+              href: '/schema-registry/management/organizations#slack',
+              text: 'Learn more.',
+            }}
           />
           <SlackIntegrationSection organization={organization} />
         </SubPageLayout>
@@ -345,19 +327,11 @@ const OrganizationSettingsContent = (props: {
         <SubPageLayout>
           <SubPageLayoutHeader
             subPageTitle="GitHub Integration"
-            description={
-              <>
-                <CardDescription>Link your Hive organization with GitHub.</CardDescription>
-                <CardDescription>
-                  <DocsLink
-                    className="text-neutral-10 text-sm"
-                    href="/schema-registry/management/organizations#github"
-                  >
-                    Learn more.
-                  </DocsLink>
-                </CardDescription>
-              </>
-            }
+            description="Link your Hive organization with GitHub."
+            docsLink={{
+              href: '/schema-registry/management/organizations#github',
+              text: 'Learn more.',
+            }}
           />
           <GitHubIntegrationSection organization={organization} />
         </SubPageLayout>
@@ -368,21 +342,15 @@ const OrganizationSettingsContent = (props: {
           <SubPageLayoutHeader
             subPageTitle="Transfer Ownership"
             description={
-              <>
-                <CardDescription>
-                  <strong>You are currently the owner of the organization.</strong> You can transfer
-                  the organization to another member of the organization, or to an external user.
-                </CardDescription>
-                <CardDescription>
-                  <DocsLink
-                    className="text-neutral-10 text-sm"
-                    href="/schema-registry/management/organizations#transfer-ownership"
-                  >
-                    Learn more about the process
-                  </DocsLink>
-                </CardDescription>
-              </>
+              <p>
+                <strong>You are currently the owner of the organization.</strong> You can transfer
+                the organization to another member of the organization, or to an external user.
+              </p>
             }
+            docsLink={{
+              href: '/schema-registry/management/organizations#transfer-ownership',
+              text: 'Learn more about the process',
+            }}
           />
           <Button variant="destructive" onClick={toggleTransferModalOpen} className="px-5">
             Transfer Ownership
@@ -400,24 +368,15 @@ const OrganizationSettingsContent = (props: {
           <SubPageLayoutHeader
             subPageTitle="Delete Organization"
             description={
-              <>
-                <CardDescription>
-                  Deleting an organization will delete all the projects, targets, schemas and data
-                  associated with it.
-                </CardDescription>
-                <CardDescription>
-                  <DocsLink
-                    className="text-neutral-10 text-sm"
-                    href="/schema-registry/management/organizations#delete-an-organization"
-                  >
-                    <span>
-                      <strong>This action is not reversible!</strong> You can find more information
-                      about this process in the documentation
-                    </span>
-                  </DocsLink>
-                </CardDescription>
-              </>
+              <p>
+                Deleting an organization will delete all the projects, targets, schemas and data
+                associated with it. <strong>This action is not reversible!</strong>
+              </p>
             }
+            docsLink={{
+              href: '/schema-registry/management/organizations#delete-an-organization',
+              text: 'You can find more information about this process in the documentation',
+            }}
           />
           <Button variant="destructive" onClick={toggleDeleteModalOpen} className="px-5">
             Delete Organization
@@ -434,21 +393,11 @@ const OrganizationSettingsContent = (props: {
         <SubPageLayout>
           <SubPageLayoutHeader
             subPageTitle="Audit Logs"
-            description={
-              <>
-                <CardDescription>
-                  View a history of changes made to the organization settings.
-                </CardDescription>
-                <CardDescription>
-                  <DocsLink
-                    className="text-neutral-10 text-sm"
-                    href="/schema-registry/management/audit-logs"
-                  >
-                    Learn more.
-                  </DocsLink>
-                </CardDescription>
-              </>
-            }
+            description="View a history of changes made to the organization settings."
+            docsLink={{
+              href: '/schema-registry/management/audit-logs',
+              text: 'Learn more',
+            }}
           />
           <Button variant="default" onClick={toggleAuditLogsModalOpen} className="px-5">
             Export Audit Logs
@@ -521,17 +470,11 @@ function OrganizationPolicySettings(props: {
     <SubPageLayout>
       <SubPageLayoutHeader
         subPageTitle="Rules"
-        description={
-          <CardDescription>
-            At the organizational level, policies can be defined to affect all projects and targets.
-            <br />
-            At the project level, policies can be overridden or extended.
-            <br />
-            <DocsLink className="text-neutral-10" href="/features/schema-policy">
-              Learn more
-            </DocsLink>
-          </CardDescription>
-        }
+        description="At the organizational level, policies can be defined to affect all projects and targets. At the project level, policies can be overridden or extended."
+        docsLink={{
+          href: '/features/schema-policy',
+          text: 'Learn more',
+        }}
       />
       <PolicySettings
         saving={mutation.fetching}

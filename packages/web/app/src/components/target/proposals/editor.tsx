@@ -1,7 +1,6 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -407,11 +406,7 @@ export function ProposalEditor(props: {
                     {!!service.service && (
                       <SubPageLayoutHeader
                         subPageTitle="Settings"
-                        description={
-                          <CardDescription className="pb-4">
-                            Additional service configuration
-                          </CardDescription>
-                        }
+                        description={<p className="pb-4">Additional service configuration</p>}
                       />
                     )}
                     <div className="my-2 font-semibold">Service URL</div>

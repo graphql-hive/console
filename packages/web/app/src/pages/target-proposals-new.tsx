@@ -20,7 +20,6 @@ import {
 import { schemaTitle } from '@/components/target/proposals/util';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
@@ -145,11 +144,7 @@ function ProposalsNewHeading(props: Parameters<typeof TargetProposalsNewPage>[0]
               <span className="text-neutral-10 inline-block px-2 italic">/</span> New
             </span>
           }
-          description={
-            <CardDescription>
-              Collaborate on schema changes to reduce friction during development.
-            </CardDescription>
-          }
+          description="Collaborate on schema changes to reduce friction during development."
         />
       </div>
     </div>
@@ -206,9 +201,9 @@ function ConfirmationModal(props: {
       <SubPageLayoutHeader
         subPageTitle="Issues Found"
         description={
-          <CardDescription className="pb-4">
+          <p className="pb-4">
             The proposed changes are invalid but can be automatically corrected.
-          </CardDescription>
+          </p>
         }
       />
       <Table>

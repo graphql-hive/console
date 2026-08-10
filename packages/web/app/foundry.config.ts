@@ -3,7 +3,10 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  previews: 'src/components/base/**/*.preview.tsx',
+  // Widened past `base/` so real app components can be previewed too, not just design-system
+  // primitives. Previews of app components render inside the stand-in router in
+  // `foundry.router.tsx` and stand in for query data with `makeFragmentData`.
+  previews: 'src/components/**/*.preview.tsx',
   title: 'Hive Console Components',
   // Declaration order is display order, so this groups the shelf by kind rather than
   // alphabetically. It also narrows `NavPath` to these exact paths, which turns a typo in
@@ -47,6 +50,17 @@ export default defineConfig({
         { label: 'DataTable' },
         { label: 'DescriptionList' },
         { label: 'PageLead' },
+      ],
+    },
+    // Temporary. Working notes for the Card consolidation; delete this group and
+    // src/components/base/migration/ once ui/card and v2/card are gone.
+    {
+      label: 'Migration',
+      children: [
+        { label: 'Inventory', children: [{ label: 'Card' }] },
+        // Real app components reproduced with stub data, so a call site can be checked
+        // without running Hive locally.
+        { label: 'Live', children: [{ label: 'ProjectCard' }] },
       ],
     },
   ],

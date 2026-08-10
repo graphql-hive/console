@@ -310,9 +310,10 @@ export const ExternalCompositionSettings = (props: {
           For advanced users, you can configure an endpoint for external schema compositions. This
           can be used to implement custom composition logic.
         </p>
-        <ProductUpdatesLink href="https://the-guild.dev/graphql/hive/docs/features/external-schema-composition">
-          Read about external schema composition in our documentation.
-        </ProductUpdatesLink>
+        <ProductUpdatesLink
+          href="https://the-guild.dev/graphql/hive/docs/features/external-schema-composition"
+          text="Read about external schema composition in our documentation."
+        />
       </div>
       <div className="flex justify-between">
         <Form {...form}>

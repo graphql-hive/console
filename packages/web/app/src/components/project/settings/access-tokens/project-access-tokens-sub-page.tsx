@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useQuery } from 'urql';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
-import { DocsLink } from '@/components/ui/docs-note';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { graphql } from '@/gql';
@@ -55,23 +53,11 @@ export function ProjectAccessTokensSubPage(
     <SubPageLayout>
       <SubPageLayoutHeader
         subPageTitle="Access Tokens"
-        description={
-          <>
-            <CardDescription>
-              These are the access tokens created for this project. Members with permissions can
-              manage and issues access tokens for CI/CD integrations with the CLI or local
-              development.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/access-tokens"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                Learn more about Access Tokens
-              </DocsLink>
-            </CardDescription>
-          </>
-        }
+        description="These are the access tokens created for this project. Members with permissions can manage and issues access tokens for CI/CD integrations with the CLI or local development."
+        docsLink={{
+          href: '/schema-registry/management/access-tokens',
+          text: 'Learn more about Access Tokens',
+        }}
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
         <Sheet
