@@ -9,11 +9,12 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import laboratoryStyles from '../../index.css?inline';
-import { FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from 'lucide-react';
+import { BookOpenIcon, FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from 'lucide-react';
 import monacoStyles from 'monaco-editor/min/vs/editor/editor.main.css?inline';
 import * as z from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useCollections } from '../../lib/collections';
+import { useDocs } from '../../lib/docs';
 import { ensureDocumentFontFaces } from '../../lib/document-styles';
 import { useEndpoint } from '../../lib/endpoint';
 import { useEnv } from '../../lib/env';
@@ -59,6 +60,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resi
 import { Toaster } from '../ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { Collections } from './collections';
+import { Docs } from './docs';
 import { Command } from './command';
 import {
   LaboratoryPermission,
@@ -215,7 +217,6 @@ const LaboratoryContent = () => {
   const {
     activeTab,
     addOperation,
-    collections,
     addTab,
     setActiveTab,
     preflight,
@@ -224,11 +225,11 @@ const LaboratoryContent = () => {
     plugins,
     pluginsState,
     setPluginsState,
+    activePanel,
+    setActivePanel,
+    enableDocs,
   } = useLaboratory();
   const laboratory = useLaboratory();
-  const [activePanel, setActivePanel] = useState<
-    'collections' | 'history' | 'tests' | 'settings' | null
-  >(collections.length > 0 ? 'collections' : null);
   const [commandOpen, setCommandOpen] = useState(false);
 
   const contentNode = useMemo(() => {
@@ -360,6 +361,32 @@ const LaboratoryContent = () => {
           </TooltipTrigger>
           <TooltipContent side="right">History</TooltipContent>
         </Tooltip>
+        {enableDocs ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className={cn(
+                  'relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
+                  {
+                    'border-primary': activePanel === 'docs',
+                  },
+                )}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setActivePanel(activePanel === 'docs' ? null : 'docs')}
+                  className={cn('text-muted-foreground hover:text-foreground', {
+                    'text-foreground': activePanel === 'docs',
+                  })}
+                >
+                  <BookOpenIcon className="size-5" />
+                </Button>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right">Documentation</TooltipContent>
+          </Tooltip>
+        ) : null}
         <div
           className={cn(
             'z-100 relative mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
@@ -445,6 +472,7 @@ const LaboratoryContent = () => {
         <ResizablePanel minSize={10} defaultSize={17} hidden={!activePanel} className="border-l">
           {activePanel === 'collections' && <Collections />}
           {activePanel === 'history' && <History />}
+          {activePanel === 'docs' && <Docs />}
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel minSize={10} defaultSize={83} className="flex flex-col">
@@ -537,6 +565,9 @@ export const Laboratory = (
   const collectionsApi = useCollections({
     ...props,
     tabsApi,
+  });
+  const docsApi = useDocs({
+    defaultActivePanel: collectionsApi.collections.length > 0 ? 'collections' : null,
   });
   const operationsApi = useOperations({
     ...props,
@@ -688,6 +719,7 @@ export const Laboratory = (
           {...collectionsApi}
           {...operationsApi}
           {...historyApi}
+          {...docsApi}
           container={container}
           openAddCollectionDialog={openAddCollectionDialog}
           openUpdateEndpointDialog={openUpdateEndpointDialog}

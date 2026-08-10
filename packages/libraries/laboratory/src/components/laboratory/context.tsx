@@ -6,6 +6,7 @@ import {
   type LaboratoryCollectionsActions,
   type LaboratoryCollectionsState,
 } from '../../lib/collections';
+import type { LaboratoryDocsActions, LaboratoryDocsState } from '../../lib/docs';
 import { type LaboratoryEndpointActions, type LaboratoryEndpointState } from '../../lib/endpoint';
 import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '../../lib/env';
 import type {
@@ -45,6 +46,7 @@ type LaboratoryContextState = LaboratoryCollectionsState &
   LaboratoryEnvState &
   LaboratorySettingsState &
   LaboratoryPluginsState &
+  LaboratoryDocsState &
   LaboratoryTestState & {
     isFullScreen?: boolean;
     enableFullScreen?: boolean;
@@ -60,6 +62,7 @@ type LaboratoryContextActions = LaboratoryCollectionsActions &
   LaboratoryEnvActions &
   LaboratorySettingsActions &
   LaboratoryPluginsActions &
+  LaboratoryDocsActions &
   LaboratoryTestActions & {
     openAddCollectionDialog?: () => void;
     openUpdateEndpointDialog?: () => void;

@@ -6,6 +6,7 @@ export * from './components/laboratory/context';
 export * from './components/laboratory/editor';
 export * from './components/ui/dialog';
 export * from './components/ui/tabs';
+export * from './lib/docs';
 export * from './lib/endpoint';
 export * from './lib/collections';
 export * from './lib/env';
