@@ -64,8 +64,10 @@ function useGitHubAction(): CIRunner {
         process.env.GITHUB_EVENT_NAME === 'pull_request' ||
         // eslint-disable-next-line no-process-env
         process.env.GITHUB_EVENT_NAME === 'pull_request_target';
+      // eslint-disable-next-line no-process-env
+      const isMergeGroup = process.env.GITHUB_EVENT_NAME === 'merge_group';
 
-      if (isPr) {
+      if (isPr || isMergeGroup) {
         try {
           // eslint-disable-next-line no-process-env
           const event = process.env.GITHUB_EVENT_PATH
@@ -76,6 +78,10 @@ function useGitHubAction(): CIRunner {
           if (event?.pull_request) {
             commit = event.pull_request.head.sha as string;
             pullRequestNumber = String(event.pull_request.number);
+          } else if (event?.merge_group) {
+            commit = event.merge_group.head_sha as string;
+            const match = event.merge_group.head_ref?.match(/\/pr-(\d+)-/);
+            pullRequestNumber = match?.[1] ?? null;
           }
         } catch {
           // Noop
