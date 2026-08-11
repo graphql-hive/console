@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import {
   isValidEnvValue,
   PREFLIGHT_TIMEOUT,
+  readLineAndColumn,
   runIsolatedLabScript,
   usePreflight,
   usePreflightPrompt,
@@ -113,6 +114,30 @@ describe('runIsolatedLabScript', () => {
   });
 });
 
+describe('readLineAndColumn', () => {
+  // Shape verified against V8: the script starts three lines into the generated function.
+  const stack = 'Error: boom\n    at eval (eval at <anonymous> ([eval]:4:12), <anonymous>:5:7)';
+
+  it('maps a frame back onto the script', () => {
+    expect(readLineAndColumn(stack)).toEqual({ line: 2, column: 7 });
+  });
+
+  // `console.log('hi')` on script line 2 reports column 9, pointing at `log` rather than the
+  // start of the statement; the offset walks it back.
+  it('applies the column offset to a console frame', () => {
+    const consoleFrame = 'Error\n    at eval (eval at <anonymous> ([eval]:4:12), <anonymous>:5:9)';
+
+    expect(readLineAndColumn(consoleFrame, 'console.'.length)).toEqual({ line: 2, column: 1 });
+  });
+
+  it.each([undefined, 'Error: boom\n    at blob:http://localhost/abc:12:3'])(
+    'reports nothing usable for %s',
+    value => {
+      expect(readLineAndColumn(value)).toEqual({});
+    },
+  );
+});
+
 describe('isValidEnvValue', () => {
   it.each([['a string'], [42], [true], [null]])('keeps %s', value => {
     expect(isValidEnvValue(value)).toBe(true);
@@ -136,6 +161,64 @@ describe('isValidEnvValue', () => {
     await vi.waitFor(() => {
       expect(workerSource).toContain('isValidEnvValue(value)');
     });
+  });
+});
+
+// The suite drives the message protocol with a fake worker, so nothing else here executes the
+// generated worker source. A ReferenceError in it silently costs a run: the script's failure is
+// swallowed, no result is posted, and the lab waits for the timeout.
+describe('the generated worker source', () => {
+  const runWorkerSource = async (script: string) => {
+    let workerSource = '';
+    URL.createObjectURL = vi.fn((blob: Blob) => {
+      void blob.text().then(text => (workerSource = text));
+      return 'blob:preflight-spec';
+    }) as unknown as typeof URL.createObjectURL;
+
+    void runIsolatedLabScript(script, { variables: {} });
+    await vi.waitFor(() => expect(workerSource).not.toBe(''));
+
+    const posted: any[] = [];
+    const self: Record<string, any> = {
+      postMessage: (message: any) => posted.push(message),
+      console: globalThis.console,
+    };
+
+    // In a worker `self` is the global scope, so what the source hangs off it — CryptoJS, the
+    // replaced console — is reachable as a bare identifier. `with` gives the sandbox the same
+    // lookup, rather than the source resolving to node's console and posting nothing.
+    // eslint-disable-next-line no-new-func
+    new Function('self', `with (self) {${workerSource}}`)(self);
+
+    await self.onmessage({ data: { type: 'init', script } });
+
+    return posted;
+  };
+
+  it('reports a script failure instead of going quiet', async () => {
+    const posted = await runWorkerSource('throw new Error("boom");');
+
+    expect(posted).toContainEqual(expect.objectContaining({ type: 'result', error: 'boom' }));
+    expect(posted).toContainEqual(
+      expect.objectContaining({ type: 'log', level: 'error', message: ['boom'] }),
+    );
+  });
+
+  it('reports a successful run', async () => {
+    const posted = await runWorkerSource('lab.environment.set("a", "1");');
+
+    expect(posted).toContainEqual(
+      expect.objectContaining({ type: 'result', env: { variables: { a: '1' } } }),
+    );
+  });
+
+  it('drops non-scalar environment values with a warning', async () => {
+    const posted = await runWorkerSource('lab.environment.set("a", { nope: true });');
+
+    expect(posted).toContainEqual(expect.objectContaining({ type: 'log', level: 'warn' }));
+    expect(posted).toContainEqual(
+      expect.objectContaining({ type: 'result', env: { variables: {} } }),
+    );
   });
 });
 
@@ -198,9 +281,11 @@ describe('runIsolatedLabScript run control', () => {
       { onLog },
     );
 
-    lastWorker().emit({ type: 'log', level: 'log', message: ['working'] });
+    lastWorker().emit({ type: 'log', level: 'log', message: ['working'], line: 2, column: 1 });
 
-    expect(onLog).toHaveBeenCalledWith(expect.objectContaining({ level: 'log' }));
+    expect(onLog).toHaveBeenCalledWith(
+      expect.objectContaining({ level: 'log', line: 2, column: 1 }),
+    );
 
     lastWorker().emit({ type: 'result', env: { variables: {} }, headers: {}, pluginsState: {} });
     await run;

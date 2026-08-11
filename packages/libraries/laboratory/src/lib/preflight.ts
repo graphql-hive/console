@@ -7,7 +7,26 @@ export interface LaboratoryPreflightLog {
   level: 'log' | 'warn' | 'error' | 'info' | 'system';
   message: unknown[];
   createdAt: string;
+  /** Where in the script this came from, when the browser reports a usable stack. */
+  line?: number;
+  column?: number;
 }
+
+/**
+ * Maps a stack frame back onto the user's script. The script runs inside a generated
+ * `AsyncFunction`, so it starts three lines in (`async function anonymous(…`, `) {`,
+ * `with(lab){`). A `console.x` frame points at the member name rather than the statement,
+ * which is what `columnOffset` is for.
+ */
+export const readLineAndColumn = (stack?: string, columnOffset = 0) => {
+  const match = stack?.match(/<anonymous>:(\d+):(\d+)/);
+
+  if (!match) {
+    return {};
+  }
+
+  return { line: Number(match[1]) - 3, column: Number(match[2]) - columnOffset };
+};
 
 export interface LaboratoryPreflightResult {
   status: 'success' | 'error';
@@ -297,6 +316,10 @@ export async function runIsolatedLabScript(
 
         let promptResolve = null;
 
+        // Declared out here because the catch below needs it too, and a const inside the try
+        // would be out of scope exactly when a script has just failed.
+        const readLineAndColumn = ${readLineAndColumn.toString()};
+
         self.onmessage = async (event) => {
           if (event.data.type === 'prompt:result') {
             promptResolve?.(event.data.value || null);
@@ -304,19 +327,21 @@ export async function runIsolatedLabScript(
 
           if (event.data.type === 'init') {
             try {
+              // 'console.'.length: the reported column points at the member, not the statement.
+              const postLog = (level) => (...args) => {
+                self.postMessage({
+                  type: 'log',
+                  level,
+                  message: args,
+                  ...readLineAndColumn(new Error().stack, 8),
+                });
+              };
+
               self.console = {
-                log: (...args) => {
-                  self.postMessage({ type: 'log', level: 'log', message: args });
-                },
-                warn: (...args) => {
-                  self.postMessage({ type: 'log', level: 'warn', message: args });
-                },
-                error: (...args) => {
-                  self.postMessage({ type: 'log', level: 'error', message: args });
-                },
-                info: (...args) => {
-                  self.postMessage({ type: 'log', level: 'info', message: args });
-                },
+                log: postLog('log'),
+                warn: postLog('warn'),
+                error: postLog('error'),
+                info: postLog('info'),
               };
 
               let state = ${JSON.stringify(pluginsState)};
@@ -369,13 +394,20 @@ export async function runIsolatedLabScript(
                 }
               });
   
-              // Make CryptoJS available globally in the script context
+              // Make CryptoJS available globally in the script context.
+              // The script sits on its own line so reported lines and columns map back to it
+              // by a fixed offset, rather than the first line being shifted by 'with(lab){'.
               const AsyncFunction = async function () {}.constructor;
-              await new AsyncFunction('lab', 'CryptoJS', 'with(lab){' + event.data.script + '}')(lab, CryptoJS);
-              
+              await new AsyncFunction('lab', 'CryptoJS', 'with(lab){\\n' + event.data.script + '\\n}')(lab, CryptoJS);
+
               self.postMessage({ type: 'result', env: env, headers: Object.fromEntries(lab.request.headers.entries()), pluginsState: state });
             } catch (err) {
-              self.console.error(err);
+              self.postMessage({
+                type: 'log',
+                level: 'error',
+                message: [err && err.message ? err.message : String(err)],
+                ...readLineAndColumn(err && err.stack),
+              });
               self.postMessage({ type: 'result', error: err.message || String(err) });
             }
           }
@@ -494,6 +526,8 @@ export async function runIsolatedLabScript(
             level: data.level,
             message: data.message,
             createdAt: new Date().toISOString(),
+            line: data.line,
+            column: data.column,
           });
         }
       } else if (data.type === 'header') {

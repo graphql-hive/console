@@ -292,6 +292,11 @@ export const Preflight = () => {
                     >
                       {log.level.toUpperCase()}
                     </span>{' '}
+                    {log.line ? (
+                      <span className="text-muted-foreground text-xs">
+                        ({log.line}:{log.column}){' '}
+                      </span>
+                    ) : null}
                     <span className="text-xs">
                       {tokenizeUrls(log.message.join(' ')).map((tok, i) =>
                         tok.type === 'url' ? (

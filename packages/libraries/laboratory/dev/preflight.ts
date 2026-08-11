@@ -9,7 +9,7 @@
  */
 import type { LaboratoryPreflight } from '../src/lib/preflight';
 
-export const devPreflightScenarios = ['logs', 'slow', 'loop', 'env', 'headers'] as const;
+export const devPreflightScenarios = ['logs', 'slow', 'loop', 'env', 'headers', 'error'] as const;
 
 const script = `const scenario = await lab.prompt('Demo scenario', 'logs', {
   placeholder: '${devPreflightScenarios.join(' | ')}',
@@ -43,6 +43,9 @@ if (scenario === null) {
 } else if (scenario === 'headers') {
   lab.request.headers.set('x-demo-token', 'abc123');
   console.log('Header set; the run reports the headers it produced.');
+} else if (scenario === 'error') {
+  console.log('This log should report the line it was written on, and so should the throw.');
+  throw new Error('boom from the error scenario');
 } else {
   console.error('Unknown scenario: ' + scenario);
 }`;
