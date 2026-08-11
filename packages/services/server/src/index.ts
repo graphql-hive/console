@@ -570,6 +570,7 @@ export async function main() {
       broadcastLog,
       env.supertokens.secrets,
       workloadIdentityFederation,
+      env.organizationSCIM,
     );
 
     if (env.cdn.providers.api !== null) {

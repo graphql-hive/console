@@ -24,6 +24,7 @@ import {
   resourceLevelToHumanReadableName,
   resourceLevelToResourceLevelType,
 } from '../../auth/resolvers/Permission';
+import { OIDCIntegrationConfig } from '../../oidc-integrations/providers/oidc-integration-config';
 import { OTEL_TRACING_ENABLED } from '../../operations/providers/traces';
 import { SCHEMA_PROPOSALS_ENABLED } from '../../proposals/providers/schema-proposals-enabled-token';
 import { IdTranslator } from '../../shared/providers/id-translator';
@@ -193,6 +194,7 @@ export class OrganizationAccessTokens {
     @Inject(OTEL_TRACING_ENABLED) private otelTracingEnabled: boolean,
     @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
     @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: boolean,
+    private oidcConfig: OIDCIntegrationConfig,
   ) {
     this.logger = logger.child({
       source: 'OrganizationAccessTokens',
@@ -996,12 +998,14 @@ export class OrganizationAccessTokens {
     const isOTELTracingEnabled = organization.featureFlags.otelTracing || this.otelTracingEnabled;
     const isSchemaProposalsEnabled =
       organization.featureFlags.schemaProposals || this.schemaProposalsEnabled;
+    const isSCIMProvisioningEnabled =
+      organization.featureFlags.scim || this.oidcConfig.isSCIMEnabled;
 
     return (id: Permission) =>
       (!isAppDeploymentsEnabled && id.startsWith('appDeployment:')) ||
       (!isOTELTracingEnabled && id.startsWith('traces:')) ||
       (!isSchemaProposalsEnabled && id.startsWith('schemaProposal:')) ||
-      (!organization.featureFlags.scim && id.startsWith('scim:provision'))
+      (!isSCIMProvisioningEnabled && id.startsWith('scim:provision'))
         ? false
         : true;
   }
