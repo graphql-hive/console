@@ -935,8 +935,9 @@ export function AlertForm(props: AlertFormProps) {
                                       {field.value || '0'}
                                     </span>{' '}
                                     minutes before firing. Helps prevent false alarms from brief
-                                    spikes. Leave at 0 to fire immediately (recommended for alert
-                                    ranges greater than 1 day).
+                                    spikes. Leave at 0 to fire as soon as the condition holds for
+                                    two consecutive evaluations (recommended for alert ranges
+                                    greater than 1 day).
                                   </>
                                 }
                               />
