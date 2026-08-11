@@ -274,20 +274,35 @@ export async function runIsolatedLabScript(
     const logs: LaboratoryPreflightLog[] = [];
     const headers: Record<string, string> = {};
 
-    const worker = new Worker(URL.createObjectURL(blob), { type: 'module' });
+    const workerUrl = URL.createObjectURL(blob);
+    const worker = new Worker(workerUrl, { type: 'module' });
+
+    let isSettled = false;
+
+    // Single exit for the run: without it a failed run leaves its worker running and its blob
+    // URL alive for the rest of the session.
+    const settle = (result: LaboratoryPreflightResult) => {
+      if (isSettled) {
+        return;
+      }
+
+      isSettled = true;
+      worker.terminate();
+      URL.revokeObjectURL(workerUrl);
+      resolve(result);
+    };
 
     worker.onmessage = ({ data }) => {
       if (data.type === 'result') {
-        worker.terminate();
-
         if (data.error) {
-          resolve({
+          settle({
             status: 'error',
             error: data.error,
             logs,
             env,
-            headers: data.headers,
-            pluginsState: data.pluginsState,
+            // The worker sends neither of these when the script throws.
+            headers: {},
+            pluginsState: data.pluginsState ?? pluginsState,
           });
         } else {
           if (Object.keys(data.headers).length > 0) {
@@ -298,7 +313,7 @@ export async function runIsolatedLabScript(
             });
           }
 
-          resolve({
+          settle({
             status: 'success',
             logs,
             env: data.env,
@@ -355,7 +370,7 @@ export async function runIsolatedLabScript(
     };
 
     worker.onerror = error => {
-      resolve({
+      settle({
         status: 'error',
         error: error.message,
         logs,

@@ -14,6 +14,7 @@ class FakeWorker {
   onmessage: ((event: { data: any }) => void) | null = null;
   onerror: ((error: unknown) => void) | null = null;
   posted: any[] = [];
+  terminateCount = 0;
 
   constructor() {
     FakeWorker.instances.push(this);
@@ -23,19 +24,29 @@ class FakeWorker {
     this.posted.push(data);
   }
 
-  terminate() {}
+  terminate() {
+    this.terminateCount++;
+  }
 
   emit(data: any) {
     this.onmessage?.({ data });
+  }
+
+  fail(message: string) {
+    this.onerror?.({ message });
   }
 }
 
 const lastWorker = () => FakeWorker.instances[FakeWorker.instances.length - 1];
 
+let revokeObjectURL: ReturnType<typeof vi.fn<(url: string) => void>>;
+
 beforeEach(() => {
   FakeWorker.instances = [];
   vi.stubGlobal('Worker', FakeWorker);
+  revokeObjectURL = vi.fn<(url: string) => void>();
   URL.createObjectURL = vi.fn(() => 'blob:preflight-spec');
+  URL.revokeObjectURL = revokeObjectURL;
 });
 
 afterEach(() => {
@@ -97,6 +108,52 @@ describe('runIsolatedLabScript', () => {
     await vi.waitFor(() => {
       expect(lastWorker().posted).toContainEqual({ type: 'prompt:result', value: null });
     });
+  });
+});
+
+describe('runIsolatedLabScript cleanup', () => {
+  const settledResult = { type: 'result', env: { variables: {} }, headers: {}, pluginsState: {} };
+
+  it('terminates the worker and revokes its url when a run succeeds', async () => {
+    const run = runIsolatedLabScript('lab.environment.set("a", "1")', { variables: {} });
+
+    lastWorker().emit(settledResult);
+
+    await expect(run).resolves.toMatchObject({ status: 'success' });
+    expect(lastWorker().terminateCount).toBe(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:preflight-spec');
+  });
+
+  it('cleans up when the script throws', async () => {
+    const run = runIsolatedLabScript('throw new Error("boom")', { variables: {} });
+
+    lastWorker().emit({ type: 'result', error: 'boom' });
+
+    // The worker sends no headers alongside a script error, so the result must not claim any.
+    await expect(run).resolves.toMatchObject({ status: 'error', error: 'boom', headers: {} });
+    expect(lastWorker().terminateCount).toBe(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:preflight-spec');
+  });
+
+  it('cleans up when the worker itself fails', async () => {
+    const run = runIsolatedLabScript('syntax error', { variables: {} });
+
+    lastWorker().fail('Unexpected identifier');
+
+    await expect(run).resolves.toMatchObject({ status: 'error', error: 'Unexpected identifier' });
+    expect(lastWorker().terminateCount).toBe(1);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
+  });
+
+  it('settles once even if the worker reports twice', async () => {
+    const run = runIsolatedLabScript('lab.environment.set("a", "1")', { variables: {} });
+
+    lastWorker().emit(settledResult);
+    lastWorker().emit({ type: 'result', error: 'late failure' });
+
+    await expect(run).resolves.toMatchObject({ status: 'success' });
+    expect(lastWorker().terminateCount).toBe(1);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
   });
 });
 
