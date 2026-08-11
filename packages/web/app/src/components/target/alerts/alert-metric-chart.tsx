@@ -9,7 +9,12 @@ import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
 import { useChartStyles } from '@/lib/utils';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
-import { applyThresholdSign, visibleSeries, windowAggregates } from './alert-threshold';
+import {
+  applyThresholdSign,
+  scoredWindow,
+  visibleSeries,
+  windowAggregates,
+} from './alert-threshold';
 
 export const AlertMetricChart_OperationsStatsFragment = graphql(`
   fragment AlertMetricChart_OperationsStatsFragment on OperationsStats {
@@ -62,6 +67,8 @@ type AlertMetricChartProps = {
   /** Clip the series to the trailing window. Only for callers that fetch ~2
    * windows; a caller fetching a user-chosen range would crop it to the window. */
   clipToCurrentWindow?: boolean;
+  /** Anchors `current` to the window the rule scored. Omitted by the preview. */
+  evaluatedAt?: string | null;
 };
 
 // Maps the GraphQL enum to the lowercase field names on DurationValues
@@ -91,8 +98,6 @@ const SEVERITY_COLOR_KEY: Record<string, 'critical' | 'warning' | 'info'> = {
 // backstop against a larger `timeWindowMinutes` reaching the chart.
 const PREVIEW_SPAN_CAP_MINUTES = 20_160;
 
-const MS_PER_MINUTE = 60_000;
-
 export function AlertMetricChart({
   stats,
   loading,
@@ -104,6 +109,7 @@ export function AlertMetricChart({
   thresholdType,
   timeWindowMinutes,
   clipToCurrentWindow = false,
+  evaluatedAt,
 }: AlertMetricChartProps) {
   const { colors } = useChartStyles();
 
@@ -174,10 +180,11 @@ export function AlertMetricChart({
 
   const firstMs = new Date(data[0][0]).getTime();
   const lastMs = new Date(data[data.length - 1][0]).getTime();
-  // The current window is the most recent `timeWindowMinutes` of the fetched
-  // span; the previous window is the slice before it. Mirrors the evaluator's
-  // split (its 1-minute offset is immaterial for an illustrative preview).
-  const boundaryMs = lastMs - timeWindowMinutes * MS_PER_MINUTE;
+  const { boundaryMs, scoredEndMs, isEvaluated } = scoredWindow({
+    evaluatedAt,
+    lastMs,
+    timeWindowMinutes,
+  });
   // The previous window is only present when the fetched span covers two full
   // windows (the form caps it at 30 days) and the boundary lands in the data.
   const hasPreviousWindow =
@@ -185,12 +192,18 @@ export function AlertMetricChart({
     timeWindowMinutes * 2 <= PREVIEW_SPAN_CAP_MINUTES &&
     boundaryMs > firstMs;
 
+  // Trimming all three keeps them index-aligned, which `windowAggregates` needs.
+  // Skipped for the preview, whose cutoff is the newest bucket: trimming would
+  // drop that bucket rather than exclude an in-flight one.
+  const beforeCutoff = <T extends { date: string }>(nodes: readonly T[]) =>
+    isEvaluated ? nodes.filter(node => new Date(node.date).getTime() < scoredEndMs) : nodes;
+
   const { current: currentAgg, previous: previousAgg } = windowAggregates(
     type,
     latencyPercentile,
-    requestsOverTime,
-    failuresOverTime,
-    durationOverTime,
+    beforeCutoff(requestsOverTime),
+    beforeCutoff(failuresOverTime),
+    beforeCutoff(durationOverTime),
     boundaryMs,
   );
 
@@ -240,11 +253,18 @@ export function AlertMetricChart({
       label: { show: false },
     });
   }
-  const markArea: MarkAreaComponentOption | undefined = showWindowSplit
+  // % change shades the previous window; a fixed-value rule has none, so it
+  // shades the scored window to give `current` a visible span.
+  const shadeRange: [number, number] | null = showWindowSplit
+    ? [firstMs, boundaryMs]
+    : isEvaluated && !isPercentageChange && boundaryMs < scoredEndMs
+      ? [boundaryMs, scoredEndMs]
+      : null;
+  const markArea: MarkAreaComponentOption | undefined = shadeRange
     ? {
         silent: true,
         itemStyle: { color: colors.gridSubtle, opacity: 0.18 },
-        data: [[{ xAxis: firstMs }, { xAxis: boundaryMs }]],
+        data: [[{ xAxis: shadeRange[0] }, { xAxis: shadeRange[1] }]],
       }
     : undefined;
 
@@ -289,7 +309,7 @@ export function AlertMetricChart({
       ],
       [
         { coord: [boundaryMs, currentAgg], symbol: 'none', lineStyle: segLine },
-        { coord: [lastMs, currentAgg], symbol: 'none' },
+        { coord: [scoredEndMs, currentAgg], symbol: 'none' },
       ],
     );
   }

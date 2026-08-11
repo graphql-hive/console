@@ -62,6 +62,7 @@ const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
         thresholdValue
         direction
         confirmationMinutes
+        lastEvaluatedAt
         channels {
           id
           name
@@ -299,6 +300,7 @@ function RuleStateLogSection(props: {
     createdAt: string;
     metric?: MetricAlertRuleMetric | null;
     severity: MetricAlertRuleSeverity;
+    lastEvaluatedAt?: string | null;
   };
 }) {
   const { organizationSlug, projectSlug, targetSlug, ruleId, viewRangeMinutes, rule } = props;
@@ -369,6 +371,7 @@ function RuleStateLogSection(props: {
           direction={rule.direction}
           thresholdType={rule.thresholdType}
           timeWindowMinutes={rule.timeWindowMinutes}
+          evaluatedAt={rule.lastEvaluatedAt}
         />
       </section>
 

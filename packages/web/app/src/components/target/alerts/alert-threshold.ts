@@ -116,3 +116,29 @@ export function visibleSeries<T extends readonly [string, number]>(
   }
   return data.filter(([date]) => new Date(date).getTime() >= args.boundaryMs);
 }
+
+/** Mirrors `offsetMs` in packages/services/workflows/src/lib/metric-alert-evaluator.ts. */
+export const EVALUATOR_LAG_MS = 60_000;
+
+const MS_PER_MINUTE = 60_000;
+
+/**
+ * The window a rule scored, as `[boundaryMs, scoredEndMs)`. Anchors on the
+ * evaluation, not the newest bucket: the newest bucket follows the viewer's
+ * clock and would pick a different bucket than the rule did. Falls back to it
+ * only for the preview, which has no rule to be consistent with.
+ */
+export function scoredWindow(args: {
+  evaluatedAt: string | null | undefined;
+  lastMs: number;
+  timeWindowMinutes: number;
+}): { boundaryMs: number; scoredEndMs: number; isEvaluated: boolean } {
+  const evaluatedMs = args.evaluatedAt ? new Date(args.evaluatedAt).getTime() : NaN;
+  const isEvaluated = Number.isFinite(evaluatedMs);
+  const scoredEndMs = isEvaluated ? evaluatedMs - EVALUATOR_LAG_MS : args.lastMs;
+  return {
+    boundaryMs: scoredEndMs - args.timeWindowMinutes * MS_PER_MINUTE,
+    scoredEndMs,
+    isEvaluated,
+  };
+}
