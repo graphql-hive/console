@@ -162,6 +162,7 @@ const OrganizationMemberRow_ConfirmSCIMManagementForMember = graphql(`
       ok {
         confirmedMember {
           id
+          ...OrganizationMemberRow_MemberFragment
         }
       }
       error {
