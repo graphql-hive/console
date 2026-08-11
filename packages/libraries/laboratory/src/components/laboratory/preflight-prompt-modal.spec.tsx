@@ -35,6 +35,26 @@ describe('PreflightPromptModal', () => {
     expect(screen.getByPlaceholderText('hv_...')).toBeDefined();
   });
 
+  // A script can raise a prompt with no user action behind it (an operation run, or schema
+  // polling), so the dialog's own voice has to stay the lab's.
+  it('keeps the script out of the dialog title', () => {
+    render(<PreflightPromptModal open onOpenChange={vi.fn()} title="Enter your Hive password" />);
+
+    expect(screen.getByRole('heading', { name: 'Preflight script request' })).toBeDefined();
+  });
+
+  it('answers with null when cancelled, even with a valid value typed', async () => {
+    const onSubmit = vi.fn();
+    const { input, onOpenChange } = mount(onSubmit);
+
+    fireEvent.change(input(), { target: { value: 'dog' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(null));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it('answers with the submitted value', async () => {
     const onSubmit = vi.fn();
     const { input } = mount(onSubmit);

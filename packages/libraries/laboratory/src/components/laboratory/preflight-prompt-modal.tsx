@@ -78,10 +78,17 @@ export const PreflightPromptModal = (
       }}
     >
       <DialogContent>
+        {/*
+          The header is the lab talking, the field below is the script talking. Script-supplied
+          strings stay in the label, description and placeholder so a prompt can never dress
+          itself up as something the lab is asking for.
+        */}
         <DialogHeader>
-          <DialogTitle>Preflight prompt</DialogTitle>
+          <DialogTitle>Preflight script request</DialogTitle>
         </DialogHeader>
-        <DialogDescription>Enter values for the preflight script.</DialogDescription>
+        <DialogDescription>
+          Your preflight script is asking for a value before this request runs.
+        </DialogDescription>
         <form
           id="preflight-prompt-form"
           onSubmit={e => {
@@ -115,6 +122,18 @@ export const PreflightPromptModal = (
           </FieldGroup>
         </form>
         <DialogFooter>
+          {/* Answers before closing, so cancelling wins over whatever is typed in the field. */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              answer(null);
+              props.onOpenChange(false);
+              form.reset();
+            }}
+          >
+            Cancel
+          </Button>
           <Button
             type="submit"
             form="preflight-prompt-form"
