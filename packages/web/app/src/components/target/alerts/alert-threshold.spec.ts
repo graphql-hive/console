@@ -1,4 +1,9 @@
-import { applyThresholdSign, thresholdUnit, windowAggregates } from './alert-threshold';
+import {
+  applyThresholdSign,
+  thresholdUnit,
+  visibleSeries,
+  windowAggregates,
+} from './alert-threshold';
 
 describe('thresholdUnit', () => {
   it('is always % for a percentage change, regardless of metric', () => {
@@ -92,5 +97,58 @@ describe('windowAggregates', () => {
     const { current, previous } = windowAggregates('LATENCY', 'p95', [], [], durations, boundaryMs);
     expect(previous).toBe(200); // mean(100, 300)
     expect(current).toBe(800); // mean(800)
+  });
+});
+
+describe('visibleSeries', () => {
+  // An hour of one-minute buckets, with a boundary one minute from the end.
+  const hourOfBuckets = Array.from(
+    { length: 60 },
+    (_, i) => [new Date(Date.UTC(2026, 5, 15, 1, i)).toISOString(), i] as const,
+  );
+  const boundaryMs = new Date(Date.UTC(2026, 5, 15, 1, 59)).getTime();
+
+  it('keeps the whole fetched span when the caller does not opt in', () => {
+    expect(
+      visibleSeries(hourOfBuckets, {
+        clipToCurrentWindow: false,
+        isPercentageChange: false,
+        timeWindowMinutes: 1,
+        boundaryMs,
+      }),
+    ).toHaveLength(60);
+  });
+
+  it('clips to the trailing window when the caller opts in', () => {
+    expect(
+      visibleSeries(hourOfBuckets, {
+        clipToCurrentWindow: true,
+        isPercentageChange: false,
+        timeWindowMinutes: 1,
+        boundaryMs,
+      }),
+    ).toHaveLength(1);
+  });
+
+  it('keeps both windows for a percentage change, even when opted in', () => {
+    expect(
+      visibleSeries(hourOfBuckets, {
+        clipToCurrentWindow: true,
+        isPercentageChange: true,
+        timeWindowMinutes: 1,
+        boundaryMs,
+      }),
+    ).toHaveLength(60);
+  });
+
+  it('keeps the whole span when there is no window to clip to', () => {
+    expect(
+      visibleSeries(hourOfBuckets, {
+        clipToCurrentWindow: true,
+        isPercentageChange: false,
+        timeWindowMinutes: 0,
+        boundaryMs,
+      }),
+    ).toHaveLength(60);
   });
 });

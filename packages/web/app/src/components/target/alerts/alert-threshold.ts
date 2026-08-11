@@ -96,3 +96,23 @@ export function windowAggregates(
   };
   return { current: reduce(true), previous: reduce(false) };
 }
+
+/**
+ * The buckets a chart plots. Defaults to the whole fetched span; only a caller
+ * that fetched ~2 windows opts into clipping to the trailing one. A % change
+ * chart always keeps both windows, since the comparison is the point.
+ */
+export function visibleSeries<T extends readonly [string, number]>(
+  data: readonly T[],
+  args: {
+    clipToCurrentWindow: boolean;
+    isPercentageChange: boolean;
+    timeWindowMinutes: number;
+    boundaryMs: number;
+  },
+): readonly T[] {
+  if (!args.clipToCurrentWindow || args.isPercentageChange || args.timeWindowMinutes <= 0) {
+    return data;
+  }
+  return data.filter(([date]) => new Date(date).getTime() >= args.boundaryMs);
+}

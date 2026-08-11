@@ -873,6 +873,7 @@ export function AlertForm(props: AlertFormProps) {
                   direction={watchedValues.direction}
                   thresholdType={watchedValues.thresholdType}
                   timeWindowMinutes={parseInt(watchedValues.timeWindowMinutes, 10) || 0}
+                  clipToCurrentWindow
                 />
 
                 <Accordion defaultValue={expandAdvanced ? [0] : undefined}>

@@ -9,7 +9,7 @@ import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
 import { useChartStyles } from '@/lib/utils';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
-import { applyThresholdSign, windowAggregates } from './alert-threshold';
+import { applyThresholdSign, visibleSeries, windowAggregates } from './alert-threshold';
 
 export const AlertMetricChart_OperationsStatsFragment = graphql(`
   fragment AlertMetricChart_OperationsStatsFragment on OperationsStats {
@@ -59,6 +59,9 @@ type AlertMetricChartProps = {
    * (~2 windows) into the previous | current windows the evaluator compares.
    */
   timeWindowMinutes: number;
+  /** Clip the series to the trailing window. Only for callers that fetch ~2
+   * windows; a caller fetching a user-chosen range would crop it to the window. */
+  clipToCurrentWindow?: boolean;
 };
 
 // Maps the GraphQL enum to the lowercase field names on DurationValues
@@ -100,6 +103,7 @@ export function AlertMetricChart({
   direction,
   thresholdType,
   timeWindowMinutes,
+  clipToCurrentWindow = false,
 }: AlertMetricChartProps) {
   const { colors } = useChartStyles();
 
@@ -218,10 +222,12 @@ export function AlertMetricChart({
       : false;
 
   const showWindowSplit = isPercentageChange && hasPreviousWindow;
-  const displayData =
-    isPercentageChange || timeWindowMinutes <= 0 || boundaryMs <= firstMs
-      ? data
-      : data.filter(([date]) => new Date(date).getTime() >= boundaryMs);
+  const displayData = visibleSeries(data, {
+    clipToCurrentWindow,
+    isPercentageChange,
+    timeWindowMinutes,
+    boundaryMs,
+  });
 
   const markLineData: NonNullable<MarkLineComponentOption['data']> = [];
 
