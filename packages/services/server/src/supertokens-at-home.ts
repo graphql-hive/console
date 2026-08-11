@@ -49,6 +49,7 @@ export async function registerSupertokensAtHome(
     accessTokenKey: string;
   },
   workloadIdentityFederation: WorkloadIdentityFederationProvider | null,
+  isSCIMEnabled: boolean,
 ) {
   const supertokensStore = new SuperTokensStore(storage.pool, server.log);
 
@@ -1656,7 +1657,10 @@ export async function registerSupertokensAtHome(
         if (!supertokenUser) {
           req.log.debug('no existing user found.');
 
-          if (organization.featureFlags.scim && oidcIntegration.userProvisioningRequired) {
+          if (
+            (organization.featureFlags.scim || isSCIMEnabled) &&
+            oidcIntegration.userProvisioningRequired
+          ) {
             req.log.debug('oidc integration settings requires user being provisioned.');
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
@@ -1676,7 +1680,7 @@ export async function registerSupertokensAtHome(
           superTokensUserId: supertokenUser.userId,
         });
 
-        if (organization.featureFlags.scim) {
+        if (organization.featureFlags.scim || isSCIMEnabled) {
           if (maybeHiveUser?.provisioningStatus === 'active' && maybeHiveUser.deactivatedAt) {
             req.log.debug('user is deactivated.');
             return rep.status(200).send({
@@ -1702,7 +1706,10 @@ export async function registerSupertokensAtHome(
 
         // only perform these updates if the user is not provisioned
         // if the user is provisioned the SCIM provider is the source of truth for all attributes
-        if (!organization.featureFlags.scim || !maybeHiveUser?.provisionedByOrganizationId) {
+        if (
+          (!organization.featureFlags.scim && !isSCIMEnabled) ||
+          !maybeHiveUser?.provisionedByOrganizationId
+        ) {
           if (supertokenUser.email !== email.data) {
             req.log.debug('providers email has changed. Update record.');
             supertokenUser = await supertokensStore.updateOIDCUserEmail({
