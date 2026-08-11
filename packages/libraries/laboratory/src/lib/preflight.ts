@@ -141,7 +141,12 @@ export const usePreflight = (props: {
     props.defaultPreflight ?? null,
   );
 
-  const [preflightLogs, setPreflightLogs] = useState<LaboratoryPreflightLog[]>([]);
+  // Seeded from the stored result so a reload still shows the last run, then owned entirely
+  // by the runs themselves. Reading from both this and `lastTestResult` would make Clear look
+  // broken: emptying one just falls back to the other.
+  const [preflightLogs, setPreflightLogs] = useState<LaboratoryPreflightLog[]>(
+    () => props.defaultPreflight?.lastTestResult?.logs ?? [],
+  );
   const [runCount, setRunCount] = useState(0);
 
   // Runs overlap (an operation run, a schema poll, a Test run), so stopping has to reach all
@@ -367,6 +372,13 @@ export async function runIsolatedLabScript(
     };
 
     const abort = () => {
+      // Output otherwise just stops mid-script with nothing saying why.
+      pushLog({
+        level: 'system',
+        message: ['Run stopped.'],
+        createdAt: new Date().toISOString(),
+      });
+
       settle({
         status: 'error',
         error: 'Preflight aborted',

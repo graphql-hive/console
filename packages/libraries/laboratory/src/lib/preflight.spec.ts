@@ -181,9 +181,16 @@ describe('runIsolatedLabScript run control', () => {
   it('stops a run when its signal aborts', async () => {
     const controller = new AbortController();
 
-    const run = runIsolatedLabScript('while (true) {}', { variables: {} }, undefined, [], {}, {
-      signal: controller.signal,
-    });
+    const run = runIsolatedLabScript(
+      'while (true) {}',
+      { variables: {} },
+      undefined,
+      [],
+      {},
+      {
+        signal: controller.signal,
+      },
+    );
 
     controller.abort();
 
@@ -221,14 +228,19 @@ describe('runIsolatedLabScript run control', () => {
   });
 
   it('settles immediately when the signal is already aborted', async () => {
-    const run = runIsolatedLabScript('console.log(1)', { variables: {} }, undefined, [], {}, {
-      signal: AbortSignal.abort(),
-    });
+    const run = runIsolatedLabScript(
+      'console.log(1)',
+      { variables: {} },
+      undefined,
+      [],
+      {},
+      {
+        signal: AbortSignal.abort(),
+      },
+    );
 
     await expect(run).resolves.toMatchObject({ status: 'error', error: 'Preflight aborted' });
-    expect(lastWorker().posted).not.toContainEqual(
-      expect.objectContaining({ type: 'init' }),
-    );
+    expect(lastWorker().posted).not.toContainEqual(expect.objectContaining({ type: 'init' }));
   });
 });
 
@@ -240,6 +252,54 @@ describe('usePreflight run control', () => {
         envApi: { env: { variables: {} }, setEnv: vi.fn() },
       }),
     );
+
+  // Clearing used to empty the live logs and then fall straight back to the stored result,
+  // so the pane redrew the same lines and the button looked broken.
+  it('stays cleared when a stored result exists', () => {
+    const { result } = renderHook(() =>
+      usePreflight({
+        defaultPreflight: {
+          enabled: true,
+          script: 'console.log("hi")',
+          lastTestResult: {
+            status: 'success',
+            logs: [{ level: 'log', message: ['from the last run'], createdAt: '2026-01-01' }],
+            env: { variables: {} },
+            headers: {},
+            pluginsState: {},
+          },
+        },
+        envApi: { env: { variables: {} }, setEnv: vi.fn() },
+      }),
+    );
+
+    expect(result.current.preflightLogs).toHaveLength(1);
+
+    act(() => {
+      result.current.clearPreflightLogs();
+    });
+
+    expect(result.current.preflightLogs).toHaveLength(0);
+  });
+
+  it('says so in the logs when a run is stopped', async () => {
+    const { result } = mount();
+
+    let run: Promise<unknown> | undefined;
+    act(() => {
+      run = result.current.runPreflight();
+    });
+
+    await act(async () => {
+      result.current.abortPreflight();
+      await run;
+    });
+
+    expect(result.current.preflightLogs.at(-1)).toMatchObject({
+      level: 'system',
+      message: ['Run stopped.'],
+    });
+  });
 
   it('collects logs from every run, not just the Test button', async () => {
     const { result } = mount();

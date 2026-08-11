@@ -37,8 +37,7 @@ export const Preflight = () => {
     setLastTestResult(result ?? null);
   }, [preflight?.script, testPreflight, plugins, pluginsState, setEnv, setPluginsState]);
 
-  // Logs arrive as the script runs; `lastTestResult` is what survives a reload.
-  const logs = preflightLogs?.length ? preflightLogs : (preflight?.lastTestResult?.logs ?? []);
+  const logs = preflightLogs ?? [];
 
   return (
     <ResizablePanelGroup direction="horizontal" className="size-full">

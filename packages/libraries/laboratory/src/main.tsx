@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import { devCollections } from '../dev/collections';
 import { devActiveTabId, devOperations, devTabs } from '../dev/operations';
+import { devPreflight } from '../dev/preflight';
 import { Laboratory } from './components/laboratory/laboratory';
 
 /**
@@ -16,5 +17,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     defaultOperations={devOperations}
     defaultTabs={devTabs}
     defaultActiveTabId={devActiveTabId}
+    defaultPreflight={devPreflight}
   />,
 );
