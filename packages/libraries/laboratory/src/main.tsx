@@ -11,6 +11,7 @@ import { Laboratory } from './components/laboratory/laboratory';
  */
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <Laboratory
+    enableDocs
     theme="dark"
     defaultEndpoint={`${window.location.origin}/graphql`}
     defaultCollections={devCollections}
