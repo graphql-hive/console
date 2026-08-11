@@ -187,7 +187,6 @@ describe('the generated worker source', () => {
     // In a worker `self` is the global scope, so what the source hangs off it — CryptoJS, the
     // replaced console — is reachable as a bare identifier. `with` gives the sandbox the same
     // lookup, rather than the source resolving to node's console and posting nothing.
-    // eslint-disable-next-line no-new-func
     new Function('self', `with (self) {${workerSource}}`)(self);
 
     await self.onmessage({ data: { type: 'init', script } });
