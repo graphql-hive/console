@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as z from 'zod';
 import { useForm } from '@tanstack/react-form';
+import type { LaboratoryPreflightPromptField } from '../../lib/preflight';
 import { Button } from '../ui/button';
 import {
   Dialog,
@@ -10,16 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog';
-import { Field, FieldError, FieldGroup } from '../ui/field';
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '../ui/field';
 import { Input } from '../ui/input';
 
-export const PreflightPromptModal = (props: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  placeholder: string;
-  defaultValue?: string;
-  onSubmit?: (value: string | null) => void;
-}) => {
+export const PreflightPromptModal = (
+  props: LaboratoryPreflightPromptField & {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSubmit?: (value: string | null) => void;
+  },
+) => {
   const isAnsweredRef = useRef(false);
 
   // The script stays suspended on `lab.prompt()` until this modal answers, so every way of
@@ -94,6 +95,8 @@ export const PreflightPromptModal = (props: {
                 const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                 return (
                   <Field data-invalid={isInvalid}>
+                    {props.title && <FieldLabel htmlFor={field.name}>{props.title}</FieldLabel>}
+                    {props.description && <FieldDescription>{props.description}</FieldDescription>}
                     <Input
                       id={field.name}
                       name={field.name}

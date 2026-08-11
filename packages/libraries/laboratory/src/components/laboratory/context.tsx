@@ -26,6 +26,7 @@ import {
 import type {
   LaboratoryPreflight,
   LaboratoryPreflightActions,
+  LaboratoryPreflightPromptRequest,
   LaboratoryPreflightState,
 } from '../../lib/preflight';
 import type {
@@ -63,11 +64,7 @@ type LaboratoryContextActions = LaboratoryCollectionsActions &
     openAddCollectionDialog?: () => void;
     openUpdateEndpointDialog?: () => void;
     openAddTestDialog?: () => void;
-    openPreflightPromptModal?: (props: {
-      placeholder: string;
-      defaultValue?: string;
-      onSubmit?: (value: string | null) => void;
-    }) => void;
+    openPreflightPromptModal?: (request: LaboratoryPreflightPromptRequest) => void;
     goToFullScreen?: () => void;
     exitFullScreen?: () => void;
     checkPermissions?: (
@@ -136,11 +133,7 @@ export interface LaboratoryApi {
   openAddCollectionDialog?: () => void;
   openUpdateEndpointDialog?: () => void;
   openAddTestDialog?: () => void;
-  openPreflightPromptModal?: (props: {
-    placeholder: string;
-    defaultValue?: string;
-    onSubmit?: (value: string | null) => void;
-  }) => void;
+  openPreflightPromptModal?: (request: LaboratoryPreflightPromptRequest) => void;
   isFullScreen?: boolean;
   /** Show the full screen control. Off for hosts that already fill the viewport. */
   enableFullScreen?: boolean;

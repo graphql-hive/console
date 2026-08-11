@@ -28,12 +28,24 @@ export interface LaboratoryPreflightState {
   preflight: LaboratoryPreflight | null;
 }
 
-/** A single `lab.prompt()` call waiting on the user. */
-export interface LaboratoryPreflightPromptRequest {
-  placeholder: string;
+/** The script-supplied parts of a `lab.prompt()` call. */
+export interface LaboratoryPreflightPromptField {
+  title?: string;
   defaultValue?: string;
+  description?: string;
+  placeholder?: string;
+}
+
+/** A single `lab.prompt()` call waiting on the user. */
+export interface LaboratoryPreflightPromptRequest extends LaboratoryPreflightPromptField {
   onSubmit?: (value: string | null) => void;
 }
+
+export type LaboratoryPreflightPrompt = (
+  title: string,
+  defaultValue: string,
+  options?: { placeholder?: string; description?: string },
+) => Promise<string | null>;
 
 export interface LaboratoryPreflightActions {
   setPreflight: (preflight: LaboratoryPreflight) => void;
@@ -53,11 +65,7 @@ export const usePreflightPrompt = () => {
   const [isPreflightPromptModalOpen, setIsPreflightPromptModalOpen] = useState(false);
 
   const [preflightPromptModalProps, setPreflightPromptModalProps] =
-    useState<LaboratoryPreflightPromptRequest>({
-      placeholder: '',
-      defaultValue: undefined,
-      onSubmit: undefined,
-    });
+    useState<LaboratoryPreflightPromptRequest>({});
 
   const pendingPromptRef = useRef<LaboratoryPreflightPromptRequest['onSubmit']>(undefined);
 
@@ -73,6 +81,8 @@ export const usePreflightPrompt = () => {
       pendingPromptRef.current = request.onSubmit;
 
       setPreflightPromptModalProps({
+        title: request.title,
+        description: request.description,
         placeholder: request.placeholder,
         defaultValue: request.defaultValue,
         onSubmit: answerPendingPrompt,
@@ -123,9 +133,15 @@ export const usePreflight = (props: {
         preflight.script,
         props.envApi?.env ?? { variables: {} },
         openPreflightPromptModal
-          ? (placeholder, defaultValue) =>
+          ? (title, defaultValue, options) =>
               new Promise<string | null>(resolve =>
-                openPreflightPromptModal({ placeholder, defaultValue, onSubmit: resolve }),
+                openPreflightPromptModal({
+                  title,
+                  defaultValue,
+                  placeholder: options?.placeholder,
+                  description: options?.description,
+                  onSubmit: resolve,
+                }),
               )
           : undefined,
         plugins,
@@ -160,7 +176,7 @@ export const usePreflight = (props: {
 export async function runIsolatedLabScript(
   script: string,
   env: LaboratoryEnv,
-  prompt?: (placeholder: string, defaultValue: string) => Promise<string | null>,
+  prompt?: LaboratoryPreflightPrompt,
   plugins: LaboratoryPlugin[] = [],
   pluginsState: Record<string, any> = {},
 ): Promise<LaboratoryPreflightResult> {
@@ -220,10 +236,10 @@ export async function runIsolatedLabScript(
                 request: {
                   headers: new Headers()
                 },
-                prompt: (placeholder, defaultValue) => {
+                prompt: (title, defaultValue, options) => {
                   return new Promise((resolve) => {
                     promptResolve = resolve;
-                    self.postMessage({ type: 'prompt', placeholder, defaultValue });
+                    self.postMessage({ type: 'prompt', title, defaultValue, options: options ?? {} });
                   });
                 },
                 plugins: {
@@ -327,7 +343,8 @@ export async function runIsolatedLabScript(
       } else if (data.type === 'prompt') {
         // Without an answer the script awaits `lab.prompt()` forever and the worker never
         // reports a result, so a missing handler has to answer with null.
-        const answer = prompt?.(data.placeholder, data.defaultValue) ?? Promise.resolve(null);
+        const answer =
+          prompt?.(data.title, data.defaultValue, data.options) ?? Promise.resolve(null);
 
         void answer
           .catch(() => null)

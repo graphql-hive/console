@@ -1,6 +1,11 @@
 // @vitest-environment happy-dom
 import { act, renderHook } from '@testing-library/react';
-import { runIsolatedLabScript, usePreflight, usePreflightPrompt } from './preflight';
+import {
+  runIsolatedLabScript,
+  usePreflight,
+  usePreflightPrompt,
+  type LaboratoryPreflightPromptRequest,
+} from './preflight';
 
 /** The real worker never runs under happy-dom, so the tests drive its message protocol. */
 class FakeWorker {
@@ -43,12 +48,32 @@ describe('runIsolatedLabScript', () => {
 
     void runIsolatedLabScript('await lab.prompt("Noun")', { variables: {} }, prompt);
 
-    lastWorker().emit({ type: 'prompt', placeholder: 'Noun', defaultValue: undefined });
+    lastWorker().emit({ type: 'prompt', title: 'Noun', defaultValue: undefined, options: {} });
 
     await vi.waitFor(() => {
       expect(lastWorker().posted).toContainEqual({ type: 'prompt:result', value: 'dog' });
     });
-    expect(prompt).toHaveBeenCalledWith('Noun', undefined);
+    expect(prompt).toHaveBeenCalledWith('Noun', undefined, {});
+  });
+
+  it('passes the prompt metadata through to the handler', async () => {
+    const prompt = vi.fn().mockResolvedValue('hv_123');
+
+    void runIsolatedLabScript('await lab.prompt("API token")', { variables: {} }, prompt);
+
+    lastWorker().emit({
+      type: 'prompt',
+      title: 'API token',
+      defaultValue: 'hv_',
+      options: { placeholder: 'hv_...', description: 'Used for this request only' },
+    });
+
+    await vi.waitFor(() => {
+      expect(prompt).toHaveBeenCalledWith('API token', 'hv_', {
+        placeholder: 'hv_...',
+        description: 'Used for this request only',
+      });
+    });
   });
 
   it('answers with null when the handler rejects', async () => {
@@ -56,7 +81,7 @@ describe('runIsolatedLabScript', () => {
 
     void runIsolatedLabScript('await lab.prompt("Noun")', { variables: {} }, prompt);
 
-    lastWorker().emit({ type: 'prompt', placeholder: 'Noun', defaultValue: undefined });
+    lastWorker().emit({ type: 'prompt', title: 'Noun', defaultValue: undefined, options: {} });
 
     await vi.waitFor(() => {
       expect(lastWorker().posted).toContainEqual({ type: 'prompt:result', value: null });
@@ -67,7 +92,7 @@ describe('runIsolatedLabScript', () => {
   it('answers with null when no handler is supplied', async () => {
     void runIsolatedLabScript('await lab.prompt("Noun")', { variables: {} });
 
-    lastWorker().emit({ type: 'prompt', placeholder: 'Noun', defaultValue: undefined });
+    lastWorker().emit({ type: 'prompt', title: 'Noun', defaultValue: undefined, options: {} });
 
     await vi.waitFor(() => {
       expect(lastWorker().posted).toContainEqual({ type: 'prompt:result', value: null });
@@ -89,14 +114,21 @@ describe('usePreflightPrompt', () => {
     const { result } = renderHook(() => usePreflightPrompt());
 
     act(() => {
-      result.current.openPreflightPromptModal({ placeholder: 'Noun', defaultValue: 'dog' });
+      result.current.openPreflightPromptModal({
+        title: 'Noun',
+        defaultValue: 'dog',
+        placeholder: 'e.g. cat',
+        description: 'Any noun will do',
+      });
       vi.advanceTimersByTime(200);
     });
 
     expect(result.current.isPreflightPromptModalOpen).toBe(true);
     expect(result.current.preflightPromptModalProps).toMatchObject({
-      placeholder: 'Noun',
+      title: 'Noun',
       defaultValue: 'dog',
+      placeholder: 'e.g. cat',
+      description: 'Any noun will do',
     });
   });
 
@@ -105,7 +137,7 @@ describe('usePreflightPrompt', () => {
     const { result } = renderHook(() => usePreflightPrompt());
 
     act(() => {
-      result.current.openPreflightPromptModal({ placeholder: 'Noun', onSubmit });
+      result.current.openPreflightPromptModal({ title: 'Noun', onSubmit });
     });
 
     act(() => {
@@ -125,12 +157,12 @@ describe('usePreflightPrompt', () => {
     const { result } = renderHook(() => usePreflightPrompt());
 
     act(() => {
-      result.current.openPreflightPromptModal({ placeholder: 'Noun', onSubmit: first });
-      result.current.openPreflightPromptModal({ placeholder: 'Verb', onSubmit: second });
+      result.current.openPreflightPromptModal({ title: 'Noun', onSubmit: first });
+      result.current.openPreflightPromptModal({ title: 'Verb', onSubmit: second });
     });
 
     expect(first).toHaveBeenCalledWith(null);
-    expect(result.current.preflightPromptModalProps.placeholder).toBe('Verb');
+    expect(result.current.preflightPromptModalProps.title).toBe('Verb');
 
     act(() => {
       result.current.preflightPromptModalProps.onSubmit?.('run');
@@ -143,11 +175,7 @@ describe('usePreflightPrompt', () => {
 
 describe('usePreflight', () => {
   const mountPreflight = (
-    openPreflightPromptModal?: (props: {
-      placeholder: string;
-      defaultValue?: string;
-      onSubmit?: (value: string | null) => void;
-    }) => void,
+    openPreflightPromptModal?: (request: LaboratoryPreflightPromptRequest) => void,
   ) =>
     renderHook(() =>
       usePreflight({
@@ -168,11 +196,11 @@ describe('usePreflight', () => {
       run = result.current.runPreflight();
     });
 
-    lastWorker().emit({ type: 'prompt', placeholder: 'Noun', defaultValue: undefined });
+    lastWorker().emit({ type: 'prompt', title: 'Noun', defaultValue: undefined, options: {} });
 
     await vi.waitFor(() => {
       expect(openPreflightPromptModal).toHaveBeenCalledWith(
-        expect.objectContaining({ placeholder: 'Noun' }),
+        expect.objectContaining({ title: 'Noun' }),
       );
     });
 
@@ -194,7 +222,7 @@ describe('usePreflight', () => {
       void result.current.runPreflight();
     });
 
-    lastWorker().emit({ type: 'prompt', placeholder: 'Noun', defaultValue: undefined });
+    lastWorker().emit({ type: 'prompt', title: 'Noun', defaultValue: undefined, options: {} });
 
     await vi.waitFor(() => {
       expect(lastWorker().posted).toContainEqual({ type: 'prompt:result', value: null });

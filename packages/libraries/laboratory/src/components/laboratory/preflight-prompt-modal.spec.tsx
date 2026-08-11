@@ -9,15 +9,32 @@ const mount = (onSubmit: (value: string | null) => void) => {
     <PreflightPromptModal
       open
       onOpenChange={onOpenChange}
-      placeholder="Noun"
+      title="Noun"
+      placeholder="e.g. cat"
       onSubmit={onSubmit}
     />,
   );
 
-  return { onOpenChange, input: () => screen.getByPlaceholderText('Noun') };
+  return { onOpenChange, input: () => screen.getByPlaceholderText('e.g. cat') };
 };
 
 describe('PreflightPromptModal', () => {
+  it('renders the script-supplied title and description', () => {
+    render(
+      <PreflightPromptModal
+        open
+        onOpenChange={vi.fn()}
+        title="API token"
+        description="Used for this request only"
+        placeholder="hv_..."
+      />,
+    );
+
+    expect(screen.getByText('API token')).toBeDefined();
+    expect(screen.getByText('Used for this request only')).toBeDefined();
+    expect(screen.getByPlaceholderText('hv_...')).toBeDefined();
+  });
+
   it('answers with the submitted value', async () => {
     const onSubmit = vi.fn();
     const { input } = mount(onSubmit);

@@ -31,11 +31,13 @@ export const Preflight = () => {
     const result = await runIsolatedLabScript(
       preflight?.script ?? '',
       env ?? { variables: {} },
-      (placeholder, defaultValue) => {
+      (title, defaultValue, options) => {
         return new Promise(resolve => {
           openPreflightPromptModal?.({
-            placeholder,
+            title,
             defaultValue,
+            placeholder: options?.placeholder,
+            description: options?.description,
             onSubmit: value => {
               resolve(value);
             },
@@ -85,7 +87,15 @@ export const Preflight = () => {
                     request: {
                       headers: Headers;
                     };
-                    prompt: (placeholder: string, defaultValue: string) => Promise<string | null>;
+                    /**
+                     * Asks the user for a value before the request runs. The title labels the
+                     * input; placeholder and description are optional hints.
+                     */
+                    prompt: (
+                      title: string,
+                      defaultValue?: string,
+                      options?: { placeholder?: string; description?: string },
+                    ) => Promise<string | null>;
                     CryptoJS: typeof CryptoJS;
                     plugins: {
                       ${plugins
