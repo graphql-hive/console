@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, renderHook } from '@testing-library/react';
 import {
+  PREFLIGHT_TIMEOUT,
   runIsolatedLabScript,
   usePreflight,
   usePreflightPrompt,
@@ -241,6 +242,83 @@ describe('runIsolatedLabScript run control', () => {
 
     await expect(run).resolves.toMatchObject({ status: 'error', error: 'Preflight aborted' });
     expect(lastWorker().posted).not.toContainEqual(expect.objectContaining({ type: 'init' }));
+  });
+});
+
+describe('runIsolatedLabScript timeout', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('kills a script that never finishes', async () => {
+    const run = runIsolatedLabScript('while (true) {}', { variables: {} });
+
+    await vi.advanceTimersByTimeAsync(PREFLIGHT_TIMEOUT);
+
+    await expect(run).resolves.toMatchObject({
+      status: 'error',
+      error: 'Preflight execution timed out after 30 seconds',
+    });
+    expect(lastWorker().terminateCount).toBe(1);
+  });
+
+  it('says so in the logs when a run times out', async () => {
+    const onLog = vi.fn();
+
+    const run = runIsolatedLabScript(
+      'while (true) {}',
+      { variables: {} },
+      undefined,
+      [],
+      {},
+      {
+        onLog,
+      },
+    );
+
+    await vi.advanceTimersByTimeAsync(PREFLIGHT_TIMEOUT);
+    await run;
+
+    expect(onLog).toHaveBeenCalledWith(
+      expect.objectContaining({ level: 'system', message: ['Run timed out after 30 seconds.'] }),
+    );
+  });
+
+  // The budget is for the script, not for how long the user takes to find a token.
+  it('does not spend the budget while a prompt waits on the user', async () => {
+    let answerPrompt: (value: string | null) => void = () => {};
+    const prompt = vi.fn(() => new Promise<string | null>(resolve => (answerPrompt = resolve)));
+
+    const run = runIsolatedLabScript('await lab.prompt("Token")', { variables: {} }, prompt);
+
+    lastWorker().emit({ type: 'prompt', title: 'Token', defaultValue: undefined, options: {} });
+
+    await vi.advanceTimersByTimeAsync(PREFLIGHT_TIMEOUT * 3);
+
+    answerPrompt('hv_123');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(lastWorker().posted).toContainEqual({ type: 'prompt:result', value: 'hv_123' });
+
+    lastWorker().emit({ type: 'result', env: { variables: {} }, headers: {}, pluginsState: {} });
+
+    await expect(run).resolves.toMatchObject({ status: 'success' });
+  });
+
+  it('stops the clock once the run settles', async () => {
+    const run = runIsolatedLabScript('console.log(1)', { variables: {} });
+
+    lastWorker().emit({ type: 'result', env: { variables: {} }, headers: {}, pluginsState: {} });
+
+    await expect(run).resolves.toMatchObject({ status: 'success' });
+
+    await vi.advanceTimersByTimeAsync(PREFLIGHT_TIMEOUT * 2);
+
+    expect(lastWorker().terminateCount).toBe(1);
   });
 });
 

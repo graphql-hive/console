@@ -50,6 +50,13 @@ export type LaboratoryPreflightPrompt = (
   options?: { placeholder?: string; description?: string },
 ) => Promise<string | null>;
 
+/**
+ * How long a script may run before the worker is killed.
+ * The clock only covers execution: it is paused while a
+ * prompt is waiting on the user.
+ */
+export const PREFLIGHT_TIMEOUT = 30_000;
+
 export interface LaboratoryPreflightRunOptions {
   /** Aborting terminates the worker and settles the run as an error. */
   signal?: AbortSignal;
@@ -371,6 +378,34 @@ export async function runIsolatedLabScript(
       options?.onLog?.(log);
     };
 
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    const stopTimeout = () => {
+      clearTimeout(timeout);
+      timeout = undefined;
+    };
+
+    const startTimeout = () => {
+      stopTimeout();
+
+      timeout = setTimeout(() => {
+        pushLog({
+          level: 'system',
+          message: [`Run timed out after ${PREFLIGHT_TIMEOUT / 1000} seconds.`],
+          createdAt: new Date().toISOString(),
+        });
+
+        settle({
+          status: 'error',
+          error: `Preflight execution timed out after ${PREFLIGHT_TIMEOUT / 1000} seconds`,
+          logs,
+          env,
+          headers: {},
+          pluginsState,
+        });
+      }, PREFLIGHT_TIMEOUT);
+    };
+
     const abort = () => {
       // Output otherwise just stops mid-script with nothing saying why.
       pushLog({
@@ -397,6 +432,7 @@ export async function runIsolatedLabScript(
       }
 
       isSettled = true;
+      stopTimeout();
       options?.signal?.removeEventListener('abort', abort);
       worker.terminate();
       URL.revokeObjectURL(workerUrl);
@@ -449,6 +485,10 @@ export async function runIsolatedLabScript(
           createdAt: new Date().toISOString(),
         });
       } else if (data.type === 'prompt') {
+        // The script is parked until the user answers, and how long they take is not the
+        // script's execution time, so the clock stops until the answer goes back.
+        stopTimeout();
+
         // Without an answer the script awaits `lab.prompt()` forever and the worker never
         // reports a result, so a missing handler has to answer with null.
         const answer =
@@ -460,6 +500,7 @@ export async function runIsolatedLabScript(
             // A run that was aborted or timed out while the dialog was open has already
             // terminated its worker; the late answer is simply dropped.
             if (!isSettled) {
+              startTimeout();
               worker.postMessage({ type: 'prompt:result', value });
             }
           });
@@ -484,6 +525,7 @@ export async function runIsolatedLabScript(
 
     options?.signal?.addEventListener('abort', abort);
 
+    startTimeout();
     worker.postMessage({ type: 'init', script });
   });
 }
