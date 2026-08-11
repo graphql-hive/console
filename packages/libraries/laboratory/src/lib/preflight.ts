@@ -57,6 +57,14 @@ export type LaboratoryPreflightPrompt = (
  */
 export const PREFLIGHT_TIMEOUT = 30_000;
 
+/**
+ * Environment values are interpolated into headers as text and persisted by the host, so a
+ * script can only store JSON scalars. Defined here and injected into the worker by source, so
+ * the rule is stated once.
+ */
+export const isValidEnvValue = (value: unknown) =>
+  value === null || ['string', 'number', 'boolean'].includes(typeof value);
+
 export interface LaboratoryPreflightRunOptions {
   /** Aborting terminates the worker and settles the run as an error. */
   signal?: AbortSignal;
@@ -317,10 +325,22 @@ export async function runIsolatedLabScript(
                 Object.assign(state[id] ?? {}, newState);
               };
               
+              const isValidEnvValue = ${isValidEnvValue.toString()};
+
               const lab = Object.freeze({
                 environment: {
                   get: (key) => env.variables[key],
                   set: (key, value) => {
+                    if (!isValidEnvValue(value)) {
+                      console.warn(
+                        'lab.environment stores strings, numbers, booleans and null. The value for "' + key + '" was dropped.'
+                      );
+                      // Dropping the key too, so an older value can't survive under a name the
+                      // script believes it just overwrote.
+                      delete env.variables[key];
+                      return;
+                    }
+
                     env.variables[key] = value;
                   },
                   delete: (key) => {

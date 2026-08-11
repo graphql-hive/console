@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, renderHook } from '@testing-library/react';
 import {
+  isValidEnvValue,
   PREFLIGHT_TIMEOUT,
   runIsolatedLabScript,
   usePreflight,
@@ -108,6 +109,32 @@ describe('runIsolatedLabScript', () => {
 
     await vi.waitFor(() => {
       expect(lastWorker().posted).toContainEqual({ type: 'prompt:result', value: null });
+    });
+  });
+});
+
+describe('isValidEnvValue', () => {
+  it.each([['a string'], [42], [true], [null]])('keeps %s', value => {
+    expect(isValidEnvValue(value)).toBe(true);
+  });
+
+  it.each([[{ nope: true }], [['a']], [undefined], [() => {}]])('rejects %s', value => {
+    expect(isValidEnvValue(value)).toBe(false);
+  });
+
+  // The rule is defined in TypeScript and shipped into the worker as source, so the two can't
+  // drift; this proves the injection actually happens.
+  it('is injected into the worker that runs the script', async () => {
+    let workerSource = '';
+    URL.createObjectURL = vi.fn((blob: Blob) => {
+      void blob.text().then(text => (workerSource = text));
+      return 'blob:preflight-spec';
+    }) as unknown as typeof URL.createObjectURL;
+
+    void runIsolatedLabScript('lab.environment.set("a", {})', { variables: {} });
+
+    await vi.waitFor(() => {
+      expect(workerSource).toContain('isValidEnvValue(value)');
     });
   });
 });
