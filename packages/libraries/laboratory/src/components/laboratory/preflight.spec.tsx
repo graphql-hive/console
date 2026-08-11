@@ -46,10 +46,25 @@ describe('Preflight', () => {
 
   // The script runs in the browser of whoever opens the lab, so the warning is for readers
   // as much as for the person allowed to edit it.
-  it.each([true, false])('warns about plain text storage when editable is %s', canUpdate => {
+  it.each([true, false])('warns about secrets when editable is %s', canUpdate => {
     mount({ checkPermissions: () => canUpdate });
 
-    expect(screen.getByText(/stored as plain text/)).toBeDefined();
+    expect(screen.getByText(/run in this browser/)).toBeDefined();
     expect(screen.getByText(/lab\.prompt\(\)/)).toBeDefined();
+  });
+
+  // Where a script is stored and who else can read it differs per host, so the package says
+  // neither and the host adds what applies to it.
+  it('says nothing about storage or sharing on its own', () => {
+    mount();
+
+    expect(screen.queryByText(/plain text/)).toBeNull();
+    expect(screen.queryByText(/anyone/i)).toBeNull();
+  });
+
+  it('appends the notice the host supplies', () => {
+    mount({ preflightNotice: 'Stored on this target, where everyone with access can read it.' });
+
+    expect(screen.getByText(/everyone with access can read it/)).toBeDefined();
   });
 });

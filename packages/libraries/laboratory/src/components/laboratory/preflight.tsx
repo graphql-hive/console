@@ -20,6 +20,7 @@ export const Preflight = () => {
     setPreflight,
     setEnv,
     checkPermissions,
+    preflightNotice,
     plugins,
     pluginsState,
     setPluginsState,
@@ -66,13 +67,15 @@ export const Preflight = () => {
           </div>
           {/*
             Shown to readers as well as authors: the script runs in the browser of whoever
-            opens the lab, whether or not they can edit it.
+            opens the lab, whether or not they can edit it. Only what holds for every host
+            belongs here. Where a script is saved, and who else can read it, is the host's to
+            say through `preflightNotice`.
           */}
           <div className="border-border text-muted-foreground border-b px-3 py-2 text-xs">
             <TriangleAlertIcon className="mr-1.5 inline size-3.5 align-[-2px]" />
-            This script is stored as plain text and runs in the browser before every request. Anyone
-            who can open this lab can read it, so ask for secrets with{' '}
-            <code className="font-mono">lab.prompt()</code> rather than writing them in.
+            Preflight scripts run in this browser as part of your requests. Prefer{' '}
+            <code className="font-mono">lab.prompt()</code> over writing secrets into the script.
+            {preflightNotice ? <span className="ml-1">{preflightNotice}</span> : null}
           </div>
           <div className="size-full">
             <Editor

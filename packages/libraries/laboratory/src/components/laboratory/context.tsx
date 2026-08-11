@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { IntrospectionQuery } from 'graphql';
 import {
   type LaboratoryCollection,
@@ -52,6 +52,7 @@ type LaboratoryContextState = LaboratoryCollectionsState &
     isFullScreen?: boolean;
     enableFullScreen?: boolean;
     enableDocs?: boolean;
+    preflightNotice?: ReactNode;
     theme?: 'light' | 'dark';
   };
 type LaboratoryContextActions = LaboratoryCollectionsActions &
@@ -147,6 +148,8 @@ export interface LaboratoryApi {
    * `defaultSchemaIntrospection` must build that with descriptions itself.
    */
   enableDocs?: boolean;
+  /** Appended to the preflight warning. For hosts that share scripts between people. */
+  preflightNotice?: ReactNode;
   goToFullScreen?: () => void;
   exitFullScreen?: () => void;
   defaultPreflight?: LaboratoryPreflight | null;
