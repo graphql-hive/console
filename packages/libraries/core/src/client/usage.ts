@@ -3,12 +3,14 @@ import {
   GraphQLSchema,
   Kind,
   OperationDefinitionNode,
+  OperationTypeNode,
   TypeInfo,
   type ExecutionArgs,
 } from 'graphql';
 import { lru } from 'tiny-lru';
 import { normalizeOperation } from '../normalize/operation.js';
 import { version } from '../version.js';
+import { getDefinedRootType } from './add-hive-typenames.js';
 import { createAgent } from './agent.js';
 import { collectSchemaCoordinates } from './collect-schema-coordinates.js';
 import { dynamicSampling, randomSampling } from './sampling.js';
@@ -281,6 +283,9 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
            * We still want to track the field metrics, so create an artificial
            * fetch that represents the local lookup.
            */
+          const rootPath =
+            getDefinedRootType(args.args.schema, rootOperation.operation ?? OperationTypeNode.QUERY)
+              ?.name ?? 'Query';
 
           fetches = [
             {
@@ -290,7 +295,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
               subgraph: '',
               subgraphSchema: args.args.schema,
               type: 'ROOT',
-              paths: rootOperation.operation,
+              paths: rootPath,
               result, // make sure this isnt taking too much memory to store. Can this be stripped out?
             },
           ];

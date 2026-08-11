@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { IntrospectionQuery } from 'graphql';
 import {
   type LaboratoryCollection,
@@ -27,6 +27,7 @@ import {
 import type {
   LaboratoryPreflight,
   LaboratoryPreflightActions,
+  LaboratoryPreflightPromptRequest,
   LaboratoryPreflightState,
 } from '../../lib/preflight';
 import type {
@@ -51,6 +52,7 @@ type LaboratoryContextState = LaboratoryCollectionsState &
     isFullScreen?: boolean;
     enableFullScreen?: boolean;
     enableDocs?: boolean;
+    preflightNotice?: ReactNode;
     theme?: 'light' | 'dark';
   };
 type LaboratoryContextActions = LaboratoryCollectionsActions &
@@ -67,11 +69,7 @@ type LaboratoryContextActions = LaboratoryCollectionsActions &
     openAddCollectionDialog?: () => void;
     openUpdateEndpointDialog?: () => void;
     openAddTestDialog?: () => void;
-    openPreflightPromptModal?: (props: {
-      placeholder: string;
-      defaultValue?: string;
-      onSubmit?: (value: string | null) => void;
-    }) => void;
+    openPreflightPromptModal?: (request: LaboratoryPreflightPromptRequest) => void;
     goToFullScreen?: () => void;
     exitFullScreen?: () => void;
     checkPermissions?: (
@@ -140,11 +138,7 @@ export interface LaboratoryApi {
   openAddCollectionDialog?: () => void;
   openUpdateEndpointDialog?: () => void;
   openAddTestDialog?: () => void;
-  openPreflightPromptModal?: (props: {
-    placeholder: string;
-    defaultValue?: string;
-    onSubmit?: (value: string | null) => void;
-  }) => void;
+  openPreflightPromptModal?: (request: LaboratoryPreflightPromptRequest) => void;
   isFullScreen?: boolean;
   /** Show the full screen control. Off for hosts that already fill the viewport. */
   enableFullScreen?: boolean;
@@ -154,6 +148,8 @@ export interface LaboratoryApi {
    * `defaultSchemaIntrospection` must build that with descriptions itself.
    */
   enableDocs?: boolean;
+  /** Appended to the preflight warning. For hosts that share scripts between people. */
+  preflightNotice?: ReactNode;
   goToFullScreen?: () => void;
   exitFullScreen?: () => void;
   defaultPreflight?: LaboratoryPreflight | null;
