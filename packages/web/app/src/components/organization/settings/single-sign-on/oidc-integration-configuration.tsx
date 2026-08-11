@@ -747,7 +747,14 @@ function OIDCAccessSettings(props: {
           {organization.viewerCanManageSCIM ? (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Card variant={isSCIMProvisioningEnabled ? 'selected' : 'selectable'}>
+                <Card
+                  variant={isSCIMProvisioningEnabled ? 'selected' : 'selectable'}
+                  onClick={ev => {
+                    if (isSCIMProvisioningEnabled) {
+                      ev.preventDefault();
+                    }
+                  }}
+                >
                   <CardContent variant="selection">
                     <RadioGroupItem value="scim" id="scim-mode" className="mt-0.5" />
                     <div className="flex-1">
