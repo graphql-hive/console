@@ -72,6 +72,10 @@ export class SchemaCheckManager {
   }
 
   async getPreviousSchemaSDL(schemaCheck: SchemaCheck) {
+    if (schemaCheck.baseSchemaSDL !== null) {
+      return schemaCheck.baseSchemaSDL;
+    }
+
     if (schemaCheck.serviceName === null || schemaCheck.schemaVersionId === null) {
       return null;
     }

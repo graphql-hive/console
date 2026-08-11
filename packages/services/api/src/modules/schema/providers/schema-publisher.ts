@@ -580,6 +580,7 @@ export class SchemaPublisher {
 
     const sdl = tryPrettifySDL(input.sdl);
     const baseSdl = input.baseSdl ? tryPrettifySDL(input.baseSdl) : null;
+    const baseSchemaHash = baseSdl ? (input.baseSchemaHash ?? null) : null;
 
     const activeContracts =
       project.type === ProjectType.FEDERATION
@@ -775,6 +776,8 @@ export class SchemaPublisher {
     if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
+        baseSchemaSDL: baseSdl,
+        baseSchemaHash,
         serviceName: input.service ?? null,
         serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
@@ -831,6 +834,8 @@ export class SchemaPublisher {
     } else if (checkResult.conclusion === SchemaCheckConclusion.Success) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
+        baseSchemaSDL: baseSdl,
+        baseSchemaHash,
         serviceName: input.service ?? null,
         serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
@@ -889,6 +894,8 @@ export class SchemaPublisher {
 
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
+        baseSchemaSDL: baseSdl,
+        baseSchemaHash,
         serviceName: input.service ?? null,
         serviceUrl: input.url ?? null,
         meta: input.meta ?? null,

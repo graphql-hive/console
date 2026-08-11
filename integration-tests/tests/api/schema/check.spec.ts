@@ -2070,6 +2070,7 @@ describe.concurrent('schema check with a base service schema', () => {
       const result = await checkSchema(
         {
           service: 'products',
+          baseSchemaHash: 'base-commit-sha',
           baseSdl: /* GraphQL */ `
             extend schema
               @link(url: "https://specs.apollo.dev/link/v1.0")
@@ -2107,6 +2108,10 @@ describe.concurrent('schema check with a base service schema', () => {
       expect(result.schemaCheck).toMatchObject({
         __typename: 'SchemaCheckError',
         valid: false,
+        schemaCheck: {
+          previousSchemaSDL: expect.stringContaining('baseOnly: String'),
+          baseSchemaHash: 'base-commit-sha',
+        },
         changes: {
           nodes: [
             {

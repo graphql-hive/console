@@ -3092,10 +3092,15 @@ export async function createStorage(
         }
 
         const schemaSDLHash = createSDLHash(args.schemaSDL);
+        const baseSchemaSDLHash = args.baseSchemaSDL ? createSDLHash(args.baseSchemaSDL) : null;
         let compositeSchemaSDLHash: string | null = null;
         let supergraphSDLHash: string | null = null;
 
         sdlStoreInserts.push(insertSdl(schemaSDLHash, args.schemaSDL));
+
+        if (args.baseSchemaSDL && baseSchemaSDLHash) {
+          sdlStoreInserts.push(insertSdl(baseSchemaSDLHash, args.baseSchemaSDL));
+        }
 
         if (args.compositeSchemaSDL) {
           compositeSchemaSDLHash = createSDLHash(args.compositeSchemaSDL);
@@ -3114,6 +3119,8 @@ export async function createStorage(
             psql`/* createSchemaCheck */
           INSERT INTO "schema_checks" (
               "schema_sdl_store_id"
+            , "base_schema_sdl_store_id"
+            , "base_schema_hash"
             , "service_name"
             , "service_url"
             , "meta"
@@ -3141,6 +3148,8 @@ export async function createStorage(
           )
           VALUES (
               ${schemaSDLHash}
+            , ${baseSchemaSDLHash}
+            , ${args.baseSchemaHash}
             , ${args.serviceName}
             , ${args.serviceUrl}
             , ${psql.jsonbOrNull(args.meta)}
@@ -3239,6 +3248,7 @@ export async function createStorage(
         FROM
           "schema_checks" as c
         LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_base_schema       ON s_base_schema."id" = c."base_schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_composite_schema  ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_supergraph        ON s_supergraph."id" = c."supergraph_sdl_store_id"
         WHERE
@@ -3374,6 +3384,7 @@ export async function createStorage(
         FROM
           "schema_checks" as c
         LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_base_schema       ON s_base_schema."id" = c."base_schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_composite_schema  ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_supergraph        ON s_supergraph."id" = c."supergraph_sdl_store_id"
         WHERE
@@ -3426,6 +3437,7 @@ export async function createStorage(
             args.withSDL
               ? psql`
                   LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
+                  LEFT JOIN "sdl_store" as s_base_schema       ON s_base_schema."id" = c."base_schema_sdl_store_id"
                   LEFT JOIN "sdl_store" as s_composite_schema  ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
                   LEFT JOIN "sdl_store" as s_supergraph        ON s_supergraph."id" = c."supergraph_sdl_store_id"
                 `
@@ -3554,6 +3566,8 @@ export async function createStorage(
         }
         LEFT JOIN "sdl_store" as s_schema
           ON s_schema."id" = c."schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_base_schema
+          ON s_base_schema."id" = c."base_schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_composite_schema
           ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_supergraph
@@ -3707,6 +3721,10 @@ export async function createStorage(
               FROM "filtered_schema_checks"
               WHERE "filtered_schema_checks"."schema_sdl_store_id" IS NOT NULL
 
+              UNION SELECT DISTINCT "filtered_schema_checks"."base_schema_sdl_store_id"
+              FROM "filtered_schema_checks"
+              WHERE "filtered_schema_checks"."base_schema_sdl_store_id" IS NOT NULL
+
               UNION SELECT DISTINCT "filtered_schema_checks"."composite_schema_sdl_store_id"
               FROM "filtered_schema_checks"
               WHERE "filtered_schema_checks"."composite_schema_sdl_store_id" IS NOT NULL
@@ -3777,6 +3795,7 @@ export async function createStorage(
                     "schema_checks"
                   WHERE
                     "schema_checks"."schema_sdl_store_id" = "sdl_store"."id"
+                    OR "schema_checks"."base_schema_sdl_store_id" = "sdl_store"."id"
                     OR "schema_checks"."composite_schema_sdl_store_id" = "sdl_store"."id"
                     OR "schema_checks"."supergraph_sdl_store_id" = "sdl_store"."id"
                 )
@@ -4212,16 +4231,19 @@ const schemaCheckSQLFields = (include?: { sdl?: boolean; changes?: boolean }) =>
     (include?.sdl ?? true)
       ? psql`
         , coalesce(c."schema_sdl", s_schema."sdl") as "schemaSDL"
+        , s_base_schema."sdl" as "baseSchemaSDL"
         , coalesce(c."composite_schema_sdl", s_composite_schema."sdl") as "compositeSchemaSDL"
         , coalesce(c."supergraph_sdl", s_supergraph."sdl") as "supergraphSDL"
       `
       : psql`
         , '' as "schemaSDL"
+        , null as "baseSchemaSDL"
         , null as "compositeSchemaSDL"
         , null as "supergraphSDL"
       `
   }
   , c."service_name" as "serviceName"
+  , c."base_schema_hash" as "baseSchemaHash"
   , c."service_url" as "serviceUrl"
   , c."meta"
   , c."target_id" as "targetId"

@@ -1312,6 +1312,8 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
             schemaCheck {
               __typename
               id
+              previousSchemaSDL
+              baseSchemaHash
               schemaVersion {
                 id
               }
@@ -1335,6 +1337,8 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
             }
             schemaCheck {
               id
+              previousSchemaSDL
+              baseSchemaHash
             }
           }
         }

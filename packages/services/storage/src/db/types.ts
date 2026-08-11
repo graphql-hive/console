@@ -402,6 +402,8 @@ export interface schema_change_approvals {
 }
 
 export interface schema_checks {
+  base_schema_hash: string | null;
+  base_schema_sdl_store_id: string | null;
   breaking_schema_changes: any | null;
   composite_schema_sdl: string | null;
   composite_schema_sdl_store_id: string | null;

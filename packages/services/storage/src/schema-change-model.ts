@@ -1448,7 +1448,7 @@ const SchemaProposalOutputFields = {
   schemaProposalChanges: z.array(HiveSchemaChangeModel).nullable(),
 };
 
-const SchemaCheckSharedOutputFields = {
+const SchemaCheckCommonFields = {
   schemaSDL: z.string(),
   serviceName: z.string().nullable(),
   serviceUrl: z.string().nullable(),
@@ -1470,8 +1470,24 @@ const SchemaCheckSharedOutputFields = {
   ...SchemaProposalOutputFields,
 };
 
+const SchemaCheckSharedOutputFields = {
+  ...SchemaCheckCommonFields,
+  baseSchemaSDL: z.string().nullable(),
+  baseSchemaHash: z.string().nullable(),
+};
+
 const SchemaCheckSharedInputFields = {
-  ...SchemaCheckSharedOutputFields,
+  ...SchemaCheckCommonFields,
+  baseSchemaSDL: z
+    .string()
+    .nullable()
+    .optional()
+    .transform(value => value ?? null),
+  baseSchemaHash: z
+    .string()
+    .nullable()
+    .optional()
+    .transform(value => value ?? null),
 };
 
 const ContractCheckInput = z.object({

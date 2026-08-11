@@ -238,10 +238,12 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       }
 
       let minifiedBaseSdl: string | null = null;
+      let baseSchemaHash: string | null = null;
 
       if (flags.base) {
         const basePointer = flags.base;
         const gitResult = parseBaseGitFileReference(basePointer);
+        baseSchemaHash = gitResult.status === 'ok' ? gitResult.commit : null;
         const result =
           gitResult.status === 'error'
             ? await loadSchema('first-federation-then-graphql-introspection', basePointer, {
@@ -346,6 +348,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             url: flags.url,
             schemaProposalId: flags.schemaProposalId,
             baseSdl: minifiedBaseSdl,
+            baseSchemaHash,
           },
         },
         /** Gateway timeout is 60 seconds. */

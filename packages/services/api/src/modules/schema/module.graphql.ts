@@ -901,6 +901,11 @@ export default gql`
     """
     baseSdl: String
 
+    """
+    An identifier for the schema supplied through 'baseSdl', such as its Git commit SHA.
+    """
+    baseSchemaHash: String
+
     github: GitHubSchemaCheckInput
     meta: SchemaCheckMetaInput
     """
@@ -1446,6 +1451,10 @@ export default gql`
     """
     previousSchemaSDL: String @tag(name: "public")
     """
+    The caller-supplied identifier for an explicit comparison baseline, such as a Git commit SHA.
+    """
+    baseSchemaHash: String @tag(name: "public")
+    """
     The name of the service that owns the schema. Is null for non composite project types.
     """
     serviceName: String @tag(name: "public")
@@ -1603,6 +1612,10 @@ export default gql`
     """
     previousSchemaSDL: String @tag(name: "public")
     """
+    The caller-supplied identifier for an explicit comparison baseline, such as a Git commit SHA.
+    """
+    baseSchemaHash: String @tag(name: "public")
+    """
     The name of the service that owns the schema. Is null for non composite project types.
     """
     serviceName: String @tag(name: "public")
@@ -1703,6 +1716,10 @@ export default gql`
     The previous schema SDL. For composite schemas this is the service.
     """
     previousSchemaSDL: String @tag(name: "public")
+    """
+    The caller-supplied identifier for an explicit comparison baseline, such as a Git commit SHA.
+    """
+    baseSchemaHash: String @tag(name: "public")
     """
     The name of the service that owns the schema. Is null for non composite project types.
     """
