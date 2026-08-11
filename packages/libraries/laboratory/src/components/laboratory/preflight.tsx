@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
-import { HistoryIcon, PlayIcon } from 'lucide-react';
-import { runIsolatedLabScript } from '../../lib/preflight';
+import { HistoryIcon, PlayIcon, SquareIcon, Trash2Icon } from 'lucide-react';
 import { cn, tokenizeUrls } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
@@ -12,11 +11,14 @@ import { Editor } from './editor';
 export const Preflight = () => {
   const {
     preflight,
+    preflightLogs,
+    isPreflightRunning,
+    testPreflight,
+    abortPreflight,
+    clearPreflightLogs,
     setLastTestResult,
     setPreflight,
-    env,
     setEnv,
-    openPreflightPromptModal,
     checkPermissions,
     plugins,
     pluginsState,
@@ -28,30 +30,15 @@ export const Preflight = () => {
       return;
     }
 
-    const result = await runIsolatedLabScript(
-      preflight?.script ?? '',
-      env ?? { variables: {} },
-      (title, defaultValue, options) => {
-        return new Promise(resolve => {
-          openPreflightPromptModal?.({
-            title,
-            defaultValue,
-            placeholder: options?.placeholder,
-            description: options?.description,
-            onSubmit: value => {
-              resolve(value);
-            },
-          });
-        });
-      },
-      plugins,
-      pluginsState,
-    );
+    const result = await testPreflight?.(plugins, pluginsState);
 
     setEnv(result?.env ?? { variables: {} });
     setPluginsState(result?.pluginsState ?? {});
-    setLastTestResult(result);
-  }, [env, setEnv, preflight, setLastTestResult, openPreflightPromptModal]);
+    setLastTestResult(result ?? null);
+  }, [preflight?.script, testPreflight, plugins, pluginsState, setEnv, setPluginsState]);
+
+  // Logs arrive as the script runs; `lastTestResult` is what survives a reload.
+  const logs = preflightLogs?.length ? preflightLogs : (preflight?.lastTestResult?.logs ?? []);
 
   return (
     <ResizablePanelGroup direction="horizontal" className="size-full">
@@ -60,10 +47,22 @@ export const Preflight = () => {
           <div className="border-border flex w-full items-center gap-2 border-b p-3">
             <span className="text-base font-medium">Preflight</span>
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="default" size="sm" className="h-6 rounded-sm" onClick={run}>
-                <PlayIcon className="size-4" />
-                <span>Test</span>
-              </Button>
+              {isPreflightRunning ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-6 rounded-sm"
+                  onClick={abortPreflight}
+                >
+                  <SquareIcon className="size-4" />
+                  <span>Stop</span>
+                </Button>
+              ) : (
+                <Button variant="default" size="sm" className="h-6 rounded-sm" onClick={run}>
+                  <PlayIcon className="size-4" />
+                  <span>Test</span>
+                </Button>
+              )}
             </div>
           </div>
           <div className="size-full">
@@ -252,15 +251,25 @@ export const Preflight = () => {
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel minSize={10} defaultSize={50} className="bg-card">
-        {preflight?.lastTestResult?.logs && preflight?.lastTestResult?.logs.length > 0 ? (
+        {logs.length > 0 ? (
           <div className="grid size-full grid-rows-[auto_1fr] pb-0">
             <div className="border-border flex h-12 w-full items-center gap-2 border-b p-3">
               <span className="text-base font-medium">Logs</span>
-              <div className="ml-auto flex items-center gap-2" />
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 rounded-sm"
+                  onClick={clearPreflightLogs}
+                >
+                  <Trash2Icon className="size-4" />
+                  <span>Clear</span>
+                </Button>
+              </div>
             </div>
             <ScrollArea className="h-full">
               <div className="flex flex-col gap-1.5 whitespace-pre-wrap p-3">
-                {preflight?.lastTestResult?.logs.map((log, i) => (
+                {logs.map((log, i) => (
                   <div className="gap-2 font-mono" key={i}>
                     <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
                     <span

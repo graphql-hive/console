@@ -26,6 +26,9 @@ export interface LaboratoryPreflight {
 
 export interface LaboratoryPreflightState {
   preflight: LaboratoryPreflight | null;
+  /** Logs from every run, oldest first, not just the ones started from the Test button. */
+  preflightLogs: LaboratoryPreflightLog[];
+  isPreflightRunning: boolean;
 }
 
 /** The script-supplied parts of a `lab.prompt()` call. */
@@ -47,12 +50,27 @@ export type LaboratoryPreflightPrompt = (
   options?: { placeholder?: string; description?: string },
 ) => Promise<string | null>;
 
+export interface LaboratoryPreflightRunOptions {
+  /** Aborting terminates the worker and settles the run as an error. */
+  signal?: AbortSignal;
+  /** Called as each log arrives, so a long-running script reports before it finishes. */
+  onLog?: (log: LaboratoryPreflightLog) => void;
+}
+
 export interface LaboratoryPreflightActions {
   setPreflight: (preflight: LaboratoryPreflight) => void;
   runPreflight: (
     plugins?: LaboratoryPlugin[],
     pluginsState?: Record<string, any>,
   ) => Promise<LaboratoryPreflightResult | null>;
+  /** Runs the script on demand, ignoring `preflight.enabled`, and records the result. */
+  testPreflight: (
+    plugins?: LaboratoryPlugin[],
+    pluginsState?: Record<string, any>,
+  ) => Promise<LaboratoryPreflightResult | null>;
+  /** Stops every in-flight run and releases any prompt waiting on the user. */
+  abortPreflight: () => void;
+  clearPreflightLogs: () => void;
   setLastTestResult: (result: LaboratoryPreflightResult | null) => void;
 }
 
@@ -95,11 +113,19 @@ export const usePreflightPrompt = () => {
     [answerPendingPrompt],
   );
 
+  // Aborting a run leaves its dialog on screen with a script that no longer exists to answer,
+  // so stopping closes it and releases the request with null.
+  const closePreflightPromptModal = useCallback(() => {
+    answerPendingPrompt(null);
+    setIsPreflightPromptModalOpen(false);
+  }, [answerPendingPrompt]);
+
   return {
     isPreflightPromptModalOpen,
     setIsPreflightPromptModalOpen,
     preflightPromptModalProps,
     openPreflightPromptModal,
+    closePreflightPromptModal,
   };
 };
 
@@ -108,10 +134,19 @@ export const usePreflight = (props: {
   onPreflightChange?: (preflight: LaboratoryPreflight | null) => void;
   envApi: LaboratoryEnvState & LaboratoryEnvActions;
   openPreflightPromptModal?: (request: LaboratoryPreflightPromptRequest) => void;
+  /** Releases a prompt still waiting on the user, so aborting doesn't strand the dialog. */
+  closePreflightPromptModal?: () => void;
 }): LaboratoryPreflightState & LaboratoryPreflightActions => {
   const [preflight, _setPreflight] = useState<LaboratoryPreflight | null>(
     props.defaultPreflight ?? null,
   );
+
+  const [preflightLogs, setPreflightLogs] = useState<LaboratoryPreflightLog[]>([]);
+  const [runCount, setRunCount] = useState(0);
+
+  // Runs overlap (an operation run, a schema poll, a Test run), so stopping has to reach all
+  // of them rather than only the most recent.
+  const runsRef = useRef(new Set<AbortController>());
 
   const setPreflight = useCallback(
     (preflight: LaboratoryPreflight) => {
@@ -121,7 +156,44 @@ export const usePreflight = (props: {
     [props],
   );
 
-  const { openPreflightPromptModal } = props;
+  const { openPreflightPromptModal, closePreflightPromptModal } = props;
+
+  const runScript = useCallback(
+    async (script: string, plugins?: LaboratoryPlugin[], pluginsState?: Record<string, any>) => {
+      const run = new AbortController();
+      runsRef.current.add(run);
+      setRunCount(runsRef.current.size);
+
+      try {
+        return await runIsolatedLabScript(
+          script,
+          props.envApi?.env ?? { variables: {} },
+          openPreflightPromptModal
+            ? (title, defaultValue, options) =>
+                new Promise<string | null>(resolve =>
+                  openPreflightPromptModal({
+                    title,
+                    defaultValue,
+                    placeholder: options?.placeholder,
+                    description: options?.description,
+                    onSubmit: resolve,
+                  }),
+                )
+            : undefined,
+          plugins,
+          pluginsState,
+          {
+            signal: run.signal,
+            onLog: log => setPreflightLogs(previous => [...previous, log]),
+          },
+        );
+      } finally {
+        runsRef.current.delete(run);
+        setRunCount(runsRef.current.size);
+      }
+    },
+    [props.envApi.env, openPreflightPromptModal],
+  );
 
   const runPreflight = useCallback(
     async (plugins?: LaboratoryPlugin[], pluginsState?: Record<string, any>) => {
@@ -129,27 +201,31 @@ export const usePreflight = (props: {
         return null;
       }
 
-      return runIsolatedLabScript(
-        preflight.script,
-        props.envApi?.env ?? { variables: {} },
-        openPreflightPromptModal
-          ? (title, defaultValue, options) =>
-              new Promise<string | null>(resolve =>
-                openPreflightPromptModal({
-                  title,
-                  defaultValue,
-                  placeholder: options?.placeholder,
-                  description: options?.description,
-                  onSubmit: resolve,
-                }),
-              )
-          : undefined,
-        plugins,
-        pluginsState,
-      );
+      return runScript(preflight.script, plugins, pluginsState);
     },
-    [preflight, props.envApi.env, openPreflightPromptModal],
+    [preflight, runScript],
   );
+
+  // The Test button runs the script the user is editing, whether or not preflight is enabled.
+  const testPreflight = useCallback(
+    async (plugins?: LaboratoryPlugin[], pluginsState?: Record<string, any>) =>
+      runScript(preflight?.script ?? '', plugins, pluginsState),
+    [preflight?.script, runScript],
+  );
+
+  const abortPreflight = useCallback(() => {
+    for (const run of runsRef.current) {
+      run.abort();
+    }
+
+    runsRef.current.clear();
+    setRunCount(0);
+    closePreflightPromptModal?.();
+  }, [closePreflightPromptModal]);
+
+  const clearPreflightLogs = useCallback(() => {
+    setPreflightLogs([]);
+  }, []);
 
   const setLastTestResult = useCallback(
     (result: LaboratoryPreflightResult | null) => {
@@ -167,8 +243,13 @@ export const usePreflight = (props: {
 
   return {
     preflight,
+    preflightLogs,
+    isPreflightRunning: runCount > 0,
     setPreflight,
     runPreflight,
+    testPreflight,
+    abortPreflight,
+    clearPreflightLogs,
     setLastTestResult,
   };
 };
@@ -179,6 +260,7 @@ export async function runIsolatedLabScript(
   prompt?: LaboratoryPreflightPrompt,
   plugins: LaboratoryPlugin[] = [],
   pluginsState: Record<string, any> = {},
+  options?: LaboratoryPreflightRunOptions,
 ): Promise<LaboratoryPreflightResult> {
   const pluginsObjects = plugins
     .filter(plugin => plugin.preflight?.lab?.object)
@@ -279,6 +361,22 @@ export async function runIsolatedLabScript(
 
     let isSettled = false;
 
+    const pushLog = (log: LaboratoryPreflightLog) => {
+      logs.push(log);
+      options?.onLog?.(log);
+    };
+
+    const abort = () => {
+      settle({
+        status: 'error',
+        error: 'Preflight aborted',
+        logs,
+        env,
+        headers: {},
+        pluginsState,
+      });
+    };
+
     // Single exit for the run: without it a failed run leaves its worker running and its blob
     // URL alive for the rest of the session.
     const settle = (result: LaboratoryPreflightResult) => {
@@ -287,6 +385,7 @@ export async function runIsolatedLabScript(
       }
 
       isSettled = true;
+      options?.signal?.removeEventListener('abort', abort);
       worker.terminate();
       URL.revokeObjectURL(workerUrl);
       resolve(result);
@@ -306,7 +405,7 @@ export async function runIsolatedLabScript(
           });
         } else {
           if (Object.keys(data.headers).length > 0) {
-            logs.push({
+            pushLog({
               level: 'system',
               message: [`Headers:\n${JSON.stringify(data.headers, null, 2)}`],
               createdAt: new Date().toISOString(),
@@ -322,27 +421,9 @@ export async function runIsolatedLabScript(
           });
         }
       } else if (data.type === 'log') {
-        if (data.level === 'log') {
-          logs.push({
-            level: 'log',
-            message: data.message,
-            createdAt: new Date().toISOString(),
-          });
-        } else if (data.level === 'warn') {
-          logs.push({
-            level: 'warn',
-            message: data.message,
-            createdAt: new Date().toISOString(),
-          });
-        } else if (data.level === 'error') {
-          logs.push({
-            level: 'error',
-            message: data.message,
-            createdAt: new Date().toISOString(),
-          });
-        } else if (data.level === 'info') {
-          logs.push({
-            level: 'info',
+        if (['log', 'warn', 'error', 'info'].includes(data.level)) {
+          pushLog({
+            level: data.level,
             message: data.message,
             createdAt: new Date().toISOString(),
           });
@@ -350,7 +431,7 @@ export async function runIsolatedLabScript(
       } else if (data.type === 'header') {
         headers[data.name] = data.value;
 
-        logs.push({
+        pushLog({
           level: 'system',
           message: [`Header ${data.name} set to ${data.value}`],
           createdAt: new Date().toISOString(),
@@ -364,7 +445,11 @@ export async function runIsolatedLabScript(
         void answer
           .catch(() => null)
           .then(value => {
-            worker.postMessage({ type: 'prompt:result', value });
+            // A run that was aborted or timed out while the dialog was open has already
+            // terminated its worker; the late answer is simply dropped.
+            if (!isSettled) {
+              worker.postMessage({ type: 'prompt:result', value });
+            }
           });
       }
     };
@@ -379,6 +464,13 @@ export async function runIsolatedLabScript(
         pluginsState,
       });
     };
+
+    if (options?.signal?.aborted) {
+      abort();
+      return;
+    }
+
+    options?.signal?.addEventListener('abort', abort);
 
     worker.postMessage({ type: 'init', script });
   });

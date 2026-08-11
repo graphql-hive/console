@@ -1,6 +1,7 @@
 import {
   ReactNode,
   useCallback,
+  useEffect,
   useInsertionEffect,
   useLayoutEffect,
   useMemo,
@@ -446,6 +447,7 @@ export const Laboratory = (
     setIsPreflightPromptModalOpen,
     preflightPromptModalProps,
     openPreflightPromptModal,
+    closePreflightPromptModal,
   } = usePreflightPrompt();
 
   const settingsApi = useSettings(props);
@@ -454,7 +456,13 @@ export const Laboratory = (
     ...props,
     envApi,
     openPreflightPromptModal,
+    closePreflightPromptModal,
   });
+
+  const { abortPreflight } = preflightApi;
+
+  // A run outlives the lab otherwise: the worker keeps going after the host unmounts.
+  useEffect(() => abortPreflight, [abortPreflight]);
 
   const pluginsApi = usePlugins(props);
   const testsApi = useTests(props);

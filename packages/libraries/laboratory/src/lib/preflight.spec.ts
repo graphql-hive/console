@@ -157,6 +157,161 @@ describe('runIsolatedLabScript cleanup', () => {
   });
 });
 
+describe('runIsolatedLabScript run control', () => {
+  it('reports logs as they arrive, before the run settles', async () => {
+    const onLog = vi.fn();
+
+    const run = runIsolatedLabScript(
+      'console.log("working")',
+      { variables: {} },
+      undefined,
+      [],
+      {},
+      { onLog },
+    );
+
+    lastWorker().emit({ type: 'log', level: 'log', message: ['working'] });
+
+    expect(onLog).toHaveBeenCalledWith(expect.objectContaining({ level: 'log' }));
+
+    lastWorker().emit({ type: 'result', env: { variables: {} }, headers: {}, pluginsState: {} });
+    await run;
+  });
+
+  it('stops a run when its signal aborts', async () => {
+    const controller = new AbortController();
+
+    const run = runIsolatedLabScript('while (true) {}', { variables: {} }, undefined, [], {}, {
+      signal: controller.signal,
+    });
+
+    controller.abort();
+
+    await expect(run).resolves.toMatchObject({ status: 'error', error: 'Preflight aborted' });
+    expect(lastWorker().terminateCount).toBe(1);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops a prompt answered after the run was aborted', async () => {
+    const controller = new AbortController();
+    let answerPrompt: (value: string | null) => void = () => {};
+    const prompt = vi.fn(() => new Promise<string | null>(resolve => (answerPrompt = resolve)));
+
+    const run = runIsolatedLabScript(
+      'await lab.prompt("Token")',
+      { variables: {} },
+      prompt,
+      [],
+      {},
+      { signal: controller.signal },
+    );
+
+    lastWorker().emit({ type: 'prompt', title: 'Token', defaultValue: undefined, options: {} });
+    controller.abort();
+    await expect(run).resolves.toMatchObject({ status: 'error' });
+
+    answerPrompt('too late');
+
+    await vi.waitFor(() => {
+      expect(lastWorker().posted).not.toContainEqual({
+        type: 'prompt:result',
+        value: 'too late',
+      });
+    });
+  });
+
+  it('settles immediately when the signal is already aborted', async () => {
+    const run = runIsolatedLabScript('console.log(1)', { variables: {} }, undefined, [], {}, {
+      signal: AbortSignal.abort(),
+    });
+
+    await expect(run).resolves.toMatchObject({ status: 'error', error: 'Preflight aborted' });
+    expect(lastWorker().posted).not.toContainEqual(
+      expect.objectContaining({ type: 'init' }),
+    );
+  });
+});
+
+describe('usePreflight run control', () => {
+  const mount = () =>
+    renderHook(() =>
+      usePreflight({
+        defaultPreflight: { enabled: true, script: 'console.log("hi")' },
+        envApi: { env: { variables: {} }, setEnv: vi.fn() },
+      }),
+    );
+
+  it('collects logs from every run, not just the Test button', async () => {
+    const { result } = mount();
+
+    act(() => {
+      void result.current.runPreflight();
+    });
+
+    act(() => {
+      lastWorker().emit({ type: 'log', level: 'log', message: ['from an operation run'] });
+    });
+
+    expect(result.current.preflightLogs).toHaveLength(1);
+    expect(result.current.preflightLogs[0].message).toEqual(['from an operation run']);
+
+    act(() => {
+      result.current.clearPreflightLogs();
+    });
+
+    expect(result.current.preflightLogs).toHaveLength(0);
+  });
+
+  it('runs the script from the Test button even when preflight is disabled', async () => {
+    const { result } = renderHook(() =>
+      usePreflight({
+        defaultPreflight: { enabled: false, script: 'console.log("hi")' },
+        envApi: { env: { variables: {} }, setEnv: vi.fn() },
+      }),
+    );
+
+    await act(async () => {
+      expect(await result.current.runPreflight()).toBeNull();
+    });
+
+    act(() => {
+      void result.current.testPreflight();
+    });
+
+    expect(FakeWorker.instances).toHaveLength(1);
+  });
+
+  // A Test run, an operation run and a schema poll can all be in flight, so stopping has to
+  // reach every one of them rather than the most recent.
+  it('aborts every in-flight run and releases the open prompt', async () => {
+    const closePreflightPromptModal = vi.fn();
+    const { result } = renderHook(() =>
+      usePreflight({
+        defaultPreflight: { enabled: true, script: 'console.log("hi")' },
+        envApi: { env: { variables: {} }, setEnv: vi.fn() },
+        closePreflightPromptModal,
+      }),
+    );
+
+    let runs: Promise<unknown>[] = [];
+    act(() => {
+      runs = [result.current.runPreflight(), result.current.testPreflight()];
+    });
+
+    expect(FakeWorker.instances).toHaveLength(2);
+    expect(result.current.isPreflightRunning).toBe(true);
+
+    await act(async () => {
+      result.current.abortPreflight();
+      await Promise.all(runs);
+    });
+
+    expect(FakeWorker.instances.map(worker => worker.terminateCount)).toEqual([1, 1]);
+    expect(closePreflightPromptModal).toHaveBeenCalled();
+    expect(result.current.isPreflightRunning).toBe(false);
+  });
+});
+
 describe('usePreflightPrompt', () => {
   // The dialog opens on a timer, so the tests drive it rather than waiting on it.
   beforeEach(() => {
