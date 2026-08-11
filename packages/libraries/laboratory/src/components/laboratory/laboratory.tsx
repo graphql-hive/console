@@ -21,7 +21,7 @@ import { useHistory } from '../../lib/history';
 import { keepEditorMouseMovesInShadowRoot } from '../../lib/monaco-shadow-dom';
 import { useOperations } from '../../lib/operations';
 import { LaboratoryPluginTab, usePlugins } from '../../lib/plugins';
-import { usePreflight } from '../../lib/preflight';
+import { usePreflight, usePreflightPrompt } from '../../lib/preflight';
 import { useSettings } from '../../lib/settings';
 import { LaboratoryTabCustom, useTabs } from '../../lib/tabs';
 import { useTests } from '../../lib/tests';
@@ -72,6 +72,7 @@ import { History } from './history';
 import { HistoryItem } from './history-item';
 import { Operation } from './operation';
 import { Preflight } from './preflight';
+import { PreflightPromptModal } from './preflight-prompt-modal';
 import { Settings } from './settings';
 import { Tabs } from './tabs';
 
@@ -125,91 +126,6 @@ const updateEndpointFormSchema = z.object({
 const addTestFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
 });
-
-const PreflightPromptModal = (props: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  placeholder: string;
-  defaultValue?: string;
-  onSubmit?: (value: string | null) => void;
-}) => {
-  const form = useForm({
-    defaultValues: {
-      value: props.defaultValue || null,
-    },
-    validators: {
-      onSubmit: z.object({
-        value: z.string().min(1, 'Value is required').nullable(),
-      }),
-    },
-    onSubmit: ({ value }) => {
-      props.onSubmit?.(value.value || null);
-      props.onOpenChange(false);
-      form.reset();
-    },
-  });
-
-  return (
-    <Dialog
-      open={props.open}
-      onOpenChange={open => {
-        if (!form.state.isSubmitted) {
-          void form.handleSubmit();
-        }
-
-        props.onOpenChange(open);
-      }}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Preflight prompt</DialogTitle>
-        </DialogHeader>
-        <DialogDescription>Enter values for the preflight script.</DialogDescription>
-        <form
-          id="preflight-prompt-form"
-          onSubmit={e => {
-            e.preventDefault();
-            void form.handleSubmit();
-          }}
-        >
-          <FieldGroup>
-            <form.Field name="value">
-              {field => {
-                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value || ''}
-                      onBlur={field.handleBlur}
-                      onChange={e => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder={props.placeholder}
-                      autoComplete="off"
-                    />
-                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                  </Field>
-                );
-              }}
-            </form.Field>
-          </FieldGroup>
-        </form>
-        <DialogFooter>
-          <Button
-            type="submit"
-            form="preflight-prompt-form"
-            onClick={() => {
-              void form.handleSubmit();
-            }}
-          >
-            Submit
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 const LaboratoryContent = () => {
   const {
@@ -523,11 +439,21 @@ export const Laboratory = (
     [props.permissions],
   );
 
+  // Called before the API hooks so `usePreflight` can answer `lab.prompt()` calls from
+  // scripts running as part of an operation, not just from the preflight Test button.
+  const {
+    isPreflightPromptModalOpen,
+    setIsPreflightPromptModalOpen,
+    preflightPromptModalProps,
+    openPreflightPromptModal,
+  } = usePreflightPrompt();
+
   const settingsApi = useSettings(props);
   const envApi = useEnv(props);
   const preflightApi = usePreflight({
     ...props,
     envApi,
+    openPreflightPromptModal,
   });
 
   const pluginsApi = usePlugins(props);
@@ -616,37 +542,6 @@ export const Laboratory = (
       setIsAddTestDialogOpen(false);
     },
   });
-
-  const [isPreflightPromptModalOpen, setIsPreflightPromptModalOpen] = useState(false);
-
-  const [preflightPromptModalProps, setPreflightPromptModalProps] = useState<{
-    placeholder: string;
-    defaultValue?: string;
-    onSubmit?: (value: string | null) => void;
-  }>({
-    placeholder: '',
-    defaultValue: undefined,
-    onSubmit: undefined,
-  });
-
-  const openPreflightPromptModal = useCallback(
-    (props: {
-      placeholder: string;
-      defaultValue?: string;
-      onSubmit?: (value: string | null) => void;
-    }) => {
-      setPreflightPromptModalProps({
-        placeholder: props.placeholder,
-        defaultValue: props.defaultValue,
-        onSubmit: props.onSubmit,
-      });
-
-      setTimeout(() => {
-        setIsPreflightPromptModalOpen(true);
-      }, 200);
-    },
-    [],
-  );
 
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
 

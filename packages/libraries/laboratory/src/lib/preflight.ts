@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import cryptoJsSource from 'crypto-js/crypto-js.js?raw';
 import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from './env';
 import { LaboratoryPlugin } from './plugins';
@@ -28,6 +28,13 @@ export interface LaboratoryPreflightState {
   preflight: LaboratoryPreflight | null;
 }
 
+/** A single `lab.prompt()` call waiting on the user. */
+export interface LaboratoryPreflightPromptRequest {
+  placeholder: string;
+  defaultValue?: string;
+  onSubmit?: (value: string | null) => void;
+}
+
 export interface LaboratoryPreflightActions {
   setPreflight: (preflight: LaboratoryPreflight) => void;
   runPreflight: (
@@ -37,10 +44,60 @@ export interface LaboratoryPreflightActions {
   setLastTestResult: (result: LaboratoryPreflightResult | null) => void;
 }
 
+/**
+ * Owns the one prompt dialog every preflight run shares. Runs overlap in practice (an
+ * operation run while schema polling has a prompt open), and only one request can be on
+ * screen, so a displaced request is answered with null rather than left waiting.
+ */
+export const usePreflightPrompt = () => {
+  const [isPreflightPromptModalOpen, setIsPreflightPromptModalOpen] = useState(false);
+
+  const [preflightPromptModalProps, setPreflightPromptModalProps] =
+    useState<LaboratoryPreflightPromptRequest>({
+      placeholder: '',
+      defaultValue: undefined,
+      onSubmit: undefined,
+    });
+
+  const pendingPromptRef = useRef<LaboratoryPreflightPromptRequest['onSubmit']>(undefined);
+
+  const answerPendingPrompt = useCallback((value: string | null) => {
+    const pending = pendingPromptRef.current;
+    pendingPromptRef.current = undefined;
+    pending?.(value);
+  }, []);
+
+  const openPreflightPromptModal = useCallback(
+    (request: LaboratoryPreflightPromptRequest) => {
+      answerPendingPrompt(null);
+      pendingPromptRef.current = request.onSubmit;
+
+      setPreflightPromptModalProps({
+        placeholder: request.placeholder,
+        defaultValue: request.defaultValue,
+        onSubmit: answerPendingPrompt,
+      });
+
+      setTimeout(() => {
+        setIsPreflightPromptModalOpen(true);
+      }, 200);
+    },
+    [answerPendingPrompt],
+  );
+
+  return {
+    isPreflightPromptModalOpen,
+    setIsPreflightPromptModalOpen,
+    preflightPromptModalProps,
+    openPreflightPromptModal,
+  };
+};
+
 export const usePreflight = (props: {
   defaultPreflight?: LaboratoryPreflight | null;
   onPreflightChange?: (preflight: LaboratoryPreflight | null) => void;
   envApi: LaboratoryEnvState & LaboratoryEnvActions;
+  openPreflightPromptModal?: (request: LaboratoryPreflightPromptRequest) => void;
 }): LaboratoryPreflightState & LaboratoryPreflightActions => {
   const [preflight, _setPreflight] = useState<LaboratoryPreflight | null>(
     props.defaultPreflight ?? null,
@@ -54,6 +111,8 @@ export const usePreflight = (props: {
     [props],
   );
 
+  const { openPreflightPromptModal } = props;
+
   const runPreflight = useCallback(
     async (plugins?: LaboratoryPlugin[], pluginsState?: Record<string, any>) => {
       if (!preflight?.enabled) {
@@ -63,12 +122,17 @@ export const usePreflight = (props: {
       return runIsolatedLabScript(
         preflight.script,
         props.envApi?.env ?? { variables: {} },
-        undefined,
+        openPreflightPromptModal
+          ? (placeholder, defaultValue) =>
+              new Promise<string | null>(resolve =>
+                openPreflightPromptModal({ placeholder, defaultValue, onSubmit: resolve }),
+              )
+          : undefined,
         plugins,
         pluginsState,
       );
     },
-    [preflight, props.envApi.env],
+    [preflight, props.envApi.env, openPreflightPromptModal],
   );
 
   const setLastTestResult = useCallback(
@@ -261,9 +325,15 @@ export async function runIsolatedLabScript(
           createdAt: new Date().toISOString(),
         });
       } else if (data.type === 'prompt') {
-        void prompt?.(data.placeholder, data.defaultValue).then(value => {
-          worker.postMessage({ type: 'prompt:result', value });
-        });
+        // Without an answer the script awaits `lab.prompt()` forever and the worker never
+        // reports a result, so a missing handler has to answer with null.
+        const answer = prompt?.(data.placeholder, data.defaultValue) ?? Promise.resolve(null);
+
+        void answer
+          .catch(() => null)
+          .then(value => {
+            worker.postMessage({ type: 'prompt:result', value });
+          });
       }
     };
 
