@@ -1,5 +1,35 @@
 # hive
 
+## 11.11.1
+
+### Patch Changes
+
+- [#8361](https://github.com/graphql-hive/console/pull/8361)
+  [`80172a5`](https://github.com/graphql-hive/console/commit/80172a5d24eaec8c072496e138ca1867f45a5875)
+  Thanks [@jdolle](https://github.com/jdolle)! - Remove pretty print from check diff view. Add
+  integration and e2e tests to verify publishing then checking the same SDL won't cause a difference
+  in the schema check diff viewer
+
+- [#8363](https://github.com/graphql-hive/console/pull/8363)
+  [`1f7c817`](https://github.com/graphql-hive/console/commit/1f7c8177bd945b614ec18bee909b88c374b1f2ed)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-55q2-fjhq-7xh7](https://github.com/advisories/GHSA-55q2-fjhq-7xh7).
+
+- [#8367](https://github.com/graphql-hive/console/pull/8367)
+  [`890f026`](https://github.com/graphql-hive/console/commit/890f026aadc06a5a863f697e215e05bab1113f19)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add schema check composed SDL fields to public API
+
+  ```graphql
+  query CheckComposedSchemas($targetRef: TargetReferenceInput!, $checkId: ID!) {
+    target(reference: $targetRef) {
+      schemaCheck(id: $checkId) {
+        compositeSchemaSDL # newly added
+        supergraphSDL # newly added
+      }
+    }
+  }
+  ```
+
 ## 11.11.0
 
 ### Minor Changes
