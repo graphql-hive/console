@@ -44,7 +44,7 @@
   "dependencies": {
     "@base-ui/react": "^1.1.0",
     "@graphql-tools/url-loader": "^9.1.0",
-    "dompurify": "3.4.12",
+    "dompurify": "3.4.13",
     "graphql-language-service": "^5.5.0",
     "radix-ui": "^1.4.3",
     "react-zoom-pan-pinch": "^3.7.0",
