@@ -2070,22 +2070,24 @@ describe.concurrent('schema check with a base service schema', () => {
       const result = await checkSchema(
         {
           service: 'products',
-          baseSchemaHash: 'base-commit-sha',
-          baseSdl: /* GraphQL */ `
-            extend schema
-              @link(url: "https://specs.apollo.dev/link/v1.0")
-              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+          base: {
+            hash: 'base-commit-sha',
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
 
-            type Query {
-              product: Product
-            }
+              type Query {
+                product: Product
+              }
 
-            type Product @key(fields: "id") {
-              id: ID!
-              stable: String
-              baseOnly: String
-            }
-          `,
+              type Product @key(fields: "id") {
+                id: ID!
+                stable: String
+                baseOnly: String
+              }
+            `,
+          },
           sdl: /* GraphQL */ `
             extend schema
               @link(url: "https://specs.apollo.dev/link/v1.0")
@@ -2154,19 +2156,22 @@ describe.concurrent('schema check with a base service schema', () => {
     const result = await checkSchema(
       {
         service: 'products',
-        baseSdl: /* GraphQL */ `
-          extend schema
-            @link(url: "https://specs.apollo.dev/link/v1.0")
-            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+        base: {
+          hash: 'invalid-base-schema',
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
 
-          type Query {
-            product: Product
-          }
+            type Query {
+              product: Product
+            }
 
-          type Product @key(fields: "missing") {
-            id: ID!
-          }
-        `,
+            type Product @key(fields: "missing") {
+              id: ID!
+            }
+          `,
+        },
         sdl: /* GraphQL */ `
           extend schema
             @link(url: "https://specs.apollo.dev/link/v1.0")

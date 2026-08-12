@@ -418,21 +418,24 @@ test.concurrent(
     const checkResult = await checkSchema(
       {
         service,
-        baseSdl: /* GraphQL */ `
-          extend schema
-            @link(url: "https://specs.apollo.dev/link/v1.0")
-            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@tag"])
+        base: {
+          hash: 'base-commit-sha',
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@tag"])
 
-          type Query {
-            product: Product @tag(name: "public")
-          }
+            type Query {
+              product: Product @tag(name: "public")
+            }
 
-          type Product @key(fields: "id") @tag(name: "public") {
-            id: ID!
-            stable: String @tag(name: "public")
-            baseOnly: String @tag(name: "public")
-          }
-        `,
+            type Product @key(fields: "id") @tag(name: "public") {
+              id: ID!
+              stable: String @tag(name: "public")
+              baseOnly: String @tag(name: "public")
+            }
+          `,
+        },
         sdl: /* GraphQL */ `
           extend schema
             @link(url: "https://specs.apollo.dev/link/v1.0")
