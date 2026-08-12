@@ -16,6 +16,7 @@ Hive Console and can be embedded into any page that talks to a GraphQL endpoint.
 - Query builder: click schema fields/arguments to build the operation
 - Schema explorer with search (list and tree modes)
 - Collections (saved operations) and request history
+- Schema documentation pane (opt-in via `enableDocs`), reachable from Builder rows and editor hovers
 - Preflight scripts: run JavaScript before a request in a sandboxed Web Worker
 - Environment variables with `{{variable}}` interpolation
 - Renders a federation query plan when a server includes one in the response `extensions`
@@ -101,6 +102,18 @@ Pass a `permissions` object to gate actions per resource (`preflight`, `collecti
 `collectionsOperations`) with `read`/`create`/`update`/`delete` flags. Gating is applied in the UI
 (controls are hidden/disabled) with a backstop in the operations logic; anything unspecified
 defaults to allowed.
+
+### Documentation pane
+
+`enableDocs` adds a documentation icon to the left rail, opening a schema browser in the same slot
+as Collections and History. It is off unless you pass it. Builder rows get an "Open in Docs" context
+menu entry, and the GraphQL editor hover gets an "Open in Docs" link (the Lab serves that hover
+itself when docs are on, instead of monaco-graphql).
+
+The prop also decides whether introspection requests descriptions, since nothing else renders them.
+That only reaches introspection the Lab performs itself: if you pass `defaultSchemaIntrospection`,
+build it with descriptions or the pane will have nothing to show. `introspectionFromSchema` includes
+them by default, so the usual `introspectionFromSchema(buildSchema(sdl))` needs no extra options.
 
 ### Styling and rendering
 

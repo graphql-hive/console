@@ -1,5 +1,44 @@
 # @graphql-yoga/render-graphiql
 
+## 0.1.15
+
+### Patch Changes
+
+- [#8355](https://github.com/graphql-hive/console/pull/8355)
+  [`b8b4499`](https://github.com/graphql-hive/console/commit/b8b4499af882ae6f711d6553957105120d98fd31)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Lab: Add a schema documentation
+  pane, opt-in via the new `enableDocs` prop.
+
+  When enabled, a third icon appears in the left rail and opens documentation in the same slot as
+  Collections and History: browse root types, types and fields, search across the whole type map
+  (including input objects and enum values), and read descriptions, deprecations and argument
+  defaults. Builder rows gain an "Open in Docs" context menu entry, and the GraphQL editor hover
+  gains an "Open in Docs" link. `renderLaboratory` enables the pane by default, so standalone
+  embedders of the UMD bundle get it without passing `enableDocs`.
+
+  `enableDocs` also decides whether introspection asks for descriptions, so a host that supplies
+  `defaultSchemaIntrospection` must build it with descriptions itself. Building it with
+  `introspectionFromSchema` does that by default.
+
+  **Removed:** the `introspection.schemaDescription` setting and its toggle in the settings dialog.
+  It was wired to graphql-js's `descriptions` option rather than `schemaDescription`, and defaulted
+  to `false` where graphql-js defaults to `true`, so nothing rendered descriptions and the toggle
+  had no discoverable effect. Descriptions now follow `enableDocs`. `render-laboratory` no longer
+  maps Yoga's `schemaDescription` option.
+
+- [#8356](https://github.com/graphql-hive/console/pull/8356)
+  [`332e06f`](https://github.com/graphql-hive/console/commit/332e06fe81051a90b0dd89df5195a63062dee616)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adds a `defaultCollections` option to
+  `renderLaboratory`.
+
+  Collections can be pre-populated by passing a list of collections. This is useful when hosted on a
+  gateway.
+
+- Updated dependencies
+  [[`b8b4499`](https://github.com/graphql-hive/console/commit/b8b4499af882ae6f711d6553957105120d98fd31),
+  [`ee824bd`](https://github.com/graphql-hive/console/commit/ee824bd3fb254d65f16340296b19930dd53f4a50)]:
+  - @graphql-hive/laboratory@0.2.4
+
 ## 0.1.14
 
 ### Patch Changes

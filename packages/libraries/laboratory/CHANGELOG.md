@@ -1,5 +1,44 @@
 # @graphql-hive/laboratory
 
+## 0.2.4
+
+### Patch Changes
+
+- [#8355](https://github.com/graphql-hive/console/pull/8355)
+  [`b8b4499`](https://github.com/graphql-hive/console/commit/b8b4499af882ae6f711d6553957105120d98fd31)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Lab: Add a schema documentation
+  pane, opt-in via the new `enableDocs` prop.
+
+  When enabled, a third icon appears in the left rail and opens documentation in the same slot as
+  Collections and History: browse root types, types and fields, search across the whole type map
+  (including input objects and enum values), and read descriptions, deprecations and argument
+  defaults. Builder rows gain an "Open in Docs" context menu entry, and the GraphQL editor hover
+  gains an "Open in Docs" link. `renderLaboratory` enables the pane by default, so standalone
+  embedders of the UMD bundle get it without passing `enableDocs`.
+
+  `enableDocs` also decides whether introspection asks for descriptions, so a host that supplies
+  `defaultSchemaIntrospection` must build it with descriptions itself. Building it with
+  `introspectionFromSchema` does that by default.
+
+  **Removed:** the `introspection.schemaDescription` setting and its toggle in the settings dialog.
+  It was wired to graphql-js's `descriptions` option rather than `schemaDescription`, and defaulted
+  to `false` where graphql-js defaults to `true`, so nothing rendered descriptions and the toggle
+  had no discoverable effect. Descriptions now follow `enableDocs`. `render-laboratory` no longer
+  maps Yoga's `schemaDescription` option.
+
+- [#8357](https://github.com/graphql-hive/console/pull/8357)
+  [`ee824bd`](https://github.com/graphql-hive/console/commit/ee824bd3fb254d65f16340296b19930dd53f4a50)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Laboratory: restore preflight
+  behaviour that was lost when the lab moved into this package, and stop a script from being able to
+  wedge a run.
+
+  - `lab.prompt(title, defaultValue, { placeholder, description })`. **The first argument is now the
+    field label rather than the input's placeholder**.
+  - `lab.environment.set()` accepts strings, numbers, booleans and `null`; anything else is dropped
+    with a warning, since environment values are interpolated into headers as text.
+  - New `preflightNotice` prop. The preflight editor warns that scripts run in the reader's browser;
+    hosts that share one script between people should say so here.
+
 ## 0.2.3
 
 ### Patch Changes

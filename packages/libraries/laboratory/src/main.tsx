@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import { devCollections } from '../dev/collections';
 import { devActiveTabId, devOperations, devTabs } from '../dev/operations';
+import { devPreflight } from '../dev/preflight';
 import { Laboratory } from './components/laboratory/laboratory';
 
 /**
@@ -10,11 +11,13 @@ import { Laboratory } from './components/laboratory/laboratory';
  */
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <Laboratory
+    enableDocs
     theme="dark"
     defaultEndpoint={`${window.location.origin}/graphql`}
     defaultCollections={devCollections}
     defaultOperations={devOperations}
     defaultTabs={devTabs}
     defaultActiveTabId={devActiveTabId}
+    defaultPreflight={devPreflight}
   />,
 );

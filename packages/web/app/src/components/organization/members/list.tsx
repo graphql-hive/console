@@ -276,7 +276,8 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
       <tr key={member.id} className={cn(member.user.provisionInfo?.isDisabled && 'bg-red-800/5')}>
         <td className="w-12 pl-2">
           <div>
-            {member.user.provisionInfo?.isDisabled ? (
+            {member.user.provisionInfo?.provisioningStatus ===
+              GraphQLSchema.ProvisioningStatus.Active && member.user.provisionInfo?.isDisabled ? (
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-800/10">
                 <UserRoundX className="mx-auto size-5 text-red-800" />
               </div>
