@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { parse } from 'graphql';
 import { createYoga } from 'graphql-yoga';
 import stripAnsi from 'strip-ansi';
+import { getSchemaCheckDetails, pollFor } from 'testkit/flow';
 import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
 import { buildSubgraphSchema } from '@apollo/subgraph';
@@ -1239,6 +1240,89 @@ Multi line description:
 # with single line comment
 """`),
   );
+});
+
+test.concurrent('schema:check ignores SDL formatting', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { inviteAndJoinMember, createProject, organization } = await createOrg();
+  await inviteAndJoinMember();
+  const { createTargetAccessToken, project, target } = await createProject(ProjectType.Federation);
+  const { latestSchema, latestSchemaCheck } = await createTargetAccessToken({});
+
+  const targetSlug = [organization.slug, project.slug, target.slug].join('/');
+
+  // publish multiple subgraphs to ensure composition is processing and merging them
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      ownerToken,
+      '--author',
+      'me',
+      '--target',
+      targetSlug,
+      '--service',
+      'x',
+      '--url',
+      'https://x.graphql-hive.com/graphql',
+      'fixtures/federation-00.graphql',
+    ]),
+  ).resolves.not.toThrow();
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      ownerToken,
+      '--author',
+      'me',
+      '--target',
+      targetSlug,
+      '--service',
+      'y',
+      '--url',
+      'https://y.graphql-hive.com/graphql',
+      'fixtures/federation-01.graphql',
+    ]),
+  ).resolves.not.toThrow();
+
+  const { latestVersion } = await latestSchema();
+  expect(latestVersion?.isValid).toBe(true);
+
+  // check the exact same schema
+  await expect(
+    schemaCheck([
+      '--registry.accessToken',
+      ownerToken,
+      '--target',
+      targetSlug,
+      '--author',
+      'me',
+      '--commit',
+      'abc1234',
+      '--service',
+      'y',
+      '--url',
+      'https://y.graphql-hive.com/graphql',
+      'fixtures/federation-01.graphql',
+    ]),
+  ).resolves.not.toThrow();
+
+  const lastCheckId = await latestSchemaCheck();
+  const details = await getSchemaCheckDetails(
+    {
+      byId: target.id,
+    },
+    lastCheckId!,
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  // compare the check's SDLs to the schema version's SDLs
+  const lastCheck = details.target?.schemaCheck!;
+  expect(lastCheck.__typename).toBe('SuccessfulSchemaCheck');
+  assert(lastCheck.__typename === 'SuccessfulSchemaCheck');
+
+  expect(lastCheck.supergraphSDL).toEqual(lastCheck.schemaVersion?.supergraph);
+  expect(lastCheck.compositeSchemaSDL).toEqual(lastCheck.schemaVersion?.sdl);
+  expect(lastCheck.schemaSDL).toEqual(lastCheck.previousSchemaSDL);
 });
 
 test.concurrent(

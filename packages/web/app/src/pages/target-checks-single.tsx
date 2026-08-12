@@ -478,6 +478,7 @@ function DefaultSchemaView(props: {
 
   const items = [
     {
+      testId: 'details-view-btn',
       value: 'details',
       icon: <ListBulletIcon className="h-5 w-auto flex-none" />,
       label: 'Details',
@@ -488,6 +489,7 @@ function DefaultSchemaView(props: {
 
   if (schemaCheck.serviceName) {
     items.push({
+      testId: 'service-view-btn',
       value: 'service',
       icon: <DiffIcon className="h-5 w-auto flex-none" />,
       label: 'Service',
@@ -497,6 +499,7 @@ function DefaultSchemaView(props: {
   }
 
   items.push({
+    testId: 'schema-view-btn',
     value: 'schema',
     icon: <DiffIcon className="h-5 w-auto flex-none" />,
     label: 'Schema',
@@ -506,6 +509,7 @@ function DefaultSchemaView(props: {
 
   if (props.projectType === ProjectType.Federation) {
     items.push({
+      testId: 'supergraph-view-btn',
       value: 'supergraph',
       icon: <DiffIcon className="h-5 w-auto flex-none" />,
       label: 'Supergraph',
@@ -515,6 +519,7 @@ function DefaultSchemaView(props: {
   }
 
   items.push({
+    testId: 'policy-view-btn',
     value: 'policy',
     icon: <AlertTriangleIcon className="h-5 w-auto flex-none" />,
     label: 'Policy',
@@ -538,7 +543,12 @@ function DefaultSchemaView(props: {
       >
         <TabsList className="bg-neutral-5 dark:bg-neutral-3 border-neutral-5 dark:border-neutral-3 w-full justify-start rounded-none border-x border-b">
           {items.map(item => (
-            <TabsTrigger key={item.value} value={item.value} disabled={item.isDisabled}>
+            <TabsTrigger
+              data-testid={item.testId}
+              key={item.value}
+              value={item.value}
+              disabled={item.isDisabled}
+            >
               {item.icon}
               <span className="ml-2">{item.label}</span>
             </TabsTrigger>
