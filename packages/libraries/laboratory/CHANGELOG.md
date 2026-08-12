@@ -1,5 +1,14 @@
 # @graphql-hive/laboratory
 
+## 0.2.5
+
+### Patch Changes
+
+- [#8363](https://github.com/graphql-hive/console/pull/8363)
+  [`1f7c817`](https://github.com/graphql-hive/console/commit/1f7c8177bd945b614ec18bee909b88c374b1f2ed)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-55q2-fjhq-7xh7](https://github.com/advisories/GHSA-55q2-fjhq-7xh7).
+
 ## 0.2.4
 
 ### Patch Changes
