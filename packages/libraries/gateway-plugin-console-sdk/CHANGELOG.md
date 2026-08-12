@@ -1,5 +1,18 @@
 # @graphql-hive/gateway-plugin-console-sdk
 
+## 0.1.3
+
+### Patch Changes
+
+- [#8329](https://github.com/graphql-hive/console/pull/8329)
+  [`33791da`](https://github.com/graphql-hive/console/commit/33791da958f6801d4a981c9147891724f39ef50c)
+  Thanks [@jdolle](https://github.com/jdolle)! - Support Rust query planner execution by setting
+  default operation root type name in collected payload's "paths" if not returned in subgraph call
+  request info.
+- Updated dependencies
+  [[`33791da`](https://github.com/graphql-hive/console/commit/33791da958f6801d4a981c9147891724f39ef50c)]:
+  - @graphql-hive/core@0.22.3
+
 ## 0.1.2
 
 ### Patch Changes
