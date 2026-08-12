@@ -336,13 +336,19 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           this.log('Waiting for other schema publishes to complete...');
           result = null;
         } else if (result.schemaPublish.__typename === 'SchemaPublishMissingServiceError') {
-          throw new SchemaPublishMissingServiceError(result.schemaPublish.missingServiceError);
+          throw new SchemaPublishMissingServiceError(
+            result.schemaPublish.missingServiceError || 'Unknown schemaPublish.missingServiceError',
+          );
         } else if (result.schemaPublish.__typename === 'SchemaPublishMissingUrlError') {
-          throw new SchemaPublishMissingUrlError(result.schemaPublish.missingUrlError);
+          throw new SchemaPublishMissingUrlError(
+            result.schemaPublish.missingUrlError || 'Unknown schemaPublish.missingUrlError',
+          );
         } else if (result.schemaPublish.__typename === 'SchemaPublishError') {
           const changes = result.schemaPublish.changes;
           const errors = result.schemaPublish.errors;
-          this.log(renderErrors(errors));
+          if (errors) {
+            this.log(renderErrors(errors));
+          }
 
           if (changes?.edges.length) {
             this.log('');
@@ -364,7 +370,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         } else {
           throw new APIError(
             'message' in result.schemaPublish
-              ? result.schemaPublish.message
+              ? result.schemaPublish.message || 'Unknown schemaPublish.message'
               : `Received unhandled type "${(result.schemaPublish as any)?.__typename}" in response.`,
           );
         }
