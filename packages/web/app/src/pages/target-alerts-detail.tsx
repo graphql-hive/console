@@ -62,7 +62,6 @@ const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
         thresholdValue
         direction
         confirmationMinutes
-        lastEvaluatedAt
         channels {
           id
           name
@@ -122,6 +121,7 @@ const TargetAlertsDetailPage_StateLogQuery = graphql(`
       id
       metricAlertRule(id: $ruleId) {
         id
+        lastEvaluatedAt
         stateAt(timestamp: $from)
         stateLog(from: $from, to: $to) {
           id
@@ -300,7 +300,6 @@ function RuleStateLogSection(props: {
     createdAt: string;
     metric?: MetricAlertRuleMetric | null;
     severity: MetricAlertRuleSeverity;
-    lastEvaluatedAt?: string | null;
   };
 }) {
   const { organizationSlug, projectSlug, targetSlug, ruleId, viewRangeMinutes, rule } = props;
@@ -325,6 +324,9 @@ function RuleStateLogSection(props: {
   const data = useKeepPreviousData(result.data, result.fetching || result.stale);
   const stateLog = data?.target?.metricAlertRule?.stateLog ?? [];
   const stateAtWindowStart = data?.target?.metricAlertRule?.stateAt;
+  // Read from the polling query, not the rule config: the chart's scored window
+  // has to advance with each evaluation, and the config query never refetches.
+  const lastEvaluatedAt = data?.target?.metricAlertRule?.lastEvaluatedAt;
   const operationsStats = data?.target?.operationsStats ?? null;
   const hasNoData = !data;
   const stateLogStatus =
@@ -371,7 +373,7 @@ function RuleStateLogSection(props: {
           direction={rule.direction}
           thresholdType={rule.thresholdType}
           timeWindowMinutes={rule.timeWindowMinutes}
-          evaluatedAt={rule.lastEvaluatedAt}
+          evaluatedAt={lastEvaluatedAt}
         />
       </section>
 
