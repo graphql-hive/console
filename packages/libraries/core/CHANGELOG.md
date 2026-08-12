@@ -1,5 +1,23 @@
 # @graphql-hive/core
 
+## 0.22.3
+
+### Patch Changes
+
+- [#8329](https://github.com/graphql-hive/console/pull/8329)
+  [`33791da`](https://github.com/graphql-hive/console/commit/33791da958f6801d4a981c9147891724f39ef50c)
+  Thanks [@jdolle](https://github.com/jdolle)! - Support Rust query planner execution by setting
+  default operation root type name in collected payload's "paths" if not returned in subgraph call
+  request info.
+
+## 0.22.2
+
+### Patch Changes
+
+- [#8317](https://github.com/graphql-hive/console/pull/8317)
+  [`658ff6a`](https://github.com/graphql-hive/console/commit/658ff6a644ef76787d1d283a34eab56c03f8ffa5)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - add missing `tslib` dependency.
+
 ## 0.22.1
 
 ### Patch Changes

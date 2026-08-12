@@ -151,6 +151,7 @@ export function deployGraphQL({
           AUTH_GITHUB: '1',
           AUTH_GOOGLE: '1',
           AUTH_ORGANIZATION_OIDC: '1',
+          AUTH_ORGANIZATION_SCIM: '1',
           AUTH_REQUIRE_EMAIL_VERIFICATION: '1',
           // Traces (OTLP)
           OPENTELEMETRY_COLLECTOR_ENDPOINT:

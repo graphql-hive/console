@@ -115,6 +115,7 @@ const OrganizationMembersPageQuery = graphql(`
     $searchTerm: String
     $first: Int
     $after: String
+    $needsSCIMManagementConfirmation: Boolean
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...OrganizationMembersPage_OrganizationFragment
@@ -141,6 +142,7 @@ function OrganizationMembersPageContent(props: {
     variables: {
       organizationSlug: props.organizationSlug,
       searchTerm: search.search || undefined,
+      needsSCIMManagementConfirmation: search.showPendingSCIMManagementConfirmations,
       first: 20,
       after,
     },

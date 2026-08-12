@@ -8,7 +8,19 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/base/card/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
@@ -22,6 +34,7 @@ import { Tag } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
+import { Link } from '@tanstack/react-router';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { DebugOIDCIntegrationModal } from './debug-oidc-integration-modal';
 import { OIDCDefaultResourceSelector } from './oidc-default-resource-selector';
@@ -180,8 +193,8 @@ export function OIDCIntegrationConfiguration(props: {
               ? 'OIDC login is now required for verified domains.'
               : 'Other login methods are now allowed for verified domains.',
             userProvisioningRequired: value
-              ? 'Users must now be provisioned via SCIM before signing in with OIDC.'
-              : 'User s can now be provisioned when signing in with OIDC.',
+              ? 'Users must be provisioned via SCIM before signing in with OIDC.'
+              : 'Users are provisioned when signing in with OIDC.',
           }[name],
         });
       } else {
@@ -560,16 +573,55 @@ function OIDCDomainConfiguration(props: {
               <p>Require OIDC Login</p>
               <p className="max-w-[500px] text-xs font-normal leading-snug">
                 Enforce sign in/up through OIDC for verified domains. Any other login method will be
-                blocked. Organization administrators are excluded.
+                blocked. The organization owner is excluded from this restriction.
               </p>
             </div>
-            <Switch
-              checked={oidcIntegration.oidcForVerifiedDomainsRequired}
-              data-cy="oidc-require-verified-domain-login-toggle"
-              onCheckedChange={checked =>
-                props.onRestrictionChange('oidcForVerifiedDomainsRequired', checked)
-              }
-            />
+            <AlertDialog>
+              <AlertDialogContent>
+                {oidcIntegration.oidcForVerifiedDomainsRequired ? (
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Disable enforced OIDC login</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Users will be able to login with any method, such as email + password or
+                      social logins.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                ) : (
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Enforce OIDC login</AlertDialogTitle>{' '}
+                    <AlertDialogDescription>
+                      Users will no longer be able to login with email+password or social logins.
+                      <Callout type="warning">
+                        This action can potentially lock you out of the organization. Make sure your
+                        OIDC provider is not configured properly and you can log in using it.
+                      </Callout>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                )}
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={() =>
+                      props.onRestrictionChange(
+                        'oidcForVerifiedDomainsRequired',
+                        !oidcIntegration.oidcForVerifiedDomainsRequired,
+                      )
+                    }
+                  >
+                    {oidcIntegration.oidcForVerifiedDomainsRequired
+                      ? 'Disable enforced ODIC login'
+                      : 'Enforce OIDC login'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+              <AlertDialogTrigger>
+                <Switch
+                  checked={oidcIntegration.oidcForVerifiedDomainsRequired}
+                  data-cy="oidc-require-verified-domain-login-toggle"
+                />
+              </AlertDialogTrigger>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
@@ -615,6 +667,7 @@ const OIDCAccessSettings_OIDCIntegrationFragment = graphql(`
 const OIDCAccessSettings_OrganizationFragment = graphql(`
   fragment OIDCAccessSettings_OrganizationFragment on Organization {
     id
+    slug
     me {
       id
       role {
@@ -630,6 +683,7 @@ const OIDCAccessSettings_OrganizationFragment = graphql(`
         }
       }
     }
+    pendingSCIMManagementConfirmationsCount
     viewerCanManageSCIM
     ...OIDCDefaultResourceSelector_OrganizationFragment
   }
@@ -659,50 +713,88 @@ function OIDCAccessSettings(props: {
   return (
     <div>
       <Heading>User Provisioning</Heading>
+      <p>Configure how users should be provisioned by your identity provider.</p>
       <div className="mt-2 space-y-4 rounded-lg border p-6">
-        <RadioGroup
-          value={isSCIMProvisioningEnabled ? 'scim' : 'oidc'}
-          onValueChange={value =>
-            props.onRestrictionChange('userProvisioningRequired', value === 'scim' ? true : false)
-          }
-          className="flex gap-4"
-        >
+        <RadioGroup value={isSCIMProvisioningEnabled ? 'scim' : 'oidc'} className="flex gap-4">
           <Card
             variant={!isSCIMProvisioningEnabled ? 'selected' : 'selectable'}
-            onClick={() => props.onRestrictionChange('userProvisioningRequired', false)}
+            onClick={
+              oidcIntegration.userProvisioningRequired
+                ? () => props.onRestrictionChange('userProvisioningRequired', false)
+                : undefined
+            }
           >
             <CardContent variant="selection">
               <RadioGroupItem value="oidc" id="oidc-mode" className="mt-0.5" />
               <div className="flex-1">
                 <Label htmlFor="oidc-mode" className="cursor-pointer text-base font-medium">
-                  Managed via OIDC
+                  {organization.viewerCanManageSCIM ? (
+                    <>Mixed OIDC and SCIM</>
+                  ) : (
+                    <>Managed via OIDC</>
+                  )}
                 </Label>
-                <p className="mt-1 text-sm">
-                  Provision users and control user access through OIDC authentication. Configure
-                  join and access requirements with customizable default roles.
-                </p>
+                <p className="mt-1 text-sm">Users are provisioned when signing in via OIDC.</p>
+                {organization.viewerCanManageSCIM && (
+                  <p className="mt-1 text-sm">
+                    Optionally, users and groups can be provisioned via SCIM.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
 
           {organization.viewerCanManageSCIM ? (
-            <Card
-              variant={isSCIMProvisioningEnabled ? 'selected' : 'selectable'}
-              onClick={() => props.onRestrictionChange('userProvisioningRequired', true)}
-            >
-              <CardContent variant="selection">
-                <RadioGroupItem value="scim" id="scim-mode" className="mt-0.5" />
-                <div className="flex-1">
-                  <Label htmlFor="scim-mode" className="cursor-pointer text-base font-medium">
-                    Managed via SCIM
-                  </Label>
-                  <p className="mt-1 text-sm">
-                    Users and groups are synced via SCIM. Roles and permissions are assigned to
-                    groups via role mappings.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Card
+                  variant={isSCIMProvisioningEnabled ? 'selected' : 'selectable'}
+                  onClick={ev => {
+                    if (isSCIMProvisioningEnabled) {
+                      ev.preventDefault();
+                    }
+                  }}
+                >
+                  <CardContent variant="selection">
+                    <RadioGroupItem value="scim" id="scim-mode" className="mt-0.5" />
+                    <div className="flex-1">
+                      <Label htmlFor="scim-mode" className="cursor-pointer text-base font-medium">
+                        <span>Managed via SCIM</span>
+                      </Label>
+                      <p className="mt-1 text-sm">
+                        Users and groups are exclusively managed by your identity provider via SCIM.
+                      </p>
+                      <p className="mt-1 text-sm">
+                        Roles and permissions are assigned to groups via role mappings.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Require SCIM provisioning?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Users who are not provisioned through SCIM will no longer be able to access this
+                    organization. The organization owner is not affected.
+                    <Callout type="warning">
+                      Members with unresolved SCIM provisioning conflicts will keep their current
+                      access until you review them. New OIDC users must first be provisioned through
+                      SCIM.
+                    </Callout>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={() => props.onRestrictionChange('userProvisioningRequired', true)}
+                  >
+                    Require SCIM provisioning
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           ) : null}
         </RadioGroup>
         {isSCIMProvisioningEnabled ? (
@@ -720,7 +812,7 @@ function OIDCAccessSettings(props: {
                         Only (active) users provisioned via SCIM can access the organization.
                         <br />
                         <span className="font-bold">
-                          Organization administrators are excluded from this restriction.
+                          The organization owner is excluded from this restriction.
                         </span>
                       </p>
                     </div>
@@ -729,7 +821,15 @@ function OIDCAccessSettings(props: {
                     <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                       <p>Sync groups via SCIM</p>
                       <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
-                        Groups are provisioned and updated via SCIM.
+                        Groups are provisioned and updated via SCIM.{' '}
+                        <Link
+                          to="/$organizationSlug/view/members"
+                          params={{ organizationSlug: organization.slug }}
+                          search={{ page: 'groups' }}
+                          className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                        >
+                          Manage Groups
+                        </Link>
                       </p>
                     </div>
                   </div>
@@ -737,15 +837,65 @@ function OIDCAccessSettings(props: {
                     <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                       <p>Sync users via SCIM</p>
                       <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
-                        Users are provisioned and updated via SCIM.
+                        Users are provisioned and updated via SCIM.{' '}
+                        <Link
+                          to="/$organizationSlug/view/members"
+                          params={{ organizationSlug: organization.slug }}
+                          search={{ page: 'list' }}
+                          className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                        >
+                          Manage Users
+                        </Link>
                       </p>
                     </div>
+                    {organization.pendingSCIMManagementConfirmationsCount > 0 && (
+                      <div>
+                        <TooltipProvider delayDuration={100}>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <div className="flex text-xs text-yellow-500">
+                                {organization.pendingSCIMManagementConfirmationsCount} SCIM
+                                provisioning conflict
+                                {organization.pendingSCIMManagementConfirmationsCount === 1
+                                  ? ''
+                                  : 's'}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-[250px] space-y-2">
+                              <p>
+                                SCIM provisioning matched existing organization members. Review each
+                                match before allowing SCIM to manage the account.
+                              </p>
+                              <Link
+                                to="/$organizationSlug/view/members"
+                                params={{ organizationSlug: organization.slug }}
+                                search={{
+                                  page: 'list',
+                                  showPendingSCIMManagementConfirmations: true,
+                                }}
+                                className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                              >
+                                Review conflicts
+                              </Link>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center justify-between space-x-4">
                     <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                       <p>Assign permissions via groups</p>
                       <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
-                        Assign role mappings to groups to grant permissions to group members.
+                        Assign role mappings to groups to grant permissions to group members.{' '}
+                        <Link
+                          to="/$organizationSlug/view/members"
+                          params={{ organizationSlug: organization.slug }}
+                          search={{ page: 'groups' }}
+                          className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                        >
+                          Manage Groups
+                        </Link>
                       </p>
                     </div>
                   </div>

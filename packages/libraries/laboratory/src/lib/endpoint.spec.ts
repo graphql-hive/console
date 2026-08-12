@@ -141,6 +141,24 @@ describe('useEndpoint', () => {
     });
   });
 
+  describe('descriptions', () => {
+    it('requests them when the docs pane is enabled', async () => {
+      renderHook(() => useEndpoint({ defaultEndpoint: ENDPOINT, enableDocs: true }));
+
+      await advance(600);
+
+      expect(load).toHaveBeenCalledWith(ENDPOINT, expect.objectContaining({ descriptions: true }));
+    });
+
+    it('leaves them out of the payload when the docs pane is disabled', async () => {
+      renderHook(() => useEndpoint({ defaultEndpoint: ENDPOINT }));
+
+      await advance(600);
+
+      expect(load).toHaveBeenCalledWith(ENDPOINT, expect.objectContaining({ descriptions: false }));
+    });
+  });
+
   describe('schema polling', () => {
     const settingsApiWithPolling = (pollSchema: boolean) =>
       ({

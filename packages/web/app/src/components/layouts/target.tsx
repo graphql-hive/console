@@ -474,6 +474,8 @@ function FederationModalContent(props: {
   projectSlug: string;
   targetSlug: string;
 }) {
+  // reference local machine and not the docker container
+  const dockerCdnUrl = props.cdnUrl.replace('http://localhost:', 'http://host.docker.internal:');
   const authenticateSection = (
     <p>
       Replace "{'<hive_cdn_access_key>'}" with a{' '}
@@ -526,7 +528,7 @@ function FederationModalContent(props: {
             multiline
             value={`docker run --name hive-gateway --rm -p 4000:4000 \\
   ghcr.io/graphql-hive/gateway supergraph \\
-  "${props.cdnUrl}" \\
+  "${dockerCdnUrl}" \\
   --hive-cdn-key '<hive_cdn_access_key>'`}
           />
         </div>
@@ -552,7 +554,7 @@ function FederationModalContent(props: {
         <InputCopy
           multiline
           value={`docker run --name hive-router --rm -p 4000:4000 \\
-  --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
+  --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>" \\
   ghcr.io/graphql-hive/router`}
         />
@@ -578,7 +580,7 @@ function FederationModalContent(props: {
         <InputCopy
           multiline
           value={`docker run --name apollo-router -p 4000:4000 --rm \\
-  --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
+  --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
   ghcr.io/graphql-hive/apollo-router`}
         />
@@ -604,7 +606,7 @@ function FederationModalContent(props: {
         <InputCopy
           multiline
           value={`docker run --name grafbase-gateway -p 5000:5000 --rm \\
-  --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
+  --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
   ghcr.io/grafbase/gateway`}
         />

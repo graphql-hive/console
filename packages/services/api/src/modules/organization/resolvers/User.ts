@@ -8,6 +8,8 @@ export const User: Pick<UserResolvers, 'provisionInfo'> = {
 
     return {
       isDisabled: user.deactivatedAt !== null,
+      externalId: user.externalId,
+      provisioningStatus: user.provisioningStatus,
     };
   },
 };

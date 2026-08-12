@@ -10,7 +10,6 @@ import * as Sentry from '@sentry/node';
 import {
   composeServices as nativeComposeServices,
   compositionHasErrors as nativeCompositionHasErrors,
-  transformSupergraphToPublicSchema,
 } from '@theguild/federation-composition';
 import type { ExternalComposition } from '../types';
 import { toValidationError } from './errors';
@@ -25,35 +24,51 @@ interface BrokerPayload {
   body: string;
 }
 
+const ExternalCompositionResultSuccessModel = z.object({
+  type: z.literal('success'),
+  result: z.object({
+    supergraph: z.string(),
+    sdl: z.string(),
+  }),
+});
+
+const ExternalCompositionResultFailureModel = z.object({
+  type: z.literal('failure'),
+  result: z.object({
+    supergraph: z.string().nullish(),
+    sdl: z.string().nullish(),
+    errors: z.array(
+      z.object({
+        message: z.string(),
+        source: z.union([z.literal('composition'), z.literal('graphql')]).default('graphql'),
+      }),
+    ),
+  }),
+});
+
 const ExternalCompositionResultModel = z.union([
-  z.object({
-    type: z.literal('success'),
-    result: z.object({
-      supergraph: z.string(),
-      sdl: z.string(),
-    }),
-  }),
-  z.object({
-    type: z.literal('failure'),
-    result: z.object({
-      supergraph: z.string().nullish(),
-      sdl: z.string().nullish(),
-      errors: z.array(
-        z.object({
-          message: z.string(),
-          source: z.union([z.literal('composition'), z.literal('graphql')]).default('graphql'),
-        }),
-      ),
-    }),
-  }),
+  ExternalCompositionResultSuccessModel,
+  ExternalCompositionResultFailureModel,
 ]);
 
-export type ComposerMethodResult = z.TypeOf<typeof ExternalCompositionResultModel> & {
+type ComposerMethodResultSuccess = {
+  type: 'success';
+  result: {
+    sdl: string;
+    supergraph: string;
+    supergraphDocumentNode: DocumentNode;
+    sdlDocumentNode: DocumentNode;
+  };
+};
+
+type ComposerMethodResultError = z.TypeOf<typeof ExternalCompositionResultFailureModel> & {
   /** The result contains a network error */
   includesNetworkError: boolean;
   /** The result contains an internal unexpected exception */
   includesException: boolean;
 };
+
+export type ComposerMethodResult = ComposerMethodResultError | ComposerMethodResultSuccess;
 
 export function composeFederationV1(
   subgraphs: Array<{
@@ -76,14 +91,16 @@ export function composeFederationV1(
     };
   }
 
+  const sdl = printSchema(result.schema);
+
   return {
     type: 'success',
     result: {
+      sdl,
+      sdlDocumentNode: parse(sdl),
       supergraph: result.supergraphSdl,
-      sdl: printSchema(result.schema),
+      supergraphDocumentNode: parse(result.supergraphSdl),
     },
-    includesNetworkError: false,
-    includesException: false,
   };
 }
 
@@ -125,10 +142,10 @@ export function composeFederationV2(
       type: 'success',
       result: {
         supergraph: result.supergraphSdl,
-        sdl: print(transformSupergraphToPublicSchema(parse(result.supergraphSdl))),
+        supergraphDocumentNode: result.supergraphDocumentNode,
+        sdl: result.publicSdl,
+        sdlDocumentNode: result.publicDocumentNode,
       },
-      includesNetworkError: false,
-      includesException: false,
     } as const;
   } catch (error) {
     logger?.error('Unexpected error during composition.');
@@ -240,14 +257,16 @@ export async function composeExternalFederation(args: {
 
     await checkExternalCompositionCompatibility(args.logger, parseResult.data.result.sdl);
 
+    const supergraph = parseResult.data.result.supergraph;
+    const sdl = parseResult.data.result.sdl;
     return {
       type: 'success',
       result: {
-        supergraph: parseResult.data.result.supergraph,
-        sdl: print(transformSupergraphToPublicSchema(parse(parseResult.data.result.supergraph))),
+        supergraph,
+        supergraphDocumentNode: parse(supergraph),
+        sdl,
+        sdlDocumentNode: parse(sdl),
       },
-      includesNetworkError: false,
-      includesException: false,
     };
   }
 

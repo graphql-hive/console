@@ -91,6 +91,8 @@ const GetGroupQueryModel = z.object({
   excludedAttributes: z.literal('members').optional(),
 });
 
+const GetGroupsQueryModel = QuerySchemaModel.merge(GetGroupQueryModel);
+
 const SharedUserRouteParams = z.object({
   userId: z.string().uuid(),
 });
@@ -195,6 +197,7 @@ export const createSCIMPlugin =
     rateLimiter: RedisRateLimiter,
     clickHouse: ClickHouse,
     baseUri: string,
+    isSCIMEnabled: boolean,
   ): FastifyPluginAsync =>
   async server => {
     async function authenticateAuthorizeAndResolveOrganizationFromRequest(
@@ -262,7 +265,7 @@ export const createSCIMPlugin =
         }),
       ]);
 
-      if (!organization.featureFlags.scim || !oidcIntegration) {
+      if ((!organization.featureFlags.scim && !isSCIMEnabled) || !oidcIntegration) {
         return {
           type: 'error' as const,
           error: createSCIMError({
@@ -275,7 +278,7 @@ export const createSCIMPlugin =
       req.log.debug(
         'sufficient permissions for calling scim endpoint. ' +
           req.routeOptions.method +
-          '' +
+          ' ' +
           req.routeOptions.url,
       );
 
@@ -1193,7 +1196,7 @@ export const createSCIMPlugin =
         return reply.status(result.error.status).send(result.error);
       }
 
-      const queryParse = QuerySchemaModel.safeParse(req.query);
+      const queryParse = GetGroupsQueryModel.safeParse(req.query);
       if (queryParse.error) {
         return reply.status(403).send(
           createSCIMError({
@@ -1204,6 +1207,7 @@ export const createSCIMPlugin =
       }
 
       const groupStore = new GroupStore(result.logger, pool);
+      const groupMemberStore = new GroupMemberStore(result.logger, pool);
 
       const startIndex = queryParse.data.startIndex ?? 1;
       const count = queryParse.data.count ?? 100;
@@ -1251,12 +1255,20 @@ export const createSCIMPlugin =
           }
         }
 
+        const groupMembers =
+          group && queryParse.data.excludedAttributes !== 'members'
+            ? await groupMemberStore.getGroupMembersForOrganizationIdAndGroupId(
+                result.organizationId,
+                group.id,
+              )
+            : undefined;
+
         return reply.status(200).send({
           schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
           totalResults: group ? 1 : 0,
           startIndex,
           itemsPerPage: group ? 1 : 0,
-          Resources: group ? [createSCIMGroupObjectFromGroup(baseUri, group)] : [],
+          Resources: group ? [createSCIMGroupObjectFromGroup(baseUri, group, groupMembers)] : [],
         } satisfies SCIMListResponseObject);
       }
 
@@ -1268,8 +1280,24 @@ export const createSCIMPlugin =
         },
       );
 
+      const groupMembersByGroupId =
+        queryParse.data.excludedAttributes !== 'members' && pagedGroups.length > 0
+          ? await groupMemberStore.getGroupMembersForOrganizationIdAndGroupIds(
+              result.organizationId,
+              pagedGroups.map(group => group.id),
+            )
+          : null;
+
       for (const group of pagedGroups) {
-        groups.push(createSCIMGroupObjectFromGroup(baseUri, group));
+        groups.push(
+          createSCIMGroupObjectFromGroup(
+            baseUri,
+            group,
+            groupMembersByGroupId === null
+              ? undefined
+              : (groupMembersByGroupId.get(group.id) ?? []),
+          ),
+        );
       }
 
       return reply.status(200).send({
@@ -1956,11 +1984,7 @@ function createSCIMGroupObjectFromGroup(
   baseUri: string,
   group: Group,
   /**
-   * The members are optional as they do not need to be included within actions such as
-   * "list all groups".
-   *
-   * Only when a specific group object is requested or updated we include the list of members
-   * so the SCIM provider can see if a user is or is not a member of an organization.
+   * Members are omitted when the client requests `excludedAttributes=members`.
    */
   members?: Array<GroupMember>,
 ): SCIMGroupObject {

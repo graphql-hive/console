@@ -24,3 +24,4 @@ minimumReleaseAgeExclude:
   - '@whatwg-node/*'
   - '@theguild/federation-composition'
   - graphql-modules
+  - 'react-foundry'

@@ -4,6 +4,7 @@ import {
   ChevronRightIcon,
   MoreHorizontalIcon,
   ShieldCheck,
+  TriangleAlert,
   UserLock,
   UserRound,
   UserRoundX,
@@ -14,6 +15,7 @@ import { IconType } from 'react-icons/lib';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
+import { CopyChip } from '@/components/base/copy-chip/copy-chip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,14 +25,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { KeyIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
@@ -40,6 +45,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
+import { Link } from '@tanstack/react-router';
 import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
@@ -62,7 +68,7 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
-            <div className="flex items-center justify-end gap-1.5">
+            <div className="flex w-fit items-center gap-1.5">
               <UsersIcon className="h-3.5 w-3.5" />
               <span className="text-xs">Groups: none</span>
             </div>
@@ -77,7 +83,7 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
 
   return (
     <TooltipProvider>
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex w-fit items-center gap-2">
         <div className="flex items-center gap-1.5">
           <UsersIcon className="h-3.5 w-3.5" />
           <span className="text-xs">Groups:</span>
@@ -85,16 +91,9 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
 
         <div className="flex flex-wrap items-center gap-1.5">
           {visibleGroups.map(group => (
-            <Tooltip key={group.id}>
-              <TooltipTrigger asChild>
-                <Badge className="cursor-default text-xs">{group.name}</Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  <span className="font-medium">{group.name}</span>
-                </p>
-              </TooltipContent>
-            </Tooltip>
+            <Badge className="cursor-default text-xs" key={group.id}>
+              {group.name}
+            </Badge>
           ))}
           {remainingCount > 0 && (
             <Tooltip>
@@ -155,6 +154,24 @@ const OrganizationMemberRow_DeleteMember = graphql(`
   }
 `);
 
+const OrganizationMemberRow_ConfirmSCIMManagementForMember = graphql(`
+  mutation OrganizationMemberRow_ConfirmSCIMManagementForMember(
+    $input: ConfirmSCIMManagementForMemberInput!
+  ) {
+    confirmSCIMManagementForMember(input: $input) {
+      ok {
+        confirmedMember {
+          id
+          ...OrganizationMemberRow_MemberFragment
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
 const OrganizationMemberRow_MemberFragment = graphql(`
   fragment OrganizationMemberRow_MemberFragment on Member {
     id
@@ -164,6 +181,8 @@ const OrganizationMemberRow_MemberFragment = graphql(`
       email
       provisionInfo {
         isDisabled
+        externalId
+        provisioningStatus
       }
     }
     authProviders {
@@ -193,6 +212,9 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [deleteMemberState, deleteMember] = useMutation(OrganizationMemberRow_DeleteMember);
+  const [confirmManagementState, confirmManagement] = useMutation(
+    OrganizationMemberRow_ConfirmSCIMManagementForMember,
+  );
   return (
     <>
       <AlertDialog open={open} onOpenChange={setOpen}>
@@ -254,7 +276,8 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
       <tr key={member.id} className={cn(member.user.provisionInfo?.isDisabled && 'bg-red-800/5')}>
         <td className="w-12 pl-2">
           <div>
-            {member.user.provisionInfo?.isDisabled ? (
+            {member.user.provisionInfo?.provisioningStatus ===
+              GraphQLSchema.ProvisioningStatus.Active && member.user.provisionInfo?.isDisabled ? (
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-800/10">
                 <UserRoundX className="mx-auto size-5 text-red-800" />
               </div>
@@ -286,7 +309,15 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                     <TooltipTrigger>
                       <ShieldCheck className="size-4" />
                     </TooltipTrigger>
-                    <TooltipContent className="text-xs">Provisioned via SCIM</TooltipContent>
+                    <TooltipContent className="text-xs">
+                      <div>Provisioned via SCIM</div>
+                      <div>
+                        External ID:{' '}
+                        <span className="font-mono">
+                          <CopyChip value={member.user.provisionInfo.externalId} />
+                        </span>
+                      </div>
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               ) : null}
@@ -315,7 +346,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
           </div>
           <h4 className="text-neutral-10 text-xs">{member.user.email}</h4>
         </td>
-        <td className="w-full py-3 text-right text-sm">
+        <td className="w-full py-3 text-right text-sm" align="right">
           {member.isOwner ? (
             <TooltipProvider>
               <Tooltip>
@@ -328,7 +359,8 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          ) : member.user.provisionInfo ? (
+          ) : member.user.provisionInfo?.provisioningStatus ===
+            GraphQLSchema.ProvisioningStatus.Active ? (
             member.user.provisionInfo.isDisabled ? (
               <TooltipProvider>
                 <Tooltip>
@@ -339,15 +371,114 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                 </Tooltip>
               </TooltipProvider>
             ) : (
-              <MemberGroups groups={member.groups ?? []} />
+              <div className="ml-auto mr-0 w-fit">
+                <MemberGroups groups={member.groups ?? []} />
+              </div>
             )
           ) : (
-            <MemberRole member={member} organization={organization} />
+            <>
+              {member.viewerCanRemove &&
+                member.user.provisionInfo?.provisioningStatus ===
+                  GraphQLSchema.ProvisioningStatus.PendingConfirmation && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button type="button" size="xs" variant="orangeLink" className="mr-2">
+                        <TriangleAlert className="mr-1 size-3" />
+                        SCIM matched this existing account
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Allow SCIM to manage {member.user.displayName}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          SCIM matched <strong>{member.user.email}</strong> to an existing
+                          organization member.
+                        </AlertDialogDescription>
+                        <AlertDialogDescription>
+                          After confirmation, your identity provider will control this user's status
+                          and group-based access. Review the pending SCIM values below to avoid
+                          removing access unintentionally.
+                        </AlertDialogDescription>
+                        <div className="mt-4 space-y-2">
+                          <div className="text-sm">Pending SCIM values</div>
+                          <div className="flex w-fit items-center gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <KeyIcon className="h-3.5 w-3.5" />
+                              <span className="text-xs">
+                                User status:{' '}
+                                {member.user.provisionInfo.isDisabled ? 'Disabled' : 'Active'}
+                              </span>
+                            </div>
+                          </div>
+                          <MemberGroups groups={member.groups ?? []} />
+                        </div>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={confirmManagementState.fetching}>
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          variant="destructive"
+                          disabled={confirmManagementState.fetching}
+                          onClick={async event => {
+                            event.preventDefault();
+
+                            try {
+                              const result = await confirmManagement({
+                                input: {
+                                  organization: { byId: organization.id },
+                                  member: { byId: member.user.id },
+                                },
+                              });
+
+                              if (result.error) {
+                                toast({
+                                  variant: 'destructive',
+                                  title: 'Could not enable SCIM management',
+                                  description: result.error.message,
+                                });
+                              } else if (result.data?.confirmSCIMManagementForMember.error) {
+                                toast({
+                                  variant: 'destructive',
+                                  title: 'Could not enable SCIM management',
+                                  description:
+                                    result.data.confirmSCIMManagementForMember.error.message,
+                                });
+                              } else if (result.data?.confirmSCIMManagementForMember.ok) {
+                                toast({
+                                  title: 'SCIM management enabled',
+                                  description: `${member.user.email} is now managed through SCIM.`,
+                                });
+                                props.refetchMembers({ requestPolicy: 'network-only' });
+                              }
+                            } catch (error) {
+                              console.error(error);
+                              toast({
+                                variant: 'destructive',
+                                title: 'Could not enable SCIM management',
+                                description: error instanceof Error ? error.message : String(error),
+                              });
+                            }
+                          }}
+                        >
+                          {confirmManagementState.fetching
+                            ? 'Applying...'
+                            : 'Allow SCIM management'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              <MemberRole member={member} organization={organization} />
+            </>
           )}
         </td>
-        <td className="py-3 pr-2 text-right text-sm">
+        <td className="py-3 pl-2 pr-3 text-right text-sm">
           {member.viewerCanRemove &&
-            (member.user.provisionInfo ? (
+            (member.user.provisionInfo?.provisioningStatus ===
+            GraphQLSchema.ProvisioningStatus.Active ? (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
@@ -359,20 +490,22 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                 </Tooltip>
               </TooltipProvider>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="data-[state=open]:bg-neutral-3 flex size-8 p-0"
-                  >
-                    <MoreHorizontalIcon className="size-4" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[160px]">
-                  <DropdownMenuItem onSelect={() => setOpen(true)}>Delete</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              member.viewerCanRemove && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="data-[state=open]:bg-neutral-3 ml-auto flex p-0"
+                    >
+                      <MoreHorizontalIcon className="size-4" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[160px]">
+                    <DropdownMenuItem onSelect={() => setOpen(true)}>Delete</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )
             ))}
         </td>
       </tr>
@@ -453,7 +586,14 @@ const OrganizationMembers_OrganizationFragment = graphql(`
     owner {
       id
     }
-    members(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
+    members(
+      first: $first
+      after: $after
+      filters: {
+        searchTerm: $searchTerm
+        needsSCIMManagementConfirmation: $needsSCIMManagementConfirmation
+      }
+    ) {
       edges {
         node {
           id
@@ -542,29 +682,69 @@ export function OrganizationMembers(props: {
           )}
         </div>
       </SubPageLayoutHeader>
+      {search.showPendingSCIMManagementConfirmations && (
+        <Callout type="warning">
+          Showing members with unresolved SCIM provisioning conflicts.{' '}
+          <Link
+            to="/$organizationSlug/view/members"
+            search={{ page: 'list' }}
+            params={{ organizationSlug: organization.slug }}
+            className="text-neutral-1 hover:text-neutral-8"
+          >
+            Show all members
+          </Link>
+        </Callout>
+      )}
       <div className="mt-4 overflow-hidden rounded-lg border">
         <table className="divide-neutral-10/20 w-full table-auto divide-y">
           <thead className="bg-neutral-3 border-b px-4 py-3 text-sm font-medium">
             <tr>
               <th className="" />
-              <th className="relative select-none py-3 pl-3 text-left text-sm">Member</th>
+              <th className="relative min-w-[450px] select-none py-3 pl-3 text-left text-sm">
+                Member
+              </th>
               <th className="relative w-full select-none py-3 text-center align-middle text-sm font-semibold" />
               <th className="w-12 py-3 text-right text-sm font-semibold" />
             </tr>
           </thead>
           <tbody className="divide-neutral-10/20 divide-y">
             {members.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-16">
-                  <div className="flex flex-col items-center justify-center px-4">
-                    <h3 className="text-neutral-11 mb-2 text-lg font-semibold">No members found</h3>
+              search.showPendingSCIMManagementConfirmations ? (
+                <tr>
+                  <td colSpan={4} className="py-16">
+                    <div className="flex flex-col items-center justify-center px-4">
+                      <h3 className="text-neutral-11 mb-2 text-lg font-semibold">
+                        No members with provisioning conflict found
+                      </h3>
 
-                    <p className="text-neutral-10 max-w-sm text-center text-sm">
-                      {`No results for "${searchValue}". Try adjusting your search term.`}
-                    </p>
-                  </div>
-                </td>
-              </tr>
+                      {search.showPendingSCIMManagementConfirmations && (
+                        <Link
+                          to="/$organizationSlug/view/members"
+                          search={{ page: 'list' }}
+                          params={{ organizationSlug: organization.slug }}
+                          className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                        >
+                          Show all members
+                        </Link>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <tr>
+                  <td colSpan={4} className="py-16">
+                    <div className="flex flex-col items-center justify-center px-4">
+                      <h3 className="text-neutral-11 mb-2 text-lg font-semibold">
+                        No members found
+                      </h3>
+
+                      <p className="text-neutral-10 max-w-sm text-center text-sm">
+                        {`No results for "${searchValue}". Try adjusting your search term.`}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )
             ) : (
               members.map(node => (
                 <OrganizationMemberRow

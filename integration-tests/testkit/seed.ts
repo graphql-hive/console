@@ -39,6 +39,7 @@ import {
   fetchSchemaFromCDN,
   fetchSupergraphFromCDN,
   fetchVersions,
+  getLatestSchemaCheck,
   getOrganization,
   getOrganizationMembers,
   getOrganizationProjects,
@@ -80,6 +81,8 @@ import {
 import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from './schema-policy';
 import { collect, CollectedOperation, legacyCollect } from './usage';
 import { generateUnique, getServiceHost, pollForEmailVerificationLink } from './utils';
+
+export { ProjectType };
 
 function getPGConnectionString() {
   const pg = {
@@ -977,6 +980,18 @@ export function initSeed() {
                         report,
                         accessToken: secret,
                       });
+                    },
+                    latestSchemaCheck() {
+                      return getLatestSchemaCheck(
+                        {
+                          bySelector: {
+                            organizationSlug: orgSlug,
+                            projectSlug: project.slug,
+                          },
+                        },
+                        target.slug,
+                        secret,
+                      );
                     },
                     async checkSchema(
                       sdl: string,

@@ -427,7 +427,7 @@ export class OIDCIntegrationsProvider {
         organizationId: oidcIntegration.linkedOrganizationId,
       });
 
-      if (!organization.featureFlags.scim) {
+      if (!organization.featureFlags.scim && !this.oidcIntegrationConfig.isSCIMEnabled) {
         return {
           type: 'error',
           message: 'SCIM provisioning is disabled.',

@@ -139,7 +139,7 @@ export type EditorProps = React.ComponentProps<typeof MonacoEditor> & {
 const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   const id = useId();
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const { introspection, endpoint, theme } = useLaboratory();
+  const { introspection, endpoint, theme, enableDocs } = useLaboratory();
   const wantsJson = props.language === 'json' || props.defaultLanguage === 'json';
   const [typescriptReady, setTypescriptReady] = useState(!!monaco.languages.typescript);
   const [jsonReady, setJsonReady] = useState(
@@ -155,8 +155,9 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
       schemaUri: `schema_${endpoint}.graphql`,
       operationUri: props.uri?.toString(),
       variablesUri: props.variablesUri?.toString(),
+      enableDocs,
     });
-  }, [endpoint, introspection, props.uri?.toString(), props.variablesUri?.toString()]);
+  }, [endpoint, introspection, enableDocs, props.uri?.toString(), props.variablesUri?.toString()]);
 
   useEffect(() => {
     void (async function () {

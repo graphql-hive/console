@@ -1,5 +1,5 @@
 import type { GraphiQLOptions } from 'graphql-yoga';
-import type { LaboratoryProps } from '@graphql-hive/laboratory';
+import type { LaboratoryCollection, LaboratoryProps } from '@graphql-hive/laboratory';
 import {
   editorWorkerService,
   favicon,
@@ -10,12 +10,13 @@ import {
   typescriptWorker,
 } from './laboratory.js';
 
-const mapGraphiQLOptionsToLaboratoryProps = (opts?: GraphiQLOptions): LaboratoryProps => {
+const mapGraphiQLOptionsToLaboratoryProps = (opts?: RenderLaboratoryOptions): LaboratoryProps => {
   if (!opts) {
-    return {};
+    return { enableDocs: true };
   }
 
   return {
+    enableDocs: true,
     defaultSettings: {
       fetch: {
         credentials: opts.credentials ?? 'same-origin',
@@ -27,13 +28,19 @@ const mapGraphiQLOptionsToLaboratoryProps = (opts?: GraphiQLOptions): Laboratory
       },
       introspection: {
         method: opts.method,
-        schemaDescription: opts.schemaDescription,
       },
     },
+    defaultCollections: opts.defaultCollections,
   } satisfies LaboratoryProps;
 };
 
-export const renderLaboratory = (opts?: GraphiQLOptions) => /* HTML */ `
+type LaboratoryOptions = {
+  defaultCollections?: LaboratoryCollection[];
+};
+
+type RenderLaboratoryOptions = GraphiQLOptions & LaboratoryOptions;
+
+export const renderLaboratory = (opts?: RenderLaboratoryOptions) => /* HTML */ `
   <!doctype html>
   <html lang="en">
     <head>

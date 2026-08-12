@@ -6,6 +6,7 @@ import type {
   AddMetricAlertRuleInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
+  ConfirmScimManagementForMemberInput,
   CreateContractInput,
   CreateMemberRoleInput,
   CreateOrganizationAccessTokenInput,
@@ -1228,6 +1229,37 @@ export function getSchemaVersionWithAllDetails(
     .then(r => r.target?.schemaVersion ?? null);
 }
 
+export async function getLatestSchemaCheck(
+  projectRef: GraphQLSchema.ProjectReferenceInput,
+  targetSlug: string,
+  token: string,
+) {
+  const res = await execute({
+    document: graphql(`
+      query getLatestCheck($projectRef: ProjectReferenceInput!, $targetSlug: String!) {
+        project(reference: $projectRef) {
+          targetBySlug(targetSlug: $targetSlug) {
+            schemaChecks(first: 1) {
+              edges {
+                node {
+                  __typename
+                  id
+                }
+              }
+            }
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      projectRef,
+      targetSlug,
+    },
+  }).then(r => r.expectNoGraphQLErrors());
+  return res.project?.targetBySlug?.schemaChecks?.edges?.[0]?.node?.id;
+}
+
 export function getSchemaCheckDetails(
   reference: GraphQLSchema.TargetReferenceInput,
   checkId: string,
@@ -1241,9 +1273,14 @@ export function getSchemaCheckDetails(
             __typename
             id
             schemaSDL
+            previousSchemaSDL
             ... on SuccessfulSchemaCheck {
               supergraphSDL
               compositeSchemaSDL
+            }
+            schemaVersion {
+              supergraph
+              sdl
             }
           }
         }
@@ -2238,6 +2275,38 @@ export function createOIDCIntegration(
               authorizationEndpoint
               additionalScopes
             }
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function confirmSCIMManagementForMember(
+  input: ConfirmScimManagementForMemberInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_ConfirmSCIMManagementForMember(
+        $input: ConfirmSCIMManagementForMemberInput!
+      ) {
+        confirmSCIMManagementForMember(input: $input) {
+          ok {
+            confirmedMember {
+              id
+              user {
+                id
+                provisionInfo {
+                  provisioningStatus
+                }
+              }
+            }
+          }
+          error {
+            message
           }
         }
       }
