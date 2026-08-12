@@ -1639,8 +1639,8 @@ export default gql`
     """
     schemaPolicyErrors: SchemaPolicyWarningConnection
 
-    compositeSchemaSDL: String
-    supergraphSDL: String
+    compositeSchemaSDL: String @tag(name: "public")
+    supergraphSDL: String @tag(name: "public")
     """
     Results of the contracts
     """
