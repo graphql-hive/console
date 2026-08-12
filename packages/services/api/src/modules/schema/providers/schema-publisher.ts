@@ -579,8 +579,8 @@ export class SchemaPublisher {
     const baseSchema = await this.schemaManager.getBaseSchemaForTarget(target);
 
     const sdl = tryPrettifySDL(input.sdl);
-    const baseSdl = input.baseSdl ? tryPrettifySDL(input.baseSdl) : null;
-    const baseSchemaHash = baseSdl ? (input.baseSchemaHash ?? null) : null;
+    const baseSdl = input.base ? tryPrettifySDL(input.base.sdl) : null;
+    const baseSchemaHash = input.base?.hash ?? null;
 
     const activeContracts =
       project.type === ProjectType.FEDERATION

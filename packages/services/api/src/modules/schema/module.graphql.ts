@@ -881,6 +881,17 @@ export default gql`
     commit: String!
   }
 
+  input SchemaCheckBaseInput {
+    """
+    The service schema SDL.
+    """
+    sdl: String!
+    """
+    An identifier for the supplied base schema, e.g. a Git SHA
+    """
+    hash: String
+  }
+
   input SchemaCheckInput {
     target: TargetReferenceInput
     service: ID
@@ -890,21 +901,16 @@ export default gql`
     sdl: String!
 
     """
-    The schema SDL before applying the proposed change.
+    The base (service) before applying the proposed changes.
 
     When provided for a distributed schema, Hive composes this service SDL
     with the other services currently stored in the registry and compares
-    that composition against the composition produced from 'sdl'.
+    that composition against the composition produced from 'SchemaCheckInput.sdl'.
 
     Intended for checks where the comparison baseline differs from the
     latest schema stored in the registry, such as GitHub Merge Queue builds.
     """
-    baseSdl: String
-
-    """
-    An identifier for the schema supplied through 'baseSdl', such as its Git commit SHA.
-    """
-    baseSchemaHash: String
+    base: SchemaCheckBaseInput = null
 
     github: GitHubSchemaCheckInput
     meta: SchemaCheckMetaInput
@@ -1612,7 +1618,7 @@ export default gql`
     """
     previousSchemaSDL: String @tag(name: "public")
     """
-    The caller-supplied identifier for an explicit comparison baseline, such as a Git commit SHA.
+    The caller-supplied identifier for an explicit comparison baseline, usually a Git commit SHA.
     """
     baseSchemaHash: String @tag(name: "public")
     """
@@ -1717,7 +1723,7 @@ export default gql`
     """
     previousSchemaSDL: String @tag(name: "public")
     """
-    The caller-supplied identifier for an explicit comparison baseline, such as a Git commit SHA.
+    The caller-supplied identifier for an explicit comparison baseline, usually a Git commit SHA.
     """
     baseSchemaHash: String @tag(name: "public")
     """

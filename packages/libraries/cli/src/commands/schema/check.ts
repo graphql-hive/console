@@ -45,7 +45,7 @@ const approveFailedSchemaCheckMutation = graphql(/* GraphQL */ `
 `);
 
 const schemaCheckMutation = graphql(/* GraphQL */ `
-  mutation schemaCheck($input: SchemaCheckInput!) {
+  mutation CLI_SchemaCheckMutation($input: SchemaCheckInput!) {
     schemaCheck(input: $input) {
       __typename
       ... on SchemaCheckSuccess {
@@ -237,6 +237,35 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         throw new MissingRegistryTokenError();
       }
 
+      const git = await gitInfo(() => {
+        // noop
+      });
+
+      const commit = flags.commit || git?.commit;
+
+      let github: null | GraphQLSchema.GitHubSchemaCheckInput = null;
+
+      if (usesGitHubApp) {
+        if (!commit) {
+          throw new CommitRequiredError();
+        }
+        if (!git.repository) {
+          throw new GithubRepositoryRequiredError();
+        }
+        if (!git.pullRequestNumber) {
+          this.warn(
+            "Could not resolve pull request number. Are you running this command on a 'pull_request' or 'merge_group' event?\n" +
+              'See https://the-guild.dev/graphql/hive/docs/other-integrations/ci-cd#github-workflow-for-ci',
+          );
+        }
+
+        github = {
+          commit: commit,
+          repository: git.repository,
+          pullRequestNumber: git.pullRequestNumber,
+        };
+      }
+
       let minifiedBaseSdl: string | null = null;
       let baseSchemaHash: string | null = null;
 
@@ -271,12 +300,13 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             case 'path':
               throw new SchemaFileNotFoundError(
                 schemaPointer,
-                `When using the '--baseRef' flag, the file path must point to a single file containing the schema SDL.`,
+                `When using the '--base flag, the file path must point to a single file containing the schema SDL.`,
               );
           }
         }
 
         minifiedBaseSdl = minifySchema(result.sdl);
+        baseSchemaHash = gitResult.commit ?? git.baseCommit;
       }
 
       const rawSdl = await loadSchema(
@@ -289,11 +319,6 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         throw new SchemaFileNotFoundError(schemaPointer, e);
       });
 
-      const git = await gitInfo(() => {
-        // noop
-      });
-
-      const commit = flags.commit || git?.commit;
       const author = flags.author || git?.author;
 
       if (typeof rawSdl !== 'string' || rawSdl.length === 0) {
@@ -301,33 +326,6 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       }
 
       const sdl = minifySchema(rawSdl);
-
-      let github: null | {
-        commit: string;
-        repository: string | null;
-        pullRequestNumber: string | null;
-      } = null;
-
-      if (usesGitHubApp) {
-        if (!commit) {
-          throw new CommitRequiredError();
-        }
-        if (!git.repository) {
-          throw new GithubRepositoryRequiredError();
-        }
-        if (!git.pullRequestNumber) {
-          this.warn(
-            "Could not resolve pull request number. Are you running this command on a 'pull_request' event?\n" +
-              'See https://the-guild.dev/graphql/hive/docs/other-integrations/ci-cd#github-workflow-for-ci',
-          );
-        }
-
-        github = {
-          commit: commit,
-          repository: git.repository,
-          pullRequestNumber: git.pullRequestNumber,
-        };
-      }
 
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: schemaCheckMutation,
@@ -347,8 +345,12 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             target,
             url: flags.url,
             schemaProposalId: flags.schemaProposalId,
-            baseSdl: minifiedBaseSdl,
-            baseSchemaHash,
+            base: minifiedBaseSdl
+              ? {
+                  sdl: minifiedBaseSdl,
+                  hash: baseSchemaHash,
+                }
+              : null,
           },
         },
         /** Gateway timeout is 60 seconds. */
