@@ -1474,11 +1474,14 @@ const SchemaCheckSharedOutputFields = {
   ...SchemaCheckCommonFields,
   baseSchemaSDL: z.string().nullable(),
   baseSchemaHash: z.string().nullable(),
+  basePublicSDL: z.string().nullable(),
+  baseSupergraphSDL: z.string().nullable(),
+  baseCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
 };
 
 const SchemaCheckSharedInputFields = {
   ...SchemaCheckCommonFields,
-  baseSchemaSDL: z
+  baseSchemaSdl: z
     .string()
     .nullable()
     .optional()
@@ -1488,6 +1491,17 @@ const SchemaCheckSharedInputFields = {
     .nullable()
     .optional()
     .transform(value => value ?? null),
+  basePublicSdl: z
+    .string()
+    .nullable()
+    .optional()
+    .transform(value => value ?? null),
+  baseSupergraphSdl: z
+    .string()
+    .nullable()
+    .optional()
+    .transform(value => value ?? null),
+  baseSchemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
 };
 
 const ContractCheckInput = z.object({
@@ -1499,6 +1513,9 @@ const ContractCheckInput = z.object({
   schemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
   breakingSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
   safeSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
+  baseCompositeSchemaSdl: z.string().nullable(),
+  baseSupergraphSchemaSdl: z.string().nullable(),
+  baseCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
 });
 
 const DateOrString = z

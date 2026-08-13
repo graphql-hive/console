@@ -3092,24 +3092,37 @@ export async function createStorage(
         }
 
         const schemaSDLHash = createSDLHash(args.schemaSDL);
-        const baseSchemaSDLHash = args.baseSchemaSDL ? createSDLHash(args.baseSchemaSDL) : null;
-        let compositeSchemaSDLHash: string | null = null;
-        let supergraphSDLHash: string | null = null;
+        let baseSchemaSdlHash: string | null = null;
+        let basePublicSdlHash: string | null = null;
+        let baseSupergraphSdlHash: string | null = null;
+        let compositeSchemaSdlHash: string | null = null;
+        let supergraphSdlHash: string | null = null;
 
         sdlStoreInserts.push(insertSdl(schemaSDLHash, args.schemaSDL));
 
-        if (args.baseSchemaSDL && baseSchemaSDLHash) {
-          sdlStoreInserts.push(insertSdl(baseSchemaSDLHash, args.baseSchemaSDL));
+        if (args.baseSchemaSdl) {
+          baseSchemaSdlHash = createSDLHash(args.baseSchemaSdl);
+          sdlStoreInserts.push(insertSdl(baseSchemaSdlHash, args.baseSchemaSdl));
+        }
+
+        if (args.basePublicSdl) {
+          basePublicSdlHash = createSDLHash(args.basePublicSdl);
+          sdlStoreInserts.push(insertSdl(basePublicSdlHash, args.basePublicSdl));
+        }
+
+        if (args.baseSupergraphSdl) {
+          baseSupergraphSdlHash = createSDLHash(args.baseSupergraphSdl);
+          sdlStoreInserts.push(insertSdl(baseSupergraphSdlHash, args.baseSupergraphSdl));
         }
 
         if (args.compositeSchemaSDL) {
-          compositeSchemaSDLHash = createSDLHash(args.compositeSchemaSDL);
-          sdlStoreInserts.push(insertSdl(compositeSchemaSDLHash, args.compositeSchemaSDL));
+          compositeSchemaSdlHash = createSDLHash(args.compositeSchemaSDL);
+          sdlStoreInserts.push(insertSdl(compositeSchemaSdlHash, args.compositeSchemaSDL));
         }
 
         if (args.supergraphSDL) {
-          supergraphSDLHash = createSDLHash(args.supergraphSDL);
-          sdlStoreInserts.push(insertSdl(supergraphSDLHash, args.supergraphSDL));
+          supergraphSdlHash = createSDLHash(args.supergraphSDL);
+          sdlStoreInserts.push(insertSdl(supergraphSdlHash, args.supergraphSDL));
         }
 
         await Promise.all(sdlStoreInserts);
@@ -3120,6 +3133,9 @@ export async function createStorage(
           INSERT INTO "schema_checks" (
               "schema_sdl_store_id"
             , "base_schema_sdl_store_id"
+            , "base_supergraph_sdl_store_id"
+            , "base_composite_schema_sdl_store_id"
+            , "base_schema_composition_errors"
             , "base_schema_hash"
             , "service_name"
             , "service_url"
@@ -3148,7 +3164,10 @@ export async function createStorage(
           )
           VALUES (
               ${schemaSDLHash}
-            , ${baseSchemaSDLHash}
+            , ${baseSchemaSdlHash}
+            , ${baseSupergraphSdlHash}
+            , ${basePublicSdlHash}
+            , ${psql.jsonbOrNull(args.baseSchemaCompositionErrors)}
             , ${args.baseSchemaHash}
             , ${args.serviceName}
             , ${args.serviceUrl}
@@ -3161,8 +3180,8 @@ export async function createStorage(
             , ${psql.jsonbOrNull(args.safeSchemaChanges?.map(toSerializableSchemaChange))}
             , ${psql.jsonbOrNull(args.schemaPolicyWarnings?.map(w => SchemaPolicyWarningModel.parse(w)))}
             , ${psql.jsonbOrNull(args.schemaPolicyErrors?.map(w => SchemaPolicyWarningModel.parse(w)))}
-            , ${compositeSchemaSDLHash}
-            , ${supergraphSDLHash}
+            , ${compositeSchemaSdlHash}
+            , ${supergraphSdlHash}
             , ${args.isManuallyApproved}
             , ${args.manualApprovalUserId}
             , ${args.githubCheckRunId}
@@ -3189,16 +3208,34 @@ export async function createStorage(
           for (const contract of args.contracts) {
             let supergraphSchemaSdlHash: string | null = null;
             let compositeSchemaSdlHash: string | null = null;
+            let baseSupergraphSchemaSdlHash: string | null = null;
+            let basePublicSdlHash: string | null = null;
+
+            const sdlInserts: Array<Promise<unknown>> = [];
 
             if (contract.supergraphSchemaSdl) {
               supergraphSchemaSdlHash = createSDLHash(contract.supergraphSchemaSdl);
-              await insertSdl(supergraphSchemaSdlHash, contract.supergraphSchemaSdl);
+              sdlInserts.push(insertSdl(supergraphSchemaSdlHash, contract.supergraphSchemaSdl));
             }
 
             if (contract.compositeSchemaSdl) {
               compositeSchemaSdlHash = createSDLHash(contract.compositeSchemaSdl);
-              await insertSdl(compositeSchemaSdlHash, contract.compositeSchemaSdl);
+              sdlInserts.push(insertSdl(compositeSchemaSdlHash, contract.compositeSchemaSdl));
             }
+
+            if (contract.baseSupergraphSchemaSdl) {
+              baseSupergraphSchemaSdlHash = createSDLHash(contract.baseSupergraphSchemaSdl);
+              sdlInserts.push(
+                insertSdl(baseSupergraphSchemaSdlHash, contract.baseSupergraphSchemaSdl),
+              );
+            }
+
+            if (contract.baseCompositeSchemaSdl) {
+              basePublicSdlHash = createSDLHash(contract.baseCompositeSchemaSdl);
+              sdlInserts.push(insertSdl(basePublicSdlHash, contract.baseCompositeSchemaSdl));
+            }
+
+            await Promise.all(sdlInserts);
 
             await trx.query(psql`/* createContractChecks */
               INSERT INTO "contract_checks" (
@@ -3211,6 +3248,9 @@ export async function createStorage(
                 , "schema_composition_errors"
                 , "breaking_schema_changes"
                 , "safe_schema_changes"
+                , "base_supergraph_sdl_store_id"
+                , "base_composite_schema_sdl_store_id"
+                , "base_schema_composition_errors"
               )
               VALUES (
                 ${schemaCheck.id}
@@ -3222,6 +3262,9 @@ export async function createStorage(
                 , ${psql.jsonbOrNull(contract.schemaCompositionErrors)}
                 , ${psql.jsonbOrNull(contract.breakingSchemaChanges?.map(toSerializableSchemaChange))}
                 , ${psql.jsonbOrNull(contract.safeSchemaChanges?.map(toSerializableSchemaChange))}
+                , ${baseSupergraphSchemaSdlHash}
+                , ${basePublicSdlHash}
+                , ${psql.jsonbOrNull(contract.baseCompositionErrors)}
               )
             `);
           }
@@ -3249,6 +3292,8 @@ export async function createStorage(
           "schema_checks" as c
         LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_base_schema       ON s_base_schema."id" = c."base_schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_base_public       ON s_base_public."id" = c."base_composite_schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_base_supergraph   ON s_base_supergraph."id" = c."base_supergraph_sdl_store_id"
         LEFT JOIN "sdl_store" as s_composite_schema  ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_supergraph        ON s_supergraph."id" = c."supergraph_sdl_store_id"
         WHERE
@@ -3385,6 +3430,8 @@ export async function createStorage(
           "schema_checks" as c
         LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_base_schema       ON s_base_schema."id" = c."base_schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_base_public       ON s_base_public."id" = c."composite_schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_base_supergraph   ON s_base_supergraph."id" = c."base_supergraph_sdl_store_id"
         LEFT JOIN "sdl_store" as s_composite_schema  ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_supergraph        ON s_supergraph."id" = c."supergraph_sdl_store_id"
         WHERE
@@ -3438,6 +3485,8 @@ export async function createStorage(
               ? psql`
                   LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
                   LEFT JOIN "sdl_store" as s_base_schema       ON s_base_schema."id" = c."base_schema_sdl_store_id"
+                  LEFT JOIN "sdl_store" as s_base_public       ON s_base_public."id" = c."composite_schema_sdl_store_id"
+                  LEFT JOIN "sdl_store" as s_base_supergraph   ON s_base_supergraph."id" = c."base_supergraph_sdl_store_id"
                   LEFT JOIN "sdl_store" as s_composite_schema  ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
                   LEFT JOIN "sdl_store" as s_supergraph        ON s_supergraph."id" = c."supergraph_sdl_store_id"
                 `
@@ -3568,6 +3617,10 @@ export async function createStorage(
           ON s_schema."id" = c."schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_base_schema
           ON s_base_schema."id" = c."base_schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_base_public
+          ON s_base_public."id" = c."composite_schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_base_supergraph
+          ON s_base_supergraph."id" = c."base_supergraph_sdl_store_id"
         LEFT JOIN "sdl_store" as s_composite_schema
           ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_supergraph
@@ -4232,18 +4285,23 @@ const schemaCheckSQLFields = (include?: { sdl?: boolean; changes?: boolean }) =>
       ? psql`
         , coalesce(c."schema_sdl", s_schema."sdl") as "schemaSDL"
         , s_base_schema."sdl" as "baseSchemaSDL"
+        , s_base_public."sdl" as "basePublicSDL"
+        , s_base_supergraph."sdl" as "baseSupergraphSDL"
         , coalesce(c."composite_schema_sdl", s_composite_schema."sdl") as "compositeSchemaSDL"
         , coalesce(c."supergraph_sdl", s_supergraph."sdl") as "supergraphSDL"
       `
       : psql`
         , '' as "schemaSDL"
         , null as "baseSchemaSDL"
+        , null as "basePublicSDL"
+        , null as "baseSupergraphSDL"
         , null as "compositeSchemaSDL"
         , null as "supergraphSDL"
       `
   }
   , c."service_name" as "serviceName"
   , c."base_schema_hash" as "baseSchemaHash"
+  , c."base_schema_composition_errors" as "baseCompositionErrors"
   , c."service_url" as "serviceUrl"
   , c."meta"
   , c."target_id" as "targetId"

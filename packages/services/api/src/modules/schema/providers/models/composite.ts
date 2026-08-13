@@ -2,7 +2,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import type { DangerousChangeType } from '@hive/api/__generated__/types';
 import type { ContractsInputType } from '@hive/schema';
 import { invariant, traceFn } from '@hive/service-common';
-import { SchemaChangeType, SchemaCompositionError } from '@hive/storage';
+import { SchemaChangeType } from '@hive/storage';
 import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
 import {
   GetAffectedAppDeployments,
@@ -14,19 +14,19 @@ import type { Organization, Project, Target } from './../../../../shared/entitie
 import { ProjectType } from './../../../../shared/entities';
 import { Logger } from './../../../shared/providers/logger';
 import {
-  buildSchemaCheckFailureState,
-  ContractCheckInput,
   ContractInput,
-  isContractChecksSuccessful,
+  ContractStateFailure,
+  ContractStateSuccess,
   PublishFailureReasonCode,
-  PublishIgnoreReasonCode /* Check */,
+  PublishIgnoreReasonCode,
   SchemaCheckConclusion,
-  SchemaCheckResult /* Delete */,
+  SchemaCheckResult,
   SchemaDeleteConclusion,
-  SchemaDeleteResult /* Publish */,
+  SchemaDeleteResult,
   SchemaPublishConclusion,
   SchemaPublishResult,
   temp,
+  type CompositionState,
 } from './shared';
 
 @Injectable({
@@ -39,9 +39,10 @@ export class CompositeModel {
     private appDeployments: AppDeployments,
   ) {}
 
-  private async getContractChecks(args: {
+  private async getContractCheckStates(args: {
     contracts: Array<
       ContractInput & {
+        baseComposition?: null | CompositionState;
         approvedChanges?: Map<string, SchemaChangeType> | null;
       }
     > | null;
@@ -51,7 +52,7 @@ export class CompositeModel {
     failAllDangerousChanges: null | boolean;
     failDangerousChangeTypes: null | DangerousChangeType[];
     getAffectedAppDeployments: GetAffectedAppDeployments | null;
-  }): Promise<Array<ContractCheckInput> | null> {
+  }): Promise<Array<ContractStateSuccess | ContractStateFailure> | null> {
     const contractResults = (args.compositionCheck.result ?? args.compositionCheck.reason)
       ?.contracts;
 
@@ -68,24 +69,75 @@ export class CompositeModel {
           "Contract result doesn't exist. Inconsistency detected.",
         );
 
-        return {
+        if (
+          contractCompositionResult.status == 'failed' ||
+          contract.baseComposition?.type === 'failure'
+        ) {
+          return {
+            isSuccessful: false,
+            contractId: contract.contract.id,
+            contractName: contract.contract.contractName,
+            baseComposition: contract.baseComposition ?? null,
+            composition:
+              contractCompositionResult.status === 'completed'
+                ? {
+                    type: 'success',
+                    errors: null,
+                    compositeSchemaSDL: contractCompositionResult.result.fullSchemaSdl,
+                    supergraphSDL: contractCompositionResult.result.supergraph,
+                  }
+                : {
+                    type: 'failure' as const,
+                    errors: contractCompositionResult.reason.errors,
+                    compositeSchemaSDL: null,
+                    supergraphSDL: null,
+                  },
+            schemaChanges: null,
+          };
+        }
+
+        const diffCheck = await this.checks.diff({
+          conditionalBreakingChangeConfig: args.conditionalBreakingChangeDiffConfig,
+          includeUrlChanges: false,
+          // contracts were introduced after this, so we do not need to filter out federation.
+          filterOutFederationChanges: false,
+          approvedChanges: contract.approvedChanges ?? null,
+          existingSdl:
+            /** if the base composition is provided we use that one over the latest schema */
+            contract.baseComposition?.compositeSchemaSDL ??
+            contract.latestValidVersion?.compositeSchemaSdl ??
+            null,
+          incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
+          failDiffOnDangerousChange: args.failDiffOnDangerousChange ?? false,
+          failAllDangerousChanges: args.failAllDangerousChanges ?? true,
+          failDangerousChangeTypes: args.failDangerousChangeTypes ?? [],
+          filterNestedChanges: true,
+          getAffectedAppDeployments: args.getAffectedAppDeployments,
+        });
+
+        const state = {
           contractId: contract.contract.id,
           contractName: contract.contract.contractName,
-          compositionCheck: contractCompositionResult,
-          diffCheck: await this.checks.diff({
-            conditionalBreakingChangeConfig: args.conditionalBreakingChangeDiffConfig,
-            includeUrlChanges: false,
-            // contracts were introduced after this, so we do not need to filter out federation.
-            filterOutFederationChanges: false,
-            approvedChanges: contract.approvedChanges ?? null,
-            existingSdl: contract.latestValidVersion?.compositeSchemaSdl ?? null,
-            incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
-            failDiffOnDangerousChange: args.failDiffOnDangerousChange ?? false,
-            failAllDangerousChanges: args.failAllDangerousChanges ?? true,
-            failDangerousChangeTypes: args.failDangerousChangeTypes ?? [],
-            filterNestedChanges: true,
-            getAffectedAppDeployments: args.getAffectedAppDeployments,
-          }),
+          baseComposition: contract.baseComposition ?? null,
+          composition: {
+            type: 'success' as const,
+            errors: null,
+            compositeSchemaSDL: contractCompositionResult.result.fullSchemaSdl,
+            supergraphSDL: contractCompositionResult.result.supergraph,
+          },
+          schemaChanges: diffCheck.result ?? diffCheck.reason ?? null,
+        };
+
+        if (diffCheck.status === 'failed') {
+          return {
+            ...state,
+            isSuccessful: false as const,
+          };
+        }
+
+        return {
+          ...state,
+          isSuccessful: true as const,
         };
       }),
     );
@@ -177,7 +229,9 @@ export class CompositeModel {
     const schemaSwapResult = latest ? swapServices(latest.schemas, incoming) : null;
     const schemas = schemaSwapResult ? schemaSwapResult.schemas : [incoming];
     schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
+    const contractNames = contracts?.map(({ contract }) => contract.contractName) ?? null;
 
+    // TODO: figure out what to do here in case of a base schema?
     const checksumCheck = await this.checks.checksum({
       existing: schemaSwapResult?.existing
         ? {
@@ -187,7 +241,7 @@ export class CompositeModel {
         : null,
       incoming: {
         schema: incoming,
-        contractNames: contracts?.map(({ contract }) => contract.contractName) ?? null,
+        contractNames,
       },
     });
 
@@ -209,19 +263,86 @@ export class CompositeModel {
         },
       })) ?? null;
 
-    const compositionCheck = await this.checks.composition({
-      targetId: selector.targetId,
-      project,
-      organization,
-      schemas,
-      baseSchema,
-      contracts: contractCompositionInput,
-    });
+    let baseCompositionCheck$ = null;
+
+    if (input.baseSdl) {
+      this.logger.debug('base service schema provided. composing base graph');
+
+      const schemas = latest?.schemas?.filter(s => s.serviceName !== input.serviceName) ?? [];
+      schemas.push({ ...incoming, sdl: input.baseSdl });
+      schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
+
+      baseCompositionCheck$ = this.checks.composition({
+        targetId: selector.targetId,
+        project,
+        organization,
+        schemas,
+        baseSchema,
+        contracts: contractCompositionInput,
+      });
+    }
+
+    const [baseCompositionCheck, compositionCheck] = await Promise.all([
+      baseCompositionCheck$,
+      this.checks.composition({
+        targetId: selector.targetId,
+        project,
+        organization,
+        schemas,
+        baseSchema,
+        contracts: contractCompositionInput,
+      }),
+    ]);
+
+    // In case either the base composition or composition failed
+    // we fail early and skip all the other steps
+
+    if (baseCompositionCheck?.status === 'failed' || compositionCheck.status === 'failed') {
+      return {
+        conclusion: SchemaCheckConclusion.Failure,
+        reason: {
+          baseComposition:
+            baseCompositionCheck?.status === 'completed'
+              ? {
+                  type: 'success',
+                  errors: null,
+                  compositeSchemaSDL: baseCompositionCheck.result.fullSchemaSdl,
+                  supergraphSDL: baseCompositionCheck.result.supergraph,
+                }
+              : baseCompositionCheck?.status === 'failed'
+                ? {
+                    type: 'failure',
+                    errors: baseCompositionCheck.reason.errors,
+                    compositeSchemaSDL: baseCompositionCheck.reason.fullSchemaSdl,
+                    supergraphSDL: null,
+                  }
+                : null,
+          composition:
+            compositionCheck.status === 'completed'
+              ? {
+                  type: 'success',
+                  compositeSchemaSDL: compositionCheck.result.fullSchemaSdl,
+                  supergraphSDL: compositionCheck.result.supergraph!,
+                  errors: null,
+                }
+              : {
+                  type: 'failure',
+                  compositeSchemaSDL: null,
+                  supergraphSDL: null,
+                  errors: compositionCheck.reason.errors,
+                },
+          // we do not care about contracts in this case as the main graph composition failed
+          contracts: null,
+          schemaPolicy: null,
+          schemaChanges: null,
+        },
+      };
+    }
 
     let existingPublicSchemaSdl: string | null;
-    let existingContracts = contracts;
 
-    if (!input.baseSdl) {
+    // If no base composition exists, we attempt to retrieve the SDL of the latest composable schema version
+    if (!baseCompositionCheck) {
       existingPublicSchemaSdl = await this.checks.retrievePreviousVersionSdl({
         version: latestComposable,
         organization,
@@ -229,104 +350,12 @@ export class CompositeModel {
         targetId: selector.targetId,
       });
     } else {
-      this.logger.debug('base service schema provided. composing base sdl');
-      const result = await this.checks.composeServiceSchemasWithServiceOverwrite({
-        serviceSchemas: latest?.schemas ?? null,
-        serviceOverwrite: {
-          sdl: input.baseSdl,
-          serviceName: input.serviceName,
-        },
-        organization,
-        project,
-        targetId: selector.targetId,
-        contracts: contractCompositionInput,
-      });
-
-      if (result.errors.length || !result.sdl) {
-        this.logger.debug(
-          'base supergraph composition failed. Fail schema check as we cannot construct a diff.',
-        );
-        return {
-          conclusion: SchemaCheckConclusion.Failure,
-          state: {
-            composition: {
-              errors: [
-                {
-                  message: 'Base supergraph composition failed.',
-                  source: 'composition',
-                },
-              ],
-              compositeSchemaSDL: null,
-              supergraphSDL: null,
-            },
-            schemaChanges: null,
-            contracts: null,
-            schemaPolicy: null,
-          },
-        };
-      }
-
-      existingPublicSchemaSdl = result.sdl;
-
-      if (result.contracts?.length) {
-        const contractErrors: Array<SchemaCompositionError> = [];
-        const newExistingContracts: typeof contracts = [];
-
-        for (const [index, contract] of result.contracts.entries()) {
-          if (contract.errors.length) {
-            contractErrors.push(...contract.errors);
-            this.logger.debug(
-              'Base supergraph composition failed for contract. (contractId=%s).',
-              contract.id,
-            );
-          }
-          if (contractErrors.length) {
-            continue;
-          }
-
-          const existingContract = existingContracts?.at(index);
-          invariant(!!existingContract, 'There should be a previous contract');
-          invariant(!!contract.supergraph, 'There should be a supergraph if there is no errors');
-          invariant(!!contract.sdl, 'There should be a public schema if there is no errors');
-
-          newExistingContracts.push({
-            approvedChanges: existingContract.approvedChanges,
-            contract: existingContract.contract,
-            latestValidVersion: {
-              compositeSchemaSdl: contract.sdl,
-              supergraphSdl: contract.supergraph,
-              contractName: existingContract.contract.contractName,
-            },
-          });
-        }
-
-        if (contractErrors.length) {
-          this.logger.debug(
-            'One or more base supergraph compositions failed for contracts. Fail check as we cannot construct a diff.',
-          );
-
-          return {
-            conclusion: SchemaCheckConclusion.Failure,
-            state: {
-              composition: {
-                errors: [
-                  {
-                    message: 'Base supergraph composition of contracts failed.',
-                    source: 'composition',
-                  },
-                ],
-                compositeSchemaSDL: null,
-                supergraphSDL: null,
-              },
-              schemaChanges: null,
-              contracts: null,
-              schemaPolicy: null,
-            },
-          };
-        }
-
-        existingContracts = newExistingContracts;
-      }
+      // Use the base schema composition result for the diff check
+      existingPublicSchemaSdl = baseCompositionCheck.result.fullSchemaSdl;
+      invariant(
+        baseCompositionCheck.result.contracts?.length === contracts?.length,
+        'There should be the same amount of contracts',
+      );
     }
 
     const getAffectedAppDeployments: GetAffectedAppDeployments = schemaCoordinates =>
@@ -337,25 +366,13 @@ export class CompositeModel {
           conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames ?? null,
       });
 
-    const contractChecks = await this.getContractChecks({
-      contracts: existingContracts,
-      compositionCheck,
-      conditionalBreakingChangeDiffConfig,
-      failDiffOnDangerousChange,
-      failAllDangerousChanges,
-      failDangerousChangeTypes,
-      getAffectedAppDeployments,
-    });
-    this.logger.debug('Contract checks: %o', contractChecks);
-
-    const [diffCheck, policyCheck] = await Promise.all([
+    const [diffCheck, policyCheck, contractChecks] = await Promise.all([
       this.checks.diff({
         includeUrlChanges: false,
         filterOutFederationChanges: project.type === ProjectType.FEDERATION,
         approvedChanges,
         existingSdl: existingPublicSchemaSdl,
-        incomingSdl:
-          compositionCheck.result?.fullSchemaSdl ?? compositionCheck.reason?.fullSchemaSdl ?? null,
+        incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
         failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
         failAllDangerousChanges: failAllDangerousChanges ?? true,
@@ -369,26 +386,69 @@ export class CompositeModel {
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         modifiedSdl: incoming.sdl,
       }),
+      this.getContractCheckStates({
+        contracts:
+          contracts?.map((contract, index) => ({
+            contract: contract.contract,
+            baseComposition: baseCompositionCheck?.result.contracts?.[index]
+              ? baseCompositionCheck?.result.contracts?.[index].status === 'completed'
+                ? {
+                    type: 'success',
+                    errors: null,
+                    compositeSchemaSDL:
+                      baseCompositionCheck.result.contracts[index].result.fullSchemaSdl,
+                    supergraphSDL: baseCompositionCheck.result.contracts[index].result.supergraph,
+                  }
+                : {
+                    type: 'failure',
+                    errors: baseCompositionCheck.result.contracts[index].reason.errors,
+                    compositeSchemaSDL: null,
+                    supergraphSDL: null,
+                  }
+              : null,
+            latestValidVersion: contract.latestValidVersion,
+            approvedChanges: contract.approvedChanges,
+          })) ?? null,
+        compositionCheck,
+        conditionalBreakingChangeDiffConfig,
+        failDiffOnDangerousChange,
+        failAllDangerousChanges,
+        failDangerousChangeTypes,
+        getAffectedAppDeployments,
+      }),
     ]);
     this.logger.debug('diff check status: %o', diffCheck);
     this.logger.debug('policy check status: %o', policyCheck);
 
     if (
-      compositionCheck.status === 'failed' ||
       diffCheck.status === 'failed' ||
       policyCheck.status === 'failed' ||
-      // if any of the contract compositions failed, the schema check failed.
-      (contractChecks?.length && contractChecks.some(check => !isContractChecksSuccessful(check)))
+      // if any of the contract compositions failed
+      // OR any contract for the base failed
+      contractChecks?.some(check => !check.isSuccessful)
     ) {
       this.logger.info('Schema check failed');
       return {
         conclusion: SchemaCheckConclusion.Failure,
-        state: buildSchemaCheckFailureState({
-          compositionCheck,
-          diffCheck,
-          policyCheck,
-          contractChecks,
-        }),
+        reason: {
+          baseComposition: baseCompositionCheck
+            ? {
+                type: 'success',
+                errors: null,
+                supergraphSDL: baseCompositionCheck.result.supergraph,
+                compositeSchemaSDL: baseCompositionCheck.result.fullSchemaSdl,
+              }
+            : null,
+          composition: {
+            type: 'success',
+            compositeSchemaSDL: compositionCheck.result.fullSchemaSdl,
+            supergraphSDL: compositionCheck.result.supergraph,
+            errors: null,
+          },
+          schemaPolicy: policyCheck.result ?? policyCheck.reason ?? null,
+          schemaChanges: diffCheck.reason ?? diffCheck.result ?? null,
+          contracts: contractChecks,
+        },
       };
     }
 
@@ -396,28 +456,27 @@ export class CompositeModel {
     return {
       conclusion: SchemaCheckConclusion.Success,
       state: {
-        schemaPolicyWarnings: policyCheck.result?.warnings ?? null,
-        schemaChanges: diffCheck.result ?? null,
+        baseComposition: baseCompositionCheck
+          ? {
+              type: 'success',
+              errors: null,
+              compositeSchemaSDL: baseCompositionCheck.result.fullSchemaSdl,
+              supergraphSDL: baseCompositionCheck.result.supergraph,
+            }
+          : null,
         composition: {
+          type: 'success',
           compositeSchemaSDL: compositionCheck.result.fullSchemaSdl,
           supergraphSDL: compositionCheck.result.supergraph,
+          errors: null,
         },
+        schemaPolicy: policyCheck.result ?? null,
+        schemaChanges: diffCheck.result ?? null,
+
         contracts:
           contractChecks?.map(contractCheck => {
-            if (!isContractChecksSuccessful(contractCheck)) {
-              throw new Error('This should not happen.');
-            }
-
-            return {
-              contractId: contractCheck.contractId,
-              contractName: contractCheck.contractName,
-              isSuccessful: true,
-              composition: {
-                compositeSchemaSDL: contractCheck.compositionCheck.result.fullSchemaSdl,
-                supergraphSDL: contractCheck.compositionCheck.result.supergraph ?? null,
-              },
-              schemaChanges: contractCheck.diffCheck.result ?? null,
-            };
+            invariant(contractCheck.isSuccessful, 'Successful check has failed contract.');
+            return contractCheck;
           }) ?? null,
       },
     };
@@ -626,7 +685,7 @@ export class CompositeModel {
         failAllDangerousChanges: false,
         failDangerousChangeTypes: [],
       }),
-      this.getContractChecks({
+      this.getContractCheckStates({
         contracts,
         compositionCheck,
         conditionalBreakingChangeDiffConfig,
@@ -676,15 +735,11 @@ export class CompositeModel {
           contractChecks?.map(contractCheck => ({
             contractId: contractCheck.contractId,
             contractName: contractCheck.contractName,
-            isComposable: contractCheck.compositionCheck.status === 'completed',
-            compositionErrors: contractCheck.compositionCheck.reason?.errors ?? null,
-            supergraph: contractCheck.compositionCheck?.result?.supergraph ?? null,
-            fullSchemaSdl:
-              contractCheck.compositionCheck?.result?.fullSchemaSdl ??
-              contractCheck.compositionCheck?.reason?.fullSchemaSdl ??
-              null,
-            changes:
-              (contractCheck.diffCheck.result ?? contractCheck.diffCheck.reason)?.all ?? null,
+            isComposable: contractCheck.composition.type === 'success',
+            compositionErrors: contractCheck.composition.errors ?? null,
+            supergraph: contractCheck.composition.supergraphSDL ?? null,
+            fullSchemaSdl: contractCheck.composition.compositeSchemaSDL ?? null,
+            changes: contractCheck.schemaChanges?.all ?? null,
           })) ?? null,
       },
     };
@@ -787,7 +842,7 @@ export class CompositeModel {
         filterNestedChanges: true, // filter because deletes are never associated with schema proposals in this way.
         getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
       }),
-      this.getContractChecks({
+      this.getContractCheckStates({
         contracts,
         compositionCheck,
         conditionalBreakingChangeDiffConfig,
@@ -872,15 +927,11 @@ export class CompositeModel {
           contractChecks?.map(contractCheck => ({
             contractId: contractCheck.contractId,
             contractName: contractCheck.contractName,
-            isComposable: contractCheck.compositionCheck.status === 'completed',
-            compositionErrors: contractCheck.compositionCheck.reason?.errors ?? null,
-            supergraph: contractCheck.compositionCheck?.result?.supergraph ?? null,
-            fullSchemaSdl:
-              contractCheck.compositionCheck?.result?.fullSchemaSdl ??
-              contractCheck.compositionCheck?.reason?.fullSchemaSdl ??
-              null,
-            changes:
-              (contractCheck.diffCheck.result ?? contractCheck.diffCheck.reason)?.all ?? null,
+            isComposable: contractCheck.composition.type === 'success',
+            compositionErrors: contractCheck.composition.errors,
+            supergraph: contractCheck.composition.supergraphSDL,
+            fullSchemaSdl: contractCheck.composition.compositeSchemaSDL,
+            changes: contractCheck.schemaChanges?.all ?? null,
           })) ?? null,
       },
     };

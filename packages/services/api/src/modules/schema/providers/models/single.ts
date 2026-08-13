@@ -175,7 +175,7 @@ export class SingleModel {
 
       return {
         conclusion: SchemaCheckConclusion.Failure,
-        state: buildSchemaCheckFailureState({
+        reason: buildSchemaCheckFailureState({
           compositionCheck,
           diffCheck,
           policyCheck,
@@ -189,9 +189,12 @@ export class SingleModel {
     return {
       conclusion: SchemaCheckConclusion.Success,
       state: {
+        baseComposition: null,
         schemaChanges: diffCheck.result ?? null,
-        schemaPolicyWarnings: policyCheck.result?.warnings ?? null,
+        schemaPolicy: policyCheck.result ?? null,
         composition: {
+          type: 'success',
+          errors: null,
           compositeSchemaSDL: compositionCheck.result.fullSchemaSdl,
           supergraphSDL: compositionCheck.result.supergraph,
         },

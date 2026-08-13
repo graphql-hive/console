@@ -466,6 +466,9 @@ export class Contracts {
         , "contract_checks"."safe_schema_changes" as "safeSchemaChanges"
         , "s_composite"."sdl" as "compositeSchemaSdl"
         , "s_supergraph"."sdl" as "supergraphSdl"
+        , "contract_checks"."base_schema_composition_errors" as "baseSchemaCompositionErrors"
+        , "s_base_composite"."sdl" as "baseCompositeSchemaSdl"
+        , "s_base_supergraph"."sdl" as "baseSupergraphSdl"
       FROM
         "contract_checks"
       LEFT JOIN
@@ -474,6 +477,10 @@ export class Contracts {
         "sdl_store" as "s_composite" ON "s_composite"."id" = "contract_checks"."composite_schema_sdl_store_id"
       LEFT JOIN
         "sdl_store" as "s_supergraph" ON "s_supergraph"."id" = "contract_checks"."supergraph_sdl_store_id"
+      LEFT JOIN
+        "sdl_store" as "s_base_composite" ON "s_base_composite"."id" = "contract_checks"."base_composite_schema_sdl_store_id"
+      LEFT JOIN
+        "sdl_store" as "s_base_supergraph" ON "s_base_supergraph"."id" = "contract_checks"."base_supergraph_sdl_store_id"
       WHERE
         "contract_checks"."schema_check_id" = ${args.schemaCheckId}
         ${
@@ -1050,6 +1057,10 @@ const ContractCheckModel = z.object({
   supergraphSdl: z.string().nullable(),
   breakingSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
   safeSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
+
+  baseSchemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
+  baseCompositeSchemaSdl: z.string().nullable(),
+  baseSupergraphSdl: z.string().nullable(),
 });
 
 const SchemaChangeApprovalsForContractModel = z.object({

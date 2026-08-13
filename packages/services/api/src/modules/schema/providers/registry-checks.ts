@@ -6,7 +6,7 @@ import { ChangeType, CriticalityLevel, DiffRule, TypeOfChangeType } from '@graph
 import type { DangerousChangeType } from '@hive/api/__generated__/types';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
-import { traceFn } from '@hive/service-common';
+import { invariant, traceFn } from '@hive/service-common';
 import {
   HiveSchemaChangeModel,
   type RegistryServiceUrlChangeSerializableChange,
@@ -295,18 +295,16 @@ export class RegistryChecks {
       },
     );
 
-    const validationErrors = result.errors;
-
-    if (Array.isArray(validationErrors) && validationErrors.length) {
-      this.logger.debug('Detected validation errors');
+    if (Array.isArray(result.errors) && result.errors.length) {
+      this.logger.debug('Detected composition/validation errors');
 
       return {
         status: 'failed',
         reason: {
-          errors: validationErrors,
+          errors: result.errors,
           errorsBySource: {
-            graphql: validationErrors.filter(isGraphQLValidationError),
-            composition: validationErrors.filter(isCompositionValidationError),
+            graphql: result.errors.filter(isGraphQLValidationError),
+            composition: result.errors.filter(isCompositionValidationError),
           },
           // Federation 1 apparently has SDL and validation errors at the same time.
           fullSchemaSdl: result.sdl,
@@ -317,9 +315,7 @@ export class RegistryChecks {
       } satisfies CheckResult;
     }
 
-    if (!result.sdl) {
-      throw new Error('No SDL, but no errors either');
-    }
+    invariant(result.sdl, 'No SDL, but no errors either');
 
     return {
       status: 'completed',
@@ -332,50 +328,6 @@ export class RegistryChecks {
         metadataAttributes: result.metadataAttributes ?? null,
       },
     } satisfies CheckResult;
-  }
-
-  async composeServiceSchemasWithServiceOverwrite(args: {
-    serviceSchemas: Array<CompositeSchemaInput> | null;
-    serviceOverwrite: {
-      serviceName: string;
-      sdl: string;
-    };
-    contracts: ContractsInputType | null;
-    organization: Organization;
-    project: Project;
-    targetId: string;
-  }) {
-    const override = {
-      sdl: args.serviceOverwrite.sdl,
-      serviceName: args.serviceOverwrite.serviceName,
-    };
-    const schemas = !args.serviceSchemas
-      ? [this.helper.createSchemaObject(override)]
-      : args.serviceSchemas.map(s =>
-          this.helper.createSchemaObject(
-            s.serviceName === args.serviceOverwrite.serviceName
-              ? {
-                  sdl: args.serviceOverwrite.sdl,
-                  serviceName: s.serviceName,
-                  serviceUrl: s.serviceUrl,
-                }
-              : s,
-          ),
-        );
-
-    return await this.orchestrator.composeAndValidate(
-      CompositionOrchestrator.projectTypeToOrchestratorType(args.project.type),
-      schemas,
-      {
-        external: args.project.externalComposition,
-        native: this.checkProjectNativeFederationSupport(
-          args.targetId,
-          args.project,
-          args.organization,
-        ),
-        contracts: args.contracts,
-      },
-    );
   }
 
   /**
@@ -462,6 +414,7 @@ export class RegistryChecks {
         status: 'completed',
         result: {
           warnings,
+          errors: null,
         },
       } satisfies CheckResult;
     }
