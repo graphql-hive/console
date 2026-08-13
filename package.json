@@ -199,7 +199,7 @@
       "@oclif/core@4.0.6": "patches/@oclif__core@4.0.6.patch",
       "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch",
       "bentocache": "patches/bentocache.patch",
-      "@graphql-codegen/schema-ast": "patches/@graphql-codegen__schema-ast.patch",
+      "@graphql-codegen/schema-ast@6.1.0": "patches/@graphql-codegen__schema-ast@6.1.0.patch",
       "@fastify/vite": "patches/@fastify__vite.patch",
       "@slonik/pg-driver": "patches/@slonik__pg-driver.patch",
       "slonik": "patches/slonik.patch"

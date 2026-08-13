@@ -70,9 +70,9 @@ patchedDependencies:
   '@graphiql/react':
     hash: 1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0
     path: patches/@graphiql__react.patch
-  '@graphql-codegen/schema-ast':
-    hash: 2280c6d4f2e9268fc118d06dc95deea7e9b58200010db1b332004627d6793a9f
-    path: patches/@graphql-codegen__schema-ast.patch
+  '@graphql-codegen/schema-ast@6.1.0':
+    hash: 7c11353424efb48aa4e459279661e6a7cfed641cd6ab6f40dc13e8bab901d2e8
+    path: patches/@graphql-codegen__schema-ast@6.1.0.patch
   '@graphql-eslint/eslint-plugin@3.20.1':
     hash: 92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb
     path: patches/@graphql-eslint__eslint-plugin@3.20.1.patch
@@ -21673,7 +21673,7 @@ snapshots:
       '@eddeee888/gcg-server-config': 0.6.0(graphql@16.9.0)
       '@graphql-codegen/add': 7.1.0(graphql@16.9.0)
       '@graphql-codegen/plugin-helpers': 7.1.0(graphql@16.9.0)
-      '@graphql-codegen/schema-ast': 6.1.0(patch_hash=2280c6d4f2e9268fc118d06dc95deea7e9b58200010db1b332004627d6793a9f)(graphql@16.9.0)
+      '@graphql-codegen/schema-ast': 6.1.0(patch_hash=7c11353424efb48aa4e459279661e6a7cfed641cd6ab6f40dc13e8bab901d2e8)(graphql@16.9.0)
       '@graphql-codegen/typescript': 6.1.0(graphql@16.9.0)
       '@graphql-codegen/typescript-resolvers': 6.1.0(graphql@16.9.0)
       '@graphql-tools/merge': 9.2.2(graphql@16.9.0)
@@ -22490,7 +22490,7 @@ snapshots:
       import-from: 4.0.0
       tslib: 2.8.1
 
-  '@graphql-codegen/schema-ast@6.1.0(patch_hash=2280c6d4f2e9268fc118d06dc95deea7e9b58200010db1b332004627d6793a9f)(graphql@16.9.0)':
+  '@graphql-codegen/schema-ast@6.1.0(patch_hash=7c11353424efb48aa4e459279661e6a7cfed641cd6ab6f40dc13e8bab901d2e8)(graphql@16.9.0)':
     dependencies:
       '@graphql-codegen/plugin-helpers': 7.1.0(graphql@16.9.0)
       '@graphql-tools/utils': 11.2.2(graphql@16.9.0)
@@ -22509,7 +22509,7 @@ snapshots:
   '@graphql-codegen/typescript-operations@6.1.6(graphql@16.9.0)':
     dependencies:
       '@graphql-codegen/plugin-helpers': 7.1.0(graphql@16.9.0)
-      '@graphql-codegen/schema-ast': 6.1.0(patch_hash=2280c6d4f2e9268fc118d06dc95deea7e9b58200010db1b332004627d6793a9f)(graphql@16.9.0)
+      '@graphql-codegen/schema-ast': 6.1.0(patch_hash=7c11353424efb48aa4e459279661e6a7cfed641cd6ab6f40dc13e8bab901d2e8)(graphql@16.9.0)
       '@graphql-codegen/visitor-plugin-common': 7.2.5(graphql@16.9.0)
       auto-bind: 5.0.1
       graphql: 16.9.0
@@ -22528,7 +22528,7 @@ snapshots:
   '@graphql-codegen/typescript@6.1.0(graphql@16.9.0)':
     dependencies:
       '@graphql-codegen/plugin-helpers': 7.1.0(graphql@16.9.0)
-      '@graphql-codegen/schema-ast': 6.1.0(patch_hash=2280c6d4f2e9268fc118d06dc95deea7e9b58200010db1b332004627d6793a9f)(graphql@16.9.0)
+      '@graphql-codegen/schema-ast': 6.1.0(patch_hash=7c11353424efb48aa4e459279661e6a7cfed641cd6ab6f40dc13e8bab901d2e8)(graphql@16.9.0)
       '@graphql-codegen/visitor-plugin-common': 7.2.4(graphql@16.9.0)
       auto-bind: 5.0.1
       graphql: 16.9.0

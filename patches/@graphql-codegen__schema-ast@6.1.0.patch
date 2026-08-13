@@ -1,45 +1,47 @@
 diff --git a/cjs/index.js b/cjs/index.js
-index ed643f4440f514b0d933fea2d41d3fa456f99bd4..bcea9c4a71463bd46d20837a62d8b6d490b66c88 100644
+index e92a5f6c359b8667cc7da35f1812e80d3becf96c..11cc2fd44b912aa13dd14400b4e2cf5da76a83df 100644
 --- a/cjs/index.js
 +++ b/cjs/index.js
-@@ -4,13 +4,14 @@ exports.transformSchemaAST = exports.validate = exports.plugin = void 0;
+@@ -5,7 +5,7 @@ exports.transformSchemaAST = transformSchemaAST;
  const path_1 = require("path");
- const plugin_helpers_1 = require("@graphql-codegen/plugin-helpers");
  const graphql_1 = require("graphql");
+ const plugin_helpers_1 = require("@graphql-codegen/plugin-helpers");
 -const plugin = async (schema, _documents, { commentDescriptions = false, includeDirectives = false, includeIntrospectionTypes = false, sort = false, federation, }) => {
 +const plugin = async (schema, _documents, { commentDescriptions = false, includeDirectives = false, includeIntrospectionTypes = false, sort = false, federation, append = '' }) => {
-     const transformedSchemaAndAst = transformSchemaAST(schema, { sort, federation, includeIntrospectionTypes });
-     return [
-         includeIntrospectionTypes ? (0, graphql_1.printIntrospectionSchema)(transformedSchemaAndAst.schema) : null,
-         includeDirectives
-             ? (0, graphql_1.print)(transformedSchemaAndAst.ast)
-             : graphql_1.printSchema(transformedSchemaAndAst.schema, { commentDescriptions }),
+     const transformedSchemaAndAst = transformSchemaAST(schema, {
+         sort,
+         federation,
+@@ -18,6 +18,7 @@ const plugin = async (schema, _documents, { commentDescriptions = false, include
+             : graphql_1.printSchema(transformedSchemaAndAst.schema, {
+                 commentDescriptions,
+             }),
 +        append,
      ]
          .filter(Boolean)
          .join('\n');
 diff --git a/esm/index.js b/esm/index.js
-index f386116b7c1931f84b7364ac6fcf743ccecafc5a..2d7e12c89722607ac62d64cd8fbbb5f3b332b297 100644
+index f4d86178052166577407a8e6fd55b0d3e8b83e02..ce9d795ac6b4403b094a1795ab28e6cc845a344f 100644
 --- a/esm/index.js
 +++ b/esm/index.js
-@@ -1,13 +1,14 @@
+@@ -1,7 +1,7 @@
  import { extname } from 'path';
- import { getCachedDocumentNodeFromSchema, removeFederation, } from '@graphql-codegen/plugin-helpers';
  import { buildASTSchema, extendSchema, parse, print, printIntrospectionSchema, printSchema, visit, } from 'graphql';
+ import { getCachedDocumentNodeFromSchema, removeFederation, } from '@graphql-codegen/plugin-helpers';
 -export const plugin = async (schema, _documents, { commentDescriptions = false, includeDirectives = false, includeIntrospectionTypes = false, sort = false, federation, }) => {
 +export const plugin = async (schema, _documents, { commentDescriptions = false, includeDirectives = false, includeIntrospectionTypes = false, sort = false, federation, append = '' }) => {
-     const transformedSchemaAndAst = transformSchemaAST(schema, { sort, federation, includeIntrospectionTypes });
-     return [
-         includeIntrospectionTypes ? printIntrospectionSchema(transformedSchemaAndAst.schema) : null,
-         includeDirectives
-             ? print(transformedSchemaAndAst.ast)
-             : printSchema(transformedSchemaAndAst.schema, { commentDescriptions }),
+     const transformedSchemaAndAst = transformSchemaAST(schema, {
+         sort,
+         federation,
+@@ -14,6 +14,7 @@ export const plugin = async (schema, _documents, { commentDescriptions = false,
+             : printSchema(transformedSchemaAndAst.schema, {
+                 commentDescriptions,
+             }),
 +        append,
      ]
          .filter(Boolean)
          .join('\n');
 diff --git a/typings/index.d.cts b/typings/index.d.cts
-index f2df25dbcbc5c7c0d0764452e06511dff8a1e896..083980b957de8b94ca9f77b801fcee34ef4189af 100644
+index 935733cce591359ce0345db501d6b58dc4b9c8ef..d57cf3269ad20dd098a89131a2760a1bc6d722d0 100644
 --- a/typings/index.d.cts
 +++ b/typings/index.d.cts
 @@ -27,6 +27,8 @@ export interface SchemaASTConfig {
@@ -52,7 +54,7 @@ index f2df25dbcbc5c7c0d0764452e06511dff8a1e896..083980b957de8b94ca9f77b801fcee34
       * @description Include introspection types to Schema output.
       * @default false
 diff --git a/typings/index.d.ts b/typings/index.d.ts
-index f2df25dbcbc5c7c0d0764452e06511dff8a1e896..083980b957de8b94ca9f77b801fcee34ef4189af 100644
+index 935733cce591359ce0345db501d6b58dc4b9c8ef..d57cf3269ad20dd098a89131a2760a1bc6d722d0 100644
 --- a/typings/index.d.ts
 +++ b/typings/index.d.ts
 @@ -27,6 +27,8 @@ export interface SchemaASTConfig {
