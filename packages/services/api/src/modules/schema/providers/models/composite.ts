@@ -52,6 +52,7 @@ export class CompositeModel {
     failAllDangerousChanges: null | boolean;
     failDangerousChangeTypes: null | DangerousChangeType[];
     getAffectedAppDeployments: GetAffectedAppDeployments | null;
+    skipDiff: boolean;
   }): Promise<Array<ContractStateSuccess | ContractStateFailure> | null> {
     const contractResults = (args.compositionCheck.result ?? args.compositionCheck.reason)
       ?.contracts;
@@ -96,24 +97,26 @@ export class CompositeModel {
           };
         }
 
-        const diffCheck = await this.checks.diff({
-          conditionalBreakingChangeConfig: args.conditionalBreakingChangeDiffConfig,
-          includeUrlChanges: false,
-          // contracts were introduced after this, so we do not need to filter out federation.
-          filterOutFederationChanges: false,
-          approvedChanges: contract.approvedChanges ?? null,
-          existingSdl:
-            /** if the baseline composition is provided we use that one over the latest schema */
-            contract.baselineComposition?.compositeSchemaSDL ??
-            contract.latestValidVersion?.compositeSchemaSdl ??
-            null,
-          incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
-          failDiffOnDangerousChange: args.failDiffOnDangerousChange ?? false,
-          failAllDangerousChanges: args.failAllDangerousChanges ?? true,
-          failDangerousChangeTypes: args.failDangerousChangeTypes ?? [],
-          filterNestedChanges: true,
-          getAffectedAppDeployments: args.getAffectedAppDeployments,
-        });
+        const diffCheck = args.skipDiff
+          ? null
+          : await this.checks.diff({
+              conditionalBreakingChangeConfig: args.conditionalBreakingChangeDiffConfig,
+              includeUrlChanges: false,
+              // contracts were introduced after this, so we do not need to filter out federation.
+              filterOutFederationChanges: false,
+              approvedChanges: contract.approvedChanges ?? null,
+              existingSdl:
+                /** if the baseline composition is provided we use that one over the latest schema */
+                contract.baselineComposition?.compositeSchemaSDL ??
+                contract.latestValidVersion?.compositeSchemaSdl ??
+                null,
+              incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
+              failDiffOnDangerousChange: args.failDiffOnDangerousChange ?? false,
+              failAllDangerousChanges: args.failAllDangerousChanges ?? true,
+              failDangerousChangeTypes: args.failDangerousChangeTypes ?? [],
+              filterNestedChanges: true,
+              getAffectedAppDeployments: args.getAffectedAppDeployments,
+            });
 
         const state = {
           contractId: contract.contract.id,
@@ -125,10 +128,10 @@ export class CompositeModel {
             compositeSchemaSDL: contractCompositionResult.result.fullSchemaSdl,
             supergraphSDL: contractCompositionResult.result.supergraph,
           },
-          schemaChanges: diffCheck.result ?? diffCheck.reason ?? null,
+          schemaChanges: diffCheck?.result ?? diffCheck?.reason ?? null,
         };
 
-        if (diffCheck.status === 'failed') {
+        if (diffCheck?.status === 'failed') {
           return {
             ...state,
             isSuccessful: false as const,
@@ -229,23 +232,46 @@ export class CompositeModel {
     const schemaSwapResult = latest ? swapServices(latest.schemas, incoming) : null;
     const schemas = schemaSwapResult ? schemaSwapResult.schemas : [incoming];
     schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
+
     const contractNames = contracts?.map(({ contract }) => contract.contractName) ?? null;
+    const baseline = input.baselineSdl ? { ...incoming, sdl: input.baselineSdl } : null;
 
-    // TODO: figure out what to do here in case of a baseline schema?
-    const checksumCheck = await this.checks.checksum({
-      existing: schemaSwapResult?.existing
-        ? {
-            schema: schemaSwapResult.existing,
-            contractNames: latest?.contractNames ?? null,
-          }
+    const incomingChecksumInput = {
+      schema: incoming,
+      contractNames,
+    };
+
+    // These comparisons answer different questions:
+    // - baseline -> head determines whether composition and schema diff work can be deduplicated.
+    // - registry -> head determines whether the latest registry artifacts can be reused entirely.
+    const [baselineChecksumCheck, registryChecksumCheck] = await Promise.all([
+      baseline
+        ? this.checks.checksum({
+            existing: {
+              schema: baseline,
+              contractNames,
+            },
+            incoming: incomingChecksumInput,
+          })
         : null,
-      incoming: {
-        schema: incoming,
-        contractNames,
-      },
-    });
+      this.checks.checksum({
+        existing: schemaSwapResult?.existing
+          ? {
+              schema: schemaSwapResult.existing,
+              contractNames: latest?.contractNames ?? null,
+            }
+          : null,
+        incoming: incomingChecksumInput,
+      }),
+    ]);
 
-    if (checksumCheck === 'unchanged') {
+    const baselineMatchesHead = baselineChecksumCheck === 'unchanged';
+    const registryMatchesHead = registryChecksumCheck === 'unchanged';
+
+    // A complete skip is safe only when the registry, baseline (if supplied), and head represent
+    // the same service and contract state. Otherwise registry composition artifacts could describe
+    // a graph that was never represented by the explicit baseline.
+    if (registryMatchesHead && (!baseline || baselineMatchesHead)) {
       this.logger.info('No changes detected, skipping schema check');
       return {
         conclusion: SchemaCheckConclusion.Skip,
@@ -265,24 +291,30 @@ export class CompositeModel {
 
     let baselineCompositionCheck$ = null;
 
-    if (input.baselineSdl) {
-      this.logger.debug('baseline service schema provided. composing baseline graph');
+    if (baseline) {
+      if (!baselineMatchesHead) {
+        this.logger.debug('baseline matches head state. skip composing baseline');
+      } else {
+        this.logger.debug('baseline service schema provided. composing baseline graph');
 
-      const schemas = latest?.schemas?.filter(s => s.serviceName !== input.serviceName) ?? [];
-      schemas.push({ ...incoming, sdl: input.baselineSdl });
-      schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
+        const schemas = latest?.schemas?.filter(s => s.serviceName !== input.serviceName) ?? [];
+        schemas.push(baseline);
+        schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
 
-      baselineCompositionCheck$ = this.checks.composition({
-        targetId: selector.targetId,
-        project,
-        organization,
-        schemas,
-        baseSchema,
-        contracts: contractCompositionInput,
-      });
+        baselineCompositionCheck$ = this.checks.composition({
+          targetId: selector.targetId,
+          project,
+          organization,
+          schemas,
+          baseSchema,
+          contracts: contractCompositionInput,
+        });
+      }
     }
 
-    const [baselineCompositionCheck, compositionCheck] = await Promise.all([
+    // Equal baseline and head snapshots only need one composition. This still must run when they
+    // differ from the registry because current composition, policy, and contract checks apply.
+    const [composedBaseline, compositionCheck] = await Promise.all([
       baselineCompositionCheck$,
       this.checks.composition({
         targetId: selector.targetId,
@@ -293,6 +325,7 @@ export class CompositeModel {
         contracts: contractCompositionInput,
       }),
     ]);
+    const baselineCompositionCheck = baselineMatchesHead ? compositionCheck : composedBaseline;
 
     // In case either the baseline composition or composition failed
     // we fail early and skip all the other steps
@@ -367,19 +400,23 @@ export class CompositeModel {
       });
 
     const [diffCheck, policyCheck, contractChecks] = await Promise.all([
-      this.checks.diff({
-        includeUrlChanges: false,
-        filterOutFederationChanges: project.type === ProjectType.FEDERATION,
-        approvedChanges,
-        existingSdl: existingPublicSchemaSdl,
-        incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
-        conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
-        failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
-        failAllDangerousChanges: failAllDangerousChanges ?? true,
-        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
-        filterNestedChanges,
-        getAffectedAppDeployments,
-      }),
+      // The composed public schemas are identical when baseline and head checksums match
+      // we can skip early and safe some computing
+      baselineMatchesHead
+        ? ({ status: 'skipped' as const } as Awaited<ReturnType<RegistryChecks['diff']>>)
+        : this.checks.diff({
+            includeUrlChanges: false,
+            filterOutFederationChanges: project.type === ProjectType.FEDERATION,
+            approvedChanges,
+            existingSdl: existingPublicSchemaSdl,
+            incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+            conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
+            failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
+            failAllDangerousChanges: failAllDangerousChanges ?? true,
+            failDangerousChangeTypes: failDangerousChangeTypes ?? [],
+            filterNestedChanges,
+            getAffectedAppDeployments,
+          }),
       this.checks.policyCheck({
         selector,
         // if schema check does not compose then there's no point in linting. Pass in null in this case.
@@ -416,6 +453,7 @@ export class CompositeModel {
         failAllDangerousChanges,
         failDangerousChangeTypes,
         getAffectedAppDeployments,
+        skipDiff: baselineMatchesHead,
       }),
     ]);
     this.logger.debug('diff check status: %o', diffCheck);
@@ -694,6 +732,7 @@ export class CompositeModel {
         failAllDangerousChanges: false,
         failDangerousChangeTypes: [],
         getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
+        skipDiff: false,
       }),
     ]);
 
@@ -851,6 +890,7 @@ export class CompositeModel {
         failAllDangerousChanges: failAllDangerousChanges ?? true,
         failDangerousChangeTypes: failDangerousChangeTypes ?? [],
         getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
+        skipDiff: false,
       }),
       this.checks.diff({
         existingSdl: latestComposable?.supergraphSdl ?? null,

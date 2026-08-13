@@ -776,6 +776,8 @@ export class SchemaPublisher {
     if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
+        // A baseline-aware skip is only returned when baseline, head, and registry match, so the
+        // latest registry artifacts are also the exact baseline composition artifacts.
         baselineSchemaSdl: baselineSdl,
         baselineSchemaHash,
         baselinePublicSdl: checkResult.reason.baselineComposition?.compositeSchemaSDL ?? null,
@@ -904,17 +906,13 @@ export class SchemaPublisher {
         this.schemaVersionHelper.getSchemaCompositionErrors(latestVersion.version),
       ]);
 
-      invariant(baselineSdl === null, 'TODO: implement skip case with baseline schema');
-
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
-        // TODO: populate these start
-        baselineSchemaSdl: null,
-        baselineSchemaHash: null,
-        baselineSchemaCompositionErrors: null,
-        baselineSupergraphSdl: null,
-        baselinePublicSdl: null,
-        // TODO: populate these end
+        baselineSchemaSdl: baselineSdl,
+        baselineSchemaHash,
+        baselineSchemaCompositionErrors: baselineSdl ? compositionErrors : null,
+        baselineSupergraphSdl: baselineSdl ? supergraphSdl : null,
+        baselinePublicSdl: baselineSdl ? compositeSchemaSdl : null,
         serviceName: input.service ?? null,
         serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
@@ -973,11 +971,9 @@ export class SchemaPublisher {
                 compositeSchemaSdl: edge.node.compositeSchemaSdl,
                 supergraphSchemaSdl: edge.node.supergraphSdl,
                 schemaCompositionErrors: edge.node.schemaCompositionErrors,
-                // TODO: populate these start
-                baselineCompositionErrors: null,
-                baselineSupergraphSchemaSdl: null,
-                baselineCompositeSchemaSdl: null,
-                // TODO: populate these end
+                baselineCompositionErrors: baselineSdl ? edge.node.schemaCompositionErrors : null,
+                baselineSupergraphSchemaSdl: baselineSdl ? edge.node.supergraphSdl : null,
+                baselineCompositeSchemaSdl: baselineSdl ? edge.node.compositeSchemaSdl : null,
                 breakingSchemaChanges: null,
                 safeSchemaChanges: null,
               })),
