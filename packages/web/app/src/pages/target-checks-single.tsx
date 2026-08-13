@@ -415,11 +415,6 @@ const DefaultSchemaView_SchemaCheckFragment = graphql(`
     meta {
       commit
     }
-    schemaVersion {
-      id
-      supergraph
-      sdl
-    }
     ... on SuccessfulSchemaCheck {
       compositeSchemaSDL
       supergraphSDL
@@ -513,8 +508,8 @@ function DefaultSchemaView(props: {
     testId: 'schema-view-btn',
     value: 'schema',
     icon: <DiffIcon className="h-5 w-auto flex-none" />,
-    label: 'Schema',
-    tooltip: 'Schema Diff',
+    label: 'Public Schema',
+    tooltip: 'Public Schema',
     isDisabled: !schemaCheck.compositeSchemaSDL,
   });
 
@@ -655,14 +650,14 @@ function DefaultSchemaView(props: {
         )}
         {selectedView === 'schema' && (
           <DiffEditor
-            before={schemaCheck.schemaVersion?.sdl ?? null}
+            before={schemaCheck.baseline?.publicSdl ?? null}
             after={schemaCheck.compositeSchemaSDL ?? null}
             downloadFileName="schema.graphqls"
           />
         )}
         {selectedView === 'supergraph' && (
           <DiffEditor
-            before={schemaCheck?.schemaVersion?.supergraph ?? null}
+            before={schemaCheck?.baseline?.supergraphSdl ?? null}
             after={schemaCheck?.supergraphSDL ?? null}
             downloadFileName="supergraph.graphqls"
           />
@@ -709,10 +704,9 @@ const ContractCheckView_ContractCheckFragment = graphql(`
     }
     compositeSchemaSDL
     supergraphSDL
-    contractVersion {
-      id
-      compositeSchemaSDL
-      supergraphSDL
+    baseline {
+      publicSdl
+      supergraphSdl
     }
   }
 `);
@@ -751,8 +745,8 @@ function ContractCheckView(props: {
     {
       value: 'schema',
       icon: <DiffIcon className="h-5 w-auto flex-none" />,
-      label: 'Schema',
-      tooltip: 'Schema',
+      label: 'Public Schema',
+      tooltip: 'Public Schema',
       disabledReason: !contractCheck.compositeSchemaSDL && (
         <>Composition did not succeed. No public schema SDL available.</>
       ),
@@ -836,14 +830,14 @@ function ContractCheckView(props: {
         )}
         {selectedView === 'schema' && (
           <DiffEditor
-            before={contractCheck?.contractVersion?.compositeSchemaSDL ?? null}
+            before={contractCheck?.baseline?.publicSdl ?? null}
             after={contractCheck.compositeSchemaSDL ?? null}
             downloadFileName="schema.graphqls"
           />
         )}
         {selectedView === 'supergraph' && (
           <DiffEditor
-            before={contractCheck?.contractVersion?.supergraphSDL ?? null}
+            before={contractCheck?.baseline?.supergraphSdl ?? null}
             after={contractCheck?.supergraphSDL ?? null}
             downloadFileName="supergraph.graphqls"
           />
