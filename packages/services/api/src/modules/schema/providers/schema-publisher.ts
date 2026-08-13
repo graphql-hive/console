@@ -904,7 +904,7 @@ export class SchemaPublisher {
         this.schemaVersionHelper.getSchemaCompositionErrors(latestVersion.version),
       ]);
 
-      invariant(baselineSdl, 'TODO: implement skip case with baseline schema');
+      invariant(baselineSdl === null, 'TODO: implement skip case with baseline schema');
 
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
@@ -1122,6 +1122,70 @@ export class SchemaPublisher {
     if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
       increaseSchemaCheckCountMetric('rejected');
 
+      const errors: Array<{ message: string }> = [];
+
+      if (checkResult.reason.baselineComposition?.type === 'failure') {
+        errors.push({
+          message: 'Baseline composition failed.',
+        });
+      }
+
+      if (checkResult.reason.schemaChanges?.breaking) {
+        errors.push(
+          ...checkResult.reason.schemaChanges.breaking.filter(
+            breaking => breaking.approvalMetadata == null && breaking.isSafeBasedOnUsage === false,
+          ),
+        );
+      }
+
+      if (checkResult.reason.schemaPolicy?.errors) {
+        errors.push(...checkResult.reason.schemaPolicy.errors.map(formatPolicyError));
+      }
+
+      if (checkResult.reason.composition.errors) {
+        errors.push(...checkResult.reason.composition.errors);
+      }
+
+      if (checkResult.reason.contracts) {
+        for (const contract of checkResult.reason.contracts) {
+          if (!contract.baselineComposition?.errors) {
+            continue;
+          }
+
+          errors.push({ message: `[${contract.contractName}] Baseline composition failed.` });
+        }
+        for (const contract of checkResult.reason.contracts) {
+          if (!contract.composition.errors) {
+            continue;
+          }
+
+          errors.push(
+            ...contract.composition.errors.map(error => ({
+              ...error,
+              message: `[${contract.contractName}] ${error.message}`,
+            })),
+          );
+        }
+
+        for (const contract of checkResult.reason.contracts) {
+          if (!contract.schemaChanges?.breaking) {
+            continue;
+          }
+
+          errors.push(
+            ...contract.schemaChanges.breaking
+              .filter(
+                breaking =>
+                  breaking.approvalMetadata == null && breaking.isSafeBasedOnUsage === false,
+              )
+              .map(change => ({
+                ...change,
+                message: `[${contract.contractName}] ${change.message}`,
+              })),
+          );
+        }
+      }
+
       return {
         __typename: 'SchemaCheckError',
         valid: false,
@@ -1136,30 +1200,7 @@ export class SchemaPublisher {
           ]) ?? []),
         ],
         warnings: checkResult.reason.schemaPolicy?.warnings ?? [],
-        errors: [
-          ...(checkResult.reason.schemaChanges?.breaking?.filter(
-            breaking => breaking.approvalMetadata == null && breaking.isSafeBasedOnUsage === false,
-          ) ?? []),
-          ...(checkResult.reason.schemaPolicy?.errors?.map(formatPolicyError) ?? []),
-          ...(checkResult.reason.composition.errors ?? []),
-          ...(checkResult.reason.contracts?.flatMap(contract => [
-            ...(contract.composition.errors?.map(error => ({
-              message: `[${contract.contractName}] ${error.message}`,
-              source: error.source,
-            })) ?? []),
-          ]) ?? []),
-          ...(checkResult.reason.contracts?.flatMap(contract => [
-            ...(contract.schemaChanges?.breaking
-              ?.filter(
-                breaking =>
-                  breaking.approvalMetadata == null && breaking.isSafeBasedOnUsage === false,
-              )
-              .map(change => ({
-                ...change,
-                message: `[${contract.contractName}] ${change.message}`,
-              })) ?? []),
-          ]) ?? []),
-        ],
+        errors,
         schemaCheck: toGraphQLSchemaCheck(schemaCheckSelector, schemaCheck),
       } as const;
     }

@@ -2198,7 +2198,7 @@ describe.concurrent('schema check with a baseline service schema', () => {
       __typename: 'SchemaCheckError',
       valid: false,
       errors: {
-        nodes: [{ message: 'Baseline supergraph composition failed.' }],
+        nodes: [{ message: 'Baseline composition failed.' }],
         total: 1,
       },
     });
@@ -2242,6 +2242,12 @@ test.concurrent(
       },
       schemaCheck: {
         id: expect.any(String),
+        baseline: {
+          meta: {
+            commit: null,
+          },
+        },
+        previousSchemaSDL: null,
       },
       valid: false,
     });
