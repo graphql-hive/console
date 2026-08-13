@@ -25,6 +25,3 @@ minimumReleaseAgeExclude:
   - '@theguild/federation-composition'
   - graphql-modules
   - 'react-foundry'
-  - '@graphql-codegen/client-preset' # TODO: eddeee888 remove when minimumReleaseAge passes
-  - '@graphql-codegen/typescript-operations' # TODO: eddeee888 remove when minimumReleaseAge passes
-  - '@graphql-codegen/visitor-plugin-common' # TODO: eddeee888 remove when minimumReleaseAge passes
