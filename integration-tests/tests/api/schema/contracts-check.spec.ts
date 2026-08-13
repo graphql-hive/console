@@ -367,7 +367,7 @@ const SchemaCheckQuery = graphql(/* GraphQL */ `
 `);
 
 test.concurrent(
-  'schema check contract changes are compared against the provided base SDL',
+  'schema check contract changes are compared against the provided baseline SDL',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
@@ -418,8 +418,8 @@ test.concurrent(
     const checkResult = await checkSchema(
       {
         service,
-        base: {
-          hash: 'base-commit-sha',
+        baseline: {
+          hash: 'baseline-commit-sha',
           sdl: /* GraphQL */ `
             extend schema
               @link(url: "https://specs.apollo.dev/link/v1.0")

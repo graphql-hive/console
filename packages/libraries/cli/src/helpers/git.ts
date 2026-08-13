@@ -6,7 +6,7 @@ export type CIRunnerEnvironment = {
   commit: string | undefined | null;
   pullRequestNumber: string | undefined | null;
   repository: string | undefined | null;
-  baseCommit: string | undefined | null;
+  baselineCommit: string | undefined | null;
 };
 
 interface CIRunner {
@@ -61,7 +61,7 @@ function useGitHubAction(): CIRunner {
       const repository = process.env['GITHUB_REPOSITORY'] ?? null;
       let pullRequestNumber: string | null = null;
       let commit: string | null = null;
-      let baseCommit: string | null = null;
+      let baselineCommit: string | null = null;
 
       const isPr =
         // eslint-disable-next-line no-process-env
@@ -86,14 +86,14 @@ function useGitHubAction(): CIRunner {
             commit = event.merge_group.head_sha as string;
             const match = event.merge_group.head_ref?.match(/\/pr-(\d+)-/);
             pullRequestNumber = match?.[1] ?? null;
-            baseCommit = event.merge_group.base_ref as string;
+            baselineCommit = event.merge_group.base_ref as string;
           }
         } catch {
           // Noop
         }
       }
 
-      return { commit, pullRequestNumber, repository, baseCommit };
+      return { commit, pullRequestNumber, repository, baselineCommit };
     },
   };
 }
@@ -103,7 +103,7 @@ export type GitInfo = {
   pullRequestNumber: string | null;
   commit: string | null;
   author: string | null;
-  baseCommit: string | null;
+  baselineCommit: string | null;
 };
 
 export async function gitInfo(noGit: () => void): Promise<GitInfo> {
@@ -111,7 +111,7 @@ export async function gitInfo(noGit: () => void): Promise<GitInfo> {
   let pullRequestNumber: string | null = null;
   let commit: string | null = null;
   let author: string | null = null;
-  let baseCommit: string | null = null;
+  let baselineCommit: string | null = null;
 
   const env = ci();
 
@@ -122,7 +122,7 @@ export async function gitInfo(noGit: () => void): Promise<GitInfo> {
     repository = env.repository ?? null;
     commit = env.commit ?? null;
     pullRequestNumber = env.pullRequestNumber ?? null;
-    baseCommit = env.baseCommit ?? null;
+    baselineCommit = env.baselineCommit ?? null;
   }
 
   if (!commit) {
@@ -149,6 +149,6 @@ export async function gitInfo(noGit: () => void): Promise<GitInfo> {
     pullRequestNumber,
     commit,
     author,
-    baseCommit,
+    baselineCommit,
   };
 }

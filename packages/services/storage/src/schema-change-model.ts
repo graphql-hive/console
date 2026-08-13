@@ -1472,36 +1472,36 @@ const SchemaCheckCommonFields = {
 
 const SchemaCheckSharedOutputFields = {
   ...SchemaCheckCommonFields,
-  baseSchemaSDL: z.string().nullable(),
-  baseSchemaHash: z.string().nullable(),
-  basePublicSDL: z.string().nullable(),
-  baseSupergraphSDL: z.string().nullable(),
-  baseCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
+  baselineSchemaSDL: z.string().nullable(),
+  baselineSchemaHash: z.string().nullable(),
+  baselinePublicSDL: z.string().nullable(),
+  baselineSupergraphSDL: z.string().nullable(),
+  baselineCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
 };
 
 const SchemaCheckSharedInputFields = {
   ...SchemaCheckCommonFields,
-  baseSchemaSdl: z
+  baselineSchemaSdl: z
     .string()
     .nullable()
     .optional()
     .transform(value => value ?? null),
-  baseSchemaHash: z
+  baselineSchemaHash: z
     .string()
     .nullable()
     .optional()
     .transform(value => value ?? null),
-  basePublicSdl: z
+  baselinePublicSdl: z
     .string()
     .nullable()
     .optional()
     .transform(value => value ?? null),
-  baseSupergraphSdl: z
+  baselineSupergraphSdl: z
     .string()
     .nullable()
     .optional()
     .transform(value => value ?? null),
-  baseSchemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
+  baselineSchemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
 };
 
 const ContractCheckInput = z.object({
@@ -1513,9 +1513,9 @@ const ContractCheckInput = z.object({
   schemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
   breakingSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
   safeSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
-  baseCompositeSchemaSdl: z.string().nullable(),
-  baseSupergraphSchemaSdl: z.string().nullable(),
-  baseCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
+  baselineCompositeSchemaSdl: z.string().nullable(),
+  baselineSupergraphSchemaSdl: z.string().nullable(),
+  baselineCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
 });
 
 const DateOrString = z

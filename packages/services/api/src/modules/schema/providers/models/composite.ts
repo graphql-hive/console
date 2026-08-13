@@ -42,7 +42,7 @@ export class CompositeModel {
   private async getContractCheckStates(args: {
     contracts: Array<
       ContractInput & {
-        baseComposition?: null | CompositionState;
+        baselineComposition?: null | CompositionState;
         approvedChanges?: Map<string, SchemaChangeType> | null;
       }
     > | null;
@@ -71,13 +71,13 @@ export class CompositeModel {
 
         if (
           contractCompositionResult.status == 'failed' ||
-          contract.baseComposition?.type === 'failure'
+          contract.baselineComposition?.type === 'failure'
         ) {
           return {
             isSuccessful: false,
             contractId: contract.contract.id,
             contractName: contract.contract.contractName,
-            baseComposition: contract.baseComposition ?? null,
+            baselineComposition: contract.baselineComposition ?? null,
             composition:
               contractCompositionResult.status === 'completed'
                 ? {
@@ -103,8 +103,8 @@ export class CompositeModel {
           filterOutFederationChanges: false,
           approvedChanges: contract.approvedChanges ?? null,
           existingSdl:
-            /** if the base composition is provided we use that one over the latest schema */
-            contract.baseComposition?.compositeSchemaSDL ??
+            /** if the baseline composition is provided we use that one over the latest schema */
+            contract.baselineComposition?.compositeSchemaSDL ??
             contract.latestValidVersion?.compositeSchemaSdl ??
             null,
           incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
@@ -118,7 +118,7 @@ export class CompositeModel {
         const state = {
           contractId: contract.contract.id,
           contractName: contract.contract.contractName,
-          baseComposition: contract.baseComposition ?? null,
+          baselineComposition: contract.baselineComposition ?? null,
           composition: {
             type: 'success' as const,
             errors: null,
@@ -179,8 +179,8 @@ export class CompositeModel {
     filterNestedChanges,
   }: {
     input: Pick<CompositeSchemaInput, 'sdl' | 'serviceName'> & {
-      /** The base SDL that should be used instead of teh current services schema. */
-      baseSdl: string | null;
+      /** The baseline SDL that should be used instead of the current service schema. */
+      baselineSdl: string | null;
       /** for a schema check the service url is optional */
       serviceUrl: string | null;
     };
@@ -231,7 +231,7 @@ export class CompositeModel {
     schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
     const contractNames = contracts?.map(({ contract }) => contract.contractName) ?? null;
 
-    // TODO: figure out what to do here in case of a base schema?
+    // TODO: figure out what to do here in case of a baseline schema?
     const checksumCheck = await this.checks.checksum({
       existing: schemaSwapResult?.existing
         ? {
@@ -263,16 +263,16 @@ export class CompositeModel {
         },
       })) ?? null;
 
-    let baseCompositionCheck$ = null;
+    let baselineCompositionCheck$ = null;
 
-    if (input.baseSdl) {
-      this.logger.debug('base service schema provided. composing base graph');
+    if (input.baselineSdl) {
+      this.logger.debug('baseline service schema provided. composing baseline graph');
 
       const schemas = latest?.schemas?.filter(s => s.serviceName !== input.serviceName) ?? [];
-      schemas.push({ ...incoming, sdl: input.baseSdl });
+      schemas.push({ ...incoming, sdl: input.baselineSdl });
       schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
 
-      baseCompositionCheck$ = this.checks.composition({
+      baselineCompositionCheck$ = this.checks.composition({
         targetId: selector.targetId,
         project,
         organization,
@@ -282,8 +282,8 @@ export class CompositeModel {
       });
     }
 
-    const [baseCompositionCheck, compositionCheck] = await Promise.all([
-      baseCompositionCheck$,
+    const [baselineCompositionCheck, compositionCheck] = await Promise.all([
+      baselineCompositionCheck$,
       this.checks.composition({
         targetId: selector.targetId,
         project,
@@ -294,26 +294,26 @@ export class CompositeModel {
       }),
     ]);
 
-    // In case either the base composition or composition failed
+    // In case either the baseline composition or composition failed
     // we fail early and skip all the other steps
 
-    if (baseCompositionCheck?.status === 'failed' || compositionCheck.status === 'failed') {
+    if (baselineCompositionCheck?.status === 'failed' || compositionCheck.status === 'failed') {
       return {
         conclusion: SchemaCheckConclusion.Failure,
         reason: {
-          baseComposition:
-            baseCompositionCheck?.status === 'completed'
+          baselineComposition:
+            baselineCompositionCheck?.status === 'completed'
               ? {
                   type: 'success',
                   errors: null,
-                  compositeSchemaSDL: baseCompositionCheck.result.fullSchemaSdl,
-                  supergraphSDL: baseCompositionCheck.result.supergraph,
+                  compositeSchemaSDL: baselineCompositionCheck.result.fullSchemaSdl,
+                  supergraphSDL: baselineCompositionCheck.result.supergraph,
                 }
-              : baseCompositionCheck?.status === 'failed'
+              : baselineCompositionCheck?.status === 'failed'
                 ? {
                     type: 'failure',
-                    errors: baseCompositionCheck.reason.errors,
-                    compositeSchemaSDL: baseCompositionCheck.reason.fullSchemaSdl,
+                    errors: baselineCompositionCheck.reason.errors,
+                    compositeSchemaSDL: baselineCompositionCheck.reason.fullSchemaSdl,
                     supergraphSDL: null,
                   }
                 : null,
@@ -341,8 +341,8 @@ export class CompositeModel {
 
     let existingPublicSchemaSdl: string | null;
 
-    // If no base composition exists, we attempt to retrieve the SDL of the latest composable schema version
-    if (!baseCompositionCheck) {
+    // If no baseline composition exists, retrieve the SDL of the latest composable schema version.
+    if (!baselineCompositionCheck) {
       existingPublicSchemaSdl = await this.checks.retrievePreviousVersionSdl({
         version: latestComposable,
         organization,
@@ -350,10 +350,10 @@ export class CompositeModel {
         targetId: selector.targetId,
       });
     } else {
-      // Use the base schema composition result for the diff check
-      existingPublicSchemaSdl = baseCompositionCheck.result.fullSchemaSdl;
+      // Use the baseline schema composition result for the diff check
+      existingPublicSchemaSdl = baselineCompositionCheck.result.fullSchemaSdl;
       invariant(
-        baseCompositionCheck.result.contracts?.length === contracts?.length,
+        baselineCompositionCheck.result.contracts?.length === contracts?.length,
         'There should be the same amount of contracts',
       );
     }
@@ -390,18 +390,19 @@ export class CompositeModel {
         contracts:
           contracts?.map((contract, index) => ({
             contract: contract.contract,
-            baseComposition: baseCompositionCheck?.result.contracts?.[index]
-              ? baseCompositionCheck?.result.contracts?.[index].status === 'completed'
+            baselineComposition: baselineCompositionCheck?.result.contracts?.[index]
+              ? baselineCompositionCheck?.result.contracts?.[index].status === 'completed'
                 ? {
                     type: 'success',
                     errors: null,
                     compositeSchemaSDL:
-                      baseCompositionCheck.result.contracts[index].result.fullSchemaSdl,
-                    supergraphSDL: baseCompositionCheck.result.contracts[index].result.supergraph,
+                      baselineCompositionCheck.result.contracts[index].result.fullSchemaSdl,
+                    supergraphSDL:
+                      baselineCompositionCheck.result.contracts[index].result.supergraph,
                   }
                 : {
                     type: 'failure',
-                    errors: baseCompositionCheck.result.contracts[index].reason.errors,
+                    errors: baselineCompositionCheck.result.contracts[index].reason.errors,
                     compositeSchemaSDL: null,
                     supergraphSDL: null,
                   }
@@ -424,19 +425,19 @@ export class CompositeModel {
       diffCheck.status === 'failed' ||
       policyCheck.status === 'failed' ||
       // if any of the contract compositions failed
-      // OR any contract for the base failed
+      // OR any contract for the baseline failed
       contractChecks?.some(check => !check.isSuccessful)
     ) {
       this.logger.info('Schema check failed');
       return {
         conclusion: SchemaCheckConclusion.Failure,
         reason: {
-          baseComposition: baseCompositionCheck
+          baselineComposition: baselineCompositionCheck
             ? {
                 type: 'success',
                 errors: null,
-                supergraphSDL: baseCompositionCheck.result.supergraph,
-                compositeSchemaSDL: baseCompositionCheck.result.fullSchemaSdl,
+                supergraphSDL: baselineCompositionCheck.result.supergraph,
+                compositeSchemaSDL: baselineCompositionCheck.result.fullSchemaSdl,
               }
             : null,
           composition: {
@@ -456,12 +457,12 @@ export class CompositeModel {
     return {
       conclusion: SchemaCheckConclusion.Success,
       state: {
-        baseComposition: baseCompositionCheck
+        baselineComposition: baselineCompositionCheck
           ? {
               type: 'success',
               errors: null,
-              compositeSchemaSDL: baseCompositionCheck.result.fullSchemaSdl,
-              supergraphSDL: baseCompositionCheck.result.supergraph,
+              compositeSchemaSDL: baselineCompositionCheck.result.fullSchemaSdl,
+              supergraphSDL: baselineCompositionCheck.result.supergraph,
             }
           : null,
         composition: {

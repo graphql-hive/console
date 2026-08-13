@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import {
+  ArrowRight,
   BadgeCheck,
   ChevronDown,
   ChevronUp,
@@ -401,9 +402,19 @@ const DefaultSchemaView_SchemaCheckFragment = graphql(`
   fragment DefaultSchemaView_SchemaCheckFragment on SchemaCheck {
     id
     schemaSDL
-    previousSchemaSDL
     serviceName
     hasSchemaCompositionErrors
+    baseline {
+      sdl
+      publicSdl
+      supergraphSdl
+      meta {
+        commit
+      }
+    }
+    meta {
+      commit
+    }
     schemaVersion {
       id
       supergraph
@@ -618,7 +629,26 @@ function DefaultSchemaView(props: {
         )}
         {selectedView === 'service' && (
           <DiffEditor
-            before={schemaCheck.previousSchemaSDL ?? null}
+            title={
+              schemaCheck.serviceName ? (
+                <span className="flex items-center gap-1">
+                  {schemaCheck.baseline?.meta ? (
+                    <>
+                      <span className="font-mono">
+                        {schemaCheck.serviceName}@
+                        {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                      </span>
+                      <ArrowRight className="inline size-3" />
+                    </>
+                  ) : null}
+                  <span className="font-mono">
+                    {schemaCheck.serviceName}@
+                    {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                  </span>
+                </span>
+              ) : undefined
+            }
+            before={schemaCheck.baseline?.sdl ?? null}
             after={schemaCheck.schemaSDL}
             downloadFileName="service.graphqls"
           />

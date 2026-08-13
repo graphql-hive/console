@@ -18,7 +18,7 @@ import {
 import { gitInfo } from '../../helpers/git';
 import {
   loadSchemaFromGitHistory,
-  parseBaseGitFileReference,
+  parseBaselineGitFileReference,
 } from '../../helpers/git-schema-loader';
 import {
   loadSchema,
@@ -158,10 +158,10 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
     commit: Flags.string({
       description: 'Associated commit sha',
     }),
-    base: Flags.string({
+    baseline: Flags.string({
       description:
         'File containing the schema before the current change.\n' +
-        'Base schema to compare against. Accepts a local file path or a file at a' +
+        'Baseline schema to compare against. Accepts a local file path or a file at a' +
         'Git revision using `<revision>:<path>`.',
     }),
     contextId: Flags.string({
@@ -266,22 +266,22 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         };
       }
 
-      let minifiedBaseSdl: string | null = null;
-      let baseSchemaHash: string | null = null;
+      let minifiedBaselineSdl: string | null = null;
+      let baselineSchemaHash: string | null = null;
 
-      if (flags.base) {
-        const basePointer = flags.base;
-        const gitResult = parseBaseGitFileReference(basePointer);
-        baseSchemaHash = gitResult.status === 'ok' ? gitResult.commit : null;
+      if (flags.baseline) {
+        const baselinePointer = flags.baseline;
+        const gitResult = parseBaselineGitFileReference(baselinePointer);
+        baselineSchemaHash = gitResult.status === 'ok' ? gitResult.commit : null;
         const result =
           gitResult.status === 'error'
-            ? await loadSchema('first-federation-then-graphql-introspection', basePointer, {
+            ? await loadSchema('first-federation-then-graphql-introspection', baselinePointer, {
                 logger: this.logger,
               })
                 .catch(() => {
                   throw new SchemaFileNotFoundError(
-                    basePointer,
-                    'Failed to retrieve the base schema from ' + basePointer,
+                    baselinePointer,
+                    'Failed to retrieve the baseline schema from ' + baselinePointer,
                   );
                 })
                 .then(sdl => ({
@@ -295,18 +295,19 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             case 'git':
               throw new SchemaFileNotFoundError(
                 result.error.path,
-                'Failed to retrieve the base schema from the git history.\n' + result.error.message,
+                'Failed to retrieve the baseline schema from the git history.\n' +
+                  result.error.message,
               );
             case 'path':
               throw new SchemaFileNotFoundError(
                 schemaPointer,
-                `When using the '--base flag, the file path must point to a single file containing the schema SDL.`,
+                `When using the '--baseline' flag, the file path must point to a single file containing the schema SDL.`,
               );
           }
         }
 
-        minifiedBaseSdl = minifySchema(result.sdl);
-        baseSchemaHash = gitResult.commit ?? git.baseCommit;
+        minifiedBaselineSdl = minifySchema(result.sdl);
+        baselineSchemaHash = gitResult.commit ?? git.baselineCommit;
       }
 
       const rawSdl = await loadSchema(
@@ -345,10 +346,10 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             target,
             url: flags.url,
             schemaProposalId: flags.schemaProposalId,
-            base: minifiedBaseSdl
+            baseline: minifiedBaselineSdl
               ? {
-                  sdl: minifiedBaseSdl,
-                  hash: baseSchemaHash,
+                  sdl: minifiedBaselineSdl,
+                  hash: baselineSchemaHash,
                 }
               : null,
           },

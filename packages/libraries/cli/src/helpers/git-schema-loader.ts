@@ -55,7 +55,7 @@ export function loadSchemaFromGitHistory(filePointer: string, commit: string) {
   return fileResult;
 }
 
-export function parseBaseGitFileReference(schemaPointer: string) {
+export function parseBaselineGitFileReference(schemaPointer: string) {
   const [maybeCommit, maybeFilePath, ...rest] = schemaPointer.split(':');
   if (!maybeCommit || !maybeFilePath || rest.length) {
     return {

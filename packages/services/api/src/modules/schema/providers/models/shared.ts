@@ -114,8 +114,8 @@ type GroupedSchemaChanges = {
 type ContractState = {
   contractId: string;
   contractName: string;
-  /** the base schema that was used for comparison instead of the latest valid schema version */
-  baseComposition: null | CompositionState;
+  /** the baseline schema used for comparison instead of the latest valid schema version */
+  baselineComposition: null | CompositionState;
   schemaChanges: null | GroupedSchemaChanges;
 };
 
@@ -137,18 +137,18 @@ export type SchemaCheckSkip = {
 export type SchemaCheckSuccess = {
   conclusion: typeof SchemaCheckConclusion.Success;
   state: {
-    /** the base schema that was used for comparison instead of the latest valid schema version */
-    baseComposition: null | CompositionState;
+    /** the baseline schema used for comparison instead of the latest valid schema version */
+    baselineComposition: null | CompositionState;
     /** the result of the main graph composition */
     composition: SuccessCompositionState;
-    /** schema changes from the main graph to the latest valid schema version or base graph */
+    /** schema changes from the main graph to the latest valid schema version or baseline graph */
     schemaChanges: null | GroupedSchemaChanges;
     /** schema policy warnings of the main graph composition */
     schemaPolicy: null | {
       errors: null;
       warnings: SchemaCheckWarning[] | null;
     };
-    /** the result of each contract graph composition alongside a diff to the previous graph version or base graph */
+    /** the result of each contract graph composition alongside a diff to the previous graph version or baseline graph */
     contracts: null | Array<ContractStateSuccess>;
   };
 };
@@ -156,18 +156,18 @@ export type SchemaCheckSuccess = {
 export type SchemaCheckFailure = {
   conclusion: typeof SchemaCheckConclusion.Failure;
   reason: {
-    /** the base schema that was used for comparison instead of the latest valid schema version */
-    baseComposition: null | CompositionState;
+    /** the baseline schema used for comparison instead of the latest valid schema version */
+    baselineComposition: null | CompositionState;
     /** the result of the main graph composition */
     composition: CompositionState;
-    /** schema changes from the main graph to the latest valid schema version or base graph */
+    /** schema changes from the main graph to the latest valid schema version or baseline graph */
     schemaChanges: null | GroupedSchemaChanges;
     /** schema policy warnings of the main graph composition */
     schemaPolicy: null | {
       errors: SchemaCheckWarning[] | null;
       warnings: SchemaCheckWarning[] | null;
     };
-    /** the result of each contract graph composition alongside a diff to the previous graph version or base graph */
+    /** the result of each contract graph composition alongside a diff to the previous graph version or baseline graph */
     contracts: null | Array<ContractStateSuccess | ContractStateFailure>;
   };
 };
@@ -353,7 +353,7 @@ export function buildSchemaCheckFailureState(args: {
   }
 
   return {
-    baseComposition: null,
+    baselineComposition: null,
     composition:
       compositionErrors.length || args.compositionCheck.status === 'failed'
         ? {
@@ -375,7 +375,7 @@ export function buildSchemaCheckFailureState(args: {
         const state = {
           contractId: contractCheck.contractId,
           contractName: contractCheck.contractName,
-          baseComposition: null,
+          baselineComposition: null,
           schemaChanges: contractCheck.diffCheck.reason ?? contractCheck.diffCheck.result ?? null,
         };
 

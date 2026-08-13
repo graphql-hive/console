@@ -189,7 +189,7 @@ export class SingleModel {
     return {
       conclusion: SchemaCheckConclusion.Success,
       state: {
-        baseComposition: null,
+        baselineComposition: null,
         schemaChanges: diffCheck.result ?? null,
         schemaPolicy: policyCheck.result ?? null,
         composition: {

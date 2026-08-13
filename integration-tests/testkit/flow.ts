@@ -1313,7 +1313,11 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
               __typename
               id
               previousSchemaSDL
-              baseSchemaHash
+              baseline {
+                meta {
+                  commit
+                }
+              }
               schemaVersion {
                 id
               }
@@ -1338,7 +1342,11 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
             schemaCheck {
               id
               previousSchemaSDL
-              baseSchemaHash
+              baseline {
+                meta {
+                  commit
+                }
+              }
             }
           }
         }

@@ -62,6 +62,9 @@ export interface cdn_access_tokens {
 }
 
 export interface contract_checks {
+  baseline_composite_schema_sdl_store_id: string | null;
+  baseline_schema_composition_errors: any | null;
+  baseline_supergraph_sdl_store_id: string | null;
   breaking_schema_changes: any | null;
   compared_contract_version_id: string | null;
   composite_schema_sdl_store_id: string | null;
@@ -402,8 +405,11 @@ export interface schema_change_approvals {
 }
 
 export interface schema_checks {
-  base_schema_hash: string | null;
-  base_schema_sdl_store_id: string | null;
+  baseline_composite_schema_sdl_store_id: string | null;
+  baseline_schema_composition_errors: any | null;
+  baseline_schema_hash: string | null;
+  baseline_schema_sdl_store_id: string | null;
+  baseline_supergraph_sdl_store_id: string | null;
   breaking_schema_changes: any | null;
   composite_schema_sdl: string | null;
   composite_schema_sdl_store_id: string | null;

@@ -2020,9 +2020,9 @@ describe.concurrent(
   },
 );
 
-describe.concurrent('schema check with a base service schema', () => {
+describe.concurrent('schema check with a baseline service schema', () => {
   test.concurrent(
-    'compares the proposed schema against the provided base SDL',
+    'compares the proposed schema against the provided baseline SDL',
     async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
@@ -2070,8 +2070,8 @@ describe.concurrent('schema check with a base service schema', () => {
       const result = await checkSchema(
         {
           service: 'products',
-          base: {
-            hash: 'base-commit-sha',
+          baseline: {
+            hash: 'baseline-commit-sha',
             sdl: /* GraphQL */ `
               extend schema
                 @link(url: "https://specs.apollo.dev/link/v1.0")
@@ -2112,7 +2112,11 @@ describe.concurrent('schema check with a base service schema', () => {
         valid: false,
         schemaCheck: {
           previousSchemaSDL: expect.stringContaining('baseOnly: String'),
-          baseSchemaHash: 'base-commit-sha',
+          baseline: {
+            meta: {
+              commit: 'baseline-commit-sha',
+            },
+          },
         },
         changes: {
           nodes: [
@@ -2127,7 +2131,7 @@ describe.concurrent('schema check with a base service schema', () => {
     },
   );
 
-  test.concurrent('fails when the provided base SDL cannot be composed', async ({ expect }) => {
+  test.concurrent('fails when the provided baseline SDL cannot be composed', async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
     const { createTargetAccessToken } = await createProject(ProjectType.Federation);
@@ -2156,8 +2160,8 @@ describe.concurrent('schema check with a base service schema', () => {
     const result = await checkSchema(
       {
         service: 'products',
-        base: {
-          hash: 'invalid-base-schema',
+        baseline: {
+          hash: 'invalid-baseline-schema',
           sdl: /* GraphQL */ `
             extend schema
               @link(url: "https://specs.apollo.dev/link/v1.0")
@@ -2194,7 +2198,7 @@ describe.concurrent('schema check with a base service schema', () => {
       __typename: 'SchemaCheckError',
       valid: false,
       errors: {
-        nodes: [{ message: 'Base supergraph composition failed.' }],
+        nodes: [{ message: 'Baseline supergraph composition failed.' }],
         total: 1,
       },
     });

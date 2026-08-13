@@ -579,8 +579,8 @@ export class SchemaPublisher {
     const baseSchema = await this.schemaManager.getBaseSchemaForTarget(target);
 
     const sdl = tryPrettifySDL(input.sdl);
-    const baseSdl = input.base ? tryPrettifySDL(input.base.sdl) : null;
-    const baseSchemaHash = input.base?.hash ?? null;
+    const baselineSdl = input.baseline ? tryPrettifySDL(input.baseline.sdl) : null;
+    const baselineSchemaHash = input.baseline?.hash ?? null;
 
     const activeContracts =
       project.type === ProjectType.FEDERATION
@@ -714,7 +714,7 @@ export class SchemaPublisher {
         checkResult = await this.models[project.type].check({
           input: {
             sdl,
-            baseSdl,
+            baselineSdl,
             serviceName: input.service,
             serviceUrl: input.url ?? null,
           },
@@ -776,11 +776,11 @@ export class SchemaPublisher {
     if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
-        baseSchemaSdl: baseSdl,
-        baseSchemaHash,
-        basePublicSdl: checkResult.reason.baseComposition?.compositeSchemaSDL ?? null,
-        baseSupergraphSdl: checkResult.reason.baseComposition?.supergraphSDL ?? null,
-        baseSchemaCompositionErrors: checkResult.reason.baseComposition?.errors ?? null,
+        baselineSchemaSdl: baselineSdl,
+        baselineSchemaHash,
+        baselinePublicSdl: checkResult.reason.baselineComposition?.compositeSchemaSDL ?? null,
+        baselineSupergraphSdl: checkResult.reason.baselineComposition?.supergraphSDL ?? null,
+        baselineSchemaCompositionErrors: checkResult.reason.baselineComposition?.errors ?? null,
         serviceName: input.service ?? null,
         serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
@@ -827,9 +827,9 @@ export class SchemaPublisher {
             compositeSchemaSdl: contract.composition.compositeSchemaSDL,
             supergraphSchemaSdl: contract.composition.supergraphSDL,
             schemaCompositionErrors: contract.composition.errors ?? null,
-            baseCompositeSchemaSdl: contract.baseComposition?.compositeSchemaSDL ?? null,
-            baseSupergraphSchemaSdl: contract.baseComposition?.supergraphSDL ?? null,
-            baseCompositionErrors: contract.baseComposition?.errors ?? null,
+            baselineCompositeSchemaSdl: contract.baselineComposition?.compositeSchemaSDL ?? null,
+            baselineSupergraphSchemaSdl: contract.baselineComposition?.supergraphSDL ?? null,
+            baselineCompositionErrors: contract.baselineComposition?.errors ?? null,
             breakingSchemaChanges: contract.schemaChanges?.breaking ?? null,
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
@@ -840,11 +840,11 @@ export class SchemaPublisher {
     } else if (checkResult.conclusion === SchemaCheckConclusion.Success) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
-        baseSchemaSdl: baseSdl,
-        baseSchemaHash,
-        basePublicSdl: checkResult.state.baseComposition?.compositeSchemaSDL ?? null,
-        baseSupergraphSdl: checkResult.state.baseComposition?.supergraphSDL ?? null,
-        baseSchemaCompositionErrors: checkResult.state.baseComposition?.errors ?? null,
+        baselineSchemaSdl: baselineSdl,
+        baselineSchemaHash,
+        baselinePublicSdl: checkResult.state.baselineComposition?.compositeSchemaSDL ?? null,
+        baselineSupergraphSdl: checkResult.state.baselineComposition?.supergraphSDL ?? null,
+        baselineSchemaCompositionErrors: checkResult.state.baselineComposition?.errors ?? null,
         serviceName: input.service ?? null,
         serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
@@ -882,9 +882,9 @@ export class SchemaPublisher {
             isSuccess: contract.isSuccessful,
             compositeSchemaSdl: contract.composition.compositeSchemaSDL,
             supergraphSchemaSdl: contract.composition.supergraphSDL,
-            baseCompositeSchemaSdl: contract.baseComposition?.compositeSchemaSDL ?? null,
-            baseSupergraphSchemaSdl: contract.baseComposition?.supergraphSDL ?? null,
-            baseCompositionErrors: contract.baseComposition?.errors ?? null,
+            baselineCompositeSchemaSdl: contract.baselineComposition?.compositeSchemaSDL ?? null,
+            baselineSupergraphSchemaSdl: contract.baselineComposition?.supergraphSDL ?? null,
+            baselineCompositionErrors: contract.baselineComposition?.errors ?? null,
             schemaCompositionErrors: null,
             breakingSchemaChanges: contract.schemaChanges?.breaking ?? null,
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
@@ -904,16 +904,16 @@ export class SchemaPublisher {
         this.schemaVersionHelper.getSchemaCompositionErrors(latestVersion.version),
       ]);
 
-      invariant(baseSdl, 'TODO: implement skip case with base schema');
+      invariant(baselineSdl, 'TODO: implement skip case with baseline schema');
 
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
         // TODO: populate these start
-        baseSchemaSdl: null,
-        baseSchemaHash: null,
-        baseSchemaCompositionErrors: null,
-        baseSupergraphSdl: null,
-        basePublicSdl: null,
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselineSchemaCompositionErrors: null,
+        baselineSupergraphSdl: null,
+        baselinePublicSdl: null,
         // TODO: populate these end
         serviceName: input.service ?? null,
         serviceUrl: input.url ?? null,
@@ -974,9 +974,9 @@ export class SchemaPublisher {
                 supergraphSchemaSdl: edge.node.supergraphSdl,
                 schemaCompositionErrors: edge.node.schemaCompositionErrors,
                 // TODO: populate these start
-                baseCompositionErrors: null,
-                baseSupergraphSchemaSdl: null,
-                baseCompositeSchemaSdl: null,
+                baselineCompositionErrors: null,
+                baselineSupergraphSchemaSdl: null,
+                baselineCompositeSchemaSdl: null,
                 // TODO: populate these end
                 breakingSchemaChanges: null,
                 safeSchemaChanges: null,
