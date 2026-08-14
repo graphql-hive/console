@@ -758,6 +758,62 @@ test('add documents to app deployment fails if document hash is less than 1 char
   });
 });
 
+test('add documents to app deployment accepts a hash with an algorithm prefix', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+  });
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  const { addDocumentsToAppDeployment } = await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'sha256:abc123',
+            body: 'query { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(addDocumentsToAppDeployment).toEqual({
+    error: null,
+    ok: {
+      appDeployment: {
+        id: expect.any(String),
+        name: 'my-app',
+        version: '1.0.0',
+        status: 'pending',
+      },
+    },
+  });
+});
+
 test('add documents to app deployment fails if document hash is longer than 256 characters', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, setFeatureFlag } = await createOrg();

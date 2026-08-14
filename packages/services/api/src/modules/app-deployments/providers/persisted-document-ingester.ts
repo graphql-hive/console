@@ -35,8 +35,8 @@ const AppDeploymentOperationHashModel = z
   .min(1, 'Hash must be at least 1 characters long')
   .max(128, 'Hash must be at most 128 characters long')
   .regex(
-    /^([A-Za-z]|[0-9]|_|-)+$/,
-    "Operation hash can only contain letters, numbers, '_', and '-'",
+    /^([A-Za-z]|[0-9]|_|-|:)+$/,
+    "Operation hash can only contain letters, numbers, '_', ':' and '-'",
   );
 
 const AppDeploymentOperationBodyModel = z.string().min(3, 'Body must be at least 3 character long');
