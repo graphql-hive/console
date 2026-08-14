@@ -2175,6 +2175,67 @@ describe.concurrent('schema check with a baseline service schema', () => {
   );
 
   test.concurrent(
+    'skips when the baseline, head, and registry schema match',
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const token = await createTargetAccessToken({});
+
+      const sdl = /* GraphQL */ `
+        extend schema
+          @link(url: "https://specs.apollo.dev/link/v1.0")
+          @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+        type Query {
+          product: Product
+        }
+
+        type Product @key(fields: "id") {
+          id: ID!
+        }
+      `;
+
+      await token
+        .publishSchema({
+          service: 'products',
+          url: 'http://products.local',
+          sdl,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const result = await checkSchema(
+        {
+          service: 'products',
+          baseline: {
+            hash: 'baseline-matching-registry-and-head',
+            sdl,
+          },
+          sdl,
+        },
+        token.secret,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      expect(result.schemaCheck).toMatchObject({
+        __typename: 'SchemaCheckSuccess',
+        valid: true,
+        schemaCheck: {
+          previousSchemaSDL: expect.stringContaining('type Product'),
+          baseline: {
+            meta: {
+              commit: 'baseline-matching-registry-and-head',
+            },
+          },
+        },
+        changes: {
+          nodes: [],
+          total: 0,
+        },
+      });
+    },
+  );
+
+  test.concurrent(
     'compares the proposed schema against the provided baseline SDL',
     async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();

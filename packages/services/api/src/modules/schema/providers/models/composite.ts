@@ -400,23 +400,19 @@ export class CompositeModel {
       });
 
     const [diffCheck, policyCheck, contractChecks] = await Promise.all([
-      // The composed public schemas are identical when baseline and head checksums match
-      // we can skip early and safe some computing
-      baselineMatchesHead
-        ? ({ status: 'skipped' as const } as Awaited<ReturnType<RegistryChecks['diff']>>)
-        : this.checks.diff({
-            includeUrlChanges: false,
-            filterOutFederationChanges: project.type === ProjectType.FEDERATION,
-            approvedChanges,
-            existingSdl: existingPublicSchemaSdl,
-            incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
-            conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
-            failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
-            failAllDangerousChanges: failAllDangerousChanges ?? true,
-            failDangerousChangeTypes: failDangerousChangeTypes ?? [],
-            filterNestedChanges,
-            getAffectedAppDeployments,
-          }),
+      this.checks.diff({
+        includeUrlChanges: false,
+        filterOutFederationChanges: project.type === ProjectType.FEDERATION,
+        approvedChanges,
+        existingSdl: existingPublicSchemaSdl,
+        incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+        conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
+        failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
+        failAllDangerousChanges: failAllDangerousChanges ?? true,
+        failDangerousChangeTypes: failDangerousChangeTypes ?? [],
+        filterNestedChanges,
+        getAffectedAppDeployments,
+      }),
       this.checks.policyCheck({
         selector,
         // if schema check does not compose then there's no point in linting. Pass in null in this case.
