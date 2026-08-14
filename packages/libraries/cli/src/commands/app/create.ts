@@ -117,19 +117,22 @@ export default class AppCreate extends Command<typeof AppCreate> {
     if (isFile) {
       const contents = this.readJSON(file);
       const operations: unknown = JSON.parse(contents);
-      const apolloValidationResult = ApolloManifestModel.safeParse(operations);
       const manifestValidationResult = ManifestModel.safeParse(operations);
 
       let entries: Array<[string, string]>;
-      if (apolloValidationResult.success) {
-        entries = apolloValidationResult.data.operations.map(operation => [
-          operation.id,
-          operation.body,
-        ]);
-      } else if (manifestValidationResult.success) {
+
+      if (manifestValidationResult.success) {
         entries = Object.entries(manifestValidationResult.data);
       } else {
-        throw new PersistedOperationsMalformedError(file);
+        const apolloValidationResult = ApolloManifestModel.safeParse(operations);
+        if (apolloValidationResult.success) {
+          entries = apolloValidationResult.data.operations.map(operation => [
+            operation.id,
+            operation.body,
+          ]);
+        } else {
+          throw new PersistedOperationsMalformedError(file);
+        }
       }
 
       manifest = {};
