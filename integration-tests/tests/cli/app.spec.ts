@@ -200,7 +200,7 @@ test('app:create accepts a JSON file as operations input', async () => {
     `,
   });
 
-  const manifest = { 'op-hash-1': 'query { hello }' };
+  const manifest = { 'sha256:op-hash-1': 'query { hello }' };
   const operationsFile = join(tmpdir(), `operations-${Date.now()}.json`);
   await writeFile(operationsFile, JSON.stringify(manifest), 'utf-8');
 

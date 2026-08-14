@@ -270,7 +270,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
     };
 
     for (const [hash, body] of Object.entries(manifest)) {
-      buffer.push({ hash, body });
+      buffer.push({ hash: hash.replace(/^[a-z][a-z0-9-]*:/i, ''), body });
       counter++;
       await flush();
     }
