@@ -8,7 +8,7 @@ import { UrlLoader } from '@graphql-tools/url-loader';
 import type { BaseLoaderOptions, Loader, Source } from '@graphql-tools/utils';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { FragmentType, graphql, useFragment as unmaskFragment, useFragment } from '../gql';
-import { SchemaWarningConnection, SeverityLevelType } from '../gql/graphql';
+import { SeverityLevelType } from '../gql/graphql';
 import { APIError, IntrospectionError, InvalidFederationSubgraphError } from './errors';
 import { graphqlRequest } from './graphql-request';
 import { Texture } from './texture/texture';
@@ -137,7 +137,13 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
   return t.state.value;
 };
 
-export const renderWarnings = (warnings: SchemaWarningConnection) => {
+export const renderWarnings = (warnings: {
+  total: number;
+  nodes: {
+    message: string;
+    source: string | null;
+  }[];
+}) => {
   const t = Texture.createBuilder();
   t.line();
   t.warning(`Detected ${warnings.total} warning${warnings.total > 1 ? 's' : ''}`);
