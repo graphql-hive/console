@@ -54,7 +54,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
       name: 'operations',
       required: true,
       description:
-        'Path to the persisted operations manifest (JSON file), a directory containing .graphql files, or a glob pattern matching .graphql files.',
+        'Path to the persisted operations manifest (GraphQL Code Generator, Relay or Apollo persisted query manifest JSON file), a directory containing .graphql files, or a glob pattern matching .graphql files.',
       hidden: false,
     }),
   };
@@ -117,11 +117,26 @@ export default class AppCreate extends Command<typeof AppCreate> {
     if (isFile) {
       const contents = this.readJSON(file);
       const operations: unknown = JSON.parse(contents);
-      const validationResult = ManifestModel.safeParse(operations);
-      if (validationResult.success === false) {
+      const apolloValidationResult = ApolloManifestModel.safeParse(operations);
+      const manifestValidationResult = ManifestModel.safeParse(operations);
+
+      let entries: Array<[string, string]>;
+      if (apolloValidationResult.success) {
+        entries = apolloValidationResult.data.operations.map(operation => [
+          operation.id,
+          operation.body,
+        ]);
+      } else if (manifestValidationResult.success) {
+        entries = Object.entries(manifestValidationResult.data);
+      } else {
         throw new PersistedOperationsMalformedError(file);
       }
-      manifest = validationResult.data;
+
+      manifest = {};
+      for (const [hash, body] of entries) {
+        const normalizedHash = hash.replace(/^[a-z][a-z0-9-]*:/i, '');
+        manifest[normalizedHash] = body;
+      }
     } else {
       // file is a glob or directory - generate the manifest in-memory
       const globPattern = (() => {
@@ -311,6 +326,17 @@ export default class AppCreate extends Command<typeof AppCreate> {
 }
 
 const ManifestModel = z.record(z.string());
+
+const ApolloManifestModel = z.object({
+  format: z.literal('apollo-persisted-query-manifest'),
+  version: z.literal(1),
+  operations: z.array(
+    z.object({
+      id: z.string(),
+      body: z.string(),
+    }),
+  ),
+});
 
 const CreateAppDeploymentMutation = graphql(/* GraphQL */ `
   mutation CreateAppDeployment($input: CreateAppDeploymentInput!) {

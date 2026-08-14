@@ -355,7 +355,8 @@ export class PersistedOperationsMalformedError extends HiveCLIError {
     super(
       ExitCode.BAD_INIT,
       errorCode(ErrorCategory.APP_CREATE, 0),
-      `Persisted Operations file "${file}" is malformed.`,
+      `Persisted Operations file "${file}" is malformed.` +
+        ' Please make sure it follows either the GraphQL Code Generator, Relay or Apollo Persisted Query Manifest Format.',
     );
   }
 }
