@@ -361,7 +361,20 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
               status: args.status,
               subgraph,
               type,
-              result: args.result,
+              result: {
+                data: args.result?.data,
+                // clone errors to prevent them from being cleaned up too early
+                // and to avoid storing large stack traces
+                errors: args.result?.errors?.map(e => ({
+                  message: e.message,
+                  path: e.path,
+                  extensions: e.extensions?.code
+                    ? {
+                        code: e.extensions.code,
+                      }
+                    : undefined,
+                })),
+              },
               document: args.document,
               subgraphSchema: args.subgraphSchema,
               paths,
