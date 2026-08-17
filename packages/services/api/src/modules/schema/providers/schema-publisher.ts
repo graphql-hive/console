@@ -2400,8 +2400,43 @@ export class SchemaPublisher {
       });
   }
 
+  private diffSingleSchemaLogs(args: {
+    logs: {
+      target: Array<SchemaLogWithEdges>;
+      origin: Array<SchemaLogWithEdges>;
+    };
+    target: Target;
+  }): SchemaLogDiffInput {
+    // we do not need to diff the services
+    // the "main" diff already covers all changes
+    invariant(args.logs.origin.length === 1, 'In a monolith project there can only be one log.');
+    invariant(
+      args.logs.target.length <= 1,
+      'In a monolith project there can only be up to one log.',
+    );
+
+    return {
+      removed: [],
+      added: [],
+      changed: [
+        {
+          id: args.logs.origin[0].actionId,
+          // we do not need a direct link to the previous log
+          previousId: null,
+          serviceName: null,
+          // we can omit the type for a monolith schema; there is always only one "subgraph"
+          type: null,
+          // there are no service specific changes
+          // the changes are already covered via the main graph
+          changes: null,
+        },
+      ],
+      unchanged: [],
+    };
+  }
+
   @traceFn('SchemaPublisher.diffSchemaLogs')
-  private async diffSchemaLogs(args: {
+  private async diffCompositeSchemaLogs(args: {
     logs: {
       target: Array<SchemaLogWithEdges>;
       origin: Array<SchemaLogWithEdges>;
@@ -2436,14 +2471,15 @@ export class SchemaPublisher {
         continue;
       }
 
+      invariant(targetLogEdge.node.service_name !== null, 'A service name must exist.');
+
       // Note: we use fallback value of '' to support single schema workflows.
-      const serviceName = targetLogEdge.node.service_name ?? '';
       invariant(
-        diffMap.has(serviceName) === false,
+        diffMap.has(targetLogEdge.node.service_name) === false,
         'Invalid database state. A log for the same service can not appear more than once.',
       );
 
-      diffMap.set(serviceName, {
+      diffMap.set(targetLogEdge.node.service_name, {
         type: 'removed',
         previousLog: targetLogEdge.node,
       });
@@ -2454,13 +2490,11 @@ export class SchemaPublisher {
         continue;
       }
 
-      const serviceName = originLogEdge.node.service_name ?? '';
+      invariant(originLogEdge.node.service_name !== null, 'A service name must exist.');
 
-      let record = diffMap.get(serviceName);
+      let record = diffMap.get(originLogEdge.node.service_name);
 
       if (!record) {
-        invariant(originLogEdge.node.service_name !== null, 'A service name must exist.');
-
         diffMap.set(originLogEdge.node.service_name, {
           type: 'added',
           newLog: originLogEdge.node,
@@ -2471,7 +2505,7 @@ export class SchemaPublisher {
       invariant(record.type === 'removed', 'At this point the type can only be removed.');
 
       if (record.previousLog.id === originLogEdge.node.id) {
-        diffMap.set(serviceName, {
+        diffMap.set(originLogEdge.node.service_name, {
           type: 'unchanged',
           log: record.previousLog,
         });
@@ -2479,7 +2513,7 @@ export class SchemaPublisher {
       }
 
       if (record.previousLog.id !== originLogEdge.node.id) {
-        diffMap.set(serviceName, {
+        diffMap.set(originLogEdge.node.service_name, {
           type: 'changed',
           newLog: originLogEdge.node,
           previousLog: record.previousLog,
@@ -2492,7 +2526,7 @@ export class SchemaPublisher {
     // Let's create the new Graph version edges and delete logs (if needed)
 
     const schemaLogs: SchemaLogDiffInput = {
-      deleted: [],
+      removed: [],
       added: [],
       changed: [],
       unchanged: [],
@@ -2504,12 +2538,13 @@ export class SchemaPublisher {
 
         // Note: we seed the ID here so we do not need to map some more within the logic within `SchemaVersions.promoteSchemaVersionToTarget`
         const logId = crypto.randomUUID();
-        schemaLogs.deleted.push({
+        schemaLogs.removed.push({
           id: logId,
           previousId: diff.previousLog.id,
           serviceName: diff.previousLog.service_name,
           targetId: args.target.id,
           projectId: args.target.projectId,
+          type: 'removed',
         });
         continue;
       }
@@ -2522,42 +2557,45 @@ export class SchemaPublisher {
           serviceName: diff.newLog.service_name,
           projectId: args.target.projectId,
           targetId: args.target.id,
+          type: 'added',
         });
         continue;
       }
 
       if (diff.type === 'unchanged') {
-        schemaLogs.unchanged.push({ id: diff.log.id, serviceName: diff.log.service_name });
+        schemaLogs.unchanged.push({
+          id: diff.log.id,
+          serviceName: diff.log.service_name,
+          type: 'unchanged',
+        });
         continue;
       }
 
       if (diff.type === 'changed') {
-        let changes = null;
+        invariant(diff.newLog.service_name != null, 'Changed logs require a service name.');
 
-        // We only want a diff for non-monolith schemas
-        if (diff.newLog.service_name) {
-          changes = await this.registryChecks
-            .diff({
-              existingSdl: diff.previousLog.sdl ?? null,
-              incomingSdl: diff.newLog.sdl ?? null,
-              approvedChanges: null,
-              conditionalBreakingChangeConfig: null,
-              includeUrlChanges: false,
-              filterOutFederationChanges: false,
-              failDiffOnDangerousChange: false,
-              failAllDangerousChanges: false,
-              failDangerousChangeTypes: [],
-              filterNestedChanges: true,
-              getAffectedAppDeployments: null,
-            })
-            .then(r => r.result?.all ?? r.reason?.all ?? null);
-        }
+        const changes = await this.registryChecks
+          .diff({
+            existingSdl: diff.previousLog.sdl ?? null,
+            incomingSdl: diff.newLog.sdl ?? null,
+            approvedChanges: null,
+            conditionalBreakingChangeConfig: null,
+            includeUrlChanges: false,
+            filterOutFederationChanges: false,
+            failDiffOnDangerousChange: false,
+            failAllDangerousChanges: false,
+            failDangerousChangeTypes: [],
+            filterNestedChanges: true,
+            getAffectedAppDeployments: null,
+          })
+          .then(r => r.result?.all ?? r.reason?.all ?? null);
 
         schemaLogs.changed.push({
           id: diff.newLog.id,
           previousId: diff.previousLog.id,
           serviceName: diff.newLog.service_name,
           changes,
+          type: 'changed',
         });
         continue;
       }
@@ -2569,7 +2607,7 @@ export class SchemaPublisher {
     this.logger.debug(
       'producing schema log diff finished (addedCount=%d, deletedCount=%d, changedCount=%d).',
       schemaLogs.added.length,
-      schemaLogs.deleted.length,
+      schemaLogs.removed.length,
       schemaLogs.changed.length,
       schemaLogs.unchanged.length,
     );
@@ -2937,13 +2975,21 @@ export class SchemaPublisher {
       contracts,
       conditionalBreakingChangeMetadata,
     ] = await Promise.all([
-      this.diffSchemaLogs({
-        logs: {
-          target: targetLogEdges,
-          origin: originLogEdges,
-        },
-        target,
-      }),
+      project.type === Types.ProjectType.SINGLE
+        ? this.diffSingleSchemaLogs({
+            logs: {
+              target: targetLogEdges,
+              origin: originLogEdges,
+            },
+            target,
+          })
+        : this.diffCompositeSchemaLogs({
+            logs: {
+              target: targetLogEdges,
+              origin: originLogEdges,
+            },
+            target,
+          }),
       this.registryChecks
         .diff({
           existingSdl: targetLatestValidSchemaVersion?.compositeSchemaSDL ?? null,
