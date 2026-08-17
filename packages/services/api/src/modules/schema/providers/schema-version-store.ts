@@ -1051,6 +1051,7 @@ export class SchemaVersionStore {
       const edgesBySchemaVersionId = new Map<string, Array<RawSchemaLogEdge>>();
 
       for (const row of rows) {
+        console.log(row);
         const edge = RawSchemaLogEdgeModel.parse(row);
         let edges = edgesBySchemaVersionId.get(edge.schemaVersionId);
         if (!Array.isArray(edges)) {
@@ -1400,7 +1401,7 @@ export class SchemaVersionStore {
               .map(log => [
                 schemaVersion.id,
                 log.id,
-                'removed',
+                log.type,
                 log.previousId,
                 null,
                 log.serviceName,
@@ -1409,7 +1410,7 @@ export class SchemaVersionStore {
                 args.schemaLogs.changed.map(log => [
                   schemaVersion.id,
                   log.id,
-                  'changed',
+                  log.type,
                   log.previousId,
                   JSON.stringify(log.changes?.map(toSerializableSchemaChange)) ?? null,
                   log.serviceName,
@@ -1419,7 +1420,7 @@ export class SchemaVersionStore {
                 args.schemaLogs.added.map(log => [
                   schemaVersion.id,
                   log.id,
-                  'added',
+                  log.type,
                   null,
                   null,
                   log.serviceName,
@@ -1429,7 +1430,7 @@ export class SchemaVersionStore {
                 args.schemaLogs.unchanged.map(log => [
                   schemaVersion.id,
                   log.id,
-                  'unchanged',
+                  log.type,
                   null,
                   null,
                   log.serviceName,
@@ -1764,15 +1765,32 @@ export type SchemaLogDiffInput = {
     serviceName: string;
     targetId: string;
     projectId: string;
+    type: 'deleted';
   }>;
-  added: Array<{ id: string; serviceName: string; targetId: string; projectId: string }>;
-  changed: Array<{
+  added: Array<{
     id: string;
-    previousId: string | null;
-    serviceName: string | null;
-    changes: Array<SchemaChangeType> | null;
+    serviceName: string;
+    targetId: string;
+    projectId: string;
+    type: 'added';
   }>;
-  unchanged: Array<{ id: string; serviceName: string | null }>;
+  changed: Array<
+    | {
+        id: string;
+        previousId: string | null;
+        serviceName: string;
+        type: 'changed';
+        changes: Array<SchemaChangeType> | null;
+      }
+    | {
+        id: string;
+        previousId: null;
+        serviceName: null;
+        type: null;
+        changes: null;
+      }
+  >;
+  unchanged: Array<{ id: string; serviceName: string | null; type: 'unchanged' }>;
 };
 
 const SchemaLogWithEdgesModel = z.union([
