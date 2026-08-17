@@ -1131,3 +1131,57 @@ test.concurrent('promote monolith schema version succeeds', async ({ expect }) =
   });
   expect(promotedVersionDetails.sdl).toContain('b: String!');
 });
+
+test.concurrent('promote monolith version to empty target', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, createOrganizationAccessToken } = await createOrg();
+  const { target, fetchVersions, createTarget } = await createProject(ProjectType.Single);
+  const otherTarget = await createTarget().then(r => r.expectNoGraphQLErrors());
+  const { privateAccessKey } = await createOrganizationAccessToken({
+    resources: {
+      mode: ResourceAssignmentModeType.All,
+    },
+    permissions: [
+      'schemaVersion:publish',
+      'target:modifySettings',
+      'project:describe',
+      'schemaVersion:promote',
+    ],
+  });
+
+  await publishSchema(
+    {
+      author: 'a',
+      commit: 'a',
+      sdl: /* GraphQL */ `
+        type Query {
+          a: String!
+        }
+      `,
+      target: {
+        byId: target.id,
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  const [versionToPromote] = await fetchVersions(2);
+
+  assertNonNullish(otherTarget.createTarget.ok);
+  let promoteResult = await schemaVersionPromote(
+    {
+      source: {
+        fromSchemaVersionById: versionToPromote.id,
+      },
+      target: {
+        toTarget: {
+          byId: otherTarget.createTarget.ok.createdTarget.id,
+        },
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(promoteResult.schemaVersionPromote.error).toEqual(null);
+  assertNonNullish(promoteResult.schemaVersionPromote.ok);
+});
