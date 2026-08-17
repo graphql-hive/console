@@ -1165,7 +1165,7 @@ test.concurrent('promote monolith version to empty target', async () => {
     privateAccessKey,
   ).then(r => r.expectNoGraphQLErrors());
 
-  const [versionToPromote] = await fetchVersions(2);
+  const [versionToPromote] = await fetchVersions(1);
 
   assertNonNullish(otherTarget.createTarget.ok);
   let promoteResult = await schemaVersionPromote(

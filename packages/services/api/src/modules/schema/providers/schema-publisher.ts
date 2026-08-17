@@ -2409,8 +2409,11 @@ export class SchemaPublisher {
   }): SchemaLogDiffInput {
     // we do not need to diff the services
     // the "main" diff already covers all changes
-    invariant(args.logs.origin.length === 1, 'In a single schema there can only be one log.');
-    invariant(args.logs.target.length <= 1, 'In a single schema there can only be up to one log.');
+    invariant(args.logs.origin.length === 1, 'In a monolith project there can only be one log.');
+    invariant(
+      args.logs.target.length <= 1,
+      'In a monolith project there can only be up to one log.',
+    );
 
     return {
       deleted: [],

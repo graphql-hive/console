@@ -1051,7 +1051,6 @@ export class SchemaVersionStore {
       const edgesBySchemaVersionId = new Map<string, Array<RawSchemaLogEdge>>();
 
       for (const row of rows) {
-        console.log(row);
         const edge = RawSchemaLogEdgeModel.parse(row);
         let edges = edgesBySchemaVersionId.get(edge.schemaVersionId);
         if (!Array.isArray(edges)) {
