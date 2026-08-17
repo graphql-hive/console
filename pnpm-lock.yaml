@@ -407,8 +407,8 @@ importers:
         specifier: 2.6.0
         version: 2.6.0(graphql@16.9.0)
       graphql-yoga:
-        specifier: 5.13.3
-        version: 5.13.3(graphql@16.9.0)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@16.9.0)
       human-id:
         specifier: 4.1.1
         version: 4.1.1
@@ -695,8 +695,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       graphql-yoga:
-        specifier: 5.13.3
-        version: 5.13.3(graphql@16.9.0)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@16.9.0)
     publishDirectory: dist
 
   packages/libraries/laboratory:
@@ -892,8 +892,8 @@ importers:
         specifier: ^16.14.0
         version: 16.14.2
       graphql-yoga:
-        specifier: 5.21.1
-        version: 5.21.1(graphql@16.14.2)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@16.14.2)
       happy-dom:
         specifier: ^20.10.6
         version: 20.10.6
@@ -1000,8 +1000,8 @@ importers:
         specifier: ^0.16.0
         version: 0.16.6(typescript@5.7.3)
       graphql-yoga:
-        specifier: 5.13.3
-        version: 5.13.3(graphql@16.14.2)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@16.14.2)
       ioredis:
         specifier: 5.10.1
         version: 5.10.1
@@ -1034,7 +1034,7 @@ importers:
         version: 1.1.0(pino@10.3.0)
       '@graphql-yoga/plugin-persisted-operations':
         specifier: ^3.9.0
-        version: 3.9.0(@graphql-tools/utils@11.2.2(graphql@16.9.0))(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)
+        version: 3.9.0(@graphql-tools/utils@11.2.2(graphql@16.9.0))(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
       graphql:
         specifier: ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
         version: 16.9.0
@@ -1044,16 +1044,16 @@ importers:
         version: 10.0.25(graphql@16.9.0)
       '@graphql-yoga/plugin-defer-stream':
         specifier: 3.7.0
-        version: 3.7.0(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)
+        version: 3.7.0(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
       '@graphql-yoga/plugin-disable-introspection':
         specifier: 2.7.0
-        version: 2.7.0(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)
+        version: 2.7.0(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
       '@graphql-yoga/plugin-graphql-sse':
         specifier: 3.7.0
-        version: 3.7.0(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)
+        version: 3.7.0(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
       '@graphql-yoga/plugin-response-cache':
         specifier: 3.9.0
-        version: 3.9.0(@envelop/core@5.5.1)(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)
+        version: 3.9.0(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
       '@whatwg-node/fetch':
         specifier: 0.10.13
         version: 0.10.13
@@ -1061,8 +1061,8 @@ importers:
         specifier: 5.16.1
         version: 5.16.1(graphql@16.9.0)
       graphql-yoga:
-        specifier: 5.13.3
-        version: 5.13.3(graphql@16.9.0)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@16.9.0)
       vitest:
         specifier: 4.1.3
         version: 4.1.3(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(happy-dom@20.10.6)(jsdom@30.0.1(@noble/hashes@2.2.0))(msw@2.12.7(@types/node@25.5.0)(typescript@5.7.3))(vite@8.1.5(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
@@ -1279,8 +1279,8 @@ importers:
         specifier: 1.24.2
         version: 1.24.2(graphql@16.9.0)
       graphql-yoga:
-        specifier: 5.13.3
-        version: 5.13.3(graphql@16.9.0)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@16.9.0)
       ioredis-mock:
         specifier: 8.9.0
         version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.10.1)
@@ -1459,8 +1459,8 @@ importers:
         specifier: 16.9.0
         version: 16.9.0
       graphql-yoga:
-        specifier: 5.13.3
-        version: 5.13.3(graphql@16.9.0)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@16.9.0)
     devDependencies:
       wrangler:
         specifier: 3.114.17
@@ -1647,7 +1647,7 @@ importers:
         version: 9.1.1(graphql@16.9.0)
       '@graphql-yoga/plugin-response-cache':
         specifier: 3.15.4
-        version: 3.15.4(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)
+        version: 3.15.4(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
       '@graphql-yoga/redis-event-target':
         specifier: 3.0.3
         version: 3.0.3(ioredis@5.10.1)
@@ -1703,8 +1703,8 @@ importers:
         specifier: 16.9.0
         version: 16.9.0
       graphql-yoga:
-        specifier: 5.13.3
-        version: 5.13.3(graphql@16.9.0)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@16.9.0)
       hyperid:
         specifier: 4.0.0
         version: 4.0.0
@@ -2028,8 +2028,8 @@ importers:
         specifier: 16.9.0
         version: 16.9.0
       graphql-yoga:
-        specifier: 5.13.3
-        version: 5.13.3(graphql@16.9.0)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@16.9.0)
       mjml:
         specifier: 4.14.0
         version: 4.14.0(encoding@0.1.13)
@@ -14283,14 +14283,14 @@ packages:
       ws:
         optional: true
 
-  graphql-yoga@5.13.3:
-    resolution: {integrity: sha512-W8efVmPhKOreIJgiYbC2CCn60ORr7kj+5dRg7EoBg6+rbMdL4EqlXp1hYdrmbB5GGgS2g3ivyHutXKUK0S0UZw==}
+  graphql-yoga@5.21.1:
+    resolution: {integrity: sha512-NlACyYkLh7MBp3Mb2pTB2LG//5MyuHgSs7tWwkgCTuX98Aler7Djeb06ruuLBBa7gaT2cHpv7LwKayruLnXD0g==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: ^15.2.0 || ^16.0.0
 
-  graphql-yoga@5.21.1:
-    resolution: {integrity: sha512-NlACyYkLh7MBp3Mb2pTB2LG//5MyuHgSs7tWwkgCTuX98Aler7Djeb06ruuLBBa7gaT2cHpv7LwKayruLnXD0g==}
+  graphql-yoga@5.21.3:
+    resolution: {integrity: sha512-1hJTKZd7k2V0Q2tFMb+rIUSbcovL6uIkkKnW2W9HcldtrC1udukdf5CswKi6SzaI5keG4scxKPEolyZ6U83i/g==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: ^15.2.0 || ^16.0.0
@@ -22659,7 +22659,7 @@ snapshots:
       '@graphql-hive/logger': 1.1.1(pino@10.3.0)
       '@graphql-hive/pubsub': 2.1.1(ioredis@5.10.1)
       '@graphql-hive/signal': 2.0.0
-      '@graphql-hive/yoga': 0.48.2(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(pino@10.3.0)
+      '@graphql-hive/yoga': 0.48.2(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)(pino@10.3.0)
       '@graphql-mesh/cross-helpers': 0.4.14(graphql@16.14.2)
       '@graphql-mesh/fusion-runtime': 1.10.10(@types/node@25.5.0)(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)
       '@graphql-mesh/hmac-upstream-signature': 2.0.12(graphql@16.14.2)(ioredis@5.10.1)
@@ -22675,10 +22675,10 @@ snapshots:
       '@graphql-tools/stitch': 10.2.1(graphql@16.14.2)
       '@graphql-tools/utils': 11.1.0(graphql@16.14.2)
       '@graphql-tools/wrap': 11.1.18(graphql@16.14.2)
-      '@graphql-yoga/plugin-apollo-usage-report': 0.16.0(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)
-      '@graphql-yoga/plugin-csrf-prevention': 3.16.2(graphql-yoga@5.21.1(graphql@16.14.2))
-      '@graphql-yoga/plugin-defer-stream': 3.16.2(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)
-      '@graphql-yoga/plugin-persisted-operations': 3.16.2(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)
+      '@graphql-yoga/plugin-apollo-usage-report': 0.16.0(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)
+      '@graphql-yoga/plugin-csrf-prevention': 3.16.2(graphql-yoga@5.21.3(graphql@16.14.2))
+      '@graphql-yoga/plugin-defer-stream': 3.16.2(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)
+      '@graphql-yoga/plugin-persisted-operations': 3.16.2(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)
       '@types/node': 25.5.0
       '@whatwg-node/disposablestack': 0.0.6
       '@whatwg-node/fetch': 0.10.13
@@ -22687,7 +22687,7 @@ snapshots:
       '@whatwg-node/server-plugin-cookies': 1.0.7(@whatwg-node/server@0.11.0)
       graphql: 16.14.2
       graphql-ws: 6.0.6(graphql@16.14.2)(ws@8.21.0)
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@fastify/websocket'
@@ -22710,7 +22710,7 @@ snapshots:
       '@graphql-hive/logger': 1.1.1(pino@10.3.0)
       '@graphql-hive/pubsub': 2.1.1(ioredis@5.10.1)
       '@graphql-hive/signal': 2.0.0
-      '@graphql-hive/yoga': 0.48.2(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)(pino@10.3.0)
+      '@graphql-hive/yoga': 0.48.2(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)(pino@10.3.0)
       '@graphql-mesh/cross-helpers': 0.4.14(graphql@16.9.0)
       '@graphql-mesh/fusion-runtime': 1.10.10(@types/node@25.5.0)(graphql@16.9.0)(ioredis@5.10.1)(pino@10.3.0)
       '@graphql-mesh/hmac-upstream-signature': 2.0.12(graphql@16.9.0)(ioredis@5.10.1)
@@ -22726,10 +22726,10 @@ snapshots:
       '@graphql-tools/stitch': 10.2.1(graphql@16.9.0)
       '@graphql-tools/utils': 11.1.0(graphql@16.9.0)
       '@graphql-tools/wrap': 11.1.18(graphql@16.9.0)
-      '@graphql-yoga/plugin-apollo-usage-report': 0.16.0(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)
-      '@graphql-yoga/plugin-csrf-prevention': 3.16.2(graphql-yoga@5.21.1(graphql@16.9.0))
-      '@graphql-yoga/plugin-defer-stream': 3.16.2(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)
-      '@graphql-yoga/plugin-persisted-operations': 3.16.2(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)
+      '@graphql-yoga/plugin-apollo-usage-report': 0.16.0(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
+      '@graphql-yoga/plugin-csrf-prevention': 3.16.2(graphql-yoga@5.21.3(graphql@16.9.0))
+      '@graphql-yoga/plugin-defer-stream': 3.16.2(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
+      '@graphql-yoga/plugin-persisted-operations': 3.16.2(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
       '@types/node': 25.5.0
       '@whatwg-node/disposablestack': 0.0.6
       '@whatwg-node/fetch': 0.10.13
@@ -22738,7 +22738,7 @@ snapshots:
       '@whatwg-node/server-plugin-cookies': 1.0.7(@whatwg-node/server@0.11.0)
       graphql: 16.9.0
       graphql-ws: 6.0.6(graphql@16.9.0)(ws@8.21.0)
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@fastify/websocket'
@@ -22765,7 +22765,7 @@ snapshots:
       '@graphql-hive/plugin-aws-sigv4': 2.0.53(@types/node@24.13.3)(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)
       '@graphql-hive/plugin-opentelemetry': 1.4.35(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)(ws@8.21.0)
       '@graphql-hive/pubsub': 2.1.1(ioredis@5.10.1)
-      '@graphql-hive/render-laboratory': 0.1.10(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.3.6)
+      '@graphql-hive/render-laboratory': 0.1.10(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.3.6)
       '@graphql-hive/signal': 2.0.0
       '@graphql-mesh/cache-cfw-kv': 0.105.36(graphql@16.14.2)(ioredis@5.10.1)
       '@graphql-mesh/cache-localforage': 0.105.37(graphql@16.14.2)(ioredis@5.10.1)
@@ -22775,8 +22775,8 @@ snapshots:
       '@graphql-mesh/hmac-upstream-signature': 2.0.12(graphql@16.14.2)(ioredis@5.10.1)
       '@graphql-mesh/plugin-http-cache': 0.105.38(graphql@16.14.2)(ioredis@5.10.1)
       '@graphql-mesh/plugin-jit': 0.2.36(graphql@16.14.2)(ioredis@5.10.1)
-      '@graphql-mesh/plugin-jwt-auth': 2.0.11(@whatwg-node/server@0.11.0)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(ioredis@5.10.1)
-      '@graphql-mesh/plugin-prometheus': 2.1.51(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)(prom-client@15.1.3)(ws@8.21.0)
+      '@graphql-mesh/plugin-jwt-auth': 2.0.11(@whatwg-node/server@0.11.0)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)(ioredis@5.10.1)
+      '@graphql-mesh/plugin-prometheus': 2.1.51(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)(prom-client@15.1.3)(ws@8.21.0)
       '@graphql-mesh/plugin-snapshot': 0.104.37(graphql@16.14.2)(ioredis@5.10.1)
       '@graphql-mesh/string-interpolation': 0.5.17(graphql@16.14.2)
       '@graphql-mesh/transport-http': 1.1.1(@types/node@24.13.3)(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)
@@ -22788,7 +22788,7 @@ snapshots:
       '@graphql-tools/graphql-file-loader': 8.1.7(graphql@16.14.2)
       '@graphql-tools/load': 8.1.6(graphql@16.14.2)
       '@graphql-tools/utils': 11.1.0(graphql@16.14.2)
-      '@graphql-yoga/render-graphiql': 5.16.2(graphql-yoga@5.21.1(graphql@16.14.2))
+      '@graphql-yoga/render-graphiql': 5.16.2(graphql-yoga@5.21.3(graphql@16.14.2))
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/api-logs': 0.219.0
       '@opentelemetry/context-async-hooks': 2.9.0(@opentelemetry/api@1.9.1)
@@ -22806,7 +22806,7 @@ snapshots:
       commander: 14.0.2
       graphql: 16.14.2
       graphql-ws: 6.0.6(graphql@16.14.2)(ws@8.21.0)
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
       tslib: 2.8.1
       ws: 8.21.0
     transitivePeerDependencies:
@@ -22983,10 +22983,10 @@ snapshots:
     optionalDependencies:
       ioredis: 5.10.1
 
-  '@graphql-hive/render-laboratory@0.1.10(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.3.6)':
+  '@graphql-hive/render-laboratory@0.1.10(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.3.6)':
     dependencies:
       '@graphql-hive/laboratory': 0.1.9(@tanstack/react-form@1.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.13.3)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(date-fns@4.1.0)(graphql@16.14.2)(lucide-react@0.548.0(react@18.3.1))(lz-string@1.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))(tslib@2.8.1)(zod@4.3.6)
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
     transitivePeerDependencies:
       - '@fastify/websocket'
       - '@tanstack/react-form'
@@ -23036,25 +23036,25 @@ snapshots:
 
   '@graphql-hive/signal@2.0.0': {}
 
-  '@graphql-hive/yoga@0.48.2(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(pino@10.3.0)':
+  '@graphql-hive/yoga@0.48.2(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)(pino@10.3.0)':
     dependencies:
       '@graphql-hive/core': 0.21.1(graphql@16.14.2)(pino@10.3.0)
       '@graphql-hive/logger': 1.1.0(pino@10.3.0)
-      '@graphql-yoga/plugin-persisted-operations': 3.16.2(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)
+      '@graphql-yoga/plugin-persisted-operations': 3.16.2(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
     transitivePeerDependencies:
       - '@logtape/logtape'
       - pino
       - winston
 
-  '@graphql-hive/yoga@0.48.2(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)(pino@10.3.0)':
+  '@graphql-hive/yoga@0.48.2(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)(pino@10.3.0)':
     dependencies:
       '@graphql-hive/core': 0.21.1(graphql@16.9.0)(pino@10.3.0)
       '@graphql-hive/logger': 1.1.0(pino@10.3.0)
-      '@graphql-yoga/plugin-persisted-operations': 3.16.2(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)
+      '@graphql-yoga/plugin-persisted-operations': 3.16.2(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
       graphql: 16.9.0
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
     transitivePeerDependencies:
       - '@logtape/logtape'
       - pino
@@ -23392,7 +23392,7 @@ snapshots:
       '@whatwg-node/disposablestack': 0.0.6
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@logtape/logtape'
@@ -23423,7 +23423,7 @@ snapshots:
       '@whatwg-node/disposablestack': 0.0.6
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@logtape/logtape'
@@ -23454,7 +23454,7 @@ snapshots:
       '@whatwg-node/disposablestack': 0.0.6
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.9.0
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@logtape/logtape'
@@ -23485,7 +23485,7 @@ snapshots:
       '@whatwg-node/disposablestack': 0.0.6
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.9.0
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@logtape/logtape'
@@ -23549,11 +23549,11 @@ snapshots:
       - '@nats-io/nats-core'
       - ioredis
 
-  '@graphql-mesh/plugin-jwt-auth@2.0.11(@whatwg-node/server@0.11.0)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(ioredis@5.10.1)':
+  '@graphql-mesh/plugin-jwt-auth@2.0.11(@whatwg-node/server@0.11.0)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)(ioredis@5.10.1)':
     dependencies:
       '@graphql-mesh/types': 0.104.28(graphql@16.14.2)(ioredis@5.10.1)
       '@graphql-mesh/utils': 0.104.36(graphql@16.14.2)(ioredis@5.10.1)
-      '@graphql-yoga/plugin-jwt': 3.10.2(@whatwg-node/server@0.11.0)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)
+      '@graphql-yoga/plugin-jwt': 3.10.2(@whatwg-node/server@0.11.0)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)
       graphql: 16.14.2
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -23563,7 +23563,7 @@ snapshots:
       - ioredis
       - supports-color
 
-  '@graphql-mesh/plugin-prometheus@2.1.51(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)(prom-client@15.1.3)(ws@8.21.0)':
+  '@graphql-mesh/plugin-prometheus@2.1.51(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)(prom-client@15.1.3)(ws@8.21.0)':
     dependencies:
       '@graphql-hive/gateway-runtime': 2.9.10(graphql@16.14.2)(ioredis@5.10.1)(pino@10.3.0)(ws@8.21.0)
       '@graphql-hive/logger': 1.1.1(pino@10.3.0)
@@ -23571,7 +23571,7 @@ snapshots:
       '@graphql-mesh/types': 0.104.28(graphql@16.14.2)(ioredis@5.10.1)
       '@graphql-mesh/utils': 0.104.36(graphql@16.14.2)(ioredis@5.10.1)
       '@graphql-tools/utils': 11.1.0(graphql@16.14.2)
-      '@graphql-yoga/plugin-prometheus': 6.11.3(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(prom-client@15.1.3)
+      '@graphql-yoga/plugin-prometheus': 6.11.3(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)(prom-client@15.1.3)
       graphql: 16.14.2
       prom-client: 15.1.3
       tslib: 2.8.1
@@ -23597,11 +23597,11 @@ snapshots:
       '@graphql-mesh/types': 0.104.28(graphql@16.14.2)(ioredis@5.10.1)
       '@graphql-mesh/utils': 0.104.36(graphql@16.14.2)(ioredis@5.10.1)
       '@graphql-tools/utils': 11.1.0(graphql@16.14.2)
-      '@graphql-yoga/plugin-response-cache': 3.23.0(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)
+      '@graphql-yoga/plugin-response-cache': 3.23.0(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)
       '@whatwg-node/promise-helpers': 1.3.2
       cache-control-parser: 2.2.0
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@nats-io/nats-core'
@@ -23616,11 +23616,11 @@ snapshots:
       '@graphql-mesh/types': 0.104.28(graphql@16.9.0)(ioredis@5.10.1)
       '@graphql-mesh/utils': 0.104.36(graphql@16.9.0)(ioredis@5.10.1)
       '@graphql-tools/utils': 11.1.0(graphql@16.9.0)
-      '@graphql-yoga/plugin-response-cache': 3.23.0(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)
+      '@graphql-yoga/plugin-response-cache': 3.23.0(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
       '@whatwg-node/promise-helpers': 1.3.2
       cache-control-parser: 2.2.0
       graphql: 16.9.0
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@nats-io/nats-core'
@@ -25416,97 +25416,97 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@graphql-yoga/plugin-apollo-inline-trace@3.21.0(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)':
+  '@graphql-yoga/plugin-apollo-inline-trace@3.21.0(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)':
     dependencies:
       '@apollo/usage-reporting-protobuf': 4.1.1
       '@envelop/on-resolve': 7.1.1(@envelop/core@5.5.1)(graphql@16.14.2)
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@envelop/core'
 
-  '@graphql-yoga/plugin-apollo-inline-trace@3.21.0(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-apollo-inline-trace@3.21.0(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@apollo/usage-reporting-protobuf': 4.1.1
       '@envelop/on-resolve': 7.1.1(@envelop/core@5.5.1)(graphql@16.9.0)
       graphql: 16.9.0
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@envelop/core'
 
-  '@graphql-yoga/plugin-apollo-usage-report@0.16.0(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)':
+  '@graphql-yoga/plugin-apollo-usage-report@0.16.0(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)':
     dependencies:
       '@apollo/server-gateway-interface': 2.0.0(graphql@16.14.2)
       '@apollo/usage-reporting-protobuf': 4.1.1
       '@apollo/utils.usagereporting': 2.1.0(graphql@16.14.2)
       '@graphql-tools/utils': 10.11.0(graphql@16.14.2)
-      '@graphql-yoga/plugin-apollo-inline-trace': 3.21.0(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)
+      '@graphql-yoga/plugin-apollo-inline-trace': 3.21.0(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@envelop/core'
 
-  '@graphql-yoga/plugin-apollo-usage-report@0.16.0(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-apollo-usage-report@0.16.0(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@apollo/server-gateway-interface': 2.0.0(graphql@16.9.0)
       '@apollo/usage-reporting-protobuf': 4.1.1
       '@apollo/utils.usagereporting': 2.1.0(graphql@16.9.0)
       '@graphql-tools/utils': 10.11.0(graphql@16.9.0)
-      '@graphql-yoga/plugin-apollo-inline-trace': 3.21.0(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)
+      '@graphql-yoga/plugin-apollo-inline-trace': 3.21.0(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.9.0
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@envelop/core'
 
-  '@graphql-yoga/plugin-csrf-prevention@3.16.2(graphql-yoga@5.21.1(graphql@16.14.2))':
+  '@graphql-yoga/plugin-csrf-prevention@3.16.2(graphql-yoga@5.21.3(graphql@16.14.2))':
     dependencies:
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
 
-  '@graphql-yoga/plugin-csrf-prevention@3.16.2(graphql-yoga@5.21.1(graphql@16.9.0))':
+  '@graphql-yoga/plugin-csrf-prevention@3.16.2(graphql-yoga@5.21.3(graphql@16.9.0))':
     dependencies:
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
 
-  '@graphql-yoga/plugin-defer-stream@3.16.2(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)':
+  '@graphql-yoga/plugin-defer-stream@3.16.2(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)':
     dependencies:
       '@graphql-tools/utils': 10.9.1(graphql@16.14.2)
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
 
-  '@graphql-yoga/plugin-defer-stream@3.16.2(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-defer-stream@3.16.2(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@graphql-tools/utils': 10.9.1(graphql@16.9.0)
       graphql: 16.9.0
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
 
-  '@graphql-yoga/plugin-defer-stream@3.7.0(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-defer-stream@3.7.0(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@graphql-tools/utils': 10.9.1(graphql@16.9.0)
       graphql: 16.9.0
-      graphql-yoga: 5.13.3(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
 
-  '@graphql-yoga/plugin-disable-introspection@2.7.0(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-disable-introspection@2.7.0(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       graphql: 16.9.0
-      graphql-yoga: 5.13.3(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
 
-  '@graphql-yoga/plugin-graphql-sse@3.7.0(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-graphql-sse@3.7.0(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       graphql: 16.9.0
       graphql-sse: 2.6.0(graphql@16.9.0)
-      graphql-yoga: 5.13.3(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
 
-  '@graphql-yoga/plugin-jwt@3.10.2(@whatwg-node/server@0.11.0)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)':
+  '@graphql-yoga/plugin-jwt@3.10.2(@whatwg-node/server@0.11.0)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)':
     dependencies:
       '@whatwg-node/promise-helpers': 1.3.2
       '@whatwg-node/server-plugin-cookies': 1.0.7(@whatwg-node/server@0.11.0)
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
       jsonwebtoken: 9.0.3
       jwks-rsa: 3.2.0
       tslib: 2.8.1
@@ -25514,62 +25514,62 @@ snapshots:
       - '@whatwg-node/server'
       - supports-color
 
-  '@graphql-yoga/plugin-persisted-operations@3.16.2(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)':
+  '@graphql-yoga/plugin-persisted-operations@3.16.2(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)':
     dependencies:
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
 
-  '@graphql-yoga/plugin-persisted-operations@3.16.2(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-persisted-operations@3.16.2(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.9.0
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
 
-  '@graphql-yoga/plugin-persisted-operations@3.9.0(@graphql-tools/utils@11.2.2(graphql@16.9.0))(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-persisted-operations@3.9.0(@graphql-tools/utils@11.2.2(graphql@16.9.0))(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@graphql-tools/utils': 11.2.2(graphql@16.9.0)
       graphql: 16.9.0
-      graphql-yoga: 5.13.3(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
 
-  '@graphql-yoga/plugin-prometheus@6.11.3(@envelop/core@5.5.1)(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)(prom-client@15.1.3)':
+  '@graphql-yoga/plugin-prometheus@6.11.3(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)(prom-client@15.1.3)':
     dependencies:
       '@envelop/prometheus': 14.0.0(@envelop/core@5.5.1)(graphql@16.14.2)(prom-client@15.1.3)
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
       prom-client: 15.1.3
     transitivePeerDependencies:
       - '@envelop/core'
 
-  '@graphql-yoga/plugin-response-cache@3.15.4(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-response-cache@3.15.4(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.5.1
       '@envelop/response-cache': 7.1.3(@envelop/core@5.5.1)(graphql@16.9.0)
       '@whatwg-node/promise-helpers': 1.3.0
       graphql: 16.9.0
-      graphql-yoga: 5.13.3(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
 
-  '@graphql-yoga/plugin-response-cache@3.23.0(graphql-yoga@5.21.1(graphql@16.14.2))(graphql@16.14.2)':
+  '@graphql-yoga/plugin-response-cache@3.23.0(graphql-yoga@5.21.3(graphql@16.14.2))(graphql@16.14.2)':
     dependencies:
       '@envelop/core': 5.5.1
       '@envelop/response-cache': 9.1.1(@envelop/core@5.5.1)(graphql@16.14.2)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
 
-  '@graphql-yoga/plugin-response-cache@3.23.0(graphql-yoga@5.21.1(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-response-cache@3.23.0(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.5.1
       '@envelop/response-cache': 9.1.1(@envelop/core@5.5.1)(graphql@16.9.0)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.9.0
-      graphql-yoga: 5.21.1(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
 
-  '@graphql-yoga/plugin-response-cache@3.9.0(@envelop/core@5.5.1)(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-response-cache@3.9.0(@envelop/core@5.5.1)(graphql-yoga@5.21.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@envelop/response-cache': 6.1.2(@envelop/core@5.5.1)(graphql@16.9.0)
       graphql: 16.9.0
-      graphql-yoga: 5.13.3(graphql@16.9.0)
+      graphql-yoga: 5.21.3(graphql@16.9.0)
     transitivePeerDependencies:
       - '@envelop/core'
 
@@ -25579,9 +25579,9 @@ snapshots:
       '@whatwg-node/events': 0.1.2
       ioredis: 5.10.1
 
-  '@graphql-yoga/render-graphiql@5.16.2(graphql-yoga@5.21.1(graphql@16.14.2))':
+  '@graphql-yoga/render-graphiql@5.16.2(graphql-yoga@5.21.3(graphql@16.14.2))':
     dependencies:
-      graphql-yoga: 5.21.1(graphql@16.14.2)
+      graphql-yoga: 5.21.3(graphql@16.14.2)
 
   '@graphql-yoga/subscription@5.0.5':
     dependencies:
@@ -26354,7 +26354,7 @@ snapshots:
       agent-base: 9.0.0
       http-proxy-agent: 9.1.0
       https-proxy-agent: 9.1.0
-      lru-cache: 11.2.6
+      lru-cache: 11.5.2
       socks-proxy-agent: 10.1.0
     transitivePeerDependencies:
       - kerberos
@@ -33656,7 +33656,7 @@ snapshots:
       '@npmcli/fs': 6.0.0
       fs-minipass: 3.0.0
       glob: 13.0.6
-      lru-cache: 11.2.6
+      lru-cache: 11.5.2
       minipass: 7.1.3
       minipass-collect: 2.0.1
       minipass-flush: 1.0.5
@@ -36288,40 +36288,6 @@ snapshots:
     optionalDependencies:
       ws: 8.21.0
 
-  graphql-yoga@5.13.3(graphql@16.14.2):
-    dependencies:
-      '@envelop/core': 5.5.1
-      '@envelop/instrumentation': 1.0.0
-      '@graphql-tools/executor': 1.5.0(graphql@16.14.2)
-      '@graphql-tools/schema': 10.0.25(graphql@16.14.2)
-      '@graphql-tools/utils': 10.9.1(graphql@16.14.2)
-      '@graphql-yoga/logger': 2.0.1
-      '@graphql-yoga/subscription': 5.0.5
-      '@whatwg-node/fetch': 0.10.13
-      '@whatwg-node/promise-helpers': 1.3.2
-      '@whatwg-node/server': 0.10.17
-      dset: 3.1.4
-      graphql: 16.14.2
-      lru-cache: 10.2.0
-      tslib: 2.8.1
-
-  graphql-yoga@5.13.3(graphql@16.9.0):
-    dependencies:
-      '@envelop/core': 5.5.1
-      '@envelop/instrumentation': 1.0.0
-      '@graphql-tools/executor': 1.5.0(graphql@16.9.0)
-      '@graphql-tools/schema': 10.0.25(graphql@16.9.0)
-      '@graphql-tools/utils': 10.9.1(graphql@16.9.0)
-      '@graphql-yoga/logger': 2.0.1
-      '@graphql-yoga/subscription': 5.0.5
-      '@whatwg-node/fetch': 0.10.13
-      '@whatwg-node/promise-helpers': 1.3.2
-      '@whatwg-node/server': 0.10.17
-      dset: 3.1.4
-      graphql: 16.9.0
-      lru-cache: 10.2.0
-      tslib: 2.8.1
-
   graphql-yoga@5.21.1(graphql@16.14.2):
     dependencies:
       '@envelop/core': 5.5.1
@@ -36338,7 +36304,23 @@ snapshots:
       lru-cache: 10.2.0
       tslib: 2.8.1
 
-  graphql-yoga@5.21.1(graphql@16.9.0):
+  graphql-yoga@5.21.3(graphql@16.14.2):
+    dependencies:
+      '@envelop/core': 5.5.1
+      '@envelop/instrumentation': 1.0.0
+      '@graphql-tools/executor': 1.5.0(graphql@16.14.2)
+      '@graphql-tools/schema': 10.0.25(graphql@16.14.2)
+      '@graphql-tools/utils': 10.11.0(graphql@16.14.2)
+      '@graphql-yoga/logger': 2.0.1
+      '@graphql-yoga/subscription': 5.0.5
+      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/promise-helpers': 1.3.2
+      '@whatwg-node/server': 0.11.0
+      graphql: 16.14.2
+      lru-cache: 10.2.0
+      tslib: 2.8.1
+
+  graphql-yoga@5.21.3(graphql@16.9.0):
     dependencies:
       '@envelop/core': 5.5.1
       '@envelop/instrumentation': 1.0.0
