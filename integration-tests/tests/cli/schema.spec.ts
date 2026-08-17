@@ -808,7 +808,7 @@ test('schema:check gives correct error message for missing `--service` name flag
     1
     stderr--------------------------------------------:
      ›   Warning: Could not resolve pull request number. Are you running this
-     ›   command on a 'pull_request' event?
+     ›   command on a 'pull_request' or 'merge_group' event?
      ›   See https://__URL__
      ›   b-workflow-for-ci
     stdout--------------------------------------------:
