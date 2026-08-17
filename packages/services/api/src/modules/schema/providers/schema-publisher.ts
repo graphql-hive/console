@@ -2468,14 +2468,15 @@ export class SchemaPublisher {
         continue;
       }
 
+      invariant(targetLogEdge.node.service_name !== null, 'A service name must exist.');
+
       // Note: we use fallback value of '' to support single schema workflows.
-      const serviceName = targetLogEdge.node.service_name ?? '';
       invariant(
-        diffMap.has(serviceName) === false,
+        diffMap.has(targetLogEdge.node.service_name) === false,
         'Invalid database state. A log for the same service can not appear more than once.',
       );
 
-      diffMap.set(serviceName, {
+      diffMap.set(targetLogEdge.node.service_name, {
         type: 'removed',
         previousLog: targetLogEdge.node,
       });
@@ -2486,13 +2487,11 @@ export class SchemaPublisher {
         continue;
       }
 
-      const serviceName = originLogEdge.node.service_name ?? '';
+      invariant(originLogEdge.node.service_name !== null, 'A service name must exist.');
 
-      let record = diffMap.get(serviceName);
+      let record = diffMap.get(originLogEdge.node.service_name);
 
       if (!record) {
-        invariant(originLogEdge.node.service_name !== null, 'A service name must exist.');
-
         diffMap.set(originLogEdge.node.service_name, {
           type: 'added',
           newLog: originLogEdge.node,
@@ -2503,7 +2502,7 @@ export class SchemaPublisher {
       invariant(record.type === 'removed', 'At this point the type can only be removed.');
 
       if (record.previousLog.id === originLogEdge.node.id) {
-        diffMap.set(serviceName, {
+        diffMap.set(originLogEdge.node.service_name, {
           type: 'unchanged',
           log: record.previousLog,
         });
@@ -2511,7 +2510,7 @@ export class SchemaPublisher {
       }
 
       if (record.previousLog.id !== originLogEdge.node.id) {
-        diffMap.set(serviceName, {
+        diffMap.set(originLogEdge.node.service_name, {
           type: 'changed',
           newLog: originLogEdge.node,
           previousLog: record.previousLog,
