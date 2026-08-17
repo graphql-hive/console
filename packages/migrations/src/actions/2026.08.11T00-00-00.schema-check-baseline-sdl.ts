@@ -16,30 +16,5 @@ export default {
       , ADD COLUMN "baseline_composite_schema_sdl_store_id" text REFERENCES "sdl_store"("id")
       , ADD COLUMN "baseline_schema_composition_errors" jsonb
     ;
-
-    CREATE INDEX "schema_check_by_baseline_schema_sdl_store_id"
-    ON "schema_checks" ("baseline_schema_sdl_store_id")
-    WHERE "baseline_schema_sdl_store_id" IS NOT NULL
-    ;
-
-    CREATE INDEX "schema_check_baseline_supergraph_sdl_store_id"
-    ON "schema_checks" ("baseline_supergraph_sdl_store_id")
-    WHERE "baseline_supergraph_sdl_store_id" IS NOT NULL
-    ;
-
-    CREATE INDEX "schema_check_baseline_composite_schema_sdl_store_id"
-    ON "schema_checks" ("baseline_composite_schema_sdl_store_id")
-    WHERE "baseline_composite_schema_sdl_store_id" IS NOT NULL
-    ;
-
-    CREATE INDEX "contract_checks_baseline_supergraph_sdl_store_id"
-    ON "contract_checks" ("baseline_supergraph_sdl_store_id")
-    WHERE "baseline_supergraph_sdl_store_id" IS NOT NULL
-    ;
-
-    CREATE INDEX "contract_checks_baseline_composite_schema_sdl_store_id"
-    ON "contract_checks" ("baseline_composite_schema_sdl_store_id")
-    WHERE "baseline_composite_schema_sdl_store_id" IS NOT NULL
-    ;
   `,
 } satisfies MigrationExecutor;
