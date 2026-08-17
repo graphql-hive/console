@@ -327,29 +327,17 @@ export class CompositeModel {
     ]);
     const baselineCompositionCheck = baselineMatchesHead ? compositionCheck : composedBaseline;
 
-    // In case either the baseline composition or composition failed
-    // we fail early and skip all the other steps
-
-    if (baselineCompositionCheck?.status === 'failed' || compositionCheck.status === 'failed') {
+    // Without a valid baseline composition there is no schema to diff against.
+    if (baselineCompositionCheck?.status === 'failed') {
       return {
         conclusion: SchemaCheckConclusion.Failure,
         reason: {
-          baselineComposition:
-            baselineCompositionCheck?.status === 'completed'
-              ? {
-                  type: 'success',
-                  errors: null,
-                  compositeSchemaSDL: baselineCompositionCheck.result.fullSchemaSdl,
-                  supergraphSDL: baselineCompositionCheck.result.supergraph,
-                }
-              : baselineCompositionCheck?.status === 'failed'
-                ? {
-                    type: 'failure',
-                    errors: baselineCompositionCheck.reason.errors,
-                    compositeSchemaSDL: baselineCompositionCheck.reason.fullSchemaSdl,
-                    supergraphSDL: null,
-                  }
-                : null,
+          baselineComposition: {
+            type: 'failure',
+            errors: baselineCompositionCheck.reason.errors,
+            compositeSchemaSDL: baselineCompositionCheck.reason.fullSchemaSdl,
+            supergraphSDL: null,
+          },
           composition:
             compositionCheck.status === 'completed'
               ? {
@@ -405,7 +393,8 @@ export class CompositeModel {
         filterOutFederationChanges: project.type === ProjectType.FEDERATION,
         approvedChanges,
         existingSdl: existingPublicSchemaSdl,
-        incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+        incomingSdl:
+          compositionCheck.result?.fullSchemaSdl ?? compositionCheck.reason?.fullSchemaSdl ?? null,
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
         failDiffOnDangerousChange: failDiffOnDangerousChange ?? false,
         failAllDangerousChanges: failAllDangerousChanges ?? true,
@@ -456,6 +445,7 @@ export class CompositeModel {
     this.logger.debug('policy check status: %o', policyCheck);
 
     if (
+      compositionCheck.status === 'failed' ||
       diffCheck.status === 'failed' ||
       policyCheck.status === 'failed' ||
       // if any of the contract compositions failed
@@ -474,12 +464,20 @@ export class CompositeModel {
                 compositeSchemaSDL: baselineCompositionCheck.result.fullSchemaSdl,
               }
             : null,
-          composition: {
-            type: 'success',
-            compositeSchemaSDL: compositionCheck.result.fullSchemaSdl,
-            supergraphSDL: compositionCheck.result.supergraph,
-            errors: null,
-          },
+          composition:
+            compositionCheck.status === 'completed'
+              ? {
+                  type: 'success',
+                  compositeSchemaSDL: compositionCheck.result.fullSchemaSdl,
+                  supergraphSDL: compositionCheck.result.supergraph,
+                  errors: null,
+                }
+              : {
+                  type: 'failure',
+                  compositeSchemaSDL: compositionCheck.reason.fullSchemaSdl,
+                  supergraphSDL: null,
+                  errors: compositionCheck.reason.errors,
+                },
           schemaPolicy: policyCheck.result ?? policyCheck.reason ?? null,
           schemaChanges: diffCheck.reason ?? diffCheck.result ?? null,
           contracts: contractChecks,
