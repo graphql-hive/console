@@ -1350,7 +1350,7 @@ export class SchemaVersionStore {
         });
       }
 
-      if (args.schemaLogs.deleted.length) {
+      if (args.schemaLogs.removed.length) {
         // Insert new nodes
         const insertDeleteSchemaLogsQuery = psql` /* insertDeleteSchemaLogs */
           INSERT INTO "schema_log" (
@@ -1363,7 +1363,7 @@ export class SchemaVersionStore {
             , "action"
           )
           SELECT * FROM ${psql.unnest(
-            args.schemaLogs.deleted.map(log => [
+            args.schemaLogs.removed.map(log => [
               log.id,
               log.projectId,
               log.targetId,
@@ -1383,7 +1383,7 @@ export class SchemaVersionStore {
       if (
         args.schemaLogs.added.length ||
         args.schemaLogs.changed.length ||
-        args.schemaLogs.deleted.length ||
+        args.schemaLogs.removed.length ||
         args.schemaLogs.unchanged.length
       ) {
         const insertAddedAndChangedSchemaLogEdges = psql` /* insertAddedAndChangedSchemaLogEdges */
@@ -1396,7 +1396,7 @@ export class SchemaVersionStore {
             , "subgraph_name"
           )
           SELECT * FROM ${psql.unnest(
-            args.schemaLogs.deleted
+            args.schemaLogs.removed
               .map(log => [
                 schemaVersion.id,
                 log.id,
@@ -1758,13 +1758,13 @@ const schemaLogEdgesFields = (prefix = psql``) => psql`
 `;
 
 export type SchemaLogDiffInput = {
-  deleted: Array<{
+  removed: Array<{
     id: string;
     previousId: string;
     serviceName: string;
     targetId: string;
     projectId: string;
-    type: 'deleted';
+    type: 'removed';
   }>;
   added: Array<{
     id: string;

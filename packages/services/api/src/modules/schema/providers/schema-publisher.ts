@@ -2416,7 +2416,7 @@ export class SchemaPublisher {
     );
 
     return {
-      deleted: [],
+      removed: [],
       added: [],
       changed: [
         {
@@ -2526,7 +2526,7 @@ export class SchemaPublisher {
     // Let's create the new Graph version edges and delete logs (if needed)
 
     const schemaLogs: SchemaLogDiffInput = {
-      deleted: [],
+      removed: [],
       added: [],
       changed: [],
       unchanged: [],
@@ -2538,13 +2538,13 @@ export class SchemaPublisher {
 
         // Note: we seed the ID here so we do not need to map some more within the logic within `SchemaVersions.promoteSchemaVersionToTarget`
         const logId = crypto.randomUUID();
-        schemaLogs.deleted.push({
+        schemaLogs.removed.push({
           id: logId,
           previousId: diff.previousLog.id,
           serviceName: diff.previousLog.service_name,
           targetId: args.target.id,
           projectId: args.target.projectId,
-          type: 'deleted',
+          type: 'removed',
         });
         continue;
       }
@@ -2607,7 +2607,7 @@ export class SchemaPublisher {
     this.logger.debug(
       'producing schema log diff finished (addedCount=%d, deletedCount=%d, changedCount=%d).',
       schemaLogs.added.length,
-      schemaLogs.deleted.length,
+      schemaLogs.removed.length,
       schemaLogs.changed.length,
       schemaLogs.unchanged.length,
     );
