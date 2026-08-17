@@ -292,7 +292,7 @@ export class CompositeModel {
     let baselineCompositionCheck$ = null;
 
     if (baseline) {
-      if (!baselineMatchesHead) {
+      if (baselineMatchesHead) {
         this.logger.debug('baseline matches head state. skip composing baseline');
       } else {
         this.logger.debug('baseline service schema provided. composing baseline graph');
