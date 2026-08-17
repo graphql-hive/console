@@ -1118,7 +1118,7 @@ export class SchemaPublisher {
     if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
       increaseSchemaCheckCountMetric('rejected');
 
-      const errors: Array<{ message: string }> = [];
+      const errors: Array<{ message: string; path?: string | null }> = [];
 
       if (checkResult.reason.baselineComposition?.type === 'failure') {
         errors.push({
