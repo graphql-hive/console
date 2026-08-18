@@ -111,7 +111,8 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
         });
       }
     },
-    // since response-cache modifies the executed GraphQL document, we need to extract it after parsing.
+    // Capture the original parsed document before execution plugins transform it,
+    // so usage reporting reflects the client operation.
     onParse(parseCtx) {
       return ctx => {
         const result = ctx.result as ASTNode;
@@ -122,35 +123,34 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
             record.parsedDocument = result;
             parsedDocumentCache.set(parseCtx.params.source, result);
           }
-
-          if (fieldLevelMetricsEnabled && operationCache) {
-            // We need __typename on every object in the result so we can
-            // resolve abstract types (unions/interfaces) to concrete type coordinates
-            // when recording field-level metrics downstream.
-            // This is done here for more performant caching of the result.
-            const query = parseCtx.params.source;
-            const cachedDocument = operationCache.get(query);
-            if (cachedDocument) {
-              // If "true" is cached, then this operation doesn't need stored because it's identical to the original.
-              // Else, the document hash been modified and cached
-              if (cachedDocument !== true) {
-                parseCtx.setParsedDocument(cachedDocument);
-              }
-            } else if (latestSchema) {
-              const modifiedDocument = addHiveTypenames(ctx.result, latestSchema);
-              operationCache.set(query, result === modifiedDocument || modifiedDocument);
-              if (result !== modifiedDocument) {
-                parseCtx.setParsedDocument(modifiedDocument);
-              }
-            }
-          }
         }
       };
     },
-    onExecute() {
+    onExecute({ args, executeFn, setExecuteFn }) {
+      const record = contextualCache.get(args.contextValue);
+
+      if (fieldLevelMetricsEnabled && operationCache && latestSchema) {
+        // Validation must run against the client document. Add the metadata fields only
+        // to the document passed to execution and cache that transformed document.
+        const query = record?.paramsArgs.query || args.document.loc?.source.body;
+        const cachedDocument = query ? operationCache.get(query) : undefined;
+        const modifiedDocument =
+          cachedDocument === true
+            ? args.document
+            : cachedDocument || addHiveTypenames(args.document, latestSchema);
+
+        if (query && cachedDocument === undefined) {
+          operationCache.set(query, args.document === modifiedDocument || modifiedDocument);
+        }
+        if (args.document !== modifiedDocument) {
+          setExecuteFn(executionArgs =>
+            executeFn({ ...executionArgs, document: modifiedDocument }),
+          );
+        }
+      }
+
       return {
         onExecuteDone({ args, result }) {
-          const record = contextualCache.get(args.contextValue);
           if (!record) {
             return;
           }
