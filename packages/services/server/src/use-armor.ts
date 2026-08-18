@@ -1,4 +1,4 @@
-import type { ParseOptions, Source } from 'graphql';
+import type { ParseOptions, Source, ValidationRule } from 'graphql';
 import { createGraphQLError, type Plugin } from 'graphql-yoga';
 import promClient from 'prom-client';
 import { maxAliasesRule } from '@escape.tech/graphql-armor-max-aliases';
@@ -28,6 +28,22 @@ const getHiveClientVersion = (userAgent: string | null) => {
   return match ? match[1] : null;
 };
 
+const reservedTypenameAliases = new Set([
+  '__hive_typename__',
+  '__responseCacheTypeName',
+  '__responseCacheId',
+]);
+
+const DisallowReservedAliasesRule: ValidationRule = context => {
+  return {
+    Field(field) {
+      if (field.alias?.value && reservedTypenameAliases.has(field.alias.value)) {
+        context.reportError(createGraphQLError(`The alias "${field.alias.value}" cannot be used.`));
+      }
+    },
+  };
+};
+
 export function useArmor<
   PluginContext extends Record<string, any> = object,
   TServerContext extends Record<string, any> = object,
@@ -37,9 +53,12 @@ export function useArmor<
     onValidate(ctx) {
       const hiveClientVersion = getHiveClientVersion(ctx.context.request.headers.get('user-agent'));
 
+      ctx.addValidationRule(DisallowReservedAliasesRule);
+
       ctx.addValidationRule(
         maxAliasesRule({
           n: 20,
+          allowList: [],
           onReject: [
             (context, error) => {
               context?.reportError(error);
