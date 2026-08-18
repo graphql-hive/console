@@ -42,7 +42,7 @@ type CacheRecord = {
    */
   parsedDocument?: DocumentNode;
   /** persisted document id */
-  experimental__documentId?: string;
+  documentId?: string;
 };
 
 export type YogaPluginOptions = HivePluginOptions & {
@@ -170,7 +170,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                   document: record.parsedDocument ?? record.executionArgs.document,
                 },
                 result,
-                record.experimental__documentId,
+                record.documentId,
               ),
             );
             return;
@@ -198,7 +198,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                       record.parsedDocument ?? record.executionArgs?.document ?? args.document,
                   },
                   errors.length ? { errors } : {},
-                  record.experimental__documentId,
+                  record.documentId,
                 ),
               );
             },
@@ -207,11 +207,14 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
       };
     },
     onSubscribe(context) {
+      if (!context.args.schema.getSubscriptionType()) {
+        return;
+      }
       const record = contextualCache.get(context.args.contextValue);
 
       return {
         onSubscribeResult() {
-          const experimental__persistedDocumentHash = record?.experimental__documentId;
+          const persistedDocumentId = record?.documentId;
           hive.collectSubscriptionUsage({
             args: {
               ...context.args, // spread the context because the record might not have all the necessary fields
@@ -219,7 +222,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
               document:
                 record?.parsedDocument ?? record?.executionArgs?.document ?? context.args.document,
             },
-            experimental__persistedDocumentHash,
+            experimental__persistedDocumentHash: persistedDocumentId,
           });
         },
       };
@@ -253,7 +256,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                 contextValue: serverContext,
               },
               result,
-              record.experimental__documentId,
+              record.documentId,
             ),
           );
         } catch (err) {
@@ -339,7 +342,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
               if (document) {
                 const record = contextualCache.get(context);
                 if (record) {
-                  record.experimental__documentId = key;
+                  record.documentId = key;
                   record.paramsArgs = {
                     ...record.paramsArgs,
                     query: document,
