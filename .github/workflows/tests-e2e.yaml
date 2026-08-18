@@ -10,10 +10,15 @@ on:
       imageTag:
         required: true
         type: string
+      buildImagesLocally:
+        default: false
+        type: boolean
 
 jobs:
   e2e:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
 
     env:
       DOCKER_REGISTRY: ${{ inputs.registry }}/${{ inputs.imageName }}/
@@ -29,6 +34,34 @@ jobs:
         with:
           codegen: true
           actor: test-e2e
+
+      - name: build packages and applications
+        if: ${{ inputs.buildImagesLocally }}
+        run: pnpm build
+
+      - name: configure Docker Node.js image tag
+        id: node-version-tag
+        if: ${{ inputs.buildImagesLocally }}
+        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
+
+      - name: configure Docker buildx
+        if: ${{ inputs.buildImagesLocally }}
+        uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5 # v3.8.0
+
+      - name: build local Docker images
+        if: ${{ inputs.buildImagesLocally }}
+        env:
+          COMMIT_SHA: ${{ inputs.imageTag }}
+          RELEASE: ${{ inputs.imageTag }}
+          BRANCH_NAME: external-pr
+          BUILD_TYPE: ''
+          DOCKER_REGISTRY: ''
+          DOCKER_TAG: :${{ inputs.imageTag }}
+          NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
+        run: |
+          echo "DOCKER_REGISTRY=" >> "$GITHUB_ENV"
+          echo "DOCKER_TAG=:${{ inputs.imageTag }}" >> "$GITHUB_ENV"
+          docker buildx bake -f docker/docker.hcl build --load
 
       - name: install playwright browsers
         timeout-minutes: 15
@@ -66,7 +99,7 @@ jobs:
             logs
 
       - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
-        if: ${{ failure() }}
+        if: ${{ failure() && !inputs.buildImagesLocally }}
         with:
           name: playwright
           path: |
