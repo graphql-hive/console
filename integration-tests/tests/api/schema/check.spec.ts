@@ -2021,6 +2021,67 @@ describe.concurrent(
 );
 
 describe.concurrent('schema check with a baseline service schema', () => {
+  test.concurrent('compares a single schema against the provided baseline', async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+
+    await token
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            stable: String
+            registryOnly: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const result = await checkSchema(
+      {
+        baseline: {
+          hash: 'single-schema-baseline',
+          sdl: /* GraphQL */ `
+            type Query {
+              stable: String
+              baselineOnly: String
+            }
+          `,
+        },
+        sdl: /* GraphQL */ `
+          type Query {
+            stable: String
+          }
+        `,
+      },
+      token.secret,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.schemaCheck).toMatchObject({
+      __typename: 'SchemaCheckError',
+      valid: false,
+      changes: {
+        nodes: [
+          {
+            message: "Field 'baselineOnly' was removed from object type 'Query'",
+          },
+        ],
+        total: 1,
+      },
+      schemaCheck: {
+        baseline: {
+          sdl: expect.stringContaining('baselineOnly: String'),
+          publicSdl: expect.stringContaining('baselineOnly: String'),
+          compositionErrors: null,
+          meta: {
+            commit: 'single-schema-baseline',
+          },
+        },
+      },
+    });
+  });
+
   test.concurrent(
     'compares the baseline against the head when the head matches the registry',
     async ({ expect }) => {
