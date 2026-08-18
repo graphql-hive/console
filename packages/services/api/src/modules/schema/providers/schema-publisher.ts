@@ -656,7 +656,7 @@ export class SchemaPublisher {
         }
 
         checkResult = await this.models[ProjectType.SINGLE].check({
-          input: { sdl },
+          input: { sdl, baselineSdl },
           selector,
           latest: latestVersion
             ? {

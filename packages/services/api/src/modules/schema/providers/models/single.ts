@@ -62,7 +62,9 @@ export class SingleModel {
     failDangerousChangeTypes,
     filterNestedChanges,
   }: {
-    input: Pick<SingleSchemaInput, 'sdl'>;
+    input: Pick<SingleSchemaInput, 'sdl'> & {
+      baselineSdl: string | null;
+    };
     selector: {
       organizationId: string;
       projectId: string;
@@ -88,7 +90,7 @@ export class SingleModel {
     failDangerousChangeTypes: DangerousChangeType[];
     filterNestedChanges: boolean;
   }): Promise<SchemaCheckResult> {
-    const incoming: SingleSchemaInput = {
+    const newSchemaInput: SingleSchemaInput = {
       id: temp,
       sdl: input.sdl,
       metadata: null,
@@ -96,43 +98,108 @@ export class SingleModel {
       serviceUrl: null,
     };
 
-    const schemas = [incoming] as [SingleSchemaInput];
+    const schemas = [newSchemaInput] as [SingleSchemaInput];
 
-    const checksumResult = await this.checks.checksum({
-      existing: latest
+    const baseline = input.baselineSdl ? { ...newSchemaInput, sdl: input.baselineSdl } : null;
+    const incoming = {
+      schema: newSchemaInput,
+      contractNames: null,
+    };
+
+    const baselineChecksumResult = baseline
+      ? this.checks.checksum({
+          existing: {
+            schema: baseline,
+            contractNames: null,
+          },
+          incoming,
+        })
+      : null;
+
+    const registryChecksumResult = this.checks.checksum({
+      existing: latest?.schemas[0]
         ? {
             schema: latest.schemas[0],
             contractNames: null,
           }
         : null,
-      incoming: {
-        schema: incoming,
-        contractNames: null,
-      },
+      incoming,
     });
 
-    if (checksumResult === 'unchanged') {
+    const baselineMatchesHead = baselineChecksumResult === 'unchanged';
+    const registryMatchesHead = registryChecksumResult === 'unchanged';
+
+    if (registryMatchesHead && (!baseline || baselineMatchesHead)) {
       this.logger.info('No changes detected, skipping schema check');
       return {
         conclusion: SchemaCheckConclusion.Skip,
       };
     }
 
-    const compositionCheck = await this.checks.composition({
-      targetId: selector.targetId,
-      project,
-      organization,
-      schemas,
-      baseSchema,
-      contracts: null,
-    });
+    const [baselineCompositionCheck, compositionCheck] = await Promise.all([
+      baseline && !baselineMatchesHead
+        ? this.checks.composition({
+            targetId: selector.targetId,
+            project,
+            organization,
+            schemas: [baseline],
+            baseSchema,
+            contracts: null,
+          })
+        : null,
+      this.checks.composition({
+        targetId: selector.targetId,
+        project,
+        organization,
+        schemas,
+        baseSchema,
+        contracts: null,
+      }),
+    ]);
 
-    const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: latestComposable,
-      organization,
-      project,
-      targetId: selector.targetId,
-    });
+    const effectiveBaselineCompositionCheck = baselineMatchesHead
+      ? compositionCheck
+      : baselineCompositionCheck;
+
+    if (effectiveBaselineCompositionCheck?.status === 'failed') {
+      return {
+        conclusion: SchemaCheckConclusion.Failure,
+        reason: {
+          baselineComposition: {
+            type: 'failure',
+            errors: effectiveBaselineCompositionCheck.reason.errors,
+            compositeSchemaSDL: effectiveBaselineCompositionCheck.reason.fullSchemaSdl,
+            supergraphSDL: null,
+          },
+          composition:
+            compositionCheck.status === 'completed'
+              ? {
+                  type: 'success',
+                  errors: null,
+                  compositeSchemaSDL: compositionCheck.result.fullSchemaSdl,
+                  supergraphSDL: compositionCheck.result.supergraph,
+                }
+              : {
+                  type: 'failure',
+                  errors: compositionCheck.reason.errors,
+                  compositeSchemaSDL: compositionCheck.reason.fullSchemaSdl,
+                  supergraphSDL: null,
+                },
+          contracts: null,
+          schemaPolicy: null,
+          schemaChanges: null,
+        },
+      };
+    }
+
+    const previousVersionSdl = effectiveBaselineCompositionCheck
+      ? effectiveBaselineCompositionCheck.result.fullSchemaSdl
+      : await this.checks.retrievePreviousVersionSdl({
+          version: latestComposable,
+          organization,
+          project,
+          targetId: selector.targetId,
+        });
 
     const getAffectedAppDeployments: GetAffectedAppDeployments = schemaCoordinates =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
@@ -175,12 +242,22 @@ export class SingleModel {
 
       return {
         conclusion: SchemaCheckConclusion.Failure,
-        reason: buildSchemaCheckFailureState({
-          compositionCheck,
-          diffCheck,
-          policyCheck,
-          contractChecks: null,
-        }),
+        reason: {
+          ...buildSchemaCheckFailureState({
+            compositionCheck,
+            diffCheck,
+            policyCheck,
+            contractChecks: null,
+          }),
+          baselineComposition: effectiveBaselineCompositionCheck
+            ? {
+                type: 'success',
+                errors: null,
+                compositeSchemaSDL: effectiveBaselineCompositionCheck.result.fullSchemaSdl,
+                supergraphSDL: effectiveBaselineCompositionCheck.result.supergraph,
+              }
+            : null,
+        },
       };
     }
 
@@ -189,7 +266,14 @@ export class SingleModel {
     return {
       conclusion: SchemaCheckConclusion.Success,
       state: {
-        baselineComposition: null,
+        baselineComposition: effectiveBaselineCompositionCheck
+          ? {
+              type: 'success',
+              errors: null,
+              compositeSchemaSDL: effectiveBaselineCompositionCheck.result.fullSchemaSdl,
+              supergraphSDL: effectiveBaselineCompositionCheck.result.supergraph,
+            }
+          : null,
         schemaChanges: diffCheck.result ?? null,
         schemaPolicy: policyCheck.result ?? null,
         composition: {
@@ -250,7 +334,7 @@ export class SingleModel {
     const latestVersion = latest;
     const schemas = [incoming] as [SingleSchemaInput];
 
-    const checksumCheck = await this.checks.checksum({
+    const checksumCheck = this.checks.checksum({
       existing: latest
         ? {
             schema: latest.schemas[0],
