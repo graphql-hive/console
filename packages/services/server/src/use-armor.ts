@@ -1,5 +1,5 @@
 import type { ParseOptions, Source } from 'graphql';
-import type { Plugin } from 'graphql-yoga';
+import { createGraphQLError, type Plugin } from 'graphql-yoga';
 import promClient from 'prom-client';
 import { maxAliasesRule } from '@escape.tech/graphql-armor-max-aliases';
 import { maxDepthRule } from '@escape.tech/graphql-armor-max-depth';
@@ -40,9 +40,10 @@ export function useArmor<
       ctx.addValidationRule(
         maxAliasesRule({
           n: 20,
-          allowList: ['__responseCacheTypeName', '__responseCacheId'],
+          allowList: ['__responseCacheTypeName', '__responseCacheId', '__hive_typename__'],
           onReject: [
-            (_, error) => {
+            (context, error) => {
+              context?.reportError(error);
               rejectedRequests.inc({
                 reason: 'maxAliases',
               });
@@ -59,13 +60,15 @@ export function useArmor<
               }
             },
           ],
+          propagateOnRejection: false,
         }),
       );
       ctx.addValidationRule(
         maxDirectivesRule({
           n: 20,
           onReject: [
-            (_, error) => {
+            (context, error) => {
+              context?.reportError(error);
               rejectedRequests.inc({
                 reason: 'maxDirectives',
               });
@@ -82,6 +85,7 @@ export function useArmor<
               }
             },
           ],
+          propagateOnRejection: false,
         }),
       );
       ctx.addValidationRule(
@@ -90,7 +94,8 @@ export function useArmor<
           flattenFragments: true,
           ignoreIntrospection: true,
           onReject: [
-            (_, error) => {
+            (context, error) => {
+              context?.reportError(error);
               rejectedRequests.inc({
                 reason: 'maxDepth',
               });
@@ -107,16 +112,19 @@ export function useArmor<
               }
             },
           ],
+          propagateOnRejection: false,
         }),
       );
     },
     onParse(ctx) {
       function parseWithTokenLimit(source: string | Source, options: ParseOptions) {
+        let tokenLimitError = null as Error | null;
         const parser = new MaxTokensParserWLexer(source, {
           ...options,
           n: 800,
           onReject: [
             (_, error) => {
+              tokenLimitError = error;
               rejectedRequests.inc({
                 reason: 'maxTokenCount',
               });
@@ -137,7 +145,22 @@ export function useArmor<
             },
           ],
         });
-        return parser.parseDocument();
+
+        try {
+          return parser.parseDocument();
+        } catch (error) {
+          if (tokenLimitError && error === tokenLimitError) {
+            throw createGraphQLError(tokenLimitError.message, {
+              extensions: {
+                http: {
+                  spec: true,
+                  status: 400,
+                },
+              },
+            });
+          }
+          throw error;
+        }
       }
 
       ctx.setParseFn(parseWithTokenLimit);
