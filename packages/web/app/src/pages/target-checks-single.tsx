@@ -14,6 +14,7 @@ import { useMutation, useQuery } from 'urql';
 import { SchemaEditor } from '@/components/schema-editor';
 import {
   ChangesBlock,
+  CompositionErrorsList,
   CompositionErrorsSection,
   labelize,
   NoGraphChanges,
@@ -408,6 +409,9 @@ const DefaultSchemaView_SchemaCheckFragment = graphql(`
       sdl
       publicSdl
       supergraphSdl
+      compositionErrors {
+        message
+      }
       meta {
         commit
       }
@@ -568,7 +572,15 @@ function DefaultSchemaView(props: {
               !schemaCheck.safeSchemaChanges?.edges?.length &&
               !schemaCheck.breakingSchemaChanges?.edges?.length &&
               !schemaCheck.schemaPolicyErrors?.edges?.length &&
-              !schemaCheck.hasSchemaCompositionErrors && <NoGraphChanges />}
+              !schemaCheck.hasSchemaCompositionErrors &&
+              !schemaCheck.baseline?.compositionErrors?.length && <NoGraphChanges />}
+            {schemaCheck.baseline?.compositionErrors?.length ? (
+              <CompositionErrorsList
+                title="Baseline Composition Errors"
+                description="The supplied baseline could not be composed, no schema diff could be performed."
+                errors={schemaCheck.baseline.compositionErrors}
+              />
+            ) : null}
             {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.compositionErrors && (
               <CompositionErrorsSection compositionErrors={schemaCheck.compositionErrors} />
             )}
@@ -707,6 +719,9 @@ const ContractCheckView_ContractCheckFragment = graphql(`
     baseline {
       publicSdl
       supergraphSdl
+      compositionErrors {
+        message
+      }
     }
   }
 `);
@@ -789,6 +804,13 @@ function ContractCheckView(props: {
       <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
+            {contractCheck.baseline?.compositionErrors?.length ? (
+              <CompositionErrorsList
+                title="Baseline Composition Errors"
+                description="The supplied contract baseline could not be composed, no schema diff could be performed."
+                errors={contractCheck.baseline.compositionErrors}
+              />
+            ) : null}
             {contractCheck.schemaCompositionErrors && (
               <CompositionErrorsSection compositionErrors={contractCheck.schemaCompositionErrors} />
             )}
@@ -821,7 +843,8 @@ function ContractCheckView(props: {
             )}
             {!contractCheck.breakingSchemaChanges &&
             !contractCheck.safeSchemaChanges &&
-            !contractCheck.schemaCompositionErrors ? (
+            !contractCheck.schemaCompositionErrors &&
+            !contractCheck.baseline?.compositionErrors?.length ? (
               <NoGraphChanges />
             ) : (
               <ConditionalBreakingChangesMetadataSection schemaCheck={schemaCheck} />
