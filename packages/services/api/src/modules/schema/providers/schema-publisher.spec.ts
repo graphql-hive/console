@@ -3,8 +3,61 @@ import { CriticalityLevel } from '@graphql-inspector/core';
 import {
   buildSchemaCheckSuccessGithubOutput,
   changesToMarkdown,
+  getSchemaCheckFailureGithubDetails,
   type MarkdownSchemaChange,
 } from './schema-publisher';
+
+describe('getSchemaCheckFailureGithubDetails', () => {
+  test('summarizes baseline failures without exposing individual composition errors', () => {
+    const result = getSchemaCheckFailureGithubDetails({
+      baselineComposition: {
+        type: 'failure',
+        errors: [
+          { message: 'Main baseline detail', source: 'composition' },
+          { message: 'Another main baseline detail', source: 'composition' },
+        ],
+        compositeSchemaSDL: null,
+        supergraphSDL: null,
+      },
+      composition: {
+        type: 'success',
+        errors: null,
+        compositeSchemaSDL: 'type Query { ok: Boolean }',
+        supergraphSDL: null,
+      },
+      schemaChanges: null,
+      schemaPolicy: null,
+      contracts: [
+        {
+          contractId: 'contract-id',
+          contractName: 'public',
+          isSuccessful: false,
+          baselineComposition: {
+            type: 'failure',
+            errors: [{ message: 'Contract baseline detail', source: 'composition' }],
+            compositeSchemaSDL: null,
+            supergraphSDL: null,
+          },
+          composition: {
+            type: 'success',
+            errors: null,
+            compositeSchemaSDL: 'type Query { ok: Boolean }',
+            supergraphSDL: null,
+          },
+          schemaChanges: null,
+        },
+      ],
+    });
+
+    expect(result).toEqual({
+      errors: [
+        { message: 'Baseline composition failed.' },
+        { message: '[public] Baseline composition failed.' },
+      ],
+      failedContractCompositionCount: 1,
+    });
+  });
+});
 
 describe('buildSchemaCheckSuccessGithubOutput', () => {
   test('reports a contract-only change instead of "No changes" (#6954)', () => {

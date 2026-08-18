@@ -153,23 +153,25 @@ export type SchemaCheckSuccess = {
   };
 };
 
+export type SchemaCheckFailureReason = {
+  /** the baseline schema used for comparison instead of the latest valid schema version */
+  baselineComposition: null | CompositionState;
+  /** the result of the main graph composition */
+  composition: CompositionState;
+  /** schema changes from the main graph to the latest valid schema version or baseline graph */
+  schemaChanges: null | GroupedSchemaChanges;
+  /** schema policy warnings of the main graph composition */
+  schemaPolicy: null | {
+    errors: SchemaCheckWarning[] | null;
+    warnings: SchemaCheckWarning[] | null;
+  };
+  /** the result of each contract graph composition alongside a diff to the previous graph version or baseline graph */
+  contracts: null | Array<ContractStateSuccess | ContractStateFailure>;
+};
+
 export type SchemaCheckFailure = {
   conclusion: typeof SchemaCheckConclusion.Failure;
-  reason: {
-    /** the baseline schema used for comparison instead of the latest valid schema version */
-    baselineComposition: null | CompositionState;
-    /** the result of the main graph composition */
-    composition: CompositionState;
-    /** schema changes from the main graph to the latest valid schema version or baseline graph */
-    schemaChanges: null | GroupedSchemaChanges;
-    /** schema policy warnings of the main graph composition */
-    schemaPolicy: null | {
-      errors: SchemaCheckWarning[] | null;
-      warnings: SchemaCheckWarning[] | null;
-    };
-    /** the result of each contract graph composition alongside a diff to the previous graph version or baseline graph */
-    contracts: null | Array<ContractStateSuccess | ContractStateFailure>;
-  };
+  reason: SchemaCheckFailureReason;
 };
 
 export type SchemaCheckResult = SchemaCheckFailure | SchemaCheckSuccess | SchemaCheckSkip;

@@ -53,6 +53,7 @@ import {
   getReasonByCode,
   PublishFailureReasonCode,
   SchemaCheckConclusion,
+  SchemaCheckFailureReason,
   SchemaDeleteConclusion,
   SchemaPublishConclusion,
   type SchemaCheckResult,
@@ -1015,8 +1016,9 @@ export class SchemaPublisher {
       }
 
       if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
-        const failedContractCompositionCount =
-          checkResult.reason.contracts?.filter(c => c.composition.type === 'failure').length ?? 0;
+        const { errors, failedContractCompositionCount } = getSchemaCheckFailureGithubDetails(
+          checkResult.reason,
+        );
 
         increaseSchemaCheckCountMetric('rejected');
         return await this.updateGithubCheckRunForSchemaCheck({
@@ -1029,7 +1031,7 @@ export class SchemaPublisher {
           breakingChanges: checkResult.reason.schemaChanges?.breaking ?? [],
           compositionErrors: checkResult.reason.composition.errors ?? [],
           warnings: checkResult.reason.schemaPolicy?.warnings ?? [],
-          errors: checkResult.reason.schemaPolicy?.errors?.map(formatPolicyError) ?? [],
+          errors,
           schemaCheckId: schemaCheck?.id ?? null,
           githubCheckRun: githubCheckRun,
           failedContractCompositionCount,
@@ -3582,6 +3584,45 @@ export type MarkdownSchemaChange = {
   isSafeBasedOnUsage?: boolean;
   approvalMetadata?: unknown;
 };
+
+export function getSchemaCheckFailureGithubDetails(reason: SchemaCheckFailureReason) {
+  const errors: Array<{ message: string }> =
+    reason.schemaPolicy?.errors?.map(formatPolicyError) ?? [];
+
+  if (reason.baselineComposition?.type === 'failure') {
+    errors.push({ message: 'Baseline composition failed.' });
+  }
+
+  for (const contract of reason.contracts ?? []) {
+    if (contract.baselineComposition?.type === 'failure') {
+      errors.push({ message: `[${contract.contractName}] Baseline composition failed.` });
+    }
+
+    if (contract.composition.type === 'failure') {
+      errors.push(
+        ...contract.composition.errors.map(error => ({
+          message: `[${contract.contractName}] ${error.message}`,
+        })),
+      );
+    }
+
+    errors.push(
+      ...(contract.schemaChanges?.breaking?.map(change => ({
+        message: `[${contract.contractName}] ${change.message}`,
+      })) ?? []),
+    );
+  }
+
+  return {
+    errors,
+    failedContractCompositionCount:
+      reason.contracts?.filter(
+        contract =>
+          contract.composition.type === 'failure' ||
+          contract.baselineComposition?.type === 'failure',
+      ).length ?? 0,
+  };
+}
 
 export function changesToMarkdown(
   changes: ReadonlyArray<MarkdownSchemaChange>,
