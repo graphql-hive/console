@@ -1272,6 +1272,16 @@ export function getSchemaCheckDetails(
           schemaCheck(id: $checkId) {
             __typename
             id
+            contextId
+            meta {
+              author
+              commit
+            }
+            baseline {
+              meta {
+                commit
+              }
+            }
             schemaSDL
             previousSchemaSDL
             ... on SuccessfulSchemaCheck {

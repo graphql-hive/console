@@ -86,7 +86,7 @@ function useGitHubAction(): CIRunner {
             commit = event.merge_group.head_sha as string;
             const match = event.merge_group.head_ref?.match(/\/pr-(\d+)-/);
             pullRequestNumber = match?.[1] ?? null;
-            baselineCommit = event.merge_group.base_ref as string;
+            baselineCommit = event.merge_group.base_sha as string;
           }
         } catch {
           // Noop
