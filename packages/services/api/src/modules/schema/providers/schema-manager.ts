@@ -783,6 +783,7 @@ export class SchemaManager {
       cursor: args.cursor,
       transformNode: node => args.transformNode(node),
       filters: args.filters,
+      withSDL: args.withSDL,
       withChanges: args.withChanges,
     });
 
