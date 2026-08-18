@@ -871,6 +871,14 @@ export class SchemaManager {
       schemaCheck.id,
     );
 
+    if (schemaCheck.baselineCompositionErrors !== null) {
+      this.logger.debug(
+        'Check can not be approved due to baseline composition errors. (schemaCheckId=%s)',
+        schemaCheck.id,
+      );
+      return false;
+    }
+
     if (schemaCheck.schemaCompositionErrors !== null) {
       this.logger.debug(
         'Check can not be approved due to composition errors. (schemaCheckId=%s)',
@@ -905,6 +913,14 @@ export class SchemaManager {
     );
 
     for (const contract of contracts) {
+      if (contract.baselineSchemaCompositionErrors !== null) {
+        this.logger.debug(
+          'Contract has baseline composition errors, schema check can not be approved. (schemaCheckId=%s, contractId=%s)',
+          schemaCheck.id,
+          contract.contractId,
+        );
+        return false;
+      }
       if (contract.schemaCompositionErrors !== null) {
         this.logger.debug(
           'Contract has composition errors, schema check can not be approved. (schemaCheckId=%s, contractId=%s)',
