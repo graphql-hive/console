@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 function isGlobPath(path: string) {
   const globPattern = /[*?{}\[\]()]/;
@@ -22,11 +22,11 @@ function parseSingleLocalFilePath(schemaPointer: string) {
   };
 }
 
-const buildShowGitFileCommand = (commit: string, path: string) => `git show ${commit}:${path}`;
-
 function loadGitFile(commit: string, path: string) {
   try {
-    const sdl = execSync(buildShowGitFileCommand(commit, path), { cwd: process.cwd() }).toString();
+    const sdl = execFileSync('git', ['show', `${commit}:${path}`], {
+      cwd: process.cwd(),
+    }).toString();
     return {
       status: 'ok' as const,
       sdl,
