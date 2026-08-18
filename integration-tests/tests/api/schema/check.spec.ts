@@ -2082,6 +2082,10 @@ describe.concurrent('schema check with a baseline service schema', () => {
         schemaCheck: {
           previousSchemaSDL: expect.stringContaining('removedInHead: String'),
           baseline: {
+            sdl: expect.stringContaining('removedInHead: String'),
+            supergraphSdl: expect.stringContaining('removedInHead'),
+            publicSdl: expect.stringContaining('removedInHead'),
+            compositionErrors: null,
             meta: {
               commit: 'baseline-with-removed-field',
             },
@@ -2415,6 +2419,22 @@ describe.concurrent('schema check with a baseline service schema', () => {
         nodes: [{ message: 'Baseline composition failed.' }],
         total: 1,
       },
+      schemaCheck: {
+        baseline: {
+          sdl: expect.stringContaining('@key(fields: "missing")'),
+          supergraphSdl: null,
+          publicSdl: null,
+          compositionErrors: expect.arrayContaining([
+            {
+              message: expect.any(String),
+              path: null,
+            },
+          ]),
+          meta: {
+            commit: 'invalid-baseline-schema',
+          },
+        },
+      },
     });
   });
 });
@@ -2460,6 +2480,10 @@ test.concurrent(
           meta: {
             commit: null,
           },
+          sdl: null,
+          compositionErrors: null,
+          supergraphSdl: null,
+          publicSdl: null,
         },
         previousSchemaSDL: null,
       },

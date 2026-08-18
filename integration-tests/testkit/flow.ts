@@ -1314,6 +1314,13 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
               id
               previousSchemaSDL
               baseline {
+                sdl
+                supergraphSdl
+                publicSdl
+                compositionErrors {
+                  message
+                  path
+                }
                 meta {
                   commit
                 }
@@ -1343,6 +1350,13 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
               id
               previousSchemaSDL
               baseline {
+                sdl
+                supergraphSdl
+                publicSdl
+                compositionErrors {
+                  message
+                  path
+                }
                 meta {
                   commit
                 }

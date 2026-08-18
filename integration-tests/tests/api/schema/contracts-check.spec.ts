@@ -342,6 +342,14 @@ const SchemaCheckQuery = graphql(/* GraphQL */ `
               id
               contractName
               isSuccess
+              baseline {
+                supergraphSdl
+                publicSdl
+                compositionErrors {
+                  message
+                  path
+                }
+              }
               breakingSchemaChanges {
                 nodes {
                   criticality
@@ -484,6 +492,11 @@ test.concurrent(
             node: {
               contractName,
               isSuccess: false,
+              baseline: {
+                supergraphSdl: expect.stringContaining('baseOnly'),
+                publicSdl: expect.stringContaining('baseOnly'),
+                compositionErrors: null,
+              },
               breakingSchemaChanges: {
                 nodes: [
                   {
