@@ -207,6 +207,10 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
       };
     },
     onSubscribe(context) {
+      // In GraphQL.js 16 `onSubscribe` is called even if the schema does not contain a subscription type.
+      // In GraphQL.js 17 there is a new validation rule [`KnownOperationTypes`](https://github.com/graphql/graphql-js/pull/3601)
+      // that prevents `onSubscribe` being called if the schema has no subscription type.
+      // We want to avoid running SDK code here as it would raise an exception in the schema coordinate collection.
       if (!context.args.schema.getSubscriptionType()) {
         return;
       }

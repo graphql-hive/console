@@ -709,7 +709,15 @@ describe('subscription usage reporting', () => {
       },
       body: JSON.stringify({ query: 'subscription { hello }' }),
     });
-    await response.text();
+    expect(await response.text()).toMatchInlineSnapshot(`
+      :
+
+      event: next
+      data: {"errors":[{"message":"Schema is not configured to execute subscription operation.","locations":[{"line":1,"column":1}]}]}
+
+      event: complete
+      data:
+    `);
     expect(response.headers.get('content-type')).toContain('text/event-stream');
 
     // make sure no error occurs
