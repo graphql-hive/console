@@ -320,7 +320,7 @@ test('app:create accepts an Apollo persisted query manifest', async () => {
   expect(result.target?.appDeployment?.documents?.edges.map(edge => edge.node)).toEqual(
     expect.arrayContaining([
       {
-        hash: 'apollo-operation-1',
+        hash: 'sha256:apollo-operation-1',
         body: 'query GetHello { hello }',
       },
       {

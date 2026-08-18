@@ -134,11 +134,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
         }
       }
 
-      manifest = {};
-      for (const [hash, body] of entries) {
-        const normalizedHash = hash.replace(/^[a-z][a-z0-9-]*:/i, '');
-        manifest[normalizedHash] = body;
-      }
+      manifest = Object.fromEntries(entries);
     } else {
       // file is a glob or directory - generate the manifest in-memory
       const globPattern = (() => {
