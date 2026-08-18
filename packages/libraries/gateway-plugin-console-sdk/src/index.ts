@@ -152,7 +152,9 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
           operationCache.set(query, args.document === modifiedDocument || modifiedDocument);
         }
         if (args.document !== modifiedDocument) {
-          setExecuteFn(executionArgs => executeFn({ ...executionArgs, document: modifiedDocument }));
+          setExecuteFn(executionArgs =>
+            executeFn({ ...executionArgs, document: modifiedDocument }),
+          );
         }
       }
 
