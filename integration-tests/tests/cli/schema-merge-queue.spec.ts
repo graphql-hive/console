@@ -23,6 +23,8 @@ test('schema:check parses GitHub merge queue commit information', async ({ expec
     'initial-commit-sha',
     '--service',
     'test',
+    '--url',
+    'http://localhost:6769',
     'fixtures/init-schema.graphql',
   ]);
 
@@ -49,6 +51,8 @@ test('schema:check parses GitHub merge queue commit information', async ({ expec
           'HiveBot',
           '--service',
           'test',
+          '--url',
+          'http://localhost:6769',
           '--contextId',
           'graphql-hive/console#123',
           '--baseline',
