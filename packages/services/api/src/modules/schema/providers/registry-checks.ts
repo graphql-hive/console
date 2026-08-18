@@ -208,7 +208,7 @@ export class RegistryChecks {
    * as the only element that is different is the subgraph that is updated.
    * The rest of the subgraphs are inherited from the previous version, meaning they are the same.
    */
-  async checksum(args: {
+  checksum(args: {
     incoming: {
       schema: SchemaInput;
       contractNames: null | Array<string>;

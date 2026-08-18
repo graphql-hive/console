@@ -244,26 +244,24 @@ export class CompositeModel {
     // These comparisons answer different questions:
     // - baseline -> head determines whether composition and schema diff work can be deduplicated.
     // - registry -> head determines whether the latest registry artifacts can be reused entirely.
-    const [baselineChecksumCheck, registryChecksumCheck] = await Promise.all([
-      baseline
-        ? this.checks.checksum({
-            existing: {
-              schema: baseline,
-              contractNames,
-            },
-            incoming: incomingChecksumInput,
-          })
+    const baselineChecksumCheck = baseline
+      ? this.checks.checksum({
+          existing: {
+            schema: baseline,
+            contractNames,
+          },
+          incoming: incomingChecksumInput,
+        })
+      : null;
+    const registryChecksumCheck = this.checks.checksum({
+      existing: schemaSwapResult?.existing
+        ? {
+            schema: schemaSwapResult.existing,
+            contractNames: latest?.contractNames ?? null,
+          }
         : null,
-      this.checks.checksum({
-        existing: schemaSwapResult?.existing
-          ? {
-              schema: schemaSwapResult.existing,
-              contractNames: latest?.contractNames ?? null,
-            }
-          : null,
-        incoming: incomingChecksumInput,
-      }),
-    ]);
+      incoming: incomingChecksumInput,
+    });
 
     const baselineMatchesHead = baselineChecksumCheck === 'unchanged';
     const registryMatchesHead = registryChecksumCheck === 'unchanged';
@@ -594,7 +592,7 @@ export class CompositeModel {
     const schemas = schemaSwapResult?.schemas ?? [incoming];
     schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
 
-    const checksumCheck = await this.checks.checksum({
+    const checksumCheck = this.checks.checksum({
       existing: schemaSwapResult?.existing
         ? {
             schema: schemaSwapResult.existing,
