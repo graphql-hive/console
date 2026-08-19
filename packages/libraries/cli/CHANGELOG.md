@@ -1,5 +1,47 @@
 # @graphql-hive/cli
 
+## 0.62.0
+
+### Minor Changes
+
+- [#8371](https://github.com/graphql-hive/console/pull/8371)
+  [`48a7822`](https://github.com/graphql-hive/console/commit/48a7822f952e3f46877a8c49669d7fad61069d6c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support uploading an Apollo persisted query
+  manifest file with the `hive app:create` command.
+
+- [#8327](https://github.com/graphql-hive/console/pull/8327)
+  [`6c67f5f`](https://github.com/graphql-hive/console/commit/6c67f5f0751a223bbf4ef05b789d90973cb28075)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support providing a base schema when performaning a
+  schema check. When providing a base schema the diff is generated based on the latest schema
+  version composed with the provided base schema override for the service.
+
+  This helps when running the `hive schema:check` command as part of a merge queue in order to avoid
+  flagging breaking changes that have been approved in the context of a previous merge queue pull
+  request failing the merge queue check.
+
+  Use the `--baseline` CLI argument for referencing either a local file or a file within the Git
+  history.
+
+  ```sh
+  hive schema:check \
+    --target the-guild/hive-console/development \
+    --baseline 43e728ea9:schema.graphqls \
+    --service products \
+    --contextId "hive-console#67" \
+    schema.graphqls
+  ```
+
+  Example using the GitHub integration:
+
+  ```sh
+  hive schema:check \
+    --target the-guild/hive-console/development \
+    --baseline 43e728ea9:schema.graphqls \
+    --service products \
+    --github \
+    schema.graphqls
+  ```
+
 ## 0.61.5
 
 ### Patch Changes

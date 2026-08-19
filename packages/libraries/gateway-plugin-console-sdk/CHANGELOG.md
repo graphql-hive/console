@@ -1,5 +1,13 @@
 # @graphql-hive/gateway-plugin-console-sdk
 
+## 0.1.4
+
+### Patch Changes
+
+- [#8369](https://github.com/graphql-hive/console/pull/8369)
+  [`dc32e0b`](https://github.com/graphql-hive/console/commit/dc32e0b43081f87cf6f41a820e5e6e76cd4aa687)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-yoga package to patch vulnerability
+
 ## 0.1.3
 
 ### Patch Changes
