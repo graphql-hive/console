@@ -272,7 +272,6 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       if (flags.baseline) {
         const baselinePointer = flags.baseline;
         const gitResult = parseBaselineGitFileReference(baselinePointer);
-        baselineSchemaHash = gitResult.status === 'ok' ? gitResult.commit : null;
         const result =
           gitResult.status === 'error'
             ? await loadSchema('first-federation-then-graphql-introspection', baselinePointer, {

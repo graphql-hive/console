@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import path from 'node:path/win32';
 
 function isGlobPath(path: string) {
   const globPattern = /[*?{}\[\]()]/;
@@ -24,7 +25,8 @@ function parseSingleLocalFilePath(schemaPointer: string) {
 
 function loadGitFile(commit: string, path: string) {
   try {
-    const sdl = execFileSync('git', ['show', `${commit}:${path}`], {
+    const gitPath = path.replace(/\\/g, '/');
+    const sdl = execFileSync('git', ['show', `${commit}:${gitPath}`], {
       cwd: process.cwd(),
     }).toString();
     return {
@@ -56,6 +58,13 @@ export function loadSchemaFromGitHistory(filePointer: string, commit: string) {
 }
 
 export function parseBaselineGitFileReference(schemaPointer: string) {
+  // mostly Windows :)
+  if (path.isAbsolute(schemaPointer)) {
+    return {
+      status: 'error' as const,
+    };
+  }
+
   const [maybeCommit, maybeFilePath, ...rest] = schemaPointer.split(':');
   if (!maybeCommit || !maybeFilePath || rest.length) {
     return {
