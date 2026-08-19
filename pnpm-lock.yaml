@@ -338,8 +338,8 @@ importers:
         specifier: ^1.0.0 || ^2.0.0
         version: 2.9.10(graphql@16.9.0)(ioredis@5.10.1)(pino@10.3.0)(ws@8.21.0)
       '@graphql-hive/router-runtime':
-        specifier: ^1.4.0
-        version: 1.4.22(@types/node@25.5.0)(graphql@16.9.0)(ioredis@5.10.1)(pino@10.3.0)
+        specifier: ^1.4.23
+        version: 1.4.23(@types/node@25.5.0)(graphql@16.9.0)(ioredis@5.10.1)(pino@10.3.0)
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.9.0)
@@ -4342,8 +4342,8 @@ packages:
     resolution: {integrity: sha512-KTvconFeSdKejudY6hUrfP8nvkxp+bg2uuNqbIZF1pmlFzjlDHGoUO8qpvKxdmWijXSuEcQBzWnn4rpMkzgC/A==}
     engines: {bun: ^1, node: '>=20'}
 
-  '@graphql-hive/router-runtime@1.4.22':
-    resolution: {integrity: sha512-XDsLCfDlecAGUjO8kVwkXk4iufP/vJ2CH9PCL44tcu/BeOrjo8C4kt9ykI/BUN24/gx4ykNCGIK0D2D5LdQSJA==}
+  '@graphql-hive/router-runtime@1.4.23':
+    resolution: {integrity: sha512-mPzAZFMlRZMpt9fYlOIRQ2zHY+7uGrr9VezAkb3wGuViBepuisDYMstBZT+PiDJOM5rBw/md8mtqUpo01CHkJQ==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
@@ -22679,7 +22679,7 @@ snapshots:
 
   '@graphql-hive/router-query-planner@0.0.38': {}
 
-  '@graphql-hive/router-runtime@1.4.22(@types/node@25.5.0)(graphql@16.9.0)(ioredis@5.10.1)(pino@10.3.0)':
+  '@graphql-hive/router-runtime@1.4.23(@types/node@25.5.0)(graphql@16.9.0)(ioredis@5.10.1)(pino@10.3.0)':
     dependencies:
       '@envelop/core': 5.5.1
       '@graphql-hive/router-query-planner': 0.0.38
@@ -23135,7 +23135,7 @@ snapshots:
       '@envelop/core': 5.6.0
       '@envelop/instrumentation': 1.0.0
       '@graphql-hive/logger': 1.1.1(pino@10.3.0)
-      '@graphql-mesh/cross-helpers': 0.4.14(graphql@16.9.0)
+      '@graphql-mesh/cross-helpers': 0.4.16(graphql@16.9.0)
       '@graphql-mesh/transport-common': 1.0.20(graphql@16.9.0)(ioredis@5.10.1)(pino@10.3.0)
       '@graphql-mesh/types': 0.105.1(graphql@16.9.0)(ioredis@5.10.1)
       '@graphql-mesh/utils': 0.104.38(graphql@16.9.0)(ioredis@5.10.1)
@@ -23487,8 +23487,8 @@ snapshots:
 
   '@graphql-mesh/types@0.104.30(graphql@16.9.0)(ioredis@5.10.1)':
     dependencies:
-      '@graphql-hive/pubsub': 2.1.1(ioredis@5.10.1)
-      '@graphql-tools/batch-delegate': 10.0.28(graphql@16.9.0)
+      '@graphql-hive/pubsub': 2.2.1(ioredis@5.10.1)
+      '@graphql-tools/batch-delegate': 10.0.29(graphql@16.9.0)
       '@graphql-tools/delegate': 12.1.1(graphql@16.9.0)
       '@graphql-tools/utils': 11.2.2(graphql@16.9.0)
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.9.0)
@@ -23497,6 +23497,7 @@ snapshots:
       graphql: 16.9.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@nats-io/jetstream'
       - '@nats-io/nats-core'
       - ioredis
 
@@ -23570,10 +23571,10 @@ snapshots:
       '@graphql-mesh/cross-helpers': 0.4.16(graphql@16.9.0)
       '@graphql-mesh/string-interpolation': 0.5.18(graphql@16.9.0)
       '@graphql-mesh/types': 0.104.30(graphql@16.9.0)(ioredis@5.10.1)
-      '@graphql-tools/batch-delegate': 10.0.28(graphql@16.9.0)
+      '@graphql-tools/batch-delegate': 10.0.29(graphql@16.9.0)
       '@graphql-tools/delegate': 12.1.1(graphql@16.9.0)
       '@graphql-tools/utils': 11.2.2(graphql@16.9.0)
-      '@graphql-tools/wrap': 11.1.20(graphql@16.9.0)
+      '@graphql-tools/wrap': 11.1.21(graphql@16.9.0)
       '@whatwg-node/disposablestack': 0.0.6
       '@whatwg-node/fetch': 0.10.13
       '@whatwg-node/promise-helpers': 1.3.2
@@ -23585,6 +23586,7 @@ snapshots:
       tiny-lru: 13.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@nats-io/jetstream'
       - '@nats-io/nats-core'
       - ioredis
 

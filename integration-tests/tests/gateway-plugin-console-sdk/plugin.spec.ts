@@ -1,5 +1,11 @@
 import { AddressInfo } from 'node:net';
-import { DocumentNode, GraphQLError, parse } from 'graphql';
+import {
+  GraphQLError,
+  parse,
+  type DocumentNode,
+  type FieldNode,
+  type ValidationContext,
+} from 'graphql';
 import { createLogger, createYoga } from 'graphql-yoga';
 import { pollFor, readOperationsStats } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
@@ -8,7 +14,7 @@ import { getServiceHost } from 'testkit/utils';
 import { describe, expect, test } from 'vitest';
 import { buildSubgraphSchema } from '@apollo/subgraph';
 import { useHive } from '@graphql-hive/gateway-plugin-console-sdk';
-import { createGatewayRuntime } from '@graphql-hive/gateway-runtime';
+import { createGatewayRuntime, GatewayPlugin } from '@graphql-hive/gateway-runtime';
 import { unifiedGraphHandler, useQueryPlan } from '@graphql-hive/router-runtime';
 import { createServer } from '@hive/service-common';
 import { composeServices, ServiceDefinition } from '@theguild/federation-composition';
@@ -57,6 +63,7 @@ async function setup(
     };
   },
   gatewayType: 'js' | 'rust',
+  additionalPlugins?: GatewayPlugin[],
 ) {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
@@ -85,6 +92,7 @@ async function setup(
       graphqlEndpoint: 'http://noop/',
       applicationUrl: 'http://noop/',
     },
+    logger: createLogger('debug') as any,
   });
 
   const services = await Promise.all(
@@ -101,13 +109,13 @@ async function setup(
   expect(supergraph.errors).toBeUndefined();
   const jsGateway = createGatewayRuntime({
     supergraph: supergraph.supergraphSdl!,
-    plugins: () => [plugin],
+    plugins: () => [plugin, ...(additionalPlugins ?? [])],
   });
 
   const rustGateway = createGatewayRuntime({
     unifiedGraphHandler: unifiedGraphHandler as any,
     supergraph: supergraph.supergraphSdl!,
-    plugins: () => [plugin, useQueryPlan() as any],
+    plugins: () => [plugin, useQueryPlan() as any, ...(additionalPlugins ?? [])],
   });
 
   return {
@@ -316,6 +324,12 @@ describe.each(['js', 'rust'] as const)('GraphQL Hive Plugin (%s)', gatewayType =
     });
   });
 
+  /**
+   * The unifiedGraphHandler parses and generates the query plan earlier in this flow. The document
+   * passed to the subgraph is then already determined ahead of time. To support rust, it's necessary
+   * to either address the root cause and somehow modify the document prior to planning, or
+   * to add the hive typenames on subgraph execute every time.
+   */
   test.skipIf(gatewayType === 'rust')('supports abstract type', async () => {
     const subgraphs = {
       products: {
@@ -332,12 +346,17 @@ describe.each(['js', 'rust'] as const)('GraphQL Hive Plugin (%s)', gatewayType =
           type GoodieBag implements Product @key(fields: "id") {
             id: ID!
             price: Int
+            contents: String
           }
         `),
         resolvers: {
           Query: {
             product: () => {
-              return { __typename: 'GoodieBag', id: 1, price: 20.2 };
+              return {
+                __typename: 'GoodieBag',
+                id: 1,
+                price: 20.2,
+              };
             },
           },
         },
@@ -615,6 +634,111 @@ describe.each(['js', 'rust'] as const)('GraphQL Hive Plugin (%s)', gatewayType =
         stats.target?.schemaCoordinateStats.totalFailures === 1 &&
         operationsStatsResult.target?.operationsStats.operations.edges[0].node.count === 1
       );
+    });
+  });
+
+  test('errors thrown in the gateway are tracked', async () => {
+    const subgraphs = {
+      products: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            product: Product
+          }
+
+          type Product @key(fields: "id") {
+            id: ID!
+            price: Int
+          }
+        `),
+        resolvers: {
+          Query: {
+            product: () => {
+              return { id: 1, price: 20.2 };
+            },
+          },
+        },
+      },
+      users: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            users: [User]
+          }
+          type User {
+            id: ID!
+            name: String
+          }
+        `),
+        resolvers: {
+          Query: {
+            users: () => [{ id: 2 }],
+          },
+          User: {
+            name: () => {
+              'j';
+            },
+          },
+        },
+      },
+    };
+
+    const { readErrorCodes, gateway, waitForRequestsCollected } = await setup(
+      subgraphs,
+      gatewayType,
+      [
+        {
+          onValidate({ addValidationRule }) {
+            addValidationRule((context: ValidationContext) => {
+              return {
+                Field(node: FieldNode) {
+                  if (node.name.value === 'product') {
+                    context.reportError(
+                      new GraphQLError('hm', {
+                        nodes: [node],
+                        extensions: { code: 'NOPE' },
+                        path: ['product'], // assumes "path" is set so it can be attributed to a coordinate.
+                      }),
+                    );
+                    return null;
+                  }
+                },
+              };
+            });
+          },
+        },
+      ],
+    );
+
+    const request = new Request('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'x-graphql-client-name': 'app-name',
+        'x-graphql-client-version': 'app-version',
+        'content-type': 'application/json',
+        accept: 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+          { product { id } }
+        `,
+      }),
+    });
+
+    const usageCollected = waitForRequestsCollected(1);
+    await gateway.handle(request);
+    await usageCollected;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const period = {
+      from: yesterday.toISOString(),
+      to: new Date().toISOString(),
+    };
+
+    await pollFor(async () => {
+      const errorCodes = await readErrorCodes('Query.product', period);
+      const code = errorCodes.target?.schemaCoordinateStats?.errorCodes?.edges?.[0]?.node?.code;
+
+      return code === 'NOPE';
     });
   });
 
