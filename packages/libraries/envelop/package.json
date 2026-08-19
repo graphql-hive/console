@@ -50,7 +50,7 @@
     "@graphql-hive/core": "workspace:*"
   },
   "devDependencies": {
-    "@envelop/types": "5.0.0"
+    "@envelop/types": "5.2.1"
   },
   "publishConfig": {
     "access": "public",
