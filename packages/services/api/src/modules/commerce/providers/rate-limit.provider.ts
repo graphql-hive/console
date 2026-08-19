@@ -1,5 +1,5 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import LRU from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import { Logger } from '../../shared/providers/logger';
 import {
   COMMERCE_TRPC_CLIENT,
@@ -17,10 +17,10 @@ const RETENTION_CACHE_TTL_IN_SECONDS = 120;
 })
 export class RateLimitProvider {
   private logger: Logger;
-  private retentionCache = new LRU<string, number>({
+  private retentionCache = new LRUCache<string, number>({
     max: 500,
     ttl: RETENTION_CACHE_TTL_IN_SECONDS * 1000,
-    stale: false,
+    allowStale: false,
   });
 
   constructor(
