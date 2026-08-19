@@ -9,7 +9,7 @@
     "@apollo/subgraph": "2.13.2",
     "@theguild/federation-composition": "0.24.1",
     "graphql": "16.9.0",
-    "graphql-yoga": "5.21.3"
+    "graphql-yoga": "5.22.0"
   },
   "devDependencies": {
     "wrangler": "3.114.17"

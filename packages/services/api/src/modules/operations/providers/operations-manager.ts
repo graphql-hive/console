@@ -1,6 +1,6 @@
 import DataLoader from 'dataloader';
 import { Injectable, Scope } from 'graphql-modules';
-import LRU from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import { traceFn } from '@hive/service-common';
 import type { DateRange } from '../../../shared/entities';
 import type { Listify, Optional } from '../../../shared/helpers';
@@ -16,10 +16,10 @@ import { Storage } from '../../shared/providers/storage';
 import { FieldMetricsState, OperationsReader } from './operations-reader';
 
 const DAY_IN_MS = 86_400_000;
-const lru = new LRU<string, boolean>({
+const lru = new LRUCache<string, boolean>({
   max: 500,
   ttl: 30 * DAY_IN_MS,
-  stale: false,
+  allowStale: false,
 });
 
 async function hasCollectedOperationsCached(target: string, checkFn: () => Promise<boolean>) {

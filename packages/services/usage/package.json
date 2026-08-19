@@ -21,7 +21,7 @@
     "dotenv": "16.4.7",
     "graphql": "16.9.0",
     "kafkajs": "2.2.4",
-    "lru-cache": "11.0.2",
+    "lru-cache": "11.5.2",
     "p-limit": "6.2.0",
     "pino-pretty": "11.3.0",
     "reflect-metadata": "0.2.2",
