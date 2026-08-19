@@ -3,6 +3,7 @@ import type {
   SuccessfulSchemaCheckMapper,
 } from '../module.graphql.mappers';
 import { Injectable, Scope } from 'graphql-modules';
+import type * as GraphQLSchema from '../../../__generated__/types';
 import { formatNumber } from '../lib/number-formatting';
 import { SchemaManager } from './schema-manager';
 import { SchemaVersionStore } from './schema-version-store';
@@ -72,6 +73,10 @@ export class SchemaCheckManager {
   }
 
   async getPreviousSchemaSDL(schemaCheck: SchemaCheck) {
+    if (schemaCheck.baselineSchemaSDL !== null) {
+      return schemaCheck.baselineSchemaSDL;
+    }
+
     if (schemaCheck.serviceName === null || schemaCheck.schemaVersionId === null) {
       return null;
     }
@@ -107,6 +112,44 @@ export class SchemaCheckManager {
           schemaCheck.conditionalBreakingChangeMetadata.usage.totalRequestCount,
         ),
       },
+    };
+  }
+
+  async getGraphQLSchemaCheckBaseline(
+    schemaCheck: SchemaCheck,
+  ): Promise<GraphQLSchema.SchemaCheckBaseline | null> {
+    const schemaVersion = await this.getSchemaVersion(schemaCheck);
+
+    if (schemaCheck.baselineSchemaSDL) {
+      return {
+        __typename: 'SchemaCheckBaseline',
+        meta: {
+          commit: schemaCheck.baselineSchemaHash,
+        },
+        sdl: schemaCheck.baselineSchemaSDL,
+        publicSdl: schemaCheck.baselinePublicSDL,
+        supergraphSdl: schemaCheck.baselineSupergraphSDL,
+        compositionErrors: schemaCheck.baselineCompositionErrors,
+      };
+    }
+
+    const service =
+      schemaCheck.serviceName && schemaVersion
+        ? await this.schemaVersions.getSchemaForSchemaVersionIdAndName(
+            schemaVersion.id,
+            schemaCheck.serviceName,
+          )
+        : null;
+
+    return {
+      __typename: 'SchemaCheckBaseline',
+      meta: {
+        commit: service?.commit,
+      },
+      sdl: service?.sdl ?? null,
+      publicSdl: schemaVersion?.compositeSchemaSDL ?? null,
+      supergraphSdl: schemaVersion?.supergraphSDL ?? null,
+      compositionErrors: schemaVersion?.schemaCompositionErrors ?? null,
     };
   }
 }

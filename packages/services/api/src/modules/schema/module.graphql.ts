@@ -881,10 +881,37 @@ export default gql`
     commit: String!
   }
 
+  input SchemaCheckBaselineInput {
+    """
+    The service schema SDL.
+    """
+    sdl: String!
+    """
+    An identifier for the supplied baseline schema, e.g. a Git SHA
+    """
+    hash: String
+  }
+
   input SchemaCheckInput {
     target: TargetReferenceInput
     service: ID
+    """
+    The schema SDL after applying the proposed change.
+    """
     sdl: String!
+
+    """
+    The baseline service SDL before applying the proposed changes.
+
+    When provided for a distributed schema, Hive composes this service SDL
+    with the other services currently stored in the registry and compares
+    that composition against the composition produced from 'SchemaCheckInput.sdl'.
+
+    Intended for checks where the comparison baseline differs from the
+    latest schema stored in the registry, such as GitHub Merge Queue builds.
+    """
+    baseline: SchemaCheckBaselineInput = null
+
     github: GitHubSchemaCheckInput
     meta: SchemaCheckMetaInput
     """
@@ -1428,7 +1455,13 @@ export default gql`
     """
     The previous schema SDL. For composite schemas this is the service.
     """
-    previousSchemaSDL: String @tag(name: "public")
+    previousSchemaSDL: String
+      @tag(name: "public")
+      @deprecated(reason: "Please use the 'SchemaCheck.baseline' field instead.")
+    """
+    The schema used as the baseline for this check.
+    """
+    baseline: SchemaCheckBaseline
     """
     The name of the service that owns the schema. Is null for non composite project types.
     """
@@ -1487,6 +1520,24 @@ export default gql`
   }
 
   """
+  The contract schema used as the baseline for this check.
+  """
+  type ContractCheckBaseline {
+    """
+    The supergraph SDL of the baseline contract schema, if composition succeeded.
+    """
+    supergraphSdl: String
+    """
+    The public SDL of the baseline contract schema, if composition succeeded.
+    """
+    publicSdl: String
+    """
+    Composition errors produced by the baseline contract schema.
+    """
+    compositionErrors: [SchemaError!]
+  }
+
+  """
   Schema check result for contracts
   """
   type ContractCheck {
@@ -1522,6 +1573,11 @@ export default gql`
     The contract version against this check was performed.
     """
     contractVersion: ContractVersion @tag(name: "public")
+
+    """
+    The contract schema used as the baseline for this check.
+    """
+    baseline: ContractCheckBaseline
   }
 
   type ContractCheckEdge {
@@ -1569,6 +1625,43 @@ export default gql`
   }
 
   """
+  Metadata associated with a schema check baseline.
+  """
+  type SchemaCheckBaselineMeta {
+    """
+    The caller-supplied identifier for the baseline, such as a Git commit SHA.
+    """
+    commit: String
+  }
+
+  """
+  The schema used as the baseline for a schema check.
+  """
+  type SchemaCheckBaseline {
+    """
+    The service SDL of the baseline schema.
+    """
+    sdl: String
+    """
+    The supergraph SDL of the baseline schema, if composition succeeded.
+    """
+    supergraphSdl: String
+    """
+    The public SDL of the baseline schema, if composition succeeded.
+    """
+    publicSdl: String
+    """
+    Composition errors produced by the baseline schema.
+    """
+    compositionErrors: [SchemaError!]
+
+    """
+    Metadata associated with the baseline schema.
+    """
+    meta: SchemaCheckBaselineMeta!
+  }
+
+  """
   A successful schema check.
   """
   type SuccessfulSchemaCheck implements SchemaCheck {
@@ -1585,7 +1678,13 @@ export default gql`
     """
     The previous schema SDL. For composite schemas this is the service.
     """
-    previousSchemaSDL: String @tag(name: "public")
+    previousSchemaSDL: String
+      @tag(name: "public")
+      @deprecated(reason: "Please use the 'SchemaCheck.baseline' field instead.")
+    """
+    The schema used as the baseline for this check.
+    """
+    baseline: SchemaCheckBaseline
     """
     The name of the service that owns the schema. Is null for non composite project types.
     """
@@ -1686,7 +1785,13 @@ export default gql`
     """
     The previous schema SDL. For composite schemas this is the service.
     """
-    previousSchemaSDL: String @tag(name: "public")
+    previousSchemaSDL: String
+      @tag(name: "public")
+      @deprecated(reason: "Please use the 'SchemaCheck.baseline' field instead.")
+    """
+    The schema used as the baseline for this check.
+    """
+    baseline: SchemaCheckBaseline
     """
     The name of the service that owns the schema. Is null for non composite project types.
     """

@@ -1272,6 +1272,16 @@ export function getSchemaCheckDetails(
           schemaCheck(id: $checkId) {
             __typename
             id
+            contextId
+            meta {
+              author
+              commit
+            }
+            baseline {
+              meta {
+                commit
+              }
+            }
             schemaSDL
             previousSchemaSDL
             ... on SuccessfulSchemaCheck {
@@ -1312,6 +1322,19 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
             schemaCheck {
               __typename
               id
+              previousSchemaSDL
+              baseline {
+                sdl
+                supergraphSdl
+                publicSdl
+                compositionErrors {
+                  message
+                  path
+                }
+                meta {
+                  commit
+                }
+              }
               schemaVersion {
                 id
               }
@@ -1335,6 +1358,19 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
             }
             schemaCheck {
               id
+              previousSchemaSDL
+              baseline {
+                sdl
+                supergraphSdl
+                publicSdl
+                compositionErrors {
+                  message
+                  path
+                }
+                meta {
+                  commit
+                }
+              }
             }
           }
         }

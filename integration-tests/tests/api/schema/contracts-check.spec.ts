@@ -1,4 +1,5 @@
 import { ProjectType } from 'testkit/gql/graphql';
+import { checkSchema } from '../../../testkit/flow';
 import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
@@ -341,6 +342,14 @@ const SchemaCheckQuery = graphql(/* GraphQL */ `
               id
               contractName
               isSuccess
+              baseline {
+                supergraphSdl
+                publicSdl
+                compositionErrors {
+                  message
+                  path
+                }
+              }
               breakingSchemaChanges {
                 nodes {
                   criticality
@@ -364,6 +373,144 @@ const SchemaCheckQuery = graphql(/* GraphQL */ `
     }
   }
 `);
+
+test.concurrent(
+  'schema check contract changes are compared against the provided baseline SDL',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(
+      ProjectType.Federation,
+    );
+    const token = await createTargetAccessToken({});
+    const service = 'products';
+    const contractName = 'public-products';
+
+    await token
+      .publishSchema({
+        service,
+        url: 'http://products.local',
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@tag"])
+
+          type Query {
+            product: Product @tag(name: "public")
+          }
+
+          type Product @key(fields: "id") @tag(name: "public") {
+            id: ID!
+            stable: String @tag(name: "public")
+            registryOnly: String @tag(name: "public")
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const createContractResult = await execute({
+      document: CreateContractMutation,
+      variables: {
+        input: {
+          target: { byId: target.id },
+          contractName,
+          removeUnreachableTypesFromPublicApiSchema: true,
+          includeTags: ['public'],
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(createContractResult.createContract.error).toBeNull();
+
+    const checkResult = await checkSchema(
+      {
+        service,
+        baseline: {
+          hash: 'baseline-commit-sha',
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@tag"])
+
+            type Query {
+              product: Product @tag(name: "public")
+            }
+
+            type Product @key(fields: "id") @tag(name: "public") {
+              id: ID!
+              stable: String @tag(name: "public")
+              baseOnly: String @tag(name: "public")
+            }
+          `,
+        },
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@tag"])
+
+          type Query {
+            product: Product @tag(name: "public")
+          }
+
+          type Product @key(fields: "id") @tag(name: "public") {
+            id: ID!
+            stable: String @tag(name: "public")
+          }
+        `,
+      },
+      token.secret,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error(`Expected SchemaCheckError, got ${checkResult.schemaCheck.__typename}`);
+    }
+
+    const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Missing schema check id.');
+    }
+
+    const schemaCheck = await execute({
+      document: SchemaCheckQuery,
+      variables: {
+        selector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+        id: schemaCheckId,
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(schemaCheck.target?.schemaCheck).toMatchObject({
+      __typename: 'FailedSchemaCheck',
+      contractChecks: {
+        edges: [
+          {
+            node: {
+              contractName,
+              isSuccess: false,
+              baseline: {
+                supergraphSdl: expect.stringContaining('baseOnly'),
+                publicSdl: expect.stringContaining('baseOnly'),
+                compositionErrors: null,
+              },
+              breakingSchemaChanges: {
+                nodes: [
+                  {
+                    message: "Field 'baseOnly' was removed from object type 'Product'",
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    });
+  },
+);
 
 test.concurrent(
   'approve failed schema check that has breaking change in contract check -> updates the status to successful and attaches meta information to the breaking change',
@@ -1312,6 +1459,156 @@ test.concurrent(
       id: expect.any(String),
       canBeApproved: false,
       canBeApprovedByViewer: false,
+    });
+
+    const mutationResult = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(mutationResult).toEqual({
+      approveFailedSchemaCheck: {
+        ok: null,
+        error: {
+          message: 'Schema check has composition errors.',
+        },
+      },
+    });
+  },
+);
+
+test.concurrent(
+  'schema check that has baseline composition errors in contract check can not be approved',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(
+      ProjectType.Federation,
+    );
+    const token = await createTargetAccessToken({});
+    const service = 'products';
+    const contractName = 'public-products';
+
+    await token
+      .publishSchema({
+        service,
+        url: 'http://products.local',
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+          type Query {
+            product: String @tag(name: "public")
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const createContractResult = await execute({
+      document: CreateContractMutation,
+      variables: {
+        input: {
+          target: { byId: target.id },
+          contractName,
+          removeUnreachableTypesFromPublicApiSchema: true,
+          includeTags: ['public'],
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(createContractResult.createContract.error).toBeNull();
+
+    const checkResult = await checkSchema(
+      {
+        service,
+        baseline: {
+          hash: 'baseline-with-invalid-contract',
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+            type Query {
+              product: String
+              removedInHead: String
+            }
+          `,
+        },
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+          type Query {
+            product: String @tag(name: "public")
+          }
+        `,
+      },
+      token.secret,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error(`Expected SchemaCheckError, got ${checkResult.schemaCheck.__typename}`);
+    }
+
+    const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Missing schema check id.');
+    }
+
+    const schemaCheck = await execute({
+      document: SchemaCheckQuery,
+      variables: {
+        selector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+        id: schemaCheckId,
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(schemaCheck.target?.schemaCheck).toMatchObject({
+      __typename: 'FailedSchemaCheck',
+      canBeApproved: false,
+      canBeApprovedByViewer: false,
+      breakingSchemaChanges: {
+        nodes: [
+          {
+            message: "Field 'removedInHead' was removed from object type 'Query'",
+            path: ['Query', 'removedInHead'],
+          },
+        ],
+      },
+      contractChecks: {
+        edges: [
+          {
+            node: {
+              contractName,
+              isSuccess: false,
+              baseline: {
+                compositionErrors: expect.arrayContaining([
+                  {
+                    message: expect.any(String),
+                    path: null,
+                  },
+                ]),
+              },
+            },
+          },
+        ],
+      },
     });
 
     const mutationResult = await execute({

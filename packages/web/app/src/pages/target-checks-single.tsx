@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import {
+  ArrowRight,
   BadgeCheck,
   ChevronDown,
   ChevronUp,
@@ -13,6 +14,7 @@ import { useMutation, useQuery } from 'urql';
 import { SchemaEditor } from '@/components/schema-editor';
 import {
   ChangesBlock,
+  CompositionErrorsList,
   CompositionErrorsSection,
   labelize,
   NoGraphChanges,
@@ -401,13 +403,21 @@ const DefaultSchemaView_SchemaCheckFragment = graphql(`
   fragment DefaultSchemaView_SchemaCheckFragment on SchemaCheck {
     id
     schemaSDL
-    previousSchemaSDL
     serviceName
     hasSchemaCompositionErrors
-    schemaVersion {
-      id
-      supergraph
+    baseline {
       sdl
+      publicSdl
+      supergraphSdl
+      compositionErrors {
+        message
+      }
+      meta {
+        commit
+      }
+    }
+    meta {
+      commit
     }
     ... on SuccessfulSchemaCheck {
       compositeSchemaSDL
@@ -502,8 +512,8 @@ function DefaultSchemaView(props: {
     testId: 'schema-view-btn',
     value: 'schema',
     icon: <DiffIcon className="h-5 w-auto flex-none" />,
-    label: 'Schema',
-    tooltip: 'Schema Diff',
+    label: 'Public Schema',
+    tooltip: 'Public Schema',
     isDisabled: !schemaCheck.compositeSchemaSDL,
   });
 
@@ -562,7 +572,15 @@ function DefaultSchemaView(props: {
               !schemaCheck.safeSchemaChanges?.edges?.length &&
               !schemaCheck.breakingSchemaChanges?.edges?.length &&
               !schemaCheck.schemaPolicyErrors?.edges?.length &&
-              !schemaCheck.hasSchemaCompositionErrors && <NoGraphChanges />}
+              !schemaCheck.hasSchemaCompositionErrors &&
+              !schemaCheck.baseline?.compositionErrors?.length && <NoGraphChanges />}
+            {schemaCheck.baseline?.compositionErrors?.length ? (
+              <CompositionErrorsList
+                title="Baseline Composition Errors"
+                description="The supplied baseline could not be composed, no schema diff could be performed."
+                errors={schemaCheck.baseline.compositionErrors}
+              />
+            ) : null}
             {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.compositionErrors && (
               <CompositionErrorsSection compositionErrors={schemaCheck.compositionErrors} />
             )}
@@ -618,21 +636,40 @@ function DefaultSchemaView(props: {
         )}
         {selectedView === 'service' && (
           <DiffEditor
-            before={schemaCheck.previousSchemaSDL ?? null}
+            title={
+              schemaCheck.serviceName ? (
+                <span className="flex items-center gap-1">
+                  {schemaCheck.baseline?.meta ? (
+                    <>
+                      <span className="font-mono">
+                        {schemaCheck.serviceName}@
+                        {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                      </span>
+                      <ArrowRight className="inline size-3" />
+                    </>
+                  ) : null}
+                  <span className="font-mono">
+                    {schemaCheck.serviceName}@
+                    {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                  </span>
+                </span>
+              ) : undefined
+            }
+            before={schemaCheck.baseline?.sdl ?? null}
             after={schemaCheck.schemaSDL}
             downloadFileName="service.graphqls"
           />
         )}
         {selectedView === 'schema' && (
           <DiffEditor
-            before={schemaCheck.schemaVersion?.sdl ?? null}
+            before={schemaCheck.baseline?.publicSdl ?? null}
             after={schemaCheck.compositeSchemaSDL ?? null}
             downloadFileName="schema.graphqls"
           />
         )}
         {selectedView === 'supergraph' && (
           <DiffEditor
-            before={schemaCheck?.schemaVersion?.supergraph ?? null}
+            before={schemaCheck?.baseline?.supergraphSdl ?? null}
             after={schemaCheck?.supergraphSDL ?? null}
             downloadFileName="supergraph.graphqls"
           />
@@ -679,10 +716,12 @@ const ContractCheckView_ContractCheckFragment = graphql(`
     }
     compositeSchemaSDL
     supergraphSDL
-    contractVersion {
-      id
-      compositeSchemaSDL
-      supergraphSDL
+    baseline {
+      publicSdl
+      supergraphSdl
+      compositionErrors {
+        message
+      }
     }
   }
 `);
@@ -721,8 +760,8 @@ function ContractCheckView(props: {
     {
       value: 'schema',
       icon: <DiffIcon className="h-5 w-auto flex-none" />,
-      label: 'Schema',
-      tooltip: 'Schema',
+      label: 'Public Schema',
+      tooltip: 'Public Schema',
       disabledReason: !contractCheck.compositeSchemaSDL && (
         <>Composition did not succeed. No public schema SDL available.</>
       ),
@@ -765,6 +804,13 @@ function ContractCheckView(props: {
       <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
+            {contractCheck.baseline?.compositionErrors?.length ? (
+              <CompositionErrorsList
+                title="Baseline Composition Errors"
+                description="The supplied contract baseline could not be composed, no schema diff could be performed."
+                errors={contractCheck.baseline.compositionErrors}
+              />
+            ) : null}
             {contractCheck.schemaCompositionErrors && (
               <CompositionErrorsSection compositionErrors={contractCheck.schemaCompositionErrors} />
             )}
@@ -797,7 +843,8 @@ function ContractCheckView(props: {
             )}
             {!contractCheck.breakingSchemaChanges &&
             !contractCheck.safeSchemaChanges &&
-            !contractCheck.schemaCompositionErrors ? (
+            !contractCheck.schemaCompositionErrors &&
+            !contractCheck.baseline?.compositionErrors?.length ? (
               <NoGraphChanges />
             ) : (
               <ConditionalBreakingChangesMetadataSection schemaCheck={schemaCheck} />
@@ -806,14 +853,14 @@ function ContractCheckView(props: {
         )}
         {selectedView === 'schema' && (
           <DiffEditor
-            before={contractCheck?.contractVersion?.compositeSchemaSDL ?? null}
+            before={contractCheck?.baseline?.publicSdl ?? null}
             after={contractCheck.compositeSchemaSDL ?? null}
             downloadFileName="schema.graphqls"
           />
         )}
         {selectedView === 'supergraph' && (
           <DiffEditor
-            before={contractCheck?.contractVersion?.supergraphSDL ?? null}
+            before={contractCheck?.baseline?.supergraphSdl ?? null}
             after={contractCheck?.supergraphSDL ?? null}
             downloadFileName="supergraph.graphqls"
           />

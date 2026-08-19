@@ -301,4 +301,32 @@ export class ContractsManager {
       contractCheck.breakingSchemaChanges?.length || contractCheck.safeSchemaChanges?.length
     );
   }
+
+  async getContractBaselineForContractCheck(
+    contractCheck: ContractCheck,
+  ): Promise<GraphQLSchema.ContractCheckBaseline | null> {
+    if (
+      contractCheck.baselineCompositeSchemaSdl ||
+      contractCheck.baselineSupergraphSdl ||
+      contractCheck.baselineSchemaCompositionErrors
+    ) {
+      return {
+        publicSdl: contractCheck.baselineCompositeSchemaSdl,
+        supergraphSdl: contractCheck.baselineSupergraphSdl,
+        compositionErrors: contractCheck.baselineSchemaCompositionErrors,
+      };
+    }
+
+    const contractVersion = await this.getContractVersionForContractCheck(contractCheck);
+
+    if (!contractVersion) {
+      return null;
+    }
+
+    return {
+      publicSdl: contractVersion.compositeSchemaSdl,
+      supergraphSdl: contractVersion.supergraphSdl,
+      compositionErrors: contractVersion.schemaCompositionErrors,
+    };
+  }
 }

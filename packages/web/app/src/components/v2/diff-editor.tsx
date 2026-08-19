@@ -11,6 +11,7 @@ import { ArrowDownIcon, ArrowUpIcon, DownloadIcon } from '@radix-ui/react-icons'
 import { Spinner } from '../ui/spinner';
 
 export const DiffEditor = (props: {
+  title?: ReactElement;
   before: string | null;
   after: string | null;
   downloadFileName?: string;
@@ -68,10 +69,12 @@ export const DiffEditor = (props: {
     });
   }
 
+  const title = props?.title ?? 'Diff View';
+
   return (
     <div className="w-full">
       <div className="border-neutral-3 mb-2 flex items-center justify-between border-b px-2 py-1">
-        <div className="px-2 font-bold">Diff View</div>
+        <div className="px-2 font-bold">{title}</div>
         <div className="ml-auto flex h-[36px] items-center px-2">
           {props.after && props.downloadFileName && (
             <DownloadButton fileName={props.downloadFileName} contents={props.after} />
