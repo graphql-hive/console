@@ -24,7 +24,7 @@
     "@fastify/formbody": "8.0.2",
     "@graphql-hive/plugin-opentelemetry": "1.4.35",
     "@graphql-hive/yoga": "workspace:*",
-    "@graphql-tools/merge": "9.1.1",
+    "@graphql-tools/merge": "9.2.3",
     "@graphql-yoga/plugin-response-cache": "3.24.0",
     "@graphql-yoga/redis-event-target": "3.0.3",
     "@hive/api": "workspace:*",
