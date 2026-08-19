@@ -1,5 +1,18 @@
 # @graphql-hive/yoga
 
+## 0.49.4
+
+### Patch Changes
+
+- [#8380](https://github.com/graphql-hive/console/pull/8380)
+  [`988b9b4`](https://github.com/graphql-hive/console/commit/988b9b4b851c5f528dabc3196198fab25234db3c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Do not attempt to report a subscription operation
+  via usage reporting if the schema has no subscription root type.
+
+- [#8369](https://github.com/graphql-hive/console/pull/8369)
+  [`dc32e0b`](https://github.com/graphql-hive/console/commit/dc32e0b43081f87cf6f41a820e5e6e76cd4aa687)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-yoga package to patch vulnerability
+
 ## 0.49.3
 
 ### Patch Changes

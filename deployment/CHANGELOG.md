@@ -1,5 +1,36 @@
 # hive
 
+## 11.12.0
+
+### Minor Changes
+
+- [#8327](https://github.com/graphql-hive/console/pull/8327)
+  [`6c67f5f`](https://github.com/graphql-hive/console/commit/6c67f5f0751a223bbf4ef05b789d90973cb28075)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support providing a base schema when performaning a
+  schema check.
+
+- [#8373](https://github.com/graphql-hive/console/pull/8373)
+  [`2d39e87`](https://github.com/graphql-hive/console/commit/2d39e87bdb67fdc0a4ad703f2a131d4c6026f0ea)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Allow colon characters (`:`) as part of the
+  persisted documents hash. This allows uploading a persisted document manifest that contains a hash
+  prefixed with the algorithm, e.g. `sha1:c9a2a17494906eeb5fff2c81a1980ae1c0b6650f`.
+
+### Patch Changes
+
+- [#8376](https://github.com/graphql-hive/console/pull/8376)
+  [`b08a92c`](https://github.com/graphql-hive/console/commit/b08a92c7e9df356c329ca6f5b96b3be41abc8646)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix internal server error when promoting a monolith
+  schema to an empty target.
+
+- [#8377](https://github.com/graphql-hive/console/pull/8377)
+  [`d2a20f7`](https://github.com/graphql-hive/console/commit/d2a20f7d64f118d9fd18241c656ddfc1bc52d4c1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Bump `otel-collector` docker image otel collector
+  version from `3.14.10` to `3.22`.
+
+- [#8369](https://github.com/graphql-hive/console/pull/8369)
+  [`dc32e0b`](https://github.com/graphql-hive/console/commit/dc32e0b43081f87cf6f41a820e5e6e76cd4aa687)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-yoga package to patch vulnerability
+
 ## 11.11.1
 
 ### Patch Changes
