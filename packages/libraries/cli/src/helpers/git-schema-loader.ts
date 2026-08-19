@@ -25,8 +25,7 @@ function parseSingleLocalFilePath(schemaPointer: string) {
 
 function loadGitFile(commit: string, path: string) {
   try {
-    const gitPath = path.replace(/\\/g, '/');
-    const sdl = execFileSync('git', ['show', `${commit}:${gitPath}`], {
+    const sdl = execFileSync('git', ['show', `${commit}:${path}`], {
       cwd: process.cwd(),
     }).toString();
     return {
