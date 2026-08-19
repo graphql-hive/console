@@ -245,6 +245,92 @@ test('app:create accepts a JSON file as operations input', async () => {
   });
 });
 
+test('app:create accepts an Apollo persisted query manifest', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+        goodbye: String
+      }
+    `,
+  });
+
+  const manifest = {
+    format: 'apollo-persisted-query-manifest',
+    version: 1,
+    operations: [
+      {
+        id: 'sha256:apollo-operation-1',
+        body: 'query GetHello { hello }',
+        name: 'GetHello',
+        type: 'query',
+      },
+      {
+        id: 'apollo-operation-2',
+        body: 'query GetGoodbye { goodbye }',
+        name: 'GetGoodbye',
+        type: 'query',
+      },
+    ],
+  };
+  const operationsFile = join(tmpdir(), `apollo-operations-${Date.now()}.json`);
+  await writeFile(operationsFile, JSON.stringify(manifest), 'utf-8');
+
+  await appCreate([
+    '--registry.accessToken',
+    token.secret,
+    '--name',
+    'apollo-manifest-app',
+    '--version',
+    '1.0.0',
+    operationsFile,
+  ]);
+
+  await appPublish([
+    '--registry.accessToken',
+    token.secret,
+    '--name',
+    'apollo-manifest-app',
+    '--version',
+    '1.0.0',
+  ]);
+
+  const result = await execute({
+    document: CLI_GetAppDeploymentDocuments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      appDeploymentName: 'apollo-manifest-app',
+      appDeploymentVersion: '1.0.0',
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.appDeployment?.status).toBe('active');
+  expect(result.target?.appDeployment?.documents?.edges).toHaveLength(2);
+  expect(result.target?.appDeployment?.documents?.edges.map(edge => edge.node)).toEqual(
+    expect.arrayContaining([
+      {
+        hash: 'sha256:apollo-operation-1',
+        body: 'query GetHello { hello }',
+      },
+      {
+        hash: 'apollo-operation-2',
+        body: 'query GetGoodbye { goodbye }',
+      },
+    ]),
+  );
+});
+
 test('app:create accepts a directory of .graphql files as operations input', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, setFeatureFlag, organization } = await createOrg();
