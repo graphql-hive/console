@@ -674,6 +674,58 @@ test('respects "graphql-client-name" and "graphql-client-version" headers by def
 });
 
 describe('subscription usage reporting', () => {
+  test('ignores subscribe hooks for schemas without subscriptions', async () => {
+    const logger = createHiveTestingLogger();
+
+    const hive = createHive({
+      enabled: true,
+      token: 'dummy-token',
+      agent: {
+        logger,
+        maxSize: 1,
+        sendInterval: 1,
+      },
+      usage: {
+        endpoint: 'http://localhost/usage',
+        clientInfo() {
+          return {
+            name: 'brrr',
+            version: '1',
+          };
+        },
+      },
+    });
+    const collectSubscriptionUsage = vi.spyOn(hive, 'collectSubscriptionUsage');
+    const yoga = createYoga({
+      schema: createSchema({ typeDefs, resolvers }),
+      plugins: [useHive(hive)],
+    });
+
+    const response = await yoga.fetch('http://localhost/graphql', {
+      method: 'POST',
+      headers: {
+        accept: 'text/event-stream',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ query: 'subscription { hello }' }),
+    });
+    expect(await response.text()).toMatchInlineSnapshot(`
+      :
+
+      event: next
+      data: {"errors":[{"message":"Schema is not configured to execute subscription operation.","locations":[{"line":1,"column":1}]}]}
+
+      event: complete
+      data:
+    `);
+    expect(response.headers.get('content-type')).toContain('text/event-stream');
+
+    // make sure no error occurs
+    expect(logger.getLogs()).toEqual('');
+    expect(collectSubscriptionUsage).not.toHaveBeenCalled();
+    await hive.dispose();
+  });
+
   describe('built-in see', () => {
     test('reports usage for successful subscription operation', async ({ expect }) => {
       const d = Promise.withResolvers<RequestInit>();
