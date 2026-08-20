@@ -81,7 +81,7 @@
     "@graphql-inspector/cli": "7.0.0",
     "@graphql-inspector/core": "8.0.0",
     "@graphql-inspector/patch": "1.0.0",
-    "@graphql-tools/load": "8.1.16",
+    "@graphql-tools/load": "8.1.17",
     "@manypkg/get-packages": "2.2.2",
     "@parcel/watcher": "2.5.1",
     "@playwright/test": "1.60.0",
