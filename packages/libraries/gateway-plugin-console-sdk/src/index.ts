@@ -129,38 +129,33 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
       latestSchema = schema;
       operationCache?.clear();
     },
-    onParse(parseCtx) {
-      return ctx => {
-        if (ctx.result.kind === 'Document' && fieldLevelMetricsEnabled && operationCache) {
-          // We need __typename on every object in the subgraph result so we can
-          // resolve abstract types (unions/interfaces) to concrete type coordinates
-          // when recording field-level metrics downstream.
-          // This is done here for more performant caching of the result.
-          const query = parseCtx.params.source;
-          const cachedDocument = operationCache.get(query);
-          if (cachedDocument) {
-            // If "true" is cached, then this operation doesn't need stored because it's identical to the original.
-            // Else, the document hash been modified and cached
-            if (cachedDocument !== true) {
-              parseCtx.setParsedDocument(cachedDocument);
-            }
-          } else if (latestSchema) {
-            const modifiedDocument = addHiveTypenames(ctx.result, latestSchema);
-            operationCache.set(query, ctx.result === modifiedDocument || modifiedDocument);
-            if (ctx.result !== modifiedDocument) {
-              parseCtx.setParsedDocument(modifiedDocument);
-            }
-          }
-        }
-      };
-    },
-    onExecute({ args }) {
+    onExecute({ args, executeFn, setExecuteFn }) {
       const collection = hive.collectUsage();
 
       // Inject the collection object into the GraphQL context
       // so it can be accessed downstream by subgraph executions.
       if (args.contextValue) {
         (args.contextValue as any).__hiveUsageCollection = collection;
+      }
+
+      if (fieldLevelMetricsEnabled && operationCache && latestSchema) {
+        // Validation must run against the client document. Add the metadata fields only
+        // to the document passed to execution and cache that transformed document.
+        const query = args.document.loc?.source.body;
+        const cachedDocument = query ? operationCache.get(query) : undefined;
+        const modifiedDocument =
+          cachedDocument === true
+            ? args.document
+            : cachedDocument || addHiveTypenames(args.document, latestSchema);
+
+        if (query && cachedDocument === undefined) {
+          operationCache.set(query, args.document === modifiedDocument || modifiedDocument);
+        }
+        if (args.document !== modifiedDocument) {
+          setExecuteFn(executionArgs =>
+            executeFn({ ...executionArgs, document: modifiedDocument }),
+          );
+        }
       }
 
       return {
