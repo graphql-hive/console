@@ -19,6 +19,10 @@ export interface SchemaReporter {
   dispose(): Promise<void>;
 }
 
+/**
+ *
+ * @deprecated Use @graphql-hive/cli to report schemas instead.
+ */
 export function createReporting(pluginOptions: HiveInternalPluginOptions): SchemaReporter {
   if (!pluginOptions.reporting || pluginOptions.enabled === false) {
     return {
