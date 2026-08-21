@@ -1008,7 +1008,7 @@ const SchemaPolicyEditor = (props: {
             character: (edge.node.end?.column ?? 0) - 1,
           },
           message: edge.node.message,
-          severity: 'warning',
+          severity: 'warning' as const,
         })) ?? []),
         ...(errors?.edges.map(edge => ({
           start: {
@@ -1021,7 +1021,7 @@ const SchemaPolicyEditor = (props: {
           },
           lineNumber: edge.node.start?.line ?? 0,
           message: edge.node.message,
-          severity: 'error',
+          severity: 'error' as const,
         })) ?? []),
       ]}
     />
