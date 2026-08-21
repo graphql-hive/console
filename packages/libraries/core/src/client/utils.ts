@@ -1,3 +1,4 @@
+import { versionInfo } from 'graphql';
 import { Attributes, Logger } from '@graphql-hive/logger';
 import { crypto, TextEncoder } from '@whatwg-node/fetch';
 import { hiveClientSymbol } from './client.js';
@@ -89,8 +90,44 @@ export function cache<R, A, K, V>(
   };
 }
 
+/**
+ * GraphQL 17 started omitting empty arrays within the Document AST.
+ * In order to retain the hash, we backfill these.
+ */
+const cacheDocumentReplacer = (_: any, value: any) => {
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  switch (value.kind) {
+    case 'OperationDefinition':
+      return {
+        ...value,
+        variableDefinitions: value.variableDefinitions ?? [],
+        directives: value.directives ?? [],
+      };
+    case 'VariableDefinition':
+    case 'FragmentSpread':
+    case 'InlineFragment':
+    case 'FragmentDefinition':
+      return { ...value, directives: value.directives ?? [] };
+    case 'Field':
+      return {
+        ...value,
+        arguments: value.arguments ?? [],
+        directives: value.directives ?? [],
+      };
+    case 'Directive':
+      return { ...value, arguments: value.arguments ?? [] };
+    default:
+      return value;
+  }
+};
+
 export async function cacheDocumentKey<T, V>(doc: T, variables: V | null) {
-  const hasher = createHash('SHA-1').update(JSON.stringify(doc));
+  const hasher = createHash('SHA-1').update(
+    JSON.stringify(doc, versionInfo.major >= 17 ? cacheDocumentReplacer : undefined),
+  );
 
   if (variables) {
     hasher.update(
