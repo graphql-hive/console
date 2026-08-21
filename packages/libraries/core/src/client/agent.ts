@@ -127,7 +127,7 @@ export function createAgent<TEvent>(
       const promise = captureAsync(event);
       inProgressCaptures.push(promise);
       void promise
-        .catch(e => logger.error('Failed to capture async event (error=%o)', e))
+        .catch(e => logger.error('Failed to capture async event (error=%s)', e))
         .finally(() => {
           inProgressCaptures = inProgressCaptures.filter(p => p !== promise);
         });
