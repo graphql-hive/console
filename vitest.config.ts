@@ -36,6 +36,7 @@ export default defineConfig(({ mode }) => {
         'integration-tests',
         'packages/migrations/test',
         'docker/.hive-dev',
+        // We only need to support graphql-16 from our SDKs
         ...(usesLegacyGraphQL ? ['packages/internal', 'packages/services', 'packages/web'] : []),
       ],
       setupFiles: ['./scripts/serializer.ts'],
