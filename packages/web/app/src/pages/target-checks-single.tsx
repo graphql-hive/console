@@ -13,7 +13,6 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { SchemaEditor } from '@/components/schema-editor';
 import {
   ChangesBlock,
   CompositionErrorsList,
@@ -21,7 +20,6 @@ import {
   labelize,
   NoGraphChanges,
 } from '@/components/target/history/errors-and-changes';
-import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
 import { CopyText } from '@/components/ui/copy-text';
 import { File } from '@/components/ui/diffs';
@@ -959,12 +957,6 @@ function ContractCheckView(props: {
       </div>
     </TooltipProvider>
   );
-}
-
-function withLineAndColumn<T>(
-  marker: T,
-): marker is T & { start: { line: number; column: number } } {
-  return typeof (marker as any)?.start?.line === 'number';
 }
 
 const SchemaPolicyEditor_PolicyWarningsFragment = graphql(`

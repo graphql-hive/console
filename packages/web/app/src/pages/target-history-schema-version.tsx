@@ -33,7 +33,6 @@ import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
-import { useTheme } from '@/components/theme/theme-provider';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { File, MultiFileDiff } from '@/components/ui/diffs';
