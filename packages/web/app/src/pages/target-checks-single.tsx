@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useMemo, useState } from 'react';
+import { Fragment, ReactElement, useCallback, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import {
   ArrowRight,
@@ -9,6 +9,8 @@ import {
   GitCompareIcon,
   InfoIcon,
   Loader2,
+  ShieldAlertIcon,
+  TriangleAlertIcon,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { SchemaEditor } from '@/components/schema-editor';
@@ -19,23 +21,27 @@ import {
   labelize,
   NoGraphChanges,
 } from '@/components/target/history/errors-and-changes';
+import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
 import { CopyText } from '@/components/ui/copy-text';
+import { File } from '@/components/ui/diffs';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Heading } from '@/components/ui/heading';
 import { AlertTriangleIcon, DiffIcon } from '@/components/ui/icon';
+import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { QueryError } from '@/components/ui/query-error';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DiffEditor } from '@/components/v2/diff-editor';
+import { DownloadButton } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
@@ -45,6 +51,91 @@ import {
   InfoCircledIcon,
   ListBulletIcon,
 } from '@radix-ui/react-icons';
+import { SDLDiffView, SDLView } from './target-history-schema-version';
+
+function AnnotatedSDLView(props: {
+  sdl: string;
+  annotations?: Array<{
+    message: string;
+    severity: 'error' | 'warning';
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  }>;
+}) {
+  return (
+    <div className="max-w-[inherit]">
+      <File
+        file={{
+          name: 'schema.graphql',
+          contents: props.sdl,
+        }}
+        options={{
+          disableFileHeader: true,
+        }}
+        lineAnnotations={props.annotations?.map(annotation => ({
+          lineNumber: annotation.start.line,
+          metadata: { message: annotation.message, severity: annotation.severity },
+        }))}
+        renderAnnotation={annotation => (
+          <div
+            className={cn(
+              'border-l-5 flex items-center pl-1',
+              annotation.metadata.severity === 'warning'
+                ? 'border-yellow-400 bg-yellow-100 text-yellow-800'
+                : 'border-red-500 bg-red-100 text-red-800',
+            )}
+          >
+            <span>{annotation.metadata.message}</span>
+            {annotation.metadata.severity === 'warning' ? (
+              <TriangleAlertIcon className="ml-auto mr-2 size-4 text-yellow-800" />
+            ) : (
+              <ShieldAlertIcon className="ml-auto mr-2 size-4 text-red-800" />
+            )}
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+
+function SDLSingleDiffToggleView(props: {
+  title?: ReactElement;
+  before: string | null;
+  after: string | null;
+  downloadFileName?: string;
+}): ReactElement {
+  const [showDiff, setShowDiff] = useState<boolean>(true);
+  const title = props?.title ?? 'Diff View';
+
+  return (
+    <div className="w-full">
+      <div className="border-neutral-3 flex items-center justify-between border-b px-2 py-1">
+        <div className="px-2 font-bold">{title}</div>
+        <div className="ml-auto flex h-[36px] items-center px-2">
+          {props.after && props.downloadFileName && (
+            <DownloadButton fileName={props.downloadFileName} contents={props.after} />
+          )}
+
+          <div className="ml-2 flex items-center space-x-2">
+            <Label htmlFor="toggle-diff-mode" className="text-xs font-normal">
+              Toggle Diff
+            </Label>
+            <Switch
+              id="toggle-diff-mode"
+              checked={showDiff}
+              onCheckedChange={isChecked => setShowDiff(isChecked)}
+            />
+          </div>
+        </div>
+      </div>
+      {showDiff ? (
+        <SDLDiffView before={props.before ?? ''} after={props.after ?? ''} />
+      ) : (
+        <SDLView sdl={props.after ?? ''} />
+      )}
+    </div>
+  );
+}
 
 const ApproveFailedSchemaCheckMutation = graphql(`
   mutation ApproveFailedSchemaCheckModal_ApproveFailedSchemaCheckMutation(
@@ -635,7 +726,7 @@ function DefaultSchemaView(props: {
           </div>
         )}
         {selectedView === 'service' && (
-          <DiffEditor
+          <SDLSingleDiffToggleView
             title={
               schemaCheck.serviceName ? (
                 <span className="flex items-center gap-1">
@@ -661,14 +752,14 @@ function DefaultSchemaView(props: {
           />
         )}
         {selectedView === 'schema' && (
-          <DiffEditor
+          <SDLSingleDiffToggleView
             before={schemaCheck.baseline?.publicSdl ?? null}
             after={schemaCheck.compositeSchemaSDL ?? null}
             downloadFileName="schema.graphqls"
           />
         )}
         {selectedView === 'supergraph' && (
-          <DiffEditor
+          <SDLSingleDiffToggleView
             before={schemaCheck?.baseline?.supergraphSdl ?? null}
             after={schemaCheck?.supergraphSDL ?? null}
             downloadFileName="supergraph.graphqls"
@@ -852,14 +943,14 @@ function ContractCheckView(props: {
           </div>
         )}
         {selectedView === 'schema' && (
-          <DiffEditor
+          <SDLSingleDiffToggleView
             before={contractCheck?.baseline?.publicSdl ?? null}
             after={contractCheck.compositeSchemaSDL ?? null}
             downloadFileName="schema.graphqls"
           />
         )}
         {selectedView === 'supergraph' && (
-          <DiffEditor
+          <SDLSingleDiffToggleView
             before={contractCheck?.baseline?.supergraphSdl ?? null}
             after={contractCheck?.supergraphSDL ?? null}
             downloadFileName="supergraph.graphqls"
@@ -904,45 +995,35 @@ const SchemaPolicyEditor = (props: {
   const warnings = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.warnings);
   const errors = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.errors);
   return (
-    <SchemaEditor
-      theme="vs-dark"
-      options={{
-        renderLineHighlightOnlyWhenFocus: true,
-        readOnly: true,
-        lineNumbers: 'on',
-        renderValidationDecorations: 'on',
-      }}
-      onMount={(editor, monaco) => {
-        monaco.editor.setModelMarkers(monaco.editor.getModels()[0], 'owner', [
-          ...(warnings?.edges
-            .map(edge => edge.node)
-            .filter(withLineAndColumn)
-            .map(node => ({
-              message: node.message,
-              startLineNumber: node.start.line,
-              startColumn: node.start.column,
-              endLineNumber: node.end?.line ?? node.start.line,
-              endColumn: node.end?.column ?? node.start.column,
-              severity: monaco.MarkerSeverity.Warning,
-            })) ?? []),
-          ...(errors?.edges
-            .map(edge => edge.node)
-            .filter(withLineAndColumn)
-            .map(node => ({
-              message: node.message,
-              startLineNumber: node.start.line,
-              startColumn: node.start.column,
-              endLineNumber: node.end?.line ?? node.start.line,
-              endColumn: node.end?.column ?? node.start.column,
-              severity: monaco.MarkerSeverity.Error,
-            })) ?? []),
-        ]);
-
-        if (props.scrollToLine) {
-          editor.revealLineInCenter(props.scrollToLine);
-        }
-      }}
-      schema={props.compositeSchemaSDL}
+    <AnnotatedSDLView
+      sdl={props.compositeSchemaSDL}
+      annotations={[
+        ...(warnings?.edges.map(edge => ({
+          start: {
+            line: (edge.node.start?.line ?? 0) - 1,
+            character: (edge.node.start?.column ?? 0) - 1,
+          },
+          end: {
+            line: (edge.node.end?.line ?? 0) - 1,
+            character: (edge.node.end?.column ?? 0) - 1,
+          },
+          message: edge.node.message,
+          severity: 'warning',
+        })) ?? []),
+        ...(errors?.edges.map(edge => ({
+          start: {
+            line: (edge.node.start?.line ?? 0) - 1,
+            character: (edge.node.start?.column ?? 0) - 1,
+          },
+          end: {
+            line: (edge.node.end?.line ?? 0) - 1,
+            character: (edge.node.end?.column ?? 0) - 1,
+          },
+          lineNumber: edge.node.start?.line ?? 0,
+          message: edge.node.message,
+          severity: 'error',
+        })) ?? []),
+      ]}
     />
   );
 };
