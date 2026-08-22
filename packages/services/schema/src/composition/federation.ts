@@ -39,6 +39,7 @@ export type ComposeFederationDeps = {
   logger?: ServiceLogger;
   decrypt: (value: string) => string;
   requestTimeoutMs: number;
+  transformToPublicSdl?: boolean;
 };
 
 export type ComposeFederationArgs = {
@@ -152,6 +153,7 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
           requestId: args.requestId,
           subgraphs,
           requestTimeoutMs: deps.requestTimeoutMs,
+          transformToPublicSdl: deps.transformToPublicSdl,
         });
     } else {
       deps.logger?.debug(

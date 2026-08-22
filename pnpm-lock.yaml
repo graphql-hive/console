@@ -1594,6 +1594,9 @@ importers:
       ioredis-mock:
         specifier: 8.9.0
         version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.10.1)
+      nock:
+        specifier: 14.0.10
+        version: 14.0.10
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
