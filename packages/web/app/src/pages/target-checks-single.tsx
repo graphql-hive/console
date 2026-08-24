@@ -96,6 +96,26 @@ function AnnotatedSDLView(props: {
   );
 }
 
+function SDLSingleView(props: {
+  title?: ReactElement;
+  sdl: string;
+  downloadFileName?: string;
+}): ReactElement {
+  return (
+    <div className="w-full">
+      <div className="border-neutral-3 flex items-center justify-between border-b px-2 py-1">
+        <div className="px-2 font-bold">{props.title}</div>
+        <div className="ml-auto flex h-[36px] items-center px-2">
+          {props.sdl && props.downloadFileName && (
+            <DownloadButton fileName={props.downloadFileName} contents={props.sdl} />
+          )}
+        </div>
+      </div>
+      <SDLView sdl={props.sdl} />
+    </div>
+  );
+}
+
 function SDLSingleDiffToggleView(props: {
   title?: ReactElement;
   before: string | null;
@@ -723,46 +743,124 @@ function DefaultSchemaView(props: {
             <ConditionalBreakingChangesMetadataSection schemaCheck={schemaCheck} />
           </div>
         )}
-        {selectedView === 'service' && (
-          <SDLSingleDiffToggleView
-            title={
-              schemaCheck.serviceName ? (
-                <span className="flex items-center gap-1">
-                  {schemaCheck.baseline?.meta ? (
-                    <>
-                      <span className="font-mono">
-                        {schemaCheck.serviceName}@
-                        {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
-                      </span>
-                      <ArrowRight className="inline size-3" />
-                    </>
-                  ) : null}
-                  <span className="font-mono">
-                    {schemaCheck.serviceName}@
-                    {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+        {selectedView === 'service' &&
+          (schemaCheck.baseline?.sdl === schemaCheck.schemaSDL ? (
+            <SDLSingleView
+              sdl={schemaCheck.schemaSDL}
+              downloadFileName="service.graphqls"
+              title={
+                schemaCheck.serviceName ? (
+                  <span className="flex items-center gap-1">
+                    {schemaCheck.baseline?.meta ? (
+                      <>
+                        <span className="font-mono">
+                          {schemaCheck.serviceName}@
+                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                        </span>
+                        <ArrowRight className="inline size-3" />
+                      </>
+                    ) : null}
+                    <span className="font-mono">
+                      {schemaCheck.serviceName}@
+                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                    </span>
+                    (unchanged)
                   </span>
-                </span>
-              ) : undefined
-            }
-            before={schemaCheck.baseline?.sdl ?? null}
-            after={schemaCheck.schemaSDL}
-            downloadFileName="service.graphqls"
-          />
-        )}
-        {selectedView === 'schema' && (
-          <SDLSingleDiffToggleView
-            before={schemaCheck.baseline?.publicSdl ?? null}
-            after={schemaCheck.compositeSchemaSDL ?? null}
-            downloadFileName="schema.graphqls"
-          />
-        )}
-        {selectedView === 'supergraph' && (
-          <SDLSingleDiffToggleView
-            before={schemaCheck?.baseline?.supergraphSdl ?? null}
-            after={schemaCheck?.supergraphSDL ?? null}
-            downloadFileName="supergraph.graphqls"
-          />
-        )}
+                ) : undefined
+              }
+            />
+          ) : (
+            <SDLSingleDiffToggleView
+              title={
+                schemaCheck.serviceName ? (
+                  <span className="flex items-center gap-1">
+                    {schemaCheck.baseline?.meta ? (
+                      <>
+                        <span className="font-mono">
+                          {schemaCheck.serviceName}@
+                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                        </span>
+                        <ArrowRight className="inline size-3" />
+                      </>
+                    ) : null}
+                    <span className="font-mono">
+                      {schemaCheck.serviceName}@
+                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                    </span>
+                  </span>
+                ) : undefined
+              }
+              before={schemaCheck.baseline?.sdl ?? null}
+              after={schemaCheck.schemaSDL}
+              downloadFileName="service.graphqls"
+            />
+          ))}
+        {selectedView === 'schema' &&
+          (schemaCheck.baseline?.publicSdl === schemaCheck.compositeSchemaSDL ? (
+            <SDLSingleView
+              sdl={schemaCheck.schemaSDL}
+              downloadFileName="schema.graphqls"
+              title={
+                schemaCheck.serviceName ? (
+                  <span className="flex items-center gap-1">
+                    {schemaCheck.baseline?.meta ? (
+                      <>
+                        <span className="font-mono">
+                          {schemaCheck.serviceName}@
+                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                        </span>
+                        <ArrowRight className="inline size-3" />
+                      </>
+                    ) : null}
+                    <span className="font-mono">
+                      {schemaCheck.serviceName}@
+                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                    </span>
+                    (unchanged)
+                  </span>
+                ) : undefined
+              }
+            />
+          ) : (
+            <SDLSingleDiffToggleView
+              before={schemaCheck.baseline?.publicSdl ?? null}
+              after={schemaCheck.compositeSchemaSDL ?? null}
+              downloadFileName="schema.graphqls"
+            />
+          ))}
+        {selectedView === 'supergraph' &&
+          (schemaCheck?.baseline?.supergraphSdl === schemaCheck.supergraphSDL ? (
+            <SDLSingleView
+              sdl={schemaCheck?.baseline?.supergraphSdl ?? ''}
+              downloadFileName="supergraph.graphqls"
+              title={
+                schemaCheck.serviceName ? (
+                  <span className="flex items-center gap-1">
+                    {schemaCheck.baseline?.meta ? (
+                      <>
+                        <span className="font-mono">
+                          supergraph@
+                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                        </span>
+                        <ArrowRight className="inline size-3" />
+                      </>
+                    ) : null}
+                    <span className="font-mono">
+                      supergraph@
+                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                    </span>
+                    (unchanged)
+                  </span>
+                ) : undefined
+              }
+            />
+          ) : (
+            <SDLSingleDiffToggleView
+              before={schemaCheck?.baseline?.supergraphSdl ?? null}
+              after={schemaCheck?.supergraphSDL ?? null}
+              downloadFileName="supergraph.graphqls"
+            />
+          ))}
         {selectedView === 'policy' && (
           <>
             <div className="my-2 px-2">
@@ -818,6 +916,15 @@ const ContractCheckView_ContractCheckFragment = graphql(`
 const ContractCheckView_SchemaCheckFragment = graphql(`
   fragment ContractCheckView_SchemaCheckFragment on SchemaCheck {
     id
+    serviceName
+    meta {
+      commit
+    }
+    baseline {
+      meta {
+        commit
+      }
+    }
     ...ConditionalBreakingChangesMetadataSection_SchemaCheckFragment
     conditionalBreakingChangeMetadata {
       ...ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment
@@ -940,20 +1047,72 @@ function ContractCheckView(props: {
             )}
           </div>
         )}
-        {selectedView === 'schema' && (
-          <SDLSingleDiffToggleView
-            before={contractCheck?.baseline?.publicSdl ?? null}
-            after={contractCheck.compositeSchemaSDL ?? null}
-            downloadFileName="schema.graphqls"
-          />
-        )}
-        {selectedView === 'supergraph' && (
-          <SDLSingleDiffToggleView
-            before={contractCheck?.baseline?.supergraphSdl ?? null}
-            after={contractCheck?.supergraphSDL ?? null}
-            downloadFileName="supergraph.graphqls"
-          />
-        )}
+        {selectedView === 'schema' &&
+          (contractCheck?.baseline?.publicSdl === contractCheck.compositeSchemaSDL ? (
+            <SDLSingleView
+              sdl={contractCheck.compositeSchemaSDL ?? ''}
+              downloadFileName="service.graphqls"
+              title={
+                schemaCheck.serviceName ? (
+                  <span className="flex items-center gap-1">
+                    {schemaCheck.baseline?.meta ? (
+                      <>
+                        <span className="font-mono">
+                          schema@
+                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                        </span>
+                        <ArrowRight className="inline size-3" />
+                      </>
+                    ) : null}
+                    <span className="font-mono">
+                      schema@
+                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                    </span>
+                    (unchanged)
+                  </span>
+                ) : undefined
+              }
+            />
+          ) : (
+            <SDLSingleDiffToggleView
+              before={contractCheck?.baseline?.publicSdl ?? null}
+              after={contractCheck.compositeSchemaSDL ?? null}
+              downloadFileName="schema.graphqls"
+            />
+          ))}
+        {selectedView === 'supergraph' &&
+          (contractCheck?.baseline?.supergraphSdl === contractCheck?.supergraphSDL ? (
+            <SDLSingleView
+              sdl={contractCheck?.supergraphSDL ?? ''}
+              downloadFileName="supergraph.graphqls"
+              title={
+                schemaCheck.serviceName ? (
+                  <span className="flex items-center gap-1">
+                    {schemaCheck.baseline?.meta ? (
+                      <>
+                        <span className="font-mono">
+                          supergraph@
+                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                        </span>
+                        <ArrowRight className="inline size-3" />
+                      </>
+                    ) : null}
+                    <span className="font-mono">
+                      supergraph@
+                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                    </span>
+                    (unchanged)
+                  </span>
+                ) : undefined
+              }
+            />
+          ) : (
+            <SDLSingleDiffToggleView
+              before={contractCheck?.baseline?.supergraphSdl ?? null}
+              after={contractCheck?.supergraphSDL ?? null}
+              downloadFileName="supergraph.graphqls"
+            />
+          ))}
       </div>
     </TooltipProvider>
   );
@@ -1297,7 +1456,7 @@ const ActiveSchemaCheck = (props: {
   }
 
   return (
-    <div className="flex h-full grow flex-col">
+    <div className="flex h-full max-w-[-webkit-fill-available] grow flex-col">
       <div className="py-6">
         <Title>Check {schemaCheck.id}</Title>
         <Subtitle>Detailed view of the schema check</Subtitle>
