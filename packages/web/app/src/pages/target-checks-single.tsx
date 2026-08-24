@@ -753,18 +753,18 @@ function DefaultSchemaView(props: {
                   <span className="flex items-center gap-1">
                     {schemaCheck.baseline?.meta ? (
                       <>
-                        <span className="font-mono">
+                        <span className="font-mono" data-testid="schema-title-before">
                           {schemaCheck.serviceName}@
                           {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
                         </span>
                         <ArrowRight className="inline size-3" />
                       </>
                     ) : null}
-                    <span className="font-mono">
+                    <span className="font-mono" data-testid="schema-title">
                       {schemaCheck.serviceName}@
                       {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
                     </span>
-                    (unchanged)
+                    <span data-testid="schema-title-changed">(unchanged)</span>
                   </span>
                 ) : undefined
               }
@@ -805,18 +805,18 @@ function DefaultSchemaView(props: {
                   <span className="flex items-center gap-1">
                     {schemaCheck.baseline?.meta ? (
                       <>
-                        <span className="font-mono">
-                          {schemaCheck.serviceName}@
+                        <span className="font-mono" data-testid="schema-title-before">
+                          schema@
                           {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
                         </span>
                         <ArrowRight className="inline size-3" />
                       </>
                     ) : null}
-                    <span className="font-mono">
-                      {schemaCheck.serviceName}@
+                    <span className="font-mono" data-testid="schema-title">
+                      schema@
                       {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
                     </span>
-                    (unchanged)
+                    <span data-testid="schema-title-changed">(unchanged)</span>
                   </span>
                 ) : undefined
               }
@@ -838,18 +838,18 @@ function DefaultSchemaView(props: {
                   <span className="flex items-center gap-1">
                     {schemaCheck.baseline?.meta ? (
                       <>
-                        <span className="font-mono">
+                        <span className="font-mono" data-testid="schema-title-before">
                           supergraph@
                           {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
                         </span>
                         <ArrowRight className="inline size-3" />
                       </>
                     ) : null}
-                    <span className="font-mono">
+                    <span className="font-mono" data-testid="schema-title">
                       supergraph@
                       {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
                     </span>
-                    (unchanged)
+                    <span data-testid="schema-title-changed">(unchanged)</span>
                   </span>
                 ) : undefined
               }
