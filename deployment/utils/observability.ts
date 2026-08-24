@@ -5,6 +5,19 @@ import { helmChart } from './helm';
 import { Values as OpenTelemetryCollectorValues } from './opentelemetry-collector.types';
 import { VectorValues } from './vector.types';
 
+const REVERSE_PROXY_METRICS = [
+  'envoy_server_live',
+  'envoy_server_memory_allocated',
+  'envoy_http_downstream_rq_total',
+  'envoy_http_downstream_rq_xx',
+  'envoy_http_downstream_rq_active',
+  'envoy_http_downstream_rq_time_bucket',
+  'envoy_http_downstream_rq_time_sum',
+  'envoy_http_downstream_rq_time_count',
+  'envoy_cluster_membership_healthy',
+  'contour_httpproxy_invalid',
+] as const;
+
 export type ObservabilityConfig =
   | 'local'
   | {
@@ -356,6 +369,12 @@ export class Observability {
                       source_labels: ['__meta_kubernetes_namespace'],
                       target_label: 'namespace',
                     },
+                    // Contour exports its own namespace label, so keep the scrape namespace separate for filtering.
+                    {
+                      action: 'replace',
+                      source_labels: ['__meta_kubernetes_namespace'],
+                      target_label: 'scrape_namespace',
+                    },
                     {
                       action: 'replace',
                       source_labels: ['__meta_kubernetes_service_name'],
@@ -370,6 +389,17 @@ export class Observability {
                       action: 'replace',
                       source_labels: ['__meta_kubernetes_pod_node_name'],
                       target_label: 'kubernetes_node',
+                    },
+                  ],
+                  metric_relabel_configs: [
+                    {
+                      source_labels: ['scrape_namespace', '__name__'],
+                      action: 'keep',
+                      regex: `default;.*|contour;(${REVERSE_PROXY_METRICS.join('|')})`,
+                    },
+                    {
+                      action: 'labeldrop',
+                      regex: 'scrape_namespace',
                     },
                   ],
                 },
