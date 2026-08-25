@@ -690,42 +690,20 @@ describe.each(['js', 'rust'] as const)('GraphQL Hive Plugin (%s)', gatewayType =
       subgraphs,
       gatewayType,
       [
-        /** Mimic the useGenericAuth plugin to run validation onExecute as an example. */
         {
           onSchemaChange({ schema }) {
             typeInfo = new TypeInfo(schema);
           },
           async onExecute({ args, setResultAndStopExecution }) {
-            const errors: GraphQLError[] = [];
-            typeInfo ??= new TypeInfo(args.schema);
-            const validationContext = new ValidationContext(
-              args.schema,
-              args.document,
-              typeInfo,
-              e => {
-                errors.push(e);
-              },
-            );
-            const visitor = visitInParallel([
-              {
-                Field(node: FieldNode) {
-                  if (node.name.value === 'product') {
-                    validationContext.reportError(
-                      new GraphQLError('hm', {
-                        nodes: [node],
-                        extensions: { code: 'NOPE' },
-                        path: ['product'], // assumes "path" is set so it can be attributed to a coordinate.
-                      }),
-                    );
-                    return null;
-                  }
-                },
-              },
-            ]);
-            args.document = visit(args.document, visitWithTypeInfo(typeInfo, visitor));
-            if (errors.length > 0) {
-              return setResultAndStopExecution({ data: null, errors });
-            }
+            setResultAndStopExecution({
+              data: null,
+              errors: [
+                new GraphQLError('oops', {
+                  extensions: { code: 'NOPE' },
+                  path: ['product'],
+                }),
+              ],
+            });
           },
         },
       ],
