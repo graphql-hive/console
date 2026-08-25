@@ -210,7 +210,7 @@ export type GraphQLUnionTypeMapper = WithSchemaCoordinatesUsage<{
 }>;
 export type GraphQLEnumTypeMapper = WithSchemaCoordinatesUsage<{
   entity: {
-    kind: Kind.ENUM_TYPE_DEFINITION;
+    kind: typeof Kind.ENUM_TYPE_DEFINITION;
     name: string;
     description?: string | null;
     values: Array<GraphQLEnumValueMapper['entity']>;
