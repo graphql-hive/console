@@ -94,9 +94,12 @@ function pollInternal(
           const waited = Date.now() - startTime;
           if (waited > maxWait) {
             reject(
-              new Error(`Polling failed. Condition was not satisfied within ${maxWait}ms`, {
-                cause: lastError,
-              }),
+              new Error(
+                `Polling failed. Condition was not satisfied within ${maxWait}ms. Causeed by ${String(lastError)}`,
+                {
+                  cause: lastError,
+                },
+              ),
             );
           } else {
             pollInternal(check, pollFrequency, maxWait, jitter, resolve, reject, startTime);
