@@ -43,7 +43,7 @@ const EnvironmentModel = zod.object({
   ).optional(),
   TRANSFORM_EXTERNAL_SUPERGRAPH_TO_PUBLIC_SDL: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]),
-  ),
+  ).optional(),
 });
 
 const RequestBrokerModel = zod.union([
