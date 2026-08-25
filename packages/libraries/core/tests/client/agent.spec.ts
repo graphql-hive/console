@@ -32,7 +32,7 @@ describe('createAgent', () => {
     agent.capture(rejectedPromise);
     await expect(agent.dispose()).resolves.not.toThrow(); // wait for the capture to be resolved/rejected
     expect(mockLogger.getLogs()).toEqual(
-      expect.stringContaining('[ERR] Failed to capture async event (error={})'),
+      expect.stringContaining('[ERR] Failed to capture async event (error=Error: Testing)'),
     );
     process.off('unhandledRejection', unhandledRejectionSpy);
     expect(unhandledRejectionSpy).not.toHaveBeenCalled();

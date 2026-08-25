@@ -33,6 +33,12 @@ export default gql`
   scalar JSONSchemaObject
   scalar SafeInt @tag(name: "public")
 
+  schema {
+    query: Query
+    mutation: Mutation
+    subscription: Subscription
+  }
+
   extend schema
     @link(url: "https://specs.apollo.dev/link/v1.0")
     @link(url: "https://specs.apollo.dev/federation/v2.9", import: ["@tag", "@composeDirective"])

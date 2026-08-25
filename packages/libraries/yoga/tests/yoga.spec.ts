@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { GraphQLError, type GraphQLResolveInfo, type ValidationRule } from 'graphql';
+import { GraphQLError, versionInfo, type GraphQLResolveInfo, type ValidationRule } from 'graphql';
 import { createClient } from 'graphql-ws';
 import { useServer as useWSServer } from 'graphql-ws/lib/use/ws';
 import { createLogger, createSchema, createYoga, type Plugin } from 'graphql-yoga';
@@ -770,7 +770,19 @@ describe('subscription usage reporting', () => {
       },
       body: JSON.stringify({ query: 'subscription { hello }' }),
     });
-    expect(await response.text()).toMatchInlineSnapshot(`
+    if (versionInfo.major >= 17) {
+      // In graphql 17 a new validation rule was introduced that avoids execution being reached.
+      expect(await response.text()).toMatchInlineSnapshot(`
+        :
+
+        event: next
+        data: {"errors":[{"message":"The subscription operation is not supported by the schema.","locations":[{"line":1,"column":1}],"extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}]}
+
+        event: complete
+        data:
+      `);
+    } else {
+      expect(await response.text()).toMatchInlineSnapshot(`
       :
 
       event: next
@@ -779,6 +791,7 @@ describe('subscription usage reporting', () => {
       event: complete
       data:
     `);
+    }
     expect(response.headers.get('content-type')).toContain('text/event-stream');
 
     // make sure no error occurs

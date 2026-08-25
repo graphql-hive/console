@@ -106,7 +106,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.26",
     "globals": "^16.5.0",
-    "graphql": "^16.14.0",
+    "graphql": "^17.0.2",
     "graphql-yoga": "5.22.0",
     "happy-dom": "^20.10.6",
     "jsdom": "^30.0.1",
