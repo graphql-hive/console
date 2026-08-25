@@ -164,6 +164,7 @@ services:
     environment:
       NODEJS_FLAGS: '--expose-gc'
       EXPOSE_MEMORY_UTILS: '1'
+      CLICKHOUSE_TDIGEST_ROLLUPS_START: '1970-01-01T00:00:00.000Z'
       CDN_CF: '1'
       CDN_CF_BASE_PATH: http://local_cdn:3004
       CDN_CF_ACCOUNT_ID: 103df45224310d669213971ce28b5b70
