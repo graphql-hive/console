@@ -2095,11 +2095,11 @@ importers:
         specifier: workspace:*
         version: link:../../libraries/laboratory
       '@graphql-inspector/core':
-        specifier: 7.1.3
-        version: 7.1.3(graphql@17.0.2)
+        specifier: 8.0.0
+        version: 8.0.0(graphql@17.0.2)
       '@graphql-inspector/patch':
-        specifier: 0.1.3
-        version: 0.1.3(graphql@17.0.2)
+        specifier: 1.0.0
+        version: 1.0.0(graphql@17.0.2)
       '@graphql-tools/mock':
         specifier: 9.1.13
         version: 9.1.13(graphql@17.0.2)
@@ -4401,12 +4401,6 @@ packages:
     peerDependencies:
       graphql: ^16.0.0 || ^17.0.0
 
-  '@graphql-inspector/core@7.1.3':
-    resolution: {integrity: sha512-KY5UlRVn3Q12mBeGCu0Z2dmKYUl+eiHpLPo5cyQBWmAibjatPe0IO3I9THW/9rPusafbh3cRnGpYHIH/SxyASQ==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
-
   '@graphql-inspector/core@8.0.0':
     resolution: {integrity: sha512-2nzh/ez5BGi0yuKJnLv6STp2HKHZJ/PtFd5mHlrZTR2SxkvauPLwrvyekVethZRp+fVJHgb+3IcYh7osIAqsng==}
     engines: {node: '>=18.0.0'}
@@ -4471,12 +4465,6 @@ packages:
   '@graphql-inspector/logger@6.0.0':
     resolution: {integrity: sha512-OAxD3us3IuyQ1pBi3dsq6hDghl4+D7wg9Rg7UHAfk65uW6k0iAY/+Wqvy1Px1VbWNAcxHEa+SBwkuQzA5BGciQ==}
     engines: {node: '>=18.0.0'}
-
-  '@graphql-inspector/patch@0.1.3':
-    resolution: {integrity: sha512-7Xl6HIMUIcuI45IgrPwZYIWitchGCtnDsIsIXEIisayuUcEmTSap6fa654wnfzruO4DD8a9uJ5sO1iiamOYX6Q==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
   '@graphql-inspector/patch@1.0.0':
     resolution: {integrity: sha512-KD2CvW2aQKTj3HeyS+fyLH0q2p8ensYBOdsRa8jomM49y+JJlL+sFVugEK9+x6ySjz4kzEgBPIDNC0vK73Iilw==}
@@ -16063,10 +16051,6 @@ packages:
     resolution: {integrity: sha512-RSn9F68PjH9HqtltsSnqYC1XXoWe9Bju5+213R98cNGttag9q9yAOTzdbsqvIa7aNm5WffBZFpWYr2aWrklWAw==}
     engines: {node: '>= 6'}
 
-  object-inspect@1.13.2:
-    resolution: {integrity: sha512-IRZSRuzJiynemAXPYtPe5BoI/RESNYR7TYm50MC5Mqbd3Jmw5y790sErYw3V6SryFJD64b74qQQs9wn5Bg/k3g==}
-    engines: {node: '>= 0.4'}
-
   object-inspect@1.13.4:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
     engines: {node: '>= 0.4'}
@@ -22569,13 +22553,6 @@ snapshots:
       graphql: 17.0.2
       tslib: 2.6.2
 
-  '@graphql-inspector/core@7.1.3(graphql@17.0.2)':
-    dependencies:
-      dependency-graph: 1.0.0
-      graphql: 17.0.2
-      object-inspect: 1.13.2
-      tslib: 2.6.2
-
   '@graphql-inspector/core@8.0.0(graphql@17.0.2)':
     dependencies:
       dependency-graph: 1.0.0
@@ -22677,12 +22654,6 @@ snapshots:
       figures: 3.2.0
       log-symbols: 4.1.0
       std-env: 3.7.0
-      tslib: 2.6.2
-
-  '@graphql-inspector/patch@0.1.3(graphql@17.0.2)':
-    dependencies:
-      '@graphql-tools/utils': 10.11.0(graphql@17.0.2)
-      graphql: 17.0.2
       tslib: 2.6.2
 
   '@graphql-inspector/patch@1.0.0(graphql@17.0.2)':
@@ -37191,8 +37162,6 @@ snapshots:
   object-assign@4.1.1: {}
 
   object-hash@3.0.0: {}
-
-  object-inspect@1.13.2: {}
 
   object-inspect@1.13.4: {}
 
