@@ -344,7 +344,7 @@ export class OperationsReader {
             SELECT
               coordinate,
               sum(total) as total
-            FROM ${aggregationTableName('coordinate_counts')} 
+            FROM ${aggregationTableName('coordinate_counts')}
             ${this.createFilter({
               target: targetIds,
               period,
@@ -452,7 +452,7 @@ export class OperationsReader {
             SELECT
               coordinate,
               sum(total) as total
-            FROM ${aggregationTableName('coordinates')} 
+            FROM ${aggregationTableName('coordinates')}
             ${this.createFilter({
               target: targetIds,
               period,
@@ -2718,9 +2718,9 @@ export class OperationsReader {
 
     const query = this.pickAggregationByPeriod({
       query: aggregationTableName => sql`
-      SELECT 
-        coalesce(c.coordinate, r.coordinate) AS coordinate, 
-        c.total AS total, 
+      SELECT
+        coalesce(c.coordinate, r.coordinate) AS coordinate,
+        c.total AS total,
         r.totalResolutions AS totalResolutions
       FROM
       (
