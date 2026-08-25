@@ -270,25 +270,17 @@ export async function composeExternalFederation(args: {
 
     const supergraph = parseResult.data.result.supergraph;
     let sdl = parseResult.data.result.sdl;
+    const supergraphDocumentNode = parse(supergraph);
+
     let sdlDocumentNode: ASTNode;
     if (args.transformToPublicSdl) {
-      try {
-        /**
-         * Ensure the externally composed schema doesn't include supergraph SDL
-         * This is done for us in the native composition library
-         * https://github.com/graphql-hive/federation-composition/blob/77d6b4ece2abacf94164beafb4e7f5961f726755/src/compose.ts#L228
-         */
-        const ast = parse(supergraph);
-        const publicAST = transformSupergraphToPublicSchema(ast);
-        sdl = print(publicAST);
-        sdlDocumentNode = publicAST;
-      } catch (e) {
-        // silently fail and revert to using the existing public sdl.
-        // This is the best option if the supergraph cannot be parsed.
-        // This is an extreme edge case because the supergraph should always be
-        // parseable.
-        sdlDocumentNode = parse(sdl);
-      }
+      /**
+       * Ensure the externally composed schema doesn't include supergraph SDL
+       * This is done for us in the native composition library
+       * https://github.com/graphql-hive/federation-composition/blob/77d6b4ece2abacf94164beafb4e7f5961f726755/src/compose.ts#L228
+       */
+      sdlDocumentNode = transformSupergraphToPublicSchema(supergraphDocumentNode);
+      sdl = print(sdlDocumentNode);
     } else {
       sdlDocumentNode = parse(sdl);
     }
@@ -296,7 +288,7 @@ export async function composeExternalFederation(args: {
       type: 'success',
       result: {
         supergraph,
-        supergraphDocumentNode: parse(supergraph),
+        supergraphDocumentNode,
         sdl,
         sdlDocumentNode,
       },
