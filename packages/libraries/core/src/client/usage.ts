@@ -163,7 +163,6 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                 fields: subgraphFields,
               };
             });
-
             reportOperations.push({
               operationMapKey: operation.key,
               timestamp: operation.timestamp,

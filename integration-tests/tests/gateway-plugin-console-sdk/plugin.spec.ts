@@ -2,9 +2,13 @@ import { AddressInfo } from 'node:net';
 import {
   GraphQLError,
   parse,
+  TypeInfo,
+  ValidationContext,
+  visit,
+  visitInParallel,
+  visitWithTypeInfo,
   type DocumentNode,
   type FieldNode,
-  type ValidationContext,
 } from 'graphql';
 import { createLogger, createYoga } from 'graphql-yoga';
 import { pollFor, readOperationsStats } from 'testkit/flow';
@@ -681,17 +685,32 @@ describe.each(['js', 'rust'] as const)('GraphQL Hive Plugin (%s)', gatewayType =
       },
     };
 
+    let typeInfo: TypeInfo | undefined;
     const { readErrorCodes, gateway, waitForRequestsCollected } = await setup(
       subgraphs,
       gatewayType,
       [
+        /** Mimic the useGenericAuth plugin to run validation onExecute as an example. */
         {
-          onValidate({ addValidationRule }) {
-            addValidationRule((context: ValidationContext) => {
-              return {
+          onSchemaChange({ schema }) {
+            typeInfo = new TypeInfo(schema);
+          },
+          async onExecute({ args, setResultAndStopExecution }) {
+            const errors: GraphQLError[] = [];
+            typeInfo ??= new TypeInfo(args.schema);
+            const validationContext = new ValidationContext(
+              args.schema,
+              args.document,
+              typeInfo,
+              e => {
+                errors.push(e);
+              },
+            );
+            const visitor = visitInParallel([
+              {
                 Field(node: FieldNode) {
                   if (node.name.value === 'product') {
-                    context.reportError(
+                    validationContext.reportError(
                       new GraphQLError('hm', {
                         nodes: [node],
                         extensions: { code: 'NOPE' },
@@ -701,8 +720,12 @@ describe.each(['js', 'rust'] as const)('GraphQL Hive Plugin (%s)', gatewayType =
                     return null;
                   }
                 },
-              };
-            });
+              },
+            ]);
+            args.document = visit(args.document, visitWithTypeInfo(typeInfo, visitor));
+            if (errors.length > 0) {
+              return setResultAndStopExecution({ data: null, errors });
+            }
           },
         },
       ],

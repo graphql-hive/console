@@ -189,21 +189,24 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
             if (result.errors) {
               const gatewayErrors = result.errors?.filter(
                 e =>
-                  e.extensions?.code !== 'DOWNSTREAM_SERVICE_ERROR' && !e.extensions?.subgraphName,
+                  /**
+                   * DOWNSTREAM_SERVICE_ERROR is set by the executor to wrap subgraph errors. A serviceName is also
+                   * used to indicate the source of the error. If either of these are found, then it's safe to assume
+                   * the error was not thrown in the gateway.
+                   */
+                  e.extensions?.code !== 'DOWNSTREAM_SERVICE_ERROR' && !e.extensions?.serviceName,
               );
               if (cache && gatewayErrors?.length > 0) {
-                console.dir(result.errors);
                 cache.collector.trackGatewayErrors({ errors: gatewayErrors });
               }
             }
 
             args.contextValue.waitUntil(
               cache.collector.finish(
-                args,
-                // {
-                //   ...args,
-                //   document: ctx.document ?? args.document,
-                // },
+                {
+                  ...args,
+                  document: cache.document ?? ctx.document ?? args.document,
+                },
                 result,
                 cache.experimental__documentId,
               ),
@@ -221,11 +224,10 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
             onEnd() {
               ctx.waitUntil(
                 cache.collector.finish(
-                  args,
-                  // {
-                  //   ...args,
-                  //   document: cache.document ?? args.document,
-                  // },
+                  {
+                    ...args,
+                    document: cache.document ?? args.document,
+                  },
                   // how to pass in data here?
                   errors.length ? { errors } : {},
                   cache.experimental__documentId,
@@ -245,11 +247,10 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
         onSubscribeResult() {
           const experimental__persistedDocumentHash = record?.experimental__documentId;
           hive.collectSubscriptionUsage({
-            args,
-            // args: {
-            //   ...args,
-            //   document: record?.executionArgs?.document ?? args.document,
-            // },
+            args: {
+              ...args,
+              document: record?.document ?? record?.executionArgs?.document ?? args.document,
+            },
             experimental__persistedDocumentHash,
           });
         },

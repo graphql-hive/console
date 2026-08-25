@@ -83,6 +83,7 @@ function pollInternal(
   /** In milliseconds */
   startTime: number = Date.now(),
 ) {
+  let lastError: unknown;
   setTimeout(
     async () => {
       try {
@@ -92,18 +93,35 @@ function pollInternal(
         } else {
           const waited = Date.now() - startTime;
           if (waited > maxWait) {
-            reject(new Error(`Polling failed. Condition was not satisfied within ${maxWait}ms`));
+            reject(
+              new Error(`Polling failed. Condition was not satisfied within ${maxWait}ms`, {
+                cause: lastError,
+              }),
+            );
           } else {
             pollInternal(check, pollFrequency, maxWait, jitter, resolve, reject, startTime);
           }
         }
       } catch (e) {
+        lastError = e;
         reject(e);
       }
     },
     Math.round(pollFrequency + Math.random() * jitter),
   );
 }
+
+// Use this function to give our backend (clickhouse) time to insert into the materialized views' tables
+export const waitForExpectations = (expectation: () => Promise<void>) => {
+  return pollFor(async () => {
+    try {
+      await expectation();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  });
+};
 
 export function pollFor(
   check: () => Promise<boolean>,
