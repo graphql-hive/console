@@ -292,8 +292,14 @@ export function initSeed() {
             r.expectNoGraphQLErrors(),
           );
 
+          if (!orgResult.createOrganization.ok) {
+            throw new Error(
+              `Cannot create organization: ${JSON.stringify(orgResult.createOrganization.error)}`,
+            );
+          }
+
           const organization =
-            orgResult.createOrganization.ok!.createdOrganizationPayload.organization;
+            orgResult.createOrganization.ok.createdOrganizationPayload.organization;
 
           return {
             organization,

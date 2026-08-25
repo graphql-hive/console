@@ -131,7 +131,7 @@ export function pollFor(
     pollInternal(
       check,
       opts?.pollFrequency ?? 500,
-      opts?.maxWait ?? 10_000,
+      opts?.maxWait ?? 15_000,
       opts?.jitter ?? 100,
       resolve,
       reject,
