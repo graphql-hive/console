@@ -22288,6 +22288,7 @@ snapshots:
     transitivePeerDependencies:
       - '@fastify/websocket'
       - '@logtape/logtape'
+      - '@nats-io/jetstream'
       - '@nats-io/nats-core'
       - '@tanstack/react-form'
       - '@types/ioredis-mock'
@@ -22372,10 +22373,10 @@ snapshots:
       '@graphql-hive/core': 0.21.1(graphql@17.0.2)(pino@10.3.0)
       '@graphql-hive/gateway-runtime': 2.9.10(graphql@17.0.2)(ioredis@5.10.1)(pino@10.3.0)(ws@8.21.0)
       '@graphql-hive/logger': 1.1.1(pino@10.3.0)
-      '@graphql-mesh/cross-helpers': 0.4.14(graphql@17.0.2)
-      '@graphql-mesh/transport-common': 1.0.17(graphql@17.0.2)(ioredis@5.10.1)(pino@10.3.0)
-      '@graphql-mesh/types': 0.104.28(graphql@17.0.2)(ioredis@5.10.1)
-      '@graphql-mesh/utils': 0.104.36(graphql@17.0.2)(ioredis@5.10.1)
+      '@graphql-mesh/cross-helpers': 0.4.16(graphql@17.0.2)
+      '@graphql-mesh/transport-common': 1.0.20(graphql@17.0.2)(ioredis@5.10.1)(pino@10.3.0)
+      '@graphql-mesh/types': 0.104.30(graphql@17.0.2)(ioredis@5.10.1)
+      '@graphql-mesh/utils': 0.104.38(graphql@17.0.2)(ioredis@5.10.1)
       '@graphql-tools/utils': 11.2.2(graphql@17.0.2)
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/api-logs': 0.219.0
@@ -22396,6 +22397,7 @@ snapshots:
     transitivePeerDependencies:
       - '@fastify/websocket'
       - '@logtape/logtape'
+      - '@nats-io/jetstream'
       - '@nats-io/nats-core'
       - crossws
       - ioredis
