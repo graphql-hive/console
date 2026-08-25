@@ -322,6 +322,7 @@ export async function main() {
         username: env.clickhouse.username,
         password: env.clickhouse.password,
         requestTimeout: env.clickhouse.requestTimeout,
+        tdigestRollupsStart: env.clickhouse.tdigestRollupsStart,
         onReadEnd(query, timings) {
           clickHouseReadDuration.labels({ query }).observe(timings.totalSeconds);
 

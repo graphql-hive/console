@@ -1,5 +1,5 @@
 import { addMinutes, format } from 'date-fns';
-import { Injectable } from 'graphql-modules';
+import { Inject, Injectable } from 'graphql-modules';
 import * as z from 'zod';
 import { UTCDate } from '@date-fns/utc';
 import { buildOperationsFilterSQLConditions, RawValue, SqlValue } from '@hive/clickhouse';
@@ -11,6 +11,7 @@ import { toEndOfInterval, toStartOfInterval } from '../lib/date-time-helpers';
 import { pickTableByPeriod } from '../lib/pick-table-by-provider';
 import { ClickHouse, RowOf, sql } from './clickhouse-client';
 import { calculateTimeWindow } from './helpers';
+import { CLICKHOUSE_CONFIG, type ClickHouseConfig } from './tokens';
 
 const CoordinateClientNamesGroupModel = z.array(
   z.object({
@@ -89,6 +90,13 @@ function ensureNumber(value: number | string): number {
   return parseFloat(value);
 }
 
+export function shouldUseTDigestRollups(
+  period: DateRange | null,
+  tdigestRollupsStart?: Date,
+): boolean {
+  return !!(period && tdigestRollupsStart && period.from >= tdigestRollupsStart);
+}
+
 @Injectable({
   global: true,
 })
@@ -96,7 +104,29 @@ export class OperationsReader {
   constructor(
     private clickHouse: ClickHouse,
     private logger: Logger,
+    @Inject(CLICKHOUSE_CONFIG) private clickHouseConfig?: ClickHouseConfig,
   ) {}
+
+  private aggregationTableName(
+    tableName: 'operations' | 'clients' | 'coordinates' | 'coordinate_counts' | 'coordinate_errors',
+    aggregation: 'daily' | 'hourly' | 'minutely',
+    useTDigestRollups: boolean,
+  ): RawValue {
+    const suffix =
+      useTDigestRollups && (tableName === 'operations' || tableName === 'clients')
+        ? `_tdigest_${aggregation}`
+        : `_${aggregation}`;
+
+    return sql.raw(tableName + suffix);
+  }
+
+  private dailyAggregationTableName(tableName: 'operations' | 'clients', period: DateRange) {
+    return this.aggregationTableName(
+      tableName,
+      'daily',
+      shouldUseTDigestRollups(period, this.clickHouseConfig?.tdigestRollupsStart),
+    );
+  }
 
   private pickAggregationByPeriod(args: {
     period: DateRange | null;
@@ -117,6 +147,7 @@ export class OperationsReader {
           | 'coordinate_counts'
           | 'coordinate_errors',
       ) => RawValue,
+      durationQuantilesMerge: RawValue,
     ): SqlValue;
     queryId(aggregation: 'daily' | 'hourly' | 'minutely'): `${string}_${typeof aggregation}`;
   }) {
@@ -125,20 +156,36 @@ export class OperationsReader {
         ? { daily: args.timeout, hourly: args.timeout, minutely: args.timeout }
         : args.timeout;
     let { period, resolution } = args;
+    const useTDigestRollups = shouldUseTDigestRollups(
+      period,
+      this.clickHouseConfig?.tdigestRollupsStart,
+    );
+    const durationQuantilesMerge = sql.raw(
+      useTDigestRollups ? 'quantilesTDigestMerge' : 'quantilesMerge',
+    );
 
     const queryMap = {
       daily: {
-        query: args.query(tName => sql.raw(tName + '_daily')),
+        query: args.query(
+          tName => this.aggregationTableName(tName, 'daily', useTDigestRollups),
+          durationQuantilesMerge,
+        ),
         queryId: args.queryId('daily'),
         timeout: timeout.daily,
       },
       hourly: {
-        query: args.query(tName => sql.raw(tName + '_hourly')),
+        query: args.query(
+          tName => this.aggregationTableName(tName, 'hourly', useTDigestRollups),
+          durationQuantilesMerge,
+        ),
         queryId: args.queryId('hourly'),
         timeout: timeout.hourly,
       },
       minutely: {
-        query: args.query(tName => sql.raw(tName + '_minutely')),
+        query: args.query(
+          tName => this.aggregationTableName(tName, 'minutely', useTDigestRollups),
+          durationQuantilesMerge,
+        ),
         queryId: args.queryId('minutely'),
         timeout: timeout.minutely,
       },
@@ -148,6 +195,7 @@ export class OperationsReader {
       return {
         ...queryMap.daily,
         queryType: 'daily' as const,
+        useTDigestRollups,
       };
     }
 
@@ -168,6 +216,7 @@ export class OperationsReader {
     return {
       ...queryMap[resolvedTable],
       queryType: resolvedTable,
+      useTDigestRollups,
     };
   }
 
@@ -279,7 +328,7 @@ export class OperationsReader {
                 excludedClients,
                 'String',
               )})) as non_excluded_clients_total
-            FROM clients_daily ${this.createFilter({
+            FROM ${this.dailyAggregationTableName('clients', period)} ${this.createFilter({
               target: targetIds,
               period,
             })}
@@ -387,7 +436,7 @@ export class OperationsReader {
                 excludedClients,
                 'String',
               )})) as non_excluded_clients_total
-            FROM clients_daily ${this.createFilter({
+            FROM ${this.dailyAggregationTableName('clients', period)} ${this.createFilter({
               target: targetIds,
               period,
             })}
@@ -492,7 +541,7 @@ export class OperationsReader {
                 excludedClients,
                 'String',
               )})) as non_excluded_clients_total
-            FROM clients_daily ${this.createFilter({
+            FROM ${this.dailyAggregationTableName('clients', period)} ${this.createFilter({
               target: targetIds,
               period,
             })}
@@ -925,7 +974,11 @@ export class OperationsReader {
                 sql`
                   hash IN (
                     SELECT hash
-                    FROM ${sql.raw('operations_' + query.queryType)}
+                    FROM ${this.aggregationTableName(
+                      'operations',
+                      query.queryType,
+                      query.useTDigestRollups,
+                    )}
                     ${this.createFilter({
                       target,
                       period,
@@ -935,13 +988,15 @@ export class OperationsReader {
                       excludeClientVersionFilters,
                       extra: schemaCoordinate
                         ? [
-                            sql`hash IN (SELECT hash FROM ${sql.raw('coordinates_' + query.queryType)} ${this.createFilter(
-                              {
-                                target,
-                                period,
-                                extra: [sql`coordinate = ${schemaCoordinate}`],
-                              },
-                            )})`,
+                            sql`hash IN (SELECT hash FROM ${this.aggregationTableName(
+                              'coordinates',
+                              query.queryType,
+                              query.useTDigestRollups,
+                            )} ${this.createFilter({
+                              target,
+                              period,
+                              extra: [sql`coordinate = ${schemaCoordinate}`],
+                            })})`,
                           ]
                         : [],
                     })}
@@ -1258,6 +1313,7 @@ export class OperationsReader {
     const TotalCountModel = z
       .tuple([z.object({ amountOfRequests: z.string() })])
       .transform(data => ensureNumber(data[0].amountOfRequests));
+    const operationsDaily = this.dailyAggregationTableName('operations', args.period);
 
     return await this.clickHouse
       .query<unknown>({
@@ -1269,7 +1325,7 @@ export class OperationsReader {
             SELECT
               SUM("operations_daily"."total") AS "total"
             FROM
-              "operations_daily"
+              ${operationsDaily} AS "operations_daily"
             PREWHERE
               "operations_daily"."target" IN (${sql.array(args.targetIds, 'String')})
               AND "operations_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
@@ -1311,6 +1367,7 @@ export class OperationsReader {
     );
 
     this.logger.debug('Fetching top operations for schema coordinates (args=%o)', args);
+    const operationsDaily = this.dailyAggregationTableName('operations', args.period);
 
     /**
      * top_operations_by_coordinates -> get the top operations for schema coordinates, we need to right join operations_daily as coordinates_daily does not contain the client_names column
@@ -1331,7 +1388,7 @@ export class OperationsReader {
                 "operations_daily"."hash",
                 SUM("operations_daily"."total") AS "total"
               FROM
-                "operations_daily"
+                ${operationsDaily} AS "operations_daily"
               PREWHERE
                 "target" IN (${sql.array(args.targetIds, 'String')})
                 AND "timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
@@ -1464,6 +1521,8 @@ export class OperationsReader {
     );
 
     this.logger.debug('Fetching top clients for schema coordinates (args=%o)', args);
+    const operationsDaily = this.dailyAggregationTableName('operations', args.period);
+    const clientsDaily = this.dailyAggregationTableName('clients', args.period);
 
     const results = await this.clickHouse
       .postQuery({
@@ -1480,7 +1539,7 @@ export class OperationsReader {
                 "operations_daily"."hash",
                 "operations_daily"."client_name"
               FROM
-                "operations_daily"
+                ${operationsDaily} AS "operations_daily"
               PREWHERE
                 "operations_daily"."target" IN (${sql.array(args.targetIds, 'String')})
                 AND "operations_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
@@ -1530,7 +1589,7 @@ export class OperationsReader {
             "clients_daily"."client_name" AS "name",
             "clients_daily"."total" AS "count"
           FROM
-            "clients_daily"
+            ${clientsDaily} AS "clients_daily"
           LEFT JOIN
             "coordinates_to_client_name_mapping"
             ON "clients_daily"."client_name" = "coordinates_to_client_name_mapping"."client_name"
@@ -1820,6 +1879,7 @@ export class OperationsReader {
       count: number;
     }>
   > {
+    const clientsDaily = this.dailyAggregationTableName('clients', period);
     const result = await this.clickHouse.query<{
       count: string;
       client_name: string;
@@ -1828,7 +1888,7 @@ export class OperationsReader {
         SELECT
           sum(total) as count,
           client_name
-        FROM clients_daily
+        FROM ${clientsDaily}
         ${this.createFilter({
           target,
           period,
@@ -1950,7 +2010,7 @@ export class OperationsReader {
               `,
               queryId: aggregation => `targets_count_over_time_${aggregation}`,
               timeout: 15_000,
-              period,
+              period: roundedPeriod,
               resolution,
             }),
           )
@@ -2139,10 +2199,10 @@ export class OperationsReader {
       average: number;
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        query: (aggregationTableName, durationQuantilesMerge) => sql`
           SELECT
             avgMerge(duration_avg) as average,
-            quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
+            ${durationQuantilesMerge}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
           FROM ${aggregationTableName('operations')}
             ${this.createFilter({ target, period, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters })}
         `,
@@ -2180,11 +2240,11 @@ export class OperationsReader {
       percentiles: [number, number, number, number];
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        query: (aggregationTableName, durationQuantilesMerge) => sql`
               SELECT
                 hash,
                 avgMerge(duration_avg) as average,
-                quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
+                ${durationQuantilesMerge}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
               FROM ${aggregationTableName('operations')}
               ${this.createFilter({
                 target,
@@ -2485,10 +2545,10 @@ export class OperationsReader {
 
     const query = this.pickAggregationByPeriod({
       timeout: 15_000,
-      period,
+      period: roundedPeriod,
       resolution,
       queryId: aggregation => `duration_and_count_over_time_${aggregation}`,
-      query: aggregationTableName => {
+      query: (aggregationTableName, durationQuantilesMerge) => {
         return sql`
         SELECT
           date,
@@ -2505,7 +2565,7 @@ export class OperationsReader {
               ) * toUInt32(${String(interval.seconds)})
             ) as date,
             avgMerge(duration_avg) as average,
-            quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles,
+            ${durationQuantilesMerge}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles,
             sum(total) as total,
             sum(total_ok) as totalOk
           FROM ${aggregationTableName('operations')}
@@ -2939,7 +2999,7 @@ export class OperationsReader {
       `,
         queryId: aggregation => `admin_operations_per_target_${aggregation}`,
         timeout: 15_000,
-        period,
+        period: roundedPeriod,
         resolution,
       }),
     );
