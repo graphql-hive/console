@@ -33,6 +33,9 @@ type SchemaExplorerContextType = {
   hasMetadataFilter(name: string, value: string): boolean;
   clearMetadataFilter(name?: string): void;
   metadata: string[];
+  subgraphs: string[];
+  setSubgraphFilters(names: string[]): void;
+  clearSubgraphFilter(): void;
 };
 
 const defaultPeriod: Period = {
@@ -56,6 +59,9 @@ const SchemaExplorerContext = createContext<SchemaExplorerContextType>({
   hasMetadataFilter: () => false,
   clearMetadataFilter: () => {},
   metadata: [],
+  subgraphs: [],
+  setSubgraphFilters: () => {},
+  clearSubgraphFilter: () => {},
 });
 
 function filterUnique(array: string[]) {
@@ -82,6 +88,7 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
   );
   const [resolvedPeriod, setResolvedPeriod] = useState<Period>(() => resolveRange(period));
   const [metadata, setMetadataFilter] = useSearchParamsFilter('meta', [] as string[]);
+  const [subgraphs, setSubgraphs] = useSearchParamsFilter('subgraph', [] as string[]);
 
   return (
     <SchemaExplorerContext.Provider
@@ -131,6 +138,13 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
           return metadata.includes(`${name}:${value}`);
         },
         metadata,
+        subgraphs,
+        setSubgraphFilters(names) {
+          setSubgraphs(filterUnique(names));
+        },
+        clearSubgraphFilter() {
+          setSubgraphs([]);
+        },
       }}
     >
       {children}

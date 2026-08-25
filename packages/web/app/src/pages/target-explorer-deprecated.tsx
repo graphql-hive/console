@@ -1,12 +1,17 @@
 import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
-import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
+import { AlertCircleIcon, ChevronDown, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Button as BaseButton } from '@/components/base/button/button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
-import { MetadataFilter, SchemaVariantFilter } from '@/components/target/explorer/filter';
+import {
+  MetadataFilter,
+  SchemaVariantFilter,
+  SubgraphFilter,
+} from '@/components/target/explorer/filter';
 import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -183,6 +188,7 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
         __typename
         id
         explorer {
+          subgraphNames
           metadataAttributes {
             name
             values
@@ -238,6 +244,22 @@ function DeprecatedSchemaExplorer(props: {
 
   const latestSchemaVersion = query.data?.target?.latestSchemaVersion;
   const latestValidSchemaVersion = query.data?.target?.latestValidSchemaVersion;
+  const dateRangeFilter = (
+    <DateRangePicker
+      trigger={
+        <BaseButton
+          label={dateRangeController.selectedPreset.label}
+          variant="default"
+          rightIcon={{ icon: ChevronDown, withSeparator: true }}
+        />
+      }
+      validUnits={['y', 'M', 'w', 'd', 'h']}
+      selectedRange={dateRangeController.selectedPreset.range}
+      startDate={dateRangeController.startDate}
+      align="start"
+      onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+    />
+  );
 
   return (
     <>
@@ -247,13 +269,14 @@ function DeprecatedSchemaExplorer(props: {
           <Subtitle>Understand the deprecated part of GraphQL schema</Subtitle>
         </div>
         <div className="flex justify-end gap-x-2">
-          <DateRangePicker
-            validUnits={['y', 'M', 'w', 'd', 'h']}
-            selectedRange={dateRangeController.selectedPreset.range}
-            startDate={dateRangeController.startDate}
-            align="end"
-            onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
-          />
+          {latestValidSchemaVersion?.explorer?.subgraphNames.length ? (
+            <SubgraphFilter
+              options={latestValidSchemaVersion.explorer.subgraphNames}
+              pinnedControls={dateRangeFilter}
+            />
+          ) : (
+            dateRangeFilter
+          )}
           <SchemaVariantFilter
             organizationSlug={props.organizationSlug}
             projectSlug={props.projectSlug}

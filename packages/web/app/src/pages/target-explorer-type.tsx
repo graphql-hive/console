@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
+  ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
@@ -12,6 +13,7 @@ import {
   FieldByNameFilter,
   MetadataFilter,
   SchemaVariantFilter,
+  SubgraphFilter,
   TypeFilter,
 } from '@/components/target/explorer/filter';
 import { GraphQLInputObjectTypeComponent } from '@/components/target/explorer/input-object-type';
@@ -23,6 +25,7 @@ import {
 } from '@/components/target/explorer/provider';
 import { GraphQLScalarTypeComponent } from '@/components/target/explorer/scalar-type';
 import { GraphQLUnionTypeComponent } from '@/components/target/explorer/union-type';
+import { matchesSubgraphFilter } from '@/components/target/explorer/utils';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -32,6 +35,9 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 export const TypeRenderFragment = graphql(`
   fragment TypeRenderFragment on GraphQLNamedType {
     __typename
+    supergraphMetadata {
+      ownedByServiceNames
+    }
     ...GraphQLObjectTypeComponent_TypeFragment
     ...GraphQLInterfaceTypeComponent_TypeFragment
     ...GraphQLUnionTypeComponent_TypeFragment
@@ -49,8 +55,15 @@ export function TypeRenderer(props: {
   targetSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
+  filteredFallback?: ReactNode;
 }) {
   const ttype = useFragment(TypeRenderFragment, props.type);
+  const { subgraphs } = useSchemaExplorerContext();
+
+  if (!matchesSubgraphFilter(ttype.supergraphMetadata?.ownedByServiceNames, subgraphs)) {
+    return props.filteredFallback ?? null;
+  }
+
   switch (ttype.__typename) {
     case 'GraphQLObjectType':
       return (
@@ -149,6 +162,7 @@ const TargetExplorerTypenamePageQuery = graphql(`
         __typename
         id
         explorer(usage: { period: $period }) {
+          subgraphNames
           metadataAttributes {
             name
             values
@@ -229,8 +243,15 @@ function TypeExplorerPageContent(props: {
                 typename={props.typename}
               />
               <FieldByNameFilter />
-              <DateRangeFilter />
               <DescriptionsVisibilityFilter />
+              {latestSchemaVersion.explorer?.subgraphNames.length ? (
+                <SubgraphFilter
+                  options={latestSchemaVersion.explorer.subgraphNames}
+                  pinnedControls={<DateRangeFilter />}
+                />
+              ) : (
+                <DateRangeFilter />
+              )}
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
@@ -257,6 +278,7 @@ function TypeExplorerPageContent(props: {
           targetSlug={props.targetSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
+          filteredFallback={<ExplorerFilteredEmptyState />}
         />
       ) : type ? (
         <NoSchemaVersion

@@ -12,6 +12,7 @@ import {
   FieldByNameFilter,
   MetadataFilter,
   SchemaVariantFilter,
+  SubgraphFilter,
   TypeFilter,
 } from '@/components/target/explorer/filter';
 import { GraphQLObjectTypeComponent } from '@/components/target/explorer/object-type';
@@ -124,6 +125,7 @@ const TargetExplorerPageQuery = graphql(`
         __typename
         id
         explorer(usage: { period: $period }) {
+          subgraphNames
           metadataAttributes {
             name
             values
@@ -210,8 +212,15 @@ function ExplorerPageContent(props: {
                 period={resolvedPeriod}
               />
               <FieldByNameFilter />
-              <DateRangeFilter />
               <DescriptionsVisibilityFilter />
+              {latestValidSchemaVersion?.explorer?.subgraphNames.length ? (
+                <SubgraphFilter
+                  options={latestValidSchemaVersion.explorer.subgraphNames}
+                  pinnedControls={<DateRangeFilter />}
+                />
+              ) : (
+                <DateRangeFilter />
+              )}
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
