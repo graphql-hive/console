@@ -33,7 +33,6 @@ import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
-import { useTheme } from '@/components/theme/theme-provider';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { File, MultiFileDiff } from '@/components/ui/diffs';
@@ -961,7 +960,7 @@ function GraphVersionSubgraphChangesView(props: {
   );
 }
 
-function SDLDiffView(props: { before: string; after: string }) {
+export function SDLDiffView(props: { before: string; after: string }) {
   return (
     <MultiFileDiff
       options={{
@@ -980,8 +979,7 @@ function SDLDiffView(props: { before: string; after: string }) {
   );
 }
 
-function SDLView(props: { sdl: string }) {
-  const { resolvedTheme } = useTheme();
+export function SDLView(props: { sdl: string }) {
   return (
     <div className="max-w-[inherit]">
       <File
@@ -990,7 +988,6 @@ function SDLView(props: { sdl: string }) {
           contents: props.sdl,
         }}
         options={{
-          theme: resolvedTheme === 'dark' ? 'pierre-dark' : 'pierre-light',
           disableFileHeader: true,
         }}
       />
