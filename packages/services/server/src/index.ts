@@ -294,6 +294,14 @@ export async function main() {
       };
     }
     const logger = createGraphQLLogger();
+
+    if (env.clickhouse.tdigestRollupsStart) {
+      logger.info(
+        'clickhouse tdigest rollup table start set to %s.',
+        env.clickhouse.tdigestRollupsStart,
+      );
+    }
+
     const registry = createRegistry({
       app: env.hiveServices.webApp
         ? {
