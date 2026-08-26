@@ -1,4 +1,4 @@
-import { pollFor } from 'testkit/flow';
+import { pollFor, waitForExpectations } from 'testkit/flow';
 import { clickHouseQuery } from '../../testkit/clickhouse';
 import { graphql } from '../../testkit/gql';
 import { GraphQlOperationType, ResourceAssignmentModeType } from '../../testkit/gql/graphql';
@@ -540,19 +540,6 @@ test('traces can be filtered via GraphQL API', async () => {
   await waitForTraceInNormalized(trace1Id);
   await waitForTraceInNormalized(trace2Id);
   await waitForTraceInNormalized(trace3Id);
-
-  // Use this function to give our backend (clickhouse) time to insert into the materialized views' tables
-  const waitForExpectations = (expectation: () => Promise<void>) => {
-    return pollFor(async () => {
-      try {
-        await expectation();
-        return true;
-      } catch (e) {
-        console.error(e);
-        return false;
-      }
-    });
-  };
 
   // Test 1: Filter by operation name
   await waitForExpectations(async () => {

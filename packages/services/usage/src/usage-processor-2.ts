@@ -191,9 +191,15 @@ export const usageProcessorV2 = traceInlineSync(
         },
       });
 
-      const errors = operation.execution.fetches
-        ?.flatMap(f => f.errors)
-        .filter(e => e !== undefined);
+      let errors = operation.execution.fetches?.flatMap(f => f.errors).filter(e => e !== undefined);
+      if (operation.execution.gatewayErrors?.length) {
+        // append gateway errors onto the reported rawErrors.
+        if (!errors?.length) {
+          errors = operation.execution.gatewayErrors;
+        } else {
+          errors.push(...operation.execution.gatewayErrors);
+        }
+      }
       if (errors?.length) {
         rawErrors.push({
           operationMapKey,
@@ -280,6 +286,8 @@ const OperationMapRecordSchema = tb.Object(
 
 type OperationMapRecord = tb.Static<typeof OperationMapRecordSchema>;
 
+const TrackedErrorSchema = tb.Object({ coordinate: tb.String(), code: tb.Optional(tb.String()) });
+
 const SubgraphRequestSchema = tb.Object(
   {
     /** Delta start time from "timestamp" */
@@ -306,9 +314,7 @@ const SubgraphRequestSchema = tb.Object(
     fields: tb.Record(tb.String(), tb.Number()),
 
     /** Error code for a coordinate, with a code returned from the graphql extensions */
-    errors: tb.Optional(
-      tb.Array(tb.Object({ coordinate: tb.String(), code: tb.Optional(tb.String()) })),
-    ),
+    errors: tb.Optional(tb.Array(TrackedErrorSchema)),
 
     /** Which subgraph resolved this path */
     subgraph: tb.String(),
@@ -347,6 +353,7 @@ const ExecutionSchema = tb.Type.Object(
       maximum: Math.pow(2, 16) - 1,
     }),
     fetches: OptionalAndNullable(tb.Array(SubgraphRequestSchema)),
+    gatewayErrors: OptionalAndNullable(tb.Array(TrackedErrorSchema)),
   },
   {
     title: 'Execution',

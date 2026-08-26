@@ -60,6 +60,7 @@ import {
   updateTargetDangerousChangeClassification,
   updateTargetFailingDangerousChanges,
   updateTargetValidationSettings,
+  waitForExpectations,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
 import {
@@ -291,8 +292,14 @@ export function initSeed() {
             r.expectNoGraphQLErrors(),
           );
 
+          if (!orgResult.createOrganization.ok) {
+            throw new Error(
+              `Cannot create organization: ${JSON.stringify(orgResult.createOrganization.error)}`,
+            );
+          }
+
           const organization =
-            orgResult.createOrganization.ok!.createdOrganizationPayload.organization;
+            orgResult.createOrganization.ok.createdOrganizationPayload.organization;
 
           return {
             organization,
@@ -1276,7 +1283,7 @@ export function initSeed() {
                 ) {
                   const from = formatISO(_from ?? subHours(Date.now(), 1));
                   const to = formatISO(_to ?? Date.now());
-                  const check = async () => {
+                  await waitForExpectations(async () => {
                     const statsResult = await readOperationsStats(
                       {
                         bySelector: {
@@ -1292,10 +1299,8 @@ export function initSeed() {
                       {},
                       ownerToken,
                     ).then(r => r.expectNoGraphQLErrors());
-                    return statsResult.target?.operationsStats.totalOperations == n;
-                  };
-
-                  return pollFor(check);
+                    expect(statsResult.target?.operationsStats.totalOperations).toBe(n);
+                  });
                 },
                 async waitForRequestsCollected(
                   n: number,
@@ -1307,7 +1312,8 @@ export function initSeed() {
                 ) {
                   const from = formatISO(opts?.from ?? subHours(Date.now(), 1));
                   const to = formatISO(opts?.to ?? Date.now());
-                  const check = async () => {
+
+                  await waitForExpectations(async () => {
                     const statsResult = await readTotalRequests(
                       {
                         bySelector: {
@@ -1322,10 +1328,8 @@ export function initSeed() {
                       },
                       ownerToken,
                     ).then(r => r.expectNoGraphQLErrors());
-                    return statsResult.target?.totalRequests == n;
-                  };
-
-                  return pollFor(check);
+                    expect(statsResult.target?.totalRequests).toBe(n);
+                  });
                 },
                 async readOperationsStats(
                   from: string,
