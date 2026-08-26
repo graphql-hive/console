@@ -99,6 +99,14 @@ export async function appCreate(args: string[]) {
   );
 }
 
+export async function appCheck(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+
+  return await exec(
+    ['app:check', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
 export async function appPublish(args: string[]) {
   const registryAddress = await getServiceHost('server', 8082);
 
