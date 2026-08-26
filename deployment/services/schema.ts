@@ -48,6 +48,7 @@ export function deploySchema({
           observability.enabled && observability.tracingEndpoint
             ? observability.tracingEndpoint
             : '',
+        TRANSFORM_EXTERNAL_SUPERGRAPH_TO_PUBLIC_SDL: '1',
       },
       readinessProbe: '/_readiness',
       livenessProbe: '/_health',

@@ -68,6 +68,7 @@ export function createCompositionWorker(args: {
             decrypt,
             logger: baseLogger.child({ reqId: message.data.args.requestId }) as FastifyBaseLogger,
             requestTimeoutMs: args.env.timings.schemaExternalCompositionTimeout,
+            transformToPublicSdl: args.env.transformExternalSupergraphToPublicSdl,
           });
           const composed = await composeFederation(message.data.args);
 
