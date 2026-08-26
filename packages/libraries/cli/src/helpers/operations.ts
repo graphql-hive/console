@@ -67,6 +67,7 @@ export async function loadOperations(
       }),
       new GraphQLFileLoader(),
     ],
+    skipGraphQLImport: true,
   });
 
   return sources.map(source => ({

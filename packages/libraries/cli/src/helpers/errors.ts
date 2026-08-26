@@ -1,7 +1,6 @@
 import { extname } from 'node:path';
 import { env } from 'node:process';
-import { GraphQLError } from 'graphql';
-import { InvalidDocument } from '@graphql-inspector/core';
+import { GraphQLError, Source } from 'graphql';
 import { CLIError } from '@oclif/core/lib/errors';
 import { CompositionFailure } from '@theguild/federation-composition';
 import { FragmentType, makeFragmentData } from '../gql/index';
@@ -286,7 +285,12 @@ export class SchemaPublishMissingUrlError extends HiveCLIError {
 }
 
 export class InvalidDocumentsError extends HiveCLIError {
-  constructor(invalidDocuments: InvalidDocument[]) {
+  constructor(
+    invalidDocuments: Array<{
+      source: string | Source;
+      errors: ReadonlyArray<GraphQLError>;
+    }>,
+  ) {
     const message = invalidDocuments
       .map(doc => {
         return `${Texture.failure(doc.source)}\n${doc.errors.map(e => ` - ${Texture.boldQuotedWords(e.message)}`).join('\n')}`;
