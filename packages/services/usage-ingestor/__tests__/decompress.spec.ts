@@ -6,7 +6,13 @@
  *
  */
 
-import { compressGzip, compressZstd, decompress, type RawReport, ZSTD_MAGIC } from '@hive/usage-common';
+import {
+  compressGzip,
+  compressZstd,
+  decompress,
+  ZSTD_MAGIC,
+  type RawReport,
+} from '@hive/usage-common';
 
 const reports: RawReport[] = Array.from({ length: 50 }, (_, i) => ({
   id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`,

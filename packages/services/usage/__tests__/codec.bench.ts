@@ -7,7 +7,6 @@ import { usageProcessorV2 } from '../src/usage-processor-2';
 faker.seed(42);
 
 function createNameGenerator(): () => string {
-
   return () => `f${faker.string.alphanumeric(10)}`;
 }
 
