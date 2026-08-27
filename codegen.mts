@@ -5,6 +5,9 @@ import { addTypenameSelectionDocumentTransform } from '@graphql-codegen/client-p
 const config: CodegenConfig = {
   schema: './packages/services/api/src/modules/*/module.graphql.ts',
   emitLegacyCommonJSImports: true,
+  overwrite: {
+    removeStaleFiles: false,
+  },
   generates: {
     // API
     './packages/services/api/src': defineConfig(
