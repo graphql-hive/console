@@ -13,6 +13,7 @@ import {
   totalReports,
 } from './metrics';
 import type { TokensResponse } from './tokens';
+import { isUnixTimestamp } from './usage-processor-2';
 
 const DAY_IN_MS = 86_400_000;
 
@@ -207,12 +208,6 @@ function convertLegacyReport(legacy: IncomingLegacyReport): IncomingReport {
   }
 
   return report;
-}
-
-const unixTimestampRegex = /^\d{13,}$/;
-
-function isUnixTimestamp(x: number) {
-  return unixTimestampRegex.test(String(x));
 }
 
 // This is a custom format for positive integers (0 is allowed, decimals are not)

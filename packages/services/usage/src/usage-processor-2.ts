@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { LRUCache } from 'lru-cache';
 import { ServiceLogger as Logger, traceInlineSync } from '@hive/service-common';
 import type {
   ClientMetadata,
@@ -12,6 +13,105 @@ import * as tc from '@sinclair/typebox/compiler';
 import * as tbe from '@sinclair/typebox/errors';
 import { invalidRawOperations, rawOperationsSize, totalOperations, totalReports } from './metrics';
 import { isValidOperationBody } from './usage-processor-1';
+
+interface OperationMapKeyEntry {
+  /** md5(targetId, document, operation name and the sorted fields) */
+  hash: string;
+  /** Sorted, so field order never affects identity. Also what Kafka carries. */
+  sortedFields: string[];
+}
+
+/**
+ * The idea here is to reuse operation map keys across requests,
+ * so we can skip sorting and stringifying the field list, and hashing the whole document.
+ */
+const operationMapKeyCache = new LRUCache<string, Map<string, OperationMapKeyEntry[]>>({
+  // We're using `maxSize` instead of `max`, because the stored Map can have 1 record or 1000s,
+  // and we want to cap the total memory used by the cache, not just the number of entries.
+  maxSize: 200 * 1024 * 1024, // 200MB
+  sizeCalculation: (byTarget, document) => {
+    // Yeah yeah, magic numbers, but I ran a bunch of different-sized reports to get those numbers
+    // and they roughtly represent 1:1 the memory footprint of the stored records in the cache.
+    let size = document.length + 1024; // The cost of Map, the LRU's own node, and the key
+    for (const entries of byTarget.values()) {
+      for (const entry of entries) {
+        size += 128; // md5 and stuff
+        for (const field of entry.sortedFields) {
+          size += field.length;
+        }
+      }
+    }
+    return size;
+  },
+});
+
+function sameFields(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function operationMapSlot(record: OperationMapRecord): Map<string, OperationMapKeyEntry[]> | null {
+  const cached = operationMapKeyCache.get(record.operation);
+  if (cached) {
+    return cached;
+  }
+  if (!isValidOperationBody(record.operation)) {
+    return null;
+  }
+  return new Map();
+}
+
+function buildOperationMapKeyEntry(
+  targetId: string,
+  record: OperationMapRecord,
+  sortedFields: string[],
+): OperationMapKeyEntry {
+  return {
+    sortedFields,
+    hash: createHash('md5')
+      .update(targetId)
+      .update(record.operation)
+      .update(record.operationName ?? '')
+      .update(JSON.stringify(sortedFields))
+      .digest('hex'),
+  };
+}
+
+function deriveOperationMapKey(
+  targetId: string,
+  record: OperationMapRecord,
+): OperationMapKeyEntry | null {
+  const byTarget = operationMapSlot(record);
+  if (byTarget === null) {
+    return null;
+  }
+
+  const sortedFields = record.fields.toSorted();
+
+  const entries = byTarget.get(targetId);
+  const cached = entries?.find(entry => sameFields(entry.sortedFields, sortedFields));
+  if (cached) {
+    return cached;
+  }
+
+  const entry = buildOperationMapKeyEntry(targetId, record, sortedFields);
+  if (entries) {
+    entries.push(entry);
+  } else {
+    byTarget.set(targetId, [entry]);
+  }
+
+  // Re-set so the LRU recalculates the size
+  operationMapKeyCache.set(record.operation, byTarget);
+  return entry;
+}
 
 export const usageProcessorV2 = traceInlineSync(
   'usageProcessorV2',
@@ -117,34 +217,30 @@ export const usageProcessorV2 = traceInlineSync(
 
       let newOperationMapKey = newKeyMappings.get(operationMapRecord);
 
-      if (!isValidOperationBody(operationMapRecord.operation)) {
-        logger.warn(
-          `Detected invalid operation (target=%s): %s`,
-          targetSelector.targetId,
-          operationMapKey,
-        );
-        invalidRawOperations
-          .labels({
-            reason: 'invalid_operation_body',
-          })
-          .inc(1);
-        return null;
-      }
-
       if (newOperationMapKey === undefined) {
-        const sortedFields = operationMapRecord.fields.sort();
-        newOperationMapKey = createHash('md5')
-          .update(targetSelector.targetId)
-          .update(operationMapRecord.operation)
-          .update(operationMapRecord.operationName ?? '')
-          .update(JSON.stringify(sortedFields))
-          .digest('hex');
+        const key = deriveOperationMapKey(targetSelector.targetId, operationMapRecord);
+
+        if (key === null) {
+          logger.warn(
+            `Detected invalid operation (target=%s): %s`,
+            targetSelector.targetId,
+            operationMapKey,
+          );
+          invalidRawOperations
+            .labels({
+              reason: 'invalid_operation_body',
+            })
+            .inc(1);
+          return null;
+        }
+
+        newOperationMapKey = key.hash;
 
         report.map[newOperationMapKey] = {
           key: newOperationMapKey,
           operation: operationMapRecord.operation,
           operationName: operationMapRecord.operationName,
-          fields: sortedFields,
+          fields: key.sortedFields,
         };
 
         newKeyMappings.set(operationMapRecord, newOperationMapKey);
@@ -388,9 +484,8 @@ const PersistedDocumentHash = tb.Type.String({
   pattern: '^[a-zA-Z0-9_-]{1,64}~[a-zA-Z0-9._-]{1,64}~([A-Za-z]|[0-9]|_){1,128}$',
 });
 
-const unixTimestampRegex = /^\d{13,}$/;
-function isUnixTimestamp(x: number) {
-  return unixTimestampRegex.test(String(x));
+export function isUnixTimestamp(x: number) {
+  return Number.isInteger(x) && x >= 1e12;
 }
 
 tbe.SetErrorFunction(param => {
@@ -462,17 +557,19 @@ interface ValueError {
 export function decodeReport(
   report: unknown,
 ): { success: true; report: ReportType } | { success: false; errors: Array<ValueError> } {
-  const errors = ReportModel.Errors(report);
-  if (ReportModel.Errors(report).First()) {
+  // Check() short-circuits on the first failure,
+  // where Errors() walk the whole document building error objects.
+  // We only pay for Errors() when it is invalid.
+  if (ReportModel.Check(report)) {
     return {
-      success: false,
-      errors: getTypeBoxErrors(errors),
+      success: true,
+      report: report as ReportType,
     };
   }
 
   return {
-    success: true,
-    report: report as ReportType,
+    success: false,
+    errors: getTypeBoxErrors(ReportModel.Errors(report)),
   };
 }
 

@@ -1,7 +1,7 @@
 import Agent from 'agentkeepalive';
 import { got, Response as GotResponse } from 'got';
 import type { ServiceLogger } from '@hive/service-common';
-import { compress } from '@hive/usage-common';
+import { compressGzip } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
 import { writeDuration } from './metrics';
 import {
@@ -66,7 +66,7 @@ export function createWriter({
       }
 
       const csv = joinIntoSingleMessage(operations);
-      const compressed = await compress(csv);
+      const compressed = await compressGzip(csv);
 
       // Note that `SETTINGS input_format_with_names_use_header = 1` is enabled by default.
       // If migrating this table in the future, be sure to double check this via
@@ -87,7 +87,7 @@ export function createWriter({
       }
 
       const csv = joinIntoSingleMessage(operations);
-      const compressed = await compress(csv);
+      const compressed = await compressGzip(csv);
 
       await writeCsv(
         clickhouse,
@@ -104,7 +104,7 @@ export function createWriter({
       }
 
       const csv = joinIntoSingleMessage(records);
-      const compressed = await compress(csv);
+      const compressed = await compressGzip(csv);
 
       await writeCsv(
         clickhouse,
@@ -121,7 +121,7 @@ export function createWriter({
       }
 
       const csv = joinIntoSingleMessage(records);
-      const compressed = await compress(csv);
+      const compressed = await compressGzip(csv);
 
       await writeCsv(
         clickhouse,
@@ -138,7 +138,7 @@ export function createWriter({
       }
 
       const csv = joinIntoSingleMessage(records);
-      const compressed = await compress(csv);
+      const compressed = await compressGzip(csv);
       // create input structure schema
 
       await writeCsv(
