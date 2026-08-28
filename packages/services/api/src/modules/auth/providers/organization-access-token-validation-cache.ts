@@ -2,7 +2,10 @@ import { BentoCache, bentostore } from 'bentocache';
 import { memoryDriver } from 'bentocache/build/src/drivers/memory';
 import { Injectable, Scope } from 'graphql-modules';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
-import { PrometheusConfig } from '../../shared/providers/prometheus-config';
+import {
+  PROMETHEUS_CACHE_KEY_GROUPS,
+  PrometheusConfig,
+} from '../../shared/providers/prometheus-config';
 
 /**
  * Cache for performant OrganizationAccessToken lookups.
@@ -21,6 +24,7 @@ export class OrganizationAccessTokenValidationCache {
         ? [
             prometheusPlugin({
               prefix: 'bentocache_organization_access_token_validation',
+              keyGroups: PROMETHEUS_CACHE_KEY_GROUPS,
             }),
           ]
         : undefined,

@@ -137,6 +137,17 @@ export function createKVBuffer<T>(config: {
 }) {
   const { logger } = config;
   let buffer: T[] = [];
+  let bufferedUnits = 0;
+  let bufferedOperations = 0;
+
+  function pushToBuffer(report: T, units = 0) {
+    buffer.push(report);
+    if (config.useEstimator) {
+      bufferedUnits += units;
+    } else {
+      bufferedOperations += (report as { size?: number }).size ?? 0;
+    }
+  }
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   const estimator = createEstimator({
@@ -155,14 +166,6 @@ export function createKVBuffer<T>(config: {
 
   function calculateBufferSize(reports: readonly T[]) {
     return reports.reduce((sum, report) => sum + config.calculateReportSize(report), 0);
-  }
-
-  function calculateBufferSizeInBytes(reports: readonly T[]) {
-    return estimator.estimate(calculateBufferSize(reports));
-  }
-
-  function sumOfOperationsSizeInBuffer() {
-    return buffer.reduce((sum, report) => sum + (report as any).size, 0);
   }
 
   async function flushBuffer(
@@ -246,11 +249,13 @@ export function createKVBuffer<T>(config: {
 
     if (buffer.length !== 0) {
       const reports = buffer.slice();
-      const size = calculateBufferSize(reports);
+      const size = bufferedUnits;
       const batchId = randomUUID();
 
       try {
         buffer = [];
+        bufferedUnits = 0;
+        bufferedOperations = 0;
         await flushBuffer(reports, size, batchId);
       } catch (error) {
         logger.error(error);
@@ -283,8 +288,9 @@ export function createKVBuffer<T>(config: {
 
   function add(report: T) {
     if (config.useEstimator) {
-      const currentBufferSize = calculateBufferSizeInBytes(buffer);
-      const estimatedReportSize = estimator.estimate(config.calculateReportSize(report));
+      const reportSize = config.calculateReportSize(report);
+      const currentBufferSize = estimator.estimate(bufferedUnits);
+      const estimatedReportSize = estimator.estimate(reportSize);
       const estimatedBufferSize = currentBufferSize + estimatedReportSize;
 
       if (currentBufferSize >= config.limitInBytes || estimatedBufferSize >= config.limitInBytes) {
@@ -296,15 +302,20 @@ export function createKVBuffer<T>(config: {
       if (estimatedReportSize > config.limitInBytes) {
         const numOfChunks = Math.ceil(estimatedReportSize / config.limitInBytes);
         const reports = config.split(report, numOfChunks);
-        for (const report of reports) {
-          add(report);
+        for (const splitReport of reports) {
+          const splitReportSize = config.calculateReportSize(splitReport);
+          if (splitReportSize >= reportSize) {
+            pushToBuffer(splitReport, splitReportSize);
+          } else {
+            add(splitReport);
+          }
         }
       } else {
-        buffer.push(report);
+        pushToBuffer(report, reportSize);
       }
     } else {
-      buffer.push(report);
-      if (sumOfOperationsSizeInBuffer() >= config.size) {
+      pushToBuffer(report);
+      if (bufferedOperations >= config.size) {
         void send({
           scheduleNextSend: true,
         });
