@@ -12,4 +12,4 @@ Set the `CLICKHOUSE_TDIGEST_ROLLUPS_START` environment variable on the `server` 
 
 A follow up breaking change release that will contain a database migration for dropping the tables `operations_minutely`, `operations_hourly`, `clients_minutely` and `clients_hourly` can be expected to land roughly 30 days after this version is released. By then the new tables can satisfy all the date ranges for queries executed against those tables.
 
-A follow up breaking change release that will contain a database migration for dropping the tables `operations_daily` and `clients_daily` can be expected to land  roughly 1 year (equal to our enterprise plan retention of Hive Console Cloud) after this version is released. By then the new tables can satisfy all the date ranges for queries executed against those tables.
+A follow up breaking change release that will contain a database migration for dropping the tables `operations_daily` and `clients_daily` can be expected to land roughly 1 year (equal to our enterprise plan retention of Hive Console Cloud) after this version is released. By then the new tables can satisfy all the date ranges for queries executed against those tables.
