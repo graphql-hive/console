@@ -199,6 +199,22 @@ test('app:check validates an Apollo manifest against the latest schema', async (
   );
 });
 
+test('app:check handles missing and empty operation inputs', async () => {
+  const accessToken = 'unused-access-token';
+  const missingOperationsFile = join(tmpdir(), `missing-operations-${Date.now()}.json`);
+
+  await expect(
+    appCheck(['--registry.accessToken', accessToken, missingOperationsFile]),
+  ).rejects.toThrow(/Unable to find any GraphQL type definitions/);
+
+  const emptyOperationsFile = join(tmpdir(), `empty-operations-${Date.now()}.json`);
+  await writeFile(emptyOperationsFile, '{}', 'utf-8');
+
+  await expect(
+    appCheck(['--registry.accessToken', accessToken, emptyOperationsFile]),
+  ).resolves.toContain('No operations found');
+});
+
 test('app:create --publish creates and immediately activates the deployment', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, setFeatureFlag, organization } = await createOrg();
