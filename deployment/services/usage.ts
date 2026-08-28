@@ -81,10 +81,6 @@ export function deployUsage({
           limit: environment.podsConfig.usageService.cpuMax,
           requests: environment.podsConfig.usageService.cpuMin,
         },
-        autoScaling: {
-          cpuAverageToScale: environment.podsConfig.usageService.cpuAverageToScale,
-          maxReplicas: environment.podsConfig.usageService.maxReplicas,
-        },
       },
       [dbMigrations, commerce.deployment, commerce.service].filter(Boolean),
     )
