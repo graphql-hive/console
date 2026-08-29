@@ -26,3 +26,4 @@ minimumReleaseAgeExclude:
   - graphql-modules
   - 'react-foundry'
   - 'graphql-scalars'
+  - '@eddeee888/gcg-typescript-resolver-files' # TODO: remove before merge
