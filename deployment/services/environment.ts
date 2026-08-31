@@ -70,8 +70,8 @@ export function prepareEnvironment(input: {
         memory:
           isProduction || isStaging
             ? {
-                min: '1500Mi',
-                max: '1500Mi',
+                min: '2000Mi',
+                max: '2000Mi',
               }
             : {
                 min: '500Mi',
