@@ -57,6 +57,7 @@ export function deployUsage({
         availabilityOnEveryNode: true,
         env: {
           ...environment.envVars,
+          NODEJS_FLAGS: '--max-old-space-size-percentage=80',
           LOG_LEVEL: 'info',
           SENTRY: sentry.enabled ? '1' : '0',
           REQUEST_LOGGING: '0',
@@ -76,14 +77,16 @@ export function deployUsage({
         },
         exposesMetrics: true,
         port: 4000,
-        pdb: true,
+        pdb: {
+          minAvailable: environment.isProduction ? environment.podsConfig.usageService.replicas : 1,
+        },
         cpu: {
           limit: environment.podsConfig.usageService.cpuMax,
           requests: environment.podsConfig.usageService.cpuMin,
         },
-        autoScaling: {
-          cpuAverageToScale: environment.podsConfig.usageService.cpuAverageToScale,
-          maxReplicas: environment.podsConfig.usageService.maxReplicas,
+        memory: {
+          limit: environment.podsConfig.usageService.memory.max,
+          requests: environment.podsConfig.usageService.memory.min,
         },
       },
       [dbMigrations, commerce.deployment, commerce.service].filter(Boolean),
