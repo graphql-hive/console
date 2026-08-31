@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import Agent from 'agentkeepalive';
 import { Inject, Injectable } from 'graphql-modules';
 import { printWithValues, sql, SqlStatement, toQueryParams } from '@hive/clickhouse';
-import { SpanKind, trace } from '@hive/service-common';
+import { setErrorSource, SpanKind, trace } from '@hive/service-common';
 import { castValue, compressGzip } from '@hive/usage-common';
 import { atomic } from '../../../shared/helpers';
 import { HttpClient } from '../../shared/providers/http-client';
@@ -221,7 +221,7 @@ export class ClickHouse {
           error.name,
           error.message,
         );
-        return Promise.reject(error);
+        return Promise.reject(setErrorSource(error, 'clickhouse'));
       })
       .finally(() => {
         this.logger.debug(
@@ -381,7 +381,7 @@ export class ClickHouse {
           error.name,
           error.message,
         );
-        return Promise.reject(error);
+        return Promise.reject(setErrorSource(error, 'clickhouse'));
       })
       .finally(() => {
         this.logger.debug(
@@ -482,7 +482,7 @@ export class ClickHouse {
           error.name,
           error.message,
         );
-        return Promise.reject(error);
+        return Promise.reject(setErrorSource(error, 'clickhouse'));
       })
       .finally(() => {
         this.logger.debug(
