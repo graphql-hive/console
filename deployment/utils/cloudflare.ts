@@ -79,35 +79,39 @@ export class CloudflareCDN {
         },
         {
           name: 'S3_ENDPOINT',
-          text: this.config.s3.secret.raw.endpoint,
-        },
-        {
-          name: 'S3_ACCESS_KEY_ID',
-          text: this.config.s3.secret.raw.accessKeyId,
-        },
-        {
-          name: 'S3_SECRET_ACCESS_KEY',
-          text: this.config.s3.secret.raw.secretAccessKey,
-        },
-        {
-          name: 'S3_BUCKET_NAME',
-          text: this.config.s3.secret.raw.bucket,
-        },
-        {
-          name: 'S3_MIRROR_ENDPOINT',
           text: this.config.s3Mirror.secret.raw.endpoint,
         },
         {
-          name: 'S3_MIRROR_ACCESS_KEY_ID',
+          name: 'S3_ACCESS_KEY_ID',
           text: this.config.s3Mirror.secret.raw.accessKeyId,
         },
         {
-          name: 'S3_MIRROR_SECRET_ACCESS_KEY',
+          name: 'S3_SECRET_ACCESS_KEY',
           text: this.config.s3Mirror.secret.raw.secretAccessKey,
         },
         {
-          name: 'S3_MIRROR_BUCKET_NAME',
+          name: 'S3_BUCKET_NAME',
           text: this.config.s3Mirror.secret.raw.bucket,
+        },
+        {
+          name: 'S3_MIRROR',
+          text: '0',
+        },
+        {
+          name: 'S3_MIRROR_ENDPOINT',
+          text: this.config.s3.secret.raw.endpoint,
+        },
+        {
+          name: 'S3_MIRROR_ACCESS_KEY_ID',
+          text: this.config.s3.secret.raw.accessKeyId,
+        },
+        {
+          name: 'S3_MIRROR_SECRET_ACCESS_KEY',
+          text: this.config.s3.secret.raw.secretAccessKey,
+        },
+        {
+          name: 'S3_MIRROR_BUCKET_NAME',
+          text: this.config.s3.secret.raw.bucket,
         },
       ],
     });

@@ -158,7 +158,7 @@ export function deployGraphQL({
             observability.enabled && observability.tracingEndpoint
               ? observability.tracingEndpoint
               : '',
-          S3_MIRROR: '1',
+          S3_MIRROR: '0',
         },
         exposesMetrics: true,
         port: 4000,
@@ -197,15 +197,15 @@ export function deployGraphQL({
       .withSecret('CDN_AUTH_PRIVATE_KEY', cdn.secret, 'authPrivateKey')
       .withSecret('CDN_CF_BASE_URL', cdn.secret, 'baseUrl')
       // S3
-      .withSecret('S3_ACCESS_KEY_ID', s3.secret, 'accessKeyId')
-      .withSecret('S3_SECRET_ACCESS_KEY', s3.secret, 'secretAccessKey')
-      .withSecret('S3_BUCKET_NAME', s3.secret, 'bucket')
-      .withSecret('S3_ENDPOINT', s3.secret, 'endpoint')
+      .withSecret('S3_ACCESS_KEY_ID', s3Mirror.secret, 'accessKeyId')
+      .withSecret('S3_SECRET_ACCESS_KEY', s3Mirror.secret, 'secretAccessKey')
+      .withSecret('S3_BUCKET_NAME', s3Mirror.secret, 'bucket')
+      .withSecret('S3_ENDPOINT', s3Mirror.secret, 'endpoint')
       // S3 Mirror
-      .withSecret('S3_MIRROR_ACCESS_KEY_ID', s3Mirror.secret, 'accessKeyId')
-      .withSecret('S3_MIRROR_SECRET_ACCESS_KEY', s3Mirror.secret, 'secretAccessKey')
-      .withSecret('S3_MIRROR_BUCKET_NAME', s3Mirror.secret, 'bucket')
-      .withSecret('S3_MIRROR_ENDPOINT', s3Mirror.secret, 'endpoint')
+      .withSecret('S3_MIRROR_ACCESS_KEY_ID', s3.secret, 'accessKeyId')
+      .withSecret('S3_MIRROR_SECRET_ACCESS_KEY', s3.secret, 'secretAccessKey')
+      .withSecret('S3_MIRROR_BUCKET_NAME', s3.secret, 'bucket')
+      .withSecret('S3_MIRROR_ENDPOINT', s3.secret, 'endpoint')
       // S3 Audit Log
       .withSecret('S3_AUDIT_LOG_ACCESS_KEY_ID', s3AuditLog.secret, 'accessKeyId')
       .withSecret('S3_AUDIT_LOG_SECRET_ACCESS_KEY', s3AuditLog.secret, 'secretAccessKey')

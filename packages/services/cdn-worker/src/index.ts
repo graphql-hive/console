@@ -17,6 +17,7 @@ type Env = {
   S3_BUCKET_NAME: string;
   S3_SESSION_TOKEN?: string;
 
+  S3_MIRROR: string;
   S3_MIRROR_ENDPOINT: string;
   S3_MIRROR_ACCESS_KEY_ID: string;
   S3_MIRROR_SECRET_ACCESS_KEY: string;
@@ -64,16 +65,19 @@ const handler: ExportedHandler<Env> = {
       endpoint: env.S3_ENDPOINT,
     };
 
-    const s3Mirror = {
-      client: new AwsClient({
-        accessKeyId: env.S3_MIRROR_ACCESS_KEY_ID,
-        secretAccessKey: env.S3_MIRROR_SECRET_ACCESS_KEY,
-        sessionToken: env.S3_MIRROR_SESSION_TOKEN,
-        service: 's3',
-      }),
-      bucketName: env.S3_MIRROR_BUCKET_NAME,
-      endpoint: env.S3_MIRROR_ENDPOINT,
-    };
+    const s3Mirror =
+      env.S3_MIRROR === '1'
+        ? {
+            client: new AwsClient({
+              accessKeyId: env.S3_MIRROR_ACCESS_KEY_ID,
+              secretAccessKey: env.S3_MIRROR_SECRET_ACCESS_KEY,
+              sessionToken: env.S3_MIRROR_SESSION_TOKEN,
+              service: 's3',
+            }),
+            bucketName: env.S3_MIRROR_BUCKET_NAME,
+            endpoint: env.S3_MIRROR_ENDPOINT,
+          }
+        : null;
 
     const analytics = createAnalytics({
       usage: env.USAGE_ANALYTICS,
