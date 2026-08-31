@@ -9,18 +9,6 @@ export type ErrorWithSource = Error & {
   errorSource: ErrorSource;
 };
 
-const unexpectedErrorCounted = Symbol('unexpectedErrorCounted');
-
-export function markUnexpectedErrorCounted(error: unknown): void {
-  if (error instanceof Error) {
-    Object.defineProperty(error, unexpectedErrorCounted, { value: true });
-  }
-}
-
-export function isUnexpectedErrorCounted(error: unknown): boolean {
-  return error instanceof Error && unexpectedErrorCounted in error;
-}
-
 export function withErrorSource<T>(promise: Promise<T>, errorSource: ErrorSource): Promise<T> {
   return promise.catch(error => {
     throw setErrorSource(error, errorSource);
