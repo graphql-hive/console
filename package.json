@@ -183,7 +183,8 @@
       "@opentelemetry/propagator-jaeger@<2.9.0": "2.9.0",
       "sharp@<0.35.0": "0.35.0",
       "body-parser@1.x.x": "1.20.6",
-      "prettier-plugin-sh": "0.19.0"
+      "prettier-plugin-sh": "0.19.0",
+      "pacote@<21.5.1": "^21.5.1"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
