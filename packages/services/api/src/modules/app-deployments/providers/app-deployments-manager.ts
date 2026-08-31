@@ -1,12 +1,51 @@
 import { Injectable, Scope } from 'graphql-modules';
+import promClient from 'prom-client';
+import { getErrorSource } from '@hive/service-common';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Target } from '../../../shared/entities';
+import { HiveError } from '../../../shared/errors';
 import { batch } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { TargetManager } from '../../target/providers/target-manager';
 import { AppDeployments, type AppDeploymentRecord } from './app-deployments';
+
+const appDeploymentCreateOutcomeCount = new promClient.Counter({
+  name: 'app_deployment_create_outcome_count',
+  help: 'Number of completed app deployment create operations by outcome. Only unexpected errors are treated as failures.',
+  labelNames: ['conclusion'],
+});
+
+const appDeploymentCreateUnexpectedErrorCount = new promClient.Counter({
+  name: 'app_deployment_create_unexpected_error_count',
+  help: 'Unexpected, not gracefully handled app deployment create errors.',
+  labelNames: ['source'],
+});
+
+const appDeploymentDocumentUploadOutcomeCount = new promClient.Counter({
+  name: 'app_deployment_document_upload_outcome_count',
+  help: 'Number of completed app deployment document upload operations by outcome. Only unexpected errors are treated as failures.',
+  labelNames: ['conclusion'],
+});
+
+const appDeploymentDocumentUploadUnexpectedErrorCount = new promClient.Counter({
+  name: 'app_deployment_document_upload_unexpected_error_count',
+  help: 'Unexpected, not gracefully handled app deployment document upload errors.',
+  labelNames: ['source'],
+});
+
+const appDeploymentPublishOutcomeCount = new promClient.Counter({
+  name: 'app_deployment_publish_outcome_count',
+  help: 'Number of completed app deployment publish operations by outcome. Only unexpected errors are treated as failures.',
+  labelNames: ['conclusion'],
+});
+
+const appDeploymentPublishUnexpectedErrorCount = new promClient.Counter({
+  name: 'app_deployment_publish_unexpected_error_count',
+  help: 'Unexpected, not gracefully handled app deployment publish errors.',
+  labelNames: ['source'],
+});
 
 export type AppDeploymentStatus = 'pending' | 'active' | 'retired';
 
@@ -68,6 +107,32 @@ export class AppDeploymentsManager {
       version: string;
     };
   }) {
+    return this.internalCreateAppDeployment(args).then(
+      result => {
+        appDeploymentCreateOutcomeCount.inc({ conclusion: 'success' });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          appDeploymentCreateOutcomeCount.inc({ conclusion: 'success' });
+        } else {
+          appDeploymentCreateOutcomeCount.inc({ conclusion: 'failure' });
+          appDeploymentCreateUnexpectedErrorCount.inc({
+            source: getErrorSource(error) ?? 'unknown',
+          });
+        }
+        throw error;
+      },
+    );
+  }
+
+  private async internalCreateAppDeployment(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
+    appDeployment: {
+      name: string;
+      version: string;
+    };
+  }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
     });
@@ -95,6 +160,36 @@ export class AppDeploymentsManager {
   }
 
   async addDocumentsToAppDeployment(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
+    appDeployment: {
+      name: string;
+      version: string;
+    };
+    documents: ReadonlyArray<{
+      hash: string;
+      body: string;
+    }>;
+  }) {
+    return this.internalAddDocumentsToAppDeployment(args).then(
+      result => {
+        appDeploymentDocumentUploadOutcomeCount.inc({ conclusion: 'success' });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          appDeploymentDocumentUploadOutcomeCount.inc({ conclusion: 'success' });
+        } else {
+          appDeploymentDocumentUploadOutcomeCount.inc({ conclusion: 'failure' });
+          appDeploymentDocumentUploadUnexpectedErrorCount.inc({
+            source: getErrorSource(error) ?? 'unknown',
+          });
+        }
+        throw error;
+      },
+    );
+  }
+
+  private async internalAddDocumentsToAppDeployment(args: {
     reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
@@ -134,6 +229,32 @@ export class AppDeploymentsManager {
   }
 
   async activateAppDeployment(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
+    appDeployment: {
+      name: string;
+      version: string;
+    };
+  }) {
+    return this.internalActivateAppDeployment(args).then(
+      result => {
+        appDeploymentPublishOutcomeCount.inc({ conclusion: 'success' });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          appDeploymentPublishOutcomeCount.inc({ conclusion: 'success' });
+        } else {
+          appDeploymentPublishOutcomeCount.inc({ conclusion: 'failure' });
+          appDeploymentPublishUnexpectedErrorCount.inc({
+            source: getErrorSource(error) ?? 'unknown',
+          });
+        }
+        throw error;
+      },
+    );
+  }
+
+  private async internalActivateAppDeployment(args: {
     reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
