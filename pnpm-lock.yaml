@@ -185,8 +185,8 @@ importers:
         specifier: 0.12.1
         version: 0.12.1(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)
       '@theguild/federation-composition':
-        specifier: 0.25.0
-        version: 0.25.0(graphql@16.9.0)
+        specifier: 0.26.0
+        version: 0.26.0(graphql@16.9.0)
       '@theguild/prettier-config':
         specifier: 2.0.7
         version: 2.0.7(prettier@3.4.2)
@@ -366,8 +366,8 @@ importers:
         specifier: workspace:*
         version: link:../packages/services/workflows
       '@theguild/federation-composition':
-        specifier: 0.25.0
-        version: 0.25.0(graphql@16.9.0)
+        specifier: 0.26.0
+        version: 0.26.0(graphql@16.9.0)
       '@trpc/client':
         specifier: 10.45.3
         version: 10.45.3(@trpc/server@10.45.3)
@@ -545,8 +545,8 @@ importers:
         specifier: 4.7.16
         version: 4.7.16
       '@theguild/federation-composition':
-        specifier: 0.25.0
-        version: 0.25.0(graphql@16.9.0)
+        specifier: 0.26.0
+        version: 0.26.0(graphql@16.9.0)
       cli-table3:
         specifier: 0.6.5
         version: 0.6.5
@@ -1217,8 +1217,8 @@ importers:
         specifier: 7.10.0
         version: 7.10.0
       '@theguild/federation-composition':
-        specifier: 0.25.0
-        version: 0.25.0(graphql@16.9.0)
+        specifier: 0.26.0
+        version: 0.26.0(graphql@16.9.0)
       '@trpc/client':
         specifier: 10.45.3
         version: 10.45.3(@trpc/server@10.45.3)
@@ -1454,8 +1454,8 @@ importers:
         specifier: 2.13.2
         version: 2.13.2(graphql@16.9.0)
       '@theguild/federation-composition':
-        specifier: 0.25.0
-        version: 0.25.0(graphql@16.9.0)
+        specifier: 0.26.0
+        version: 0.26.0(graphql@16.9.0)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1563,8 +1563,8 @@ importers:
         specifier: 7.120.2
         version: 7.120.2
       '@theguild/federation-composition':
-        specifier: 0.25.0
-        version: 0.25.0(graphql@16.9.0)
+        specifier: 0.26.0
+        version: 0.26.0(graphql@16.9.0)
       '@trpc/server':
         specifier: 10.45.3
         version: 10.45.3
@@ -1686,8 +1686,8 @@ importers:
         specifier: 1.13.5
         version: 1.13.5
       '@theguild/federation-composition':
-        specifier: 0.25.0
-        version: 0.25.0(graphql@16.9.0)
+        specifier: 0.26.0
+        version: 0.26.0(graphql@16.9.0)
       '@trpc/server':
         specifier: 10.45.3
         version: 10.45.3
@@ -10480,8 +10480,8 @@ packages:
     peerDependencies:
       graphql: ^16.0.0
 
-  '@theguild/federation-composition@0.25.0':
-    resolution: {integrity: sha512-Nvl38wnVGsUE+F0qJAP/cS8B+PZceCeL3qgyt0oGp5WKRHfVqfwW0L029E/UELU0i6ON4RkRRdUPNtmoAR9lOA==}
+  '@theguild/federation-composition@0.26.0':
+    resolution: {integrity: sha512-UWqrZvakf8F6DUnLsWn1JQDrgKTu9jIsBmDfZ8edgzP7GEHFXtrJ+xTRyB/q6t1R5ETk7Y3V2mSNbjtVAKql5A==}
     engines: {node: '>=18'}
     peerDependencies:
       graphql: ^16.0.0 || ^17.0.0
@@ -31407,7 +31407,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@theguild/federation-composition@0.25.0(graphql@16.9.0)':
+  '@theguild/federation-composition@0.26.0(graphql@16.9.0)':
     dependencies:
       constant-case: 3.0.4
       debug: 4.4.3(supports-color@8.1.1)
