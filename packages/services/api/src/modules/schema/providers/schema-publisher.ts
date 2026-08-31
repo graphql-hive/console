@@ -1298,7 +1298,9 @@ export class SchemaPublisher {
         return result;
       },
       error => {
-        if (error instanceof HiveError === false) {
+        if (error instanceof HiveError) {
+          schemaCheckOutcomeCount.inc({ conclusion: 'success' });
+        } else {
           schemaCheckOutcomeCount.inc({ conclusion: 'failure' });
           schemaCheckUnexpectedErrorCount.inc(unexpectedErrorMetricLabels(error));
         }
@@ -1327,8 +1329,11 @@ export class SchemaPublisher {
         return result;
       },
       error => {
-        if (!(error instanceof HiveError)) {
+        if (error instanceof HiveError) {
+          schemaPublishOutcomeCount.inc({ conclusion: 'success' });
+        } else {
           schemaPublishOutcomeCount.inc({ conclusion: 'failure' });
+          schemaPublishUnexpectedErrorCount.inc(unexpectedErrorMetricLabels(error));
         }
         throw error;
       },
@@ -1503,10 +1508,6 @@ export class SchemaPublisher {
           } satisfies PublishResult;
         }
 
-        if (error instanceof HiveError === false) {
-          schemaPublishUnexpectedErrorCount.inc(unexpectedErrorMetricLabels(error));
-        }
-
         throw error;
       });
   }
@@ -1531,7 +1532,11 @@ export class SchemaPublisher {
         return result;
       },
       error => {
-        if (error instanceof HiveError === false) {
+        if (error instanceof HiveError) {
+          schemaDeleteOutcomeCount.inc({
+            conclusion: 'success',
+          });
+        } else {
           schemaDeleteOutcomeCount.inc({ conclusion: 'failure' });
           schemaDeleteUnexpectedErrorCount.inc(unexpectedErrorMetricLabels(error));
         }
@@ -2432,7 +2437,9 @@ export class SchemaPublisher {
         return result;
       },
       error => {
-        if (error instanceof HiveError === false) {
+        if (error instanceof HiveError) {
+          schemaPromotionOutcomeCount.inc({ conclusion: 'success' });
+        } else {
           schemaPromotionOutcomeCount.inc({ conclusion: 'failure' });
           schemaPromotionUnexpectedErrorCount.inc(unexpectedErrorMetricLabels(error));
         }
