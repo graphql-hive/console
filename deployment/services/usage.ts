@@ -77,7 +77,9 @@ export function deployUsage({
         },
         exposesMetrics: true,
         port: 4000,
-        pdb: true,
+        pdb: {
+          minAvailable: environment.isProduction ? environment.podsConfig.usageService.replicas : 1,
+        },
         cpu: {
           limit: environment.podsConfig.usageService.cpuMax,
           requests: environment.podsConfig.usageService.cpuMin,
