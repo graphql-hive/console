@@ -64,7 +64,7 @@ export function prepareEnvironment(input: {
         replicas: isProduction ? 6 : isStaging ? 3 : 1,
       },
       usageService: {
-        replicas: isProduction ? 12 : isStaging ? 6 : 1,
+        replicas: isProduction ? 12 : isStaging ? 3 : 1,
         cpuMin: isProduction || isStaging ? '200m' : '100m',
         cpuMax: isProduction || isStaging ? '1000m' : '100m',
         memory:
@@ -74,7 +74,7 @@ export function prepareEnvironment(input: {
                 max: '2000Mi',
               }
             : {
-                min: '500Mi',
+                min: '200Mi',
                 max: '500Mi',
               },
       },
