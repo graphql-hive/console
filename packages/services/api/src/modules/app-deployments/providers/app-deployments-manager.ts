@@ -1,10 +1,16 @@
 import { Injectable, Scope } from 'graphql-modules';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Target } from '../../../shared/entities';
+import { HiveError } from '../../../shared/errors';
 import { batch } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
+import {
+  registryOperationOutcomeCount,
+  registryOperationUnexpectedErrorCount,
+  unexpectedErrorMetricLabels,
+} from '../../shared/providers/registry-operation-metrics';
 import { TargetManager } from '../../target/providers/target-manager';
 import { AppDeployments, type AppDeploymentRecord } from './app-deployments';
 
@@ -68,6 +74,41 @@ export class AppDeploymentsManager {
       version: string;
     };
   }) {
+    return this.internalCreateAppDeployment(args).then(
+      result => {
+        registryOperationOutcomeCount.inc({
+          operation: 'app_deployment_create',
+          conclusion: 'success',
+        });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          registryOperationOutcomeCount.inc({
+            operation: 'app_deployment_create',
+            conclusion: 'success',
+          });
+        } else {
+          registryOperationOutcomeCount.inc({
+            operation: 'app_deployment_create',
+            conclusion: 'failure',
+          });
+          registryOperationUnexpectedErrorCount.inc(
+            unexpectedErrorMetricLabels('app_deployment_create', error),
+          );
+        }
+        throw error;
+      },
+    );
+  }
+
+  private async internalCreateAppDeployment(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
+    appDeployment: {
+      name: string;
+      version: string;
+    };
+  }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
     });
@@ -95,6 +136,45 @@ export class AppDeploymentsManager {
   }
 
   async addDocumentsToAppDeployment(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
+    appDeployment: {
+      name: string;
+      version: string;
+    };
+    documents: ReadonlyArray<{
+      hash: string;
+      body: string;
+    }>;
+  }) {
+    return this.internalAddDocumentsToAppDeployment(args).then(
+      result => {
+        registryOperationOutcomeCount.inc({
+          operation: 'persisted_document_upload',
+          conclusion: 'success',
+        });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          registryOperationOutcomeCount.inc({
+            operation: 'persisted_document_upload',
+            conclusion: 'success',
+          });
+        } else {
+          registryOperationOutcomeCount.inc({
+            operation: 'persisted_document_upload',
+            conclusion: 'failure',
+          });
+          registryOperationUnexpectedErrorCount.inc(
+            unexpectedErrorMetricLabels('persisted_document_upload', error),
+          );
+        }
+        throw error;
+      },
+    );
+  }
+
+  private async internalAddDocumentsToAppDeployment(args: {
     reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
@@ -134,6 +214,41 @@ export class AppDeploymentsManager {
   }
 
   async activateAppDeployment(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
+    appDeployment: {
+      name: string;
+      version: string;
+    };
+  }) {
+    return this.internalActivateAppDeployment(args).then(
+      result => {
+        registryOperationOutcomeCount.inc({
+          operation: 'app_deployment_publish',
+          conclusion: 'success',
+        });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          registryOperationOutcomeCount.inc({
+            operation: 'app_deployment_publish',
+            conclusion: 'success',
+          });
+        } else {
+          registryOperationOutcomeCount.inc({
+            operation: 'app_deployment_publish',
+            conclusion: 'failure',
+          });
+          registryOperationUnexpectedErrorCount.inc(
+            unexpectedErrorMetricLabels('app_deployment_publish', error),
+          );
+        }
+        throw error;
+      },
+    );
+  }
+
+  private async internalActivateAppDeployment(args: {
     reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;

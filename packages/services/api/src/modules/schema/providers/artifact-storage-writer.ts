@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Inject } from 'graphql-modules';
 import { buildArtifactStorageKey } from '@hive/cdn-script/artifact-storage-reader';
-import { traceFn } from '@hive/service-common';
+import { setErrorSource, traceFn } from '@hive/service-common';
 import { Logger } from '../../shared/providers/logger';
 import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
 
@@ -98,8 +98,11 @@ export class ArtifactStorageWriter {
             versionedKey,
             versionedResult.statusCode,
           );
-          throw new Error(
-            `Unexpected status code ${versionedResult.statusCode} when writing versioned artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, versionId=${args.versionId}, key=${versionedKey})`,
+          throw setErrorSource(
+            new Error(
+              `Unexpected status code ${versionedResult.statusCode} when writing versioned artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, versionId=${args.versionId}, key=${versionedKey})`,
+            ),
+            `s3 ${s3.endpoint}`,
           );
         }
       }
@@ -128,8 +131,11 @@ export class ArtifactStorageWriter {
           versionedKey,
           latestKey,
         );
-        throw new Error(
-          `Unexpected status code ${latestResult.statusCode} when writing latest artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, contractName=${args.contractName}, key=${latestKey}). Note: versioned artifact was already written.`,
+        throw setErrorSource(
+          new Error(
+            `Unexpected status code ${latestResult.statusCode} when writing latest artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, contractName=${args.contractName}, key=${latestKey}). Note: versioned artifact was already written.`,
+          ),
+          `s3 ${new URL(s3.endpoint).origin}`,
         );
       }
     }

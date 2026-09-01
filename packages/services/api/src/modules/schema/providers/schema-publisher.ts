@@ -33,6 +33,11 @@ import { DistributedCache } from '../../shared/providers/distributed-cache';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Mutex, MutexResourceLockedError } from '../../shared/providers/mutex';
+import {
+  registryOperationOutcomeCount,
+  registryOperationUnexpectedErrorCount,
+  unexpectedErrorMetricLabels,
+} from '../../shared/providers/registry-operation-metrics';
 import { Storage, type TargetSelector } from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
 import { toGraphQLSchemaCheck } from '../to-graphql-schema-check';
@@ -87,20 +92,8 @@ const schemaCheckCount = new promClient.Counter({
 
 const schemaPublishCount = new promClient.Counter({
   name: 'registry_publish_count',
-  help: 'Number of schema publishes',
+  help: 'Number of performed schema publishes',
   labelNames: ['model', 'projectType', 'conclusion'],
-});
-
-const schemaPublishUnexpectedErrorCount = new promClient.Counter({
-  name: 'registry_publish_unexpected_error_count',
-  help: 'Unexpected, not gracefully handled errors. E.g. from GitHub or other third-party services.',
-  labelNames: ['errorName'],
-});
-
-const schemaCheckUnexpectedErrorCount = new promClient.Counter({
-  name: 'registry_check_unexpected_error_count',
-  help: 'Unexpected, not gracefully handled errors. E.g. from GitHub or other third-party services.',
-  labelNames: ['errorName'],
 });
 
 const schemaDeleteCount = new promClient.Counter({
@@ -1250,15 +1243,21 @@ export class SchemaPublisher {
   }
 
   async check(input: CheckInput) {
-    return await this.internalCheck(input).catch(error => {
-      if (error instanceof HiveError === false) {
-        schemaCheckUnexpectedErrorCount.inc({
-          errorName: (error instanceof Error && error.name) || 'unknown',
-        });
-      }
-
-      throw error;
-    });
+    return await this.internalCheck(input).then(
+      result => {
+        registryOperationOutcomeCount.inc({ operation: 'check', conclusion: 'success' });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          registryOperationOutcomeCount.inc({ operation: 'check', conclusion: 'success' });
+        } else {
+          registryOperationOutcomeCount.inc({ operation: 'check', conclusion: 'failure' });
+          registryOperationUnexpectedErrorCount.inc(unexpectedErrorMetricLabels('check', error));
+        }
+        throw error;
+      },
+    );
   }
 
   @traceFn('SchemaPublisher.publish', {
@@ -1273,6 +1272,30 @@ export class SchemaPublisher {
     }),
   })
   async publish(input: PublishInput, signal: AbortSignal): Promise<PublishResult> {
+    return this.internalPublishRequest(input, signal).then(
+      result => {
+        registryOperationOutcomeCount.inc({
+          operation: 'publish',
+          conclusion: 'success',
+        });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          registryOperationOutcomeCount.inc({ operation: 'publish', conclusion: 'success' });
+        } else {
+          registryOperationOutcomeCount.inc({ operation: 'publish', conclusion: 'failure' });
+          registryOperationUnexpectedErrorCount.inc(unexpectedErrorMetricLabels('publish', error));
+        }
+        throw error;
+      },
+    );
+  }
+
+  private async internalPublishRequest(
+    input: PublishInput,
+    signal: AbortSignal,
+  ): Promise<PublishResult> {
     this.logger.debug('Start schema publication.');
 
     const selector = await this.idTranslator.resolveTargetReference({
@@ -1437,12 +1460,6 @@ export class SchemaPublisher {
           } satisfies PublishResult;
         }
 
-        if (error instanceof HiveError === false) {
-          schemaPublishUnexpectedErrorCount.inc({
-            errorName: (error instanceof Error && error.name) || 'unknown',
-          });
-        }
-
         throw error;
       });
   }
@@ -1459,6 +1476,30 @@ export class SchemaPublisher {
     }),
   })
   async delete(input: DeleteInput, signal: AbortSignal) {
+    return this.internalDeleteRequest(input, signal).then(
+      result => {
+        registryOperationOutcomeCount.inc({
+          operation: 'delete',
+          conclusion: 'success',
+        });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          registryOperationOutcomeCount.inc({
+            operation: 'delete',
+            conclusion: 'success',
+          });
+        } else {
+          registryOperationOutcomeCount.inc({ operation: 'delete', conclusion: 'failure' });
+          registryOperationUnexpectedErrorCount.inc(unexpectedErrorMetricLabels('delete', error));
+        }
+        throw error;
+      },
+    );
+  }
+
+  private async internalDeleteRequest(input: DeleteInput, signal: AbortSignal) {
     this.logger.info('Deleting schema (input=%o)', input);
 
     const selector = await this.idTranslator.resolveTargetReference({
@@ -2340,6 +2381,32 @@ export class SchemaPublisher {
       /** Where the schema version is promoted to. */
       target: Types.TargetReferenceInput;
       /** Which schema version is promoted. This can be either a target or specific schema version by id. */
+      source: Types.SchemaVersionPromoteSourceInput;
+    },
+    signal: AbortSignal,
+  ) {
+    return this.internalPromoteSchemaVersionRequest(args, signal).then(
+      result => {
+        registryOperationOutcomeCount.inc({ operation: 'promotion', conclusion: 'success' });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          registryOperationOutcomeCount.inc({ operation: 'promotion', conclusion: 'success' });
+        } else {
+          registryOperationOutcomeCount.inc({ operation: 'promotion', conclusion: 'failure' });
+          registryOperationUnexpectedErrorCount.inc(
+            unexpectedErrorMetricLabels('promotion', error),
+          );
+        }
+        throw error;
+      },
+    );
+  }
+
+  private async internalPromoteSchemaVersionRequest(
+    args: {
+      target: Types.TargetReferenceInput;
       source: Types.SchemaVersionPromoteSourceInput;
     },
     signal: AbortSignal,

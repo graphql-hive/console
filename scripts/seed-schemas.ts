@@ -86,6 +86,62 @@ const publishMutationDocument =
     }
   `;
 
+const checkMutationDocument =
+  /* GraphQL */
+  `
+    mutation schemaCheck($input: SchemaCheckInput!) {
+      schemaCheck(input: $input) {
+        __typename
+        ... on SchemaCheckSuccess {
+          valid
+          schemaCheck {
+            webUrl
+          }
+        }
+        ... on SchemaCheckError {
+          valid
+          schemaCheck {
+            webUrl
+          }
+          errors {
+            nodes {
+              message
+            }
+          }
+        }
+      }
+    }
+  `;
+
+async function checkSchema(args: { sdl: string; service?: string; target?: string }) {
+  const response = await fetch(graphqlEndpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      query: checkMutationDocument,
+      variables: {
+        input: {
+          sdl: args.sdl,
+          service: args.service,
+          target: args.target ? { byId: args.target } : null,
+        },
+      },
+    }),
+  }).then(res => res.json());
+  return response as {
+    data: {
+      schemaCheck: {
+        schemaCheck: { webUrl: string } | null;
+        valid: boolean;
+      } | null;
+    } | null;
+    errors?: any[];
+  };
+}
+
 async function publishSchema(args: { sdl: string; service?: string; target?: string }) {
   const commit = `${Date.now()}`;
   const response = await fetch(graphqlEndpoint, {
@@ -123,11 +179,25 @@ function minifySchema(schema: string): string {
   return schema.replace(/\s+/g, ' ').trim();
 }
 
+function createCheckSdl(sdl: string, variant: string): string {
+  const field = `seedCheck${variant.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+  return `${sdl} extend type Query { ${field}: String }`;
+}
+
 async function single() {
   const schema = await loadSchema('scripts/seed-schemas/mono.graphql', {
     loaders: [new GraphQLFileLoader()],
   });
   const sdl = minifySchema(printSchema(schema));
+  const checkResult = await checkSchema({
+    sdl: createCheckSdl(sdl, 'Single'),
+    target,
+  });
+  if (checkResult?.errors || checkResult?.data?.schemaCheck?.valid !== true) {
+    console.error(`Schema check is invalid.`);
+  } else {
+    console.log(`Schema check succeeded (${checkResult.data.schemaCheck.schemaCheck?.webUrl})`);
+  }
   const result = await publishSchema({
     sdl,
     target,
@@ -151,9 +221,21 @@ async function federation() {
         return null;
       }
       const service = d.location ? parsePath(d.location).name.replaceAll('.', '-') : undefined;
+      const sdl = minifySchema(d.rawSDL);
+
+      const checkResult = await checkSchema({
+        sdl: createCheckSdl(sdl, service ?? 'Federated'),
+        service,
+        target,
+      });
+      if (checkResult?.errors || checkResult?.data?.schemaCheck?.valid !== true) {
+        console.error(`Schema check is invalid for "${service}".`);
+      } else {
+        console.log(`Schema check for "${service}" succeeded.`);
+      }
 
       const result = await publishSchema({
-        sdl: minifySchema(d.rawSDL),
+        sdl,
         service,
         target,
       });
