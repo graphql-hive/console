@@ -74,7 +74,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"check\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"check\"}[$__range])) or vector(0)",
           "instant": true,
           "legendFormat": "Check",
           "range": false,
@@ -86,7 +86,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"publish\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"publish\"}[$__range])) or vector(0)",
           "instant": true,
           "legendFormat": "Publish",
           "range": false,
@@ -98,7 +98,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"delete\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"delete\"}[$__range])) or vector(0)",
           "instant": true,
           "legendFormat": "Delete",
           "range": false,
@@ -110,7 +110,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"promotion\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"promotion\"}[$__range])) or vector(0)",
           "instant": true,
           "legendFormat": "Promotion",
           "range": false,
@@ -166,7 +166,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"app_deployment_create\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"app_deployment_create\"}[$__range])) or vector(0)",
           "instant": true,
           "legendFormat": "Create",
           "range": false,
@@ -178,7 +178,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"persisted_document_upload\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"persisted_document_upload\"}[$__range])) or vector(0)",
           "instant": true,
           "legendFormat": "Document upload",
           "range": false,
@@ -190,7 +190,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"app_deployment_publish\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"app_deployment_publish\"}[$__range])) or vector(0)",
           "instant": true,
           "legendFormat": "Publish",
           "range": false,
@@ -264,7 +264,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "100 * (sum(increase(registry_operation_outcome_count{conclusion=\"failure\"}[$__range])) or vector(0)) / clamp_min(sum(increase(registry_operation_outcome_count[$__range])) or vector(0), 1)",
+          "expr": "100 * (sum(increase(registry_operation_outcome_count_total{conclusion=\"failure\"}[$__range])) or vector(0)) / clamp_min(sum(increase(registry_operation_outcome_count_total[$__range])) or vector(0), 1)",
           "instant": true,
           "legendFormat": "Unexpected error rate",
           "range": false,
@@ -351,7 +351,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"check\"}[$__rate_interval]))",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"check\"}[$__rate_interval]))",
           "legendFormat": "Check",
           "range": true,
           "refId": "A"
@@ -362,7 +362,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"publish\"}[$__rate_interval]))",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"publish\"}[$__rate_interval]))",
           "legendFormat": "Publish",
           "range": true,
           "refId": "B"
@@ -373,7 +373,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"delete\"}[$__rate_interval]))",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"delete\"}[$__rate_interval]))",
           "legendFormat": "Delete",
           "range": true,
           "refId": "C"
@@ -384,7 +384,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"promotion\"}[$__rate_interval]))",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"promotion\"}[$__rate_interval]))",
           "legendFormat": "Promotion",
           "range": true,
           "refId": "D"
@@ -395,7 +395,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"app_deployment_create\"}[$__rate_interval]))",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"app_deployment_create\"}[$__rate_interval]))",
           "legendFormat": "Deployment create",
           "range": true,
           "refId": "E"
@@ -406,7 +406,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"persisted_document_upload\"}[$__rate_interval]))",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"persisted_document_upload\"}[$__rate_interval]))",
           "legendFormat": "Document upload",
           "range": true,
           "refId": "F"
@@ -417,7 +417,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase(registry_operation_outcome_count{operation=\"app_deployment_publish\"}[$__rate_interval]))",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"app_deployment_publish\"}[$__rate_interval]))",
           "legendFormat": "Deployment publish",
           "range": true,
           "refId": "G"
@@ -517,7 +517,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "100 * sum(increase(registry_operation_outcome_count{operation=\"check\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count{operation=\"check\"}[$__rate_interval])), 1e-9)",
+          "expr": "100 * sum(increase(registry_operation_outcome_count_total{operation=\"check\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count_total{operation=\"check\"}[$__rate_interval])), 1e-9)",
           "legendFormat": "Check",
           "range": true,
           "refId": "A"
@@ -528,7 +528,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "100 * sum(increase(registry_operation_outcome_count{operation=\"publish\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count{operation=\"publish\"}[$__rate_interval])), 1e-9)",
+          "expr": "100 * sum(increase(registry_operation_outcome_count_total{operation=\"publish\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count_total{operation=\"publish\"}[$__rate_interval])), 1e-9)",
           "legendFormat": "Publish",
           "range": true,
           "refId": "B"
@@ -539,7 +539,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "100 * sum(increase(registry_operation_outcome_count{operation=\"delete\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count{operation=\"delete\"}[$__rate_interval])), 1e-9)",
+          "expr": "100 * sum(increase(registry_operation_outcome_count_total{operation=\"delete\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count_total{operation=\"delete\"}[$__rate_interval])), 1e-9)",
           "legendFormat": "Delete",
           "range": true,
           "refId": "C"
@@ -550,7 +550,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "100 * sum(increase(registry_operation_outcome_count{operation=\"promotion\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count{operation=\"promotion\"}[$__rate_interval])), 1e-9)",
+          "expr": "100 * sum(increase(registry_operation_outcome_count_total{operation=\"promotion\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count_total{operation=\"promotion\"}[$__rate_interval])), 1e-9)",
           "legendFormat": "Promotion",
           "range": true,
           "refId": "D"
@@ -561,7 +561,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "100 * sum(increase(registry_operation_outcome_count{operation=\"app_deployment_create\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count{operation=\"app_deployment_create\"}[$__rate_interval])), 1e-9)",
+          "expr": "100 * sum(increase(registry_operation_outcome_count_total{operation=\"app_deployment_create\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count_total{operation=\"app_deployment_create\"}[$__rate_interval])), 1e-9)",
           "legendFormat": "Deployment create",
           "range": true,
           "refId": "E"
@@ -572,7 +572,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "100 * sum(increase(registry_operation_outcome_count{operation=\"persisted_document_upload\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count{operation=\"persisted_document_upload\"}[$__rate_interval])), 1e-9)",
+          "expr": "100 * sum(increase(registry_operation_outcome_count_total{operation=\"persisted_document_upload\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count_total{operation=\"persisted_document_upload\"}[$__rate_interval])), 1e-9)",
           "legendFormat": "Document upload",
           "range": true,
           "refId": "F"
@@ -583,7 +583,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "100 * sum(increase(registry_operation_outcome_count{operation=\"app_deployment_publish\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count{operation=\"app_deployment_publish\"}[$__rate_interval])), 1e-9)",
+          "expr": "100 * sum(increase(registry_operation_outcome_count_total{operation=\"app_deployment_publish\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count_total{operation=\"app_deployment_publish\"}[$__rate_interval])), 1e-9)",
           "legendFormat": "Deployment publish",
           "range": true,
           "refId": "G"
@@ -668,7 +668,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count{operation=\"check\"}[$__rate_interval])) * $__interval_s",
+          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count_total{operation=\"check\"}[$__rate_interval])) * $__interval_s",
           "legendFormat": "Check / {{source}}",
           "range": true,
           "refId": "A"
@@ -679,7 +679,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count{operation=\"publish\"}[$__rate_interval])) * $__interval_s",
+          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count_total{operation=\"publish\"}[$__rate_interval])) * $__interval_s",
           "legendFormat": "Publish / {{source}}",
           "range": true,
           "refId": "B"
@@ -690,7 +690,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count{operation=\"delete\"}[$__rate_interval])) * $__interval_s",
+          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count_total{operation=\"delete\"}[$__rate_interval])) * $__interval_s",
           "legendFormat": "Delete / {{source}}",
           "range": true,
           "refId": "C"
@@ -701,7 +701,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count{operation=\"promotion\"}[$__rate_interval])) * $__interval_s",
+          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count_total{operation=\"promotion\"}[$__rate_interval])) * $__interval_s",
           "legendFormat": "Promotion / {{source}}",
           "range": true,
           "refId": "D"
@@ -712,7 +712,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count{operation=\"app_deployment_create\"}[$__rate_interval])) * $__interval_s",
+          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count_total{operation=\"app_deployment_create\"}[$__rate_interval])) * $__interval_s",
           "legendFormat": "Deployment create / {{source}}",
           "range": true,
           "refId": "E"
@@ -723,7 +723,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count{operation=\"persisted_document_upload\"}[$__rate_interval])) * $__interval_s",
+          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count_total{operation=\"persisted_document_upload\"}[$__rate_interval])) * $__interval_s",
           "legendFormat": "Document upload / {{source}}",
           "range": true,
           "refId": "F"
@@ -734,7 +734,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count{operation=\"app_deployment_publish\"}[$__rate_interval])) * $__interval_s",
+          "expr": "sum by (source) (rate(registry_operation_unexpected_error_count_total{operation=\"app_deployment_publish\"}[$__rate_interval])) * $__interval_s",
           "legendFormat": "Deployment publish / {{source}}",
           "range": true,
           "refId": "G"
@@ -794,7 +794,7 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum by (source) (increase(registry_operation_unexpected_error_count[$__range] offset $__rate_interval)) + sum by (source) (increase(registry_operation_unexpected_error_count[$__rate_interval]))",
+          "expr": "sum by (source) (increase(registry_operation_unexpected_error_count_total[$__range] offset $__rate_interval)) + sum by (source) (increase(registry_operation_unexpected_error_count_total[$__rate_interval]))",
           "instant": true,
           "legendFormat": "{{source}}",
           "range": false,
