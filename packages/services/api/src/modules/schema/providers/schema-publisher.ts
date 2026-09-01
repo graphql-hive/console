@@ -6,7 +6,7 @@ import lodash from 'lodash';
 import promClient from 'prom-client';
 import { z } from 'zod';
 import { CriticalityLevel } from '@graphql-inspector/core';
-import { getErrorSource, invariant, trace, traceFn } from '@hive/service-common';
+import { invariant, trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -33,6 +33,11 @@ import { DistributedCache } from '../../shared/providers/distributed-cache';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Mutex, MutexResourceLockedError } from '../../shared/providers/mutex';
+import {
+  registryOperationOutcomeCount,
+  registryOperationUnexpectedErrorCount,
+  unexpectedErrorMetricLabels,
+} from '../../shared/providers/registry-operation-metrics';
 import { Storage, type TargetSelector } from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
 import { toGraphQLSchemaCheck } from '../to-graphql-schema-check';
@@ -91,65 +96,11 @@ const schemaPublishCount = new promClient.Counter({
   labelNames: ['model', 'projectType', 'conclusion'],
 });
 
-const schemaPublishOutcomeCount = new promClient.Counter({
-  name: 'registry_publish_outcome_count',
-  help: 'Number of completed schema publish attempts by outcome. Only unexpected errors are treated as failures, invalid input or insufficient auth is treated as a success.',
-  labelNames: ['conclusion'],
-});
-
-const schemaPublishUnexpectedErrorCount = new promClient.Counter({
-  name: 'registry_publish_unexpected_error_count',
-  help: 'Unexpected, not gracefully handled schema publish errors.',
-  labelNames: ['source'],
-});
-
-const schemaCheckUnexpectedErrorCount = new promClient.Counter({
-  name: 'registry_check_unexpected_error_count',
-  help: 'Unexpected, not gracefully handled errors. E.g. from GitHub or other third-party services.',
-  labelNames: ['source'],
-});
-
-const schemaCheckOutcomeCount = new promClient.Counter({
-  name: 'registry_check_outcome_count',
-  help: 'Number of completed schema check attempts by outcome. Only unexpected errors are treated as failures.',
-  labelNames: ['conclusion'],
-});
-
 const schemaDeleteCount = new promClient.Counter({
   name: 'registry_delete_count',
   help: 'Number of schema deletes',
   labelNames: ['model', 'projectType'],
 });
-
-const schemaDeleteOutcomeCount = new promClient.Counter({
-  name: 'registry_delete_outcome_count',
-  help: 'Number of completed schema delete attempts by outcome. Only unexpected errors are treated as failures.',
-  labelNames: ['conclusion'],
-});
-
-const schemaDeleteUnexpectedErrorCount = new promClient.Counter({
-  name: 'registry_delete_unexpected_error_count',
-  help: 'Unexpected, not gracefully handled schema delete errors.',
-  labelNames: ['source'],
-});
-
-const schemaPromotionOutcomeCount = new promClient.Counter({
-  name: 'registry_promotion_outcome_count',
-  help: 'Number of completed schema promotion attempts by outcome. Only unexpected errors are treated as failures.',
-  labelNames: ['conclusion'],
-});
-
-const schemaPromotionUnexpectedErrorCount = new promClient.Counter({
-  name: 'registry_promotion_unexpected_error_count',
-  help: 'Unexpected, not gracefully handled schema promotion errors.',
-  labelNames: ['source'],
-});
-
-function unexpectedErrorMetricLabels(error: unknown) {
-  return {
-    source: getErrorSource(error) ?? 'unknown',
-  };
-}
 
 export type CheckInput = Types.SchemaCheckInput & {
   schemaProposalId?: string | null;
@@ -1294,15 +1245,15 @@ export class SchemaPublisher {
   async check(input: CheckInput) {
     return await this.internalCheck(input).then(
       result => {
-        schemaCheckOutcomeCount.inc({ conclusion: 'success' });
+        registryOperationOutcomeCount.inc({ operation: 'check', conclusion: 'success' });
         return result;
       },
       error => {
         if (error instanceof HiveError) {
-          schemaCheckOutcomeCount.inc({ conclusion: 'success' });
+          registryOperationOutcomeCount.inc({ operation: 'check', conclusion: 'success' });
         } else {
-          schemaCheckOutcomeCount.inc({ conclusion: 'failure' });
-          schemaCheckUnexpectedErrorCount.inc(unexpectedErrorMetricLabels(error));
+          registryOperationOutcomeCount.inc({ operation: 'check', conclusion: 'failure' });
+          registryOperationUnexpectedErrorCount.inc(unexpectedErrorMetricLabels('check', error));
         }
         throw error;
       },
@@ -1323,17 +1274,18 @@ export class SchemaPublisher {
   async publish(input: PublishInput, signal: AbortSignal): Promise<PublishResult> {
     return this.internalPublishRequest(input, signal).then(
       result => {
-        schemaPublishOutcomeCount.inc({
+        registryOperationOutcomeCount.inc({
+          operation: 'publish',
           conclusion: 'success',
         });
         return result;
       },
       error => {
         if (error instanceof HiveError) {
-          schemaPublishOutcomeCount.inc({ conclusion: 'success' });
+          registryOperationOutcomeCount.inc({ operation: 'publish', conclusion: 'success' });
         } else {
-          schemaPublishOutcomeCount.inc({ conclusion: 'failure' });
-          schemaPublishUnexpectedErrorCount.inc(unexpectedErrorMetricLabels(error));
+          registryOperationOutcomeCount.inc({ operation: 'publish', conclusion: 'failure' });
+          registryOperationUnexpectedErrorCount.inc(unexpectedErrorMetricLabels('publish', error));
         }
         throw error;
       },
@@ -1526,19 +1478,21 @@ export class SchemaPublisher {
   async delete(input: DeleteInput, signal: AbortSignal) {
     return this.internalDeleteRequest(input, signal).then(
       result => {
-        schemaDeleteOutcomeCount.inc({
+        registryOperationOutcomeCount.inc({
+          operation: 'delete',
           conclusion: 'success',
         });
         return result;
       },
       error => {
         if (error instanceof HiveError) {
-          schemaDeleteOutcomeCount.inc({
+          registryOperationOutcomeCount.inc({
+            operation: 'delete',
             conclusion: 'success',
           });
         } else {
-          schemaDeleteOutcomeCount.inc({ conclusion: 'failure' });
-          schemaDeleteUnexpectedErrorCount.inc(unexpectedErrorMetricLabels(error));
+          registryOperationOutcomeCount.inc({ operation: 'delete', conclusion: 'failure' });
+          registryOperationUnexpectedErrorCount.inc(unexpectedErrorMetricLabels('delete', error));
         }
         throw error;
       },
@@ -2433,15 +2387,17 @@ export class SchemaPublisher {
   ) {
     return this.internalPromoteSchemaVersionRequest(args, signal).then(
       result => {
-        schemaPromotionOutcomeCount.inc({ conclusion: 'success' });
+        registryOperationOutcomeCount.inc({ operation: 'promotion', conclusion: 'success' });
         return result;
       },
       error => {
         if (error instanceof HiveError) {
-          schemaPromotionOutcomeCount.inc({ conclusion: 'success' });
+          registryOperationOutcomeCount.inc({ operation: 'promotion', conclusion: 'success' });
         } else {
-          schemaPromotionOutcomeCount.inc({ conclusion: 'failure' });
-          schemaPromotionUnexpectedErrorCount.inc(unexpectedErrorMetricLabels(error));
+          registryOperationOutcomeCount.inc({ operation: 'promotion', conclusion: 'failure' });
+          registryOperationUnexpectedErrorCount.inc(
+            unexpectedErrorMetricLabels('promotion', error),
+          );
         }
         throw error;
       },

@@ -1,6 +1,4 @@
 import { Injectable, Scope } from 'graphql-modules';
-import promClient from 'prom-client';
-import { getErrorSource } from '@hive/service-common';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Target } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
@@ -8,44 +6,13 @@ import { batch } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
+import {
+  registryOperationOutcomeCount,
+  registryOperationUnexpectedErrorCount,
+  unexpectedErrorMetricLabels,
+} from '../../shared/providers/registry-operation-metrics';
 import { TargetManager } from '../../target/providers/target-manager';
 import { AppDeployments, type AppDeploymentRecord } from './app-deployments';
-
-const appDeploymentCreateOutcomeCount = new promClient.Counter({
-  name: 'app_deployment_create_outcome_count',
-  help: 'Number of completed app deployment create operations by outcome. Only unexpected errors are treated as failures.',
-  labelNames: ['conclusion'],
-});
-
-const appDeploymentCreateUnexpectedErrorCount = new promClient.Counter({
-  name: 'app_deployment_create_unexpected_error_count',
-  help: 'Unexpected, not gracefully handled app deployment create errors.',
-  labelNames: ['source'],
-});
-
-const appDeploymentDocumentUploadOutcomeCount = new promClient.Counter({
-  name: 'app_deployment_document_upload_outcome_count',
-  help: 'Number of completed app deployment document upload operations by outcome. Only unexpected errors are treated as failures.',
-  labelNames: ['conclusion'],
-});
-
-const appDeploymentDocumentUploadUnexpectedErrorCount = new promClient.Counter({
-  name: 'app_deployment_document_upload_unexpected_error_count',
-  help: 'Unexpected, not gracefully handled app deployment document upload errors.',
-  labelNames: ['source'],
-});
-
-const appDeploymentPublishOutcomeCount = new promClient.Counter({
-  name: 'app_deployment_publish_outcome_count',
-  help: 'Number of completed app deployment publish operations by outcome. Only unexpected errors are treated as failures.',
-  labelNames: ['conclusion'],
-});
-
-const appDeploymentPublishUnexpectedErrorCount = new promClient.Counter({
-  name: 'app_deployment_publish_unexpected_error_count',
-  help: 'Unexpected, not gracefully handled app deployment publish errors.',
-  labelNames: ['source'],
-});
 
 export type AppDeploymentStatus = 'pending' | 'active' | 'retired';
 
@@ -109,17 +76,26 @@ export class AppDeploymentsManager {
   }) {
     return this.internalCreateAppDeployment(args).then(
       result => {
-        appDeploymentCreateOutcomeCount.inc({ conclusion: 'success' });
+        registryOperationOutcomeCount.inc({
+          operation: 'app_deployment_create',
+          conclusion: 'success',
+        });
         return result;
       },
       error => {
         if (error instanceof HiveError) {
-          appDeploymentCreateOutcomeCount.inc({ conclusion: 'success' });
-        } else {
-          appDeploymentCreateOutcomeCount.inc({ conclusion: 'failure' });
-          appDeploymentCreateUnexpectedErrorCount.inc({
-            source: getErrorSource(error) ?? 'unknown',
+          registryOperationOutcomeCount.inc({
+            operation: 'app_deployment_create',
+            conclusion: 'success',
           });
+        } else {
+          registryOperationOutcomeCount.inc({
+            operation: 'app_deployment_create',
+            conclusion: 'failure',
+          });
+          registryOperationUnexpectedErrorCount.inc(
+            unexpectedErrorMetricLabels('app_deployment_create', error),
+          );
         }
         throw error;
       },
@@ -172,17 +148,26 @@ export class AppDeploymentsManager {
   }) {
     return this.internalAddDocumentsToAppDeployment(args).then(
       result => {
-        appDeploymentDocumentUploadOutcomeCount.inc({ conclusion: 'success' });
+        registryOperationOutcomeCount.inc({
+          operation: 'persisted_document_upload',
+          conclusion: 'success',
+        });
         return result;
       },
       error => {
         if (error instanceof HiveError) {
-          appDeploymentDocumentUploadOutcomeCount.inc({ conclusion: 'success' });
-        } else {
-          appDeploymentDocumentUploadOutcomeCount.inc({ conclusion: 'failure' });
-          appDeploymentDocumentUploadUnexpectedErrorCount.inc({
-            source: getErrorSource(error) ?? 'unknown',
+          registryOperationOutcomeCount.inc({
+            operation: 'persisted_document_upload',
+            conclusion: 'success',
           });
+        } else {
+          registryOperationOutcomeCount.inc({
+            operation: 'persisted_document_upload',
+            conclusion: 'failure',
+          });
+          registryOperationUnexpectedErrorCount.inc(
+            unexpectedErrorMetricLabels('persisted_document_upload', error),
+          );
         }
         throw error;
       },
@@ -237,17 +222,26 @@ export class AppDeploymentsManager {
   }) {
     return this.internalActivateAppDeployment(args).then(
       result => {
-        appDeploymentPublishOutcomeCount.inc({ conclusion: 'success' });
+        registryOperationOutcomeCount.inc({
+          operation: 'app_deployment_publish',
+          conclusion: 'success',
+        });
         return result;
       },
       error => {
         if (error instanceof HiveError) {
-          appDeploymentPublishOutcomeCount.inc({ conclusion: 'success' });
-        } else {
-          appDeploymentPublishOutcomeCount.inc({ conclusion: 'failure' });
-          appDeploymentPublishUnexpectedErrorCount.inc({
-            source: getErrorSource(error) ?? 'unknown',
+          registryOperationOutcomeCount.inc({
+            operation: 'app_deployment_publish',
+            conclusion: 'success',
           });
+        } else {
+          registryOperationOutcomeCount.inc({
+            operation: 'app_deployment_publish',
+            conclusion: 'failure',
+          });
+          registryOperationUnexpectedErrorCount.inc(
+            unexpectedErrorMetricLabels('app_deployment_publish', error),
+          );
         }
         throw error;
       },
