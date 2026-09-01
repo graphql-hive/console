@@ -1,5 +1,17 @@
 # @graphql-hive/yoga
 
+## 0.49.5
+
+### Patch Changes
+
+- [#8379](https://github.com/graphql-hive/console/pull/8379)
+  [`a6089c5`](https://github.com/graphql-hive/console/commit/a6089c5e869b1b83edda16d6452432428db3424d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent validation failure by modifying selection
+  set with hive specific typename aliases within `onExecute` plugin hook instead of `onParse` hook.
+- Updated dependencies
+  [[`85a3351`](https://github.com/graphql-hive/console/commit/85a33512ed9f03095d376fc586d737ac0183410d)]:
+  - @graphql-hive/core@0.22.4
+
 ## 0.49.4
 
 ### Patch Changes
