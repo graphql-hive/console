@@ -1,5 +1,37 @@
 # @graphql-hive/cli
 
+## 0.63.0
+
+### Minor Changes
+
+- [#8407](https://github.com/graphql-hive/console/pull/8407)
+  [`b27ac17`](https://github.com/graphql-hive/console/commit/b27ac171c7affa9d287f91fd2a79c2f2548da89f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add the `app:check` command.
+
+  The `app:check` command can be used to verify whether persisted documents are valid against the
+  latest target schema without having to create and upload the persisted documents to the schema
+  registry.
+
+  **Example Usage**
+
+  ```sh
+  hive app:check persisted-documents.json \
+    --registry.accessToken "$HIVE_TOKEN" \
+    --target the-guild/hive-console/production
+  ```
+
+### Patch Changes
+
+- [#8421](https://github.com/graphql-hive/console/pull/8421)
+  [`c970ddb`](https://github.com/graphql-hive/console/commit/c970ddbda4b73557830de2e955c96003418232dd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Updates
+  `@theguild/federation-composition` to `v0.26.0`. Adds support for `@context` and `@fromContext`
+  directives in Federation.
+
+- Updated dependencies
+  [[`85a3351`](https://github.com/graphql-hive/console/commit/85a33512ed9f03095d376fc586d737ac0183410d)]:
+  - @graphql-hive/core@0.22.4
+
 ## 0.62.0
 
 ### Minor Changes

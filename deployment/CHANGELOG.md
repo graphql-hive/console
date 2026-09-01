@@ -1,5 +1,39 @@
 # hive
 
+## 11.12.1
+
+### Patch Changes
+
+- [#8421](https://github.com/graphql-hive/console/pull/8421)
+  [`c970ddb`](https://github.com/graphql-hive/console/commit/c970ddbda4b73557830de2e955c96003418232dd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Updates
+  `@theguild/federation-composition` to `v0.26.0`. Adds support for `@context` and `@fromContext`
+  directives in Federation.
+
+- [#8413](https://github.com/graphql-hive/console/pull/8413)
+  [`0b75e08`](https://github.com/graphql-hive/console/commit/0b75e08958d0d39db510a0aea89c9a4ccb9ba50f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-w67g-5rqw-f597](https://github.com/advisories/GHSA-w67g-5rqw-f597).
+
+- [#8409](https://github.com/graphql-hive/console/pull/8409)
+  [`7448692`](https://github.com/graphql-hive/console/commit/74486928a27b73f2ca8de0536d360f9b6bc72348)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Improve usage-service performance:
+
+  - compression is now done with zstd instead of gzip
+  - report processing is more efficient now, we cache things cross-requests and significantly
+    reduced CPU usage (4x more throughput)
+
+- [#8379](https://github.com/graphql-hive/console/pull/8379)
+  [`a6089c5`](https://github.com/graphql-hive/console/commit/a6089c5e869b1b83edda16d6452432428db3424d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Send correct status code 400 when alias limit,
+  maximum directive count, max depth limit or token limit is exceeded for incoming operation.
+
+- [#8398](https://github.com/graphql-hive/console/pull/8398)
+  [`97071e9`](https://github.com/graphql-hive/console/commit/97071e9b1416f100652cabb95e5e4f4f596f38a3)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add a worker environment option to transform
+  external composed supergraph to public sdl instead of reading the public SDL from the external
+  composer.
+
 ## 11.12.0
 
 ### Minor Changes
