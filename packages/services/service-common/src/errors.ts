@@ -18,7 +18,7 @@ export function withErrorSource<T>(promise: Promise<T>, errorSource: ErrorSource
 export function setErrorSource(error: unknown, errorSource: ErrorSource): ErrorWithSource {
   const sourcedError = error instanceof Error ? error : new Error(String(error));
 
-  if (!('errorSource' in sourcedError)) {
+  if (!(errorSourceProperty in sourcedError)) {
     Object.defineProperty(sourcedError, errorSourceProperty, {
       value: errorSource,
       enumerable: true,
