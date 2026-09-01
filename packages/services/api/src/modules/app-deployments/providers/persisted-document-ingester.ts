@@ -14,7 +14,7 @@ import PromiseQueue from 'p-queue';
 import { z } from 'zod';
 import { collectSchemaCoordinates, preprocessOperation } from '@graphql-hive/core';
 import { buildOperationS3BucketKey } from '@hive/cdn-script/artifact-storage-reader';
-import { ServiceLogger } from '@hive/service-common';
+import { ServiceLogger, setErrorSource } from '@hive/service-common';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
 import { S3Config } from '../../shared/providers/s3-config';
 
@@ -409,8 +409,11 @@ export class PersistedDocumentIngester {
             });
 
             if (response.statusCode !== 200) {
-              throw new Error(
-                `Failed to upload operation to S3 object storage (${s3.endpoint}/${s3.bucket}): [${response.statusCode}] ${response.statusMessage}`,
+              throw setErrorSource(
+                new Error(
+                  `Failed to upload operation to S3 object storage (${s3.endpoint}/${s3.bucket}): [${response.statusCode}] ${response.statusMessage}`,
+                ),
+                `s3 ${s3.endpoint}`,
               );
             }
           }
