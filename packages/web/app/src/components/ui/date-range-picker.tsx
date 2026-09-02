@@ -172,7 +172,7 @@ export function findMatchingPreset(
   });
 }
 
-function getDisplayLabel(
+export function getDateRangeDisplayLabel(
   selectedRange: { from: string; to: string } | null | undefined,
   presets: Preset[],
   validUnits: DurationUnit[],
@@ -551,7 +551,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
     );
   }
 
-  const label = getDisplayLabel(props.selectedRange, staticPresets, validUnits);
+  const label = getDateRangeDisplayLabel(props.selectedRange, staticPresets, validUnits);
 
   return (
     <Popover

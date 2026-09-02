@@ -1148,6 +1148,7 @@ export default gql`
 
   type SchemaExplorer {
     metadataAttributes: [MetadataAttribute!]
+    subgraphNames: [String!]!
     types: [GraphQLNamedType!]!
     type(name: String!): GraphQLNamedType
     query: GraphQLObjectType

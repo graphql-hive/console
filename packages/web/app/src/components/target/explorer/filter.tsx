@@ -1,8 +1,21 @@
-import React, { ChangeEvent, useCallback, useDeferredValue, useMemo, useState } from 'react';
-import { FilterIcon } from 'lucide-react';
+import React, {
+  ChangeEvent,
+  ReactNode,
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useState,
+} from 'react';
+import { ChevronDown, FilterIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Button as BaseButton } from '@/components/base/button/button';
+import { Filters } from '@/components/base/floating/filter-menu/filters';
 import { Button } from '@/components/ui/button';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+import {
+  availablePresets,
+  DateRangePicker,
+  getDateRangeDisplayLabel,
+} from '@/components/ui/date-range-picker';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -32,6 +45,7 @@ import {
   usePeriodSelector,
   useSchemaExplorerContext,
 } from './provider';
+import { matchesSubgraphFilter } from './utils';
 
 const TypeFilter_AllTypes = graphql(`
   query TypeFilter_AllTypes(
@@ -58,6 +72,9 @@ const TypeFilter_AllTypes = graphql(`
         explorer(usage: { period: $period }) {
           types {
             __typename
+            supergraphMetadata {
+              ownedByServiceNames
+            }
             ... on GraphQLObjectType {
               name
             }
@@ -94,6 +111,7 @@ export function TypeFilter(props: {
   };
 }) {
   const router = useRouter();
+  const { subgraphs } = useSchemaExplorerContext();
   const [inputValue, setInputValue] = useState('');
   const deferredInputValue = useDeferredValue(inputValue);
   const [query] = useQuery({
@@ -110,11 +128,15 @@ export function TypeFilter(props: {
   const allNamedTypes = query.data?.target?.latestValidSchemaVersion?.explorer?.types;
   const types = useMemo(
     () =>
-      allNamedTypes?.map(t => ({
-        value: t.name,
-        label: t.name,
-      })) || [],
-    [allNamedTypes],
+      allNamedTypes
+        ?.filter(type =>
+          matchesSubgraphFilter(type.supergraphMetadata?.ownedByServiceNames, subgraphs),
+        )
+        .map(t => ({
+          value: t.name,
+          label: t.name,
+        })) || [],
+    [allNamedTypes, subgraphs],
   );
 
   const sortedTypes = useMemo(() => {
@@ -163,7 +185,7 @@ export function TypeFilter(props: {
   return (
     <Autocomplete
       className="min-w-[200px] grow cursor-text"
-      placeholder="Search for a type"
+      placeholder="Select type"
       defaultValue={defaultValue}
       options={sortedTypes}
       onChange={onChange}
@@ -198,7 +220,7 @@ export function FieldByNameFilter() {
   return (
     <Input
       className="w-[200px] grow cursor-text"
-      placeholder="Filter by field name"
+      placeholder="Find field"
       onChange={onChange}
       defaultValue={initialValue}
     />
@@ -207,6 +229,7 @@ export function FieldByNameFilter() {
 
 export function DateRangeFilter() {
   const periodSelector = usePeriodSelector();
+  const validUnits = ['y', 'M', 'w', 'd'] as const;
   const onUpdate = useCallback(
     (value: { preset: { range: { from: string; to: string } } }) => {
       periodSelector.setPeriod(value.preset.range);
@@ -216,11 +239,18 @@ export function DateRangeFilter() {
 
   return (
     <DateRangePicker
-      validUnits={['y', 'M', 'w', 'd']}
+      trigger={
+        <BaseButton
+          label={getDateRangeDisplayLabel(periodSelector.period, availablePresets, [...validUnits])}
+          variant="default"
+          rightIcon={{ icon: ChevronDown, withSeparator: true }}
+        />
+      }
+      validUnits={[...validUnits]}
       onUpdate={onUpdate}
       selectedRange={periodSelector.period}
       startDate={periodSelector.startDate}
-      align="end"
+      align="start"
     />
   );
 }
@@ -397,5 +427,26 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+export function SubgraphFilter(props: { options: string[]; pinnedControls?: ReactNode }) {
+  const { subgraphs, setSubgraphFilters, clearSubgraphFilter } = useSchemaExplorerContext();
+
+  return (
+    <Filters
+      pinnedControls={props.pinnedControls}
+      dimensions={[
+        {
+          key: 'subgraph',
+          label: 'Subgraph',
+          labelPlural: 'subgraphs',
+          items: props.options.map(name => ({ name, values: [] })),
+          selectedItems: subgraphs.map(name => ({ name, values: null })),
+          onChange: selections => setSubgraphFilters(selections.map(selection => selection.name)),
+          onRemove: clearSubgraphFilter,
+        },
+      ]}
+    />
   );
 }
