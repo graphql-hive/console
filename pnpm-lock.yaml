@@ -16,8 +16,6 @@ overrides:
   ip: npm:neoip@2.1.0
   miniflare@3>undici: 7.29.0
   tailwindcss: 3.4.17
-  '@graphql-codegen/cli': 7.4.0
-  '@graphql-codegen/plugin-helpers': 7.3.0
   '@graphql-hive/laboratory>tailwindcss': 4.1.18
   '@hive/app>tailwindcss': 4.1.18
   '@tailwindcss/node>tailwindcss': 4.1.18
@@ -130,8 +128,8 @@ importers:
         specifier: 2.31.1
         version: 2.31.1(@types/node@24.13.3)
       '@eddeee888/gcg-typescript-resolver-files':
-        specifier: 0.0.0-pr490-run436-1-20260901153733
-        version: 0.0.0-pr490-run436-1-20260901153733(graphql@16.9.0)
+        specifier: 0.19.0
+        version: 0.19.0(graphql@16.9.0)
       '@graphql-codegen/add':
         specifier: 7.1.0
         version: 7.1.0(graphql@16.9.0)
@@ -3535,8 +3533,8 @@ packages:
   '@eddeee888/gcg-server-config@0.6.0':
     resolution: {integrity: sha512-1VbpixLCLkuS56zj3ZL2GtOJvNIzOZgxVxLiIChhSmCJN+28tekIxPTKsX0lTaH4AlpvOF+eNLJa5dJJQmqyoA==}
 
-  '@eddeee888/gcg-typescript-resolver-files@0.0.0-pr490-run436-1-20260901153733':
-    resolution: {integrity: sha512-tl2E1m4BPseDwqMy5WlCsMdklzHmHWgtkHWWh84fNPACgxp19AwOWNXzdVE/S/+x9Ci1oQYYeMc8Zar8x3q74Q==}
+  '@eddeee888/gcg-typescript-resolver-files@0.19.0':
+    resolution: {integrity: sha512-cfRbA2mKPJXH24TsVshHfckIJ1LBeR8b7G7VD6SvdLBm/1uBxT9SN/41MNw6tDL/XAMWLEcID6SSO9JeVM6ghw==}
     peerDependencies:
       graphql: ^15.0.0 || ^16.0.0 || ^17.0.0
 
@@ -4161,6 +4159,12 @@ packages:
     engines: {node: '>=16'}
     peerDependencies:
       graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
+
+  '@graphql-codegen/plugin-helpers@6.3.0':
+    resolution: {integrity: sha512-Auc+/B7okDx9+pVgLVliZtZLYh6iltWXlnzzM+bRE+zh1T4r3hKbnr8xAmtT937ArfSgk5GHcQHr8LfPYnrRBg==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
 
   '@graphql-codegen/plugin-helpers@7.3.0':
     resolution: {integrity: sha512-aaGfI/8Q8wmdO1nx1NMWGoZn/5Tl5TNOVQSI2qkGhk8h8Z8Uc6grFH0O6//HdHfqnUsiruBbe3IaK4/ah3sWcQ==}
@@ -11981,6 +11985,9 @@ packages:
     resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
 
+  change-case-all@1.0.15:
+    resolution: {integrity: sha512-3+GIFhk3sNuvFAJKU46o26OdzudQlPNBCu1ZQi3cMeMHhty1bhDxu2WrEilVNYaGvqUtR1VSigFcJOiS13dRhQ==}
+
   change-case-all@2.1.0:
     resolution: {integrity: sha512-v6b0WWWkZUMHVuYk82l+WROgkUm4qEN2w5hKRNWtEOYwWqUGoi8C6xH0l1RLF1EoWqDFK6MFclmN3od6ws3/uw==}
 
@@ -14482,6 +14489,9 @@ packages:
   is-lambda@1.0.1:
     resolution: {integrity: sha512-z7CMFGNrENq5iFB9Bqo64Xk6Y9sg+epq1myIcdHaGnbMTYOxvzsEtdYqQUylB7LxfkvgrrjP32T6Ywciio9UIQ==}
 
+  is-lower-case@2.0.2:
+    resolution: {integrity: sha512-bVcMJy4X5Og6VZfdOZstSexlEy20Sr0k/p/b2IlQJlfdKAQuMpiv5w2Ccxb8sKdRUNAG1PnHVHjFSdRDVS6NlQ==}
+
   is-map@2.0.3:
     resolution: {integrity: sha512-1Qed0/Hr2m+YqxnM09CjA2d/i6YZNfF6R2oRAOj36eUdS6qIV/huPJNSEpKbupewFs+ZsJlxsjjPbc0/afW6Lw==}
     engines: {node: '>= 0.4'}
@@ -14604,6 +14614,9 @@ packages:
   is-unicode-supported@2.1.0:
     resolution: {integrity: sha512-mE00Gnza5EEB3Ds0HfMyllZzbBrmLOX3vfWoj9A9PEnTfratQ/BcaJOuMhnkhjXvb2+FkY3VuHqtAGpTPmglFQ==}
     engines: {node: '>=18'}
+
+  is-upper-case@2.0.2:
+    resolution: {integrity: sha512-44pxmxAvnnAOwBg4tHPnkfvgjPwbc5QIsSstNU+YcJ1ovxVzCWpSGosPJOZh/a1tdl81fbgnLc9LLv+x2ywbPQ==}
 
   is-weakmap@2.0.2:
     resolution: {integrity: sha512-K5pXYOm9wqY1RgjpL3YTkF39tni1XajUIkawTLUo9EZEVUFga5gSQJF8nNS7ZwJQ02y+1YCNYcMh+HIf1ZqE+w==}
@@ -15300,6 +15313,9 @@ packages:
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
+
+  lower-case-first@2.0.2:
+    resolution: {integrity: sha512-EVm/rR94FJTZi3zefZ82fLWab+GX14LJN4HrWBcuo6Evmsl9hEfnqxgcHCKb9q+mNf6EVdsjx/qucYFIIB84pg==}
 
   lower-case@2.0.2:
     resolution: {integrity: sha512-7fm3l3NAF9WfN6W3JOmf5drwpVqX78JtoGJ3A6W0a6ZnldM41w2fV5D490psKFTpMds8TJse/eHLFFsNHHjHgg==}
@@ -17922,6 +17938,9 @@ packages:
     resolution: {integrity: sha512-VBiJxFkxiXRlUIeyMQi8s4hgvKCSjtknJv/LVYbrgALPwf5zSKmEwV9Lst25AkvMDnvxODugjdl6KZgwKM1WYQ==}
     engines: {node: '>= 10.x'}
 
+  sponge-case@1.0.1:
+    resolution: {integrity: sha512-dblb9Et4DAtiZ5YSUZHLl4XhH4uK80GhAZrVXdN4O2P4gQ40Wa5UIOPUHlA/nFd2PLblBZWUioLMMAVrgpoYcA==}
+
   sponge-case@2.0.3:
     resolution: {integrity: sha512-i4h9ZGRfxV6Xw3mpZSFOfbXjf0cQcYmssGWutgNIfFZ2VM+YIWfD71N/kjjwK6X/AAHzBr+rciEcn/L34S8TGw==}
 
@@ -18156,6 +18175,9 @@ packages:
   supports-preserve-symlinks-flag@1.0.0:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
+
+  swap-case@2.0.2:
+    resolution: {integrity: sha512-kc6S2YS/2yXbtkSMunBtKdah4VFETZ8Oh6ONSmSd9bRxhqTrtARUCBUiWXH3xVPpvR7tz2CSnkuXVE42EcGnMw==}
 
   swap-case@3.0.3:
     resolution: {integrity: sha512-6p4op8wE9CQv7uDFzulI6YXUw4lD9n4oQierdbFThEKVWVQcbQcUjdP27W8XE7V4QnWmnq9jueSHceyyQnqQVA==}
@@ -21408,7 +21430,7 @@ snapshots:
       - graphql
       - graphql-sock
 
-  '@eddeee888/gcg-typescript-resolver-files@0.0.0-pr490-run436-1-20260901153733(graphql@16.9.0)':
+  '@eddeee888/gcg-typescript-resolver-files@0.19.0(graphql@16.9.0)':
     dependencies:
       '@eddeee888/gcg-server-config': 0.6.0(graphql@16.9.0)
       '@graphql-codegen/add': 7.1.0(graphql@16.9.0)
@@ -22216,6 +22238,15 @@ snapshots:
       graphql: 16.9.0
       tslib: 2.8.1
 
+  '@graphql-codegen/plugin-helpers@6.3.0(graphql@16.9.0)':
+    dependencies:
+      '@graphql-tools/utils': 11.2.2(graphql@16.9.0)
+      change-case-all: 1.0.15
+      common-tags: 1.8.2
+      graphql: 16.9.0
+      import-from: 4.0.0
+      tslib: 2.8.1
+
   '@graphql-codegen/plugin-helpers@7.3.0(graphql@16.9.0)':
     dependencies:
       '@graphql-tools/utils': 11.2.2(graphql@16.9.0)
@@ -22271,7 +22302,7 @@ snapshots:
 
   '@graphql-codegen/urql-introspection@4.0.1(graphql@16.9.0)':
     dependencies:
-      '@graphql-codegen/plugin-helpers': 7.3.0(graphql@16.9.0)
+      '@graphql-codegen/plugin-helpers': 6.3.0(graphql@16.9.0)
       '@urql/introspection': 0.3.3(graphql@16.9.0)
       graphql: 16.9.0
       tslib: 2.8.1
@@ -33082,6 +33113,19 @@ snapshots:
 
   chalk@5.6.2: {}
 
+  change-case-all@1.0.15:
+    dependencies:
+      change-case: 4.1.2
+      is-lower-case: 2.0.2
+      is-upper-case: 2.0.2
+      lower-case: 2.0.2
+      lower-case-first: 2.0.2
+      sponge-case: 1.0.1
+      swap-case: 2.0.2
+      title-case: 3.0.3
+      upper-case: 2.0.2
+      upper-case-first: 2.0.2
+
   change-case-all@2.1.0:
     dependencies:
       change-case: 5.4.4
@@ -36161,6 +36205,10 @@ snapshots:
 
   is-lambda@1.0.1: {}
 
+  is-lower-case@2.0.2:
+    dependencies:
+      tslib: 2.8.1
+
   is-map@2.0.3: {}
 
   is-module@1.0.0: {}
@@ -36255,6 +36303,10 @@ snapshots:
   is-unicode-supported@0.1.0: {}
 
   is-unicode-supported@2.1.0: {}
+
+  is-upper-case@2.0.2:
+    dependencies:
+      tslib: 2.8.1
 
   is-weakmap@2.0.2: {}
 
@@ -36880,6 +36932,10 @@ snapshots:
   loose-envify@1.4.0:
     dependencies:
       js-tokens: 4.0.0
+
+  lower-case-first@2.0.2:
+    dependencies:
+      tslib: 2.8.1
 
   lower-case@2.0.2:
     dependencies:
@@ -40162,6 +40218,10 @@ snapshots:
 
   split2@4.1.0: {}
 
+  sponge-case@1.0.1:
+    dependencies:
+      tslib: 2.8.1
+
   sponge-case@2.0.3: {}
 
   sprintf-js@1.0.3: {}
@@ -40426,6 +40486,10 @@ snapshots:
       supports-color: 7.2.0
 
   supports-preserve-symlinks-flag@1.0.0: {}
+
+  swap-case@2.0.2:
+    dependencies:
+      tslib: 2.8.1
 
   swap-case@3.0.3: {}
 
