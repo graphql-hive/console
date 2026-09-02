@@ -1,5 +1,19 @@
 # hive
 
+## 11.12.2
+
+### Patch Changes
+
+- [#8425](https://github.com/graphql-hive/console/pull/8425)
+  [`49c36fe`](https://github.com/graphql-hive/console/commit/49c36fe2adc8e4590d4029b6860a9ff1113704bf)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-vcc3-ghjq-m6fr](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr).
+
+- [#8430](https://github.com/graphql-hive/console/pull/8430)
+  [`ab61aa7`](https://github.com/graphql-hive/console/commit/ab61aa74d9430524f06d1217258e97183781dedd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-vp52-pcj8-j9qc](https://github.com/advisories/GHSA-vp52-pcj8-j9qc).
+
 ## 11.12.1
 
 ### Patch Changes
