@@ -37,8 +37,7 @@ service is dispatching.
    it (handy if you already have a browser tab signed in as that user).
 3. Starts the webhook receiver on port 9999.
 4. Creates a dedicated `live-alerts-demo-{timestamp}` org / project / target via GraphQL mutations.
-5. Enables the per-org `metricAlertRules` feature flag (direct PG `UPDATE`, since the cluster env
-   var is usually off in local dev).
+5. Enables the per-org `metricAlertRules` feature flag (direct PG `UPDATE`).
 6. Publishes a tiny schema (so the usage service will accept operations against the target).
 7. Creates a webhook channel pointing at port 9999 (plus a preview-only `SLACK` channel — see
    "Slack" below), and (unless started with `--no-rules`) 7 short-window alert rules each
