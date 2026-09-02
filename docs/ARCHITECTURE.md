@@ -140,3 +140,6 @@ proxy. Redpanda also publishes its Kafka listener on port `9092` and metrics/adm
 
 The observability integrations are optional. The community Compose file does not run an
 OpenTelemetry collector, Prometheus, or Sentry; operators provide and configure these externally.
+
+See [ClickHouse Schema](./CLICKHOUSE_SCHEMA.md) for the complete table and materialized-view
+dependency graph.

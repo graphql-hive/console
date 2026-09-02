@@ -294,6 +294,14 @@ export async function main() {
       };
     }
     const logger = createGraphQLLogger();
+
+    if (env.clickhouse.tdigestRollupsStart) {
+      logger.info(
+        'clickhouse tdigest rollup table start set to %s.',
+        env.clickhouse.tdigestRollupsStart,
+      );
+    }
+
     const registry = createRegistry({
       app: env.hiveServices.webApp
         ? {
@@ -322,6 +330,7 @@ export async function main() {
         username: env.clickhouse.username,
         password: env.clickhouse.password,
         requestTimeout: env.clickhouse.requestTimeout,
+        tdigestRollupsStart: env.clickhouse.tdigestRollupsStart,
         onReadEnd(query, timings) {
           clickHouseReadDuration.labels({ query }).observe(timings.totalSeconds);
 

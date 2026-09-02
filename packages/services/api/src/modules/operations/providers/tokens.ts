@@ -10,6 +10,10 @@ export interface ClickHouseConfig {
    * In milliseconds
    */
   requestTimeout?: number;
+  /**
+   * Earliest timestamp for which the t-digest operation rollups contain data.
+   */
+  tdigestRollupsStart?: Date;
   onReadEnd?: (
     label: string,
     timings: {
