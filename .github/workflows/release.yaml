@@ -17,7 +17,9 @@ permissions:
 
 jobs:
   snapshot:
-    if: github.event_name == 'pull_request'
+    if: >-
+      github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name ==
+      github.repository
     uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@v1
     with:
       npmTag:
