@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@faker-js/faker": "9.9.0",
+    "@faker-js/faker": "10.5.0",
     "@hive/api": "workspace:*",
     "@hive/postgres": "workspace:*",
     "@hive/service-common": "workspace:*",
