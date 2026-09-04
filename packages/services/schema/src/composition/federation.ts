@@ -6,6 +6,7 @@ import {
   type FieldDefinitionNode,
   type NameNode,
 } from 'graphql';
+import { Supergraph } from '@apollo/federation-internals';
 import type { ServiceLogger } from '@hive/service-common';
 import {
   addInaccessibleToUnreachableTypes,
@@ -271,6 +272,33 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
             supergraphDocumentNode,
             publicDocumentNode,
           });
+
+          // Marking unreachable types as @inaccessible can produce an invalid supergraph.
+          // This verifies that the supergraph generated is valid.
+          try {
+            Supergraph.build(result.supergraphSdl).apiSchema();
+          } catch (error) {
+            return {
+              id: contract.id,
+              result: {
+                type: 'failure',
+                result: {
+                  supergraph: null,
+                  sdl: null,
+                  errors: [
+                    {
+                      message: `Removing unreachable types from the public API schema produced an invalid schema: ${
+                        error instanceof Error ? error.message : String(error)
+                      }`,
+                      source: 'composition',
+                    },
+                  ],
+                  includesNetworkError: false,
+                  includesException: false,
+                },
+              },
+            } satisfies ContractResultFailure;
+          }
 
           return {
             id: contract.id,

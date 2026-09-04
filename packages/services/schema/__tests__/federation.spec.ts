@@ -1,5 +1,6 @@
 import { parse } from 'graphql';
 import { composeAndValidate } from '@apollo/federation';
+import { createComposeFederation } from '../src/composition/federation';
 import { composeFederationV2 } from '../src/lib/compose';
 
 test('patch', () => {
@@ -134,4 +135,80 @@ test('native federation formats the composed supergraph', ({ expect }) => {
       product: Product
     }
   `);
+});
+
+test('contract composition fails instead of producing an invalid schema when removing unreachable types marks a type referenced by a custom directive as @inaccessible', async ({
+  expect,
+}) => {
+  const composeFederation = createComposeFederation({
+    decrypt: value => value,
+    requestTimeoutMs: 30_000,
+  });
+
+  const result = await composeFederation({
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(
+              url: "https://specs.apollo.dev/federation/v2.5"
+              import: ["@key", "@tag", "@composeDirective"]
+            )
+            @link(url: "https://myspecs.dev/meta/v1.0", import: ["@meta"])
+            @composeDirective(name: "@meta")
+
+          directive @meta(options: MetaOptions) repeatable on FIELD_DEFINITION
+
+          scalar MetaOptions
+
+          type Product @key(fields: "id") {
+            id: ID!
+            name: String @meta(options: {}) @tag(name: "internal")
+            secret: String @tag(name: "internal")
+          }
+
+          type Query {
+            product: Product
+          }
+        `,
+        source: 'products',
+        url: 'https://products.example.com/graphql',
+      },
+    ],
+    external: null,
+    native: true,
+    requestId: 'test',
+    contracts: [
+      {
+        id: 'contract-1',
+        filter: {
+          include: null,
+          exclude: ['internal'],
+          removeUnreachableTypesFromPublicApiSchema: true,
+        },
+      },
+    ],
+  });
+
+  expect(result.type).toBe('success');
+  if (result.type !== 'success') {
+    throw new Error('unreachable');
+  }
+
+  const contractResult = result.result.contracts?.[0];
+  expect(contractResult?.result.type).toBe('failure');
+  if (contractResult?.result.type !== 'failure') {
+    throw new Error('unreachable');
+  }
+
+  expect(contractResult.result.result.supergraph).toBeNull();
+  expect(contractResult.result.result.sdl).toBeNull();
+  expect(contractResult.result.result.errors).toContainEqual(
+    expect.objectContaining({
+      source: 'composition',
+      message: expect.stringContaining(
+        'Type "MetaOptions" is @inaccessible but is referenced by "@meta(options:)"',
+      ),
+    }),
+  );
 });
