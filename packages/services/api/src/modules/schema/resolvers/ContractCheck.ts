@@ -30,4 +30,7 @@ export const ContractCheck: ContractCheckResolvers = {
       ...(contractCheck.safeSchemaChanges ?? []),
     ];
   },
+  async baseline(contractCheck, _arg, { injector }) {
+    return injector.get(ContractsManager).getContractBaselineForContractCheck(contractCheck);
+  },
 };

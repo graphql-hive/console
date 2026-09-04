@@ -25,8 +25,11 @@ import (
 )
 
 var (
-	_ extension.Extension = (*hiveAuthExtension)(nil)
-	_ extensionauth.Server = (*hiveAuthExtension)(nil)
+	_                       extension.Extension  = (*hiveAuthExtension)(nil)
+	_                       extensionauth.Server = (*hiveAuthExtension)(nil)
+	errUnauthorized                              = errors.New("unauthorized")
+	errMissingAuthorization                      = errors.New("missing Authorization header")
+	errMissingHiveTargetRef                      = errors.New("missing X-Hive-Target-Ref header")
 )
 
 var _ client.AuthData = (*authData)(nil)
@@ -56,8 +59,8 @@ type hiveAuthExtension struct {
 	cache  *cache.Cache
 
 	telemetrySettings component.TelemetrySettings
-	requestDuration metric.Int64Histogram
-    requestCount    metric.Int64Counter
+	requestDuration   metric.Int64Histogram
+	requestCount      metric.Int64Counter
 }
 
 func (h *hiveAuthExtension) Start(_ context.Context, _ component.Host) error {
@@ -87,8 +90,8 @@ type AuthStatusError struct {
 	Msg  string
 }
 
-func (e *AuthStatusError) Error() string {
-	return fmt.Sprintf("authentication failed: status %d, %s", e.Code, e.Msg)
+func (*AuthStatusError) Error() string {
+	return errUnauthorized.Error()
 }
 
 func getHeader(h map[string][]string, headerKey string, metadataKey string) string {
@@ -139,8 +142,7 @@ type authResult struct {
 
 func (h *hiveAuthExtension) doAuthRequest(ctx context.Context, auth string, targetRef string) (string, error) {
 	h.logger.Debug("authenticate token for target",
-	    zap.String("targetRef", targetRef),
-	    zap.String("accessToken", auth[:10]))
+		zap.String("targetRef", targetRef))
 
 	start := time.Now()
 	statusLabel := "error"
@@ -198,7 +200,7 @@ func (h *hiveAuthExtension) doAuthRequest(ctx context.Context, auth string, targ
 			resp.Body.Close()
 
 			select {
-			case <-time.After(retryDelay * time.Duration(attempt + 1)):
+			case <-time.After(retryDelay * time.Duration(attempt+1)):
 				// Continue to next attempt.
 			case <-ctx.Done():
 				return "", ctx.Err()
@@ -207,12 +209,29 @@ func (h *hiveAuthExtension) doAuthRequest(ctx context.Context, auth string, targ
 		}
 
 		// For non-retryable errors.
-		errMsg := fmt.Sprintf("authentication failed: received status %s", resp.Status)
-		h.logger.Warn(errMsg)
+		body, readErr := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
 		resp.Body.Close()
+		if readErr != nil {
+			return "", fmt.Errorf("failed to read authentication error response: %w", readErr)
+		}
+
+		errMsg := strings.TrimSpace(string(body))
+		var result struct {
+			Message string `json:"message"`
+		}
+		if json.Unmarshal(body, &result) == nil && result.Message != "" {
+			errMsg = result.Message
+		}
+		if errMsg == "" {
+			errMsg = resp.Status
+		}
+
+		h.logger.Warn("authentication failed",
+			zap.Int("status", resp.StatusCode),
+			zap.String("message", errMsg))
 		return "", &AuthStatusError{
 			Code: resp.StatusCode,
-			Msg:  "non-retryable error",
+			Msg:  errMsg,
 		}
 	}
 
@@ -226,11 +245,11 @@ func (h *hiveAuthExtension) Authenticate(ctx context.Context, headers map[string
 	auth := getAuthHeader(headers)
 	targetRef := getTargetRefHeader(headers)
 	if auth == "" {
-		return ctx, errors.New("No auth provided")
+		return ctx, errMissingAuthorization
 	}
 
 	if targetRef == "" {
-		return ctx, errors.New("No target ref provided")
+		return ctx, errMissingHiveTargetRef
 	}
 
 	cacheKey := fmt.Sprintf("%s|%s", auth, targetRef)
@@ -244,7 +263,7 @@ func (h *hiveAuthExtension) Authenticate(ctx context.Context, headers map[string
 			return client.NewContext(ctx, cl), nil
 		}
 
-		return ctx, res.err
+		return ctx, errUnauthorized
 	}
 
 	// Deduplicate concurrent calls.
@@ -266,7 +285,7 @@ func (h *hiveAuthExtension) Authenticate(ctx context.Context, headers map[string
 		return client.NewContext(ctx, cl), nil
 	}
 
-	return ctx, err
+	return ctx, errUnauthorized
 }
 
 func newHiveAuthExtension(
@@ -289,7 +308,7 @@ func newHiveAuthExtension(
 		client: &http.Client{
 			Timeout: c.Timeout,
 		},
-		cache: cache.New(500*time.Second, time.Minute),
+		cache:             cache.New(500*time.Second, time.Minute),
 		telemetrySettings: telemetrySettings,
 	}, nil
 }

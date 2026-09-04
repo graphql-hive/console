@@ -115,6 +115,7 @@ export type SCIMListQuery = {
   count?: string | number;
   startIndex?: string | number;
   filter?: string;
+  excludedAttributes?: 'members';
 };
 
 export function createScimTestkit({ baseUrl, headers }: { baseUrl: string; headers: HeadersInit }) {

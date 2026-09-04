@@ -11,7 +11,6 @@ export type LaboratorySettings = {
   };
   introspection: {
     method?: 'GET' | 'POST';
-    schemaDescription?: boolean;
     headers?: string;
     includeActiveOperationHeaders?: boolean;
     pollSchema?: boolean;
@@ -29,7 +28,6 @@ export const defaultLaboratorySettings: LaboratorySettings = {
   },
   introspection: {
     method: 'POST',
-    schemaDescription: false,
     headers: '',
     includeActiveOperationHeaders: false,
     pollSchema: true,
@@ -50,9 +48,6 @@ export const normalizeLaboratorySettings = (
   },
   introspection: {
     method: settings?.introspection?.method ?? defaultLaboratorySettings.introspection.method,
-    schemaDescription:
-      settings?.introspection?.schemaDescription ??
-      defaultLaboratorySettings.introspection.schemaDescription,
     headers: settings?.introspection?.headers ?? defaultLaboratorySettings.introspection.headers,
     includeActiveOperationHeaders:
       settings?.introspection?.includeActiveOperationHeaders ??

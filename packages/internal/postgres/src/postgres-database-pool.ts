@@ -9,7 +9,7 @@ import {
   type CommonQueryMethods as SlonikCommonQueryMethods,
 } from 'slonik';
 import { createQueryLoggingInterceptor } from 'slonik-interceptor-query-logging';
-import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
+import { context, SpanKind, SpanStatusCode, trace, withErrorSource } from '@hive/service-common';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import {
   createConnectionString,
@@ -72,46 +72,46 @@ export class PostgresDatabasePool implements CommonQueryMethods {
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<boolean> {
-    return this.pool.exists(sql, values);
+    return withErrorSource(this.pool.exists(sql, values), 'pg');
   }
 
   async any<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<ReadonlyArray<StandardSchemaV1.InferOutput<T>>> {
-    return this.pool.any(sql, values);
+    return withErrorSource(this.pool.any(sql, values), 'pg');
   }
 
   async maybeOne<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<null | StandardSchemaV1.InferOutput<T>> {
-    return this.pool.maybeOne(sql, values);
+    return withErrorSource(this.pool.maybeOne(sql, values), 'pg');
   }
 
   async query(sql: QuerySqlToken<any>, values?: PrimitiveValueExpression[]): Promise<void> {
-    await this.pool.query(sql, values);
+    await withErrorSource(this.pool.query(sql, values), 'pg');
   }
 
   async oneFirst<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]> {
-    return await this.pool.oneFirst(sql, values);
+    return await withErrorSource(this.pool.oneFirst(sql, values), 'pg');
   }
 
   async maybeOneFirst<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<null | StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]> {
-    return await this.pool.maybeOneFirst(sql, values);
+    return await withErrorSource(this.pool.maybeOneFirst(sql, values), 'pg');
   }
 
   async one<T extends StandardSchemaV1>(
     sql: QuerySqlToken<T>,
     values?: PrimitiveValueExpression[],
   ): Promise<StandardSchemaV1.InferOutput<T>> {
-    return await this.pool.one(sql, values);
+    return await withErrorSource(this.pool.one(sql, values), 'pg');
   }
 
   async anyFirst<T extends StandardSchemaV1>(
@@ -120,7 +120,7 @@ export class PostgresDatabasePool implements CommonQueryMethods {
   ): Promise<
     ReadonlyArray<StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>]>
   > {
-    return await this.pool.anyFirst(sql, values);
+    return await withErrorSource(this.pool.anyFirst(sql, values), 'pg');
   }
 
   async transaction<T = void>(
@@ -131,67 +131,70 @@ export class PostgresDatabasePool implements CommonQueryMethods {
       kind: SpanKind.INTERNAL,
     });
 
-    return context.with(trace.setSpan(context.active(), span), async () => {
-      return await this.pool.transaction(async methods => {
-        try {
-          return await handler({
-            exists: methods.exists,
-            any: methods.any,
-            maybeOne: methods.maybeOne,
-            async query(
-              sql: QuerySqlToken<any>,
-              values?: PrimitiveValueExpression[],
-            ): Promise<void> {
-              await methods.query(sql, values);
-            },
-            oneFirst: methods.oneFirst,
-            maybeOneFirst: methods.maybeOneFirst,
-            anyFirst: methods.anyFirst,
-            one: methods.one,
-            transaction<T>(name: string, handler: (methods: CommonQueryMethods) => Promise<T>) {
-              // We just mark this as a virtual transaction, it still runs as part of the current one.
-              const span = tracer.startSpan(`Virtual PG Transaction: ${name}`, {
-                kind: SpanKind.INTERNAL,
-              });
-
-              try {
-                return context.with(trace.setSpan(context.active(), span), async () => {
-                  return handler(this);
+    return withErrorSource(
+      context.with(trace.setSpan(context.active(), span), async () => {
+        return await this.pool.transaction(async methods => {
+          try {
+            return await handler({
+              exists: methods.exists,
+              any: methods.any,
+              maybeOne: methods.maybeOne,
+              async query(
+                sql: QuerySqlToken<any>,
+                values?: PrimitiveValueExpression[],
+              ): Promise<void> {
+                await methods.query(sql, values);
+              },
+              oneFirst: methods.oneFirst,
+              maybeOneFirst: methods.maybeOneFirst,
+              anyFirst: methods.anyFirst,
+              one: methods.one,
+              transaction<T>(name: string, handler: (methods: CommonQueryMethods) => Promise<T>) {
+                // We just mark this as a virtual transaction, it still runs as part of the current one.
+                const span = tracer.startSpan(`Virtual PG Transaction: ${name}`, {
+                  kind: SpanKind.INTERNAL,
                 });
-              } catch (err) {
-                span.setAttribute('error', 'true');
 
-                if (err instanceof Error) {
-                  span.setAttribute('error.type', err.name);
-                  span.setAttribute('error.message', err.message);
-                  span.setStatus({
-                    code: SpanStatusCode.ERROR,
-                    message: err.message,
+                try {
+                  return context.with(trace.setSpan(context.active(), span), async () => {
+                    return handler(this);
                   });
+                } catch (err) {
+                  span.setAttribute('error', 'true');
+
+                  if (err instanceof Error) {
+                    span.setAttribute('error.type', err.name);
+                    span.setAttribute('error.message', err.message);
+                    span.setStatus({
+                      code: SpanStatusCode.ERROR,
+                      message: err.message,
+                    });
+                  }
+
+                  throw err;
                 }
-
-                throw err;
-              }
-            },
-          });
-        } catch (err) {
-          span.setAttribute('error', 'true');
-
-          if (err instanceof Error) {
-            span.setAttribute('error.type', err.name);
-            span.setAttribute('error.message', err.message);
-            span.setStatus({
-              code: SpanStatusCode.ERROR,
-              message: err.message,
+              },
             });
-          }
+          } catch (err) {
+            span.setAttribute('error', 'true');
 
-          throw err;
-        } finally {
-          span.end();
-        }
-      });
-    });
+            if (err instanceof Error) {
+              span.setAttribute('error.type', err.name);
+              span.setAttribute('error.message', err.message);
+              span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: err.message,
+              });
+            }
+
+            throw err;
+          } finally {
+            span.end();
+          }
+        });
+      }),
+      'pg',
+    );
   }
 
   end(): Promise<void> {

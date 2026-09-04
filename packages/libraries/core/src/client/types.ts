@@ -1,4 +1,10 @@
-import type { DocumentNode, ExecutionArgs, GraphQLErrorExtensions, GraphQLSchema } from 'graphql';
+import type {
+  DocumentNode,
+  ExecutionArgs,
+  GraphQLError,
+  GraphQLErrorExtensions,
+  GraphQLSchema,
+} from 'graphql';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
 import { LogLevel as HiveLoggerLevel, Logger } from '@graphql-hive/logger';
 import { MaybePromise } from '@graphql-tools/utils';
@@ -11,6 +17,10 @@ import type { SchemaReporter } from './reporting.js';
 type HeadersObject = {
   get(name: string): string | null;
 };
+
+export type TrackGatewayErrorsCallback = (args: {
+  errors?: any[] | readonly Error[] | readonly GraphQLError[] | null;
+}) => void;
 
 export type SubRequestCallback = (args: {
   /** Which subgraph resolved this path */
@@ -44,6 +54,7 @@ export type FinishSubRequestCallback = (args: {
 }) => void;
 
 export type CollectUsage = {
+  trackGatewayErrors: TrackGatewayErrorsCallback;
   subrequest: SubRequestCallback;
   finish: CollectUsageCallback;
 };
@@ -335,6 +346,11 @@ export type Maybe<T> = null | undefined | T;
 export type GraphQLResult<TData = Record<string, unknown>> = {
   data?: TData | null;
 } & GraphQLErrorsResult;
+
+export interface TrackedGraphQLError {
+  coordinate: string;
+  code?: string;
+}
 
 export interface GraphQLErrorsResult {
   errors?: ReadonlyArray<{

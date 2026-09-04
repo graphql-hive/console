@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { waitForExpectations } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { createCLI } from '../../testkit/cli';
 import { initSeed } from '../../testkit/seed';
@@ -151,20 +152,22 @@ describe('dev --remote', () => {
     });
 
     const supergraph = tmpFile('graphql');
-    const cmd = cli.dev({
-      remote: true,
-      services: [
-        {
-          name: 'bar',
-          url: 'http://localhost/bar',
-          sdl: 'type Query { bar: String }',
-        },
-      ],
-      write: supergraph.filepath,
-    });
+    waitForExpectations(async () => {
+      const cmd = cli.dev({
+        remote: true,
+        services: [
+          {
+            name: 'bar',
+            url: 'http://localhost/bar',
+            sdl: 'type Query { bar: String }',
+          },
+        ],
+        write: supergraph.filepath,
+      });
 
-    await expect(cmd).resolves.toMatch(supergraph.filepath);
-    await expect(supergraph.read()).resolves.toMatch('http://localhost/bar');
+      await expect(cmd).resolves.toMatch(supergraph.filepath);
+      await expect(supergraph.read()).resolves.toMatch('http://localhost/bar');
+    });
   });
 
   test('uses latest composable version by default', async () => {

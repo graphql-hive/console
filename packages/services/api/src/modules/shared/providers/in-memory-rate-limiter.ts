@@ -1,5 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
-import LRU from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import { HiveError } from '../../../shared/errors';
 import { Logger } from './logger';
 
@@ -75,14 +75,14 @@ export class InMemoryRateLimiter {
 class SlidingWindowRateLimiter {
   private windowSize: number;
   private maxActions: number;
-  private userActions: LRU<string, number[]>;
+  private userActions: LRUCache<string, number[]>;
 
   constructor(windowSize: number, maxActions: number) {
     this.windowSize = windowSize;
     this.maxActions = maxActions;
-    this.userActions = new LRU({
+    this.userActions = new LRUCache({
       max: 500,
-      maxAge: windowSize,
+      ttl: windowSize,
     });
   }
 

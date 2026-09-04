@@ -760,10 +760,23 @@ export function CompositionErrorsSection(props: {
   );
 
   return (
+    <CompositionErrorsList
+      errors={compositionErrors?.edges?.map(edge => edge.node) ?? []}
+      title="Composition Errors"
+    />
+  );
+}
+
+export function CompositionErrorsList(props: {
+  errors: ReadonlyArray<{ message: string }>;
+  title: string;
+  description?: string;
+}) {
+  return (
     <div className="mb-2 px-2">
       <TooltipProvider>
         <Heading className="my-2">
-          Composition Errors
+          {props.title}
           <Tooltip>
             <TooltipTrigger>
               <Button variant="ghost" size="icon-sm" className="ml-2">
@@ -783,10 +796,13 @@ export function CompositionErrorsSection(props: {
           </Tooltip>
         </Heading>
       </TooltipProvider>
+      {props.description ? (
+        <p className="text-neutral-11 mb-2 text-sm">{props.description}</p>
+      ) : null}
       <ul>
-        {compositionErrors?.edges?.map((edge, index) => (
+        {props.errors.map((error, index) => (
           <li key={index} className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
-            <CompositionError message={edge.node.message} />
+            <CompositionError message={error.message} />
           </li>
         ))}
       </ul>

@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/envelop",
-  "version": "0.40.8",
+  "version": "0.40.11",
   "type": "module",
   "description": "Hive Console + GraphQL Envelop",
   "repository": {
@@ -50,7 +50,7 @@
     "@graphql-hive/core": "workspace:*"
   },
   "devDependencies": {
-    "@envelop/types": "5.0.0"
+    "@envelop/types": "5.2.1"
   },
   "publishConfig": {
     "access": "public",

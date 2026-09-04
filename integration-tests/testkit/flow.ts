@@ -6,6 +6,7 @@ import type {
   AddMetricAlertRuleInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
+  ConfirmScimManagementForMemberInput,
   CreateContractInput,
   CreateMemberRoleInput,
   CreateOrganizationAccessTokenInput,
@@ -82,6 +83,7 @@ function pollInternal(
   /** In milliseconds */
   startTime: number = Date.now(),
 ) {
+  let lastError: unknown;
   setTimeout(
     async () => {
       try {
@@ -91,18 +93,38 @@ function pollInternal(
         } else {
           const waited = Date.now() - startTime;
           if (waited > maxWait) {
-            reject(new Error(`Polling failed. Condition was not satisfied within ${maxWait}ms`));
+            reject(
+              new Error(
+                `Polling failed. Condition was not satisfied within ${maxWait}ms. Causeed by ${String(lastError)}`,
+                {
+                  cause: lastError,
+                },
+              ),
+            );
           } else {
             pollInternal(check, pollFrequency, maxWait, jitter, resolve, reject, startTime);
           }
         }
       } catch (e) {
+        lastError = e;
         reject(e);
       }
     },
     Math.round(pollFrequency + Math.random() * jitter),
   );
 }
+
+// Use this function to give our backend (clickhouse) time to insert into the materialized views' tables
+export const waitForExpectations = (expectation: () => Promise<void>) => {
+  return pollFor(async () => {
+    try {
+      await expectation();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  });
+};
 
 export function pollFor(
   check: () => Promise<boolean>,
@@ -112,7 +134,7 @@ export function pollFor(
     pollInternal(
       check,
       opts?.pollFrequency ?? 500,
-      opts?.maxWait ?? 10_000,
+      opts?.maxWait ?? 15_000,
       opts?.jitter ?? 100,
       resolve,
       reject,
@@ -1228,6 +1250,37 @@ export function getSchemaVersionWithAllDetails(
     .then(r => r.target?.schemaVersion ?? null);
 }
 
+export async function getLatestSchemaCheck(
+  projectRef: GraphQLSchema.ProjectReferenceInput,
+  targetSlug: string,
+  token: string,
+) {
+  const res = await execute({
+    document: graphql(`
+      query getLatestCheck($projectRef: ProjectReferenceInput!, $targetSlug: String!) {
+        project(reference: $projectRef) {
+          targetBySlug(targetSlug: $targetSlug) {
+            schemaChecks(first: 1) {
+              edges {
+                node {
+                  __typename
+                  id
+                }
+              }
+            }
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      projectRef,
+      targetSlug,
+    },
+  }).then(r => r.expectNoGraphQLErrors());
+  return res.project?.targetBySlug?.schemaChecks?.edges?.[0]?.node?.id;
+}
+
 export function getSchemaCheckDetails(
   reference: GraphQLSchema.TargetReferenceInput,
   checkId: string,
@@ -1240,10 +1293,25 @@ export function getSchemaCheckDetails(
           schemaCheck(id: $checkId) {
             __typename
             id
+            contextId
+            meta {
+              author
+              commit
+            }
+            baseline {
+              meta {
+                commit
+              }
+            }
             schemaSDL
+            previousSchemaSDL
             ... on SuccessfulSchemaCheck {
               supergraphSDL
               compositeSchemaSDL
+            }
+            schemaVersion {
+              supergraph
+              sdl
             }
           }
         }
@@ -1275,6 +1343,19 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
             schemaCheck {
               __typename
               id
+              previousSchemaSDL
+              baseline {
+                sdl
+                supergraphSdl
+                publicSdl
+                compositionErrors {
+                  message
+                  path
+                }
+                meta {
+                  commit
+                }
+              }
               schemaVersion {
                 id
               }
@@ -1298,6 +1379,19 @@ export function checkSchema(input: SchemaCheckInput, token: string) {
             }
             schemaCheck {
               id
+              previousSchemaSDL
+              baseline {
+                sdl
+                supergraphSdl
+                publicSdl
+                compositionErrors {
+                  message
+                  path
+                }
+                meta {
+                  commit
+                }
+              }
             }
           }
         }
@@ -2238,6 +2332,38 @@ export function createOIDCIntegration(
               authorizationEndpoint
               additionalScopes
             }
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function confirmSCIMManagementForMember(
+  input: ConfirmScimManagementForMemberInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_ConfirmSCIMManagementForMember(
+        $input: ConfirmSCIMManagementForMemberInput!
+      ) {
+        confirmSCIMManagementForMember(input: $input) {
+          ok {
+            confirmedMember {
+              id
+              user {
+                id
+                provisionInfo {
+                  provisioningStatus
+                }
+              }
+            }
+          }
+          error {
+            message
           }
         }
       }

@@ -1,5 +1,4 @@
 import { Injectable, Scope } from 'graphql-modules';
-import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import * as zod from 'zod';
 import { z } from 'zod';
 import * as GraphQLSchema from '../../../__generated__/types';
@@ -226,7 +225,7 @@ export class TargetManager {
     return this.storage.getTarget(selector);
   }
 
-  async getTargetByReferenceInput(reference: TargetReferenceInput) {
+  async getTargetByReferenceInput(reference: GraphQLSchema.TargetReferenceInput) {
     const selector = await this.idTranslator.resolveTargetReference({ reference });
 
     if (!selector) {

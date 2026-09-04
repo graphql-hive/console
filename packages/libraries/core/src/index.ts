@@ -22,4 +22,8 @@ export {
   type CDNArtifactFetcher,
 } from './client/cdn-artifact-fetcher.js';
 export type { CircuitBreakerConfiguration } from './client/circuit-breaker.js';
-export { addHiveTypenames, hideInjectedTypenames } from './client/add-hive-typenames.js';
+export {
+  addHiveTypenames,
+  hideInjectedTypenames,
+  getDefinedRootType,
+} from './client/add-hive-typenames.js';

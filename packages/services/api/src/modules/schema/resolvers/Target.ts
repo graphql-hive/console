@@ -66,6 +66,9 @@ export const Target: Pick<
   },
   schemaChecks: async (target, args, { injector }, info) => {
     const operationSelectsSDL = isFieldRequestedDeep(info, [
+      ['SchemaCheck', 'baseline'],
+      ['SuccessfulSchemaCheck', 'baseline'],
+      ['FailedSchemaCheck', 'baseline'],
       ['SuccessfulSchemaCheck', 'schemaSDL'],
       ['SuccessfulSchemaCheck', 'compositeSchemaSDL'],
       ['SuccessfulSchemaCheck', 'supergraphSDL'],

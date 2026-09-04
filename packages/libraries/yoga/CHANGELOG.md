@@ -1,5 +1,46 @@
 # @graphql-hive/yoga
 
+## 0.49.5
+
+### Patch Changes
+
+- [#8379](https://github.com/graphql-hive/console/pull/8379)
+  [`a6089c5`](https://github.com/graphql-hive/console/commit/a6089c5e869b1b83edda16d6452432428db3424d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent validation failure by modifying selection
+  set with hive specific typename aliases within `onExecute` plugin hook instead of `onParse` hook.
+- Updated dependencies
+  [[`85a3351`](https://github.com/graphql-hive/console/commit/85a33512ed9f03095d376fc586d737ac0183410d)]:
+  - @graphql-hive/core@0.22.4
+
+## 0.49.4
+
+### Patch Changes
+
+- [#8380](https://github.com/graphql-hive/console/pull/8380)
+  [`988b9b4`](https://github.com/graphql-hive/console/commit/988b9b4b851c5f528dabc3196198fab25234db3c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Do not attempt to report a subscription operation
+  via usage reporting if the schema has no subscription root type.
+
+- [#8369](https://github.com/graphql-hive/console/pull/8369)
+  [`dc32e0b`](https://github.com/graphql-hive/console/commit/dc32e0b43081f87cf6f41a820e5e6e76cd4aa687)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-yoga package to patch vulnerability
+
+## 0.49.3
+
+### Patch Changes
+
+- Updated dependencies
+  [[`33791da`](https://github.com/graphql-hive/console/commit/33791da958f6801d4a981c9147891724f39ef50c)]:
+  - @graphql-hive/core@0.22.3
+
+## 0.49.2
+
+### Patch Changes
+
+- Updated dependencies
+  [[`658ff6a`](https://github.com/graphql-hive/console/commit/658ff6a644ef76787d1d283a34eab56c03f8ffa5)]:
+  - @graphql-hive/core@0.22.2
+
 ## 0.49.1
 
 ### Patch Changes

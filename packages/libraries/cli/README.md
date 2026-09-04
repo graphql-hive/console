@@ -38,6 +38,7 @@ curl -sSL https://graphql-hive.com/install.sh | sh
 
 <!-- commands -->
 
+- [`hive app:check OPERATIONS`](#hive-appcheck-operations)
 - [`hive app:create OPERATIONS`](#hive-appcreate-operations)
 - [`hive app:publish`](#hive-apppublish)
 - [`hive app:retire`](#hive-appretire)
@@ -54,6 +55,35 @@ curl -sSL https://graphql-hive.com/install.sh | sh
 - [`hive update [CHANNEL]`](#hive-update-channel)
 - [`hive whoami`](#hive-whoami)
 
+## `hive app:check OPERATIONS`
+
+checks app operations against the latest published schema
+
+```
+USAGE
+  $ hive app:check OPERATIONS [--debug] [--registry.endpoint <value>] [--registry.accessToken <value>]
+    [--target <value>]
+
+ARGUMENTS
+  OPERATIONS  Path to the persisted operations manifest (GraphQL Code Generator, Relay or Apollo persisted query
+              manifest JSON file), a directory containing .graphql files, or a glob pattern matching .graphql files.
+
+FLAGS
+  --debug                         Whether debug output for HTTP calls and similar should be enabled.
+  --registry.accessToken=<value>  registry access token
+  --registry.endpoint=<value>     registry endpoint
+  --target=<value>                The target against which the app operations are checked. This can either be a slug
+                                  following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
+                                  "the-guild/graphql-hive/staging") or an UUID (e.g.
+                                  "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
+
+DESCRIPTION
+  checks app operations against the latest published schema
+```
+
+_See code:
+[src/commands/app/check.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/app/check.ts)_
+
 ## `hive app:create OPERATIONS`
 
 create an app deployment
@@ -64,8 +94,8 @@ USAGE
     <value>] [--version <value>] [--target <value>] [--publish]
 
 ARGUMENTS
-  OPERATIONS  Path to the persisted operations manifest (JSON file), a directory containing .graphql files, or a glob
-              pattern matching .graphql files.
+  OPERATIONS  Path to the persisted operations manifest (GraphQL Code Generator, Relay or Apollo persisted query
+              manifest JSON file), a directory containing .graphql files, or a glob pattern matching .graphql files.
 
 FLAGS
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
@@ -84,7 +114,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/create.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/app/create.ts)_
+[src/commands/app/create.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/app/create.ts)_
 
 ## `hive app:publish`
 
@@ -111,7 +141,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/publish.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/app/publish.ts)_
+[src/commands/app/publish.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/app/publish.ts)_
 
 ## `hive app:retire`
 
@@ -139,7 +169,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/retire.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/app/retire.ts)_
+[src/commands/app/retire.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/app/retire.ts)_
 
 ## `hive artifact:fetch`
 
@@ -163,7 +193,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/artifact/fetch.ts)_
+[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/artifact/fetch.ts)_
 
 ## `hive dev`
 
@@ -206,7 +236,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/dev.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/dev.ts)_
+[src/commands/dev.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/dev.ts)_
 
 ## `hive help [COMMAND]`
 
@@ -252,7 +282,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/introspect.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/introspect.ts)_
+[src/commands/introspect.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/introspect.ts)_
 
 ## `hive operations:check FILE`
 
@@ -311,7 +341,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/operations/check.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/operations/check.ts)_
+[src/commands/operations/check.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/operations/check.ts)_
 
 ## `hive schema:check FILE`
 
@@ -321,14 +351,17 @@ checks schema
 USAGE
   $ hive schema:check FILE [--debug] [--service <value>] [--registry.endpoint <value>] [--registry <value>]
     [--registry.accessToken <value>] [--token <value>] [--experimentalJsonFile <value>] [--forceSafe] [--github]
-    [--require <value>...] [--author <value>] [--commit <value>] [--contextId <value>] [--target <value>] [--url
-    <value>] [--schemaProposalId <value>]
+    [--require <value>...] [--author <value>] [--commit <value>] [--baseline <value>] [--contextId <value>] [--target
+    <value>] [--url <value>] [--schemaProposalId <value>]
 
 ARGUMENTS
   FILE  Path to the schema file(s)
 
 FLAGS
   --author=<value>                Author of the change
+  --baseline=<value>              File containing the schema before the current change.
+                                  Baseline schema to compare against. Accepts a local file path or a file at aGit
+                                  revision using `<revision>:<path>`.
   --commit=<value>                Associated commit sha
   --contextId=<value>             Context ID for grouping the schema check.
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
@@ -356,7 +389,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/check.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/schema/check.ts)_
+[src/commands/schema/check.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/schema/check.ts)_
 
 ## `hive schema:delete SERVICE`
 
@@ -389,7 +422,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/delete.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/schema/delete.ts)_
+[src/commands/schema/delete.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/schema/delete.ts)_
 
 ## `hive schema:fetch [COMMIT]`
 
@@ -422,7 +455,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/fetch.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/schema/fetch.ts)_
+[src/commands/schema/fetch.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/schema/fetch.ts)_
 
 ## `hive schema:promote`
 
@@ -455,7 +488,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/promote.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/schema/promote.ts)_
+[src/commands/schema/promote.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/schema/promote.ts)_
 
 ## `hive schema:publish FILE`
 
@@ -499,7 +532,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/publish.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/schema/publish.ts)_
+[src/commands/schema/publish.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/schema/publish.ts)_
 
 ## `hive update [CHANNEL]`
 
@@ -562,7 +595,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/whoami.ts](https://github.com/graphql-hive/console/blob/v0.61.3/src/commands/whoami.ts)_
+[src/commands/whoami.ts](https://github.com/graphql-hive/console/blob/v0.63.0/src/commands/whoami.ts)_
 
 <!-- commandsstop -->
 

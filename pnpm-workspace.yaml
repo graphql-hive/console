@@ -25,3 +25,4 @@ minimumReleaseAgeExclude:
   - '@theguild/federation-composition'
   - graphql-modules
   - 'react-foundry'
+  - 'graphql-scalars'

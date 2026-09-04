@@ -39,8 +39,12 @@ export function registerUsageCollectionLegacyRoute(args: {
   >({
     method: 'POST',
     url: '/',
-    onRequest(req, _, done) {
+    onRequest(req, reply, done) {
       req.onRequestHRTime = process.hrtime();
+      if (args.usage.readiness() === false) {
+        void reply.status(503).send();
+        return;
+      }
       done();
     },
     onResponse(req, _, done) {

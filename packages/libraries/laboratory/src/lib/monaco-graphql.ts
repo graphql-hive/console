@@ -19,6 +19,11 @@ export type SyncMonacoGraphQLInput = {
   schemaUri: string;
   operationUri?: string;
   variablesUri?: string;
+  /**
+   * Hand the hover to our own provider, which rebuilds the same content and adds
+   * the docs link. Without it monaco-graphql keeps serving hovers as before.
+   */
+  enableDocs?: boolean;
 };
 
 export function syncMonacoGraphQL(input: SyncMonacoGraphQLInput): MonacoGraphQLAPI {
@@ -39,8 +44,10 @@ export function syncMonacoGraphQL(input: SyncMonacoGraphQLInput): MonacoGraphQLA
     jsonDiagnosticSettings: { allowComments: true },
   };
 
+  const hovers = !input.enableDocs;
+
   if (!api) {
-    api = initializeMode({ schemas, diagnosticSettings });
+    api = initializeMode({ schemas, diagnosticSettings, modeConfiguration: { hovers } });
     api.setCompletionSettings({ __experimental__fillLeafsOnComplete: true });
 
     return api;
@@ -48,6 +55,7 @@ export function syncMonacoGraphQL(input: SyncMonacoGraphQLInput): MonacoGraphQLA
 
   api.setSchemaConfig(schemas);
   api.setDiagnosticSettings(diagnosticSettings);
+  api.setModeConfiguration({ ...api.modeConfiguration, hovers });
 
   return api;
 }

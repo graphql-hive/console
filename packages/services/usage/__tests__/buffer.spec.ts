@@ -224,6 +224,34 @@ test('buffer should split the report into multiple reports when the estimated si
   await buffer.stop();
 });
 
+test('buffer should not recursively split a report that cannot get smaller', async () => {
+  const split = vi.fn((report: { size: number }) => [{ size: 0 }, report]);
+  const buffer = createKVBuffer<{ size: number }>({
+    logger: { info: vi.fn(), error: vi.fn() } as any,
+    size: 1,
+    interval: 60_000,
+    limitInBytes: 100,
+    useEstimator: true,
+    calculateReportSize: report => report.size,
+    split,
+    onRetry() {},
+    isTooLargePayloadError() {
+      return false;
+    },
+    async sender(reports, _bytes, _batchId, validateSize) {
+      validateSize(reports.reduce((sum, report) => sum + report.size, 0) * 200);
+    },
+  });
+
+  // The first flush teaches the estimator that one unit exceeds the byte limit.
+  buffer.add({ size: 1 });
+  await buffer.stop();
+
+  expect(() => buffer.add({ size: 1 })).not.toThrow();
+  await buffer.stop();
+  expect(split.mock.calls.length).toBeLessThan(10);
+});
+
 test('buffer create two chunks out of one buffer when actual buffer size is too big', async () => {
   const logger = {
     info: vi.fn(),

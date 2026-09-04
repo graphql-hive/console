@@ -1,5 +1,4 @@
-import { ReactElement, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { parse, print } from 'graphql';
+import { ReactElement, useLayoutEffect, useRef, useState } from 'react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
 import { useTheme } from '@/components/theme/theme-provider';
@@ -7,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { usePrettify } from '@/lib/hooks';
 import type { Monaco, MonacoDiffEditor as OriginalMonacoDiffEditor } from '@monaco-editor/react';
 import { ArrowDownIcon, ArrowUpIcon, DownloadIcon } from '@radix-ui/react-icons';
 import { Spinner } from '../ui/spinner';
 
 export const DiffEditor = (props: {
+  title?: ReactElement;
   before: string | null;
   after: string | null;
   downloadFileName?: string;
@@ -24,16 +23,6 @@ export const DiffEditor = (props: {
 }): ReactElement => {
   const { resolvedTheme } = useTheme();
   const [showDiff, setShowDiff] = useState<boolean>(true);
-  const sdlBefore = usePrettify(props.before);
-  // runs once on mount then uses internal monaco state to manage
-  let sdlAfter = props.after ?? '';
-  useEffect(() => {
-    try {
-      sdlAfter = print(parse(sdlAfter));
-    } catch {
-      // ignore
-    }
-  }, []);
   const editorRef = useRef<OriginalMonacoDiffEditor | null>(null);
   const modelsRef = useRef<{
     original: editor.ITextModel | null;
@@ -80,13 +69,15 @@ export const DiffEditor = (props: {
     });
   }
 
+  const title = props?.title ?? 'Diff View';
+
   return (
     <div className="w-full">
       <div className="border-neutral-3 mb-2 flex items-center justify-between border-b px-2 py-1">
-        <div className="px-2 font-bold">Diff View</div>
+        <div className="px-2 font-bold">{title}</div>
         <div className="ml-auto flex h-[36px] items-center px-2">
-          {sdlAfter && props.downloadFileName && (
-            <DownloadButton fileName={props.downloadFileName} contents={sdlAfter} />
+          {props.after && props.downloadFileName && (
+            <DownloadButton fileName={props.downloadFileName} contents={props.after} />
           )}
           {showDiff && (
             <>
@@ -141,8 +132,8 @@ export const DiffEditor = (props: {
           height="70vh"
           language="graphql"
           loading={<Spinner />}
-          original={sdlBefore ?? undefined}
-          modified={sdlAfter ?? undefined}
+          original={props.before ?? undefined}
+          modified={props.after ?? undefined}
           keepCurrentOriginalModel
           keepCurrentModifiedModel
           options={{
@@ -162,7 +153,7 @@ export const DiffEditor = (props: {
           height="70vh"
           language="graphql"
           loading={<Spinner />}
-          value={sdlAfter ?? undefined}
+          value={props.after ?? undefined}
           onMount={props.onMount}
           onChange={props.onChange}
           options={{
@@ -180,7 +171,7 @@ export const DiffEditor = (props: {
   );
 };
 
-function DownloadButton(props: { contents: string; fileName: string }) {
+export function DownloadButton(props: { contents: string; fileName: string }) {
   return (
     <TooltipProvider>
       <Tooltip>

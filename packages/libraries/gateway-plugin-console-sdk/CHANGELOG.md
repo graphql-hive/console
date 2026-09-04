@@ -1,5 +1,57 @@
 # @graphql-hive/gateway-plugin-console-sdk
 
+## 0.1.5
+
+### Patch Changes
+
+- [#8379](https://github.com/graphql-hive/console/pull/8379)
+  [`a6089c5`](https://github.com/graphql-hive/console/commit/a6089c5e869b1b83edda16d6452432428db3424d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent validation failure by modifying selection
+  set with hive specific typename aliases within `onExecute` plugin hook instead of `onParse` hook.
+
+- [#8383](https://github.com/graphql-hive/console/pull/8383)
+  [`85a3351`](https://github.com/graphql-hive/console/commit/85a33512ed9f03095d376fc586d737ac0183410d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Explicitly supports errors thrown in the gateway.
+  I.e. authentication during execution.
+
+  This adds a new field to the usage payload that specifically contains errors thrown within the
+  gateway. This separates gateway errors from subgraph errors. All errors are currently ingested
+  similarly into Clickhouse, but this change supports future improvements to show the source
+  (subgraph name or gateway) of errors.
+
+- Updated dependencies
+  [[`85a3351`](https://github.com/graphql-hive/console/commit/85a33512ed9f03095d376fc586d737ac0183410d)]:
+  - @graphql-hive/core@0.22.4
+
+## 0.1.4
+
+### Patch Changes
+
+- [#8369](https://github.com/graphql-hive/console/pull/8369)
+  [`dc32e0b`](https://github.com/graphql-hive/console/commit/dc32e0b43081f87cf6f41a820e5e6e76cd4aa687)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-yoga package to patch vulnerability
+
+## 0.1.3
+
+### Patch Changes
+
+- [#8329](https://github.com/graphql-hive/console/pull/8329)
+  [`33791da`](https://github.com/graphql-hive/console/commit/33791da958f6801d4a981c9147891724f39ef50c)
+  Thanks [@jdolle](https://github.com/jdolle)! - Support Rust query planner execution by setting
+  default operation root type name in collected payload's "paths" if not returned in subgraph call
+  request info.
+- Updated dependencies
+  [[`33791da`](https://github.com/graphql-hive/console/commit/33791da958f6801d4a981c9147891724f39ef50c)]:
+  - @graphql-hive/core@0.22.3
+
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies
+  [[`658ff6a`](https://github.com/graphql-hive/console/commit/658ff6a644ef76787d1d283a34eab56c03f8ffa5)]:
+  - @graphql-hive/core@0.22.2
+
 ## 0.1.1
 
 ### Patch Changes

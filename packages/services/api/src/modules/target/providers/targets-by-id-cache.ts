@@ -7,7 +7,10 @@ import { PostgresDatabasePool } from '@hive/postgres';
 import { findTargetById } from '@hive/storage';
 import type { Target } from '../../../shared/entities';
 import { isUUID } from '../../../shared/is-uuid';
-import { PrometheusConfig } from '../../shared/providers/prometheus-config';
+import {
+  PROMETHEUS_CACHE_KEY_GROUPS,
+  PrometheusConfig,
+} from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 
 /**
@@ -31,6 +34,7 @@ export class TargetsByIdCache {
         ? [
             prometheusPlugin({
               prefix: 'bentocache_targetsById',
+              keyGroups: PROMETHEUS_CACHE_KEY_GROUPS,
             }),
           ]
         : undefined,

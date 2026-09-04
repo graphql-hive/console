@@ -15,7 +15,7 @@
     "@whatwg-node/server": "0.10.17",
     "dotenv": "16.4.7",
     "graphql": "16.9.0",
-    "lru-cache": "^7.17.0",
+    "lru-cache": "11.5.2",
     "zod": "3.25.76"
   }
 }

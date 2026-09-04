@@ -29,6 +29,18 @@ export async function purgeExpiredSchemaChecks(args: {
           FROM "filtered_schema_checks"
           WHERE "filtered_schema_checks"."schema_sdl_store_id" IS NOT NULL
 
+          UNION SELECT DISTINCT "filtered_schema_checks"."baseline_schema_sdl_store_id"
+          FROM "filtered_schema_checks"
+          WHERE "filtered_schema_checks"."baseline_schema_sdl_store_id" IS NOT NULL
+
+          UNION SELECT DISTINCT "filtered_schema_checks"."baseline_composite_schema_sdl_store_id"
+          FROM "filtered_schema_checks"
+          WHERE "filtered_schema_checks"."baseline_composite_schema_sdl_store_id" IS NOT NULL
+
+          UNION SELECT DISTINCT "filtered_schema_checks"."baseline_supergraph_sdl_store_id"
+          FROM "filtered_schema_checks"
+          WHERE "filtered_schema_checks"."baseline_supergraph_sdl_store_id" IS NOT NULL
+
           UNION SELECT DISTINCT "filtered_schema_checks"."composite_schema_sdl_store_id"
           FROM "filtered_schema_checks"
           WHERE "filtered_schema_checks"."composite_schema_sdl_store_id" IS NOT NULL
@@ -45,6 +57,16 @@ export async function purgeExpiredSchemaChecks(args: {
           UNION SELECT DISTINCT "contract_checks"."supergraph_sdl_store_id" FROM "filtered_schema_checks"
             INNER JOIN "contract_checks" ON "contract_checks"."schema_check_id" = "filtered_schema_checks"."id"
             WHERE "contract_checks"."supergraph_sdl_store_id" IS NOT NULL
+
+          UNION SELECT DISTINCT "contract_checks"."baseline_composite_schema_sdl_store_id"
+          FROM "contract_checks"
+            INNER JOIN "filtered_schema_checks" ON "contract_checks"."schema_check_id" = "filtered_schema_checks"."id"
+          WHERE "contract_checks"."baseline_composite_schema_sdl_store_id" IS NOT NULL
+
+          UNION SELECT DISTINCT "contract_checks"."baseline_supergraph_sdl_store_id"
+          FROM "contract_checks"
+            INNER JOIN "filtered_schema_checks" ON "contract_checks"."schema_check_id" = "filtered_schema_checks"."id"
+          WHERE "contract_checks"."baseline_supergraph_sdl_store_id" IS NOT NULL
         ) AS "sdlStoreIds",
         ARRAY(
           SELECT DISTINCT "filtered_schema_checks"."context_id"
@@ -99,6 +121,9 @@ export async function purgeExpiredSchemaChecks(args: {
                 "schema_checks"
               WHERE
                 "schema_checks"."schema_sdl_store_id" = "sdl_store"."id"
+                OR "schema_checks"."baseline_schema_sdl_store_id" = "sdl_store"."id"
+                OR "schema_checks"."baseline_composite_schema_sdl_store_id" = "sdl_store"."id"
+                OR "schema_checks"."baseline_supergraph_sdl_store_id" = "sdl_store"."id"
                 OR "schema_checks"."composite_schema_sdl_store_id" = "sdl_store"."id"
                 OR "schema_checks"."supergraph_sdl_store_id" = "sdl_store"."id"
             )
@@ -108,8 +133,10 @@ export async function purgeExpiredSchemaChecks(args: {
               FROM
                 "contract_checks"
               WHERE
-               "contract_checks"."composite_schema_sdl_store_id" = "sdl_store"."id"
-               OR "contract_checks"."supergraph_sdl_store_id" = "sdl_store"."id"
+                "contract_checks"."composite_schema_sdl_store_id" = "sdl_store"."id"
+                OR "contract_checks"."supergraph_sdl_store_id" = "sdl_store"."id"
+                OR "contract_checks"."baseline_composite_schema_sdl_store_id" = "sdl_store"."id"
+                OR "contract_checks"."baseline_supergraph_sdl_store_id" = "sdl_store"."id"
             )
           RETURNING
             "id"

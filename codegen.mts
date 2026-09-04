@@ -5,6 +5,9 @@ import { addTypenameSelectionDocumentTransform } from '@graphql-codegen/client-p
 const config: CodegenConfig = {
   schema: './packages/services/api/src/modules/*/module.graphql.ts',
   emitLegacyCommonJSImports: true,
+  overwrite: {
+    removeStaleFiles: false,
+  },
   generates: {
     // API
     './packages/services/api/src': defineConfig(
@@ -65,7 +68,11 @@ const config: CodegenConfig = {
       documents: ['./packages/web/app/src/(components|lib|pages|server)/**/*.ts(x)?'],
       preset: 'client',
       config: {
+        enumType: 'native',
         scalars: {
+          ID: 'string',
+          DateTime64: 'string',
+          JSONObject: 'Record<string,unknown>',
           DateTime: 'string',
           Date: 'string',
           SafeInt: 'number',
@@ -75,7 +82,6 @@ const config: CodegenConfig = {
       presetConfig: {
         persistedDocuments: true,
       },
-      plugins: [],
       documentTransforms: [addTypenameSelectionDocumentTransform],
     },
     './packages/web/app/src/gql/schema.ts': {
@@ -89,8 +95,8 @@ const config: CodegenConfig = {
     './packages/libraries/cli/src/gql/': {
       documents: ['./packages/libraries/cli/src/(commands|helpers)/**/*.ts'],
       preset: 'client',
-      plugins: [],
       config: {
+        enumType: 'native',
         useTypeImports: true,
       },
     },
@@ -99,16 +105,15 @@ const config: CodegenConfig = {
       documents: ['./packages/libraries/core/src/client/**/*.ts'],
       config: {
         flattenGeneratedTypes: true,
-        onlyOperationTypes: true,
       },
-      plugins: ['typescript', 'typescript-operations'],
+      plugins: ['typescript-operations'],
     },
     // Integration tests
     './integration-tests/testkit/gql/': {
       documents: ['./integration-tests/(testkit|tests)/**/*.ts'],
       preset: 'client',
-      plugins: [],
       config: {
+        enumType: 'native',
         scalars: {
           DateTime: 'string',
           Date: 'string',
@@ -119,4 +124,4 @@ const config: CodegenConfig = {
   },
 };
 
-module.exports = config;
+export default config;

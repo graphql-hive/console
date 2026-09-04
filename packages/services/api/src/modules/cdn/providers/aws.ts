@@ -1,5 +1,6 @@
 import { got, type Method, type OptionsInit } from 'got';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
+import { withErrorSource } from '@hive/service-common';
 
 /**
  * AWS credential provider chain + custom SigV4 signer (ported from aws4fetch).
@@ -199,9 +200,10 @@ export class AwsClient {
     console.log(`Calling ${init.method} ${url}`);
     const startedAt = Date.now();
 
-    const signed = await this.sign(url, init);
+    const errorSource = `s3 ${new URL(url).origin}` as const;
+    const signed = await withErrorSource(this.sign(url, init), errorSource);
 
-    return got(signed.url, {
+    const request = got(signed.url, {
       method: signed.init.method,
       body: signed.init.body,
       headers: signed.init.headers,
@@ -244,6 +246,8 @@ export class AwsClient {
     }).finally(() => {
       console.log(`Finished ${init.method} ${url} in ${Date.now() - startedAt}ms`);
     });
+
+    return withErrorSource(request, errorSource);
   }
 
   private async sign(url: string, init?: AwsRequestInit) {

@@ -6,7 +6,10 @@ import { prometheusPlugin } from '@bentocache/plugin-prometheus';
 import { PostgresDatabasePool } from '@hive/postgres';
 import { AuthorizationPolicyStatement } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
-import { PrometheusConfig } from '../../shared/providers/prometheus-config';
+import {
+  PROMETHEUS_CACHE_KEY_GROUPS,
+  PrometheusConfig,
+} from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 import { Groups } from './groups';
 import {
@@ -51,6 +54,7 @@ export class OrganizationAccessTokensCache {
         ? [
             prometheusPlugin({
               prefix: 'bentocache_organization_access_tokens',
+              keyGroups: PROMETHEUS_CACHE_KEY_GROUPS,
             }),
           ]
         : undefined,
@@ -86,7 +90,7 @@ export class OrganizationAccessTokensCache {
         accessToken.userId,
       );
 
-      if (provisionedUser?.deactivatedAt) {
+      if (provisionedUser?.provisioningStatus === 'active' && provisionedUser.deactivatedAt) {
         logger.debug('user is disabled');
         return null;
       }
@@ -102,7 +106,7 @@ export class OrganizationAccessTokensCache {
         return null;
       }
 
-      if (provisionedUser) {
+      if (provisionedUser?.provisioningStatus === 'active') {
         const mappings = await Groups.getAllGroupMembershipsWithRoleForOrganizationMembership(
           logger,
           this.pool,

@@ -14,7 +14,7 @@ import PromiseQueue from 'p-queue';
 import { z } from 'zod';
 import { collectSchemaCoordinates, preprocessOperation } from '@graphql-hive/core';
 import { buildOperationS3BucketKey } from '@hive/cdn-script/artifact-storage-reader';
-import { ServiceLogger } from '@hive/service-common';
+import { ServiceLogger, setErrorSource } from '@hive/service-common';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
 import { S3Config } from '../../shared/providers/s3-config';
 
@@ -35,8 +35,8 @@ const AppDeploymentOperationHashModel = z
   .min(1, 'Hash must be at least 1 characters long')
   .max(128, 'Hash must be at most 128 characters long')
   .regex(
-    /^([A-Za-z]|[0-9]|_|-)+$/,
-    "Operation hash can only contain letters, numbers, '_', and '-'",
+    /^([A-Za-z]|[0-9]|_|-|:)+$/,
+    "Operation hash can only contain letters, numbers, '_', ':' and '-'",
   );
 
 const AppDeploymentOperationBodyModel = z.string().min(3, 'Body must be at least 3 character long');
@@ -131,26 +131,6 @@ export type BatchProcessedEvent = {
       };
 };
 
-/**
- * Callback invoked when documents are successfully persisted to S3.
- * Can be used to prefill a Redis cache during deployment.
- *
- * @example
- * ```typescript
- * const onDocumentsPersisted: OnDocumentsPersistedCallback = async (documents) => {
- *   for (const { key, body } of documents) {
- *     await redis.set(`hive:pd:${key}`, body, { EX: 3600 });
- *   }
- * };
- * ```
- */
-export type OnDocumentsPersistedCallback = (
-  documents: Array<{
-    key: string; // targetId~appName~appVersion~hash
-    body: string;
-  }>,
-) => Promise<void>;
-
 export class PersistedDocumentIngester {
   private promiseQueue = new PromiseQueue({ concurrency: 30 });
   private logger: ServiceLogger;
@@ -159,7 +139,6 @@ export class PersistedDocumentIngester {
     private clickhouse: ClickHouse,
     private s3: S3Config,
     logger: ServiceLogger,
-    private onDocumentsPersisted?: OnDocumentsPersistedCallback,
   ) {
     this.logger = logger.child({ source: 'PersistedDocumentIngester' });
   }
@@ -409,8 +388,11 @@ export class PersistedDocumentIngester {
             });
 
             if (response.statusCode !== 200) {
-              throw new Error(
-                `Failed to upload operation to S3: [${response.statusCode}] ${response.statusMessage}`,
+              throw setErrorSource(
+                new Error(
+                  `Failed to upload operation to S3 object storage (${s3.endpoint}/${s3.bucket}): [${response.statusCode}] ${response.statusMessage}`,
+                ),
+                `s3 ${s3.endpoint}`,
               );
             }
           }
@@ -426,33 +408,6 @@ export class PersistedDocumentIngester {
       args.appDeployment.id,
       args.documents.length,
     );
-
-    // Trigger cache prefill callback if configured
-    if (this.onDocumentsPersisted) {
-      const docsForCache = args.documents.map(doc => ({
-        // Key format matches what the SDK uses for lookups: targetId~appName~appVersion~hash
-        key: `${args.targetId}~${args.appDeployment.name}~${args.appDeployment.version}~${doc.hash}`,
-        body: doc.body,
-      }));
-
-      try {
-        await this.onDocumentsPersisted(docsForCache);
-        this.logger.debug(
-          'Cache prefill callback completed. (targetId=%s, appDeployment=%s, documentCount=%d)',
-          args.targetId,
-          args.appDeployment.id,
-          docsForCache.length,
-        );
-      } catch (error) {
-        // Don't fail the deployment for cache prefill failures
-        this.logger.warn(
-          { error },
-          'Cache prefill callback failed. (targetId=%s, appDeployment=%s)',
-          args.targetId,
-          args.appDeployment.id,
-        );
-      }
-    }
   }
 
   /** inserts operations of an app deployment into clickhouse and s3 */

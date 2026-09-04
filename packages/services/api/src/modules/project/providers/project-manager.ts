@@ -1,6 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
-import * as GraphQLSchema from 'packages/libraries/core/src/client/__generated__/types';
 import { z } from 'zod';
+import * as GraphQLSchema from '../../../__generated__/types';
 import type { ProjectReferenceInput } from '../../../__generated__/types';
 import type { Organization, Project, ProjectType, Target } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';

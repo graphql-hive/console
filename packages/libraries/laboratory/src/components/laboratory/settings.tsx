@@ -20,7 +20,6 @@ const settingsFormSchema = z.object({
   }),
   introspection: z.object({
     method: z.enum(['GET', 'POST']).optional(),
-    schemaDescription: z.boolean().optional(),
     headers: z.string().optional(),
     includeActiveOperationHeaders: z.boolean().optional(),
   }),
@@ -184,20 +183,6 @@ export const Settings = () => {
                           <SelectItem value="POST">POST</SelectItem>
                         </SelectContent>
                       </Select>
-                    </Field>
-                  );
-                }}
-              </form.Field>
-              <form.Field name="introspection.schemaDescription">
-                {field => {
-                  return (
-                    <Field className="flex-row items-center">
-                      <Switch
-                        className="!w-8"
-                        checked={field.state.value ?? false}
-                        onCheckedChange={field.handleChange}
-                      />
-                      <FieldLabel htmlFor={field.name}>Schema description</FieldLabel>
                     </Field>
                   );
                 }}

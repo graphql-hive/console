@@ -1,5 +1,37 @@
 # @graphql-hive/core
 
+## 0.22.4
+
+### Patch Changes
+
+- [#8383](https://github.com/graphql-hive/console/pull/8383)
+  [`85a3351`](https://github.com/graphql-hive/console/commit/85a33512ed9f03095d376fc586d737ac0183410d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Explicitly supports errors thrown in the gateway.
+  I.e. authentication during execution.
+
+  This adds a new field to the usage payload that specifically contains errors thrown within the
+  gateway. This separates gateway errors from subgraph errors. All errors are currently ingested
+  similarly into Clickhouse, but this change supports future improvements to show the source
+  (subgraph name or gateway) of errors.
+
+## 0.22.3
+
+### Patch Changes
+
+- [#8329](https://github.com/graphql-hive/console/pull/8329)
+  [`33791da`](https://github.com/graphql-hive/console/commit/33791da958f6801d4a981c9147891724f39ef50c)
+  Thanks [@jdolle](https://github.com/jdolle)! - Support Rust query planner execution by setting
+  default operation root type name in collected payload's "paths" if not returned in subgraph call
+  request info.
+
+## 0.22.2
+
+### Patch Changes
+
+- [#8317](https://github.com/graphql-hive/console/pull/8317)
+  [`658ff6a`](https://github.com/graphql-hive/console/commit/658ff6a644ef76787d1d283a34eab56c03f8ffa5)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - add missing `tslib` dependency.
+
 ## 0.22.1
 
 ### Patch Changes

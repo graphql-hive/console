@@ -1448,7 +1448,7 @@ const SchemaProposalOutputFields = {
   schemaProposalChanges: z.array(HiveSchemaChangeModel).nullable(),
 };
 
-const SchemaCheckSharedOutputFields = {
+const SchemaCheckCommonFields = {
   schemaSDL: z.string(),
   serviceName: z.string().nullable(),
   serviceUrl: z.string().nullable(),
@@ -1470,8 +1470,38 @@ const SchemaCheckSharedOutputFields = {
   ...SchemaProposalOutputFields,
 };
 
+const SchemaCheckSharedOutputFields = {
+  ...SchemaCheckCommonFields,
+  baselineSchemaSDL: z.string().nullable(),
+  baselineSchemaHash: z.string().nullable(),
+  baselinePublicSDL: z.string().nullable(),
+  baselineSupergraphSDL: z.string().nullable(),
+  baselineCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
+};
+
 const SchemaCheckSharedInputFields = {
-  ...SchemaCheckSharedOutputFields,
+  ...SchemaCheckCommonFields,
+  baselineSchemaSdl: z
+    .string()
+    .nullable()
+    .optional()
+    .transform(value => value ?? null),
+  baselineSchemaHash: z
+    .string()
+    .nullable()
+    .optional()
+    .transform(value => value ?? null),
+  baselinePublicSdl: z
+    .string()
+    .nullable()
+    .optional()
+    .transform(value => value ?? null),
+  baselineSupergraphSdl: z
+    .string()
+    .nullable()
+    .optional()
+    .transform(value => value ?? null),
+  baselineSchemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
 };
 
 const ContractCheckInput = z.object({
@@ -1483,6 +1513,9 @@ const ContractCheckInput = z.object({
   schemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
   breakingSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
   safeSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
+  baselineCompositeSchemaSdl: z.string().nullable(),
+  baselineSupergraphSchemaSdl: z.string().nullable(),
+  baselineCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
 });
 
 const DateOrString = z

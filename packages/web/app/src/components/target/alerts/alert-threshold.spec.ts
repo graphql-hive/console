@@ -1,4 +1,11 @@
-import { applyThresholdSign, thresholdUnit, windowAggregates } from './alert-threshold';
+import {
+  applyThresholdSign,
+  EVALUATOR_LAG_MS,
+  scoredWindow,
+  thresholdUnit,
+  visibleSeries,
+  windowAggregates,
+} from './alert-threshold';
 
 describe('thresholdUnit', () => {
   it('is always % for a percentage change, regardless of metric', () => {
@@ -92,5 +99,123 @@ describe('windowAggregates', () => {
     const { current, previous } = windowAggregates('LATENCY', 'p95', [], [], durations, boundaryMs);
     expect(previous).toBe(200); // mean(100, 300)
     expect(current).toBe(800); // mean(800)
+  });
+});
+
+describe('visibleSeries', () => {
+  // An hour of one-minute buckets, with a boundary one minute from the end.
+  const hourOfBuckets = Array.from(
+    { length: 60 },
+    (_, i) => [new Date(Date.UTC(2026, 5, 15, 1, i)).toISOString(), i] as const,
+  );
+  const boundaryMs = new Date(Date.UTC(2026, 5, 15, 1, 59)).getTime();
+
+  it('keeps the whole fetched span when the caller does not opt in', () => {
+    expect(
+      visibleSeries(hourOfBuckets, {
+        clipToCurrentWindow: false,
+        isPercentageChange: false,
+        timeWindowMinutes: 1,
+        boundaryMs,
+      }),
+    ).toHaveLength(60);
+  });
+
+  it('clips to the trailing window when the caller opts in', () => {
+    expect(
+      visibleSeries(hourOfBuckets, {
+        clipToCurrentWindow: true,
+        isPercentageChange: false,
+        timeWindowMinutes: 1,
+        boundaryMs,
+      }),
+    ).toEqual([hourOfBuckets[59]]);
+  });
+
+  it('keeps both windows for a percentage change, even when opted in', () => {
+    expect(
+      visibleSeries(hourOfBuckets, {
+        clipToCurrentWindow: true,
+        isPercentageChange: true,
+        timeWindowMinutes: 1,
+        boundaryMs,
+      }),
+    ).toHaveLength(60);
+  });
+
+  it('keeps the whole span when there is no window to clip to', () => {
+    expect(
+      visibleSeries(hourOfBuckets, {
+        clipToCurrentWindow: true,
+        isPercentageChange: false,
+        timeWindowMinutes: 0,
+        boundaryMs,
+      }),
+    ).toHaveLength(60);
+  });
+});
+
+describe('scoredWindow', () => {
+  const evaluatedAt = '2026-06-15T01:40:00.000Z';
+  const evaluatedMs = new Date(evaluatedAt).getTime();
+  // Well past the evaluation, so a fallback to it would be obvious.
+  const lastMs = new Date('2026-06-15T01:45:00.000Z').getTime();
+
+  it('reproduces the evaluator window: [anchor - lag - window, anchor - lag)', () => {
+    const { boundaryMs, scoredEndMs, isEvaluated } = scoredWindow({
+      evaluatedAt,
+      lastMs,
+      timeWindowMinutes: 5,
+    });
+    expect(isEvaluated).toBe(true);
+    expect(scoredEndMs).toBe(evaluatedMs - EVALUATOR_LAG_MS);
+    expect(boundaryMs).toBe(evaluatedMs - EVALUATOR_LAG_MS - 5 * 60_000);
+  });
+
+  it('ignores the newest bucket, which follows the viewer clock', () => {
+    const viewedLater = scoredWindow({
+      evaluatedAt,
+      lastMs: lastMs + 60 * 60_000,
+      timeWindowMinutes: 5,
+    });
+    const viewedNow = scoredWindow({ evaluatedAt, lastMs, timeWindowMinutes: 5 });
+    expect(viewedLater).toEqual(viewedNow);
+  });
+
+  it('excludes a bucket at the cutoff and includes the one before it', () => {
+    const { boundaryMs, scoredEndMs } = scoredWindow({
+      evaluatedAt,
+      lastMs,
+      timeWindowMinutes: 1,
+    });
+    const inWindow = (ms: number) => ms >= boundaryMs && ms < scoredEndMs;
+    expect(inWindow(scoredEndMs)).toBe(false);
+    expect(inWindow(scoredEndMs - 1)).toBe(true);
+    expect(inWindow(boundaryMs)).toBe(true);
+    expect(inWindow(boundaryMs - 1)).toBe(false);
+  });
+
+  it('falls back to the newest bucket when the rule has never been evaluated', () => {
+    for (const missing of [null, undefined, '']) {
+      const { boundaryMs, scoredEndMs, isEvaluated } = scoredWindow({
+        evaluatedAt: missing,
+        lastMs,
+        timeWindowMinutes: 5,
+      });
+      expect(isEvaluated).toBe(false);
+      expect(scoredEndMs).toBe(lastMs);
+      expect(boundaryMs).toBe(lastMs - 5 * 60_000);
+    }
+  });
+
+  it('falls back rather than producing NaN on an unparseable timestamp', () => {
+    const { boundaryMs, scoredEndMs, isEvaluated } = scoredWindow({
+      evaluatedAt: 'not a date',
+      lastMs,
+      timeWindowMinutes: 5,
+    });
+    expect(isEvaluated).toBe(false);
+    expect(scoredEndMs).toBe(lastMs);
+    expect(boundaryMs).toBe(lastMs - 5 * 60_000);
   });
 });

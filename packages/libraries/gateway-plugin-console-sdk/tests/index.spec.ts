@@ -1,5 +1,5 @@
-import type { GraphQLResolveInfo } from 'graphql';
-import { createSchema, createYoga } from 'graphql-yoga';
+import { GraphQLError, ValidationRule, type GraphQLResolveInfo } from 'graphql';
+import { createSchema, createYoga, type Plugin } from 'graphql-yoga';
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime';
 import { createHive, useHive } from '../src';
 
@@ -36,9 +36,25 @@ describe('field-level usage reporting', () => {
         Query: { item: itemResolver },
       },
     });
+
+    const rule: ValidationRule = context => ({
+      Field(node) {
+        if (node.alias?.value === '__hive_typename__') {
+          context.reportError(new GraphQLError('Hive typename was injected too early'));
+        }
+      },
+    });
+
+    const validationPlugin: Plugin = {
+      onValidate({ addValidationRule }) {
+        addValidationRule(rule);
+      },
+    };
+
     await using yoga = createYoga({
       schema: () => schema,
       plugins: [
+        validationPlugin,
         useHive({
           enabled: false,
           token: 'dummy-token',

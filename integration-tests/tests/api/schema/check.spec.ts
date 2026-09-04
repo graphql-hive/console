@@ -6,6 +6,7 @@ import {
 import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
+import { checkSchema } from '../../../testkit/flow';
 import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
@@ -2019,6 +2020,486 @@ describe.concurrent(
   },
 );
 
+describe.concurrent('schema check with a baseline service schema', () => {
+  test.concurrent('compares a single schema against the provided baseline', async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+
+    await token
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            stable: String
+            registryOnly: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const result = await checkSchema(
+      {
+        baseline: {
+          hash: 'single-schema-baseline',
+          sdl: /* GraphQL */ `
+            type Query {
+              stable: String
+              baselineOnly: String
+            }
+          `,
+        },
+        sdl: /* GraphQL */ `
+          type Query {
+            stable: String
+          }
+        `,
+      },
+      token.secret,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.schemaCheck).toMatchObject({
+      __typename: 'SchemaCheckError',
+      valid: false,
+      changes: {
+        nodes: [
+          {
+            message: "Field 'baselineOnly' was removed from object type 'Query'",
+          },
+        ],
+        total: 1,
+      },
+      schemaCheck: {
+        baseline: {
+          sdl: expect.stringContaining('baselineOnly: String'),
+          publicSdl: expect.stringContaining('baselineOnly: String'),
+          compositionErrors: null,
+          meta: {
+            commit: 'single-schema-baseline',
+          },
+        },
+      },
+    });
+  });
+
+  test.concurrent(
+    'compares the baseline against the head when the head matches the registry',
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const token = await createTargetAccessToken({});
+
+      const headSdl = /* GraphQL */ `
+        extend schema
+          @link(url: "https://specs.apollo.dev/link/v1.0")
+          @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+        type Query {
+          product: Product
+        }
+
+        type Product @key(fields: "id") {
+          id: ID!
+        }
+      `;
+
+      await token
+        .publishSchema({
+          service: 'products',
+          url: 'http://products.local',
+          sdl: headSdl,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const result = await checkSchema(
+        {
+          service: 'products',
+          baseline: {
+            hash: 'baseline-with-removed-field',
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+              type Query {
+                product: Product
+              }
+
+              type Product @key(fields: "id") {
+                id: ID!
+                removedInHead: String
+              }
+            `,
+          },
+          sdl: headSdl,
+        },
+        token.secret,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      expect(result.schemaCheck).toMatchObject({
+        __typename: 'SchemaCheckError',
+        valid: false,
+        schemaCheck: {
+          previousSchemaSDL: expect.stringContaining('removedInHead: String'),
+          baseline: {
+            sdl: expect.stringContaining('removedInHead: String'),
+            supergraphSdl: expect.stringContaining('removedInHead'),
+            publicSdl: expect.stringContaining('removedInHead'),
+            compositionErrors: null,
+            meta: {
+              commit: 'baseline-with-removed-field',
+            },
+          },
+        },
+        changes: {
+          nodes: [
+            {
+              criticality: 'Breaking',
+              message: "Field 'removedInHead' was removed from object type 'Product'",
+            },
+          ],
+          total: 1,
+        },
+      });
+    },
+  );
+
+  test.concurrent(
+    'reports no changes when the baseline and head match but differ from the registry',
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const token = await createTargetAccessToken({});
+
+      await token
+        .publishSchema({
+          service: 'products',
+          url: 'http://products.local',
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+            type Query {
+              product: Product
+            }
+
+            type Product @key(fields: "id") {
+              id: ID!
+              registryOnly: String
+            }
+          `,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const baselineAndHeadSdl = /* GraphQL */ `
+        extend schema
+          @link(url: "https://specs.apollo.dev/link/v1.0")
+          @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+        type Query {
+          product: Product
+        }
+
+        type Product @key(fields: "id") {
+          id: ID!
+        }
+      `;
+
+      const result = await checkSchema(
+        {
+          service: 'products',
+          baseline: {
+            hash: 'baseline-matching-head',
+            sdl: baselineAndHeadSdl,
+          },
+          sdl: baselineAndHeadSdl,
+        },
+        token.secret,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      expect(result.schemaCheck).toMatchObject({
+        __typename: 'SchemaCheckSuccess',
+        valid: true,
+        schemaCheck: {
+          previousSchemaSDL: expect.not.stringContaining('registryOnly: String'),
+          baseline: {
+            meta: {
+              commit: 'baseline-matching-head',
+            },
+          },
+        },
+        changes: {
+          nodes: [],
+          total: 0,
+        },
+      });
+    },
+  );
+
+  test.concurrent(
+    'skips when the baseline, head, and registry schema match',
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const token = await createTargetAccessToken({});
+
+      const sdl = /* GraphQL */ `
+        extend schema
+          @link(url: "https://specs.apollo.dev/link/v1.0")
+          @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+        type Query {
+          product: Product
+        }
+
+        type Product @key(fields: "id") {
+          id: ID!
+        }
+      `;
+
+      await token
+        .publishSchema({
+          service: 'products',
+          url: 'http://products.local',
+          sdl,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const result = await checkSchema(
+        {
+          service: 'products',
+          baseline: {
+            hash: 'baseline-matching-registry-and-head',
+            sdl,
+          },
+          sdl,
+        },
+        token.secret,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      expect(result.schemaCheck).toMatchObject({
+        __typename: 'SchemaCheckSuccess',
+        valid: true,
+        schemaCheck: {
+          previousSchemaSDL: expect.stringContaining('type Product'),
+          baseline: {
+            meta: {
+              commit: 'baseline-matching-registry-and-head',
+            },
+          },
+        },
+        changes: {
+          nodes: [],
+          total: 0,
+        },
+      });
+    },
+  );
+
+  test.concurrent(
+    'compares the proposed schema against the provided baseline SDL',
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const token = await createTargetAccessToken({});
+
+      await token
+        .publishSchema({
+          service: 'products',
+          url: 'http://products.local',
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+            type Query {
+              product: Product
+            }
+
+            type Product @key(fields: "id") {
+              id: ID!
+              stable: String
+              registryOnly: String
+            }
+          `,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      await token
+        .publishSchema({
+          service: 'reviews',
+          url: 'http://reviews.local',
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+            type Query {
+              review: String
+            }
+          `,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const result = await checkSchema(
+        {
+          service: 'products',
+          baseline: {
+            hash: 'baseline-commit-sha',
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+              type Query {
+                product: Product
+              }
+
+              type Product @key(fields: "id") {
+                id: ID!
+                stable: String
+                baseOnly: String
+              }
+            `,
+          },
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+            type Query {
+              product: Product
+            }
+
+            type Product @key(fields: "id") {
+              id: ID!
+              stable: String
+            }
+          `,
+        },
+        token.secret,
+      ).then(r => r.expectNoGraphQLErrors());
+
+      // registryOnly being removed does not show up!
+      expect(result.schemaCheck).toMatchObject({
+        __typename: 'SchemaCheckError',
+        valid: false,
+        schemaCheck: {
+          previousSchemaSDL: expect.stringContaining('baseOnly: String'),
+          baseline: {
+            meta: {
+              commit: 'baseline-commit-sha',
+            },
+          },
+        },
+        changes: {
+          nodes: [
+            {
+              criticality: 'Breaking',
+              message: "Field 'baseOnly' was removed from object type 'Product'",
+            },
+          ],
+          total: 1,
+        },
+      });
+    },
+  );
+
+  test.concurrent('fails when the provided baseline SDL cannot be composed', async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const token = await createTargetAccessToken({});
+
+    await token
+      .publishSchema({
+        service: 'products',
+        url: 'http://products.local',
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+          type Query {
+            product: Product
+          }
+
+          type Product @key(fields: "id") {
+            id: ID!
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const result = await checkSchema(
+      {
+        service: 'products',
+        baseline: {
+          hash: 'invalid-baseline-schema',
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+            type Query {
+              product: Product
+            }
+
+            type Product @key(fields: "missing") {
+              id: ID!
+            }
+          `,
+        },
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+          type Query {
+            product: Product
+          }
+
+          type Product @key(fields: "id") {
+            id: ID!
+            name: String
+          }
+        `,
+      },
+      token.secret,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.schemaCheck).toMatchObject({
+      __typename: 'SchemaCheckError',
+      valid: false,
+      errors: {
+        nodes: [{ message: 'Baseline composition failed.' }],
+        total: 1,
+      },
+      schemaCheck: {
+        baseline: {
+          sdl: expect.stringContaining('@key(fields: "missing")'),
+          supergraphSdl: null,
+          publicSdl: null,
+          compositionErrors: expect.arrayContaining([
+            {
+              message: expect.any(String),
+              path: null,
+            },
+          ]),
+          meta: {
+            commit: 'invalid-baseline-schema',
+          },
+        },
+      },
+    });
+  });
+});
+
 test.concurrent(
   'checking an invalid schema fails due to validation errors (deprecated non-nullable input field)',
   async () => {
@@ -2056,6 +2537,16 @@ test.concurrent(
       },
       schemaCheck: {
         id: expect.any(String),
+        baseline: {
+          meta: {
+            commit: null,
+          },
+          sdl: null,
+          compositionErrors: null,
+          supergraphSdl: null,
+          publicSdl: null,
+        },
+        previousSchemaSDL: null,
       },
       valid: false,
     });

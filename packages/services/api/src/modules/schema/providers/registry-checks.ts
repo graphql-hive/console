@@ -6,7 +6,7 @@ import { ChangeType, CriticalityLevel, DiffRule, TypeOfChangeType } from '@graph
 import type { DangerousChangeType } from '@hive/api/__generated__/types';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
-import { traceFn } from '@hive/service-common';
+import { invariant, traceFn } from '@hive/service-common';
 import {
   HiveSchemaChangeModel,
   type RegistryServiceUrlChangeSerializableChange,
@@ -208,7 +208,7 @@ export class RegistryChecks {
    * as the only element that is different is the subgraph that is updated.
    * The rest of the subgraphs are inherited from the previous version, meaning they are the same.
    */
-  async checksum(args: {
+  checksum(args: {
     incoming: {
       schema: SchemaInput;
       contractNames: null | Array<string>;
@@ -295,18 +295,16 @@ export class RegistryChecks {
       },
     );
 
-    const validationErrors = result.errors;
-
-    if (Array.isArray(validationErrors) && validationErrors.length) {
-      this.logger.debug('Detected validation errors');
+    if (Array.isArray(result.errors) && result.errors.length) {
+      this.logger.debug('Detected composition/validation errors');
 
       return {
         status: 'failed',
         reason: {
-          errors: validationErrors,
+          errors: result.errors,
           errorsBySource: {
-            graphql: validationErrors.filter(isGraphQLValidationError),
-            composition: validationErrors.filter(isCompositionValidationError),
+            graphql: result.errors.filter(isGraphQLValidationError),
+            composition: result.errors.filter(isCompositionValidationError),
           },
           // Federation 1 apparently has SDL and validation errors at the same time.
           fullSchemaSdl: result.sdl,
@@ -317,9 +315,7 @@ export class RegistryChecks {
       } satisfies CheckResult;
     }
 
-    if (!result.sdl) {
-      throw new Error('No SDL, but no errors either');
-    }
+    invariant(result.sdl, 'No SDL, but no errors either');
 
     return {
       status: 'completed',
@@ -418,6 +414,7 @@ export class RegistryChecks {
         status: 'completed',
         result: {
           warnings,
+          errors: null,
         },
       } satisfies CheckResult;
     }

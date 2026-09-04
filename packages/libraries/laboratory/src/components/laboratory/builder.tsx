@@ -30,6 +30,7 @@ import {
   SettingsIcon,
   TextAlignStartIcon,
 } from 'lucide-react';
+import { docsTargetFromPath } from '../../lib/docs';
 import type { LaboratoryOperation } from '../../lib/operations';
 import {
   getFieldByPath,
@@ -45,6 +46,12 @@ import { GraphQLIcon } from '../icons';
 import { Button, buttonVariants } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '../ui/context-menu';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '../ui/input-group';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
@@ -52,6 +59,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { useLaboratory } from './context';
+
+/**
+ * Rows are already buttons (and the collapsible ones wrap the checkbox's own
+ * button), so there is no room to nest an inline docs control. A context menu
+ * keeps the row untouched and works the same on every row variant.
+ *
+ * Must sit outside `CollapsibleTrigger` so both `asChild` slots resolve onto the
+ * same underlying element.
+ */
+const BuilderRowContextMenu = (props: { path: string[]; children: React.ReactNode }) => {
+  const { schema, enableDocs, openDocs } = useLaboratory();
+
+  const target = useMemo(
+    () => docsTargetFromPath(props.path, schema ?? null),
+    [props.path, schema],
+  );
+
+  if (!enableDocs || !target) {
+    return <>{props.children}</>;
+  }
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{props.children}</ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={() => openDocs(target)}>Open in Docs</ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+};
 
 export const BuilderArgument = (props: {
   field: GraphQLArgument;
@@ -192,99 +229,103 @@ export const BuilderScalarField = (props: {
     return (
       // A div, not a Button: the row is a styled container, and a button here would
       // nest the checkbox's own button inside it.
-      <div
-        className={cn(
-          buttonVariants({ variant: 'ghost', size: 'sm' }),
-          'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
-          {
-            'text-foreground-primary': isInQuery,
-          },
-        )}
-        style={{
-          top: `${(props.path.length - 2) * 32}px`,
-        }}
-      >
-        <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-        <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
-        <Checkbox
-          onClick={e => e.stopPropagation()}
-          checked={isInQuery}
-          disabled={activeTab?.type !== 'operation' || props.isReadOnly}
-          onCheckedChange={checked => {
-            if (checked) {
-              setIsOpen(true);
-              addPathToActiveOperation(path, props.operationName);
-            } else {
-              deletePathFromActiveOperation(path, props.operationName);
-            }
+      <BuilderRowContextMenu path={props.path}>
+        <div
+          className={cn(
+            buttonVariants({ variant: 'ghost', size: 'sm' }),
+            'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+            {
+              'text-foreground-primary': isInQuery,
+            },
+          )}
+          style={{
+            top: `${(props.path.length - 2) * 32}px`,
           }}
-        />
-        <BoxIcon className="size-4 text-rose-400" />
-        {props.label ?? (
-          <span
-            className={cn({
-              'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
-            })}
-          >
-            {props.field.name}
-          </span>
-        )}
-        : <GraphQLType type={props.field.type} />
-      </div>
+        >
+          <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
+          <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+          <Checkbox
+            onClick={e => e.stopPropagation()}
+            checked={isInQuery}
+            disabled={activeTab?.type !== 'operation' || props.isReadOnly}
+            onCheckedChange={checked => {
+              if (checked) {
+                setIsOpen(true);
+                addPathToActiveOperation(path, props.operationName);
+              } else {
+                deletePathFromActiveOperation(path, props.operationName);
+              }
+            }}
+          />
+          <BoxIcon className="size-4 text-rose-400" />
+          {props.label ?? (
+            <span
+              className={cn({
+                'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+              })}
+            >
+              {props.field.name}
+            </span>
+          )}
+          : <GraphQLType type={props.field.type} />
+        </div>
+      </BuilderRowContextMenu>
     );
   }
 
   if (args.length > 0) {
     return (
       <Collapsible key={props.field.name} open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            className={cn(
-              'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
-              {
-                'text-foreground-primary': isInQuery,
-              },
-            )}
-            style={{
-              top: `${(props.path.length - 2) * 32}px`,
-            }}
-            size="sm"
-          >
-            <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-            <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
-            <ChevronDownIcon
-              className={cn('text-muted-foreground size-4 transition-all', {
-                '-rotate-90': !isOpen,
-              })}
-            />
-            <Checkbox
-              asSpan
-              onClick={e => e.stopPropagation()}
-              checked={isInQuery}
-              disabled={activeTab?.type !== 'operation' || props.isReadOnly}
-              onCheckedChange={checked => {
-                if (checked) {
-                  setIsOpen(true);
-                  addPathToActiveOperation(path, props.operationName);
-                } else {
-                  deletePathFromActiveOperation(path, props.operationName);
-                }
+        <BuilderRowContextMenu path={props.path}>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              className={cn(
+                'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+                {
+                  'text-foreground-primary': isInQuery,
+                },
+              )}
+              style={{
+                top: `${(props.path.length - 2) * 32}px`,
               }}
-            />
-            <BoxIcon className="size-4 text-rose-400" />
-            {props.label ?? (
-              <span
-                className={cn({
-                  'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+              size="sm"
+            >
+              <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
+              <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+              <ChevronDownIcon
+                className={cn('text-muted-foreground size-4 transition-all', {
+                  '-rotate-90': !isOpen,
                 })}
-              >
-                {props.field.name}
-              </span>
-            )}
-            : <GraphQLType type={props.field.type} />
-          </Button>
-        </CollapsibleTrigger>
+              />
+              <Checkbox
+                asSpan
+                onClick={e => e.stopPropagation()}
+                checked={isInQuery}
+                disabled={activeTab?.type !== 'operation' || props.isReadOnly}
+                onCheckedChange={checked => {
+                  if (checked) {
+                    setIsOpen(true);
+                    addPathToActiveOperation(path, props.operationName);
+                  } else {
+                    deletePathFromActiveOperation(path, props.operationName);
+                  }
+                }}
+              />
+              <BoxIcon className="size-4 text-rose-400" />
+              {props.label ?? (
+                <span
+                  className={cn({
+                    'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+                  })}
+                >
+                  {props.field.name}
+                </span>
+              )}
+              : <GraphQLType type={props.field.type} />
+            </Button>
+          </CollapsibleTrigger>
+        </BuilderRowContextMenu>
         <CollapsibleContent className="border-border relative z-0 ml-3 flex flex-col border-l pl-2">
           {isOpen && (
             <div>
@@ -342,41 +383,43 @@ export const BuilderScalarField = (props: {
   return (
     // A div, not a Button: the row is a styled container, and a button here would
     // nest the checkbox's own button inside it.
-    <div
-      key={props.field.name}
-      className={cn(
-        buttonVariants({ variant: 'ghost', size: 'sm' }),
-        'text-muted-foreground p-1! w-full justify-start text-xs',
-        {
-          'text-foreground-primary': isInQuery,
-        },
-      )}
-    >
-      <div className="size-4" />
-      <Checkbox
-        onClick={e => e.stopPropagation()}
-        checked={isInQuery}
-        disabled={activeTab?.type !== 'operation'}
-        onCheckedChange={checked => {
-          if (checked) {
-            addPathToActiveOperation(props.path.join('.'), props.operationName);
-          } else {
-            deletePathFromActiveOperation(props.path.join('.'), props.operationName);
-          }
-        }}
-      />
-      <BoxIcon className="size-4 text-rose-400" />
-      {props.label ?? (
-        <span
-          className={cn({
-            'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
-          })}
-        >
-          {props.field.name}
-        </span>
-      )}
-      : <GraphQLType type={props.field.type} />
-    </div>
+    <BuilderRowContextMenu path={props.path}>
+      <div
+        key={props.field.name}
+        className={cn(
+          buttonVariants({ variant: 'ghost', size: 'sm' }),
+          'text-muted-foreground p-1! w-full justify-start text-xs',
+          {
+            'text-foreground-primary': isInQuery,
+          },
+        )}
+      >
+        <div className="size-4" />
+        <Checkbox
+          onClick={e => e.stopPropagation()}
+          checked={isInQuery}
+          disabled={activeTab?.type !== 'operation'}
+          onCheckedChange={checked => {
+            if (checked) {
+              addPathToActiveOperation(props.path.join('.'), props.operationName);
+            } else {
+              deletePathFromActiveOperation(props.path.join('.'), props.operationName);
+            }
+          }}
+        />
+        <BoxIcon className="size-4 text-rose-400" />
+        {props.label ?? (
+          <span
+            className={cn({
+              'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+            })}
+          >
+            {props.field.name}
+          </span>
+        )}
+        : <GraphQLType type={props.field.type} />
+      </div>
+    </BuilderRowContextMenu>
   );
 };
 
@@ -460,54 +503,10 @@ export const BuilderObjectField = (props: {
     return (
       // A div, not a Button: the row is a styled container, and a button here would
       // nest the checkbox's own button inside it.
-      <div
-        className={cn(
-          buttonVariants({ variant: 'ghost', size: 'sm' }),
-          'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
-          {
-            'text-foreground-primary': isInQuery,
-          },
-        )}
-        style={{
-          top: `${(props.path.length - 2) * 32}px`,
-        }}
-      >
-        <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-        <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
-        <Checkbox
-          onClick={e => e.stopPropagation()}
-          checked={isInQuery}
-          disabled={activeTab?.type !== 'operation' || props.isReadOnly}
-          onCheckedChange={checked => {
-            if (checked) {
-              setIsOpen(true);
-              addPathToActiveOperation(path, props.operationName);
-            } else {
-              deletePathFromActiveOperation(path, props.operationName);
-            }
-          }}
-        />
-        <BoxIcon className="size-4 text-rose-400" />
-        {props.label ?? (
-          <span
-            className={cn({
-              'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
-            })}
-          >
-            {props.field.name}
-          </span>
-        )}
-        : <GraphQLType type={props.field.type} />
-      </div>
-    );
-  }
-
-  return (
-    <Collapsible key={props.field.name} open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger asChild>
-        <Button
-          variant="ghost"
+      <BuilderRowContextMenu path={props.path}>
+        <div
           className={cn(
+            buttonVariants({ variant: 'ghost', size: 'sm' }),
             'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
             {
               'text-foreground-primary': isInQuery,
@@ -516,17 +515,10 @@ export const BuilderObjectField = (props: {
           style={{
             top: `${(props.path.length - 2) * 32}px`,
           }}
-          size="sm"
         >
           <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
           <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
-          <ChevronDownIcon
-            className={cn('text-muted-foreground size-4 transition-all', {
-              '-rotate-90': !isOpen,
-            })}
-          />
           <Checkbox
-            asSpan
             onClick={e => e.stopPropagation()}
             checked={isInQuery}
             disabled={activeTab?.type !== 'operation' || props.isReadOnly}
@@ -550,8 +542,63 @@ export const BuilderObjectField = (props: {
             </span>
           )}
           : <GraphQLType type={props.field.type} />
-        </Button>
-      </CollapsibleTrigger>
+        </div>
+      </BuilderRowContextMenu>
+    );
+  }
+
+  return (
+    <Collapsible key={props.field.name} open={isOpen} onOpenChange={setIsOpen}>
+      <BuilderRowContextMenu path={props.path}>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            className={cn(
+              'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+              {
+                'text-foreground-primary': isInQuery,
+              },
+            )}
+            style={{
+              top: `${(props.path.length - 2) * 32}px`,
+            }}
+            size="sm"
+          >
+            <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
+            <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+            <ChevronDownIcon
+              className={cn('text-muted-foreground size-4 transition-all', {
+                '-rotate-90': !isOpen,
+              })}
+            />
+            <Checkbox
+              asSpan
+              onClick={e => e.stopPropagation()}
+              checked={isInQuery}
+              disabled={activeTab?.type !== 'operation' || props.isReadOnly}
+              onCheckedChange={checked => {
+                if (checked) {
+                  setIsOpen(true);
+                  addPathToActiveOperation(path, props.operationName);
+                } else {
+                  deletePathFromActiveOperation(path, props.operationName);
+                }
+              }}
+            />
+            <BoxIcon className="size-4 text-rose-400" />
+            {props.label ?? (
+              <span
+                className={cn({
+                  'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+                })}
+              >
+                {props.field.name}
+              </span>
+            )}
+            : <GraphQLType type={props.field.type} />
+          </Button>
+        </CollapsibleTrigger>
+      </BuilderRowContextMenu>
       <CollapsibleContent className="border-border relative z-0 ml-4 flex flex-col border-l pl-1">
         {isOpen && (
           <div>

@@ -6,7 +6,7 @@ import { deployGrafana } from './grafana';
 import { deployGrafanaAlerts } from './grafana-alerts';
 
 // Change this to control OTEL tracing for usage service
-const enableTracingForUsageService = true;
+const enableTracingForUsageService = false;
 
 export function deployObservability(config: { environment: Environment }) {
   const observabilityConfig = new pulumi.Config('observability');

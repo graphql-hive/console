@@ -697,6 +697,9 @@ function useLaboratoryState(props: {
       updatePreflight(preflight ?? { script: '', enabled: true });
       setLocalStorageState('preflightEnabled', preflight?.enabled ?? true);
     },
+    // One script per target, stored server side, so it is not private to the person editing it.
+    preflightNotice:
+      'It is stored in plain text on this target, where everyone with access can read it and it runs in their browser too.',
     permissions: {
       preflight: {
         update: preflight?.viewerCanModifyPreflightScript === true,

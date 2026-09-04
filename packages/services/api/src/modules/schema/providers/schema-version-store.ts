@@ -1350,7 +1350,7 @@ export class SchemaVersionStore {
         });
       }
 
-      if (args.schemaLogs.deleted.length) {
+      if (args.schemaLogs.removed.length) {
         // Insert new nodes
         const insertDeleteSchemaLogsQuery = psql` /* insertDeleteSchemaLogs */
           INSERT INTO "schema_log" (
@@ -1363,7 +1363,7 @@ export class SchemaVersionStore {
             , "action"
           )
           SELECT * FROM ${psql.unnest(
-            args.schemaLogs.deleted.map(log => [
+            args.schemaLogs.removed.map(log => [
               log.id,
               log.projectId,
               log.targetId,
@@ -1383,7 +1383,7 @@ export class SchemaVersionStore {
       if (
         args.schemaLogs.added.length ||
         args.schemaLogs.changed.length ||
-        args.schemaLogs.deleted.length ||
+        args.schemaLogs.removed.length ||
         args.schemaLogs.unchanged.length
       ) {
         const insertAddedAndChangedSchemaLogEdges = psql` /* insertAddedAndChangedSchemaLogEdges */
@@ -1396,11 +1396,11 @@ export class SchemaVersionStore {
             , "subgraph_name"
           )
           SELECT * FROM ${psql.unnest(
-            args.schemaLogs.deleted
+            args.schemaLogs.removed
               .map(log => [
                 schemaVersion.id,
                 log.id,
-                'removed',
+                log.type,
                 log.previousId,
                 null,
                 log.serviceName,
@@ -1409,7 +1409,7 @@ export class SchemaVersionStore {
                 args.schemaLogs.changed.map(log => [
                   schemaVersion.id,
                   log.id,
-                  'changed',
+                  log.type,
                   log.previousId,
                   JSON.stringify(log.changes?.map(toSerializableSchemaChange)) ?? null,
                   log.serviceName,
@@ -1419,7 +1419,7 @@ export class SchemaVersionStore {
                 args.schemaLogs.added.map(log => [
                   schemaVersion.id,
                   log.id,
-                  'added',
+                  log.type,
                   null,
                   null,
                   log.serviceName,
@@ -1429,7 +1429,7 @@ export class SchemaVersionStore {
                 args.schemaLogs.unchanged.map(log => [
                   schemaVersion.id,
                   log.id,
-                  'unchanged',
+                  log.type,
                   null,
                   null,
                   log.serviceName,
@@ -1758,21 +1758,38 @@ const schemaLogEdgesFields = (prefix = psql``) => psql`
 `;
 
 export type SchemaLogDiffInput = {
-  deleted: Array<{
+  removed: Array<{
     id: string;
     previousId: string;
     serviceName: string;
     targetId: string;
     projectId: string;
+    type: 'removed';
   }>;
-  added: Array<{ id: string; serviceName: string; targetId: string; projectId: string }>;
-  changed: Array<{
+  added: Array<{
     id: string;
-    previousId: string | null;
-    serviceName: string | null;
-    changes: Array<SchemaChangeType> | null;
+    serviceName: string;
+    targetId: string;
+    projectId: string;
+    type: 'added';
   }>;
-  unchanged: Array<{ id: string; serviceName: string | null }>;
+  changed: Array<
+    | {
+        id: string;
+        previousId: string | null;
+        serviceName: string;
+        type: 'changed';
+        changes: Array<SchemaChangeType> | null;
+      }
+    | {
+        id: string;
+        previousId: null;
+        serviceName: null;
+        type: null;
+        changes: null;
+      }
+  >;
+  unchanged: Array<{ id: string; serviceName: string | null; type: 'unchanged' }>;
 };
 
 const SchemaLogWithEdgesModel = z.union([

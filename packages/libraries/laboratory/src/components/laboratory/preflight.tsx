@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
-import { HistoryIcon, PlayIcon } from 'lucide-react';
-import { runIsolatedLabScript } from '../../lib/preflight';
+import { HistoryIcon, PlayIcon, SquareIcon, Trash2Icon, TriangleAlertIcon } from 'lucide-react';
 import { cn, tokenizeUrls } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
@@ -12,12 +11,16 @@ import { Editor } from './editor';
 export const Preflight = () => {
   const {
     preflight,
+    preflightLogs,
+    isPreflightRunning,
+    testPreflight,
+    abortPreflight,
+    clearPreflightLogs,
     setLastTestResult,
     setPreflight,
-    env,
     setEnv,
-    openPreflightPromptModal,
     checkPermissions,
+    preflightNotice,
     plugins,
     pluginsState,
     setPluginsState,
@@ -28,41 +31,51 @@ export const Preflight = () => {
       return;
     }
 
-    const result = await runIsolatedLabScript(
-      preflight?.script ?? '',
-      env ?? { variables: {} },
-      (placeholder, defaultValue) => {
-        return new Promise(resolve => {
-          openPreflightPromptModal?.({
-            placeholder,
-            defaultValue,
-            onSubmit: value => {
-              resolve(value);
-            },
-          });
-        });
-      },
-      plugins,
-      pluginsState,
-    );
+    const result = await testPreflight?.(plugins, pluginsState);
 
     setEnv(result?.env ?? { variables: {} });
     setPluginsState(result?.pluginsState ?? {});
-    setLastTestResult(result);
-  }, [env, setEnv, preflight, setLastTestResult, openPreflightPromptModal]);
+    setLastTestResult(result ?? null);
+  }, [preflight?.script, testPreflight, plugins, pluginsState, setEnv, setPluginsState]);
+
+  const logs = preflightLogs ?? [];
 
   return (
     <ResizablePanelGroup direction="horizontal" className="size-full">
       <ResizablePanel defaultSize={50} className="bg-card">
-        <div className="grid size-full grid-rows-[auto_1fr] pb-0">
+        <div className="grid size-full grid-rows-[auto_auto_1fr] pb-0">
           <div className="border-border flex w-full items-center gap-2 border-b p-3">
             <span className="text-base font-medium">Preflight</span>
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="default" size="sm" className="h-6 rounded-sm" onClick={run}>
-                <PlayIcon className="size-4" />
-                <span>Test</span>
-              </Button>
+              {isPreflightRunning ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-6 rounded-sm"
+                  onClick={abortPreflight}
+                >
+                  <SquareIcon className="size-4" />
+                  <span>Stop</span>
+                </Button>
+              ) : (
+                <Button variant="default" size="sm" className="h-6 rounded-sm" onClick={run}>
+                  <PlayIcon className="size-4" />
+                  <span>Test</span>
+                </Button>
+              )}
             </div>
+          </div>
+          {/*
+            Shown to readers as well as authors: the script runs in the browser of whoever
+            opens the lab, whether or not they can edit it. Only what holds for every host
+            belongs here. Where a script is saved, and who else can read it, is the host's to
+            say through `preflightNotice`.
+          */}
+          <div className="border-border text-muted-foreground border-b px-3 py-2 text-xs">
+            <TriangleAlertIcon className="mr-1.5 inline size-3.5 align-[-2px]" />
+            Preflight scripts run in this browser as part of your requests. Prefer{' '}
+            <code className="font-mono">lab.prompt()</code> over writing secrets into the script.
+            {preflightNotice ? <span className="ml-1">{preflightNotice}</span> : null}
           </div>
           <div className="size-full">
             <Editor
@@ -85,7 +98,15 @@ export const Preflight = () => {
                     request: {
                       headers: Headers;
                     };
-                    prompt: (placeholder: string, defaultValue: string) => Promise<string | null>;
+                    /**
+                     * Asks the user for a value before the request runs. The title labels the
+                     * input; placeholder and description are optional hints.
+                     */
+                    prompt: (
+                      title: string,
+                      defaultValue?: string,
+                      options?: { placeholder?: string; description?: string },
+                    ) => Promise<string | null>;
                     CryptoJS: typeof CryptoJS;
                     plugins: {
                       ${plugins
@@ -242,15 +263,25 @@ export const Preflight = () => {
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel minSize={10} defaultSize={50} className="bg-card">
-        {preflight?.lastTestResult?.logs && preflight?.lastTestResult?.logs.length > 0 ? (
+        {logs.length > 0 ? (
           <div className="grid size-full grid-rows-[auto_1fr] pb-0">
             <div className="border-border flex h-12 w-full items-center gap-2 border-b p-3">
               <span className="text-base font-medium">Logs</span>
-              <div className="ml-auto flex items-center gap-2" />
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 rounded-sm"
+                  onClick={clearPreflightLogs}
+                >
+                  <Trash2Icon className="size-4" />
+                  <span>Clear</span>
+                </Button>
+              </div>
             </div>
             <ScrollArea className="h-full">
               <div className="flex flex-col gap-1.5 whitespace-pre-wrap p-3">
-                {preflight?.lastTestResult?.logs.map((log, i) => (
+                {logs.map((log, i) => (
                   <div className="gap-2 font-mono" key={i}>
                     <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
                     <span
@@ -264,6 +295,11 @@ export const Preflight = () => {
                     >
                       {log.level.toUpperCase()}
                     </span>{' '}
+                    {log.line ? (
+                      <span className="text-muted-foreground text-xs">
+                        ({log.line}:{log.column}){' '}
+                      </span>
+                    ) : null}
                     <span className="text-xs">
                       {tokenizeUrls(log.message.join(' ')).map((tok, i) =>
                         tok.type === 'url' ? (

@@ -147,7 +147,12 @@ export class OrganizationMembers {
 
   async getPaginatedOrganizationMembersForOrganization(
     organization: Organization,
-    args: { first: number | null; after: string | null; searchTerm: string | null },
+    args: {
+      first: number | null;
+      after: string | null;
+      searchTerm: string | null;
+      needsSCIMManagementConfirmation: boolean | null;
+    },
   ) {
     this.logger.debug(
       'Find paginated organization members for organization. (organizationId=%s)',
@@ -165,7 +170,7 @@ export class OrganizationMembers {
       FROM
         "organization_member" AS "om"
       ${
-        searching
+        searching || args.needsSCIMManagementConfirmation
           ? psql`
             JOIN "users" as "u"
             ON "om"."user_id" = "u"."id"
@@ -188,6 +193,11 @@ export class OrganizationMembers {
             : psql``
         }
         ${searching ? psql`AND "u"."display_name" || ' ' || "u"."email" ILIKE ${'%' + searchTerm + '%'}` : psql``}
+        ${
+          args.needsSCIMManagementConfirmation
+            ? psql`AND "u"."provisioning_status" = 'pendingConfirmation'`
+            : psql``
+        }
       ORDER BY
         "om"."organization_id" DESC
         , "om"."created_at" DESC
@@ -232,6 +242,20 @@ export class OrganizationMembers {
         },
       },
     };
+  }
+
+  async getPendingSCIMManagementConfirmationsCount(organizationId: string) {
+    const query = psql`
+      SELECT COUNT(*)
+      FROM "organization_member" "om"
+      INNER JOIN "users" "u" ON "u"."id" = "om"."user_id"
+      WHERE
+        "om"."organization_id" = ${organizationId}
+        AND "u"."provisioned_by_organization_id" = ${organizationId}
+        AND "u"."provisioning_status" = 'pendingConfirmation'
+    `;
+
+    return this.pool.oneFirst(query).then(z.number().int().parse);
   }
 
   /**

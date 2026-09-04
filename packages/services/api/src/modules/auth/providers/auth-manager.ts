@@ -121,7 +121,7 @@ export class AuthManager {
       throw new AccessError('Action can only be performed by user.');
     }
 
-    if (actor.user.provisionedByOrganizationId !== null) {
+    if (actor.user.provisioningStatus === 'active') {
       return {
         type: 'error' as const,
         error: {

@@ -50,6 +50,7 @@ export const useEndpoint = (props: {
   defaultEndpoint?: string | null;
   onEndpointChange?: (endpoint: string | null) => void;
   defaultSchemaIntrospection?: IntrospectionQuery | null;
+  enableDocs?: boolean;
   settingsApi?: LaboratorySettingsState & LaboratorySettingsActions;
   operationsApi?: LaboratoryOperationsState & LaboratoryOperationsActions;
   envApi?: LaboratoryEnvState & LaboratoryEnvActions;
@@ -201,7 +202,8 @@ export const useEndpoint = (props: {
             timeout: props.settingsApi?.settings.fetch.timeout,
             useGETForQueries: props.settingsApi?.settings.fetch.useGETForQueries,
             exposeHTTPDetailsInExtensions: true,
-            descriptions: props.settingsApi?.settings.introspection.schemaDescription ?? false,
+            // Only worth the payload when the docs pane can render them.
+            descriptions: props.enableDocs === true,
             method: props.settingsApi?.settings.introspection.method ?? 'POST',
             fetch: (input: string | URL | Request, init?: RequestInit) =>
               fetch(input, {
@@ -247,9 +249,9 @@ export const useEndpoint = (props: {
       endpoint,
       props.defaultEndpoint,
       props.defaultSchemaIntrospection,
+      props.enableDocs,
       props.settingsApi?.settings.fetch.timeout,
       props.settingsApi?.settings.introspection.method,
-      props.settingsApi?.settings.introspection.schemaDescription,
       props.settingsApi?.settings.introspection.headers,
       props.settingsApi?.settings.introspection.includeActiveOperationHeaders,
     ],
