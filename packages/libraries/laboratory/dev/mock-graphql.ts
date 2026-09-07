@@ -170,8 +170,8 @@ const queryPlanPlugin: Plugin = {
 export const createMockYoga = ({
   graphqlEndpoint = '/graphql',
   subscriptions = { eventCount: 3, intervalMs: 500 },
+  schemaPath = fileURLToPath(new URL('../../../../schema.graphql', import.meta.url)),
 } = {}) => {
-  const schemaPath = fileURLToPath(new URL('../../../../schema.graphql', import.meta.url));
   const schema = createSchema({ typeDefs: readFileSync(schemaPath, 'utf-8') });
   const subscriptionTypeName = (schema.getSubscriptionType() as { name?: string } | null)?.name;
 

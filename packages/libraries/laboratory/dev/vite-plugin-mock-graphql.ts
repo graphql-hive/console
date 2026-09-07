@@ -4,18 +4,26 @@
  * Lives here rather than inline in vite.config.ts because foundry runs its own vite
  * server and needs the same endpoint; both configs register this plugin.
  */
+import path from 'node:path';
 import type { PluginOption } from 'vite';
 import { createMockYoga } from './mock-graphql';
 import { attachSubscriptionTransports } from './subscription-transports';
 
 export const GRAPHQL_ENDPOINT = '/graphql';
 
+/**
+ * Resolved from the working directory rather than import.meta.url: foundry bundles the
+ * config that imports this file into node_modules/.cache, which moves the module but not
+ * the process. Both `pnpm dev` and `pnpm foundry` run from the package directory.
+ */
+const DEFAULT_SCHEMA_PATH = path.resolve(process.cwd(), '../../../schema.graphql');
+
 /** Same-origin mock endpoint so `pnpm dev` needs no second process and no CORS. */
-export const mockGraphQLEndpoint = (): PluginOption => ({
+export const mockGraphQLEndpoint = ({ schemaPath = DEFAULT_SCHEMA_PATH } = {}): PluginOption => ({
   name: 'laboratory-mock-graphql',
   apply: 'serve',
   configureServer(server) {
-    const yoga = createMockYoga({ graphqlEndpoint: GRAPHQL_ENDPOINT });
+    const yoga = createMockYoga({ graphqlEndpoint: GRAPHQL_ENDPOINT, schemaPath });
 
     // Mounted without a route prefix so connect leaves req.url intact for yoga.
     server.middlewares.use((req, res, next) => {

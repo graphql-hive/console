@@ -27,6 +27,7 @@
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && vite build --config vite.umd.config.ts",
     "dev": "vite",
+    "foundry": "foundry dev",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -123,6 +124,7 @@
     "postcss-prefixwrap": "^1.57.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "react-foundry": "0.0.10",
     "react-resizable-panels": "^3.0.6",
     "react-shadow": "^20.6.0",
     "rollup-plugin-typescript2": "^0.36.0",
