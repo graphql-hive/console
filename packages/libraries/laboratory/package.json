@@ -91,6 +91,7 @@
     "@types/node": "24.13.3",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
+    "@types/ws": "8.18.1",
     "@vitejs/plugin-react": "^5.1.2",
     "@xyflow/react": "^12.10.0",
     "autoprefixer": "^10.4.23",
@@ -107,6 +108,7 @@
     "eslint-plugin-react-refresh": "^0.4.26",
     "globals": "^16.5.0",
     "graphql": "^16.14.0",
+    "graphql-ws": "6.0.6",
     "graphql-yoga": "5.22.0",
     "happy-dom": "^20.10.6",
     "jsdom": "^30.0.1",
@@ -139,6 +141,7 @@
     "vite-plugin-commonjs": "^0.10.4",
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-monaco-editor": "^1.1.0",
+    "ws": "8.21.0",
     "zod": "^4.3.6"
   },
   "publishConfig": {
