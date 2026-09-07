@@ -10,7 +10,7 @@ import {
 } from 'graphql';
 import { decompressFromEncodedURIComponent } from 'lz-string';
 import { v4 as uuidv4 } from 'uuid';
-import { isAsyncIterable } from '@/lib/utils';
+import { isAsyncIterable, untilAborted } from '@/lib/utils';
 import { SubscriptionProtocol, UrlLoader } from '@graphql-tools/url-loader';
 import { LaboratoryPermission, LaboratoryPermissions } from '../components/laboratory/context';
 import type {
@@ -473,7 +473,7 @@ export const useOperations = (
 
         if (isAsyncIterable(response)) {
           try {
-            for await (const item of response) {
+            for await (const item of untilAborted(response, abortController.signal)) {
               options?.onResponse?.(JSON.stringify(item ?? {}));
             }
           } finally {
