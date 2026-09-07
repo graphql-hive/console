@@ -955,9 +955,6 @@ importers:
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      subscriptions-transport-ws:
-        specifier: ^0.11.0
-        version: 0.11.0(graphql@16.14.2)
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
