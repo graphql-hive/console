@@ -7,6 +7,7 @@ import {
   GraphQLScalarType,
   GraphQLSchema,
   GraphQLUnionType,
+  isAbstractType,
   Kind,
   OperationTypeNode,
   parse,
@@ -165,6 +166,34 @@ function descendSelections(
   return steps;
 }
 
+/**
+ * An abstract field selects nothing on its own, so a selection set holding only
+ * `__typename` is the smallest valid thing the builder can write for one. Seeding
+ * it on the way in means the document is never momentarily invalid, and it is
+ * what keeps the set non-empty as branches come and go.
+ */
+const ensureTypename = (node: FieldNode | InlineFragmentNode) => {
+  if (!node.selectionSet) {
+    (node as { selectionSet: SelectionSetNode }).selectionSet = {
+      kind: Kind.SELECTION_SET,
+      selections: [],
+    };
+  }
+
+  const selectionSet = node.selectionSet as SelectionSetNode;
+
+  const hasTypename = selectionSet.selections.some(
+    selection => selection.kind === Kind.FIELD && selection.name.value === '__typename',
+  );
+
+  if (!hasTypename) {
+    asSelections(selectionSet).unshift({
+      kind: Kind.FIELD,
+      name: { kind: Kind.NAME, value: '__typename' },
+    });
+  }
+};
+
 const removeSelection = (parent: SelectionSetNode, node: SelectionNode) => {
   (parent as { selections: readonly SelectionNode[] }).selections = parent.selections.filter(
     selection => selection !== node,
@@ -215,7 +244,12 @@ export function isPathInQuery(query: string, path: string, operationName?: strin
   return descendSelections(operationDefinition, segments) !== null;
 }
 
-export function addPathToQuery(query: string, path: string, operationName?: string | null) {
+export function addPathToQuery(
+  query: string,
+  path: string,
+  operationName?: string | null,
+  schema?: GraphQLSchema,
+) {
   query = healQuery(query);
 
   const [operation, ...parts] = path.split('.') as [OperationTypeNode, ...string[]];
@@ -288,7 +322,18 @@ export function addPathToQuery(query: string, path: string, operationName?: stri
       .join('\n');
   }
 
-  descendSelections(operationDefinition, parts, true);
+  const steps = descendSelections(operationDefinition, parts, true);
+  const schemaSteps = schema ? resolveSchemaPath(path, schema) : null;
+
+  if (steps && schemaSteps) {
+    // A type-condition step resolves to its concrete member, so `__typename`
+    // lands on the abstract parent rather than inside each branch.
+    steps.forEach((step, i) => {
+      if (schemaSteps[i] && isAbstractType(schemaSteps[i].type)) {
+        ensureTypename(step.node);
+      }
+    });
+  }
 
   return print(doc);
 }
@@ -540,7 +585,7 @@ export function addArgToField(
   query = print(doc);
 
   if (!isPathInQuery(query, path, operationName)) {
-    doc = parse(addPathToQuery(query, path, operationName));
+    doc = parse(addPathToQuery(query, path, operationName, schema));
 
     operationDefinition = doc.definitions.find(v => {
       if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {

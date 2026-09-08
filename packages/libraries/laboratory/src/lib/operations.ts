@@ -62,7 +62,12 @@ export interface LaboratoryOperationsActions {
   setOperations: (operations: LaboratoryOperation[]) => void;
   updateActiveOperation: (operation: Partial<Omit<LaboratoryOperation, 'id'>>) => void;
   deleteOperation: (operationId: string) => void;
-  addPathToActiveOperation: (path: string, operationName?: string | null) => void;
+  /** With a schema, an abstract field is given `__typename` so it is never selection-less. */
+  addPathToActiveOperation: (
+    path: string,
+    operationName?: string | null,
+    schema?: GraphQLSchema,
+  ) => void;
   deletePathFromActiveOperation: (path: string, operationName?: string | null) => void;
   addArgToActiveOperation: (
     path: string,
@@ -291,13 +296,13 @@ export const useOperations = (
   );
 
   const addPathToActiveOperation = useCallback(
-    (path: string, operationName?: string | null) => {
+    (path: string, operationName?: string | null, schema?: GraphQLSchema) => {
       if (!activeOperation) {
         return;
       }
       const newActiveOperation = {
         ...activeOperation,
-        query: addPathToQuery(activeOperation.query, path, operationName),
+        query: addPathToQuery(activeOperation.query, path, operationName, schema),
       };
       updateActiveOperation(newActiveOperation);
     },

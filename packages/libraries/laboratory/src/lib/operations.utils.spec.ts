@@ -263,6 +263,12 @@ describe('inline fragments in the document', () => {
     expect(addPathToQuery(query, 'query.page.title')).toContain('...Fields');
   });
 
+  it('does not confuse a fragment path for the parent-level field of the same name', () => {
+    const both = addPathToQuery(addPathToQuery('', IMAGE), VIDEO);
+
+    expect(isPathInQuery(both, 'query.page.content.url')).toBe(false);
+  });
+
   it('adds and removes an argument on a field inside a fragment', () => {
     const schema = buildSchema(/* GraphQL */ `
       type Image {
@@ -334,6 +340,89 @@ describe('addArgToField / removeArgFromField', () => {
     const removed = removeArgFromField(result, 'query.posts.author', 'verified');
 
     expect(isArgInQuery(removed, 'query.posts.author', 'verified')).toBe(false);
+  });
+});
+
+describe('__typename on abstract fields', () => {
+  const schema = buildSchema(/* GraphQL */ `
+    type Image {
+      url: String
+    }
+    type Video {
+      url: String
+    }
+    union CmsContent = Image | Video
+    interface Node {
+      id: ID!
+    }
+    type Page {
+      content: [CmsContent!]!
+      node: Node
+      meta: Meta
+    }
+    type Meta {
+      title: String
+    }
+    type Query {
+      categoryPage: Page
+    }
+  `);
+
+  // The reported bug: the builder wrote `content` with no selection set, and the
+  // customer's server rejected the operation with a 400.
+  it('gives a union field a selection set instead of leaving it bare', () => {
+    const result = addPathToQuery('', 'query.categoryPage.content', null, schema);
+
+    expect(result).toContain('__typename');
+    expect(() => parse(result)).not.toThrow();
+    expect(result).not.toMatch(/content\s*\n/);
+  });
+
+  it('gives an interface field the same treatment', () => {
+    expect(addPathToQuery('', 'query.categoryPage.node', null, schema)).toContain('__typename');
+  });
+
+  it('leaves an object field alone', () => {
+    expect(addPathToQuery('', 'query.categoryPage.meta', null, schema)).not.toContain('__typename');
+  });
+
+  it('puts __typename on the abstract parent, not inside each branch', () => {
+    const result = addPathToQuery('', 'query.categoryPage.content.on:Image.url', null, schema);
+
+    expect(result.match(/__typename/g)).toHaveLength(1);
+    expect(result.indexOf('__typename')).toBeLessThan(result.indexOf('... on Image'));
+  });
+
+  it('does not duplicate __typename when the path is added again', () => {
+    const once = addPathToQuery('', 'query.categoryPage.content', null, schema);
+    const twice = addPathToQuery(once, 'query.categoryPage.content', null, schema);
+
+    expect(twice.match(/__typename/g)).toHaveLength(1);
+  });
+
+  it('preserves a hand-written __typename', () => {
+    const result = addPathToQuery(
+      'query { categoryPage { content { __typename } } }',
+      'query.categoryPage.content.on:Image.url',
+      null,
+      schema,
+    );
+
+    expect(result.match(/__typename/g)).toHaveLength(1);
+  });
+
+  // Unticking the last branch has to land back on a document that still runs.
+  it('leaves a valid selection set after the last branch is removed', () => {
+    const withBranch = addPathToQuery('', 'query.categoryPage.content.on:Image.url', null, schema);
+    const result = deletePathFromQuery(withBranch, 'query.categoryPage.content.on:Image.url');
+
+    expect(() => parse(result)).not.toThrow();
+    expect(result).toContain('__typename');
+    expect(result).not.toContain('... on Image');
+  });
+
+  it('adds nothing without a schema', () => {
+    expect(addPathToQuery('', 'query.categoryPage.content')).not.toContain('__typename');
   });
 });
 
