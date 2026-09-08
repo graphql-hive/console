@@ -86,8 +86,6 @@ export default class Dev extends Command<typeof Dev> {
     'Two modes are available:',
     " 1. Local mode (default): Compose provided services locally. (Uses Hive's native Federation v2 composition)",
     ' 2. Remote mode: Perform composition remotely (according to project settings) using all services registered in the registry.',
-    '',
-    'Work in Progress: Please note that this command is still under development and may undergo changes in future releases',
   ].join('\n');
   static flags = {
     'registry.endpoint': Flags.string({
