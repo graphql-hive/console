@@ -4,11 +4,16 @@ import { useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
+  ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
 import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
-import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
+import {
+  SchemaExplorerProvider,
+  useSchemaExplorerContext,
+} from '@/components/target/explorer/provider';
+import { matchesSubgraphFilter } from '@/components/target/explorer/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
@@ -61,11 +66,27 @@ function InternalDeprecatedSchemaView(props: {
     DeprecatedSchemaView_DeprecatedSchemaExplorerFragment,
     props.explorer,
   );
+  const { subgraphs } = useSchemaExplorerContext();
+
+  // The letter index has to be built from the types that will actually render,
+  // otherwise a filtered-out type leaves behind a letter with nothing under it.
+  // useFragment is an identity function, so indexes line up with `types`.
+  const unmaskedTypes = useFragment(TypeRenderFragment, types);
+  const visibleTypes = useMemo(
+    () =>
+      types.filter((_, index) =>
+        matchesSubgraphFilter(
+          unmaskedTypes[index]?.supergraphMetadata?.ownedByServiceNames,
+          subgraphs,
+        ),
+      ),
+    [types, unmaskedTypes, subgraphs],
+  );
 
   const typesGroupedByFirstLetter = useMemo(() => {
     const grouped = new Map<string, FragmentType<typeof TypeRenderFragment>[]>([]);
 
-    for (const type of types) {
+    for (const type of visibleTypes) {
       const letter = type.name[0].toLocaleUpperCase();
       const existingNameGroup = grouped.get(letter);
 
@@ -76,15 +97,12 @@ function InternalDeprecatedSchemaView(props: {
       }
     }
     return grouped;
-  }, [types]);
+  }, [visibleTypes]);
 
   const letters = Array.from(typesGroupedByFirstLetter.keys()).sort();
-
-  useEffect(() => {
-    if (!selectedLetter) {
-      setSelectedLetter(letters[0]);
-    }
-  }, [selectedLetter, setSelectedLetter]);
+  // The selected letter can vanish when the filter changes.
+  const activeLetter =
+    selectedLetter && letters.includes(selectedLetter) ? selectedLetter : letters[0];
 
   if (types.length === 0) {
     return (
@@ -101,7 +119,11 @@ function InternalDeprecatedSchemaView(props: {
     );
   }
 
-  if (!selectedLetter) {
+  if (visibleTypes.length === 0) {
+    return <ExplorerFilteredEmptyState />;
+  }
+
+  if (!activeLetter) {
     return null;
   }
 
@@ -114,11 +136,11 @@ function InternalDeprecatedSchemaView(props: {
               <TooltipTrigger asChild>
                 <Button
                   onClick={() => setSelectedLetter(letter)}
-                  variant={letter === selectedLetter ? 'secondary' : 'ghost'}
+                  variant={letter === activeLetter ? 'secondary' : 'ghost'}
                   size="sm"
                   className={cn(
                     'rounded-none px-2 py-1',
-                    letter === selectedLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
+                    letter === activeLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
                   )}
                   key={letter}
                 >
@@ -133,7 +155,7 @@ function InternalDeprecatedSchemaView(props: {
         </TooltipProvider>
       </div>
       <div className="flex flex-col gap-4">
-        {(typesGroupedByFirstLetter.get(selectedLetter) ?? []).map((type, i) => {
+        {(typesGroupedByFirstLetter.get(activeLetter) ?? []).map((type, i) => {
           return (
             <TypeRenderer
               key={i}
