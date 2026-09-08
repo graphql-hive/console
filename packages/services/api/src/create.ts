@@ -214,9 +214,11 @@ export function createRegistry({
     InMemoryRateLimitStore,
     InMemoryRateLimiter,
     RedisRateLimiter,
-    S3Writer,
     ArtifactStorageWriter,
-
+    {
+      provide: S3Writer,
+      useValue: new S3Writer(s3Config),
+    },
     {
       provide: AuditLogS3Config,
       useValue: auditLogS3Config,

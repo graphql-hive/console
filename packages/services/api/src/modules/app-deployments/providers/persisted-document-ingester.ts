@@ -17,7 +17,7 @@ import { buildOperationS3BucketKey } from '@hive/cdn-script/artifact-storage-rea
 import { ServiceLogger, setErrorSource } from '@hive/service-common';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
 import { S3Writer } from '../../shared/providers/s3-writer';
-import type { S3WriteMetric } from '../../shared/providers/s3-writer';
+import type { R2ErrorTraceSummary, S3WriteMetric } from '../../shared/providers/s3-writer';
 import type { SerializedWorkerError } from './persisted-document-scheduler';
 
 type DocumentRecord = {
@@ -116,6 +116,7 @@ export type BatchProcessedEvent = {
   event: 'processedBatch';
   id: string;
   s3WriteMetrics: Array<S3WriteMetric>;
+  r2ErrorTraceSummary: R2ErrorTraceSummary;
   data:
     | {
         type: 'error';
@@ -139,6 +140,7 @@ export type BatchProcessingErrorEvent = {
   id: string;
   error: SerializedWorkerError;
   s3WriteMetrics: Array<S3WriteMetric>;
+  r2ErrorTraceSummary: R2ErrorTraceSummary;
 };
 
 export class PersistedDocumentIngester {

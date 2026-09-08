@@ -1,5 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
-import { metrics } from '@hive/service-common';
+import { metrics, trace } from '@hive/service-common';
 import { AwsClient } from '../../cdn/providers/aws';
 import { S3Config, S3Destination } from './s3-config';
 
@@ -17,6 +17,17 @@ export type S3WriteMetric = {
   operation: S3WriteOperation;
   result: 'success' | 'failure';
   durationSeconds: number;
+};
+
+export type R2ErrorTrace = {
+  rayId: string;
+  statusCode: number;
+};
+
+export type R2ErrorTraceSummary = {
+  rayIds: Array<string>;
+  statusCodes: Array<number>;
+  totalCount: number;
 };
 
 const s3Writes = new metrics.Counter({
@@ -45,6 +56,8 @@ export class S3Writer {
   constructor(
     private s3Config: S3Config,
     private observer: (metric: S3WriteMetric) => void = observeS3Write,
+    private r2ErrorObserver: (errors: Array<R2ErrorTrace>) => void = errors =>
+      observeR2ErrorTrace(summarizeR2ErrorTraces(errors)),
   ) {}
 
   private async writeS3Object(
@@ -61,6 +74,15 @@ export class S3Writer {
         ...init,
         method: 'PUT',
       });
+      if (
+        response.statusCode >= 400 &&
+        new URL(s3.endpoint).hostname.endsWith('.r2.cloudflarestorage.com')
+      ) {
+        const rayId = response.headers['cf-ray'];
+        if (typeof rayId === 'string') {
+          this.r2ErrorObserver([{ rayId, statusCode: response.statusCode }]);
+        }
+      }
       result = response.ok ? 'success' : 'failure';
       return response;
     } finally {
@@ -99,4 +121,26 @@ export class S3Writer {
   private url(destination: S3Destination, key: string) {
     return [destination.endpoint, destination.bucket, key].join('/');
   }
+}
+
+export function observeR2ErrorTrace(summary: R2ErrorTraceSummary) {
+  if (summary.totalCount === 0) {
+    return;
+  }
+
+  trace.getActiveSpan()?.addEvent('cloudflare.r2.error_responses', {
+    'cloudflare.ray.ids': summary.rayIds,
+    'http.response.status_codes': summary.statusCodes,
+    'error.count': summary.totalCount,
+    'error.truncated_count': Math.max(0, summary.totalCount - summary.rayIds.length),
+  });
+}
+
+export function summarizeR2ErrorTraces(errors: Array<R2ErrorTrace>): R2ErrorTraceSummary {
+  const slicedErrors = errors.slice(0, 10);
+  return {
+    rayIds: slicedErrors.map(err => err.rayId),
+    statusCodes: slicedErrors.map(err => err.statusCode),
+    totalCount: errors.length,
+  };
 }

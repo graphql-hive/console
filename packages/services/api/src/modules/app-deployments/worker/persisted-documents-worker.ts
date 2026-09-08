@@ -5,8 +5,8 @@ import { ClickHouse } from '../../operations/providers/clickhouse-client';
 import { HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
 import { S3Config } from '../../shared/providers/s3-config';
-import { S3Writer } from '../../shared/providers/s3-writer';
-import type { S3WriteMetric } from '../../shared/providers/s3-writer';
+import { S3Writer, summarizeR2ErrorTraces } from '../../shared/providers/s3-writer';
+import type { R2ErrorTrace, S3WriteMetric } from '../../shared/providers/s3-writer';
 import {
   PersistedDocumentIngester,
   type BatchProcessedEvent,
@@ -93,9 +93,14 @@ export function createWorker(
   port.on('message', async (message: BatchProcessEvent) => {
     logger.debug('processing message', message.id, message.event);
     const s3WriteMetrics: Array<S3WriteMetric> = [];
+    const r2ErrorTraces: Array<R2ErrorTrace> = [];
     const persistedOperationsProcessor = new PersistedDocumentIngester(
       clickhouse,
-      new S3Writer(s3Config, metric => s3WriteMetrics.push(metric)),
+      new S3Writer(
+        s3Config,
+        metric => s3WriteMetrics.push(metric),
+        errors => r2ErrorTraces.push(...errors),
+      ),
       logger as any,
     );
     try {
@@ -106,6 +111,7 @@ export function createWorker(
         id: message.id,
         data: result,
         s3WriteMetrics,
+        r2ErrorTraceSummary: summarizeR2ErrorTraces(r2ErrorTraces),
       } satisfies BatchProcessedEvent);
     } catch (err: unknown) {
       logger.error(
@@ -118,6 +124,7 @@ export function createWorker(
         id: message.id,
         error: serializeWorkerError(err),
         s3WriteMetrics,
+        r2ErrorTraceSummary: summarizeR2ErrorTraces(r2ErrorTraces),
       } satisfies BatchProcessingErrorEvent);
     }
   });

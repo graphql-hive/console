@@ -2,9 +2,14 @@ import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { fileURLToPath } from 'url';
 import { Injectable, Scope } from 'graphql-modules';
-import { getErrorSource, setErrorSource } from '@hive/service-common';
+import { getErrorSource, invariant, setErrorSource, traceFn } from '@hive/service-common';
 import { Logger, registerWorkerLogging } from '../../shared/providers/logger';
-import { observeS3Write } from '../../shared/providers/s3-writer';
+import {
+  observeR2ErrorTrace,
+  observeS3Write,
+  R2ErrorTraceSummary,
+  S3WriteMetric,
+} from '../../shared/providers/s3-writer';
 import {
   type BatchProcessedEvent,
   type BatchProcessEvent,
@@ -16,6 +21,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 type PendingTaskRecord = {
   resolve: (data: BatchProcessedEvent) => void;
   reject: (err: unknown) => void;
+  onMetrics: (metrics: {
+    s3WriteMetrics?: S3WriteMetric[];
+    r2ErrorTraceSummary?: R2ErrorTraceSummary;
+  }) => void;
 };
 
 export type SerializedWorkerError = {
@@ -93,9 +102,13 @@ export class PersistedDocumentScheduler {
     registerWorkerLogging(this.logger, worker, name);
 
     worker.on('message', (data: BatchProcessedEvent | BatchProcessingErrorEvent) => {
-      for (const metric of data.s3WriteMetrics) {
-        observeS3Write(metric);
-      }
+      const task = tasks.get(data.id);
+      invariant(task, 'The task must exist.');
+
+      task.onMetrics({
+        s3WriteMetrics: data.s3WriteMetrics,
+        r2ErrorTraceSummary: data.r2ErrorTraceSummary,
+      });
 
       if (data.event === 'error') {
         tasks.get(data.id)?.reject(deserializeWorkerError(data.error));
@@ -131,6 +144,17 @@ export class PersistedDocumentScheduler {
           clearTimeout(timeout);
           d.reject(err);
         },
+        onMetrics(data) {
+          if (data.s3WriteMetrics) {
+            for (const metric of data.s3WriteMetrics) {
+              observeS3Write(metric);
+            }
+          }
+
+          if (data.r2ErrorTraceSummary) {
+            observeR2ErrorTrace(data.r2ErrorTraceSummary);
+          }
+        },
       };
 
       tasks.set(id, task);
@@ -155,6 +179,14 @@ export class PersistedDocumentScheduler {
     return this.workers[Math.floor(Math.random() * this.workers.length)];
   }
 
+  @traceFn('PersistedDocumentScheduler.processBatch', {
+    initAttributes: data => ({
+      'hive.target.id': data.targetId,
+      'hive.appDeployment.documentCount': data.documents.length,
+      'hive.appDeployment.id': data.appDeployment.id,
+      'hive.appDeployment.version': data.appDeployment.version,
+    }),
+  })
   async processBatch(data: BatchProcessEvent['data']) {
     return this.getRandomWorker()(data);
   }
