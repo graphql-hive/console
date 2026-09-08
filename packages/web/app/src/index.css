@@ -2,7 +2,7 @@
 @plugin "./lib/tailwind-plugins.js";
 
 /* Configure dark mode to use .dark class instead of prefers-color-scheme */
-@variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* Typography */
@@ -225,6 +225,13 @@
   --color-teal-950: #042f2e;
 
   --color-ring: hsl(var(--ring));
+
+  --color-card-bg: var(--color-neutral-3);
+  --color-card-border: var(--color-neutral-4);
+  --color-card-bg-hover: var(--color-neutral-4);
+  --color-card-border-hover: var(--color-neutral-5);
+  --color-floating-bg: var(--color-neutral-4);
+  --color-floating-border: var(--color-neutral-5);
 
   /* Border Radius */
   --radius: 0.5rem;
@@ -621,6 +628,27 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /*
+   * Thin, muted scrollbar. The standard properties cover Firefox, Chromium 121+ and Safari 18.2+;
+   * the -webkit- rules cover older Chromium and Safari, which ignore the standard ones. Browsers
+   * that support both prefer the standard properties, so the two never fight.
+   */
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neutral-7) transparent;
+  }
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--color-neutral-7);
+    border-radius: 4px;
   }
 
   /* Animation utilities (replaces tailwindcss-animate) */
