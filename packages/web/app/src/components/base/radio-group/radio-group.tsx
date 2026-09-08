@@ -79,7 +79,15 @@ type RadioVariants = VariantProps<typeof radioItemVariants>;
  * label/description layout, or arbitrary `content` when a call site needs its own body (e.g. the
  * billing plan cards, or a label preceded by a status dot).
  */
-export type RadioItemProps = { value: string } & (
+export type RadioItemProps = {
+  value: string;
+  /**
+   * Accessible name for the option. Without it the name is read from the rendered content, which
+   * for a card of body copy is the whole card. Worth setting whenever `content` is more than a
+   * short label.
+   */
+  ariaLabel?: string;
+} & (
   | {
       label: string;
       /** Supporting copy under the label. Rendered by `as-card` only. */
@@ -105,6 +113,7 @@ function RadioItem({
   return (
     <BaseRadio.Root
       value={item.value}
+      aria-label={item.ariaLabel}
       className={radioItemVariants({ variant, onSurface, orientation })}
     >
       {item.content ?? (
