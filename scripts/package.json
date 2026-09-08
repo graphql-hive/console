@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@faker-js/faker": "9.9.0",
+    "@faker-js/faker": "10.5.0",
     "@graphql-hive/core": "workspace:*",
     "@supercharge/promise-pool": "3.2.0",
     "immer": "10.1.1"
