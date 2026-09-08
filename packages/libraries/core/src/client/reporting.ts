@@ -36,6 +36,10 @@ export function createReporting(pluginOptions: HiveInternalPluginOptions): Schem
   const reportingOptions = pluginOptions.reporting;
   const logger = pluginOptions.logger.child({ module: 'hive-reporting' });
 
+  logger.warn(
+    '[hive][reporting] Run-time schema reporting is deprecated. Use `@graphql-hive/cli` to safely check and publish schemas.',
+  );
+
   logIf(
     typeof reportingOptions.author !== 'string' || reportingOptions.author.length === 0,
     '[hive][reporting] author is missing',
