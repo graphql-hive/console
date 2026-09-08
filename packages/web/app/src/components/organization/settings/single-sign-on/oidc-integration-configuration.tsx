@@ -740,42 +740,22 @@ function OIDCAccessSettings(props: {
           items={[
             {
               value: 'oidc',
+              label: organization.viewerCanManageSCIM ? 'Mixed OIDC and SCIM' : 'Managed via OIDC',
               ariaLabel: organization.viewerCanManageSCIM
                 ? 'Mixed OIDC and SCIM'
                 : 'Managed via OIDC',
-              content: (
-                <div className="flex-1">
-                  <span className="text-neutral-12 text-base font-medium">
-                    {organization.viewerCanManageSCIM ? 'Mixed OIDC and SCIM' : 'Managed via OIDC'}
-                  </span>
-                  <p className="mt-1 text-sm">Users are provisioned when signing in via OIDC.</p>
-                  {organization.viewerCanManageSCIM && (
-                    <p className="mt-1 text-sm">
-                      Optionally, users and groups can be provisioned via SCIM.
-                    </p>
-                  )}
-                </div>
-              ),
+              description: organization.viewerCanManageSCIM
+                ? 'Users are provisioned when signing in via OIDC. Optionally, users and groups can be provisioned via SCIM.'
+                : 'Users are provisioned when signing in via OIDC.',
             },
             ...(organization.viewerCanManageSCIM
               ? [
                   {
                     value: 'scim',
+                    label: 'Managed via SCIM',
                     ariaLabel: 'Managed via SCIM',
-                    content: (
-                      <div className="flex-1">
-                        <span className="text-neutral-12 text-base font-medium">
-                          Managed via SCIM
-                        </span>
-                        <p className="mt-1 text-sm">
-                          Users and groups are exclusively managed by your identity provider via
-                          SCIM.
-                        </p>
-                        <p className="mt-1 text-sm">
-                          Roles and permissions are assigned to groups via role mappings.
-                        </p>
-                      </div>
-                    ),
+                    description:
+                      'Users and groups are exclusively managed by your identity provider via SCIM. Roles and permissions are assigned to groups via role mappings.',
                   },
                 ]
               : []),
