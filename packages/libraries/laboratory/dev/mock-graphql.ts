@@ -10,6 +10,11 @@
  *
  * Send `x-query-plan: <fixture>` with a request to get an extensions.queryPlan back;
  * see dev/query-plan-fixtures.ts for the names. Omit the header for the empty state.
+ * Subscriptions never see one: queryPlanPlugin hooks onExecute, which envelop does
+ * not run for subscription events.
+ *
+ * Subscription fields stream a few generated events and then complete, so every
+ * transport the lab offers (SSE, graphql-ws, legacy ws) has something to carry.
  *
  * Note: everything here goes through graphql-yoga's own exports on purpose. The
  * workspace has two copies of `graphql` (16.9.0 hoisted at the root, 16.14.2 for
@@ -25,12 +30,17 @@ import { resolveQueryPlanFixture } from './query-plan-fixtures';
 type MockType = {
   ofType?: MockType;
   name?: string;
+  getFields?: () => Record<string, MockField>;
   getValues?: () => Array<{ value: unknown }>;
   serialize?: unknown;
   toString: () => string;
 };
 
-type MockField = { type: MockType; resolve?: (source: unknown) => unknown };
+type MockField = {
+  type: MockType;
+  resolve?: (source: unknown) => unknown;
+  subscribe?: () => AsyncGenerator<unknown>;
+};
 
 type MockNamedType = {
   name: string;
@@ -84,6 +94,51 @@ const mockValue = (type: MockType, fieldName: string): unknown => {
   return {};
 };
 
+/** Strip ! and [] structurally; a named type has no ofType, so this stops there. */
+const namedTypeOf = (type: MockType): MockType => (type.ofType ? namedTypeOf(type.ofType) : type);
+
+const ISO_8601 = /^\d{4}-\d{2}-\d{2}T/;
+
+/**
+ * Make successive events tell themselves apart without changing their type: a
+ * DateTime stays a parseable DateTime, an enum stays a member of its enum.
+ */
+const withTick = (value: unknown, tick: number): unknown => {
+  if (typeof value === 'number') {
+    return value + tick;
+  }
+
+  if (typeof value === 'string') {
+    return ISO_8601.test(value)
+      ? new Date(Date.parse(value) + tick * 1000).toISOString()
+      : `${value} #${tick}`;
+  }
+
+  return value;
+};
+
+/**
+ * Seeds one event. The wrapper object matters: the generated root resolver returns
+ * source[fieldName] when present, so a bare payload would be ignored and every tick
+ * would render identically. Seeding only reaches the event type's own fields, which
+ * is enough for the flat event types in the schema.
+ */
+const mockEventSource = (field: MockField, fieldName: string, tick: number): unknown => {
+  const named = namedTypeOf(field.type);
+  const fields = typeof named.getFields === 'function' ? named.getFields() : null;
+
+  const payload = fields
+    ? Object.fromEntries(
+        Object.entries(fields).map(([name, eventField]) => [
+          name,
+          withTick(mockValue(eventField.type, name), tick),
+        ]),
+      )
+    : withTick(mockValue(field.type, fieldName), tick);
+
+  return { [fieldName]: payload };
+};
+
 const queryPlanPlugin: Plugin = {
   onExecute({ args }) {
     const request = (args.contextValue as { request?: Request } | undefined)?.request;
@@ -112,9 +167,13 @@ const queryPlanPlugin: Plugin = {
   },
 };
 
-export const createMockYoga = ({ graphqlEndpoint = '/graphql' } = {}) => {
-  const schemaPath = fileURLToPath(new URL('../../../../schema.graphql', import.meta.url));
+export const createMockYoga = ({
+  graphqlEndpoint = '/graphql',
+  subscriptions = { eventCount: 3, intervalMs: 500 },
+  schemaPath = fileURLToPath(new URL('../../../../schema.graphql', import.meta.url)),
+} = {}) => {
   const schema = createSchema({ typeDefs: readFileSync(schemaPath, 'utf-8') });
+  const subscriptionTypeName = (schema.getSubscriptionType() as { name?: string } | null)?.name;
 
   for (const type of Object.values(schema.getTypeMap()) as unknown as MockNamedType[]) {
     if (type.name.startsWith('__')) {
@@ -131,6 +190,22 @@ export const createMockYoga = ({ graphqlEndpoint = '/graphql' } = {}) => {
           }
 
           return mockValue(field.type, fieldName);
+        };
+
+        if (type.name !== subscriptionTypeName) {
+          continue;
+        }
+
+        // Finite on purpose: the UI shows a run that completes, and specs can read
+        // the whole response body without a timeout.
+        field.subscribe = async function* mockEvents() {
+          for (let tick = 0; tick < subscriptions.eventCount; tick++) {
+            if (tick > 0 && subscriptions.intervalMs > 0) {
+              await new Promise(resolve => setTimeout(resolve, subscriptions.intervalMs));
+            }
+
+            yield mockEventSource(field, fieldName, tick);
+          }
         };
       }
     }

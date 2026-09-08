@@ -1,5 +1,40 @@
 # hive
 
+## 11.12.2
+
+### Patch Changes
+
+- [#8425](https://github.com/graphql-hive/console/pull/8425)
+  [`49c36fe`](https://github.com/graphql-hive/console/commit/49c36fe2adc8e4590d4029b6860a9ff1113704bf)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-vcc3-ghjq-m6fr](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr).
+
+- [#8438](https://github.com/graphql-hive/console/pull/8438)
+  [`7addc47`](https://github.com/graphql-hive/console/commit/7addc47db196350cdce9459dbe2c42880c653152)
+  Thanks [@jdolle](https://github.com/jdolle)! - Remove content-type header from sso discovery doc
+  request. Since no payload is sent with this request, the header can cause the request to fail.
+  This header is specifically not required by the configuration request
+
+- [#8430](https://github.com/graphql-hive/console/pull/8430)
+  [`ab61aa7`](https://github.com/graphql-hive/console/commit/ab61aa74d9430524f06d1217258e97183781dedd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-vp52-pcj8-j9qc](https://github.com/advisories/GHSA-vp52-pcj8-j9qc).
+
+- [#8443](https://github.com/graphql-hive/console/pull/8443)
+  [`c0654ee`](https://github.com/graphql-hive/console/commit/c0654ee7e597ed4997ca5574f7bb06642243f1fc)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix schema promotion raising an unexpected server
+  error for legacy schema version logs.
+
+- [#8442](https://github.com/graphql-hive/console/pull/8442)
+  [`e7ca358`](https://github.com/graphql-hive/console/commit/e7ca358d10b3ac8e3bd376622004a51cf412e68d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [GHSA-3m5p-2c4r-xxw2](https://github.com/advisories/GHSA-3m5p-2c4r-xxw2),
+  [GHSA-w2qp-rph6-63g4](https://github.com/advisories/GHSA-w2qp-rph6-63g4),
+  [GHSA-jqff-g426-hqxp](https://github.com/advisories/GHSA-jqff-g426-hqxp),
+  [GHSA-f65p-4m7j-42xc](https://github.com/advisories/GHSA-f65p-4m7j-42xc),
+  [GHSA-5jgf-p345-68v8](https://github.com/advisories/GHSA-5jgf-p345-68v8), and
+  [GHSA-fph4-wmhf-6fwf](https://github.com/advisories/GHSA-fph4-wmhf-6fwf).
+
 ## 11.12.1
 
 ### Patch Changes

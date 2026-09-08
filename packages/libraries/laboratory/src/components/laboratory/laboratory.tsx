@@ -26,6 +26,7 @@ import { useOperations } from '../../lib/operations';
 import { LaboratoryPluginTab, usePlugins } from '../../lib/plugins';
 import { usePreflight, usePreflightPrompt } from '../../lib/preflight';
 import { useSettings } from '../../lib/settings';
+import { ensureShadowRoot } from '../../lib/shadow-root';
 import { LaboratoryTabCustom, useTabs } from '../../lib/tabs';
 import { useTests } from '../../lib/tests';
 import { cn } from '../../lib/utils';
@@ -89,7 +90,7 @@ const ShadowRootContainer = (props: { children: ReactNode }) => {
       return;
     }
 
-    setShadowRoot(hostRef.current.attachShadow({ mode: 'open' }));
+    setShadowRoot(ensureShadowRoot(hostRef.current));
   }, [shadowRoot]);
 
   useLayoutEffect(() => {

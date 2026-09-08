@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/laboratory",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "type": "module",
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && vite build --config vite.umd.config.ts",
     "dev": "vite",
+    "foundry": "foundry dev",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -37,7 +38,6 @@
     "lz-string": "^1.5.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
-    "subscriptions-transport-ws": "^0.11.0",
     "tslib": "^2.8.1",
     "zod": "^4.1.12"
   },
@@ -91,6 +91,7 @@
     "@types/node": "24.13.3",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
+    "@types/ws": "8.18.1",
     "@vitejs/plugin-react": "^5.1.2",
     "@xyflow/react": "^12.10.0",
     "autoprefixer": "^10.4.23",
@@ -107,6 +108,7 @@
     "eslint-plugin-react-refresh": "^0.4.26",
     "globals": "^16.5.0",
     "graphql": "^16.14.0",
+    "graphql-ws": "6.0.6",
     "graphql-yoga": "5.22.0",
     "happy-dom": "^20.10.6",
     "jsdom": "^30.0.1",
@@ -121,11 +123,11 @@
     "postcss-prefixwrap": "^1.57.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "react-foundry": "0.0.10",
     "react-resizable-panels": "^3.0.6",
     "react-shadow": "^20.6.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "sonner": "^2.0.7",
-    "subscriptions-transport-ws": "^0.11.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",
     "tailwindcss-scoped-preflight": "^3.5.7",
@@ -139,6 +141,7 @@
     "vite-plugin-commonjs": "^0.10.4",
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-monaco-editor": "^1.1.0",
+    "ws": "8.21.0",
     "zod": "^4.3.6"
   },
   "publishConfig": {

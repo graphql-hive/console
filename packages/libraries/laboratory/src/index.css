@@ -1,6 +1,11 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* Tailwind's automatic detection is anchored to the vite root, which is this package
+   when the library builds but not when another dev server (foundry) imports this file.
+   Naming the sources relative to this stylesheet makes the output the same either way. */
+@source '../src';
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
