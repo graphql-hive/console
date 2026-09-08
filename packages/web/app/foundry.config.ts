@@ -60,7 +60,7 @@ export default defineConfig({
         { label: 'Inventory', children: [{ label: 'Card' }] },
         // Real app components reproduced with stub data, so a call site can be checked
         // without running Hive locally.
-        { label: 'Live', children: [{ label: 'ProjectCard' }] },
+        { label: 'Live', children: [{ label: 'ProjectCard' }, { label: 'BillingPlanPicker' }] },
       ],
     },
   ],
