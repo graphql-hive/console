@@ -114,7 +114,7 @@ const billingPlanLookUpMap = {
   [BillingPlanType.Hobby]: 'Free',
 } as Record<BillingPlanType, string | undefined>;
 
-const BillingPlanPicker_PlanFragment = graphql(`
+export const BillingPlanPicker_PlanFragment = graphql(`
   fragment BillingPlanPicker_PlanFragment on BillingPlan {
     planType
     id
