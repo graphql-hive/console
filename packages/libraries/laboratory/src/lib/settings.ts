@@ -23,6 +23,9 @@ export const defaultLaboratorySettings: LaboratorySettings = {
     timeout: 10000,
     useGETForQueries: false,
   },
+  // WS is what most server stacks serve; Apollo has no SSE transport at all. Note
+  // url-loader 9.x maps SSE and GRAPHQL_SSE onto the same HTTP executor, so those two
+  // values behave identically.
   subscriptions: {
     protocol: 'WS',
   },

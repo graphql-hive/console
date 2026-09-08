@@ -41,6 +41,21 @@ query SimplePlan {
     extensions: '',
   },
   {
+    id: 'dev-op-subscription',
+    name: 'Subscription',
+    query: `# Streams three events, then completes. Switch the transport under
+# Settings > Subscriptions > Protocol; the mock serves them all.
+subscription OidcLog {
+  oidcIntegrationLog(input: { oidcIntegrationId: "dev" }) {
+    message
+    timestamp
+  }
+}`,
+    variables: '',
+    headers: '',
+    extensions: '',
+  },
+  {
     id: 'dev-op-defer-plan',
     name: 'Defer plan',
     query: `# Plan tree with a Defer node: one primary branch, one deferred.

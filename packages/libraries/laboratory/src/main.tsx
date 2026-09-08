@@ -1,4 +1,5 @@
 import ReactDOM from 'react-dom/client';
+import '../dev/legacy-ws-shim';
 import { devCollections } from '../dev/collections';
 import { devActiveTabId, devOperations, devTabs } from '../dev/operations';
 import { devPreflight } from '../dev/preflight';
