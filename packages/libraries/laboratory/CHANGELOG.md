@@ -1,5 +1,17 @@
 # @graphql-hive/laboratory
 
+## 0.2.7
+
+### Patch Changes
+
+- [#8440](https://github.com/graphql-hive/console/pull/8440)
+  [`f9baa80`](https://github.com/graphql-hive/console/commit/f9baa802e523eba58bea99e77cad83269033b1ed)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Make Stop cancel a running
+  subscription on every transport. Cancellation relied on the executor honouring `request.signal`,
+  which `@graphql-tools/executor-legacy-ws` does not, so stopping a `LEGACY_WS` subscription did
+  nothing and the run kept rendering events until the server completed on its own. The stream is now
+  ended from the laboratory side as well.
+
 ## 0.2.6
 
 ### Patch Changes

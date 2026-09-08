@@ -1,5 +1,18 @@
 # @graphql-hive/cli
 
+## 0.63.1
+
+### Patch Changes
+
+- [#8427](https://github.com/graphql-hive/console/pull/8427)
+  [`a613071`](https://github.com/graphql-hive/console/commit/a61307121bce5a2e4db3f34a2e057e1bbe98f0d4)
+  Thanks [@jdolle](https://github.com/jdolle)! - Improve error handling for graphql requests
+
+  Fixes an edge case where if the graphql error response doesn't include the extension, then an
+  unexpected error was thrown. Additionally, if this error was thrown, then the error response was
+  not logged even if the debug logs are enabled. This moves the debug log to before these conditions
+  so that it is possible to always see the response in the logs.
+
 ## 0.63.0
 
 ### Minor Changes
