@@ -203,7 +203,8 @@ function ExplorerPageContent(props: {
         metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
         dateRangeControl={<DateRangeFilter />}
       />
-      {!query.fetching ? (
+      {/* No data means "not known yet", not "no schema". */}
+      {!query.fetching && !query.stale && query.data ? (
         <>
           {latestValidSchemaVersion?.explorer && latestSchemaVersion ? (
             <>
