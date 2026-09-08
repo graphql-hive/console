@@ -1,12 +1,13 @@
 /**
  * Union and interface fields in the builder, against Hive's own schema.
  *
- * What each preview should show:
+ * Every preview seeds a document that opens the tree where it is aimed, so none
+ * of them need navigating to. What each should show:
  *
- * - UnionExpansion: `tokenInfo` is a union at the top level, so it has a chevron
- *   and two `... on` rows under it. Ticking `tokenInfo` alone writes
- *   `tokenInfo { __typename }`, and Run returns data rather than a 400. That is
- *   the reported bug: it used to write a bare `tokenInfo` with no selection set.
+ * - UnionExpansion: `tokenInfo` has a chevron and a `... on` row per member,
+ *   where it used to render as a leaf. Untick it and tick it again: it comes
+ *   back as `tokenInfo { __typename }`, never a bare field. Run returns data
+ *   rather than the 400 the reported bug produced.
  *
  * - SharedFieldNames: CompositeSchema and SingleSchema share six field names. The
  *   seeded document selects `id` under CompositeSchema only, so on load exactly
@@ -15,7 +16,8 @@
  *
  * - InterfaceExpansion: `schemaCheck` is an interface. Its own fields stay where
  *   they were, with `... on FailedSchemaCheck` and `... on SuccessfulSchemaCheck`
- *   below them carrying only what each implementation adds.
+ *   below them carrying only what each implementation adds, so `id` appears once
+ *   rather than once per branch.
  *
  * - LegacyDocument: a document the builder did not write. The tree should expand
  *   to its fragment rows on load, the named fragment spread should survive every
@@ -56,7 +58,7 @@ const LaboratoryWith = ({ activeTabId }: { activeTabId: string }) => (
 
 export const UnionExpansion = createPreview({
   label: 'Union expansion',
-  render: () => <LaboratoryWith activeTabId={devTabIdFor('dev-op-me')} />,
+  render: () => <LaboratoryWith activeTabId={devTabIdFor('dev-op-union-expansion')} />,
 });
 
 export const SharedFieldNames = createPreview({
@@ -66,7 +68,7 @@ export const SharedFieldNames = createPreview({
 
 export const InterfaceExpansion = createPreview({
   label: 'Interface expansion',
-  render: () => <LaboratoryWith activeTabId={devTabIdFor('dev-op-me')} />,
+  render: () => <LaboratoryWith activeTabId={devTabIdFor('dev-op-interface-expansion')} />,
 });
 
 export const LegacyDocument = createPreview({

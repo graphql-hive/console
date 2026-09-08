@@ -56,6 +56,41 @@ subscription OidcLog {
     extensions: '',
   },
   {
+    id: 'dev-op-union-expansion',
+    name: 'Union expansion',
+    query: `# tokenInfo is a union one level down from the root, so the builder opens on
+# it. It has a chevron and a "... on" row per member, where it used to render as
+# a leaf. The __typename below is what ticking an abstract field now writes on
+# its own; untick tokenInfo and tick it again to watch that happen. Run works.
+query UnionExpansion {
+  tokenInfo {
+    __typename
+  }
+}`,
+    variables: '',
+    headers: '',
+    extensions: '',
+  },
+  {
+    id: 'dev-op-interface-expansion',
+    name: 'Interface expansion',
+    query: `# schemaCheck is an interface. Its own fields render directly, with
+# "... on FailedSchemaCheck" and "... on SuccessfulSchemaCheck" below them
+# carrying only what each implementation adds, so there is no second id row.
+# The arguments are filled in so the document validates; it is not meant to run.
+query InterfaceExpansion($target: TargetReferenceInput!, $checkId: ID!) {
+  target(reference: $target) {
+    schemaCheck(id: $checkId) {
+      __typename
+      id
+    }
+  }
+}`,
+    variables: '',
+    headers: '',
+    extensions: '',
+  },
+  {
     id: 'dev-op-shared-field-names',
     name: 'Shared field names',
     query: `# CompositeSchema and SingleSchema both declare id, author, commit, date,
