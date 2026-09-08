@@ -26,7 +26,6 @@ export const OrganizationIndexRouteSearch = z.object({
 
 type RouteSearchProps = z.infer<typeof OrganizationIndexRouteSearch>;
 
-
 const OrganizationProjectsPageQuery = graphql(`
   query OrganizationProjectsPageQuery(
     $organizationSlug: String!

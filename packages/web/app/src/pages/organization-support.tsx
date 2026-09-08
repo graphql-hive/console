@@ -3,6 +3,8 @@ import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { RadioGroup } from '@/components/base/radio-group/radio-group';
+import { scrollArea } from '@/components/base/shared-styles';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { Priority, priorityDescription, Status } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
@@ -19,8 +21,6 @@ import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { scrollArea } from '@/components/base/shared-styles';
 import {
   Sheet,
   SheetContent,

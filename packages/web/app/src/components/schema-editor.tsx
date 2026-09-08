@@ -13,13 +13,13 @@ import 'monaco-editor/esm/vs/basic-languages/graphql/graphql.contribution.js';
 // the policy naming-convention rule editor, which configures JSON schema
 // diagnostics in `beforeMount`.
 import 'monaco-editor/esm/vs/language/json/monaco.contribution.js';
+import { useTheme } from '@/components/theme/theme-provider';
 import {
   loader,
   DiffEditor as MonacoDiffEditor,
   Editor as MonacoEditor,
 } from '@monaco-editor/react';
 import type { SchemaEditorProps } from '@theguild/editor';
-import { useTheme } from '@/components/theme/theme-provider';
 
 // Use the locally bundled Monaco (via vite-plugin-monaco-editor) instead of CDN
 // to ensure the editor and workers are from the same version.

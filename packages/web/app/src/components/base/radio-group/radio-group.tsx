@@ -6,47 +6,47 @@ import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group';
 const radioItemVariants = cva(
   'group flex cursor-pointer items-center border transition-colors disabled:pointer-events-none disabled:opacity-50',
   {
-  variants: {
-    variant: {
-      'as-button': 'gap-1.5 rounded-xs px-3 py-1.5 text-[13px] font-medium',
-      'as-card': 'gap-4 rounded-md p-4 text-left text-sm',
+    variants: {
+      variant: {
+        'as-button': 'gap-1.5 rounded-xs px-3 py-1.5 text-[13px] font-medium',
+        'as-card': 'gap-4 rounded-md p-4 text-left text-sm',
+      },
+      // Surfaces differ only in resting/hover fill, so the pairing lives in compoundVariants.
+      onSurface: { base: '', floating: '' },
+      orientation: { horizontal: '', vertical: '' },
     },
-    // Surfaces differ only in resting/hover fill, so the pairing lives in compoundVariants.
-    onSurface: { base: '', floating: '' },
-    orientation: { horizontal: '', vertical: '' },
-  },
-  compoundVariants: [
-    // Cards fill the stack when stacked, and share the row evenly when side by side.
-    { variant: 'as-card', orientation: 'vertical', class: 'w-full' },
-    { variant: 'as-card', orientation: 'horizontal', class: 'flex-1 basis-0' },
-    {
-      variant: 'as-button',
-      onSurface: 'base',
-      class: [
-        'bg-neutral-2 border-neutral-5 text-neutral-11',
-        'hover:bg-neutral-3 hover:border-neutral-4 hover:text-neutral-12',
-        'data-[checked]:bg-neutral-4 data-[checked]:border-neutral-5 data-[checked]:text-neutral-12',
-      ],
-    },
-    {
-      variant: 'as-card',
-      onSurface: 'base',
-      class: [
-        'border-neutral-4 bg-transparent',
-        'hover:bg-neutral-3',
-        'data-[checked]:bg-neutral-3 data-[checked]:border-accent_30',
-      ],
-    },
-    {
-      variant: 'as-card',
-      onSurface: 'floating',
-      class: [
-        'bg-neutral-4 border-neutral-5',
-        'hover:bg-neutral-5',
-        'data-[checked]:bg-neutral-5 data-[checked]:border-accent_30',
-      ],
-    },
-  ],
+    compoundVariants: [
+      // Cards fill the stack when stacked, and share the row evenly when side by side.
+      { variant: 'as-card', orientation: 'vertical', class: 'w-full' },
+      { variant: 'as-card', orientation: 'horizontal', class: 'flex-1 basis-0' },
+      {
+        variant: 'as-button',
+        onSurface: 'base',
+        class: [
+          'bg-neutral-2 border-neutral-5 text-neutral-11',
+          'hover:bg-neutral-3 hover:border-neutral-4 hover:text-neutral-12',
+          'data-[checked]:bg-neutral-4 data-[checked]:border-neutral-5 data-[checked]:text-neutral-12',
+        ],
+      },
+      {
+        variant: 'as-card',
+        onSurface: 'base',
+        class: [
+          'border-neutral-4 bg-transparent',
+          'hover:bg-neutral-3',
+          'data-[checked]:bg-neutral-3 data-[checked]:border-accent_30',
+        ],
+      },
+      {
+        variant: 'as-card',
+        onSurface: 'floating',
+        class: [
+          'bg-neutral-4 border-neutral-5',
+          'hover:bg-neutral-5',
+          'data-[checked]:bg-neutral-5 data-[checked]:border-accent_30',
+        ],
+      },
+    ],
     defaultVariants: { variant: 'as-button', onSurface: 'base', orientation: 'horizontal' },
   },
 );
