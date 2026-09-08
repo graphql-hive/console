@@ -103,7 +103,10 @@ export class PersistedDocumentScheduler {
 
     worker.on('message', (data: BatchProcessedEvent | BatchProcessingErrorEvent) => {
       const task = tasks.get(data.id);
-      invariant(task, 'The task must exist.');
+
+      if (!task) {
+        return;
+      }
 
       task.onMetrics({
         s3WriteMetrics: data.s3WriteMetrics,
@@ -111,11 +114,11 @@ export class PersistedDocumentScheduler {
       });
 
       if (data.event === 'error') {
-        tasks.get(data.id)?.reject(deserializeWorkerError(data.error));
+        task.reject(deserializeWorkerError(data.error));
       }
 
       if (data.event === 'processedBatch') {
-        tasks.get(data.id)?.resolve(data);
+        task.resolve(data);
       }
     });
 
