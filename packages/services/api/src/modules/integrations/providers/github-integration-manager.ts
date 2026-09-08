@@ -1,4 +1,5 @@
 import { Inject, Injectable, InjectionToken, Scope } from 'graphql-modules';
+import { setErrorSource, withErrorSource } from '@hive/service-common';
 import { App } from '@octokit/app';
 import { Octokit } from '@octokit/core';
 import { retry } from '@octokit/plugin-retry';
@@ -185,7 +186,7 @@ export class GitHubIntegrationManager {
     if (!this.app) {
       throw new Error('GitHub Integration not found. Please provide GITHUB_APP_CONFIG.');
     }
-    return await this.app.getInstallationOctokit(installationId);
+    return await withErrorSource(this.app.getInstallationOctokit(installationId), 'github');
   }
 
   /**
@@ -353,7 +354,7 @@ export class GitHubIntegrationManager {
         };
       }
 
-      throw error;
+      throw setErrorSource(error, 'github');
     }
   }
 
@@ -390,14 +391,17 @@ export class GitHubIntegrationManager {
       );
     }
 
-    const result = await octokit.request('PATCH /repos/{owner}/{repo}/check-runs/{check_run_id}', {
-      owner: args.githubCheckRun.owner,
-      repo: args.githubCheckRun.repository,
-      check_run_id: args.githubCheckRun.id,
-      conclusion: args.conclusion,
-      output: this.limitOutput(args.output),
-      details_url: args.detailsUrl ?? undefined,
-    });
+    const result = await withErrorSource(
+      octokit.request('PATCH /repos/{owner}/{repo}/check-runs/{check_run_id}', {
+        owner: args.githubCheckRun.owner,
+        repo: args.githubCheckRun.repository,
+        check_run_id: args.githubCheckRun.id,
+        conclusion: args.conclusion,
+        output: this.limitOutput(args.output),
+        details_url: args.detailsUrl ?? undefined,
+      }),
+      'github',
+    );
 
     this.logger.debug('Check-run updated (link=%s)', result.data.url);
 

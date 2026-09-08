@@ -1,5 +1,28 @@
 # @graphql-hive/gateway-plugin-console-sdk
 
+## 0.1.5
+
+### Patch Changes
+
+- [#8379](https://github.com/graphql-hive/console/pull/8379)
+  [`a6089c5`](https://github.com/graphql-hive/console/commit/a6089c5e869b1b83edda16d6452432428db3424d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent validation failure by modifying selection
+  set with hive specific typename aliases within `onExecute` plugin hook instead of `onParse` hook.
+
+- [#8383](https://github.com/graphql-hive/console/pull/8383)
+  [`85a3351`](https://github.com/graphql-hive/console/commit/85a33512ed9f03095d376fc586d737ac0183410d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Explicitly supports errors thrown in the gateway.
+  I.e. authentication during execution.
+
+  This adds a new field to the usage payload that specifically contains errors thrown within the
+  gateway. This separates gateway errors from subgraph errors. All errors are currently ingested
+  similarly into Clickhouse, but this change supports future improvements to show the source
+  (subgraph name or gateway) of errors.
+
+- Updated dependencies
+  [[`85a3351`](https://github.com/graphql-hive/console/commit/85a33512ed9f03095d376fc586d737ac0183410d)]:
+  - @graphql-hive/core@0.22.4
+
 ## 0.1.4
 
 ### Patch Changes

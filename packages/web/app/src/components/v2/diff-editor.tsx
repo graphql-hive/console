@@ -171,7 +171,7 @@ export const DiffEditor = (props: {
   );
 };
 
-function DownloadButton(props: { contents: string; fileName: string }) {
+export function DownloadButton(props: { contents: string; fileName: string }) {
   return (
     <TooltipProvider>
       <Tooltip>

@@ -1011,9 +1011,9 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
     """
-    The data on which this schema version was published.
+    The date on which this schema version was published.
     """
-    date: DateTime!
+    date: DateTime! @tag(name: "public")
     """
     The log that initiated this schema version.
     For a federation schema this is the published or removed subgraph/service.

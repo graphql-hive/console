@@ -61,7 +61,7 @@ export class ServiceDeployment {
        */
       exposesMetrics?: boolean;
       replicas?: number;
-      pdb?: boolean;
+      pdb?: boolean | { minAvailable?: number };
       autoScaling?: {
         minReplicas?: number;
         maxReplicas: number;
@@ -326,9 +326,10 @@ export class ServiceDeployment {
     );
 
     if (this.options.pdb) {
+      const config = typeof this.options.pdb === 'object' ? this.options.pdb : null;
       new k8s.policy.v1.PodDisruptionBudget(`${this.name}-pdb`, {
         spec: {
-          minAvailable: 1,
+          minAvailable: config?.minAvailable ?? 1,
           selector: deployment.spec.selector,
         },
       });

@@ -41,6 +41,9 @@ const EnvironmentModel = zod.object({
   COMPOSITION_WORKER_TRACK_MEMORY_USAGE: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]),
   ).optional(),
+  TRANSFORM_EXTERNAL_SUPERGRAPH_TO_PUBLIC_SDL: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]),
+  ).optional(),
 });
 
 const RequestBrokerModel = zod.union([
@@ -211,4 +214,5 @@ export const env = {
     maxOldGenerationSizeMb: base.COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB,
     trackMemoryUsage: base.COMPOSITION_WORKER_TRACK_MEMORY_USAGE === '1',
   },
+  transformExternalSupergraphToPublicSdl: base.TRANSFORM_EXTERNAL_SUPERGRAPH_TO_PUBLIC_SDL === '1',
 } as const;

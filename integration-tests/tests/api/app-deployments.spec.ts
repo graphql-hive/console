@@ -1,6 +1,6 @@
 import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
-import { pollFor } from 'testkit/flow';
+import { pollFor, waitForExpectations } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import z from 'zod';
@@ -2208,22 +2208,22 @@ test('app deployment usage reporting', async () => {
     'app-name~app-version~aaa',
   );
 
-  await waitForOperationsCollected(1);
-
-  data = await execute({
-    document: GetAppDeployment,
-    variables: {
-      targetSelector: {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
+  await waitForExpectations(async () => {
+    data = await execute({
+      document: GetAppDeployment,
+      variables: {
+        targetSelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+        appDeploymentName: 'app-name',
+        appDeploymentVersion: 'app-version',
       },
-      appDeploymentName: 'app-name',
-      appDeploymentVersion: 'app-version',
-    },
-    authToken: ownerToken,
-  }).then(res => res.expectNoGraphQLErrors());
-  expect(data.target?.appDeployment?.lastUsed).toEqual(expect.any(String));
+      authToken: ownerToken,
+    }).then(res => res.expectNoGraphQLErrors());
+    expect(data.target?.appDeployment?.lastUsed).toEqual(expect.any(String));
+  });
 });
 
 test('app deployment manifest is written to and accessible via CDN', async () => {
@@ -2786,55 +2786,55 @@ test('activeAppDeployments filters by lastUsedBefore', async () => {
     'used-app~1.0.0~hash',
   );
 
-  await waitForOperationsCollected(1);
+  await waitForExpectations(async () => {
+    // Query for deployments last used before tomorrow (should include our deployment)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // Query for deployments last used before tomorrow (should include our deployment)
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const result = await execute({
-    document: GetActiveAppDeployments,
-    variables: {
-      targetSelector: {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
+    const result = await execute({
+      document: GetActiveAppDeployments,
+      variables: {
+        targetSelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+        filter: {
+          lastUsedBefore: tomorrow.toISOString(),
+        },
       },
-      filter: {
-        lastUsedBefore: tomorrow.toISOString(),
-      },
-    },
-    authToken: ownerToken,
-  }).then(res => res.expectNoGraphQLErrors());
+      authToken: ownerToken,
+    }).then(res => res.expectNoGraphQLErrors());
 
-  expect(result.target?.activeAppDeployments.edges).toHaveLength(1);
-  expect(result.target?.activeAppDeployments.edges[0].node).toMatchObject({
-    name: 'used-app',
-    version: '1.0.0',
-    status: 'active',
+    expect(result.target?.activeAppDeployments.edges).toHaveLength(1);
+    expect(result.target?.activeAppDeployments.edges[0].node).toMatchObject({
+      name: 'used-app',
+      version: '1.0.0',
+      status: 'active',
+    });
+    expect(result.target?.activeAppDeployments.edges[0].node.lastUsed).toBeTruthy();
+
+    // Query for deployments last used before yesterday (should NOT include our deployment)
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const result2 = await execute({
+      document: GetActiveAppDeployments,
+      variables: {
+        targetSelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+        filter: {
+          lastUsedBefore: yesterday.toISOString(),
+        },
+      },
+      authToken: ownerToken,
+    }).then(res => res.expectNoGraphQLErrors());
+
+    expect(result2.target?.activeAppDeployments.edges).toHaveLength(0);
   });
-  expect(result.target?.activeAppDeployments.edges[0].node.lastUsed).toBeTruthy();
-
-  // Query for deployments last used before yesterday (should NOT include our deployment)
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  const result2 = await execute({
-    document: GetActiveAppDeployments,
-    variables: {
-      targetSelector: {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
-      },
-      filter: {
-        lastUsedBefore: yesterday.toISOString(),
-      },
-    },
-    authToken: ownerToken,
-  }).then(res => res.expectNoGraphQLErrors());
-
-  expect(result2.target?.activeAppDeployments.edges).toHaveLength(0);
 });
 
 test('activeAppDeployments applies OR logic between lastUsedBefore and neverUsedAndCreatedBefore', async () => {
@@ -2948,39 +2948,39 @@ test('activeAppDeployments applies OR logic between lastUsedBefore and neverUsed
     'used-app~1.0.0~hash1',
   );
 
-  await waitForOperationsCollected(1);
-
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const result = await execute({
-    document: GetActiveAppDeployments,
-    variables: {
-      targetSelector: {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
+  waitForExpectations(async () => {
+    const result = await execute({
+      document: GetActiveAppDeployments,
+      variables: {
+        targetSelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+        filter: {
+          lastUsedBefore: tomorrow.toISOString(),
+          neverUsedAndCreatedBefore: tomorrow.toISOString(),
+        },
       },
-      filter: {
-        lastUsedBefore: tomorrow.toISOString(),
-        neverUsedAndCreatedBefore: tomorrow.toISOString(),
-      },
-    },
-    authToken: ownerToken,
-  }).then(res => res.expectNoGraphQLErrors());
+      authToken: ownerToken,
+    }).then(res => res.expectNoGraphQLErrors());
 
-  // Both deployments should match via OR logic
-  expect(result.target?.activeAppDeployments.edges).toHaveLength(2);
-  const names = result.target?.activeAppDeployments.edges.map(e => e.node.name).sort();
-  expect(names).toEqual(['unused-app', 'used-app']);
+    // Both deployments should match via OR logic
+    expect(result.target?.activeAppDeployments.edges).toHaveLength(2);
+    const names = result.target?.activeAppDeployments.edges.map(e => e.node.name).sort();
+    expect(names).toEqual(['unused-app', 'used-app']);
 
-  // Verify one has lastUsed and one doesn't
-  const usedApp = result.target?.activeAppDeployments.edges.find(e => e.node.name === 'used-app');
-  const unusedApp = result.target?.activeAppDeployments.edges.find(
-    e => e.node.name === 'unused-app',
-  );
-  expect(usedApp?.node.lastUsed).toBeTruthy();
-  expect(unusedApp?.node.lastUsed).toBeNull();
+    // Verify one has lastUsed and one doesn't
+    const usedApp = result.target?.activeAppDeployments.edges.find(e => e.node.name === 'used-app');
+    const unusedApp = result.target?.activeAppDeployments.edges.find(
+      e => e.node.name === 'unused-app',
+    );
+    expect(usedApp?.node.lastUsed).toBeTruthy();
+    expect(unusedApp?.node.lastUsed).toBeNull();
+  });
 });
 
 test('activeAppDeployments pagination with first and after', async () => {
@@ -3456,95 +3456,77 @@ test('schema check shows affected app deployments for breaking changes', async (
   let schemaCheckData: any = null;
 
   // ClickHouse eventual consistency
-  await pollFor(
-    async () => {
-      const checkResult = await execute({
-        document: graphql(`
-          mutation SchemaCheckForAffectedAppDeploymentsPoll($input: SchemaCheckInput!) {
-            schemaCheck(input: $input) {
-              __typename
-              ... on SchemaCheckSuccess {
-                schemaCheck {
-                  id
-                }
+  await waitForExpectations(async () => {
+    const checkResult = await execute({
+      document: graphql(`
+        mutation SchemaCheckForAffectedAppDeploymentsPoll($input: SchemaCheckInput!) {
+          schemaCheck(input: $input) {
+            __typename
+            ... on SchemaCheckSuccess {
+              schemaCheck {
+                id
               }
-              ... on SchemaCheckError {
-                schemaCheck {
-                  id
-                }
+            }
+            ... on SchemaCheckError {
+              schemaCheck {
+                id
               }
             }
           }
-        `),
-        variables: {
-          input: {
-            sdl: /* GraphQL */ `
-              type Query {
-                world: String
-              }
-            `,
-          },
+        }
+      `),
+      variables: {
+        input: {
+          sdl: /* GraphQL */ `
+            type Query {
+              world: String
+            }
+          `,
         },
-        authToken: token.secret,
-      }).then(res => res.expectNoGraphQLErrors());
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
 
-      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
-        return false;
-      }
+    assert(checkResult.schemaCheck.__typename === 'SchemaCheckError');
 
-      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
-      if (!schemaCheckId) {
-        return false;
-      }
+    const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+    assert(schemaCheckId);
 
-      schemaCheckData = await execute({
-        document: SchemaCheckWithAffectedAppDeployments,
-        variables: {
-          organizationSlug: organization.slug,
-          projectSlug: project.slug,
-          targetSlug: target.slug,
-          schemaCheckId,
-        },
-        authToken: ownerToken,
-      });
+    schemaCheckData = await execute({
+      document: SchemaCheckWithAffectedAppDeployments,
+      variables: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+        schemaCheckId,
+      },
+      authToken: ownerToken,
+    });
 
-      const breakingChanges =
-        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+    const breakingChanges =
+      schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
 
-      // Check if the hello field removal has affectedAppDeployments
-      const helloFieldRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
-        edge.node.message.includes('hello'),
-      );
-      return !!(helloFieldRemoval?.node.affectedAppDeployments?.edges?.length ?? 0);
-    },
-    { maxWait: 15_000 },
-  );
+    // Check if the hello field removal has affectedAppDeployments
+    const helloFieldRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+      edge.node.message.includes('hello'),
+    );
+    expect(helloFieldRemoval?.node.affectedAppDeployments?.edges).toHaveLength(1);
 
-  const breakingChanges =
-    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+    expect(breakingChanges).toBeDefined();
+    expect(breakingChanges!.length).toBeGreaterThan(0);
 
-  // console.log('breakingChanges:', JSON.stringify(breakingChanges, null, 2));
+    expect(helloFieldRemoval).toBeDefined();
+    expect(helloFieldRemoval?.node.affectedAppDeployments?.edges).toBeDefined();
+    expect(helloFieldRemoval?.node.affectedAppDeployments?.edges?.length).toBe(1);
 
-  expect(breakingChanges).toBeDefined();
-  expect(breakingChanges!.length).toBeGreaterThan(0);
-
-  const helloFieldRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
-    edge.node.message.includes('hello'),
-  );
-
-  // console.log('helloFieldRemoval:', JSON.stringify(helloFieldRemoval, null, 2));
-
-  expect(helloFieldRemoval).toBeDefined();
-  expect(helloFieldRemoval?.node.affectedAppDeployments?.edges).toBeDefined();
-  expect(helloFieldRemoval?.node.affectedAppDeployments?.edges?.length).toBe(1);
-
-  const affectedDeployment = helloFieldRemoval?.node.affectedAppDeployments?.edges?.[0]?.node;
-  expect(affectedDeployment?.name).toBe('test-app');
-  expect(affectedDeployment?.version).toBe('1.0.0');
-  expect(affectedDeployment?.affectedOperations.edges).toBeDefined();
-  expect(affectedDeployment?.affectedOperations.edges.length).toBe(1);
-  expect(affectedDeployment?.affectedOperations.edges[0].node.hash).toBe('hello-query-hash');
-  expect(affectedDeployment?.affectedOperations.edges[0].node.name).toBe('GetHello');
+    const affectedDeployment = helloFieldRemoval?.node.affectedAppDeployments?.edges?.[0]?.node;
+    expect(affectedDeployment?.name).toBe('test-app');
+    expect(affectedDeployment?.version).toBe('1.0.0');
+    expect(affectedDeployment?.affectedOperations.edges).toBeDefined();
+    expect(affectedDeployment?.affectedOperations.edges.length).toBe(1);
+    expect(affectedDeployment?.affectedOperations.edges[0].node.hash).toBe('hello-query-hash');
+    expect(affectedDeployment?.affectedOperations.edges[0].node.name).toBe('GetHello');
+  });
 });
 
 test('breaking changes show only deployments affected by their specific coordinate', async () => {

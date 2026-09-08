@@ -10,6 +10,7 @@ import {
   PersistedDocumentIngester,
   type BatchProcessEvent,
 } from '../providers/persisted-document-ingester';
+import { serializeWorkerError } from '../providers/persisted-document-scheduler';
 
 /**
  * Create a worker for processing incoming persisted operations.
@@ -110,7 +111,7 @@ export function createWorker(
       port.postMessage({
         event: 'error',
         id: message.id,
-        err,
+        error: serializeWorkerError(err),
       });
     }
   });

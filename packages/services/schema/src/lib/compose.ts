@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import got, { RequestError } from 'got';
-import { DocumentNode, GraphQLError, parse, print, printSchema } from 'graphql';
+import { ASTNode, DocumentNode, GraphQLError, parse, print, printSchema } from 'graphql';
 import { validateSDL } from 'graphql/validation/validate.js';
 import { z } from 'zod';
 import { composeAndValidate, compositionHasErrors } from '@apollo/federation';
@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/node';
 import {
   composeServices as nativeComposeServices,
   compositionHasErrors as nativeCompositionHasErrors,
+  transformSupergraphToPublicSchema,
 } from '@theguild/federation-composition';
 import type { ExternalComposition } from '../types';
 import { toValidationError } from './errors';
@@ -176,6 +177,16 @@ export async function composeExternalFederation(args: {
   external: Exclude<ExternalComposition, null>;
   requestTimeoutMs: number;
   requestId: string;
+
+  /**
+   * Configuration option to use the supergraph SDL and transform it to the public
+   * SDL instead of taking the public SDL from the external composition result.
+   *
+   * This is used to support some existing implementations from customers that are
+   * incorrectly returning supergraph directives in their public SDL. This is intended
+   * to be deprecated in the future once all customers have addressed their implementation.
+   */
+  transformToPublicSdl?: boolean;
 }): Promise<ComposerMethodResult> {
   args.logger?.debug(
     'Using external composition service (url=%s, schemas=%s)',
@@ -258,14 +269,28 @@ export async function composeExternalFederation(args: {
     await checkExternalCompositionCompatibility(args.logger, parseResult.data.result.sdl);
 
     const supergraph = parseResult.data.result.supergraph;
-    const sdl = parseResult.data.result.sdl;
+    let sdl = parseResult.data.result.sdl;
+    const supergraphDocumentNode = parse(supergraph);
+
+    let sdlDocumentNode: ASTNode;
+    if (args.transformToPublicSdl) {
+      /**
+       * Ensure the externally composed schema doesn't include supergraph SDL
+       * This is done for us in the native composition library
+       * https://github.com/graphql-hive/federation-composition/blob/77d6b4ece2abacf94164beafb4e7f5961f726755/src/compose.ts#L228
+       */
+      sdlDocumentNode = transformSupergraphToPublicSchema(supergraphDocumentNode);
+      sdl = print(sdlDocumentNode);
+    } else {
+      sdlDocumentNode = parse(sdl);
+    }
     return {
       type: 'success',
       result: {
         supergraph,
-        supergraphDocumentNode: parse(supergraph),
+        supergraphDocumentNode,
         sdl,
-        sdlDocumentNode: parse(sdl),
+        sdlDocumentNode,
       },
     };
   }

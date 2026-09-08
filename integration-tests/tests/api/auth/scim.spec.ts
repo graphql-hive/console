@@ -5056,7 +5056,10 @@ describe('provisioned user jail', () => {
     oidcMock.setUser({ email, userIdClaim: externalId });
     const auth = await oidcMock.runGetAuthorizationUrl();
     const signInResult = await oidcMock.runSignInUp({ state: auth.state });
-    invariant(signInResult.type === 'success', 'Expected sign in to succeed.');
+    invariant(
+      signInResult.type === 'success',
+      `Expected sign in to succeed. But got ${JSON.stringify(signInResult.body)}`,
+    );
 
     const slug = `scim-${crypto.randomUUID()}`;
     const result = await createOrganization({ slug }, signInResult.accessToken).then(response =>

@@ -14,7 +14,7 @@ import {
   type ServiceLogger,
 } from '@hive/service-common';
 import type { RawOperationMap, RawReport } from '@hive/usage-common';
-import { compress } from '@hive/usage-common';
+import { compressZstd } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
 import { calculateChunkSize, createKVBuffer } from './buffer';
 import type { KafkaEnvironment } from './environment';
@@ -216,7 +216,7 @@ export function createUsage(config: {
     async sender(reports, estimatedSizeInBytes, batchId, validateSize) {
       const numOfOperations = reports.reduce((sum, report) => report.size + sum, 0);
       const compressLatencyStop = compressDuration.startTimer();
-      const value = await compress(JSON.stringify(reports)).finally(() => {
+      const value = await compressZstd(JSON.stringify(reports)).finally(() => {
         compressLatencyStop();
       });
       estimationError.observe(Math.abs(estimatedSizeInBytes - value.byteLength) / value.byteLength);

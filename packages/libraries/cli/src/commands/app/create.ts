@@ -1,22 +1,15 @@
-import { createHash } from 'node:crypto';
-import { statSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
-import { print } from 'graphql';
-import { z } from 'zod';
-import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
-import { loadDocuments } from '@graphql-tools/load';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { AppDeploymentStatus } from '../../gql/graphql';
 import * as GraphQLSchema from '../../gql/graphql';
+import { loadAppOperations } from '../../helpers/app-operations';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
   InvalidTargetError,
   MissingEndpointError,
   MissingRegistryTokenError,
-  PersistedOperationsMalformedError,
 } from '../../helpers/errors';
 import * as TargetInput from '../../helpers/target-input';
 import { ActivateAppDeploymentMutation } from './publish';
@@ -102,99 +95,13 @@ export default class AppCreate extends Command<typeof AppCreate> {
       this.log(`No version provided, using generated version: ${version}`);
     }
 
-    const file: string = args.operations;
-
-    let manifest: Record<string, string>;
-
-    const isFile = (() => {
-      try {
-        return statSync(file).isFile();
-      } catch {
-        return false;
-      }
-    })();
-
-    if (isFile) {
-      const contents = this.readJSON(file);
-      const operations: unknown = JSON.parse(contents);
-      let entries: Array<[string, string]>;
-      const manifestValidationResult = ManifestModel.safeParse(operations);
-
-      if (manifestValidationResult.success) {
-        entries = Object.entries(manifestValidationResult.data);
-      } else {
-        const apolloValidationResult = ApolloManifestModel.safeParse(operations);
-        if (apolloValidationResult.success) {
-          entries = apolloValidationResult.data.operations.map(operation => [
-            operation.id,
-            operation.body,
-          ]);
-        } else {
-          throw new PersistedOperationsMalformedError(file);
-        }
-      }
-
-      manifest = Object.fromEntries(entries);
-    } else {
-      // file is a glob or directory - generate the manifest in-memory
-      const globPattern = (() => {
-        try {
-          if (statSync(file).isDirectory()) {
-            return `${resolve(file)}/**/*.graphql`;
-          }
-        } catch {
-          // not a directory, treat as a glob pattern as-is
-        }
-        return file;
-      })();
-
-      let sources;
-      try {
-        sources = await loadDocuments(globPattern, {
-          loaders: [new GraphQLFileLoader()],
-        });
-      } catch (err) {
-        this.error(
-          `Failed to load GraphQL files from "${relative(process.cwd(), file)}": ${String(err)}`,
-        );
-      }
-
-      if (sources.length === 0) {
-        this.error(`No .graphql files found in "${relative(process.cwd(), file)}".`);
-      }
-
-      // sort by location to make the output deterministic
-      sources.sort((a, b) => (a.location ?? '').localeCompare(b.location ?? ''));
-
-      manifest = {};
-
-      for (const source of sources) {
-        const sourceFile = source.location ?? '<unknown>';
-        if (!source.document) {
-          this.warn(`Skipping empty operation in file "${relative(process.cwd(), sourceFile)}".`);
-          continue;
-        }
-        const operation = print(source.document).replace('\n', ' ').replace(/\s+/g, ' ').trim();
-        if (!operation) {
-          this.warn(`Skipping empty operation in file "${relative(process.cwd(), sourceFile)}".`);
-          continue;
-        }
-        const hash = createHash('sha256').update(operation).digest('hex');
-        if (hash in manifest) {
-          this.warn(
-            `Hash collision detected for file "${relative(process.cwd(), sourceFile)}". The operation is identical to another operation already in the manifest. Skipping.`,
-          );
-          continue;
-        }
-        manifest[hash] = operation;
-      }
-
-      if (Object.keys(manifest).length === 0) {
-        this.error(`No valid GraphQL operations found in "${relative(process.cwd(), file)}".`);
-      }
-
+    const { manifest, generatedFrom, warnings } = await loadAppOperations(args.operations);
+    for (const warning of warnings) {
+      this.warn(warning);
+    }
+    if (generatedFrom) {
       this.log(
-        `Persisted documents manifest generated in-memory from discovered GraphQL operations under "${globPattern}".`,
+        `Persisted documents manifest generated in-memory from discovered GraphQL operations under "${generatedFrom}".`,
       );
       this.log(JSON.stringify(manifest, null, 2));
     }
@@ -322,19 +229,6 @@ export default class AppCreate extends Command<typeof AppCreate> {
     }
   }
 }
-
-const ManifestModel = z.record(z.string());
-
-const ApolloManifestModel = z.object({
-  format: z.literal('apollo-persisted-query-manifest'),
-  version: z.literal(1),
-  operations: z.array(
-    z.object({
-      id: z.string(),
-      body: z.string(),
-    }),
-  ),
-});
 
 const CreateAppDeploymentMutation = graphql(/* GraphQL */ `
   mutation CreateAppDeployment($input: CreateAppDeploymentInput!) {

@@ -2,6 +2,7 @@ import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { fileURLToPath } from 'url';
 import { Injectable, Scope } from 'graphql-modules';
+import { getErrorSource, setErrorSource } from '@hive/service-common';
 import { Logger, registerWorkerLogging } from '../../shared/providers/logger';
 import { BatchProcessedEvent, BatchProcessEvent } from './persisted-document-ingester';
 
@@ -11,6 +12,30 @@ type PendingTaskRecord = {
   resolve: (data: BatchProcessedEvent) => void;
   reject: (err: unknown) => void;
 };
+
+export type SerializedWorkerError = {
+  name: string;
+  message: string;
+  stack: string | undefined;
+  source: string | null;
+};
+
+export function serializeWorkerError(error: unknown): SerializedWorkerError {
+  const normalizedError = error instanceof Error ? error : new Error(String(error));
+  return {
+    name: normalizedError.name,
+    message: normalizedError.message,
+    stack: normalizedError.stack,
+    source: getErrorSource(normalizedError),
+  };
+}
+
+export function deserializeWorkerError(error: SerializedWorkerError): Error {
+  const deserializedError = new Error(error.message);
+  deserializedError.name = error.name;
+  deserializedError.stack = error.stack;
+  return error.source ? setErrorSource(deserializedError, error.source) : deserializedError;
+}
 
 @Injectable({
   scope: Scope.Singleton,
@@ -56,7 +81,7 @@ export class PersistedDocumentScheduler {
 
       this.logger.debug('Cancel pending tasks %s', index);
       for (const [, task] of tasks) {
-        task.reject(new Error('Worker stopped.'));
+        task.reject(setErrorSource(new Error('Worker stopped.'), 'persisted-documents-worker'));
       }
     });
 
@@ -64,9 +89,11 @@ export class PersistedDocumentScheduler {
 
     worker.on(
       'message',
-      (data: BatchProcessedEvent | { event: 'error'; id: string; err: Error }) => {
+      (
+        data: BatchProcessedEvent | { event: 'error'; id: string; error: SerializedWorkerError },
+      ) => {
         if (data.event === 'error') {
-          tasks.get(data.id)?.reject(data.err);
+          tasks.get(data.id)?.reject(deserializeWorkerError(data.error));
         }
 
         if (data.event === 'processedBatch') {
@@ -81,7 +108,12 @@ export class PersistedDocumentScheduler {
       const id = crypto.randomUUID();
       const d = Promise.withResolvers<BatchProcessedEvent>();
       const timeout = setTimeout(() => {
-        task.reject(new Error('Timeout, worker did not respond within time.'));
+        task.reject(
+          setErrorSource(
+            new Error('Timeout, worker did not respond within time.'),
+            'persisted-documents-worker',
+          ),
+        );
       }, 20_000);
 
       const task: PendingTaskRecord = {

@@ -16,9 +16,9 @@ import { collectSchemaCoordinates } from '../../../../packages/libraries/core/sr
 import { clickHouseQuery } from '../../../testkit/clickhouse';
 import {
   createTarget,
-  pollFor,
   updateTargetValidationSettings,
   waitFor,
+  waitForExpectations,
 } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 import { CollectedOperation } from '../../../testkit/usage';
@@ -2729,47 +2729,114 @@ test.concurrent(
   },
 );
 
-test.concurrent(
-  'subscription operation is used for conditional breaking change detection',
-  async ({ expect }) => {
-    const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { organization, createProject } = await createOrg();
-    const {
-      project,
-      target,
-      createTargetAccessToken,
-      toggleTargetValidation,
-      updateTargetValidationSettings,
-    } = await createProject(ProjectType.Single);
-    const token = await createTargetAccessToken({});
+test('subscription operation is used for conditional breaking change detection', async ({
+  expect,
+}) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization, createProject } = await createOrg();
+  const {
+    project,
+    target,
+    createTargetAccessToken,
+    toggleTargetValidation,
+    updateTargetValidationSettings,
+  } = await createProject(ProjectType.Single);
+  const token = await createTargetAccessToken({});
 
-    const sdl = /* GraphQL */ `
+  const sdl = /* GraphQL */ `
+    type Query {
+      a: String
+      b: String
+    }
+
+    type Subscription {
+      a: String
+      b: String
+    }
+  `;
+
+  const schema = buildASTSchema(parse(sdl));
+
+  const schemaPublishResult = await token
+    .publishSchema({
+      sdl,
+      author: 'Kamil',
+      commit: 'initial',
+    })
+    .then(res => res.expectNoGraphQLErrors());
+
+  expect(schemaPublishResult.schemaPublish.__typename).toEqual('SchemaPublishSuccess');
+
+  await toggleTargetValidation(true);
+
+  const unused = await token
+    .checkSchema(/* GraphQL */ `
       type Query {
         a: String
         b: String
       }
 
       type Subscription {
-        a: String
         b: String
       }
-    `;
+    `)
+    .then(r => r.expectNoGraphQLErrors());
 
-    const schema = buildASTSchema(parse(sdl));
+  if (unused.schemaCheck.__typename !== 'SchemaCheckSuccess') {
+    throw new Error(`Expected SchemaCheckSuccess, got ${unused.schemaCheck.__typename}`);
+  }
 
-    const schemaPublishResult = await token
-      .publishSchema({
-        sdl,
-        author: 'Kamil',
-        commit: 'initial',
-      })
-      .then(res => res.expectNoGraphQLErrors());
+  expect(unused.schemaCheck.changes).toEqual(
+    expect.objectContaining({
+      nodes: expect.arrayContaining([
+        expect.objectContaining({
+          message:
+            "Field 'a' was removed from object type 'Subscription' (non-breaking based on usage)",
+        }),
+      ]),
+      total: 1,
+    }),
+  );
 
-    expect(schemaPublishResult.schemaPublish.__typename).toEqual('SchemaPublishSuccess');
+  const usageAddress = await getServiceHost('usage', 8081);
 
-    await toggleTargetValidation(true);
+  const client = createHive({
+    enabled: true,
+    token: token.secret,
+    usage: true,
+    debug: false,
+    agent: {
+      logger: createLogger('debug'),
+      maxSize: 1,
+    },
+    selfHosting: {
+      usageEndpoint: 'http://' + usageAddress,
+      graphqlEndpoint: 'http://noop/',
+      applicationUrl: 'http://noop/',
+    },
+  });
 
-    const unused = await token
+  const request = new Request('http://localhost:4000/graphql', {
+    method: 'POST',
+    headers: {
+      'x-graphql-client-name': 'integration-tests',
+      'x-graphql-client-version': '6.6.6',
+    },
+  });
+
+  client.collectSubscriptionUsage({
+    args: {
+      document: parse('subscription { a }'),
+      schema,
+      contextValue: {
+        request,
+      },
+    },
+  });
+
+  let firstSchemaCheckId: string | undefined;
+  await waitForExpectations(async () => {
+    const used = await token
       .checkSchema(/* GraphQL */ `
         type Query {
           a: String
@@ -2782,11 +2849,115 @@ test.concurrent(
       `)
       .then(r => r.expectNoGraphQLErrors());
 
-    if (unused.schemaCheck.__typename !== 'SchemaCheckSuccess') {
-      throw new Error(`Expected SchemaCheckSuccess, got ${unused.schemaCheck.__typename}`);
-    }
+    assert(used.schemaCheck.__typename === 'SchemaCheckError');
+    expect(used.schemaCheck.errors).toEqual({
+      nodes: [
+        {
+          message: "Field 'a' was removed from object type 'Subscription'",
+        },
+      ],
+      total: 1,
+    });
+    expect(used.schemaCheck.schemaCheck?.id).not.toBeNullable();
+    firstSchemaCheckId = used.schemaCheck.schemaCheck?.id;
+  });
 
-    expect(unused.schemaCheck.changes).toEqual(
+  await waitForExpectations(async () => {
+    const firstSchemaCheck = await execute({
+      document: SubscriptionSchemaCheckQuery,
+      variables: {
+        id: firstSchemaCheckId!,
+        selector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(firstSchemaCheck.target?.schemaCheck?.breakingSchemaChanges?.nodes).toHaveLength(1);
+    const node = firstSchemaCheck.target?.schemaCheck?.breakingSchemaChanges?.nodes[0]!;
+    expect(node.isSafeBasedOnUsage).toEqual(false);
+    expect(node.usageStatistics?.topAffectedOperations).toEqual([
+      {
+        countFormatted: '1',
+        hash: 'c1bbc8385a4a6f4e4988be7394800adc',
+        name: 'anonymous',
+        percentage: 100,
+        percentageFormatted: '100.00%',
+        operation: {
+          body: 'subscription{a}',
+          hash: 'c1bbc8385a4a6f4e4988be7394800adc',
+          name: 'anonymous',
+          type: 'SUBSCRIPTION',
+        },
+      },
+    ]);
+    expect(node.usageStatistics?.topAffectedClients).toEqual([
+      {
+        countFormatted: '1',
+        name: 'integration-tests',
+        percentage: 100,
+        percentageFormatted: '100.00%',
+      },
+    ]);
+  });
+
+  // Now let's make subscription insignificant by making 3 queries
+
+  client.collectUsage().finish(
+    {
+      document: parse('{ a }'),
+      schema,
+      contextValue: {
+        request,
+      },
+    },
+    {},
+  );
+  client.collectUsage().finish(
+    {
+      document: parse('{ a }'),
+      schema,
+      contextValue: {
+        request,
+      },
+    },
+    {},
+  );
+  client.collectUsage().finish(
+    {
+      document: parse('{ a }'),
+      schema,
+      contextValue: {
+        request,
+      },
+    },
+    {},
+  );
+
+  await updateTargetValidationSettings({
+    excludedClients: [],
+    percentage: 50,
+  });
+
+  await waitForExpectations(async () => {
+    const irrelevant = await token
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          a: String
+          b: String
+        }
+
+        type Subscription {
+          b: String
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    assert(irrelevant?.schemaCheck.__typename === 'SchemaCheckSuccess');
+    expect(irrelevant.schemaCheck.changes).toEqual(
       expect.objectContaining({
         nodes: expect.arrayContaining([
           expect.objectContaining({
@@ -2797,271 +2968,63 @@ test.concurrent(
         total: 1,
       }),
     );
+  });
 
-    const usageAddress = await getServiceHost('usage', 8081);
+  // Make it relevant again, by making 3 subscriptions
 
-    const client = createHive({
-      enabled: true,
-      token: token.secret,
-      usage: true,
-      debug: false,
-      agent: {
-        logger: createLogger('debug'),
-        maxSize: 1,
+  client.collectSubscriptionUsage({
+    args: {
+      document: parse('subscription { a }'),
+      schema,
+      contextValue: {
+        request,
       },
-      selfHosting: {
-        usageEndpoint: 'http://' + usageAddress,
-        graphqlEndpoint: 'http://noop/',
-        applicationUrl: 'http://noop/',
+    },
+  });
+  client.collectSubscriptionUsage({
+    args: {
+      document: parse('subscription { a }'),
+      schema,
+      contextValue: {
+        request,
       },
-    });
-
-    const request = new Request('http://localhost:4000/graphql', {
-      method: 'POST',
-      headers: {
-        'x-graphql-client-name': 'integration-tests',
-        'x-graphql-client-version': '6.6.6',
+    },
+  });
+  client.collectSubscriptionUsage({
+    args: {
+      document: parse('subscription { a }'),
+      schema,
+      contextValue: {
+        request,
       },
-    });
+    },
+  });
 
-    client.collectSubscriptionUsage({
-      args: {
-        document: parse('subscription { a }'),
-        schema,
-        contextValue: {
-          request,
-        },
-      },
-    });
-
-    let firstSchemaCheckId: string | undefined;
-    await pollFor(async () => {
-      try {
-        const used = await token
-          .checkSchema(/* GraphQL */ `
-            type Query {
-              a: String
-              b: String
-            }
-
-            type Subscription {
-              b: String
-            }
-          `)
-          .then(r => r.expectNoGraphQLErrors());
-
-        if (used.schemaCheck.__typename === 'SchemaCheckError') {
-          expect(used.schemaCheck.errors).toEqual({
-            nodes: [
-              {
-                message: "Field 'a' was removed from object type 'Subscription'",
-              },
-            ],
-            total: 1,
-          });
-          firstSchemaCheckId = used.schemaCheck.schemaCheck?.id;
-          return true;
-        }
-        return false;
-      } catch (e) {
-        console.error(e);
-        return false;
-      }
-    });
-
-    if (!firstSchemaCheckId) {
-      throw new Error('Expected schemaCheckId to be defined');
-    }
-
-    await pollFor(async () => {
-      try {
-        const firstSchemaCheck = await execute({
-          document: SubscriptionSchemaCheckQuery,
-          variables: {
-            id: firstSchemaCheckId!,
-            selector: {
-              organizationSlug: organization.slug,
-              projectSlug: project.slug,
-              targetSlug: target.slug,
-            },
-          },
-          authToken: ownerToken,
-        }).then(r => r.expectNoGraphQLErrors());
-
-        const node = firstSchemaCheck.target?.schemaCheck?.breakingSchemaChanges?.nodes[0];
-
-        if (!node) {
-          throw new Error('Expected node to be defined');
+  await waitForExpectations(async () => {
+    const relevant = await token
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          a: String
+          b: String
         }
 
-        expect(node.isSafeBasedOnUsage).toEqual(false);
-        expect(node.usageStatistics?.topAffectedOperations).toEqual([
-          {
-            countFormatted: '1',
-            hash: 'c1bbc8385a4a6f4e4988be7394800adc',
-            name: 'anonymous',
-            percentage: 100,
-            percentageFormatted: '100.00%',
-            operation: {
-              body: 'subscription{a}',
-              hash: 'c1bbc8385a4a6f4e4988be7394800adc',
-              name: 'anonymous',
-              type: 'SUBSCRIPTION',
-            },
-          },
-        ]);
-        expect(node.usageStatistics?.topAffectedClients).toEqual([
-          {
-            countFormatted: '1',
-            name: 'integration-tests',
-            percentage: 100,
-            percentageFormatted: '100.00%',
-          },
-        ]);
-        return true;
-      } catch (e) {
-        console.error(e);
-        return false;
-      }
-    });
-
-    // Now let's make subscription insignificant by making 3 queries
-
-    client.collectUsage().finish(
-      {
-        document: parse('{ a }'),
-        schema,
-        contextValue: {
-          request,
-        },
-      },
-      {},
-    );
-    client.collectUsage().finish(
-      {
-        document: parse('{ a }'),
-        schema,
-        contextValue: {
-          request,
-        },
-      },
-      {},
-    );
-    client.collectUsage().finish(
-      {
-        document: parse('{ a }'),
-        schema,
-        contextValue: {
-          request,
-        },
-      },
-      {},
-    );
-
-    await updateTargetValidationSettings({
-      excludedClients: [],
-      percentage: 50,
-    });
-
-    await pollFor(async () => {
-      try {
-        const irrelevant = await token
-          .checkSchema(/* GraphQL */ `
-            type Query {
-              a: String
-              b: String
-            }
-
-            type Subscription {
-              b: String
-            }
-          `)
-          .then(r => r.expectNoGraphQLErrors());
-        if (irrelevant?.schemaCheck.__typename === 'SchemaCheckSuccess') {
-          expect(irrelevant.schemaCheck.changes).toEqual(
-            expect.objectContaining({
-              nodes: expect.arrayContaining([
-                expect.objectContaining({
-                  message:
-                    "Field 'a' was removed from object type 'Subscription' (non-breaking based on usage)",
-                }),
-              ]),
-              total: 1,
-            }),
-          );
-          return true;
+        type Subscription {
+          b: String
         }
-        return false;
-      } catch (e) {
-        console.error(e);
-        return false;
-      }
-    });
+      `)
+      .then(r => r.expectNoGraphQLErrors());
 
-    // Make it relevant again, by making 3 subscriptions
-
-    client.collectSubscriptionUsage({
-      args: {
-        document: parse('subscription { a }'),
-        schema,
-        contextValue: {
-          request,
+    assert(relevant.schemaCheck.__typename === 'SchemaCheckError');
+    expect(relevant.schemaCheck.errors).toEqual({
+      nodes: [
+        {
+          message: "Field 'a' was removed from object type 'Subscription'",
         },
-      },
+      ],
+      total: 1,
     });
-    client.collectSubscriptionUsage({
-      args: {
-        document: parse('subscription { a }'),
-        schema,
-        contextValue: {
-          request,
-        },
-      },
-    });
-    client.collectSubscriptionUsage({
-      args: {
-        document: parse('subscription { a }'),
-        schema,
-        contextValue: {
-          request,
-        },
-      },
-    });
-
-    await pollFor(async () => {
-      try {
-        const relevant = await token
-          .checkSchema(/* GraphQL */ `
-            type Query {
-              a: String
-              b: String
-            }
-
-            type Subscription {
-              b: String
-            }
-          `)
-          .then(r => r.expectNoGraphQLErrors());
-
-        if (relevant.schemaCheck.__typename === 'SchemaCheckError') {
-          expect(relevant.schemaCheck.errors).toEqual({
-            nodes: [
-              {
-                message: "Field 'a' was removed from object type 'Subscription'",
-              },
-            ],
-            total: 1,
-          });
-          return true;
-        }
-        return false;
-      } catch (e) {
-        console.error(e);
-        return false;
-      }
-    });
-  },
-);
+  });
+});
 
 test.concurrent('ensure percentage precision up to 2 decimal places', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
@@ -3112,25 +3075,28 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
 
   await waitForRequestsCollected(9801 + 199);
 
-  const result = await clickHouseQuery(`
-    SELECT
-      target
-      , sum(total) as total
-    FROM clients_daily
-    WHERE
-      timestamp >= subtractDays(now(), 30)
-      AND timestamp <= now()
-      AND target = '${target.id}'
-    GROUP BY target
-  `);
+  // wait again to ensure the requests have been processed by the clients_daily table
+  waitForExpectations(async () => {
+    const result = await clickHouseQuery(`
+      SELECT
+        target
+        , sum(total) as total
+      FROM clients_daily
+      WHERE
+        timestamp >= subtractDays(now(), 30)
+        AND timestamp <= now()
+        AND target = '${target.id}'
+      GROUP BY target
+    `);
 
-  expect(result.rows).toEqual(1);
-  expect(result.data).toContainEqual(
-    expect.objectContaining({
-      target: target.id,
-      total: expect.stringMatching('10000'),
-    }),
-  );
+    expect(result.rows).toEqual(1);
+    expect(result.data).toContainEqual(
+      expect.objectContaining({
+        target: target.id,
+        total: expect.stringMatching('10000'),
+      }),
+    );
+  });
 
   const targetValidationResult = await toggleTargetValidation(true);
   expect(targetValidationResult.isEnabled).toEqual(true);
