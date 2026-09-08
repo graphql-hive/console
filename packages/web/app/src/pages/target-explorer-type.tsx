@@ -1,13 +1,13 @@
 import { ReactNode, useEffect } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
 import {
   ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
 import { GraphQLEnumTypeComponent } from '@/components/target/explorer/enum-type';
+import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
 import { DateRangeFilter } from '@/components/target/explorer/filter';
 import { GraphQLInputObjectTypeComponent } from '@/components/target/explorer/input-object-type';
 import { GraphQLInterfaceTypeComponent } from '@/components/target/explorer/interface-type';

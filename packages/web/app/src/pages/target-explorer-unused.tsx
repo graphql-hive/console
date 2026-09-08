@@ -3,11 +3,11 @@ import { AlertCircleIcon, ChevronDown, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
 import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
+import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
 import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
