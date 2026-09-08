@@ -175,6 +175,37 @@ UID/GID workaround documented above for `clickhouse`/`db` applies: add `user: '$
 the `grafana` service entry in `docker/docker-compose.dev.yml` (and ensure those env vars are
 exported in your shell). macOS does not need this.
 
+## Zendesk mock (optional)
+
+The dev stack includes an opt-in `zendesk` profile that runs a MockServer instance to mimic the Zendesk API. This is configured in [docker/configs/zendesk-mock/expectations.json](../docker/configs/zendesk-mock/expectations.json).
+
+Use this to test the support-ticket flow locally without a real Zendesk account. Starting this instance uses a separate command since it's not frequently needed:
+
+```bash
+pnpm dev:zendesk-mock
+```
+
+Tear it down with `pnpm dev:zendesk-mock:down`.
+
+First set these variables in your `.env`:
+
+```
+ZENDESK_SUPPORT=1
+ZENDESK_USERNAME=mock
+ZENDESK_PASSWORD=mock
+ZENDESK_SUBDOMAIN=local
+ZENDESK_BASE_URL=http://localhost:3043
+```
+
+`ZENDESK_BASE_URL` overrides the Zendesk API host; requests still route through
+`${ZENDESK_BASE_URL}/${ZENDESK_SUBDOMAIN}/api/v2/...` so the mock server's request log stays
+grouped by subdomain. After submitting a ticket, confirm the request reached the mock by querying
+its recorded requests:
+
+```bash
+curl -s -X PUT 'http://localhost:3043/mockserver/retrieve?type=REQUESTS' | jq
+```
+
 ## Publish your first schema (manually)
 
 1. Start Hive locally

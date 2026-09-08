@@ -123,6 +123,23 @@ services:
     volumes:
       - ./.hive-dev/broker/db:/var/lib/kafka/data
 
+  zendesk-mock:
+    image: mockserver/mockserver:5.15.0
+    profiles:
+      - zendesk
+    mem_limit: 200m
+    ports:
+      - '3043:3043'
+    environment:
+      MOCKSERVER_LOG_LEVEL: DEBUG
+      MOCKSERVER_SERVER_PORT: 3043
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/expectations.json
+      MOCKSERVER_WATCH_INITIALIZATION_JSON: 'true'
+    volumes:
+      - ./configs/zendesk-mock/expectations.json:/config/expectations.json:ro
+    networks:
+      - 'stack'
+
   oidc-server-mock:
     image: ghcr.io/soluto/oidc-server-mock:0.8.6
     mem_limit: 200m

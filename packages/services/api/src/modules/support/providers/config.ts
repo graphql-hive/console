@@ -4,6 +4,7 @@ export interface SupportConfig {
   username: string;
   password: string;
   subdomain: string;
+  baseUrl?: string;
 }
 
 export const SUPPORT_MODULE_CONFIG = new InjectionToken<SupportConfig>('SupportConfig');

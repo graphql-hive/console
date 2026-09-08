@@ -142,6 +142,12 @@ export class SupportManager {
     this.logger = logger.child({ service: 'SupportManager' });
   }
 
+  private get apiRoot(): string {
+    return this.config.baseUrl
+      ? `${this.config.baseUrl}/${this.config.subdomain}`
+      : `https://${this.config.subdomain}.zendesk.com`;
+  }
+
   @atomic((organizationId: string) => organizationId)
   private async ensureZendeskOrganizationId(organizationId: string): Promise<string> {
     const organization = await this.organizationManager.getOrganization({
@@ -154,7 +160,7 @@ export class SupportManager {
 
     this.logger.info('Creating organization in zendesk (id: %s)', organizationId);
     const response = await this.httpClient
-      .post(`https://${this.config.subdomain}.zendesk.com/api/v2/organizations`, {
+      .post(`${this.apiRoot}/api/v2/organizations`, {
         username: this.config.username,
         password: this.config.password,
         responseType: 'json',
@@ -218,7 +224,7 @@ export class SupportManager {
 
       // Before attempting to create the user we need to check whether an user with that email might already exist.
       let userZendeskId = await this.httpClient
-        .get(`https://${this.config.subdomain}.zendesk.com/api/v2/users/search`, {
+        .get(`${this.apiRoot}/api/v2/users/search`, {
           searchParams: {
             query: email,
           },
@@ -269,7 +275,7 @@ export class SupportManager {
         );
 
         const response = await this.httpClient
-          .post(`https://${this.config.subdomain}.zendesk.com/api/v2/users`, {
+          .post(`${this.apiRoot}/api/v2/users`, {
             username: this.config.username,
             password: this.config.password,
             responseType: 'json',
@@ -325,7 +331,7 @@ export class SupportManager {
       // attempt connect user to organization
       try {
         await this.httpClient.post(
-          `https://${this.config.subdomain}.zendesk.com/api/v2/organization_memberships`,
+          `${this.apiRoot}/api/v2/organization_memberships`,
           {
             username: this.config.username,
             password: this.config.password,
@@ -385,7 +391,7 @@ export class SupportManager {
     this.logger.info('Fetching ticket users (id: %s)', ids.join(','));
 
     const response = await this.httpClient
-      .get(`https://${this.config.subdomain}.zendesk.com/api/v2/users/show_many`, {
+      .get(`${this.apiRoot}/api/v2/users/show_many`, {
         searchParams: {
           ids: ids.join(','),
         },
@@ -422,7 +428,7 @@ export class SupportManager {
 
     const response = await this.httpClient
       .get(
-        `https://${this.config.subdomain}.zendesk.com/api/v2/organizations/${internalOrganizationId}/tickets`,
+        `${this.apiRoot}/api/v2/organizations/${internalOrganizationId}/tickets`,
         {
           searchParams: {
             sort: '-updated_at',
@@ -465,7 +471,7 @@ export class SupportManager {
     const zendeskOrganizationId = await this.ensureZendeskOrganizationId(organizationId);
 
     const response = await this.httpClient
-      .get(`https://${this.config.subdomain}.zendesk.com/api/v2/tickets/${ticketId}`, {
+      .get(`${this.apiRoot}/api/v2/tickets/${ticketId}`, {
         username: this.config.username,
         password: this.config.password,
         responseType: 'json',
@@ -496,7 +502,7 @@ export class SupportManager {
     this.logger.info('Fetching support ticket comments (ticketId: %s)', ticketId);
 
     const response = await this.httpClient
-      .get(`https://${this.config.subdomain}.zendesk.com/api/v2/tickets/${ticketId}/comments`, {
+      .get(`${this.apiRoot}/api/v2/tickets/${ticketId}/comments`, {
         searchParams: {
           sort: '-created_at',
           'page[size]': 100,
@@ -589,7 +595,7 @@ export class SupportManager {
     const customerType = this.resolveCustomerType(organization);
 
     const response = await this.httpClient
-      .post(`https://${this.config.subdomain}.zendesk.com/api/v2/tickets`, {
+      .post(`${this.apiRoot}/api/v2/tickets`, {
         username: this.config.username,
         password: this.config.password,
         json: {
@@ -695,7 +701,7 @@ export class SupportManager {
     }
 
     const response = await this.httpClient
-      .put(`https://${this.config.subdomain}.zendesk.com/api/v2/tickets/${input.ticketId}`, {
+      .put(`${this.apiRoot}/api/v2/tickets/${input.ticketId}`, {
         username: this.config.username,
         password: this.config.password,
         json: {
