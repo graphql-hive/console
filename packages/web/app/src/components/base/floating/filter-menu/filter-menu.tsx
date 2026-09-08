@@ -63,37 +63,39 @@ export function FilterMenu({
   /** Handler for the trigger's clear-X icon. Pair with `onClearActive`. */
   onClearActive?: () => void;
 }) {
-  const dimensionSection = dimensions.filter(isNotToggle).map(d => (
-    <Menu
-      key={d.key}
-      trigger={<MenuItem>{d.label}</MenuItem>}
-      maxWidth="lg"
-      stableWidth
-      sections={[
-        isText(d) ? (
-          <FloatingSearch
-            key="content"
-            label={d.label.toLowerCase()}
-            value={d.value}
-            onSearch={d.onChange}
-            placeholder={d.placeholder}
-            standalone
-          />
-        ) : (
-          <FilterContent
-            key="content"
-            label={d.label.toLowerCase()}
-            items={d.items}
-            selectedItems={d.selectedItems}
-            onChange={d.onChange}
-            valuesLabel={d.valuesLabel}
-            singleSelect={d.singleSelect}
-            alwaysShowSearch={d.alwaysShowSearch}
-          />
-        ),
-      ]}
-    />
-  ));
+  const dimensionSection = dimensions
+    .filter(isNotToggle)
+    .map(d => (
+      <Menu
+        key={d.key}
+        trigger={<MenuItem>{d.label}</MenuItem>}
+        maxWidth="lg"
+        stableWidth
+        sections={[
+          isText(d) ? (
+            <FloatingSearch
+              key="content"
+              label={d.label.toLowerCase()}
+              value={d.value}
+              onSearch={d.onChange}
+              placeholder={d.placeholder}
+              standalone
+            />
+          ) : (
+            <FilterContent
+              key="content"
+              label={d.label.toLowerCase()}
+              items={d.items}
+              selectedItems={d.selectedItems}
+              onChange={d.onChange}
+              valuesLabel={d.valuesLabel}
+              singleSelect={d.singleSelect}
+              alwaysShowSearch={d.alwaysShowSearch}
+            />
+          ),
+        ]}
+      />
+    ));
 
   // The Switch is a visual indicator only — the row's own click handler drives
   // it, so clicking the switch itself doesn't toggle twice.

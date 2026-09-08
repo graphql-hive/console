@@ -66,7 +66,8 @@ const TypeFilter_AllTypes = graphql(`
 `);
 
 const EXPLORER_ROUTE = '/$organizationSlug/$projectSlug/$targetSlug/explorer' as const;
-const EXPLORER_TYPE_ROUTE = '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename' as const;
+const EXPLORER_TYPE_ROUTE =
+  '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename' as const;
 
 export type ExplorerFilterDimensionsOptions = {
   organizationSlug: string;
