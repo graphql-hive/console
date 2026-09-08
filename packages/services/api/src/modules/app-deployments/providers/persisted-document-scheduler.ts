@@ -2,7 +2,7 @@ import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { fileURLToPath } from 'url';
 import { Injectable, Scope } from 'graphql-modules';
-import { getErrorSource, invariant, setErrorSource, traceFn } from '@hive/service-common';
+import { getErrorSource, setErrorSource, traceFn } from '@hive/service-common';
 import { Logger, registerWorkerLogging } from '../../shared/providers/logger';
 import {
   observeR2ErrorTrace,
