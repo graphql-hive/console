@@ -2,9 +2,8 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, ChevronDown, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
-import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { ExplorerFilterBar } from '@/components/target/explorer/explorer-filter-bar';
+import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
 import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
@@ -323,21 +322,17 @@ function UnusedSchemaExplorer({
 
   return (
     <>
-      <div className="py-6">
-        <PageLead
-          title="Unused Schema"
-          description="Helps you understand the coverage of GraphQL schema and safely remove the unused part"
-        />
-        <ExplorerFilterBar
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
-          period={dateRangeController.resolvedRange}
-          variant="unused"
-          subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
-          dateRangeControl={dateRangeFilter}
-        />
-      </div>
+      <ExplorerHeader
+        title="Unused Schema"
+        description="Helps you understand the coverage of GraphQL schema and safely remove the unused part"
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        period={dateRangeController.resolvedRange}
+        variant="unused"
+        subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
+        dateRangeControl={dateRangeFilter}
+      />
 
       {!hasCollectedOperations ? (
         <div className="py-8">

@@ -1,231 +1,21 @@
-import React, {
-  ChangeEvent,
-  ReactNode,
-  useCallback,
-  useDeferredValue,
-  useMemo,
-  useState,
-} from 'react';
-import { ChevronDown, FilterIcon } from 'lucide-react';
-import { useQuery } from 'urql';
+import { useCallback } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { Button as BaseButton } from '@/components/base/button/button';
-import { Filters } from '@/components/base/floating/filter-menu/filters';
-import { Button } from '@/components/ui/button';
 import {
   availablePresets,
   DateRangePicker,
   getDateRangeDisplayLabel,
 } from '@/components/ui/date-range-picker';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Autocomplete } from '@/components/v2';
-import type { SelectOption } from '@/components/v2/radix-select';
-import { graphql } from '@/gql';
 import {
   Link,
   RegisteredRouter,
   RoutePaths,
   ToPathOption,
   useLocation,
-  useRouter,
 } from '@tanstack/react-router';
-import {
-  useDescriptionsVisibleToggle,
-  usePeriodSelector,
-  useSchemaExplorerContext,
-} from './provider';
-import { matchesSubgraphFilter } from './utils';
-
-export const TypeFilter_AllTypes = graphql(`
-  query TypeFilter_AllTypes(
-    $organizationSlug: String!
-    $projectSlug: String!
-    $targetSlug: String!
-    $period: DateRangeInput!
-  ) {
-    target(
-      reference: {
-        bySelector: {
-          organizationSlug: $organizationSlug
-          projectSlug: $projectSlug
-          targetSlug: $targetSlug
-        }
-      }
-    ) {
-      __typename
-      id
-      latestValidSchemaVersion {
-        __typename
-        id
-        isValid
-        explorer(usage: { period: $period }) {
-          types {
-            __typename
-            supergraphMetadata {
-              ownedByServiceNames
-            }
-            ... on GraphQLObjectType {
-              name
-            }
-            ... on GraphQLInterfaceType {
-              name
-            }
-            ... on GraphQLUnionType {
-              name
-            }
-            ... on GraphQLEnumType {
-              name
-            }
-            ... on GraphQLInputObjectType {
-              name
-            }
-            ... on GraphQLScalarType {
-              name
-            }
-          }
-        }
-      }
-    }
-  }
-`);
-
-export function TypeFilter(props: {
-  typename?: string;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  period: {
-    to: string;
-    from: string;
-  };
-}) {
-  const router = useRouter();
-  const { subgraphs } = useSchemaExplorerContext();
-  const [inputValue, setInputValue] = useState('');
-  const deferredInputValue = useDeferredValue(inputValue);
-  const [query] = useQuery({
-    query: TypeFilter_AllTypes,
-    variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
-      period: props.period,
-    },
-    requestPolicy: 'cache-first',
-  });
-
-  const allNamedTypes = query.data?.target?.latestValidSchemaVersion?.explorer?.types;
-  const types = useMemo(
-    () =>
-      allNamedTypes
-        ?.filter(type =>
-          matchesSubgraphFilter(type.supergraphMetadata?.ownedByServiceNames, subgraphs),
-        )
-        .map(t => ({
-          value: t.name,
-          label: t.name,
-        })) || [],
-    [allNamedTypes, subgraphs],
-  );
-
-  const sortedTypes = useMemo(() => {
-    if (!deferredInputValue) return types;
-
-    const search = deferredInputValue.toLowerCase();
-    return [...types].sort((a, b) => {
-      const aName = a.label.toLowerCase();
-      const bName = b.label.toLowerCase();
-
-      // Exact match gets highest priority
-      const aExact = aName === search;
-      const bExact = bName === search;
-      if (aExact !== bExact) return aExact ? -1 : 1;
-
-      // Prefix match gets second priority
-      const aPrefix = aName.startsWith(search);
-      const bPrefix = bName.startsWith(search);
-      if (aPrefix !== bPrefix) return aPrefix ? -1 : 1;
-
-      // Alphabetical within same relevance
-      return aName.localeCompare(bName);
-    });
-  }, [types, deferredInputValue]);
-
-  const onChange = useCallback(
-    (option: SelectOption | null) => {
-      void router.navigate({
-        search: router.latestLocation.search,
-        to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename',
-        params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
-          typename: option?.value ?? '',
-        },
-      });
-    },
-    [router],
-  );
-
-  const defaultValue = useMemo(() => {
-    return props.typename ? { value: props.typename, label: props.typename } : null;
-  }, [props.typename]);
-
-  return (
-    <Autocomplete
-      className="min-w-[200px] grow cursor-text"
-      placeholder="Select type"
-      defaultValue={defaultValue}
-      options={sortedTypes}
-      onChange={onChange}
-      onInputChange={setInputValue}
-      loading={query.fetching}
-    />
-  );
-}
-
-export function FieldByNameFilter() {
-  const router = useRouter();
-
-  const onChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      void router.navigate({
-        search: {
-          ...router.latestLocation.search,
-          search: e.target.value === '' ? undefined : e.target.value,
-        },
-        replace: true,
-      });
-    },
-    [router],
-  );
-
-  const initialValue =
-    'search' in router.latestLocation.search &&
-    typeof router.latestLocation.search.search === 'string'
-      ? router.latestLocation.search.search
-      : '';
-
-  return (
-    <Input
-      className="w-[200px] grow cursor-text"
-      placeholder="Find field"
-      onChange={onChange}
-      defaultValue={initialValue}
-    />
-  );
-}
+import { usePeriodSelector } from './provider';
 
 export function DateRangeFilter() {
   const periodSelector = usePeriodSelector();
@@ -252,34 +42,6 @@ export function DateRangeFilter() {
       startDate={periodSelector.startDate}
       align="start"
     />
-  );
-}
-
-export function DescriptionsVisibilityFilter() {
-  const { isDescriptionsVisible, toggleDescriptionsVisible } = useDescriptionsVisibleToggle();
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="bg-neutral-2 flex h-[40px] flex-row items-center gap-x-4 rounded-md border px-3">
-            <div>
-              <Label htmlFor="filter-toggle-descriptions" className="text-sm font-normal">
-                Show descriptions
-              </Label>
-            </div>
-            <Switch
-              checked={isDescriptionsVisible}
-              onCheckedChange={toggleDescriptionsVisible}
-              id="filter-toggle-descriptions"
-            />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          Descriptions are not visible by default. You can toggle this setting to display all
-          descriptions.
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
   );
 }
 
@@ -319,14 +81,14 @@ export function SchemaVariantFilter(props: {
   return (
     <TooltipProvider>
       <Tabs defaultValue={props.variant}>
-        <TabsList className="bg-neutral-5">
+        <TabsList className="dark:bg-neutral-3 bg-neutral-5">
           {variants.map(variant => (
             <Tooltip key={variant.value}>
               <TooltipTrigger asChild>
                 {props.variant === variant.value ? (
                   <div>
                     <TabsTrigger
-                      className="dark:data-[state=active]:bg-neutral-7 data-[state=active]:text-neutral-12"
+                      className="dark:data-[state=active]:bg-neutral-5 data-[state=active]:bg-neutral-6 data-[state=active]:text-neutral-12"
                       value={variant.value}
                     >
                       {variant.label}
@@ -358,95 +120,5 @@ export function SchemaVariantFilter(props: {
         </TabsList>
       </Tabs>
     </TooltipProvider>
-  );
-}
-
-function preventTheDefault(e: { preventDefault(): void }) {
-  e.preventDefault();
-}
-
-export function MetadataFilter(props: { options: Array<{ name: string; values: string[] }> }) {
-  const {
-    setMetadataFilter,
-    unsetMetadataFilter,
-    hasMetadataFilter,
-    bulkSetMetadataFilter,
-    clearMetadataFilter,
-  } = useSchemaExplorerContext();
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="secondary" className="data-[state=open]:bg-neutral-3">
-          <FilterIcon className="size-4" />
-          &nbsp;Metadata
-          <span className="sr-only">Open menu to filter by metadata.</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="max-h-[300px] min-w-[160px] max-w-[300px] flex-wrap overflow-y-auto"
-      >
-        {props.options.map(({ name, values }, i) => (
-          <React.Fragment key={name}>
-            {i > 0 && <DropdownMenuSeparator />}
-            <DropdownMenuGroup
-              className="text-neutral-10 flex cursor-pointer overflow-x-hidden text-sm hover:underline"
-              onClick={() => {
-                const isChecked = !values.every(value => hasMetadataFilter(name, value));
-                if (isChecked) {
-                  bulkSetMetadataFilter([props.options[i]]);
-                } else {
-                  clearMetadataFilter(name);
-                }
-              }}
-            >
-              {name}
-            </DropdownMenuGroup>
-            {values.map(v => {
-              const id = `${name}:${v}`;
-              return (
-                <DropdownMenuCheckboxItem
-                  onSelect={preventTheDefault}
-                  key={id}
-                  className="w-full"
-                  checked={hasMetadataFilter(name, v)}
-                  onCheckedChange={isChecked => {
-                    if (isChecked) {
-                      setMetadataFilter(name, v);
-                    } else {
-                      unsetMetadataFilter(name, v);
-                    }
-                  }}
-                >
-                  {v}
-                </DropdownMenuCheckboxItem>
-              );
-            })}
-          </React.Fragment>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-export function SubgraphFilter(props: { options: string[]; pinnedControls?: ReactNode }) {
-  const { subgraphs, setSubgraphFilters, clearSubgraphFilter } = useSchemaExplorerContext();
-
-  return (
-    <Filters
-      pinnedControls={props.pinnedControls}
-      dimensions={[
-        {
-          key: 'subgraph',
-          label: 'Subgraph',
-          labelPlural: 'subgraphs',
-          items: props.options.map(name => ({ name, values: [] })),
-          selectedItems: subgraphs.map(name => ({ name, values: null })),
-          onChange: selections => setSubgraphFilters(selections.map(selection => selection.name)),
-          onRemove: clearSubgraphFilter,
-        },
-      ]}
-    />
   );
 }

@@ -1,8 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useQuery } from 'urql';
-import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { ExplorerFilterBar } from '@/components/target/explorer/explorer-filter-bar';
+import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
 import {
   ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
@@ -220,23 +219,21 @@ function TypeExplorerPageContent(props: {
 
   return (
     <>
-      <div className="py-6">
-        <PageLead title="Explore" description="Insights from the latest version." />
-        {latestSchemaVersion && type ? (
-          <ExplorerFilterBar
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-            period={resolvedPeriod}
-            typename={props.typename}
-            variant="all"
-            includeSchemaDimensions
-            subgraphNames={latestSchemaVersion.explorer?.subgraphNames}
-            metadataAttributes={latestSchemaVersion.explorer?.metadataAttributes}
-            dateRangeControl={<DateRangeFilter />}
-          />
-        ) : null}
-      </div>
+      <ExplorerHeader
+        title="Explore"
+        description="Insights from the latest version."
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        period={resolvedPeriod}
+        typename={props.typename}
+        variant="all"
+        includeSchemaDimensions
+        showFilters={!!(latestSchemaVersion && type)}
+        subgraphNames={latestSchemaVersion?.explorer?.subgraphNames}
+        metadataAttributes={latestSchemaVersion?.explorer?.metadataAttributes}
+        dateRangeControl={<DateRangeFilter />}
+      />
       {query.fetching || query.stale ? (
         <GraphQLTypeCardSkeleton>
           <GraphQLFieldsSkeleton count={15} />

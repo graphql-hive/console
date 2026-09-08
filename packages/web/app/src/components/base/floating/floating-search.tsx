@@ -6,10 +6,16 @@ type FloatingSearchProps = {
   value: string;
   placeholder?: string;
   /**
-   * The rule separating the input from the list beneath it. Turn it off when
-   * the input is the panel's only content, where it would divide nothing.
+   * The input is the panel's only content, rather than a header above a list.
+   *
+   * The menu panel is padded `px-2 pb-2` for item rows, and its top spacing
+   * comes from `first:mt-2` on those items — which an input never gets. So a
+   * lone input sits flush at the top with 8px of dead space beneath it. This
+   * cancels that bottom padding the same way `-mx-2` already cancels the
+   * horizontal padding, and rounds all four corners to match the panel since
+   * there's no list below to divide from.
    */
-  withDivider?: boolean;
+  standalone?: boolean;
 };
 
 export function FloatingSearch({
@@ -17,10 +23,10 @@ export function FloatingSearch({
   onSearch,
   value,
   placeholder = 'Search...',
-  withDivider = true,
+  standalone = false,
 }: FloatingSearchProps) {
   return (
-    <div className="relative -mx-2">
+    <div className={cn('relative -mx-2', standalone && '-mb-2')}>
       <input
         type="text"
         role="searchbox"
@@ -34,8 +40,8 @@ export function FloatingSearch({
           }
         }}
         className={cn(
-          'text-neutral-11 placeholder:text-neutral-8 w-full rounded-t-md py-2 pl-4 pr-2 outline-none',
-          withDivider && 'border-neutral-5 border-b',
+          'text-neutral-11 placeholder:text-neutral-8 w-full py-2 pl-4 pr-2 outline-none',
+          standalone ? 'rounded-md' : 'border-neutral-5 rounded-t-md border-b',
         )}
       />
     </div>

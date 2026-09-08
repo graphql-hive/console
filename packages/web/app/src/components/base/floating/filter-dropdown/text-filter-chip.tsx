@@ -49,7 +49,7 @@ export function TextFilterChip({
               value={value}
               onSearch={onChange}
               placeholder={placeholder}
-              withDivider={false}
+              standalone
             />,
           ]}
         />

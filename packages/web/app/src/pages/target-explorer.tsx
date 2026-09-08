@@ -6,8 +6,7 @@ import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
-import { PageLead } from '@/components/base/page-lead';
-import { ExplorerFilterBar } from '@/components/target/explorer/explorer-filter-bar';
+import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
 import { DateRangeFilter } from '@/components/target/explorer/filter';
 import { GraphQLObjectTypeComponent } from '@/components/target/explorer/object-type';
 import {
@@ -190,22 +189,20 @@ function ExplorerPageContent(props: {
 
   return (
     <>
-      <div className="py-6">
-        <PageLead title="Explore Schema" description="Insights from the latest version." />
-        {isFilterVisible.current && (
-          <ExplorerFilterBar
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-            period={resolvedPeriod}
-            variant="all"
-            includeSchemaDimensions
-            subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
-            metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
-            dateRangeControl={<DateRangeFilter />}
-          />
-        )}
-      </div>
+      <ExplorerHeader
+        title="Explore Schema"
+        description="Insights from the latest version."
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        period={resolvedPeriod}
+        variant="all"
+        includeSchemaDimensions
+        showFilters={isFilterVisible.current}
+        subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
+        metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
+        dateRangeControl={<DateRangeFilter />}
+      />
       {!query.fetching ? (
         <>
           {latestValidSchemaVersion?.explorer && latestSchemaVersion ? (

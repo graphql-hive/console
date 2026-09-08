@@ -2,13 +2,12 @@ import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, ChevronDown, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
-import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
-import { ExplorerFilterBar } from '@/components/target/explorer/explorer-filter-bar';
+import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
 import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -259,22 +258,18 @@ function DeprecatedSchemaExplorer(props: {
 
   return (
     <>
-      <div className="py-6">
-        <PageLead
-          title="Deprecated Schema"
-          description="Understand the deprecated part of GraphQL schema"
-        />
-        <ExplorerFilterBar
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          period={dateRangeController.resolvedRange}
-          variant="deprecated"
-          subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
-          metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
-          dateRangeControl={dateRangeFilter}
-        />
-      </div>
+      <ExplorerHeader
+        title="Deprecated Schema"
+        description="Understand the deprecated part of GraphQL schema"
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        period={dateRangeController.resolvedRange}
+        variant="deprecated"
+        subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
+        metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
+        dateRangeControl={dateRangeFilter}
+      />
       {!query.fetching && !query.stale ? (
         <>
           {latestValidSchemaVersion?.deprecatedSchema && latestSchemaVersion ? (

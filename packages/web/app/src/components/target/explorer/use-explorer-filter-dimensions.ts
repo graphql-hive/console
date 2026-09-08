@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useQuery } from 'urql';
 import type { FilterDimension } from '@/components/base/floating/filter-menu/filter-menu';
+import { graphql } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
-import { TypeFilter_AllTypes } from './filter';
 import {
   fromMetadataSelections,
   toMetadataItems,
@@ -11,6 +11,59 @@ import {
 } from './metadata-filter-params';
 import { useSchemaExplorerContext } from './provider';
 import { matchesSubgraphFilter } from './utils';
+
+const TypeFilter_AllTypes = graphql(`
+  query TypeFilter_AllTypes(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+    $period: DateRangeInput!
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      __typename
+      id
+      latestValidSchemaVersion {
+        __typename
+        id
+        isValid
+        explorer(usage: { period: $period }) {
+          types {
+            __typename
+            supergraphMetadata {
+              ownedByServiceNames
+            }
+            ... on GraphQLObjectType {
+              name
+            }
+            ... on GraphQLInterfaceType {
+              name
+            }
+            ... on GraphQLUnionType {
+              name
+            }
+            ... on GraphQLEnumType {
+              name
+            }
+            ... on GraphQLInputObjectType {
+              name
+            }
+            ... on GraphQLScalarType {
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+`);
 
 const EXPLORER_ROUTE = '/$organizationSlug/$projectSlug/$targetSlug/explorer' as const;
 const EXPLORER_TYPE_ROUTE = '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename' as const;
