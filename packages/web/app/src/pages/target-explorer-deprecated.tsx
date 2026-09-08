@@ -2,16 +2,13 @@ import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, ChevronDown, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
+import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
-import {
-  MetadataFilter,
-  SchemaVariantFilter,
-  SubgraphFilter,
-} from '@/components/target/explorer/filter';
+import { ExplorerFilterBar } from '@/components/target/explorer/explorer-filter-bar';
 import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -19,7 +16,6 @@ import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-pic
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -263,30 +259,21 @@ function DeprecatedSchemaExplorer(props: {
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between py-6">
-        <div>
-          <Title>Deprecated Schema</Title>
-          <Subtitle>Understand the deprecated part of GraphQL schema</Subtitle>
-        </div>
-        <div className="flex justify-end gap-x-2">
-          {latestValidSchemaVersion?.explorer?.subgraphNames.length ? (
-            <SubgraphFilter
-              options={latestValidSchemaVersion.explorer.subgraphNames}
-              pinnedControls={dateRangeFilter}
-            />
-          ) : (
-            dateRangeFilter
-          )}
-          <SchemaVariantFilter
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-            variant="deprecated"
-          />
-          {latestValidSchemaVersion?.explorer?.metadataAttributes?.length ? (
-            <MetadataFilter options={latestValidSchemaVersion.explorer.metadataAttributes} />
-          ) : null}
-        </div>
+      <div className="py-6">
+        <PageLead
+          title="Deprecated Schema"
+          description="Understand the deprecated part of GraphQL schema"
+        />
+        <ExplorerFilterBar
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          period={dateRangeController.resolvedRange}
+          variant="deprecated"
+          subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
+          metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
+          dateRangeControl={dateRangeFilter}
+        />
       </div>
       {!query.fetching && !query.stale ? (
         <>

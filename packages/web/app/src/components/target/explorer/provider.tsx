@@ -29,6 +29,8 @@ type SchemaExplorerContextType = {
   refreshResolvedPeriod(): void;
   setMetadataFilter(name: string, value: string): void;
   bulkSetMetadataFilter(filters: Array<{ name: string; values: string[] }>): void;
+  /** Replaces the whole `meta` param with `name:value` entries. */
+  setMetadataFilters(entries: string[]): void;
   unsetMetadataFilter(name: string, value: string): void;
   hasMetadataFilter(name: string, value: string): boolean;
   clearMetadataFilter(name?: string): void;
@@ -55,6 +57,7 @@ const SchemaExplorerContext = createContext<SchemaExplorerContextType>({
   refreshResolvedPeriod: () => {},
   setMetadataFilter: () => {},
   bulkSetMetadataFilter: () => {},
+  setMetadataFilters: () => {},
   unsetMetadataFilter: () => {},
   hasMetadataFilter: () => false,
   clearMetadataFilter: () => {},
@@ -126,6 +129,9 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
             data.splice(index, 1);
             setMetadataFilter(data);
           }
+        },
+        setMetadataFilters(entries) {
+          setMetadataFilter(filterUnique(entries));
         },
         clearMetadataFilter(name?: string) {
           if (name) {

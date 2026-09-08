@@ -77,7 +77,7 @@ export function FilterMenu({
             value={d.value}
             onSearch={d.onChange}
             placeholder={d.placeholder}
-            autoFocus
+            withDivider={false}
           />
         ) : (
           <FilterContent

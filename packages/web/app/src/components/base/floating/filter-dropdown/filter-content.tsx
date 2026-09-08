@@ -8,7 +8,7 @@ import type { FilterItem, FilterSelection } from './types';
 const ITEM_HEIGHT = 28; // h-7
 const MAX_LIST_HEIGHT = 256; // max-h-64
 /** Hide the search input when the list is short enough to scan at a glance. */
-const SEARCH_VISIBILITY_THRESHOLD = 15;
+export const SEARCH_VISIBILITY_THRESHOLD = 15;
 
 function getKey(item: FilterItem | FilterSelection): string {
   return item.id ?? item.name;

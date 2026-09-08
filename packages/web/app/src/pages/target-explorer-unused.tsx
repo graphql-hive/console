@@ -2,12 +2,13 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, ChevronDown, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
+import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { ExplorerFilterBar } from '@/components/target/explorer/explorer-filter-bar';
 import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
-import { SchemaVariantFilter, SubgraphFilter } from '@/components/target/explorer/filter';
 import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,6 @@ import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-pic
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -323,29 +323,20 @@ function UnusedSchemaExplorer({
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between py-6">
-        <div>
-          <Title>Unused Schema</Title>
-          <Subtitle>
-            Helps you understand the coverage of GraphQL schema and safely remove the unused part
-          </Subtitle>
-        </div>
-        <div className="flex justify-end gap-x-2">
-          {latestValidSchemaVersion?.explorer?.subgraphNames.length ? (
-            <SubgraphFilter
-              options={latestValidSchemaVersion.explorer.subgraphNames}
-              pinnedControls={dateRangeFilter}
-            />
-          ) : (
-            dateRangeFilter
-          )}
-          <SchemaVariantFilter
-            organizationSlug={organizationSlug}
-            projectSlug={projectSlug}
-            targetSlug={targetSlug}
-            variant="unused"
-          />
-        </div>
+      <div className="py-6">
+        <PageLead
+          title="Unused Schema"
+          description="Helps you understand the coverage of GraphQL schema and safely remove the unused part"
+        />
+        <ExplorerFilterBar
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          period={dateRangeController.resolvedRange}
+          variant="unused"
+          subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
+          dateRangeControl={dateRangeFilter}
+        />
       </div>
 
       {!hasCollectedOperations ? (

@@ -3,6 +3,7 @@ import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { FloatingSearch } from '../floating-search';
 import { MenuItem } from '../menu/menu';
 import { floatingEmptyState, floatingScrollArea } from '../shared-styles';
+import { SEARCH_VISIBILITY_THRESHOLD } from './filter-content';
 
 type ValuesSubPanelProps = {
   itemName: string;
@@ -55,13 +56,17 @@ export function ValuesSubPanel({
     }
   }
 
+  const showSearch = values.length >= SEARCH_VISIBILITY_THRESHOLD;
+
   return (
     <div>
-      <FloatingSearch
-        label={`Search ${valuesLabel} for ${itemName}`}
-        onSearch={setSearch}
-        value={search}
-      />
+      {showSearch && (
+        <FloatingSearch
+          label={`Search ${valuesLabel} for ${itemName}`}
+          onSearch={setSearch}
+          value={search}
+        />
+      )}
 
       {/* Values list */}
       <div className={`max-h-64 ${floatingScrollArea}`}>

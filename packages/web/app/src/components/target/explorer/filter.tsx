@@ -47,7 +47,7 @@ import {
 } from './provider';
 import { matchesSubgraphFilter } from './utils';
 
-const TypeFilter_AllTypes = graphql(`
+export const TypeFilter_AllTypes = graphql(`
   query TypeFilter_AllTypes(
     $organizationSlug: String!
     $projectSlug: String!

@@ -1,21 +1,15 @@
 import { ReactNode, useEffect } from 'react';
 import { useQuery } from 'urql';
+import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { ExplorerFilterBar } from '@/components/target/explorer/explorer-filter-bar';
 import {
   ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
 import { GraphQLEnumTypeComponent } from '@/components/target/explorer/enum-type';
-import {
-  DateRangeFilter,
-  DescriptionsVisibilityFilter,
-  FieldByNameFilter,
-  MetadataFilter,
-  SchemaVariantFilter,
-  SubgraphFilter,
-  TypeFilter,
-} from '@/components/target/explorer/filter';
+import { DateRangeFilter } from '@/components/target/explorer/filter';
 import { GraphQLInputObjectTypeComponent } from '@/components/target/explorer/input-object-type';
 import { GraphQLInterfaceTypeComponent } from '@/components/target/explorer/interface-type';
 import { GraphQLObjectTypeComponent } from '@/components/target/explorer/object-type';
@@ -28,7 +22,6 @@ import { GraphQLUnionTypeComponent } from '@/components/target/explorer/union-ty
 import { matchesSubgraphFilter } from '@/components/target/explorer/utils';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 
@@ -227,43 +220,22 @@ function TypeExplorerPageContent(props: {
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between py-6">
-        <div>
-          <Title>Explore</Title>
-          <Subtitle>Insights from the latest version.</Subtitle>
-        </div>
-        <div className="flex flex-row items-center gap-x-4">
-          {latestSchemaVersion && type ? (
-            <>
-              <TypeFilter
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                period={resolvedPeriod}
-                typename={props.typename}
-              />
-              <FieldByNameFilter />
-              <DescriptionsVisibilityFilter />
-              {latestSchemaVersion.explorer?.subgraphNames.length ? (
-                <SubgraphFilter
-                  options={latestSchemaVersion.explorer.subgraphNames}
-                  pinnedControls={<DateRangeFilter />}
-                />
-              ) : (
-                <DateRangeFilter />
-              )}
-              <SchemaVariantFilter
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                variant="all"
-              />
-              {latestSchemaVersion?.explorer?.metadataAttributes?.length ? (
-                <MetadataFilter options={latestSchemaVersion.explorer.metadataAttributes} />
-              ) : null}
-            </>
-          ) : null}
-        </div>
+      <div className="py-6">
+        <PageLead title="Explore" description="Insights from the latest version." />
+        {latestSchemaVersion && type ? (
+          <ExplorerFilterBar
+            organizationSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
+            targetSlug={props.targetSlug}
+            period={resolvedPeriod}
+            typename={props.typename}
+            variant="all"
+            includeSchemaDimensions
+            subgraphNames={latestSchemaVersion.explorer?.subgraphNames}
+            metadataAttributes={latestSchemaVersion.explorer?.metadataAttributes}
+            dateRangeControl={<DateRangeFilter />}
+          />
+        ) : null}
       </div>
       {query.fetching || query.stale ? (
         <GraphQLTypeCardSkeleton>

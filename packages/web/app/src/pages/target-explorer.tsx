@@ -6,15 +6,9 @@ import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
-import {
-  DateRangeFilter,
-  DescriptionsVisibilityFilter,
-  FieldByNameFilter,
-  MetadataFilter,
-  SchemaVariantFilter,
-  SubgraphFilter,
-  TypeFilter,
-} from '@/components/target/explorer/filter';
+import { PageLead } from '@/components/base/page-lead';
+import { ExplorerFilterBar } from '@/components/target/explorer/explorer-filter-bar';
+import { DateRangeFilter } from '@/components/target/explorer/filter';
 import { GraphQLObjectTypeComponent } from '@/components/target/explorer/object-type';
 import {
   SchemaExplorerProvider,
@@ -24,7 +18,6 @@ import { useScrollRestoration } from '@/components/target/explorer/scroll-restor
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { NoSchemaVersion, noValidSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Link } from '@tanstack/react-router';
@@ -197,42 +190,21 @@ function ExplorerPageContent(props: {
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between py-6">
-        <div>
-          <Title>Explore Schema</Title>
-          <Subtitle>Insights from the latest version.</Subtitle>
-        </div>
-        <div className="flex flex-row items-center gap-x-4">
-          {isFilterVisible.current && (
-            <>
-              <TypeFilter
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                period={resolvedPeriod}
-              />
-              <FieldByNameFilter />
-              <DescriptionsVisibilityFilter />
-              {latestValidSchemaVersion?.explorer?.subgraphNames.length ? (
-                <SubgraphFilter
-                  options={latestValidSchemaVersion.explorer.subgraphNames}
-                  pinnedControls={<DateRangeFilter />}
-                />
-              ) : (
-                <DateRangeFilter />
-              )}
-              <SchemaVariantFilter
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                variant="all"
-              />
-              {latestValidSchemaVersion?.explorer?.metadataAttributes?.length ? (
-                <MetadataFilter options={latestValidSchemaVersion.explorer.metadataAttributes} />
-              ) : null}
-            </>
-          )}
-        </div>
+      <div className="py-6">
+        <PageLead title="Explore Schema" description="Insights from the latest version." />
+        {isFilterVisible.current && (
+          <ExplorerFilterBar
+            organizationSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
+            targetSlug={props.targetSlug}
+            period={resolvedPeriod}
+            variant="all"
+            includeSchemaDimensions
+            subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
+            metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
+            dateRangeControl={<DateRangeFilter />}
+          />
+        )}
       </div>
       {!query.fetching ? (
         <>
