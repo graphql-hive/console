@@ -3,6 +3,7 @@ import { BlocksIcon, BoxIcon, FoldVerticalIcon } from 'lucide-react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { NotFoundContent } from '@/components/common/not-found-content';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
@@ -24,7 +25,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
@@ -258,29 +258,26 @@ const createProjectFormSchema = z.object({
   }),
 });
 
-function ProjectTypeCard(props: {
-  title: string;
-  description: string;
-  type: ProjectType;
-  icon: FunctionComponentElement<{ className: string }>;
-}) {
-  return (
-    <FormItem>
-      <FormLabel className="[&:has([data-state=checked])>div]:border-accent_80 cursor-pointer">
-        <FormControl>
-          <RadioGroupItem value={props.type} className="sr-only" />
-        </FormControl>
-        <div className="border-neutral-5 hover:border-neutral-2 flex items-center gap-4 rounded-md border p-4">
-          <Slot className="text-neutral-12 size-8">{props.icon}</Slot>
-          <div>
-            <span className="text-neutral-12 text-sm font-medium">{props.title}</span>
-            <p className="text-neutral-11 text-sm">{props.description}</p>
-          </div>
-        </div>
-      </FormLabel>
-    </FormItem>
-  );
-}
+const PROJECT_TYPES = [
+  {
+    type: ProjectType.Single,
+    title: 'Monolith',
+    description: 'Single GraphQL schema developed as a monolith',
+    Icon: BoxIcon,
+  },
+  {
+    type: ProjectType.Federation,
+    title: 'Federation',
+    description: 'Project developed according to Apollo Federation specification',
+    Icon: BlocksIcon,
+  },
+  {
+    type: ProjectType.Stitching,
+    title: 'Stitching',
+    description: 'Project that stitches together multiple GraphQL APIs',
+    Icon: FoldVerticalIcon,
+  },
+];
 
 function CreateProjectModal(props: {
   isOpen: boolean;
@@ -389,44 +386,31 @@ export function CreateProjectModalContent(props: {
                   return (
                     <FormItem className="mt-2">
                       <FormLabel>Project Type</FormLabel>
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value}>
-                        <ProjectTypeCard
-                          type={ProjectType.Single}
-                          title="Monolith"
-                          description="Single GraphQL schema developed as a monolith"
-                          icon={
-                            <BoxIcon
-                              className={cn(
-                                field.value === ProjectType.Single && 'text-neutral-12',
-                              )}
-                            />
-                          }
-                        />
-                        <ProjectTypeCard
-                          type={ProjectType.Federation}
-                          title="Federation"
-                          description="Project developed according to Apollo Federation specification"
-                          icon={
-                            <BlocksIcon
-                              className={cn(
-                                field.value === ProjectType.Federation && 'text-neutral-12',
-                              )}
-                            />
-                          }
-                        />
-                        <ProjectTypeCard
-                          type={ProjectType.Stitching}
-                          title="Stitching"
-                          description="Project that stitches together multiple GraphQL APIs"
-                          icon={
-                            <FoldVerticalIcon
-                              className={cn(
-                                field.value === ProjectType.Stitching && 'text-neutral-12',
-                              )}
-                            />
-                          }
-                        />
-                      </RadioGroup>
+                      <RadioGroup
+                        variant="as-card"
+                        onSurface="floating"
+                        orientation="vertical"
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        items={PROJECT_TYPES.map(({ type, title, description, Icon }) => ({
+                          value: type,
+                          content: (
+                            <>
+                              <Icon
+                                className={cn(
+                                  'size-8 shrink-0',
+                                  field.value === type ? 'text-neutral-12' : 'text-neutral-9',
+                                )}
+                              />
+                              <div>
+                                <span className="text-neutral-12 text-sm font-medium">{title}</span>
+                                <p className="text-neutral-11 text-sm">{description}</p>
+                              </div>
+                            </>
+                          ),
+                        }))}
+                      />
+                      <FormMessage />
                     </FormItem>
                   );
                 }}
