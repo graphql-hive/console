@@ -14,6 +14,7 @@ export type S3WriteOperation =
   | 'persisted_document';
 
 export type S3WriteMetric = {
+  destination: string;
   operation: S3WriteOperation;
   statusCode: number | 'none';
   durationSeconds: number;
@@ -33,18 +34,22 @@ export type R2ErrorTraceSummary = {
 const s3Writes = new metrics.Counter({
   name: 'api_s3_writes_total',
   help: 'Number of S3-compatible object storage write attempts from the GraphQL API',
-  labelNames: ['operation', 'status_code'],
+  labelNames: ['destination', 'operation', 'status_code'],
 });
 
 const s3WriteDuration = new metrics.Histogram({
   name: 'api_s3_write_duration_seconds',
   help: 'Latency of S3-compatible object storage write attempts from the GraphQL API',
-  labelNames: ['operation', 'status_code'],
+  labelNames: ['destination', 'operation', 'status_code'],
   buckets: [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
 });
 
 export function observeS3Write(metric: S3WriteMetric) {
-  const labels = { operation: metric.operation, status_code: metric.statusCode };
+  const labels = {
+    destination: metric.destination,
+    operation: metric.operation,
+    status_code: metric.statusCode,
+  };
   s3Writes.inc(labels);
   s3WriteDuration.observe(labels, metric.durationSeconds);
 }
@@ -87,6 +92,7 @@ export class S3Writer {
       return response;
     } finally {
       this.observer({
+        destination: s3.endpoint + '/' + s3.bucket,
         operation,
         statusCode,
         durationSeconds: Number(process.hrtime.bigint() - startedAt) / 1e9,
