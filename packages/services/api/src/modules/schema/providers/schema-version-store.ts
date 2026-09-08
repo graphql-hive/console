@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
+import { invariant } from '@hive/service-common';
 import {
   ConditionalBreakingChangeMetadata,
   ConditionalBreakingChangeMetadataModel,
@@ -1123,9 +1124,7 @@ export class SchemaVersionStore {
 
     for (const edge of edges) {
       const node = nodesById.get(edge.actionId);
-      if (!node) {
-        throw new Error(`Invariant: Could not resolve node with id '${edge.actionId}' for edge.`);
-      }
+      invariant(node, `Could not resolve node with id '${edge.actionId}' for edge.`);
 
       if (edge.type !== null) {
         edgesWithNodes.push(
@@ -1146,17 +1145,15 @@ export class SchemaVersionStore {
       // Legacy case: We need to produce the edge by looking at the node adn previous schema version
       // In legacy versions a PUSH and DELETE action can be identified by looking at the `actionId`
 
-      if (!schemaVersion.actionId) {
-        throw new Error(
-          `Invariant: The schema version '${schemaVersion.id}' without actionId should not have an edge without a type.`,
-        );
-      }
+      invariant(
+        schemaVersion.actionId,
+        `The schema version '${schemaVersion.id}' without actionId should not have an edge without a type.`,
+      );
 
       // if the actionId does not match the node, we have a unchanged edge
       if (schemaVersion.actionId !== node.id) {
-        if (node.action === 'DELETE') {
-          throw new Error(`Invariant: The action can not be delete in this scenario.`);
-        }
+        invariant(node.action != 'DELETE', ` The action can not be delete in this scenario.`);
+
         edgesWithNodes.push({
           type: 'unchanged',
           subgraphName: node.service_name,
@@ -1178,12 +1175,8 @@ export class SchemaVersionStore {
 
       // if no previous schema version exists this is the initial one and we have an "added" action
       if (!previousSchemaVersion) {
-        if (node.action === 'DELETE') {
-          throw new Error(`Invariant: The action can not be delete in this scenario.`);
-        }
-        if (node.kind === 'single') {
-          throw new Error(`Invariant: The action can not be a single schema.`);
-        }
+        invariant(node.action !== 'DELETE', `The action can not be delete in this scenario.`);
+
         edgesWithNodes.push({
           type: 'added',
           subgraphName: node.service_name,
@@ -1234,10 +1227,6 @@ export class SchemaVersionStore {
           continue;
         }
 
-        if (node.kind === 'single') {
-          throw new Error(`Invariant: The action can not be a single schema.`);
-        }
-
         // if there is no log in the previous schema version, we have an "added" event
         edgesWithNodes.push({
           type: 'added',
@@ -1252,11 +1241,10 @@ export class SchemaVersionStore {
       }
 
       if (node.action === 'DELETE') {
-        if (!previousNode) {
-          throw new Error(
-            `Invariant: This should never happen. A 'DELETE' node can exist only if the node existed in the previous version.`,
-          );
-        }
+        invariant(
+          previousNode,
+          `This should never happen. A 'DELETE' node can exist only if the node existed in the previous version.`,
+        );
 
         // if the node action is DELETE we have a removal edge
         edgesWithNodes.push({
@@ -1271,7 +1259,7 @@ export class SchemaVersionStore {
         continue;
       }
 
-      throw new Error(`Invariant: This should never happen.`);
+      invariant(previousNode, `All node action cases exhausted.`);
     }
 
     return edgesWithNodes;
