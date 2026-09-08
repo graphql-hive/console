@@ -16,7 +16,9 @@ import { collectSchemaCoordinates, preprocessOperation } from '@graphql-hive/cor
 import { buildOperationS3BucketKey } from '@hive/cdn-script/artifact-storage-reader';
 import { ServiceLogger, setErrorSource } from '@hive/service-common';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
-import { S3Config } from '../../shared/providers/s3-config';
+import { S3Writer } from '../../shared/providers/s3-writer';
+import type { S3WriteMetric } from '../../shared/providers/s3-writer';
+import type { SerializedWorkerError } from './persisted-document-scheduler';
 
 type DocumentRecord = {
   appDeploymentId: string;
@@ -113,6 +115,7 @@ export type BatchProcessEvent = {
 export type BatchProcessedEvent = {
   event: 'processedBatch';
   id: string;
+  s3WriteMetrics: Array<S3WriteMetric>;
   data:
     | {
         type: 'error';
@@ -131,13 +134,20 @@ export type BatchProcessedEvent = {
       };
 };
 
+export type BatchProcessingErrorEvent = {
+  event: 'error';
+  id: string;
+  error: SerializedWorkerError;
+  s3WriteMetrics: Array<S3WriteMetric>;
+};
+
 export class PersistedDocumentIngester {
   private promiseQueue = new PromiseQueue({ concurrency: 30 });
   private logger: ServiceLogger;
 
   constructor(
     private clickhouse: ClickHouse,
-    private s3: S3Config,
+    private s3: S3Writer,
     logger: ServiceLogger,
   ) {
     this.logger = logger.child({ source: 'PersistedDocumentIngester' });
@@ -374,25 +384,20 @@ export class PersistedDocumentIngester {
 
       tasks.push(
         this.promiseQueue.add(async () => {
-          for (const s3 of this.s3) {
-            const response = await s3.client.fetch([s3.endpoint, s3.bucket, s3Key].join('/'), {
-              method: 'PUT',
-              headers: {
-                'content-type': 'text/plain',
-              },
-              body: document.body,
-              aws: {
-                // This boolean makes Google Cloud Storage & AWS happy.
-                signQuery: true,
-              },
-            });
+          const responses = await this.s3.write(s3Key, 'persisted_document', {
+            headers: {
+              'content-type': 'text/plain',
+            },
+            body: document.body,
+          });
 
+          for (const response of responses) {
             if (response.statusCode !== 200) {
               throw setErrorSource(
                 new Error(
-                  `Failed to upload operation to S3 object storage (${s3.endpoint}/${s3.bucket}): [${response.statusCode}] ${response.statusMessage}`,
+                  `Failed to upload operation to S3 object storage (${response.url}): [${response.statusCode}] ${response.statusMessage}`,
                 ),
-                `s3 ${s3.endpoint}`,
+                `s3 ${new URL(response.url).origin}`,
               );
             }
           }

@@ -4,7 +4,12 @@ import { fileURLToPath } from 'url';
 import { Injectable, Scope } from 'graphql-modules';
 import { getErrorSource, setErrorSource } from '@hive/service-common';
 import { Logger, registerWorkerLogging } from '../../shared/providers/logger';
-import { BatchProcessedEvent, BatchProcessEvent } from './persisted-document-ingester';
+import { observeS3Write } from '../../shared/providers/s3-writer';
+import {
+  type BatchProcessedEvent,
+  type BatchProcessEvent,
+  type BatchProcessingErrorEvent,
+} from './persisted-document-ingester';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -87,20 +92,19 @@ export class PersistedDocumentScheduler {
 
     registerWorkerLogging(this.logger, worker, name);
 
-    worker.on(
-      'message',
-      (
-        data: BatchProcessedEvent | { event: 'error'; id: string; error: SerializedWorkerError },
-      ) => {
-        if (data.event === 'error') {
-          tasks.get(data.id)?.reject(deserializeWorkerError(data.error));
-        }
+    worker.on('message', (data: BatchProcessedEvent | BatchProcessingErrorEvent) => {
+      for (const metric of data.s3WriteMetrics) {
+        observeS3Write(metric);
+      }
 
-        if (data.event === 'processedBatch') {
-          tasks.get(data.id)?.resolve(data);
-        }
-      },
-    );
+      if (data.event === 'error') {
+        tasks.get(data.id)?.reject(deserializeWorkerError(data.error));
+      }
+
+      if (data.event === 'processedBatch') {
+        tasks.get(data.id)?.resolve(data);
+      }
+    });
 
     const { logger } = this;
 

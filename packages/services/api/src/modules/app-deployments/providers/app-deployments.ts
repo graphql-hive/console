@@ -25,7 +25,7 @@ import { ClickHouse, sql as cSql } from '../../operations/providers/clickhouse-c
 import { SchemaVersionHelper } from '../../schema/providers/schema-version-helper';
 import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { Logger } from '../../shared/providers/logger';
-import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
+import { S3Writer } from '../../shared/providers/s3-writer';
 import { Storage } from '../../shared/providers/storage';
 import { APP_DEPLOYMENTS_ENABLED } from './app-deployments-enabled-token';
 import { PersistedDocumentScheduler } from './persisted-document-scheduler';
@@ -56,7 +56,7 @@ export class AppDeployments {
   constructor(
     logger: Logger,
     private pool: PostgresDatabasePool,
-    @Inject(S3_CONFIG) private s3: S3Config,
+    private s3: S3Writer,
     private clickhouse: ClickHouse,
     private storage: Storage,
     private schemaVersionHelper: SchemaVersionHelper,
@@ -460,61 +460,49 @@ export class AppDeployments {
     const appDeploymentDocumentHashes =
       await this._getAllDocumentHashesForAppDeployment(appDeployment);
 
-    for (const s3 of this.s3) {
-      let result = await s3.client.fetch(
-        [
-          s3.endpoint,
-          s3.bucket,
-          buildAppDeploymentIsEnabledKey(
-            appDeployment.targetId,
-            appDeployment.name,
-            appDeployment.version,
-          ),
-        ].join('/'),
-        {
-          method: 'PUT',
-          body: '1',
-          headers: {
-            'content-type': 'text/plain',
-          },
-          aws: {
-            signQuery: true,
-          },
+    let results = await this.s3.write(
+      buildAppDeploymentIsEnabledKey(
+        appDeployment.targetId,
+        appDeployment.name,
+        appDeployment.version,
+      ),
+      'app_deployment_enabled',
+      {
+        body: '1',
+        headers: {
+          'content-type': 'text/plain',
         },
-      );
+      },
+    );
 
+    for (const result of results) {
       if (result.statusCode !== 200) {
         throw new Error(`Failed to enable app deployment: ${result.statusMessage}`);
       }
+    }
 
-      result = await s3.client.fetch(
-        [
-          s3.endpoint,
-          s3.bucket,
-          buildAppDeploymentManifestKey(
-            appDeployment.targetId,
-            appDeployment.name,
-            appDeployment.version,
-          ),
-        ].join('/'),
-        {
-          method: 'PUT',
-          body: JSON.stringify({
-            id: appDeployment.id,
-            appName: appDeployment.name,
-            appVersion: appDeployment.version,
-            documentHashes: appDeploymentDocumentHashes.sort(),
-            isActive: true,
-          } satisfies z.TypeOf<typeof AppDeploymentManifestModel>),
-          headers: {
-            'content-type': 'application/json',
-          },
-          aws: {
-            signQuery: true,
-          },
+    results = await this.s3.write(
+      buildAppDeploymentManifestKey(
+        appDeployment.targetId,
+        appDeployment.name,
+        appDeployment.version,
+      ),
+      'app_deployment_manifest',
+      {
+        body: JSON.stringify({
+          id: appDeployment.id,
+          appName: appDeployment.name,
+          appVersion: appDeployment.version,
+          documentHashes: appDeploymentDocumentHashes.sort(),
+          isActive: true,
+        } satisfies z.TypeOf<typeof AppDeploymentManifestModel>),
+        headers: {
+          'content-type': 'application/json',
         },
-      );
+      },
+    );
 
+    for (const result of results) {
       if (result.statusCode !== 200) {
         throw new Error(`Failed to write app manifest: ${result.statusMessage}`);
       }
@@ -754,26 +742,19 @@ export class AppDeployments {
     const appDeploymentDocumentHashes =
       await this._getAllDocumentHashesForAppDeployment(appDeployment);
 
-    for (const s3 of this.s3) {
-      let result = await s3.client.fetch(
-        [
-          s3.endpoint,
-          s3.bucket,
-          buildAppDeploymentIsEnabledKey(
-            appDeployment.targetId,
-            appDeployment.name,
-            appDeployment.version,
-          ),
-        ].join('/'),
-        {
-          method: 'DELETE',
-          aws: {
-            signQuery: true,
-          },
-        },
-      );
+    let results = await this.s3.request(
+      buildAppDeploymentIsEnabledKey(
+        appDeployment.targetId,
+        appDeployment.name,
+        appDeployment.version,
+      ),
+      {
+        method: 'DELETE',
+      },
+    );
 
-      /** We receive a 204 status code if the DELETE operation was successful */
+    /** We receive a 204 status code if the DELETE operation was successful */
+    for (const result of results) {
       if (result.statusCode !== 204) {
         this.logger.error(
           'Failed to disable app deployment (organizationId=%s, targetId=%s, appDeploymentId=%s, statusCode=%s)',
@@ -786,35 +767,30 @@ export class AppDeployments {
           `Failed to disable app deployment. Request failed with status code "${result.statusMessage}".`,
         );
       }
+    }
 
-      result = await s3.client.fetch(
-        [
-          s3.endpoint,
-          s3.bucket,
-          buildAppDeploymentManifestKey(
-            appDeployment.targetId,
-            appDeployment.name,
-            appDeployment.version,
-          ),
-        ].join('/'),
-        {
-          method: 'PUT',
-          body: JSON.stringify({
-            id: appDeployment.id,
-            appName: appDeployment.name,
-            appVersion: appDeployment.version,
-            documentHashes: appDeploymentDocumentHashes.sort(),
-            isActive: false,
-          } satisfies z.TypeOf<typeof AppDeploymentManifestModel>),
-          headers: {
-            'content-type': 'application/json',
-          },
-          aws: {
-            signQuery: true,
-          },
+    results = await this.s3.write(
+      buildAppDeploymentManifestKey(
+        appDeployment.targetId,
+        appDeployment.name,
+        appDeployment.version,
+      ),
+      'app_deployment_manifest',
+      {
+        body: JSON.stringify({
+          id: appDeployment.id,
+          appName: appDeployment.name,
+          appVersion: appDeployment.version,
+          documentHashes: appDeploymentDocumentHashes.sort(),
+          isActive: false,
+        } satisfies z.TypeOf<typeof AppDeploymentManifestModel>),
+        headers: {
+          'content-type': 'application/json',
         },
-      );
+      },
+    );
 
+    for (const result of results) {
       if (result.statusCode !== 200) {
         throw new Error(`Failed to write app manifest: ${result.statusMessage}`);
       }

@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
-import { Inject } from 'graphql-modules';
+import { Injectable, Scope } from 'graphql-modules';
 import { buildArtifactStorageKey } from '@hive/cdn-script/artifact-storage-reader';
 import { setErrorSource, traceFn } from '@hive/service-common';
 import { Logger } from '../../shared/providers/logger';
-import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
+import { S3Writer } from '../../shared/providers/s3-writer';
 
 const artifactMeta = {
   sdl: {
@@ -27,11 +27,12 @@ const artifactMeta = {
 /**
  * Write an Artifact to an S3 bucket.
  */
+@Injectable({ scope: Scope.Singleton, global: true })
 export class ArtifactStorageWriter {
   private logger: Logger;
 
   constructor(
-    @Inject(S3_CONFIG) private s3Mirrors: S3Config,
+    private s3: S3Writer,
     logger: Logger,
   ) {
     this.logger = logger.child({ service: 'f' });
@@ -59,36 +60,29 @@ export class ArtifactStorageWriter {
     const meta = artifactMeta[args.artifactType];
     const body = meta.preprocessor(args.artifact);
 
-    for (const s3 of this.s3Mirrors) {
-      this.logger.debug(
-        'Writing artifact to S3 (targetId=%s, artifactType=%s, contractName=%s, versionId=%s, latestKey=%s, versionedKey=%s)',
-        args.targetId,
-        args.artifactType,
-        args.contractName,
-        args.versionId,
-        latestKey,
-        versionedKey,
-      );
+    this.logger.debug(
+      'Writing artifact to S3 (targetId=%s, artifactType=%s, contractName=%s, versionId=%s, latestKey=%s, versionedKey=%s)',
+      args.targetId,
+      args.artifactType,
+      args.contractName,
+      args.versionId,
+      latestKey,
+      versionedKey,
+    );
 
-      // Write versioned key first (if versionId provided)
-      // This order ensures that if versioned write fails, "latest" still points to the previous version
-      if (versionedKey && args.versionId) {
-        const versionedResult = await s3.client.fetch(
-          [s3.endpoint, s3.bucket, versionedKey].join('/'),
-          {
-            method: 'PUT',
-            headers: {
-              'content-type': meta.contentType,
-              // Store version ID as S3 object metadata for CDN response headers
-              'x-amz-meta-x-hive-schema-version-id': args.versionId,
-            },
-            body,
-            aws: {
-              signQuery: true,
-            },
-          },
-        );
+    // Write versioned key first (if versionId provided)
+    // This order ensures that if versioned write fails, "latest" still points to the previous version
+    if (versionedKey && args.versionId) {
+      const versionedResults = await this.s3.write(versionedKey, 'artifact_versioned', {
+        headers: {
+          'content-type': meta.contentType,
+          // Store version ID as S3 object metadata for CDN response headers
+          'x-amz-meta-x-hive-schema-version-id': args.versionId,
+        },
+        body,
+      });
 
+      for (const versionedResult of versionedResults) {
         if (versionedResult.statusCode !== 200) {
           this.logger.error(
             'Failed to write versioned artifact (targetId=%s, artifactType=%s, versionId=%s, key=%s, statusCode=%s)',
@@ -102,26 +96,23 @@ export class ArtifactStorageWriter {
             new Error(
               `Unexpected status code ${versionedResult.statusCode} when writing versioned artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, versionId=${args.versionId}, key=${versionedKey})`,
             ),
-            `s3 ${s3.endpoint}`,
+            `s3 ${new URL(versionedResult.url).origin}`,
           );
         }
       }
+    }
 
-      // Write to latest key (always) - only after versioned succeeds
-      const latestResult = await s3.client.fetch([s3.endpoint, s3.bucket, latestKey].join('/'), {
-        method: 'PUT',
-        headers: {
-          'content-type': meta.contentType,
-          // Store version ID as S3 object metadata for CDN response headers
-          ...(args.versionId ? { 'x-amz-meta-x-hive-schema-version-id': args.versionId } : {}),
-        },
-        body,
-        aws: {
-          // This boolean makes Google Cloud Storage & AWS happy.
-          signQuery: true,
-        },
-      });
+    // Write to latest key (always) - only after versioned succeeds
+    const latestResults = await this.s3.write(latestKey, 'artifact_latest', {
+      headers: {
+        'content-type': meta.contentType,
+        // Store version ID as S3 object metadata for CDN response headers
+        ...(args.versionId ? { 'x-amz-meta-x-hive-schema-version-id': args.versionId } : {}),
+      },
+      body,
+    });
 
+    for (const latestResult of latestResults) {
       if (latestResult.statusCode !== 200) {
         this.logger.error(
           'Failed to write latest artifact after versioned succeeded (targetId=%s, artifactType=%s, versionId=%s, versionedKey=%s written, latestKey=%s failed)',
@@ -135,7 +126,7 @@ export class ArtifactStorageWriter {
           new Error(
             `Unexpected status code ${latestResult.statusCode} when writing latest artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, contractName=${args.contractName}, key=${latestKey}). Note: versioned artifact was already written.`,
           ),
-          `s3 ${new URL(s3.endpoint).origin}`,
+          `s3 ${new URL(latestResult.url).origin}`,
         );
       }
     }
@@ -161,15 +152,11 @@ export class ArtifactStorageWriter {
     );
     const key = buildArtifactStorageKey(args.targetId, args.artifactType, args.contractName);
 
-    for (const s3 of this.s3Mirrors) {
-      const result = await s3.client.fetch([s3.endpoint, s3.bucket, key].join('/'), {
-        method: 'DELETE',
-        aws: {
-          // This boolean makes Google Cloud Storage & AWS happy.
-          signQuery: true,
-        },
-      });
+    const results = await this.s3.request(key, {
+      method: 'DELETE',
+    });
 
+    for (const result of results) {
       if (result.statusCode !== 204) {
         this.logger.debug(
           'Failed deleting artifact, S3 compatible storage returned unexpected status code. (targetId=%s, contractName=%s, artifactType=%s, statusCode=%s)',
@@ -201,21 +188,14 @@ export class ArtifactStorageWriter {
 
     const hash = hashBuilder.digest('hex');
 
-    const firstMirror = this.s3Mirrors[0];
-    const url = [firstMirror.endpoint, firstMirror.bucket, 'debug-artifacts', hash + '.json'].join(
-      '/',
-    );
+    const key = `debug-artifacts/${hash}.json`;
+    const url = this.s3.primaryUrl(key);
 
-    await firstMirror.client.fetch(url, {
-      method: 'PUT',
+    await this.s3.writePrimary(key, 'debug_artifact', {
       headers: {
         'content-type': 'application/json',
       },
       body: JSON.stringify(subgraphs),
-      aws: {
-        // This boolean makes Google Cloud Storage & AWS happy.
-        signQuery: true,
-      },
     });
 
     return { id: hash.substring(0, 10), url };

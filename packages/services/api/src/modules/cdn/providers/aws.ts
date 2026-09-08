@@ -266,7 +266,7 @@ export class AwsClient {
       region: init?.aws?.region || this.region,
       cache: init?.aws?.cache || this.cache,
       datetime: init?.aws?.datetime,
-      signQuery: init?.aws?.signQuery,
+      signQuery: init?.aws?.signQuery ?? true,
       appendSessionToken: init?.aws?.appendSessionToken,
       allHeaders: init?.aws?.allHeaders,
       singleEncode: init?.aws?.singleEncode,
@@ -361,7 +361,7 @@ export class AwsV4Signer {
 
     this.cache = cache || new Map();
     this.datetime = datetime || new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
-    this.signQuery = signQuery;
+    this.signQuery = signQuery ?? true;
     this.appendSessionToken = appendSessionToken || this.service === 'iotdevicegateway';
 
     this.headers.delete('Host'); // Can't be set in insecure env anyway
