@@ -18,3 +18,15 @@ export const segmentButton =
 
 /** Disabled styling for any interactive base component. */
 export const disabledStyle = { opacity: 0.5, pointerEvents: 'none' } as const;
+
+// ---------------------------------------------------------------------------
+// Scrolling
+// ---------------------------------------------------------------------------
+
+/**
+ * Vertical scroll container with a thin, muted scrollbar. Use anywhere content can overflow
+ * (sheets, dialogs, floating lists). `thin-scrollbar` is a utility in `index.css` rather than
+ * arbitrary Tailwind properties, because older Chromium and Safari need `::-webkit-scrollbar`
+ * pseudo-elements that a class string cannot express.
+ */
+export const scrollArea = 'overflow-y-auto thin-scrollbar';

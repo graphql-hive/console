@@ -6,6 +6,7 @@
  * to update the design system in one place.
  */
 import { cva } from 'class-variance-authority';
+import { scrollArea } from '../shared-styles';
 
 // ---------------------------------------------------------------------------
 // Floating panel
@@ -106,8 +107,7 @@ export type FloatingProps = {
 // ---------------------------------------------------------------------------
 
 /** Scrollbar styling for lists inside floating panels. */
-export const floatingScrollArea =
-  'overflow-y-auto [scrollbar-color:var(--color-neutral-7)_transparent] [scrollbar-width:thin]';
+export const floatingScrollArea = scrollArea;
 
 /** Empty state text inside a floating panel. */
 export const floatingEmptyState = 'text-neutral-8 px-2 py-4 text-center text-sm italic';
