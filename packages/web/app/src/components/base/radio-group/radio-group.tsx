@@ -3,7 +3,9 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Radio as BaseRadio } from '@base-ui/react/radio';
 import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group';
 
-const radioItemVariants = cva('group flex cursor-pointer items-center border transition-colors', {
+const radioItemVariants = cva(
+  'group flex cursor-pointer items-center border transition-colors disabled:pointer-events-none disabled:opacity-50',
+  {
   variants: {
     variant: {
       'as-button': 'gap-1.5 rounded-xs px-3 py-1.5 text-[13px] font-medium',
@@ -45,8 +47,9 @@ const radioItemVariants = cva('group flex cursor-pointer items-center border tra
       ],
     },
   ],
-  defaultVariants: { variant: 'as-button', onSurface: 'base', orientation: 'horizontal' },
-});
+    defaultVariants: { variant: 'as-button', onSurface: 'base', orientation: 'horizontal' },
+  },
+);
 
 const radioGroupVariants = cva('flex', {
   variants: {
@@ -71,44 +74,54 @@ const radioGroupVariants = cva('flex', {
 
 type RadioVariants = VariantProps<typeof radioItemVariants>;
 
-export type RadioItemProps = {
-  value: string;
-  label: string;
-  /** Supporting copy under the label. Rendered by `as-card` only. */
-  description?: string;
-  /** Optional visual indicator (e.g. a colored dot) rendered before the label */
-  indicator?: ReactNode;
-};
+/**
+ * `value` identifies the option either way. Past that an item is one of two shapes: the built-in
+ * label/description layout, or arbitrary `content` when a call site needs its own body (e.g. the
+ * billing plan cards, or a label preceded by a status dot).
+ */
+export type RadioItemProps = { value: string } & (
+  | {
+      label: string;
+      /** Supporting copy under the label. Rendered by `as-card` only. */
+      description?: string;
+      content?: never;
+    }
+  | {
+      /** Replaces the built-in layout entirely, radio dot included. */
+      content: ReactNode;
+      label?: never;
+      description?: never;
+    }
+);
 
 function RadioItem({
-  value,
-  label,
-  description,
-  indicator,
+  item,
   variant,
   onSurface,
   orientation,
-}: RadioItemProps & RadioVariants) {
+}: { item: RadioItemProps } & RadioVariants) {
   const isCard = variant === 'as-card';
 
   return (
     <BaseRadio.Root
-      value={value}
+      value={item.value}
       className={radioItemVariants({ variant, onSurface, orientation })}
     >
-      {isCard ? (
-        <span className="border-neutral-6 group-data-[checked]:border-accent flex size-5 shrink-0 items-center justify-center rounded-full border">
-          <BaseRadio.Indicator className="bg-accent size-2.5 rounded-full" />
-        </span>
-      ) : (
-        indicator
+      {item.content ?? (
+        <>
+          {isCard ? (
+            <span className="border-neutral-6 group-data-[checked]:border-accent flex size-5 shrink-0 items-center justify-center rounded-full border">
+              <BaseRadio.Indicator className="bg-accent size-2.5 rounded-full" />
+            </span>
+          ) : null}
+          <span className={isCard ? 'flex flex-col gap-2' : undefined}>
+            <span className={isCard ? 'text-neutral-12 font-medium' : undefined}>{item.label}</span>
+            {isCard && item.description ? (
+              <span className="text-neutral-11 leading-[1.4]">{item.description}</span>
+            ) : null}
+          </span>
+        </>
       )}
-      <span className={isCard ? 'flex flex-col gap-2' : undefined}>
-        <span className={isCard ? 'text-neutral-12 font-medium' : undefined}>{label}</span>
-        {isCard && description ? (
-          <span className="text-neutral-11 leading-[1.4]">{description}</span>
-        ) : null}
-      </span>
     </BaseRadio.Root>
   );
 }
@@ -117,12 +130,15 @@ type RadioGroupProps = {
   items: readonly RadioItemProps[];
   onValueChange: (value: string) => void;
   value: string;
+  /** Makes every option in the group non-interactive. */
+  disabled?: boolean;
 } & RadioVariants;
 
 export function RadioGroup({
   items,
   onValueChange,
   value,
+  disabled,
   variant,
   // Only `as-card` has a floating treatment in the design.
   onSurface,
@@ -135,13 +151,14 @@ export function RadioGroup({
     <BaseRadioGroup
       value={value}
       onValueChange={onValueChange}
+      disabled={disabled}
       aria-orientation={flow}
       className={radioGroupVariants({ orientation: flow, variant })}
     >
       {items.map(item => (
         <RadioItem
           key={item.value}
-          {...item}
+          item={item}
           variant={variant}
           onSurface={onSurface}
           orientation={flow}

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
+import { Check } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { RadioGroup } from './radio-group';
 
@@ -22,7 +23,7 @@ export const Default = createPreview(() => {
   );
 });
 
-/** `indicator` renders before the label, e.g. a status dot. */
+/** A status dot before the label is just `content`: the item cva already lays it out as a row. */
 export const WithIndicators = createPreview(() => {
   const [value, setValue] = useState('all');
 
@@ -35,18 +36,30 @@ export const WithIndicators = createPreview(() => {
         { value: 'all', label: 'All' },
         {
           value: 'breaking',
-          label: 'Breaking',
-          indicator: <span className="bg-critical size-2 rounded-full" />,
+          content: (
+            <>
+              <span className="bg-critical size-2 rounded-full" />
+              Breaking
+            </>
+          ),
         },
         {
           value: 'dangerous',
-          label: 'Dangerous',
-          indicator: <span className="bg-warning size-2 rounded-full" />,
+          content: (
+            <>
+              <span className="bg-warning size-2 rounded-full" />
+              Dangerous
+            </>
+          ),
         },
         {
           value: 'safe',
-          label: 'Safe',
-          indicator: <span className="bg-success size-2 rounded-full" />,
+          content: (
+            <>
+              <span className="bg-success size-2 rounded-full" />
+              Safe
+            </>
+          ),
         },
       ]}
     />
@@ -149,6 +162,121 @@ export const AsCardFloating = createPreview(() => {
         value={value}
         onValueChange={setValue}
         items={SEVERITY_ITEMS}
+      />
+    </div>
+  );
+});
+
+function PlanBody(props: {
+  name: string;
+  price: string;
+  description: string;
+  features: string[];
+  isCurrent?: boolean;
+  footer?: ReactNode;
+}) {
+  return (
+    <div className="flex w-full flex-col justify-between gap-6 self-stretch">
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-neutral-12 text-sm font-semibold">{props.name}</span>
+          {props.isCurrent ? (
+            <span className="bg-accent_10 text-accent rounded-xs px-2 py-1 text-[11px] font-medium tracking-wide">
+              CURRENT PLAN
+            </span>
+          ) : null}
+        </div>
+        <div className="text-neutral-12 text-3xl font-bold">{props.price}</div>
+        <div className="text-neutral-10 text-[13px]">{props.description}</div>
+        <div className="mt-6 flex flex-col gap-2">
+          {props.features.map(feature => (
+            <div key={feature} className="text-neutral-11 flex items-start gap-2 text-[13px]">
+              <Check className="text-neutral-10 mt-0.5 size-4 shrink-0" />
+              {feature}
+            </div>
+          ))}
+        </div>
+      </div>
+      {props.footer ? (
+        <div>
+          <div className="border-neutral-5 mx-auto mb-4 w-9/12 border-b" />
+          <div className="text-neutral-11 text-xs">{props.footer}</div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * `content` carrying a whole card body, which is what the billing plan picker needs: no radio dot,
+ * selection shown by the card border alone. Three cards in a row also exercise equal-height stretch.
+ */
+export const PlanCards = createPreview(() => {
+  const [value, setValue] = useState('pro');
+
+  return (
+    <div className="w-[62rem]">
+      <RadioGroup
+        variant="as-card"
+        orientation="horizontal"
+        value={value}
+        onValueChange={setValue}
+        items={[
+          {
+            value: 'hobby',
+            content: (
+              <PlanBody
+                isCurrent
+                name="Hobby"
+                price="Free"
+                description="For personal or small projects"
+                features={[
+                  'Unlimited seats, projects and organizations',
+                  'Unlimited schema pushes & checks',
+                  'Full access to all features (including SSO)',
+                  'Limit of 1M operations per month',
+                  '7 days of usage data retention',
+                ]}
+              />
+            ),
+          },
+          {
+            value: 'pro',
+            content: (
+              <PlanBody
+                name="Pro"
+                price="$10"
+                description="For scaling APIs and teams"
+                features={[
+                  '+ $10 per 1M operations',
+                  'Change your plan at any time',
+                  'Everything in Hobby plan, and:',
+                  '90 days of usage data retention',
+                ]}
+                footer={<span className="font-bold">Free 30 days trial period</span>}
+              />
+            ),
+          },
+          {
+            value: 'enterprise',
+            content: (
+              <PlanBody
+                name="Enterprise"
+                price="Contact Us"
+                description="Custom plan for large companies"
+                features={[
+                  'Unlimited seats',
+                  'Unlimited operations',
+                  'Unlimited schema pushes',
+                  'Change your plan at any time',
+                  'Improved pricing as you scale',
+                  '12 months of usage data retention',
+                ]}
+                footer="Shape a custom plan for your business"
+              />
+            ),
+          },
+        ]}
       />
     </div>
   );
