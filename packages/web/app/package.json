@@ -100,7 +100,7 @@
     "dotenv": "16.4.7",
     "echarts": "6.1.0",
     "echarts-for-react": "3.0.6",
-    "fastify": "5.10.0",
+    "fastify": "5.12.1",
     "formik": "2.4.6",
     "framer-motion": "11.18.2",
     "graphiql": "4.0.0-alpha.5",
