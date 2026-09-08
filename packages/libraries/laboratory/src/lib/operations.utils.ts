@@ -8,6 +8,9 @@ import {
   GraphQLSchema,
   GraphQLUnionType,
   isAbstractType,
+  isInterfaceType,
+  isObjectType,
+  isUnionType,
   Kind,
   OperationTypeNode,
   parse,
@@ -1058,7 +1061,13 @@ export function searchSchemaPaths(
   type Frame = {
     operation: OperationTypeNode;
     field: GraphQLField<unknown, unknown, unknown>;
+    /** Full path, which may carry `on:Type` segments. */
     pathSegments: string[];
+    /**
+     * Field names only. Matching runs against these so a search for "on" or for a
+     * type's own name cannot hit every field inside a branch by way of the sigil.
+     */
+    fieldSegments: string[];
     typeTrail: string[];
     depth: number;
   };
@@ -1087,6 +1096,7 @@ export function searchSchemaPaths(
         operation,
         field: rootField,
         pathSegments: [rootField.name],
+        fieldSegments: [rootField.name],
         typeTrail: [rootType.name],
         depth: 1,
       });
@@ -1106,9 +1116,9 @@ export function searchSchemaPaths(
     ++nodesVisited;
 
     const path = `${frame.operation}.${frame.pathSegments.join('.')}`;
-    const pathSegmentsLower = frame.pathSegments.map(segment => segment.toLowerCase());
+    const fieldSegmentsLower = frame.fieldSegments.map(segment => segment.toLowerCase());
 
-    if (matchSearchAgainstPath(pathSegmentsLower, normalizedSearch, searchSegments)) {
+    if (matchSearchAgainstPath(fieldSegmentsLower, normalizedSearch, searchSegments)) {
       matchedPaths.push(path);
       visiblePaths.add(path);
 
@@ -1128,20 +1138,60 @@ export function searchSchemaPaths(
 
     const namedType = unwrapNamedType(frame.field.type);
 
-    if (!isSearchableFieldType(namedType) || frame.typeTrail.includes(namedType.name)) {
+    if (frame.typeTrail.includes(namedType.name)) {
       continue;
     }
 
     const nextTrail = [...frame.typeTrail, namedType.name];
 
-    for (const childField of Object.values(namedType.getFields())) {
+    const enqueue = (
+      childField: GraphQLField<unknown, unknown, unknown>,
+      branch: GraphQLObjectType | null,
+      typeTrail: string[],
+    ) => {
       queue.push({
         operation: frame.operation,
         field: childField,
-        pathSegments: [...frame.pathSegments, childField.name],
-        typeTrail: nextTrail,
+        pathSegments: branch
+          ? [...frame.pathSegments, encodeTypeConditionSegment(branch.name), childField.name]
+          : [...frame.pathSegments, childField.name],
+        fieldSegments: [...frame.fieldSegments, childField.name],
+        typeTrail,
         depth: frame.depth + 1,
       });
+    };
+
+    if (isObjectType(namedType) || isInterfaceType(namedType)) {
+      for (const childField of Object.values(namedType.getFields())) {
+        enqueue(childField, null, nextTrail);
+      }
+    }
+
+    // A type condition is a branch, not a schema level, so reaching a member field
+    // costs the same depth budget as reaching a field of an object type would.
+    const possibleTypes = isUnionType(namedType)
+      ? namedType.getTypes()
+      : isInterfaceType(namedType)
+        ? schema.getPossibleTypes(namedType)
+        : [];
+
+    // The rows above already carry what the interface itself declares.
+    const inherited = isInterfaceType(namedType)
+      ? new Set(Object.keys(namedType.getFields()))
+      : null;
+
+    for (const possibleType of possibleTypes) {
+      if (frame.typeTrail.includes(possibleType.name)) {
+        continue;
+      }
+
+      const branchTrail = [...nextTrail, possibleType.name];
+
+      for (const childField of Object.values(possibleType.getFields())) {
+        if (!inherited?.has(childField.name)) {
+          enqueue(childField, possibleType, branchTrail);
+        }
+      }
     }
   }
 

@@ -44,7 +44,7 @@ import {
   mergeOpenPaths,
   searchSchemaPaths,
 } from '../../lib/operations.utils';
-import { encodeTypeConditionSegment } from '../../lib/schema-path';
+import { decodeTypeConditionSegment, encodeTypeConditionSegment } from '../../lib/schema-path';
 import { cn, splitIdentifier } from '../../lib/utils';
 import { GraphQLType } from '../graphql-type';
 import { GraphQLIcon } from '../icons';
@@ -1012,6 +1012,20 @@ export const BuilderSearchResults = (props: {
           label={
             <span>
               {path.split('.').map((part, index) => {
+                const typeName = decodeTypeConditionSegment(part);
+
+                // The encoded form is internal. Show the type condition as GraphQL,
+                // and never highlight it: matching runs on field names, so a hit
+                // here would be claiming a match the search never made.
+                if (typeName !== null) {
+                  return (
+                    <Fragment key={index}>
+                      <span className="text-amber-400">on {typeName}</span>
+                      {index < path.split('.').length - 1 && '.'}
+                    </Fragment>
+                  );
+                }
+
                 const splittedPart = splitIdentifier(part);
 
                 const isMatch = splittedPart.some(p =>

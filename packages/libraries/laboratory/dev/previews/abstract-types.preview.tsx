@@ -22,6 +22,16 @@
  *   edit untouched, and unticking the last field inside a fragment must leave the
  *   editor alive. An emptied `... on X` prints without braces and does not parse,
  *   which would freeze every row at once.
+ *
+ * - AbstractSearch: search `canBeApproved`. Every hit is inside a branch
+ *   (`... on FailedSchemaCheck`), and before branches were crawled this returned
+ *   nothing at all. `commit` finds the field under `... on PushedSchemaLog` and
+ *   `... on CompositeSchema` as well as on plain object types. In list mode a
+ *   branch reads `on CompositeSchema`, never the encoded `on:CompositeSchema`.
+ *   `singleschema` must match nothing: matching runs on field names, so the
+ *   spelling of a branch's own type is not searchable. Avoid `service` and
+ *   `composite` as checks; real fields are named `ownedByServiceNames` and
+ *   `compositeSchemaSDL`, so those terms are legitimately noisy.
  */
 import { createPreview, type NavPath } from 'react-foundry';
 import { Laboratory } from '../../src/components/laboratory/laboratory';
@@ -62,4 +72,9 @@ export const InterfaceExpansion = createPreview({
 export const LegacyDocument = createPreview({
   label: 'Legacy document',
   render: () => <LaboratoryWith activeTabId={devTabIdFor('dev-op-legacy-fragments')} />,
+});
+
+export const AbstractSearch = createPreview({
+  label: 'Abstract search',
+  render: () => <LaboratoryWith activeTabId={devTabIdFor('dev-op-shared-field-names')} />,
 });

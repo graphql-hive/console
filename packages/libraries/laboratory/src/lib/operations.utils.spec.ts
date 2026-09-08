@@ -511,6 +511,92 @@ describe('searchSchemaPaths', () => {
   });
 });
 
+describe('searchSchemaPaths across abstract types', () => {
+  const schema = buildSchema(/* GraphQL */ `
+    type Image {
+      url: String
+      caption: String
+    }
+    type Video {
+      url: String
+    }
+    union CmsContent = Image | Video
+    interface Node {
+      id: ID!
+    }
+    type Article implements Node {
+      id: ID!
+      body: String
+    }
+    type Recursive {
+      again: Wrapper
+    }
+    union Wrapper = Recursive
+    type Page {
+      content: [CmsContent!]!
+      node: Node
+      loop: Wrapper
+    }
+    type Query {
+      page: Page
+    }
+  `);
+
+  it('finds a field inside a union member', () => {
+    const result = searchSchemaPaths(schema, 'caption');
+
+    expect(result.matchedPaths).toContain('query.page.content.on:Image.caption');
+  });
+
+  it('forces the branch row open so the match is reachable', () => {
+    const result = searchSchemaPaths(schema, 'caption');
+
+    expect(result.forcedOpenPaths.has('query.page.content.on:Image')).toBe(true);
+    expect(result.visiblePaths.has('query.page.content')).toBe(true);
+  });
+
+  it('finds the same field name in every member that declares it', () => {
+    const result = searchSchemaPaths(schema, 'url');
+
+    expect(result.matchedPaths).toContain('query.page.content.on:Image.url');
+    expect(result.matchedPaths).toContain('query.page.content.on:Video.url');
+  });
+
+  it('finds a field an interface implementation adds', () => {
+    const result = searchSchemaPaths(schema, 'body');
+
+    expect(result.matchedPaths).toContain('query.page.node.on:Article.body');
+  });
+
+  it('leaves interface fields on the interface rather than in every branch', () => {
+    const result = searchSchemaPaths(schema, 'id');
+
+    expect(result.matchedPaths).toContain('query.page.node.id');
+    expect(result.matchedPaths).not.toContain('query.page.node.on:Article.id');
+  });
+
+  // Matching runs on field names only. Without that, the `on:Image` segment would
+  // make every field of Image a hit for a search that merely spells the type.
+  it('does not match a field because its branch segment spells the search', () => {
+    const result = searchSchemaPaths(schema, 'image');
+
+    expect(result.matchedPaths).toEqual([]);
+  });
+
+  it('matches a dotted search through a branch', () => {
+    const result = searchSchemaPaths(schema, 'content.caption');
+
+    expect(result.matchedPaths).toContain('query.page.content.on:Image.caption');
+  });
+
+  it('terminates on a recursive union', () => {
+    const result = searchSchemaPaths(schema, 'again');
+
+    expect(result.hasMore).toBe(false);
+    expect(result.matchedPaths.length).toBeGreaterThan(0);
+  });
+});
+
 describe('schema path search index', () => {
   const index = createSchemaPathSearchIndex(['query.user.name', 'query.user.id']);
 

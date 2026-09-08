@@ -1,7 +1,17 @@
 // @vitest-environment jsdom
-import { buildSchema, type GraphQLInterfaceType, type GraphQLObjectType } from 'graphql';
+import {
+  buildSchema,
+  OperationTypeNode,
+  type GraphQLInterfaceType,
+  type GraphQLObjectType,
+} from 'graphql';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { BuilderField, BuilderTypeConditionField } from './builder';
+import {
+  BuilderField,
+  BuilderSearchResultMode,
+  BuilderSearchResults,
+  BuilderTypeConditionField,
+} from './builder';
 
 const laboratory = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
 
@@ -134,6 +144,32 @@ describe('BuilderTypeConditionField', () => {
       undefined,
       schema,
     );
+  });
+
+  // The encoded segment is internal; a list result showing `on:Image` would be
+  // leaking the path format into the UI.
+  it('renders a branch segment as GraphQL in list-mode results', () => {
+    const { container } = render(
+      <BuilderSearchResults
+        type="query"
+        fields={[]}
+        openPaths={[]}
+        setOpenPaths={vi.fn()}
+        visiblePaths={null}
+        matchedPaths={['query.page.content.on:Image.url']}
+        forcedOpenPaths={null}
+        isSearchActive
+        mode={BuilderSearchResultMode.LIST}
+        isReadOnly={false}
+        operation={null}
+        searchValue="url"
+        schema={schema}
+        tab={OperationTypeNode.QUERY}
+      />,
+    );
+
+    expect(container.textContent).toContain('on Image');
+    expect(container.textContent).not.toContain('on:Image');
   });
 
   it('offers the possible type in the docs menu', () => {
