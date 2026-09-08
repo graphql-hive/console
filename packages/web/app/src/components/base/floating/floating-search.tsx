@@ -2,16 +2,25 @@ type FloatingSearchProps = {
   label: string;
   onSearch: (value: string) => void;
   value: string;
+  placeholder?: string;
+  autoFocus?: boolean;
 };
 
-export function FloatingSearch({ label, onSearch, value }: FloatingSearchProps) {
+export function FloatingSearch({
+  label,
+  onSearch,
+  value,
+  placeholder = 'Search...',
+  autoFocus,
+}: FloatingSearchProps) {
   return (
     <div className="relative -mx-2">
       <input
         type="text"
         role="searchbox"
         aria-label={`Search ${label.toLowerCase()}`}
-        placeholder="Search..."
+        placeholder={placeholder}
+        autoFocus={autoFocus}
         value={value}
         onChange={e => onSearch(e.target.value)}
         onKeyDown={e => {

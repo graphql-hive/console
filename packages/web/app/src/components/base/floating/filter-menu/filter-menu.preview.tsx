@@ -91,3 +91,123 @@ export const ActiveView = createPreview(() => {
     <FilterMenu dimensions={dimensions} activeLabel="Gateway errors" onClearActive={() => {}} />
   );
 });
+
+// A real federated supergraph has hundreds of types, so the list is long enough
+// to need both the search box and the virtualizer.
+const TYPES: FilterItem[] = [
+  'Query',
+  'Mutation',
+  'Subscription',
+  'Account',
+  'AccountConnection',
+  'Address',
+  'Cart',
+  'CartItem',
+  'Category',
+  'Checkout',
+  'Currency',
+  'Customer',
+  'Discount',
+  'Inventory',
+  'InventoryItem',
+  'Money',
+  'Order',
+  'OrderLineItem',
+  'PageInfo',
+  'Payment',
+  'Product',
+  'ProductVariant',
+  'Review',
+  'ReviewConnection',
+  'Shipment',
+  'ShippingRate',
+  'User',
+  'UserProfile',
+  'Warehouse',
+  'Wishlist',
+].map(name => ({ name, values: [] }));
+
+/**
+ * The three non-item kinds together, as the schema explorer uses them: a
+ * single-select dimension addressing a route param, a free-text dimension, and
+ * a toggle. Toggles group into their own section below the divider and never
+ * produce a chip.
+ */
+export const AllDimensionKinds = createPreview(() => {
+  const [type, setType] = useState<FilterSelection[]>([{ name: 'Product', values: null }]);
+  const [field, setField] = useState('price');
+  const [descriptions, setDescriptions] = useState(false);
+  const [targets, setTargets] = useState<FilterSelection[]>([]);
+
+  const dimensions: FilterDimension[] = [
+    {
+      key: 'type',
+      label: 'Type',
+      items: TYPES,
+      selectedItems: type,
+      onChange: setType,
+      singleSelect: true,
+      alwaysShowSearch: true,
+    },
+    {
+      key: 'field',
+      label: 'Field',
+      kind: 'text',
+      value: field,
+      onChange: setField,
+      placeholder: 'Find field',
+    },
+    {
+      key: 'target',
+      label: 'Target',
+      items: TARGETS,
+      selectedItems: targets,
+      onChange: setTargets,
+    },
+    {
+      key: 'descriptions',
+      label: 'Show descriptions',
+      kind: 'toggle',
+      checked: descriptions,
+      onChange: setDescriptions,
+    },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <FilterMenu dimensions={dimensions} />
+      <FilterChips dimensions={dimensions} />
+    </div>
+  );
+});
+
+/** Empty text value renders no chip, and the toggle section still gets its divider. */
+export const TextFilterEmpty = createPreview(() => {
+  const [field, setField] = useState('');
+  const [descriptions, setDescriptions] = useState(true);
+
+  const dimensions: FilterDimension[] = [
+    {
+      key: 'field',
+      label: 'Field',
+      kind: 'text',
+      value: field,
+      onChange: setField,
+      placeholder: 'Find field',
+    },
+    {
+      key: 'descriptions',
+      label: 'Show descriptions',
+      kind: 'toggle',
+      checked: descriptions,
+      onChange: setDescriptions,
+    },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <FilterMenu dimensions={dimensions} />
+      <FilterChips dimensions={dimensions} />
+    </div>
+  );
+});

@@ -1,16 +1,46 @@
 import { type ReactNode } from 'react';
 import { ListFilter, X } from 'lucide-react';
+import { Switch } from '@/components/base/switch/switch';
 import { Button } from '../../button/button';
 import { FilterContent } from '../filter-dropdown/filter-content';
 import { FilterDropdown } from '../filter-dropdown/filter-dropdown';
+import { TextFilterChip } from '../filter-dropdown/text-filter-chip';
+import { FloatingSearch } from '../floating-search';
 import { Menu, MenuItem } from '../menu/menu';
-import type { FilterDimension } from './types';
+import type {
+  FilterDimension,
+  ItemsFilterDimension,
+  TextFilterDimension,
+  ToggleFilterDimension,
+} from './types';
 
-export type { FilterDimension, FilterItem, FilterSelection } from './types';
+export type {
+  FilterDimension,
+  FilterItem,
+  FilterSelection,
+  ItemsFilterDimension,
+  TextFilterDimension,
+  ToggleFilterDimension,
+} from './types';
+
+function isToggle(d: FilterDimension): d is ToggleFilterDimension {
+  return d.kind === 'toggle';
+}
+
+function isText(d: FilterDimension): d is TextFilterDimension {
+  return d.kind === 'text';
+}
+
+function isNotToggle(d: FilterDimension): d is ItemsFilterDimension | TextFilterDimension {
+  return d.kind !== 'toggle';
+}
 
 /**
  * The trigger that opens a menu of dimensions. Each dimension opens a
- * sub-menu containing a `FilterContent` panel for picking items.
+ * sub-menu containing a `FilterContent` panel for picking items, or a text
+ * input for `kind: 'text'`. `kind: 'toggle'` dimensions are switch rows and
+ * are grouped into their own section below the rest, since they set a
+ * preference rather than narrow the result set.
  *
  * Default trigger reads "Filter" with a list-filter icon. To swap the
  * trigger to a custom label with a clear-X icon (e.g. for an active saved
@@ -30,26 +60,54 @@ export function FilterMenu({
   extraSections?: Array<ReactNode | ReactNode[]>;
   /** Active-state label for the trigger. Pair with `onClearActive`. */
   activeLabel?: string;
-  /** Handler for the trigger's clear-X icon. Pair with `activeLabel`. */
+  /** Handler for the trigger's clear-X icon. Pair with `onClearActive`. */
   onClearActive?: () => void;
 }) {
-  const dimensionSection = dimensions.map(d => (
+  const dimensionSection = dimensions.filter(isNotToggle).map(d => (
     <Menu
       key={d.key}
       trigger={<MenuItem>{d.label}</MenuItem>}
       maxWidth="lg"
       stableWidth
       sections={[
-        <FilterContent
-          key="content"
-          label={d.label.toLowerCase()}
-          items={d.items}
-          selectedItems={d.selectedItems}
-          onChange={d.onChange}
-          valuesLabel={d.valuesLabel}
-        />,
+        isText(d) ? (
+          <FloatingSearch
+            key="content"
+            label={d.label.toLowerCase()}
+            value={d.value}
+            onSearch={d.onChange}
+            placeholder={d.placeholder}
+            autoFocus
+          />
+        ) : (
+          <FilterContent
+            key="content"
+            label={d.label.toLowerCase()}
+            items={d.items}
+            selectedItems={d.selectedItems}
+            onChange={d.onChange}
+            valuesLabel={d.valuesLabel}
+            singleSelect={d.singleSelect}
+            alwaysShowSearch={d.alwaysShowSearch}
+          />
+        ),
       ]}
     />
+  ));
+
+  // The Switch is a visual indicator only — the row's own click handler drives
+  // it, so clicking the switch itself doesn't toggle twice.
+  const toggleSection = dimensions.filter(isToggle).map(d => (
+    <MenuItem key={d.key} closeOnClick={false} onClick={() => d.onChange(!d.checked)}>
+      <span className="flex-1">{d.label}</span>
+      <Switch
+        checked={d.checked}
+        size="small"
+        tabIndex={-1}
+        aria-hidden
+        style={{ cursor: 'inherit' }}
+      />
+    </MenuItem>
   ));
 
   const trigger =
@@ -79,22 +137,39 @@ export function FilterMenu({
       lockScroll
       side="bottom"
       align="start"
-      sections={[dimensionSection, ...extraSections]}
+      sections={[dimensionSection, toggleSection, ...extraSections]}
     />
   );
 }
 
 /**
- * Renders a `FilterDropdown` chip for each dimension that has at least one
- * selected item. Pair with `FilterMenu` so users can manage filters from
- * either the chip or the menu — both views share the same `dimensions` array.
+ * Renders a chip for each dimension that has an active value. Pair with
+ * `FilterMenu` so users can manage filters from either the chip or the menu —
+ * both views share the same `dimensions` array. `kind: 'toggle'` dimensions
+ * get no chip; the switch inside the menu is their state indicator.
  */
 export function FilterChips({ dimensions }: { dimensions: FilterDimension[] }) {
   return (
     <>
-      {dimensions
-        .filter(d => d.selectedItems.length > 0)
-        .map(d => (
+      {dimensions.map(d => {
+        if (isToggle(d)) {
+          return null;
+        }
+
+        if (isText(d)) {
+          return d.value ? (
+            <TextFilterChip
+              key={d.key}
+              label={d.label}
+              value={d.value}
+              onChange={d.onChange}
+              onRemove={() => d.onChange('')}
+              placeholder={d.placeholder}
+            />
+          ) : null;
+        }
+
+        return d.selectedItems.length > 0 ? (
           <FilterDropdown
             key={d.key}
             label={d.label}
@@ -106,8 +181,11 @@ export function FilterChips({ dimensions }: { dimensions: FilterDimension[] }) {
             valuesLabel={d.valuesLabel}
             excludeMode={d.excludeMode}
             onExcludeModeChange={d.onExcludeModeChange}
+            singleSelect={d.singleSelect}
+            alwaysShowSearch={d.alwaysShowSearch}
           />
-        ))}
+        ) : null;
+      })}
     </>
   );
 }

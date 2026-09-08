@@ -32,9 +32,18 @@ export type FilterDropdownProps = {
   excludeMode?: boolean;
   /** Called when the exclude mode changes */
   onExcludeModeChange?: (exclude: boolean) => void;
+  /** When true, picking an item replaces the selection instead of adding to it. */
+  singleSelect?: boolean;
+  /** Show the search box regardless of how many items there are. */
+  alwaysShowSearch?: boolean;
 };
 
-const chipClass = buttonVariants({ variant: 'default' });
+/** Outer shell shared by every filter chip. */
+export const chipClass = buttonVariants({ variant: 'default' });
+
+/** The chip's trailing remove button. */
+export const chipRemoveButtonClass =
+  'text-neutral-8 hover:text-neutral-12 flex cursor-pointer items-center px-2 py-1.5 transition-colors';
 
 export function FilterDropdown({
   label,
@@ -47,6 +56,8 @@ export function FilterDropdown({
   disabled,
   excludeMode,
   onExcludeModeChange,
+  singleSelect,
+  alwaysShowSearch,
 }: FilterDropdownProps) {
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -125,6 +136,8 @@ export function FilterDropdown({
               selectedItems={selectedItems}
               onChange={onChange}
               valuesLabel={valuesLabel}
+              singleSelect={singleSelect}
+              alwaysShowSearch={alwaysShowSearch}
             />,
           ]}
         />
@@ -133,7 +146,7 @@ export function FilterDropdown({
       {/* Remove button */}
       <button
         type="button"
-        className={`${segmentSeparator} text-neutral-8 hover:text-neutral-12 flex cursor-pointer items-center px-2 py-1.5 transition-colors`}
+        className={`${segmentSeparator} ${chipRemoveButtonClass}`}
         aria-label={`Remove ${label} filter`}
         onClick={onRemove}
       >
