@@ -1152,7 +1152,7 @@ export class SchemaVersionStore {
 
       // if the actionId does not match the node, we have a unchanged edge
       if (schemaVersion.actionId !== node.id) {
-        invariant(node.action != 'DELETE', ` The action can not be delete in this scenario.`);
+        invariant(node.action !== 'DELETE', ` The action can not be delete in this scenario.`);
 
         edgesWithNodes.push({
           type: 'unchanged',
