@@ -24,35 +24,13 @@ export const HeaderOnly = createPreview(() => (
   </Card>
 ));
 
-export const Selectable = createPreview(() => (
-  <div className="flex w-[36rem] gap-4">
-    <Card variant="selectable">
-      <CardContent variant="selection">
-        <div>
-          <CardTitle title="Federation" />
-          <CardDescription description="Compose multiple subgraphs into one supergraph." />
-        </div>
-      </CardContent>
-    </Card>
-    <Card variant="selected">
-      <CardContent variant="selection">
-        <div>
-          <CardTitle title="Single schema" />
-          <CardDescription description="One schema, published from a single service." />
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-));
-
 export const Playground = createPreview({
   controls: defineControls({
     title: { type: 'text', default: 'Alert rule' },
     description: { type: 'text', default: 'Notify the team when p99 latency crosses.' },
-    variant: { type: 'radio', options: ['default', 'selectable', 'selected'], default: 'default' },
   }),
   render: v => (
-    <Card variant={v.variant}>
+    <Card>
       <CardHeader>
         <CardTitle title={v.title} />
         <CardDescription description={v.description} />

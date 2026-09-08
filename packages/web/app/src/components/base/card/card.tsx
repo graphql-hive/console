@@ -5,8 +5,6 @@ const cardVariants = cva('rounded-lg border', {
   variants: {
     variant: {
       default: '',
-      selectable: 'hover:border-neutral-10 flex-1 cursor-pointer transition-colors',
-      selected: 'border-border-neutral-10 bg-neutral-3 flex-1 cursor-pointer transition-colors',
     },
   },
   defaultVariants: {
