@@ -10,9 +10,9 @@ import { formatNumber, toDecimal } from '@/lib/hooks';
 import { capitalize, cn } from '@/lib/utils';
 import { Link as NextLink, useRouter } from '@tanstack/react-router';
 import AvailabilityBar from './availability-bar';
-import { useDescriptionsVisibleToggle } from './provider';
+import { useDescriptionsVisibleToggle, useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
-import { useExplorerFieldFiltering } from './utils';
+import { matchesSubgraphFilter, useExplorerFieldFiltering } from './utils';
 
 export function Description(props: { description: string }) {
   const { isDescriptionsVisible } = useDescriptionsVisibleToggle();
@@ -238,6 +238,7 @@ const GraphQLInputFields_InputFieldFragment = graphql(`
     isDeprecated
     deprecationReason
     supergraphMetadata {
+      ownedByServiceNames
       metadata {
         name
         content
@@ -252,6 +253,7 @@ const GraphQLInputFields_InputFieldFragment = graphql(`
 
 const GraphQLTypeCard_SupergraphMetadataFragment = graphql(`
   fragment GraphQLTypeCard_SupergraphMetadataFragment on SupergraphMetadata {
+    ownedByServiceNames
     ...SupergraphMetadataList_SupergraphMetadataFragment
   }
 `);
@@ -291,11 +293,16 @@ export function GraphQLTypeCard(props: {
   projectSlug: string;
   organizationSlug: string;
   children: ReactNode;
-}): ReactElement {
+}): ReactElement | null {
   const supergraphMetadata = useFragment(
     GraphQLTypeCard_SupergraphMetadataFragment,
     props.supergraphMetadata,
   );
+  const { subgraphs } = useSchemaExplorerContext();
+
+  if (!matchesSubgraphFilter(supergraphMetadata?.ownedByServiceNames, subgraphs)) {
+    return null;
+  }
 
   return (
     <div className="border-neutral-5 rounded-md border-2">
@@ -374,6 +381,14 @@ export function GraphQLTypeCardListItem(props: {
   );
 }
 
+export function ExplorerFilteredEmptyState() {
+  return (
+    <div className="text-neutral-10 border-neutral-5 rounded-md border border-dashed px-4 py-8 text-center text-sm">
+      No schema coordinates match the active filters.
+    </div>
+  );
+}
+
 export function GraphQLInputFields(props: {
   typeName: string;
   fields: FragmentType<typeof GraphQLInputFields_InputFieldFragment>[];
@@ -387,6 +402,10 @@ export function GraphQLInputFields(props: {
   const sortedAndFilteredFields = useExplorerFieldFiltering({
     fields,
   });
+
+  if (sortedAndFilteredFields.length === 0) {
+    return <ExplorerFilteredEmptyState />;
+  }
 
   return (
     <div className="flex flex-col">

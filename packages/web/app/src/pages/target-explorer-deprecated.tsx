@@ -1,20 +1,25 @@
 import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
-import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
+import { AlertCircleIcon, ChevronDown, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Button as BaseButton } from '@/components/base/button/button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
+  ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
-import { MetadataFilter, SchemaVariantFilter } from '@/components/target/explorer/filter';
-import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
+import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
+import {
+  SchemaExplorerProvider,
+  useSchemaExplorerContext,
+} from '@/components/target/explorer/provider';
+import { matchesSubgraphFilter } from '@/components/target/explorer/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -61,11 +66,27 @@ function InternalDeprecatedSchemaView(props: {
     DeprecatedSchemaView_DeprecatedSchemaExplorerFragment,
     props.explorer,
   );
+  const { subgraphs } = useSchemaExplorerContext();
+
+  // The letter index has to be built from the types that will actually render,
+  // otherwise a filtered-out type leaves behind a letter with nothing under it.
+  // useFragment is an identity function, so indexes line up with `types`.
+  const unmaskedTypes = useFragment(TypeRenderFragment, types);
+  const visibleTypes = useMemo(
+    () =>
+      types.filter((_, index) =>
+        matchesSubgraphFilter(
+          unmaskedTypes[index]?.supergraphMetadata?.ownedByServiceNames,
+          subgraphs,
+        ),
+      ),
+    [types, unmaskedTypes, subgraphs],
+  );
 
   const typesGroupedByFirstLetter = useMemo(() => {
     const grouped = new Map<string, FragmentType<typeof TypeRenderFragment>[]>([]);
 
-    for (const type of types) {
+    for (const type of visibleTypes) {
       const letter = type.name[0].toLocaleUpperCase();
       const existingNameGroup = grouped.get(letter);
 
@@ -76,15 +97,12 @@ function InternalDeprecatedSchemaView(props: {
       }
     }
     return grouped;
-  }, [types]);
+  }, [visibleTypes]);
 
   const letters = Array.from(typesGroupedByFirstLetter.keys()).sort();
-
-  useEffect(() => {
-    if (!selectedLetter) {
-      setSelectedLetter(letters[0]);
-    }
-  }, [selectedLetter, setSelectedLetter]);
+  // The selected letter can vanish when the filter changes.
+  const activeLetter =
+    selectedLetter && letters.includes(selectedLetter) ? selectedLetter : letters[0];
 
   if (types.length === 0) {
     return (
@@ -101,7 +119,11 @@ function InternalDeprecatedSchemaView(props: {
     );
   }
 
-  if (!selectedLetter) {
+  if (visibleTypes.length === 0) {
+    return <ExplorerFilteredEmptyState />;
+  }
+
+  if (!activeLetter) {
     return null;
   }
 
@@ -114,11 +136,11 @@ function InternalDeprecatedSchemaView(props: {
               <TooltipTrigger asChild>
                 <Button
                   onClick={() => setSelectedLetter(letter)}
-                  variant={letter === selectedLetter ? 'secondary' : 'ghost'}
+                  variant={letter === activeLetter ? 'secondary' : 'ghost'}
                   size="sm"
                   className={cn(
                     'rounded-none px-2 py-1',
-                    letter === selectedLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
+                    letter === activeLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
                   )}
                   key={letter}
                 >
@@ -133,7 +155,7 @@ function InternalDeprecatedSchemaView(props: {
         </TooltipProvider>
       </div>
       <div className="flex flex-col gap-4">
-        {(typesGroupedByFirstLetter.get(selectedLetter) ?? []).map((type, i) => {
+        {(typesGroupedByFirstLetter.get(activeLetter) ?? []).map((type, i) => {
           return (
             <TypeRenderer
               key={i}
@@ -183,6 +205,7 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
         __typename
         id
         explorer {
+          subgraphNames
           metadataAttributes {
             name
             values
@@ -238,33 +261,37 @@ function DeprecatedSchemaExplorer(props: {
 
   const latestSchemaVersion = query.data?.target?.latestSchemaVersion;
   const latestValidSchemaVersion = query.data?.target?.latestValidSchemaVersion;
+  const dateRangeFilter = (
+    <DateRangePicker
+      trigger={
+        <BaseButton
+          label={dateRangeController.selectedPreset.label}
+          variant="default"
+          rightIcon={{ icon: ChevronDown, withSeparator: true }}
+        />
+      }
+      validUnits={['y', 'M', 'w', 'd', 'h']}
+      selectedRange={dateRangeController.selectedPreset.range}
+      startDate={dateRangeController.startDate}
+      align="start"
+      onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+    />
+  );
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between py-6">
-        <div>
-          <Title>Deprecated Schema</Title>
-          <Subtitle>Understand the deprecated part of GraphQL schema</Subtitle>
-        </div>
-        <div className="flex justify-end gap-x-2">
-          <DateRangePicker
-            validUnits={['y', 'M', 'w', 'd', 'h']}
-            selectedRange={dateRangeController.selectedPreset.range}
-            startDate={dateRangeController.startDate}
-            align="end"
-            onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
-          />
-          <SchemaVariantFilter
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-            variant="deprecated"
-          />
-          {latestValidSchemaVersion?.explorer?.metadataAttributes?.length ? (
-            <MetadataFilter options={latestValidSchemaVersion.explorer.metadataAttributes} />
-          ) : null}
-        </div>
-      </div>
+      <ExplorerHeader
+        title="Deprecated Schema"
+        description="Understand the deprecated part of GraphQL schema"
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        period={dateRangeController.resolvedRange}
+        variant="deprecated"
+        subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
+        metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
+        dateRangeControl={dateRangeFilter}
+      />
       {!query.fetching && !query.stale ? (
         <>
           {latestValidSchemaVersion?.deprecatedSchema && latestSchemaVersion ? (

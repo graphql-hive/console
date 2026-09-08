@@ -426,6 +426,15 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
   metadataAttributes: async ({ supergraph }, _arg, _ctx) => {
     return supergraph?.metadataAttributes;
   },
+  subgraphNames: ({ supergraph }) => {
+    if (!supergraph) {
+      return [];
+    }
+
+    return [
+      ...new Set(Array.from(supergraph.schemaCoordinateServicesMappings.values()).flat()),
+    ].sort((a, b) => a.localeCompare(b));
+  },
 };
 
 function transformGraphQLObjectType(entity: GraphQLObjectType): GraphQLObjectTypeMapper['entity'] {
