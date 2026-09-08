@@ -18,14 +18,13 @@ import {
   type GraphQLField,
   type GraphQLNamedType,
   type GraphQLOutputType,
-  type GraphQLType,
   type OperationDefinitionNode,
   type SelectionNode,
   type VariableDefinitionNode,
 } from 'graphql';
-import type { Maybe } from 'graphql/jsutils/Maybe';
 import { get } from 'lodash';
 import type { LaboratoryOperation } from './operations';
+import { resolveSchemaPath } from './schema-path';
 
 export function healQuery(query: string) {
   return query.replace(/\{(\s+)?\}/g, '');
@@ -459,72 +458,6 @@ export function isArgInQuery(
   return found;
 }
 
-export function extractOfType(
-  type: GraphQLOutputType,
-): GraphQLObjectType | GraphQLScalarType | null {
-  if (type instanceof GraphQLNonNull) {
-    return extractOfType(type.ofType);
-  }
-
-  if (type instanceof GraphQLNonNull) {
-    return extractOfType(type.ofType);
-  }
-
-  if (type instanceof GraphQLList) {
-    return extractOfType(type.ofType);
-  }
-
-  if (type instanceof GraphQLObjectType) {
-    return type;
-  }
-
-  if (type instanceof GraphQLScalarType) {
-    return type;
-  }
-
-  return null;
-}
-
-export function findFieldInSchema(path: string, schema: GraphQLSchema) {
-  const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
-
-  let type: Maybe<GraphQLType>;
-
-  if (operation === 'query') {
-    type = schema.getQueryType();
-  } else if (operation === 'mutation') {
-    type = schema.getMutationType();
-  } else if (operation === 'subscription') {
-    type = schema.getSubscriptionType();
-  }
-
-  if (!type) {
-    return;
-  }
-
-  for (let i = 0; i < segments.length; ++i) {
-    if (!type) {
-      return;
-    }
-
-    if (type instanceof GraphQLObjectType) {
-      const field = type.getFields()[segments[i]] as GraphQLField<unknown, unknown, unknown>;
-
-      if (!field) {
-        return;
-      }
-
-      if (i === segments.length - 1) {
-        return field;
-      }
-
-      type = extractOfType(field.type);
-    }
-  }
-
-  return null;
-}
-
 export function addArgToField(
   query: string,
   path: string,
@@ -623,7 +556,7 @@ export function addArgToField(
           const fieldName = segments[currentPath.length];
 
           if (field.selectionSet) {
-            const typeField = findFieldInSchema(
+            const typeField = getFieldByPath(
               [operation, ...currentPath, fieldName].join('.'),
               schema,
             );
@@ -705,7 +638,7 @@ export function addArgToField(
           const fieldName = segments[0];
 
           if (operationDefinition.selectionSet) {
-            const typeField = findFieldInSchema(
+            const typeField = getFieldByPath(
               [operation, ...currentPath, fieldName].join('.'),
               schema,
             );
@@ -1336,36 +1269,27 @@ export function handleTemplate(query: string, env: Record<string, any>) {
   });
 }
 
+/**
+ * The field a path names, or null if the path does not resolve.
+ *
+ * A path ending in a type condition names no field of its own, so the nearest
+ * enclosing field is returned instead: that is the abstract field the branch
+ * narrows, which is what a caller holding such a path is asking about.
+ */
 export function getFieldByPath(path: string, schema: GraphQLSchema) {
-  const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
+  const steps = resolveSchemaPath(path, schema);
 
-  let type: Maybe<GraphQLType>;
-
-  if (operation === 'query') {
-    type = schema.getQueryType();
-  } else if (operation === 'mutation') {
-    type = schema.getMutationType();
-  } else if (operation === 'subscription') {
-    type = schema.getSubscriptionType();
-  }
-
-  if (!type) {
+  if (!steps) {
     return null;
   }
 
-  let field: Maybe<GraphQLField<unknown, unknown, unknown>>;
+  for (let i = steps.length - 1; i >= 0; --i) {
+    const { field } = steps[i];
 
-  for (const segment of segments) {
-    if (type instanceof GraphQLObjectType) {
-      field = type.getFields()[segment] as GraphQLField<unknown, unknown, unknown>;
-
-      if (!field) {
-        return null;
-      }
-
-      type = field.type;
+    if (field) {
+      return field;
     }
   }
 
-  return field;
+  return null;
 }

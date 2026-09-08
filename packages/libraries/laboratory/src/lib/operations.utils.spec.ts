@@ -7,6 +7,7 @@ import {
   createSchemaPathSearchIndex,
   deletePathFromQuery,
   extractPaths,
+  getFieldByPath,
   getOpenPaths,
   getOperationName,
   getOperationType,
@@ -172,6 +173,10 @@ describe('addArgToField / removeArgFromField', () => {
     type Query {
       a(id: ID!): User
       b(id: ID!): User
+      posts: [Post!]!
+    }
+    type Post {
+      author(verified: Boolean): User
     }
     type User {
       id: ID!
@@ -196,6 +201,54 @@ describe('addArgToField / removeArgFromField', () => {
     const withArg = addArgToField('query { a { id } }', 'query.a', 'id', schema);
     const removed = removeArgFromField(withArg, 'query.a', 'id');
     expect(isArgInQuery(removed, 'query.a', 'id')).toBe(false);
+  });
+
+  // Resolving the arg means walking the path back to its field in the schema,
+  // which for a nested path has to see through the list wrapper on `posts`.
+  it('adds an argument to a nested field reached through a list', () => {
+    const result = addArgToField(
+      'query { posts { author { id } } }',
+      'query.posts.author',
+      'verified',
+      schema,
+    );
+
+    expect(isArgInQuery(result, 'query.posts.author', 'verified')).toBe(true);
+
+    const removed = removeArgFromField(result, 'query.posts.author', 'verified');
+
+    expect(isArgInQuery(removed, 'query.posts.author', 'verified')).toBe(false);
+  });
+});
+
+describe('getFieldByPath', () => {
+  const schema = buildSchema(/* GraphQL */ `
+    type Query {
+      posts: [Post!]!
+      user: User
+    }
+    type Post {
+      title: String!
+      author: User
+    }
+    type User {
+      name: String!
+    }
+  `);
+
+  it('resolves a field through an object-typed parent', () => {
+    expect(getFieldByPath('query.user.name', schema)?.name).toBe('name');
+  });
+
+  // The walk used to keep the wrapper type, so it silently stopped at the list
+  // field and handed back the parent instead of the field the path named.
+  it('resolves a field through a list-typed parent', () => {
+    expect(getFieldByPath('query.posts.title', schema)?.name).toBe('title');
+    expect(getFieldByPath('query.posts.author.name', schema)?.name).toBe('name');
+  });
+
+  it('returns null for a field the type does not have', () => {
+    expect(getFieldByPath('query.posts.nope', schema)).toBeNull();
   });
 });
 
