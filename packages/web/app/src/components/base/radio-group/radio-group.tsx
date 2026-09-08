@@ -93,10 +93,16 @@ export type RadioItemProps = {
       /** Supporting copy under the label. Rendered by `as-card` only. */
       description?: string;
       content?: never;
+      withIndicator?: never;
     }
   | {
-      /** Replaces the built-in layout entirely, radio dot included. */
+      /** Replaces the built-in label layout, and by default the radio dot with it. */
       content: ReactNode;
+      /**
+       * Keeps the radio dot in front of `content`. For options that supply their own body but
+       * still need a visible control, rather than signalling selection by the card border alone.
+       */
+      withIndicator?: boolean;
       label?: never;
       description?: never;
     }
@@ -110,19 +116,26 @@ function RadioItem({
 }: { item: RadioItemProps } & RadioVariants) {
   const isCard = variant === 'as-card';
 
+  const indicator = isCard ? (
+    <span className="border-neutral-6 group-data-[checked]:border-accent flex size-5 shrink-0 items-center justify-center rounded-full border">
+      <BaseRadio.Indicator className="bg-accent size-2.5 rounded-full" />
+    </span>
+  ) : null;
+
   return (
     <BaseRadio.Root
       value={item.value}
       aria-label={item.ariaLabel}
       className={radioItemVariants({ variant, onSurface, orientation })}
     >
-      {item.content ?? (
+      {item.content ? (
         <>
-          {isCard ? (
-            <span className="border-neutral-6 group-data-[checked]:border-accent flex size-5 shrink-0 items-center justify-center rounded-full border">
-              <BaseRadio.Indicator className="bg-accent size-2.5 rounded-full" />
-            </span>
-          ) : null}
+          {item.withIndicator ? indicator : null}
+          {item.content}
+        </>
+      ) : (
+        <>
+          {indicator}
           <span className={isCard ? 'flex flex-col gap-2' : undefined}>
             <span className={isCard ? 'text-neutral-12 font-medium' : undefined}>{item.label}</span>
             {isCard && item.description ? (

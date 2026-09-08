@@ -15,6 +15,7 @@ import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { z } from 'zod';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { SchemaEditor } from '@/components/schema-editor';
@@ -42,7 +43,6 @@ import {
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
@@ -65,7 +65,6 @@ import { useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckIcon } from '@radix-ui/react-icons';
-import { RadioGroupIndicator } from '@radix-ui/react-radio-group';
 import { Link, useRouter } from '@tanstack/react-router';
 
 /**
@@ -823,69 +822,68 @@ const BreakingChanges = (props: {
           />
           <div className={clsx('text-neutral-11', !isEnabled && 'pointer-events-none opacity-25')}>
             <div>A schema change is considered as breaking only if it affects more than</div>
-            <div className="mx-4 my-2">
+            <div className="my-2 w-auto max-w-4xl">
               <RadioGroup
-                name="breakingChangeFormula"
+                variant="as-card"
+                orientation="vertical"
+                disabled={isSubmitting}
                 value={values.breakingChangeFormula}
-                onValueChange={async value => {
-                  await setFieldValue('breakingChangeFormula', value);
+                onValueChange={value => {
+                  void setFieldValue('breakingChangeFormula', value);
                 }}
-              >
-                <div>
-                  <RadioGroupItem
-                    id="percentage"
-                    key="percentage"
-                    value="PERCENTAGE"
-                    disabled={isSubmitting}
-                    data-cy="target-cbc-breakingChangeFormula-option-percentage"
-                  >
-                    <RadioGroupIndicator />
-                  </RadioGroupItem>
-                  <Input
-                    name="percentage"
-                    onChange={async event => {
-                      const value = Number(event.target.value);
-                      if (!Number.isNaN(value)) {
-                        await setFieldValue('percentage', value < 0 ? 0 : value, true);
-                      }
-                    }}
-                    onBlur={handleBlur}
-                    value={values.percentage}
-                    disabled={isSubmitting}
-                    type="number"
-                    step="0.01"
-                    className="inline-flex! mx-2 w-16 text-center"
-                  />
-                  <label htmlFor="percentage">Percent of Traffic</label>
-                </div>
-                <div>
-                  <RadioGroupItem
-                    id="requestCount"
-                    key="requestCount"
-                    value="REQUEST_COUNT"
-                    disabled={isSubmitting}
-                    data-cy="target-cbc-breakingChangeFormula-option-requestCount"
-                  >
-                    <RadioGroupIndicator />
-                  </RadioGroupItem>
-                  <Input
-                    name="requestCount"
-                    onChange={async event => {
-                      const value = Math.round(Number(event.target.value));
-                      if (!Number.isNaN(value)) {
-                        await setFieldValue('requestCount', value <= 0 ? 1 : value, true);
-                      }
-                    }}
-                    onBlur={handleBlur}
-                    value={values.requestCount}
-                    disabled={isSubmitting}
-                    type="number"
-                    step="1"
-                    className="inline-flex! mx-2 w-16 text-center"
-                  />
-                  <label htmlFor="requestCount">Total Operations</label>
-                </div>
-              </RadioGroup>
+                items={[
+                  {
+                    value: 'PERCENTAGE',
+                    ariaLabel: 'Percent of Traffic',
+                    withIndicator: true,
+                    content: (
+                      <span data-cy="target-cbc-breakingChangeFormula-option-percentage">
+                        <Input
+                          name="percentage"
+                          onChange={async event => {
+                            const value = Number(event.target.value);
+                            if (!Number.isNaN(value)) {
+                              await setFieldValue('percentage', value < 0 ? 0 : value, true);
+                            }
+                          }}
+                          onBlur={handleBlur}
+                          value={values.percentage}
+                          disabled={isSubmitting}
+                          type="number"
+                          step="0.01"
+                          className="inline-flex! mr-2 w-16 text-center"
+                        />
+                        Percent of Traffic
+                      </span>
+                    ),
+                  },
+                  {
+                    value: 'REQUEST_COUNT',
+                    ariaLabel: 'Total Operations',
+                    withIndicator: true,
+                    content: (
+                      <span data-cy="target-cbc-breakingChangeFormula-option-requestCount">
+                        <Input
+                          name="requestCount"
+                          onChange={async event => {
+                            const value = Math.round(Number(event.target.value));
+                            if (!Number.isNaN(value)) {
+                              await setFieldValue('requestCount', value <= 0 ? 1 : value, true);
+                            }
+                          }}
+                          onBlur={handleBlur}
+                          value={values.requestCount}
+                          disabled={isSubmitting}
+                          type="number"
+                          step="1"
+                          className="inline-flex! mr-2 w-16 text-center"
+                        />
+                        Total Operations
+                      </span>
+                    ),
+                  },
+                ]}
+              />
             </div>
             <div>
               in the past
@@ -1042,7 +1040,7 @@ const BreakingChanges = (props: {
             {touched.targetIds && errors.targetIds && (
               <div className="text-red-500">{errors.targetIds}</div>
             )}
-            <div className="border-neutral-5 bg-neutral-8/10 text-neutral-10 mb-3 mt-5 space-y-2 rounded-sm border py-2 pl-5">
+            <div className="border-neutral-5 bg-neutral-8/10 text-neutral-10 mb-3 mt-5 w-auto max-w-4xl space-y-2 rounded-sm border py-2 pl-5">
               <div>
                 <div className="font-semibold">Example settings</div>
                 <div className="text-sm">Removal of a field is considered breaking if</div>
@@ -1796,7 +1794,7 @@ function TargetSettingsContent(props: {
     }
 
     return pages;
-  }, [currentTarget]);
+  }, [currentTarget, currentProject]);
 
   const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
 
