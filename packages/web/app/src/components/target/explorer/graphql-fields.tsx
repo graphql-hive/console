@@ -3,6 +3,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   DeprecationNote,
   Description,
+  ExplorerFilteredEmptyState,
   GraphQLTypeAsLink,
   GraphQLTypeCardListItem,
   LinkToCoordinatePage,
@@ -27,6 +28,7 @@ const GraphQLFields_FieldFragment = graphql(`
       ...GraphQLArguments_ArgumentFragment
     }
     supergraphMetadata {
+      ownedByServiceNames
       ...SupergraphMetadataList_SupergraphMetadataFragment
     }
   }
@@ -48,6 +50,10 @@ export function GraphQLFields(props: {
   const sortedAndFilteredFields = useExplorerFieldFiltering({
     fields: fieldsFromFragment,
   });
+
+  if (sortedAndFilteredFields.length === 0) {
+    return <ExplorerFilteredEmptyState />;
+  }
 
   return (
     <TooltipProvider delayDuration={0}>

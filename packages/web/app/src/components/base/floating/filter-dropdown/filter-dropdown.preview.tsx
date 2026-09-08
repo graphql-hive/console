@@ -65,7 +65,9 @@ function FilterHarness({
   const [exclude, setExclude] = useState(false);
 
   return (
-    <div className="flex w-80 flex-col gap-6">
+    // items-start: the chip is inline-flex, and a stretch-aligned column would
+    // pull it to the full width of the harness.
+    <div className="flex w-80 flex-col items-start gap-6">
       <FilterDropdown
         items={items}
         label={label}
