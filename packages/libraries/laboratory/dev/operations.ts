@@ -56,6 +56,63 @@ subscription OidcLog {
     extensions: '',
   },
   {
+    id: 'dev-op-shared-field-names',
+    name: 'Shared field names',
+    query: `# CompositeSchema and SingleSchema both declare id, author, commit, date,
+# metadata and source. Only the CompositeSchema branch is selected here, so on
+# load exactly one of the two id rows is ticked. Expand
+# latestValidVersion > schemas > edges > node in the builder to see both.
+query SharedFieldNames {
+  latestValidVersion {
+    schemas {
+      edges {
+        node {
+          __typename
+          ... on CompositeSchema {
+            id
+            service
+          }
+        }
+      }
+    }
+  }
+}`,
+    variables: '',
+    headers: '',
+    extensions: '',
+  },
+  {
+    id: 'dev-op-legacy-fragments',
+    name: 'Legacy fragments',
+    query: `# A document the builder did not write: a hand-placed __typename, an inline
+# fragment, and a named fragment spread the builder does not manage. The tree
+# should expand to the fragment rows on load, and unticking url below
+# "... on CompositeSchema" must leave a document that still parses rather than a
+# bare "... on CompositeSchema". The spread must survive untouched.
+query LegacyFragments {
+  latestValidVersion {
+    schemas {
+      edges {
+        node {
+          __typename
+          ... on CompositeSchema {
+            url
+          }
+          ...SchemaFields
+        }
+      }
+    }
+  }
+}
+
+fragment SchemaFields on CompositeSchema {
+  commit
+}`,
+    variables: '',
+    headers: '',
+    extensions: '',
+  },
+  {
     id: 'dev-op-defer-plan',
     name: 'Defer plan',
     query: `# Plan tree with a Defer node: one primary branch, one deferred.
@@ -72,10 +129,13 @@ query DeferPlan {
   },
 ];
 
+/** The tab surfacing a seeded operation, so a preview can open one by name. */
+export const devTabIdFor = (operationId: string) => `dev-tab-${operationId}`;
+
 export const devTabs: LaboratoryTab[] = devOperations.map(operation => ({
-  id: `dev-tab-${operation.id}`,
+  id: devTabIdFor(operation.id),
   type: 'operation',
   data: { id: operation.id, name: operation.name },
 }));
 
-export const devActiveTabId = 'dev-tab-dev-op-query-plan';
+export const devActiveTabId = devTabIdFor('dev-op-query-plan');
