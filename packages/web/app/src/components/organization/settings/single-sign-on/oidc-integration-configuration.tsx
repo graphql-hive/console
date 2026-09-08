@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/base/card/card';
+import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,8 +25,6 @@ import { Callout } from '@/components/ui/callout';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import * as Table from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -709,94 +708,106 @@ function OIDCAccessSettings(props: {
   const isAdmin = organization?.me?.role.name === 'Admin';
   const isSCIMProvisioningEnabled =
     organization.viewerCanManageSCIM && oidcIntegration.userProvisioningRequired;
+  const [confirmSCIMProvisioning, setConfirmSCIMProvisioning] = useState(false);
+
+  // Only a change in either direction should do anything, so both branches no-op when the group
+  // is already on that option.
+  const handleProvisioningChange = (next: string) => {
+    if (next === 'scim') {
+      // Requiring SCIM locks out members who are not provisioned through it, so the radio only
+      // opens the confirmation. The group is controlled by server state, so it stays on `oidc`
+      // until the mutation lands. Relaxing the restriction needs no confirmation.
+      if (!isSCIMProvisioningEnabled) {
+        setConfirmSCIMProvisioning(true);
+      }
+      return;
+    }
+    if (isSCIMProvisioningEnabled) {
+      props.onRestrictionChange('userProvisioningRequired', false);
+    }
+  };
 
   return (
     <div>
       <Heading>User Provisioning</Heading>
       <p>Configure how users should be provisioned by your identity provider.</p>
       <div className="mt-2 space-y-4 rounded-lg border p-6">
-        <RadioGroup value={isSCIMProvisioningEnabled ? 'scim' : 'oidc'} className="flex gap-4">
-          <Card
-            variant={!isSCIMProvisioningEnabled ? 'selected' : 'selectable'}
-            onClick={
-              oidcIntegration.userProvisioningRequired
-                ? () => props.onRestrictionChange('userProvisioningRequired', false)
-                : undefined
-            }
-          >
-            <CardContent variant="selection">
-              <RadioGroupItem value="oidc" id="oidc-mode" className="mt-0.5" />
-              <div className="flex-1">
-                <Label htmlFor="oidc-mode" className="cursor-pointer text-base font-medium">
-                  {organization.viewerCanManageSCIM ? (
-                    <>Mixed OIDC and SCIM</>
-                  ) : (
-                    <>Managed via OIDC</>
+        <RadioGroup
+          variant="as-card"
+          orientation="horizontal"
+          value={isSCIMProvisioningEnabled ? 'scim' : 'oidc'}
+          onValueChange={handleProvisioningChange}
+          items={[
+            {
+              value: 'oidc',
+              ariaLabel: organization.viewerCanManageSCIM
+                ? 'Mixed OIDC and SCIM'
+                : 'Managed via OIDC',
+              content: (
+                <div className="flex-1">
+                  <span className="text-neutral-12 text-base font-medium">
+                    {organization.viewerCanManageSCIM ? 'Mixed OIDC and SCIM' : 'Managed via OIDC'}
+                  </span>
+                  <p className="mt-1 text-sm">Users are provisioned when signing in via OIDC.</p>
+                  {organization.viewerCanManageSCIM && (
+                    <p className="mt-1 text-sm">
+                      Optionally, users and groups can be provisioned via SCIM.
+                    </p>
                   )}
-                </Label>
-                <p className="mt-1 text-sm">Users are provisioned when signing in via OIDC.</p>
-                {organization.viewerCanManageSCIM && (
-                  <p className="mt-1 text-sm">
-                    Optionally, users and groups can be provisioned via SCIM.
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {organization.viewerCanManageSCIM ? (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Card
-                  variant={isSCIMProvisioningEnabled ? 'selected' : 'selectable'}
-                  onClick={ev => {
-                    if (isSCIMProvisioningEnabled) {
-                      ev.preventDefault();
-                    }
-                  }}
-                >
-                  <CardContent variant="selection">
-                    <RadioGroupItem value="scim" id="scim-mode" className="mt-0.5" />
-                    <div className="flex-1">
-                      <Label htmlFor="scim-mode" className="cursor-pointer text-base font-medium">
-                        <span>Managed via SCIM</span>
-                      </Label>
-                      <p className="mt-1 text-sm">
-                        Users and groups are exclusively managed by your identity provider via SCIM.
-                      </p>
-                      <p className="mt-1 text-sm">
-                        Roles and permissions are assigned to groups via role mappings.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Require SCIM provisioning?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Users who are not provisioned through SCIM will no longer be able to access this
-                    organization. The organization owner is not affected.
-                    <Callout type="warning">
-                      Members with unresolved SCIM provisioning conflicts will keep their current
-                      access until you review them. New OIDC users must first be provisioned through
-                      SCIM.
-                    </Callout>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    variant="destructive"
-                    onClick={() => props.onRestrictionChange('userProvisioningRequired', true)}
-                  >
-                    Require SCIM provisioning
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          ) : null}
-        </RadioGroup>
+                </div>
+              ),
+            },
+            ...(organization.viewerCanManageSCIM
+              ? [
+                  {
+                    value: 'scim',
+                    ariaLabel: 'Managed via SCIM',
+                    content: (
+                      <div className="flex-1">
+                        <span className="text-neutral-12 text-base font-medium">
+                          Managed via SCIM
+                        </span>
+                        <p className="mt-1 text-sm">
+                          Users and groups are exclusively managed by your identity provider via
+                          SCIM.
+                        </p>
+                        <p className="mt-1 text-sm">
+                          Roles and permissions are assigned to groups via role mappings.
+                        </p>
+                      </div>
+                    ),
+                  },
+                ]
+              : []),
+          ]}
+        />
+        <AlertDialog open={confirmSCIMProvisioning} onOpenChange={setConfirmSCIMProvisioning}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Require SCIM provisioning?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Users who are not provisioned through SCIM will no longer be able to access this
+                organization. The organization owner is not affected.
+                <Callout type="warning">
+                  Members with unresolved SCIM provisioning conflicts will keep their current access
+                  until you review them. New OIDC users must first be provisioned through SCIM.
+                </Callout>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => {
+                  props.onRestrictionChange('userProvisioningRequired', true);
+                  setConfirmSCIMProvisioning(false);
+                }}
+              >
+                Require SCIM provisioning
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         {isSCIMProvisioningEnabled ? (
           <>
             <Card>
