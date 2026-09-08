@@ -1,4 +1,4 @@
-import { buildSchema } from 'graphql';
+import { buildSchema, parse } from 'graphql';
 import {
   addArgToField,
   addPathToQuery,
@@ -165,6 +165,122 @@ describe('addPathToQuery / deletePathFromQuery', () => {
     const result = deletePathFromQuery('query { user { id name } }', 'query.user.name');
     expect(isPathInQuery(result, 'query.user.name')).toBe(false);
     expect(isPathInQuery(result, 'query.user.id')).toBe(true);
+  });
+
+  // The walk is anchored at the operation root, so the same field name at two
+  // depths addresses two different selections.
+  it('does not confuse the same field name at a different depth', () => {
+    const query = 'query { user { name } }';
+
+    expect(isPathInQuery(query, 'query.name')).toBe(false);
+    expect(isPathInQuery(addPathToQuery(query, 'query.name'), 'query.user.name')).toBe(true);
+  });
+});
+
+describe('inline fragments in the document', () => {
+  const IMAGE = 'query.page.content.on:Image.url';
+  const VIDEO = 'query.page.content.on:Video.url';
+
+  it('writes a type condition as an inline fragment and round-trips it', () => {
+    const result = addPathToQuery('', IMAGE);
+
+    expect(result).toContain('... on Image');
+    expect(isPathInQuery(result, IMAGE)).toBe(true);
+    expect(() => parse(result)).not.toThrow();
+  });
+
+  // Both members declare `url`. Without the type condition in the path the two
+  // selections are indistinguishable, which is the whole reason it exists.
+  it('keeps identically named fields in different members apart', () => {
+    const onlyImage = addPathToQuery('', IMAGE);
+
+    expect(isPathInQuery(onlyImage, IMAGE)).toBe(true);
+    expect(isPathInQuery(onlyImage, VIDEO)).toBe(false);
+
+    const both = addPathToQuery(onlyImage, VIDEO);
+
+    expect(isPathInQuery(both, IMAGE)).toBe(true);
+    expect(isPathInQuery(both, VIDEO)).toBe(true);
+    expect(both.match(/\.\.\. on /g)).toHaveLength(2);
+  });
+
+  it('reuses an existing fragment rather than adding a second one', () => {
+    const result = addPathToQuery(addPathToQuery('', IMAGE), 'query.page.content.on:Image.title');
+
+    expect(result.match(/\.\.\. on Image/g)).toHaveLength(1);
+    expect(isPathInQuery(result, IMAGE)).toBe(true);
+    expect(isPathInQuery(result, 'query.page.content.on:Image.title')).toBe(true);
+  });
+
+  // A field appended beside the fragment instead of inside it is invalid on a
+  // union, which is what the old prefix-matching insert produced.
+  it('inserts into a parent whose selections are only fragments', () => {
+    const result = addPathToQuery(addPathToQuery('', IMAGE), VIDEO);
+
+    expect(() => parse(result)).not.toThrow();
+    expect(result).not.toMatch(/\}\s*url/);
+  });
+
+  // An emptied fragment prints as `... on X` with no braces, which is a syntax
+  // error, and every walker swallows a parse failure and stops working.
+  it('removes a fragment left empty by its last field', () => {
+    const both = addPathToQuery(addPathToQuery('', IMAGE), VIDEO);
+    const result = deletePathFromQuery(both, IMAGE);
+
+    expect(() => parse(result)).not.toThrow();
+    expect(result).not.toContain('... on Image');
+    expect(isPathInQuery(result, VIDEO)).toBe(true);
+  });
+
+  it('keeps a fragment that still has other fields', () => {
+    const withBoth = addPathToQuery(addPathToQuery('', IMAGE), 'query.page.content.on:Image.title');
+    const result = deletePathFromQuery(withBoth, IMAGE);
+
+    expect(result).toContain('... on Image');
+    expect(isPathInQuery(result, 'query.page.content.on:Image.title')).toBe(true);
+  });
+
+  it('reports fragment paths so a loaded document expands them', () => {
+    const paths = getOpenPaths('query { page { content { ... on Image { url } } } }');
+
+    expect(paths).toContain('query.page.content');
+    expect(paths).toContain('query.page.content.on:Image');
+    expect(paths).toContain(IMAGE);
+  });
+
+  it('treats a fragment with no type condition as transparent', () => {
+    const query = 'query { page { content { ... @include(if: $x) { url } } } }';
+
+    expect(getOpenPaths(query)).toContain('query.page.content.url');
+    expect(isPathInQuery(query, 'query.page.content.url')).toBe(true);
+  });
+
+  it('leaves a named fragment spread alone', () => {
+    const query = 'query { page { content { ...Fields } } }';
+
+    expect(isPathInQuery(query, 'query.page.content.url')).toBe(false);
+    expect(deletePathFromQuery(query, 'query.page.content.url')).toContain('...Fields');
+    expect(addPathToQuery(query, 'query.page.title')).toContain('...Fields');
+  });
+
+  it('adds and removes an argument on a field inside a fragment', () => {
+    const schema = buildSchema(/* GraphQL */ `
+      type Image {
+        url(size: Int): String
+      }
+      union Content = Image
+      type Page {
+        content: [Content!]!
+      }
+      type Query {
+        page: Page
+      }
+    `);
+
+    const withArg = addArgToField(addPathToQuery('', IMAGE), IMAGE, 'size', schema);
+
+    expect(isArgInQuery(withArg, IMAGE, 'size')).toBe(true);
+    expect(isArgInQuery(removeArgFromField(withArg, IMAGE, 'size'), IMAGE, 'size')).toBe(false);
   });
 });
 
