@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
+import { Card } from '@/components/base/card/card';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { AlertsTable, AlertsTable_AlertFragment } from '@/components/project/alerts/alerts-table';
 import {
@@ -15,14 +16,6 @@ import { CreateChannelModal } from '@/components/project/alerts/create-channel';
 import { DeleteAlertsButton } from '@/components/project/alerts/delete-alerts-button';
 import { DeleteChannelsButton } from '@/components/project/alerts/delete-channels-button';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -41,44 +34,41 @@ function Channels(props: {
   const channels = props.channels ?? [];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Channels</CardTitle>
-        <CardDescription>
-          Alert Channels are a way to configure <strong>how</strong> you want to receive alerts and
-          notifications from Hive.
-          <br />
+    <Card
+      variants={{ onSurface: 'raised' }}
+      title="Channels"
+      description={
+        <>
+          <p className="pb-2">
+            Alert Channels are a way to configure <strong>how</strong> you want to receive alerts
+            and notifications from Hive.
+          </p>
           <DocsLink text="Learn more" href="/schema-registry/management/projects#alert-channels" />
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChannelsTable
-          channels={channels}
-          isChecked={channelId => selected.includes(channelId)}
-          onCheckedChange={(channelId, isChecked) => {
-            setSelected(
-              isChecked ? [...selected, channelId] : selected.filter(k => k !== channelId),
-            );
-          }}
-        />
-      </CardContent>
-      <CardFooter>
-        <div className="mt-4 flex gap-x-2">
-          <Button variant="default" onClick={toggleModalOpen}>
-            Add channel
-          </Button>
-          {channels.length > 0 && (
-            <DeleteChannelsButton
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              selected={selected}
-              onSuccess={() => {
-                setSelected([]);
-              }}
-            />
-          )}
-        </div>
-      </CardFooter>
+        </>
+      }
+    >
+      <ChannelsTable
+        channels={channels}
+        isChecked={channelId => selected.includes(channelId)}
+        onCheckedChange={(channelId, isChecked) => {
+          setSelected(isChecked ? [...selected, channelId] : selected.filter(k => k !== channelId));
+        }}
+      />
+      <div className="mt-4 flex items-center gap-x-2">
+        <Button variant="default" onClick={toggleModalOpen}>
+          Add channel
+        </Button>
+        {channels.length > 0 && (
+          <DeleteChannelsButton
+            organizationSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
+            selected={selected}
+            onSuccess={() => {
+              setSelected([]);
+            }}
+          />
+        )}
+      </div>
       {isModalOpen && (
         <CreateChannelModal
           organizationSlug={props.organizationSlug}
@@ -104,43 +94,42 @@ function Alerts(props: {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Alerts and Notifications</CardTitle>
-          <CardDescription>
-            Alerts are a way to configure <strong>when</strong> you want to receive alerts and
-            notifications from Hive.
-            <br />
+      <Card
+        variants={{ onSurface: 'raised' }}
+        title="Alerts and Notifications"
+        description={
+          <>
+            <p className="pb-2">
+              Alerts are a way to configure <strong>when</strong> you want to receive alerts and
+              notifications from Hive.
+            </p>
             <DocsLink
               text="Learn more"
               href="/schema-registry/management/projects#alerts-and-notifications"
             />
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AlertsTable
-            alerts={alerts}
-            isChecked={alertId => selected.includes(alertId)}
-            onCheckedChange={(alertId, isChecked) => {
-              setSelected(isChecked ? [...selected, alertId] : selected.filter(k => k !== alertId));
+          </>
+        }
+      >
+        <AlertsTable
+          alerts={alerts}
+          isChecked={alertId => selected.includes(alertId)}
+          onCheckedChange={(alertId, isChecked) => {
+            setSelected(isChecked ? [...selected, alertId] : selected.filter(k => k !== alertId));
+          }}
+        />
+        <div className="mt-4 flex items-center gap-x-2">
+          <Button variant="default" onClick={toggleModalOpen}>
+            Create alert
+          </Button>
+          <DeleteAlertsButton
+            organizationSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
+            selected={selected}
+            onSuccess={() => {
+              setSelected([]);
             }}
           />
-        </CardContent>
-        <CardFooter>
-          <div className="flex gap-x-2">
-            <Button variant="default" onClick={toggleModalOpen}>
-              Create alert
-            </Button>
-            <DeleteAlertsButton
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              selected={selected}
-              onSuccess={() => {
-                setSelected([]);
-              }}
-            />
-          </div>
-        </CardFooter>
+        </div>
       </Card>
       {isModalOpen && (
         <CreateAlertModal
