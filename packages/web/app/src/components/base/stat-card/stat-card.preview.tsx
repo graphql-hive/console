@@ -198,8 +198,10 @@ export const Playground = createPreview({
     title: { type: 'text', default: 'Requests' },
     value: { type: 'text', default: '482,100' },
     caption: { type: 'text', default: 'Total requests served' },
+    // `hint` takes a node, which no control can author. Text still exercises the length and
+    // wrapping of the tooltip; `WithHint` above covers the node case.
+    hint: { type: 'text', default: '' },
     withIcon: { type: 'boolean', default: true },
-    withHint: { type: 'boolean', default: false },
   }),
   render: v => (
     <StatCard
@@ -208,7 +210,7 @@ export const Playground = createPreview({
       value={v.value}
       caption={v.caption}
       icon={v.withIcon ? GlobeIcon : undefined}
-      hint={v.withHint ? 'How this metric is derived.' : undefined}
+      hint={v.hint || undefined}
     />
   ),
 });
