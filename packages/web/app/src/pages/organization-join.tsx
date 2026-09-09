@@ -2,8 +2,8 @@ import { useCallback, useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { SessionAuth, useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation, useQuery } from 'urql';
+import { Card } from '@/components/base/card/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { DottedBackground } from '@/components/ui/dotted-background';
 import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
@@ -144,16 +144,16 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                 if (invitation.__typename === 'OrganizationInvitationError') {
                   return (
                     <div className="bg-neutral-1">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Invitation Error</CardTitle>
-                        </CardHeader>
-                        <CardContent>{invitation.message}</CardContent>
-                        <CardFooter>
+                      <Card
+                        variants={{ onSurface: 'raised', titleSize: 'large' }}
+                        title="Invitation Error"
+                      >
+                        {invitation.message}
+                        <div className="mt-6 flex items-center">
                           <Button className="w-full" onClick={goBack}>
                             Back to Hive
                           </Button>
-                        </CardFooter>
+                        </div>
                       </Card>
                     </div>
                   );
@@ -161,21 +161,19 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
 
                 return (
                   <div className="bg-neutral-1">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Join "{invitation.name}" organization</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p>
-                          You've been invited to become a member of{' '}
-                          <span className="font-semibold">{invitation.name}</span>.
-                        </p>
-                        <p className="text-neutral-10 mt-2">
-                          By accepting the invitation, you will be able to collaborate with other
-                          members of this organization.
-                        </p>
-                      </CardContent>
-                      <CardFooter className="flex flex-col gap-y-4 md:flex-row md:justify-evenly md:gap-x-4 md:gap-y-0">
+                    <Card
+                      variants={{ onSurface: 'raised', titleSize: 'large' }}
+                      title={`Join "${invitation.name}" organization`}
+                    >
+                      <p>
+                        You've been invited to become a member of{' '}
+                        <span className="font-semibold">{invitation.name}</span>.
+                      </p>
+                      <p className="text-neutral-10 mt-2">
+                        By accepting the invitation, you will be able to collaborate with other
+                        members of this organization.
+                      </p>
+                      <div className="mt-6 flex flex-col gap-y-4 md:flex-row md:justify-evenly md:gap-x-4 md:gap-y-0">
                         <Button
                           className="w-full md:flex-1"
                           variant="outline"
@@ -191,7 +189,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                         >
                           Accept
                         </Button>
-                      </CardFooter>
+                      </div>
                     </Card>
                   </div>
                 );

@@ -3,15 +3,8 @@ import { LogOutIcon } from 'lucide-react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Card } from '@/components/base/card/card';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { DottedBackground } from '@/components/ui/dotted-background';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { HiveLogo } from '@/components/ui/icon';
@@ -149,29 +142,29 @@ export const CreateOrganizationFormContent = ({
     <div className="container w-4/5 max-w-[520px] md:w-3/5">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="bg-neutral-1">
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>Create an organization</CardTitle>
-              <CardDescription>
+          <Card
+            variants={{ onSurface: 'raised', titleSize: 'large' }}
+            title="Create an organization"
+            description={
+              <>
                 An organization is built on top of <b>Projects</b>. You will become an <b>admin</b>{' '}
                 and don't worry, you can add members later.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input placeholder="my-organization" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-            <CardFooter>
+              </>
+            }
+          >
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input placeholder="my-organization" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="mt-6 flex items-center">
               <Button
                 type="submit"
                 className="w-full"
@@ -187,7 +180,7 @@ export const CreateOrganizationFormContent = ({
                   'Create Organization'
                 )}
               </Button>
-            </CardFooter>
+            </div>
           </Card>
         </form>
       </Form>
