@@ -22,6 +22,7 @@ const cardTitleVariants = cva('text-neutral-12 font-medium leading-none', {
     titleSize: {
       default: 'text-sm',
       large: 'text-lg',
+      xlarge: 'text-2xl',
     },
   },
   defaultVariants: {

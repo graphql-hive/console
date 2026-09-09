@@ -71,20 +71,26 @@ export const OnSurface = createPreview(() => (
 ));
 
 /**
- * `large` is for cards that head a page section rather than sit inside a form. Check that the
- * description underneath still reads as secondary at both sizes, since it does not scale with it.
+ * `large` heads a page section; `xlarge` is the auth card, which is the whole page rather than a
+ * section of one. The description does not scale with the title, so the thing to check here is
+ * that it still reads as secondary at `xlarge` rather than looking orphaned under it.
  */
 export const TitleSize = createPreview(() => (
   <div className="flex flex-col gap-4">
     <Card
       variants={{ titleSize: 'default' }}
       title="Default"
-      description="text-sm, the size every call site renders today."
+      description="text-sm, the size the insights stat cards render at."
     />
     <Card
       variants={{ titleSize: 'large' }}
       title="Large"
-      description="text-lg, for section-heading cards."
+      description="text-lg, for section-heading cards. Today's ui/card CardTitle."
+    />
+    <Card
+      variants={{ titleSize: 'xlarge' }}
+      title="Extra large"
+      description="text-2xl, for auth cards, which own the whole page."
     />
   </div>
 ));
@@ -92,7 +98,7 @@ export const TitleSize = createPreview(() => (
 export const Playground = createPreview({
   controls: defineControls({
     onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
-    titleSize: { type: 'radio', options: ['default', 'large'], default: 'default' },
+    titleSize: { type: 'radio', options: ['default', 'large', 'xlarge'], default: 'default' },
     title: { type: 'text', default: 'Alert rule' },
     description: { type: 'text', default: 'Notify the team when p99 latency crosses.' },
   }),
