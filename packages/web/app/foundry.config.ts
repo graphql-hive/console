@@ -52,6 +52,13 @@ export default defineConfig({
         { label: 'PageLead' },
       ],
     },
+    // App components, as opposed to the design-system primitives above. Each preview
+    // reproduces a real call site so a base-component change can be judged against the
+    // compositions that actually ship.
+    {
+      label: 'Components',
+      children: [{ label: 'Auth' }, { label: 'RadioGroup' }],
+    },
     // Temporary. Working notes for the Card consolidation; delete this group and
     // src/components/base/migration/ once ui/card and v2/card are gone.
     {
