@@ -37,14 +37,15 @@
                   "hidden": false,
                   "query": {
                     "datasource": {
-                      "name": "grafanacloud-prom"
+                      "name": "TEMPO_DATASOURCE_UID"
                     },
-                    "group": "prometheus",
+                    "group": "tempo",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "label_replace(label_replace(sum by (destination) (rate(api_s3_write_duration_seconds_sum{destination!=\"\"}[15m])) / sum by (destination) (rate(api_s3_write_duration_seconds_count{destination!=\"\"}[15m])), \"mirror\", \"R2\", \"destination\", \".*cloudflarestorage.*\"), \"mirror\", \"S3\", \"destination\", \".*amazonaws.*\")",
-                      "instant": true,
-                      "legendFormat": "{{mirror}}"
+                      "limit": 50,
+                      "query": "{ event:name = \"cloudflare.r2.error_responses\" } | select(event.cloudflare.ray.ids, event.http.response.status_codes, event.error.count)",
+                      "queryType": "traceql",
+                      "tableType": "spans"
                     },
                     "version": "v0"
                   },
@@ -58,6 +59,517 @@
         },
         "description": "",
         "id": 1,
+        "links": [],
+        "title": "Failed writes — Cloudflare Ray ID & status detail",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "cloudflare.ray.ids"
+                  },
+                  "properties": [
+                    {
+                      "id": "displayName",
+                      "value": "Cloudflare Ray IDs"
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "http.response.status_codes"
+                  },
+                  "properties": [
+                    {
+                      "id": "displayName",
+                      "value": "Status codes"
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "error.count"
+                  },
+                  "properties": [
+                    {
+                      "id": "displayName",
+                      "value": "Error count"
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Trace Service",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 125
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Cloudflare Ray IDs",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 206
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Trace Name",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 194
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "sm",
+              "showHeader": true
+            }
+          },
+          "version": "13.3.0-32457798232"
+        }
+      }
+    },
+    "panel-10": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "PROM_DATASOURCE_UID"
+                    },
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "expr": "label_replace(label_replace(sum by (destination) (increase(api_s3_write_duration_seconds_sum{destination!=\"\"}[15m])) / sum by (destination) (increase(api_s3_write_duration_seconds_count{destination!=\"\"}[15m])), \"mirror\", \"R2 (15m)\", \"destination\", \".*cloudflarestorage.*\"), \"mirror\", \"S3 (15m)\", \"destination\", \".*amazonaws.*\")",
+                      "legendFormat": "{{mirror}}"
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              },
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "PROM_DATASOURCE_UID"
+                    },
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "expr": "label_replace(label_replace(sum by (destination) (increase(api_s3_write_duration_seconds_sum{destination!=\"\"}[3h])) / sum by (destination) (increase(api_s3_write_duration_seconds_count{destination!=\"\"}[3h])), \"mirror\", \"R2 (3h baseline)\", \"destination\", \".*cloudflarestorage.*\"), \"mirror\", \"S3 (3h baseline)\", \"destination\", \".*amazonaws.*\")",
+                      "legendFormat": "{{mirror}}"
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "B"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 10,
+        "links": [],
+        "title": "Latency: recent (15m) vs baseline (3h) — R2 vs S3",
+        "vizConfig": {
+          "group": "timeseries",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "barWidthFactor": 0.6,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "auto",
+                  "showValues": false,
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "s"
+              },
+              "overrides": []
+            },
+            "options": {
+              "legend": {
+                "calcs": ["lastNotNull", "max"],
+                "displayMode": "table",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "hideZeros": false,
+                "mode": "multi",
+                "sort": "desc"
+              }
+            }
+          },
+          "version": "13.3.0-32457798232"
+        }
+      }
+    },
+    "panel-11": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "PROM_DATASOURCE_UID"
+                    },
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "expr": "label_replace(label_replace(sum by (destination, status_code) (rate(api_s3_writes_total{destination!=\"\"}[15m])), \"mirror\", \"R2\", \"destination\", \".*cloudflarestorage.*\"), \"mirror\", \"S3\", \"destination\", \".*amazonaws.*\")",
+                      "legendFormat": "{{mirror}} [{{status_code}}]"
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 11,
+        "links": [],
+        "title": "Write throughput by mirror & status",
+        "vizConfig": {
+          "group": "timeseries",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "barWidthFactor": 0.6,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "auto",
+                  "showValues": false,
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "ops"
+              },
+              "overrides": []
+            },
+            "options": {
+              "legend": {
+                "calcs": ["lastNotNull", "mean"],
+                "displayMode": "table",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "hideZeros": false,
+                "mode": "multi",
+                "sort": "desc"
+              }
+            }
+          },
+          "version": "13.3.0-32457798232"
+        }
+      }
+    },
+    "panel-2": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "TEMPO_DATASOURCE_UID"
+                    },
+                    "group": "tempo",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "query": "{ event:name = \"cloudflare.r2.error_responses\" } | count_over_time()",
+                      "queryType": "traceql",
+                      "serviceMapUseNativeHistograms": false
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 2,
+        "links": [],
+        "title": "Failed CDN writes over time",
+        "vizConfig": {
+          "group": "timeseries",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "barWidthFactor": 0.6,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "auto",
+                  "showValues": false,
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "short"
+              },
+              "overrides": []
+            },
+            "options": {
+              "legend": {
+                "calcs": ["sum"],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "hideZeros": false,
+                "mode": "multi",
+                "sort": "desc"
+              }
+            }
+          },
+          "version": "13.3.0-32457798232"
+        }
+      }
+    },
+    "panel-3": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "PROM_DATASOURCE_UID"
+                    },
+                    "group": "prometheus",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "expr": "label_replace(label_replace(sum by (destination) (rate(api_s3_write_duration_seconds_sum{destination!=\"\"}[15m])) / sum by (destination) (rate(api_s3_write_duration_seconds_count{destination!=\"\"}[15m])), \"mirror\", \"R2\", \"destination\", \".*cloudflarestorage.*\"), \"mirror\", \"S3\", \"destination\", \".*amazonaws.*\")",
+                      "legendFormat": "{{mirror}}"
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 3,
         "links": [],
         "title": "Avg write latency by mirror",
         "vizConfig": {
@@ -96,7 +608,7 @@
               "reduceOptions": {
                 "calcs": ["lastNotNull"],
                 "fields": "",
-                "values": true
+                "values": false
               },
               "showPercentChange": false,
               "textMode": "value_and_name",
@@ -107,7 +619,7 @@
         }
       }
     },
-    "panel-2": {
+    "panel-4": {
       "kind": "Panel",
       "spec": {
         "data": {
@@ -120,13 +632,12 @@
                   "hidden": false,
                   "query": {
                     "datasource": {
-                      "name": "grafanacloud-prom"
+                      "name": "PROM_DATASOURCE_UID"
                     },
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
                       "expr": "sum(rate(api_s3_writes_total{status_code!=\"200\"}[15m])) / sum(rate(api_s3_writes_total[15m]))",
-                      "instant": true,
                       "legendFormat": "error rate"
                     },
                     "version": "v0"
@@ -140,7 +651,7 @@
           }
         },
         "description": "",
-        "id": 2,
+        "id": 4,
         "links": [],
         "title": "Overall write error rate (401s, all mirrors)",
         "vizConfig": {
@@ -181,7 +692,7 @@
               "reduceOptions": {
                 "calcs": ["lastNotNull"],
                 "fields": "",
-                "values": true
+                "values": false
               },
               "showPercentChange": false,
               "textMode": "value_and_name",
@@ -192,7 +703,7 @@
         }
       }
     },
-    "panel-3": {
+    "panel-5": {
       "kind": "Panel",
       "spec": {
         "data": {
@@ -205,13 +716,12 @@
                   "hidden": false,
                   "query": {
                     "datasource": {
-                      "name": "grafanacloud-prom"
+                      "name": "PROM_DATASOURCE_UID"
                     },
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
                       "expr": "label_replace(label_replace((sum by (destination) (increase(api_s3_write_duration_seconds_sum{destination!=\"\"}[15m])) / sum by (destination) (increase(api_s3_write_duration_seconds_count{destination!=\"\"}[15m]))) / (sum by (destination) (increase(api_s3_write_duration_seconds_sum{destination!=\"\"}[3h])) / sum by (destination) (increase(api_s3_write_duration_seconds_count{destination!=\"\"}[3h]))), \"mirror\", \"R2\", \"destination\", \".*cloudflarestorage.*\"), \"mirror\", \"S3\", \"destination\", \".*amazonaws.*\")",
-                      "instant": true,
                       "legendFormat": "{{mirror}}"
                     },
                     "version": "v0"
@@ -225,7 +735,7 @@
           }
         },
         "description": "",
-        "id": 3,
+        "id": 5,
         "links": [],
         "title": "Latency vs baseline (15m vs 3h) by mirror",
         "vizConfig": {
@@ -266,7 +776,7 @@
               "reduceOptions": {
                 "calcs": ["lastNotNull"],
                 "fields": "",
-                "values": true
+                "values": false
               },
               "showPercentChange": false,
               "textMode": "value_and_name",
@@ -277,7 +787,7 @@
         }
       }
     },
-    "panel-4": {
+    "panel-6": {
       "kind": "Panel",
       "spec": {
         "data": {
@@ -290,13 +800,12 @@
                   "hidden": false,
                   "query": {
                     "datasource": {
-                      "name": "grafanacloud-prom"
+                      "name": "PROM_DATASOURCE_UID"
                     },
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
                       "expr": "label_replace(label_replace(sum by (destination) (rate(api_s3_writes_total{destination!=\"\"}[15m])), \"mirror\", \"R2\", \"destination\", \".*cloudflarestorage.*\"), \"mirror\", \"S3\", \"destination\", \".*amazonaws.*\")",
-                      "instant": true,
                       "legendFormat": "{{mirror}}"
                     },
                     "version": "v0"
@@ -310,7 +819,7 @@
           }
         },
         "description": "",
-        "id": 4,
+        "id": 6,
         "links": [],
         "title": "Write throughput by mirror",
         "vizConfig": {
@@ -345,7 +854,7 @@
               "reduceOptions": {
                 "calcs": ["lastNotNull"],
                 "fields": "",
-                "values": true
+                "values": false
               },
               "showPercentChange": false,
               "textMode": "value_and_name",
@@ -356,7 +865,7 @@
         }
       }
     },
-    "panel-5": {
+    "panel-7": {
       "kind": "Panel",
       "spec": {
         "data": {
@@ -369,7 +878,7 @@
                   "hidden": false,
                   "query": {
                     "datasource": {
-                      "name": "grafanacloud-prom"
+                      "name": "PROM_DATASOURCE_UID"
                     },
                     "group": "prometheus",
                     "kind": "DataQuery",
@@ -389,7 +898,7 @@
           }
         },
         "description": "",
-        "id": 5,
+        "id": 7,
         "links": [],
         "title": "Write detail by mirror, operation & status",
         "vizConfig": {
@@ -434,7 +943,7 @@
         }
       }
     },
-    "panel-6": {
+    "panel-8": {
       "kind": "Panel",
       "spec": {
         "data": {
@@ -447,7 +956,7 @@
                   "hidden": false,
                   "query": {
                     "datasource": {
-                      "name": "grafanacloud-prom"
+                      "name": "PROM_DATASOURCE_UID"
                     },
                     "group": "prometheus",
                     "kind": "DataQuery",
@@ -466,259 +975,9 @@
           }
         },
         "description": "",
-        "id": 6,
-        "links": [],
-        "title": "Avg write latency trend — R2 vs S3",
-        "vizConfig": {
-          "group": "timeseries",
-          "kind": "VizConfig",
-          "spec": {
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "palette-classic"
-                },
-                "custom": {
-                  "axisBorderShow": false,
-                  "axisCenteredZero": false,
-                  "axisColorMode": "text",
-                  "axisLabel": "",
-                  "axisPlacement": "auto",
-                  "barAlignment": 0,
-                  "barWidthFactor": 0.6,
-                  "drawStyle": "line",
-                  "fillOpacity": 0,
-                  "gradientMode": "none",
-                  "hideFrom": {
-                    "legend": false,
-                    "tooltip": false,
-                    "viz": false
-                  },
-                  "insertNulls": false,
-                  "lineInterpolation": "linear",
-                  "lineWidth": 1,
-                  "pointSize": 5,
-                  "scaleDistribution": {
-                    "type": "linear"
-                  },
-                  "showPoints": "auto",
-                  "showValues": false,
-                  "spanNulls": false,
-                  "stacking": {
-                    "group": "A",
-                    "mode": "none"
-                  },
-                  "thresholdsStyle": {
-                    "mode": "off"
-                  }
-                },
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    },
-                    {
-                      "color": "red",
-                      "value": 80
-                    }
-                  ]
-                },
-                "unit": "s"
-              },
-              "overrides": []
-            },
-            "options": {
-              "legend": {
-                "calcs": ["lastNotNull", "max"],
-                "displayMode": "table",
-                "placement": "bottom",
-                "showLegend": true
-              },
-              "tooltip": {
-                "hideZeros": false,
-                "mode": "multi",
-                "sort": "desc"
-              }
-            }
-          },
-          "version": "13.3.0-32457798232"
-        }
-      }
-    },
-    "panel-7": {
-      "kind": "Panel",
-      "spec": {
-        "data": {
-          "kind": "QueryGroup",
-          "spec": {
-            "queries": [
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "grafanacloud-prom"
-                    },
-                    "group": "prometheus",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "expr": "sum(rate(api_s3_writes_total{status_code!=\"200\"}[15m])) / sum(rate(api_s3_writes_total[15m]))",
-                      "legendFormat": "error rate (401s)"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "A"
-                }
-              }
-            ],
-            "queryOptions": {},
-            "transformations": []
-          }
-        },
-        "description": "",
-        "id": 7,
-        "links": [],
-        "title": "Overall write error rate trend (401s, all mirrors)",
-        "vizConfig": {
-          "group": "timeseries",
-          "kind": "VizConfig",
-          "spec": {
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "palette-classic"
-                },
-                "custom": {
-                  "axisBorderShow": false,
-                  "axisCenteredZero": false,
-                  "axisColorMode": "text",
-                  "axisLabel": "",
-                  "axisPlacement": "auto",
-                  "barAlignment": 0,
-                  "barWidthFactor": 0.6,
-                  "drawStyle": "line",
-                  "fillOpacity": 0,
-                  "gradientMode": "none",
-                  "hideFrom": {
-                    "legend": false,
-                    "tooltip": false,
-                    "viz": false
-                  },
-                  "insertNulls": false,
-                  "lineInterpolation": "linear",
-                  "lineWidth": 1,
-                  "pointSize": 5,
-                  "scaleDistribution": {
-                    "type": "linear"
-                  },
-                  "showPoints": "auto",
-                  "showValues": false,
-                  "spanNulls": false,
-                  "stacking": {
-                    "group": "A",
-                    "mode": "none"
-                  },
-                  "thresholdsStyle": {
-                    "mode": "off"
-                  }
-                },
-                "min": 0,
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 0.01
-                    },
-                    {
-                      "color": "red",
-                      "value": 0.05
-                    }
-                  ]
-                },
-                "unit": "percentunit"
-              },
-              "overrides": []
-            },
-            "options": {
-              "legend": {
-                "calcs": ["lastNotNull", "max"],
-                "displayMode": "table",
-                "placement": "bottom",
-                "showLegend": true
-              },
-              "tooltip": {
-                "hideZeros": false,
-                "mode": "multi",
-                "sort": "desc"
-              }
-            }
-          },
-          "version": "13.3.0-32457798232"
-        }
-      }
-    },
-    "panel-8": {
-      "kind": "Panel",
-      "spec": {
-        "data": {
-          "kind": "QueryGroup",
-          "spec": {
-            "queries": [
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "grafanacloud-prom"
-                    },
-                    "group": "prometheus",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "expr": "label_replace(label_replace(sum by (destination) (increase(api_s3_write_duration_seconds_sum{destination!=\"\"}[15m])) / sum by (destination) (increase(api_s3_write_duration_seconds_count{destination!=\"\"}[15m])), \"mirror\", \"R2 (15m)\", \"destination\", \".*cloudflarestorage.*\"), \"mirror\", \"S3 (15m)\", \"destination\", \".*amazonaws.*\")",
-                      "legendFormat": "{{mirror}}"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "A"
-                }
-              },
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "grafanacloud-prom"
-                    },
-                    "group": "prometheus",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "expr": "label_replace(label_replace(sum by (destination) (increase(api_s3_write_duration_seconds_sum{destination!=\"\"}[3h])) / sum by (destination) (increase(api_s3_write_duration_seconds_count{destination!=\"\"}[3h])), \"mirror\", \"R2 (3h baseline)\", \"destination\", \".*cloudflarestorage.*\"), \"mirror\", \"S3 (3h baseline)\", \"destination\", \".*amazonaws.*\")",
-                      "legendFormat": "{{mirror}}"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "B"
-                }
-              }
-            ],
-            "queryOptions": {},
-            "transformations": []
-          }
-        },
-        "description": "",
         "id": 8,
         "links": [],
-        "title": "Latency: recent (15m) vs baseline (3h) — R2 vs S3",
+        "title": "Avg write latency trend — R2 vs S3",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -810,13 +1069,13 @@
                   "hidden": false,
                   "query": {
                     "datasource": {
-                      "name": "grafanacloud-prom"
+                      "name": "PROM_DATASOURCE_UID"
                     },
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "label_replace(label_replace(sum by (destination, status_code) (rate(api_s3_writes_total{destination!=\"\"}[15m])), \"mirror\", \"R2\", \"destination\", \".*cloudflarestorage.*\"), \"mirror\", \"S3\", \"destination\", \".*amazonaws.*\")",
-                      "legendFormat": "{{mirror}} [{{status_code}}]"
+                      "expr": "sum(rate(api_s3_writes_total{status_code!=\"200\"}[15m])) / sum(rate(api_s3_writes_total[15m]))",
+                      "legendFormat": "error rate (401s)"
                     },
                     "version": "v0"
                   },
@@ -831,7 +1090,7 @@
         "description": "",
         "id": 9,
         "links": [],
-        "title": "Write throughput by mirror & status",
+        "title": "Overall write error rate trend (401s, all mirrors)",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -875,6 +1134,7 @@
                     "mode": "off"
                   }
                 },
+                "min": 0,
                 "thresholds": {
                   "mode": "absolute",
                   "steps": [
@@ -883,18 +1143,22 @@
                       "value": 0
                     },
                     {
+                      "color": "yellow",
+                      "value": 0.01
+                    },
+                    {
                       "color": "red",
-                      "value": 80
+                      "value": 0.05
                     }
                   ]
                 },
-                "unit": "ops"
+                "unit": "percentunit"
               },
               "overrides": []
             },
             "options": {
               "legend": {
-                "calcs": ["lastNotNull", "mean"],
+                "calcs": ["lastNotNull", "max"],
                 "displayMode": "table",
                 "placement": "bottom",
                 "showLegend": true
@@ -929,15 +1193,6 @@
                     "spec": {
                       "element": {
                         "kind": "ElementReference",
-                        "name": "panel-1"
-                      }
-                    }
-                  },
-                  {
-                    "kind": "AutoGridLayoutItem",
-                    "spec": {
-                      "element": {
-                        "kind": "ElementReference",
                         "name": "panel-3"
                       }
                     }
@@ -947,7 +1202,7 @@
                     "spec": {
                       "element": {
                         "kind": "ElementReference",
-                        "name": "panel-2"
+                        "name": "panel-5"
                       }
                     }
                   },
@@ -957,6 +1212,15 @@
                       "element": {
                         "kind": "ElementReference",
                         "name": "panel-4"
+                      }
+                    }
+                  },
+                  {
+                    "kind": "AutoGridLayoutItem",
+                    "spec": {
+                      "element": {
+                        "kind": "ElementReference",
+                        "name": "panel-6"
                       }
                     }
                   }
@@ -982,7 +1246,7 @@
                     "spec": {
                       "element": {
                         "kind": "ElementReference",
-                        "name": "panel-6"
+                        "name": "panel-8"
                       }
                     }
                   },
@@ -991,7 +1255,7 @@
                     "spec": {
                       "element": {
                         "kind": "ElementReference",
-                        "name": "panel-8"
+                        "name": "panel-10"
                       }
                     }
                   }
@@ -1017,7 +1281,7 @@
                     "spec": {
                       "element": {
                         "kind": "ElementReference",
-                        "name": "panel-9"
+                        "name": "panel-11"
                       }
                     }
                   },
@@ -1026,7 +1290,7 @@
                     "spec": {
                       "element": {
                         "kind": "ElementReference",
-                        "name": "panel-7"
+                        "name": "panel-9"
                       }
                     }
                   }
@@ -1043,6 +1307,46 @@
           "spec": {
             "collapse": false,
             "layout": {
+              "kind": "GridLayout",
+              "spec": {
+                "items": [
+                  {
+                    "kind": "GridLayoutItem",
+                    "spec": {
+                      "element": {
+                        "kind": "ElementReference",
+                        "name": "panel-2"
+                      },
+                      "height": 8,
+                      "width": 10,
+                      "x": 0,
+                      "y": 0
+                    }
+                  },
+                  {
+                    "kind": "GridLayoutItem",
+                    "spec": {
+                      "element": {
+                        "kind": "ElementReference",
+                        "name": "panel-1"
+                      },
+                      "height": 8,
+                      "width": 14,
+                      "x": 10,
+                      "y": 0
+                    }
+                  }
+                ]
+              }
+            },
+            "title": "Traces"
+          }
+        },
+        {
+          "kind": "RowsLayoutRow",
+          "spec": {
+            "collapse": false,
+            "layout": {
               "kind": "AutoGridLayout",
               "spec": {
                 "columnWidthMode": "standard",
@@ -1052,7 +1356,7 @@
                     "spec": {
                       "element": {
                         "kind": "ElementReference",
-                        "name": "panel-5"
+                        "name": "panel-7"
                       }
                     }
                   }
