@@ -87,6 +87,10 @@ services:
       - ./.hive-dev/clickhouse/logs:/var/log/clickhouse-server
       - ./.hive-dev/clickhouse/db:/var/lib/clickhouse
       - ./configs/clickhouse:/etc/clickhouse-server/conf.d
+      # Dev-only: kept out of ./configs/clickhouse, which the integration tests also mount.
+      # Mounted as a file, not a directory, so the entrypoint can still write
+      # users.d/default-user.xml (it holds CLICKHOUSE_PASSWORD) inside the container.
+      - ./configs/clickhouse-dev/insert-partitions.xml:/etc/clickhouse-server/users.d/insert-partitions.xml
     ports:
       - '8123:8123'
     networks:
