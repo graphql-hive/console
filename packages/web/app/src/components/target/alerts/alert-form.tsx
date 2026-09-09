@@ -11,13 +11,7 @@ import {
   AccordionTrigger,
 } from '@/components/base/accordion/accordion';
 import { Button } from '@/components/base/button/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/base/card/card';
+import { Card } from '@/components/base/card/card';
 import { Select } from '@/components/base/floating/select/select';
 import {
   Form,
@@ -29,7 +23,7 @@ import {
   FormMessage,
 } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { RadioGroup, RadioItem } from '@/components/base/radio-group/radio-group';
+import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import {
@@ -630,326 +624,315 @@ export function AlertForm(props: AlertFormProps) {
           className={showPreview ? 'min-w-0 max-w-[700px] space-y-6' : 'min-w-0 flex-1 space-y-6'}
         >
           {/* Section 1: Destination */}
-          <Card>
-            <CardHeader>
-              <CardTitle title="1. Destination" />
-              <CardDescription
-                description={
-                  <>
-                    Select the target destination for this alert. Configure destinations{' '}
-                    <Link
-                      to="/$organizationSlug/$projectSlug/view/alerts"
-                      params={{ organizationSlug, projectSlug }}
-                      className="text-accent underline"
-                    >
-                      here
-                    </Link>
-                    .
-                  </>
-                }
-              />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {fields.map((field, index) => (
-                  <div key={field.id} className="flex items-end gap-3">
-                    <FormField
-                      control={form.control}
-                      name={`channels.${index}.channelId`}
-                      render={({ field: channelField }) => (
-                        <FormItem>
-                          {index === 0 && <FormLabel label="Channel" />}
-                          <FormControl>
-                            <Select
-                              options={channelOptions}
-                              value={channelField.value}
-                              onValueChange={channelField.onChange}
-                              placeholder="Select a channel"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => remove(index)}
-                    >
-                      <X className="size-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button type="button" variant="outline" onClick={() => append({ channelId: '' })}>
-                  <Plus className="mr-1 size-3.5" />
-                  {fields.length === 0 ? 'Add destination' : 'Add another destination'}
-                </Button>
-              </div>
-            </CardContent>
+          <Card
+            title="1. Destination"
+            description={
+              <>
+                Select the target destination for this alert. Configure destinations{' '}
+                <Link
+                  to="/$organizationSlug/$projectSlug/view/alerts"
+                  params={{ organizationSlug, projectSlug }}
+                  className="text-accent underline"
+                >
+                  here
+                </Link>
+                .
+              </>
+            }
+          >
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <div key={field.id} className="flex items-end gap-3">
+                  <FormField
+                    control={form.control}
+                    name={`channels.${index}.channelId`}
+                    render={({ field: channelField }) => (
+                      <FormItem>
+                        {index === 0 && <FormLabel label="Channel" />}
+                        <FormControl>
+                          <Select
+                            options={channelOptions}
+                            value={channelField.value}
+                            onValueChange={channelField.onChange}
+                            placeholder="Select a channel"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => remove(index)}
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" onClick={() => append({ channelId: '' })}>
+                <Plus className="mr-1 size-3.5" />
+                {fields.length === 0 ? 'Add destination' : 'Add another destination'}
+              </Button>
+            </div>
           </Card>
 
           {/* Section 2: Alert type and range */}
-          <Card>
-            <CardHeader>
-              <CardTitle title="2. Alert type and range" />
-              <CardDescription description="Select the alert type and range for this alert." />
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-start gap-6">
-                <FormField
-                  control={form.control}
-                  name="metricSelection"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel label="Metric" />
-                      <FormControl>
-                        <Select
-                          options={METRIC_OPTIONS}
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="timeWindowMinutes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel label="Range" />
-                      <FormControl>
-                        <Select
-                          options={RANGE_OPTIONS}
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
+          <Card
+            title="2. Alert type and range"
+            description="Select the alert type and range for this alert."
+          >
+            <div className="flex items-start gap-6">
+              <FormField
+                control={form.control}
+                name="metricSelection"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel label="Metric" />
+                    <FormControl>
+                      <Select
+                        options={METRIC_OPTIONS}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="timeWindowMinutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel label="Range" />
+                    <FormControl>
+                      <Select
+                        options={RANGE_OPTIONS}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </Card>
 
           {/* Section 3: Alert name and severity */}
-          <Card>
-            <CardHeader>
-              <CardTitle title="3. Alert name and severity" />
-              <CardDescription description="Choose a name for your alert and the severity level." />
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-start gap-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel label="Alert name" />
-                      <FormControl>
-                        <Input placeholder="Enter alert name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="severity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel label="Severity" />
-                      <FormControl>
-                        <RadioGroup value={field.value} onValueChange={field.onChange}>
-                          {SEVERITIES.map(sev => (
-                            <RadioItem
-                              key={sev.value}
-                              value={sev.value}
-                              label={sev.label}
-                              indicator={<span className={`size-2 rounded-full ${sev.dotClass}`} />}
-                            />
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
+          <Card
+            title="3. Alert name and severity"
+            description="Choose a name for your alert and the severity level."
+          >
+            <div className="flex items-start gap-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel label="Alert name" />
+                    <FormControl>
+                      <Input placeholder="Enter alert name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="severity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel label="Severity" />
+                    <FormControl>
+                      <RadioGroup
+                        variant="as-button"
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        items={SEVERITIES.map(sev => ({
+                          value: sev.value,
+                          ariaLabel: sev.label,
+                          content: (
+                            <>
+                              <span className={`size-2 rounded-full ${sev.dotClass}`} />
+                              {sev.label}
+                            </>
+                          ),
+                        }))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </Card>
 
           {/* Section 4: Condition, threshold, value */}
-          <Card>
-            <CardHeader>
-              <CardTitle title="4. Condition, threshold, value" />
-              <CardDescription description="Select the firing condition, threshold type, and value for this alert. Use advanced settings to debounce false positives." />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex flex-col items-start gap-2">
-                  <div className="flex gap-6">
-                    <FormField
-                      control={form.control}
-                      name="direction"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel label="Condition" />
-                          <FormControl>
-                            <Select
-                              options={conditionOptions}
-                              value={field.value}
-                              onValueChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="thresholdType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel label="Threshold type" />
-                          <FormControl>
-                            <Select
-                              options={THRESHOLD_TYPE_OPTIONS}
-                              value={field.value}
-                              onValueChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="thresholdValue"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel label={`Value (${valueUnit})`} />
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="any"
-                              min={0}
-                              max={valueMax}
-                              placeholder={valuePlaceholder}
-                              style={{ minWidth: '7rem' }}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <p className="text-neutral-10 text-[13px]">
-                    {isPercentageChange
-                      ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. With "${
-                          watchedValues.direction === 'BELOW' ? 'a Decrease' : 'an Increase'
-                        }" it fires when the metric ${
-                          watchedValues.direction === 'BELOW' ? 'drops' : 'rises'
-                        } by more than your value, e.g. 75 fires on a ${
-                          watchedValues.direction === 'BELOW' ? '−75%' : '+75%'
-                        } change rather than an absolute level.`
-                      : `"Fixed value" compares the metric over the ${thresholdRangeLabel} window directly against your value, in the metric's own unit (% for error rate, ms for latency, requests for total requests).`}
-                  </p>
+          <Card
+            title="4. Condition, threshold, value"
+            description="Select the firing condition, threshold type, and value for this alert. Use advanced settings to debounce false positives."
+          >
+            <div className="space-y-6">
+              <div className="flex flex-col items-start gap-2">
+                <div className="flex gap-6">
+                  <FormField
+                    control={form.control}
+                    name="direction"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel label="Condition" />
+                        <FormControl>
+                          <Select
+                            options={conditionOptions}
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="thresholdType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel label="Threshold type" />
+                        <FormControl>
+                          <Select
+                            options={THRESHOLD_TYPE_OPTIONS}
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="thresholdValue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel label={`Value (${valueUnit})`} />
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="any"
+                            min={0}
+                            max={valueMax}
+                            placeholder={valuePlaceholder}
+                            style={{ minWidth: '7rem' }}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-
-                <AlertMetricChart
-                  stats={previewQuery.data?.target?.operationsStats ?? null}
-                  loading={previewQuery.fetching}
-                  type={parsedMetric.type}
-                  metric={parsedMetric.metric}
-                  severity={watchedValues.severity}
-                  thresholdValue={
-                    watchedValues.thresholdValue ? parseFloat(watchedValues.thresholdValue) : null
-                  }
-                  direction={watchedValues.direction}
-                  thresholdType={watchedValues.thresholdType}
-                  timeWindowMinutes={parseInt(watchedValues.timeWindowMinutes, 10) || 0}
-                  clipToCurrentWindow
-                />
-
-                <Accordion defaultValue={expandAdvanced ? [0] : undefined}>
-                  <AccordionItem value={0}>
-                    <AccordionTrigger label="Advanced settings" variant="accent" />
-                    <AccordionContent>
-                      <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="savedFilterId"
-                          render={({ field }) => {
-                            const isLoading = savedFiltersQuery.fetching;
-                            const savedFilterOptions = [
-                              {
-                                value: '',
-                                label: isLoading
-                                  ? 'Loading filters...'
-                                  : 'No filter (all operations)',
-                              },
-                              ...(savedFiltersQuery.data?.target?.savedFilters?.edges?.map(
-                                edge => ({
-                                  value: edge.node.id,
-                                  label: edge.node.name,
-                                }),
-                              ) ?? []),
-                            ];
-
-                            return (
-                              <FormItem>
-                                <FormLabel label="On filter" />
-                                <FormControl>
-                                  <Select
-                                    options={savedFilterOptions}
-                                    value={field.value || ''}
-                                    onValueChange={field.onChange}
-                                    placeholder="Select a filter name"
-                                    searchable={savedFilterOptions.length > 10}
-                                  />
-                                </FormControl>
-                                <FormDescription description="Only shared filters can be attached to alerts." />
-                              </FormItem>
-                            );
-                          }}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="confirmationMinutes"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel label="Hold minutes" />
-                              <FormControl>
-                                <Input type="number" min={0} {...field} />
-                              </FormControl>
-                              <FormDescription
-                                description={
-                                  <>
-                                    Wait for the condition to exist for{' '}
-                                    <span className="text-neutral-12 font-medium">
-                                      {field.value || '0'}
-                                    </span>{' '}
-                                    minutes before firing. Helps prevent false alarms from brief
-                                    spikes. Leave at 0 to fire as soon as the condition holds for
-                                    two consecutive evaluations (recommended for alert ranges
-                                    greater than 1 day).
-                                  </>
-                                }
-                              />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                <p className="text-neutral-10 text-[13px]">
+                  {isPercentageChange
+                    ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. With "${
+                        watchedValues.direction === 'BELOW' ? 'a Decrease' : 'an Increase'
+                      }" it fires when the metric ${
+                        watchedValues.direction === 'BELOW' ? 'drops' : 'rises'
+                      } by more than your value, e.g. 75 fires on a ${
+                        watchedValues.direction === 'BELOW' ? '−75%' : '+75%'
+                      } change rather than an absolute level.`
+                    : `"Fixed value" compares the metric over the ${thresholdRangeLabel} window directly against your value, in the metric's own unit (% for error rate, ms for latency, requests for total requests).`}
+                </p>
               </div>
-            </CardContent>
+
+              <AlertMetricChart
+                stats={previewQuery.data?.target?.operationsStats ?? null}
+                loading={previewQuery.fetching}
+                type={parsedMetric.type}
+                metric={parsedMetric.metric}
+                severity={watchedValues.severity}
+                thresholdValue={
+                  watchedValues.thresholdValue ? parseFloat(watchedValues.thresholdValue) : null
+                }
+                direction={watchedValues.direction}
+                thresholdType={watchedValues.thresholdType}
+                timeWindowMinutes={parseInt(watchedValues.timeWindowMinutes, 10) || 0}
+                clipToCurrentWindow
+              />
+
+              <Accordion defaultValue={expandAdvanced ? [0] : undefined}>
+                <AccordionItem value={0}>
+                  <AccordionTrigger label="Advanced settings" variant="accent" />
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="savedFilterId"
+                        render={({ field }) => {
+                          const isLoading = savedFiltersQuery.fetching;
+                          const savedFilterOptions = [
+                            {
+                              value: '',
+                              label: isLoading
+                                ? 'Loading filters...'
+                                : 'No filter (all operations)',
+                            },
+                            ...(savedFiltersQuery.data?.target?.savedFilters?.edges?.map(edge => ({
+                              value: edge.node.id,
+                              label: edge.node.name,
+                            })) ?? []),
+                          ];
+
+                          return (
+                            <FormItem>
+                              <FormLabel label="On filter" />
+                              <FormControl>
+                                <Select
+                                  options={savedFilterOptions}
+                                  value={field.value || ''}
+                                  onValueChange={field.onChange}
+                                  placeholder="Select a filter name"
+                                  searchable={savedFilterOptions.length > 10}
+                                />
+                              </FormControl>
+                              <FormDescription description="Only shared filters can be attached to alerts." />
+                            </FormItem>
+                          );
+                        }}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="confirmationMinutes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel label="Hold minutes" />
+                            <FormControl>
+                              <Input type="number" min={0} {...field} />
+                            </FormControl>
+                            <FormDescription
+                              description={
+                                <>
+                                  Wait for the condition to exist for{' '}
+                                  <span className="text-neutral-12 font-medium">
+                                    {field.value || '0'}
+                                  </span>{' '}
+                                  minutes before firing. Helps prevent false alarms from brief
+                                  spikes. Leave at 0 to fire as soon as the condition holds for two
+                                  consecutive evaluations (recommended for alert ranges greater than
+                                  1 day).
+                                </>
+                              }
+                            />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
           </Card>
 
           <div className="flex justify-end gap-2">
