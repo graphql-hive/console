@@ -308,6 +308,8 @@ export type HivePluginOptions = OptionalWhenFalse<
      * Schema reporting
      *
      * Disabled by default
+     *
+     * @deprecated Use Hive CLI (@graphql-hive/cli) to publish the schema file instead. This is prevents an issue where multiple service instances result in numerous publishes to Hive.
      */
     reporting?: HiveReportingPluginOptions | false;
     /**

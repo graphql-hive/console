@@ -19,6 +19,10 @@ export interface SchemaReporter {
   dispose(): Promise<void>;
 }
 
+/**
+ *
+ * @deprecated Use @graphql-hive/cli to report schemas instead.
+ */
 export function createReporting(pluginOptions: HiveInternalPluginOptions): SchemaReporter {
   if (!pluginOptions.reporting || pluginOptions.enabled === false) {
     return {
@@ -31,6 +35,10 @@ export function createReporting(pluginOptions: HiveInternalPluginOptions): Schem
   const selfHostingOptions = pluginOptions.selfHosting;
   const reportingOptions = pluginOptions.reporting;
   const logger = pluginOptions.logger.child({ module: 'hive-reporting' });
+
+  logger.warn(
+    '[hive][reporting] Run-time schema reporting is deprecated. Use `@graphql-hive/cli` to safely check and publish schemas.',
+  );
 
   logIf(
     typeof reportingOptions.author !== 'string' || reportingOptions.author.length === 0,

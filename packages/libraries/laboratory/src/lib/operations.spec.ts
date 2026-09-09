@@ -1,8 +1,19 @@
 // @vitest-environment happy-dom
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type { LaboratoryCollectionsActions, LaboratoryCollectionsState } from './collections';
 import { useOperations, type LaboratoryOperation } from './operations';
 import type { LaboratoryTabsActions, LaboratoryTabsState } from './tabs';
+
+const executor = vi.fn();
+
+vi.mock('@graphql-tools/url-loader', () => ({
+  UrlLoader: class {
+    getExecutorAsync() {
+      return executor;
+    }
+  },
+  SubscriptionProtocol: { GRAPHQL_SSE: 'GRAPHQL_SSE' },
+}));
 
 const op = (id: string): LaboratoryOperation => ({
   id,
@@ -157,5 +168,57 @@ describe('useOperations', () => {
     });
 
     expect(updateOperationInCollection).not.toHaveBeenCalled();
+  });
+});
+
+describe('runActiveOperation', () => {
+  // Mirrors @graphql-tools/executor-legacy-ws: an endless stream whose executor
+  // never looks at request.signal, so only our own wrapper can end it.
+  const endlessStream = () => {
+    let returned = false;
+
+    return {
+      wasReturned: () => returned,
+      stream: {
+        [Symbol.asyncIterator]: () => ({
+          next: async () => {
+            await new Promise(resolve => setTimeout(resolve, 5));
+            return { done: false as const, value: { data: { tick: true } } };
+          },
+          return: async () => {
+            returned = true;
+            return { done: true as const, value: undefined };
+          },
+        }),
+      },
+    };
+  };
+
+  it('stops a subscription whose executor ignores the abort signal', async () => {
+    const source = endlessStream();
+    executor.mockResolvedValue(source.stream);
+
+    const onResponse = vi.fn();
+    const { result } = renderHook(() =>
+      useOperations({
+        checkPermissions: () => true,
+        defaultOperations: [op('op1')],
+        tabsApi: tabsApiFor('op1'),
+      }),
+    );
+
+    let run: Promise<unknown>;
+    act(() => {
+      run = result.current.runActiveOperation('http://localhost:4000/graphql', { onResponse });
+    });
+
+    await waitFor(() => expect(onResponse).toHaveBeenCalled());
+    await waitFor(() => expect(result.current.stopActiveOperation).toBeTruthy());
+
+    act(() => result.current.stopActiveOperation!());
+
+    await expect(run!).resolves.toBeNull();
+    expect(source.wasReturned()).toBe(true);
+    await waitFor(() => expect(result.current.stopActiveOperation).toBeFalsy());
   });
 });

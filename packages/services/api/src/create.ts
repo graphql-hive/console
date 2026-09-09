@@ -64,7 +64,8 @@ import { PrometheusConfig } from './modules/shared/providers/prometheus-config';
 import { HivePubSub, PUB_SUB_CONFIG } from './modules/shared/providers/pub-sub';
 import { REDIS_INSTANCE, type Redis } from './modules/shared/providers/redis';
 import { RedisRateLimiter } from './modules/shared/providers/redis-rate-limiter';
-import { S3_CONFIG, type S3Config } from './modules/shared/providers/s3-config';
+import { S3Config } from './modules/shared/providers/s3-config';
+import { S3Writer } from './modules/shared/providers/s3-writer';
 import { Storage } from './modules/shared/providers/storage';
 import { RateLimitConfig, WEB_APP_URL } from './modules/shared/providers/tokens';
 import { supportModule } from './modules/support';
@@ -166,7 +167,7 @@ export function createRegistry({
   prometheus: null | Record<string, unknown>;
   taskScheduler: TaskScheduler;
 }) {
-  const s3Config: S3Config = [
+  const s3Config = new S3Config([
     {
       client: new AwsClient({
         credentialProvider: s3.credentialProvider,
@@ -175,20 +176,19 @@ export function createRegistry({
       bucket: s3.bucketName,
       endpoint: s3.endpoint,
     },
-  ];
-
-  if (s3Mirror) {
-    s3Config.push({
-      client: new AwsClient({
-        credentialProvider: s3Mirror.credentialProvider,
-        service: 's3',
-      }),
-      bucket: s3Mirror.bucketName,
-      endpoint: s3Mirror.endpoint,
-    });
-  }
-
-  const artifactStorageWriter = new ArtifactStorageWriter(s3Config, logger);
+    ...(s3Mirror
+      ? [
+          {
+            client: new AwsClient({
+              credentialProvider: s3Mirror.credentialProvider,
+              service: 's3',
+            }),
+            bucket: s3Mirror.bucketName,
+            endpoint: s3Mirror.endpoint,
+          },
+        ]
+      : []),
+  ]);
 
   const auditLogS3Config = s3AuditLogs
     ? new AuditLogS3Config(
@@ -199,7 +199,11 @@ export function createRegistry({
         s3AuditLogs.endpoint,
         s3AuditLogs.bucketName,
       )
-    : new AuditLogS3Config(s3Config[0].client, s3Config[0].endpoint, s3Config[0].bucket);
+    : new AuditLogS3Config(
+        s3Config.destinations[0].client,
+        s3Config.destinations[0].endpoint,
+        s3Config.destinations[0].bucket,
+      );
 
   const providers: Provider[] = [
     AuditLogRecorder,
@@ -210,13 +214,14 @@ export function createRegistry({
     InMemoryRateLimitStore,
     InMemoryRateLimiter,
     RedisRateLimiter,
+    ArtifactStorageWriter,
+    {
+      provide: S3Writer,
+      useValue: new S3Writer(s3Config),
+    },
     {
       provide: AuditLogS3Config,
       useValue: auditLogS3Config,
-    },
-    {
-      provide: ArtifactStorageWriter,
-      useValue: artifactStorageWriter,
     },
     {
       provide: Logger,
@@ -259,7 +264,7 @@ export function createRegistry({
       scope: Scope.Singleton,
     },
     {
-      provide: S3_CONFIG,
+      provide: S3Config,
       useValue: s3Config,
       scope: Scope.Singleton,
     },

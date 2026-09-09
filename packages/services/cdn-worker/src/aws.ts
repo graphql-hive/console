@@ -369,7 +369,7 @@ export class AwsV4Signer {
 
     this.cache = cache || new Map();
     this.datetime = datetime || new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
-    this.signQuery = signQuery;
+    this.signQuery = signQuery ?? true;
     this.appendSessionToken = appendSessionToken || this.service === 'iotdevicegateway';
 
     this.headers.delete('Host'); // Can't be set in insecure env anyway

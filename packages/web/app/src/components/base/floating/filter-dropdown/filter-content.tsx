@@ -8,7 +8,7 @@ import type { FilterItem, FilterSelection } from './types';
 const ITEM_HEIGHT = 28; // h-7
 const MAX_LIST_HEIGHT = 256; // max-h-64
 /** Hide the search input when the list is short enough to scan at a glance. */
-const SEARCH_VISIBILITY_THRESHOLD = 15;
+export const SEARCH_VISIBILITY_THRESHOLD = 15;
 
 function getKey(item: FilterItem | FilterSelection): string {
   return item.id ?? item.name;
@@ -38,6 +38,10 @@ export type FilterContentProps = {
   onChange: (value: FilterSelection[]) => void;
   /** Label for the sub-values (e.g. "versions", "endpoints"). Used in accessibility labels. */
   valuesLabel?: string;
+  /** When true, picking an item replaces the selection instead of adding to it. */
+  singleSelect?: boolean;
+  /** Show the search box regardless of how many items there are. */
+  alwaysShowSearch?: boolean;
 };
 
 export function FilterContent({
@@ -46,6 +50,8 @@ export function FilterContent({
   selectedItems,
   onChange,
   valuesLabel = 'values',
+  singleSelect,
+  alwaysShowSearch,
 }: FilterContentProps) {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -89,13 +95,14 @@ export function FilterContent({
     (item: FilterItem) => {
       const key = getKey(item);
       const current = selectedItemsRef.current;
+      const next = { id: item.id, name: item.name, values: null };
       if (current.some(s => getKey(s) === key)) {
-        onChange(current.filter(s => getKey(s) !== key));
+        onChange(singleSelect ? [] : current.filter(s => getKey(s) !== key));
       } else {
-        onChange([...current, { id: item.id, name: item.name, values: null }]);
+        onChange(singleSelect ? [next] : [...current, next]);
       }
     },
-    [onChange],
+    [onChange, singleSelect],
   );
 
   const updateItemValues = useCallback(
@@ -114,7 +121,7 @@ export function FilterContent({
 
   const listHeight = Math.min(virtualizer.getTotalSize(), MAX_LIST_HEIGHT);
 
-  const showSearch = items.length >= SEARCH_VISIBILITY_THRESHOLD;
+  const showSearch = alwaysShowSearch || items.length >= SEARCH_VISIBILITY_THRESHOLD;
 
   return (
     // Modest min-width so the popover doesn't collapse to a single 1–2 char

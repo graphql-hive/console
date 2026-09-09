@@ -592,7 +592,7 @@ function OIDCDomainConfiguration(props: {
                       Users will no longer be able to login with email+password or social logins.
                       <Callout type="warning">
                         This action can potentially lock you out of the organization. Make sure your
-                        OIDC provider is not configured properly and you can log in using it.
+                        OIDC provider is configured properly and you can log in using it.
                       </Callout>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
