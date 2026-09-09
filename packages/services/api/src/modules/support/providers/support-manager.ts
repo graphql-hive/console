@@ -330,27 +330,24 @@ export class SupportManager {
 
       // attempt connect user to organization
       try {
-        await this.httpClient.post(
-          `${this.apiRoot}/api/v2/organization_memberships`,
-          {
-            username: this.config.username,
-            password: this.config.password,
-            responseType: 'json',
-            context: {
-              logger: this.logger,
-            },
-            headers: {
-              // v2 post fix is for idemopotency key cache busting.
-              'idempotency-key': input.userId + '|v2',
-            },
-            json: {
-              organization_membership: {
-                user_id: zendeskUserId,
-                organization_id: zendeskOrganizationId,
-              },
+        await this.httpClient.post(`${this.apiRoot}/api/v2/organization_memberships`, {
+          username: this.config.username,
+          password: this.config.password,
+          responseType: 'json',
+          context: {
+            logger: this.logger,
+          },
+          headers: {
+            // v2 post fix is for idemopotency key cache busting.
+            'idempotency-key': input.userId + '|v2',
+          },
+          json: {
+            organization_membership: {
+              user_id: zendeskUserId,
+              organization_id: zendeskOrganizationId,
             },
           },
-        );
+        });
       } catch (err) {
         if (err instanceof HiveHttpClientError && err.code === '422') {
           // This user is already a member of this organization.
@@ -427,21 +424,18 @@ export class SupportManager {
     const internalOrganizationId = await this.ensureZendeskOrganizationId(organizationId);
 
     const response = await this.httpClient
-      .get(
-        `${this.apiRoot}/api/v2/organizations/${internalOrganizationId}/tickets`,
-        {
-          searchParams: {
-            sort: '-updated_at',
-            'page[size]': 100,
-          },
-          username: this.config.username,
-          password: this.config.password,
-          responseType: 'json',
-          context: {
-            logger: this.logger,
-          },
+      .get(`${this.apiRoot}/api/v2/organizations/${internalOrganizationId}/tickets`, {
+        searchParams: {
+          sort: '-updated_at',
+          'page[size]': 100,
         },
-      )
+        username: this.config.username,
+        password: this.config.password,
+        responseType: 'json',
+        context: {
+          logger: this.logger,
+        },
+      })
       .then(res =>
         SupportTicketListModel.parseAsync(res).catch(err => {
           this.logger.error(err);

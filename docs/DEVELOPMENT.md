@@ -177,9 +177,12 @@ exported in your shell). macOS does not need this.
 
 ## Zendesk mock (optional)
 
-The dev stack includes an opt-in `zendesk` profile that runs a MockServer instance to mimic the Zendesk API. This is configured in [docker/configs/zendesk-mock/expectations.json](../docker/configs/zendesk-mock/expectations.json).
+The dev stack includes an opt-in `zendesk` profile that runs a MockServer instance to mimic the
+Zendesk API. This is configured in
+[docker/configs/zendesk-mock/expectations.json](../docker/configs/zendesk-mock/expectations.json).
 
-Use this to test the support-ticket flow locally without a real Zendesk account. Starting this instance uses a separate command since it's not frequently needed:
+Use this to test the support-ticket flow locally without a real Zendesk account. Starting this
+instance uses a separate command since it's not frequently needed:
 
 ```bash
 pnpm dev:zendesk-mock
@@ -198,9 +201,9 @@ ZENDESK_BASE_URL=http://localhost:3043
 ```
 
 `ZENDESK_BASE_URL` overrides the Zendesk API host; requests still route through
-`${ZENDESK_BASE_URL}/${ZENDESK_SUBDOMAIN}/api/v2/...` so the mock server's request log stays
-grouped by subdomain. After submitting a ticket, confirm the request reached the mock by querying
-its recorded requests:
+`${ZENDESK_BASE_URL}/${ZENDESK_SUBDOMAIN}/api/v2/...` so the mock server's request log stays grouped
+by subdomain. After submitting a ticket, confirm the request reached the mock by querying its
+recorded requests:
 
 ```bash
 curl -s -X PUT 'http://localhost:3043/mockserver/retrieve?type=REQUESTS' | jq
