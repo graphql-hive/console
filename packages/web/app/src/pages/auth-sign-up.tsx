@@ -6,13 +6,7 @@ import { sendVerificationEmail } from 'supertokens-auth-react/recipe/emailverifi
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { emailPasswordSignUp } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import z from 'zod';
-import {
-  AuthCard,
-  AuthCardContent,
-  AuthCardHeader,
-  AuthCardStack,
-  AuthOrSeparator,
-} from '@/components/auth';
+import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -217,25 +211,55 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
   return (
     <>
       <Meta title="Sign Up" />
-      <AuthCard>
-        <AuthCardHeader
-          title="Register"
-          description="Enter your information to create an account"
-        />
-        <AuthCardContent>
-          <AuthCardStack>
-            <TooltipProvider delayDuration={200}>
-              <Form {...form}>
-                <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-                  <div className="grid grid-cols-2 gap-4">
+      <AuthCard
+        title="Register"
+        description="Enter your information to create an account"
+        content={
+          <>
+            <AuthCardStack>
+              <TooltipProvider delayDuration={200}>
+                <Form {...form}>
+                  <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="firstName"
+                        render={() => (
+                          <FormItem>
+                            <FormLabel>First name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Max" {...form.register('firstName')} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="lastName"
+                        render={() => (
+                          <FormItem>
+                            <FormLabel>Last name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Robinson" {...form.register('lastName')} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <FormField
                       control={form.control}
-                      name="firstName"
+                      name="email"
                       render={() => (
                         <FormItem>
-                          <FormLabel>First name</FormLabel>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="Max" {...form.register('firstName')} />
+                            <Input
+                              placeholder="m@example.com"
+                              type="email"
+                              {...form.register('email')}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -243,123 +267,93 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                     />
                     <FormField
                       control={form.control}
-                      name="lastName"
+                      name="password"
                       render={() => (
                         <FormItem>
-                          <FormLabel>Last name</FormLabel>
+                          <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input placeholder="Robinson" {...form.register('lastName')} />
+                            <Input type="password" {...form.register('password')} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="m@example.com"
-                            type="email"
-                            {...form.register('email')}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...form.register('password')} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={isPending}>
-                    {signUp.isSuccess && signUp.data.status === 'OK' && isVerificationSettled
-                      ? 'Redirecting...'
-                      : signUp.isPending
-                        ? 'Creating account...'
-                        : 'Create an account'}
-                  </Button>
-                </form>
-              </Form>
-              {enabledProviders.length ? <AuthOrSeparator /> : null}
-              {isProviderEnabled('google') ? (
-                <SignInButton previousSignIn={lastAuthMethod === 'google'} variant="outline">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => thirdPartySignIn.mutate('google')}
-                    disabled={isPending}
-                  >
-                    <SiGoogle className="mr-4 size-4" /> Sign up with Google
-                  </Button>
-                </SignInButton>
-              ) : null}
-              {isProviderEnabled('github') ? (
-                <SignInButton previousSignIn={lastAuthMethod === 'github'} variant="outline">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => thirdPartySignIn.mutate('github')}
-                    disabled={isPending}
-                  >
-                    <SiGithub className="mr-4 size-4" /> Sign up with Github
-                  </Button>
-                </SignInButton>
-              ) : null}
-              {isProviderEnabled('okta') ? (
-                <SignInButton previousSignIn={lastAuthMethod === 'okta'} variant="outline">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => thirdPartySignIn.mutate('okta')}
-                    disabled={isPending}
-                  >
-                    <SiOkta className="mr-4 size-4" /> Sign up with Okta
-                  </Button>
-                </SignInButton>
-              ) : null}
-              {isProviderEnabled('oidc') ? (
-                <SignInButton previousSignIn={lastAuthMethod === 'oidc'} variant="outline">
-                  <Button asChild variant="outline" className="w-full" disabled={isPending}>
-                    <Link
-                      to="/auth/sso"
-                      search={{
-                        redirectToPath: props.redirectToPath,
-                      }}
+                    <Button type="submit" className="w-full" disabled={isPending}>
+                      {signUp.isSuccess && signUp.data.status === 'OK' && isVerificationSettled
+                        ? 'Redirecting...'
+                        : signUp.isPending
+                          ? 'Creating account...'
+                          : 'Create an account'}
+                    </Button>
+                  </form>
+                </Form>
+                {enabledProviders.length ? <AuthOrSeparator /> : null}
+                {isProviderEnabled('google') ? (
+                  <SignInButton previousSignIn={lastAuthMethod === 'google'} variant="outline">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => thirdPartySignIn.mutate('google')}
+                      disabled={isPending}
                     >
-                      <FaRegUserCircle className="mr-4 size-4" /> Sign up with SSO
-                    </Link>
-                  </Button>
-                </SignInButton>
-              ) : null}
-            </TooltipProvider>
-          </AuthCardStack>
-          <div className="mt-4 text-center text-sm">
-            Already have an account?{' '}
-            <Link
-              to="/auth/sign-in"
-              search={{ redirectToPath: props.redirectToPath }}
-              data-auth-link="sign-in"
-              className="underline"
-            >
-              Sign in
-            </Link>
-          </div>
-        </AuthCardContent>
-      </AuthCard>
+                      <SiGoogle className="mr-4 size-4" /> Sign up with Google
+                    </Button>
+                  </SignInButton>
+                ) : null}
+                {isProviderEnabled('github') ? (
+                  <SignInButton previousSignIn={lastAuthMethod === 'github'} variant="outline">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => thirdPartySignIn.mutate('github')}
+                      disabled={isPending}
+                    >
+                      <SiGithub className="mr-4 size-4" /> Sign up with Github
+                    </Button>
+                  </SignInButton>
+                ) : null}
+                {isProviderEnabled('okta') ? (
+                  <SignInButton previousSignIn={lastAuthMethod === 'okta'} variant="outline">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => thirdPartySignIn.mutate('okta')}
+                      disabled={isPending}
+                    >
+                      <SiOkta className="mr-4 size-4" /> Sign up with Okta
+                    </Button>
+                  </SignInButton>
+                ) : null}
+                {isProviderEnabled('oidc') ? (
+                  <SignInButton previousSignIn={lastAuthMethod === 'oidc'} variant="outline">
+                    <Button asChild variant="outline" className="w-full" disabled={isPending}>
+                      <Link
+                        to="/auth/sso"
+                        search={{
+                          redirectToPath: props.redirectToPath,
+                        }}
+                      >
+                        <FaRegUserCircle className="mr-4 size-4" /> Sign up with SSO
+                      </Link>
+                    </Button>
+                  </SignInButton>
+                ) : null}
+              </TooltipProvider>
+            </AuthCardStack>
+            <div className="mt-4 text-center text-sm">
+              Already have an account?{' '}
+              <Link
+                to="/auth/sign-in"
+                search={{ redirectToPath: props.redirectToPath }}
+                data-auth-link="sign-in"
+                className="underline"
+              >
+                Sign in
+              </Link>
+            </div>
+          </>
+        }
+      />
     </>
   );
 }

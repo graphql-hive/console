@@ -1,4 +1,4 @@
-import { AuthCard, AuthCardContent, AuthCardHeader } from '@/components/auth';
+import { AuthCard } from '@/components/auth';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { env } from '@/env/frontend';
@@ -22,36 +22,31 @@ function AuthOIDC(props: { oidcId: string; redirectToPath: string }) {
   });
 
   if (auth.isError) {
-    return (
-      <AuthCard>
-        <AuthCardHeader title="OIDC Login Flow Failed" description={auth.error.message} />
-      </AuthCard>
-    );
+    return <AuthCard title="OIDC Login Flow Failed" description={auth.error.message} />;
   }
 
   return (
-    <AuthCard>
-      <AuthCardHeader
-        title="Starting OIDC Login Flow"
-        description="You are being redirected to your OIDC provider."
-      />
-    </AuthCard>
+    <AuthCard
+      title="Starting OIDC Login Flow"
+      description="You are being redirected to your OIDC provider."
+    />
   );
 }
 
 function MissingOIDCId() {
   return (
-    <AuthCard>
-      <AuthCardHeader title="Missing ID" description="You need to provide an OIDC ID to sign in." />
-      <AuthCardContent>
+    <AuthCard
+      title="Missing ID"
+      description="You need to provide an OIDC ID to sign in."
+      content={
         <p className="text-neutral-10">
           <DocsLink
             href="/management/sso-oidc-provider#login-via-oidc"
             text="Learn how to login via OIDC"
           />
         </p>
-      </AuthCardContent>
-    </AuthCard>
+      }
+    />
   );
 }
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation } from 'urql';
-import { AuthCard, AuthCardContent, AuthCardHeader, AuthCardStack } from '@/components/auth';
+import { AuthCard, AuthCardStack } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { useToast } from '@/components/ui/use-toast';
@@ -112,9 +112,9 @@ function AuthVerifyEmail() {
   if (search.userIdentityId) {
     if (verifyMutation.error) {
       return (
-        <AuthCard>
-          <AuthCardHeader title="Failed to verify your email" />
-          <AuthCardContent>
+        <AuthCard
+          title="Failed to verify your email"
+          content={
             <AuthCardStack>
               <p>There was an unexpected error when verifying your email address.</p>
               <Button
@@ -128,19 +128,17 @@ function AuthVerifyEmail() {
                 <Link to="/logout">Logout</Link>
               </Button>
             </AuthCardStack>
-          </AuthCardContent>
-        </AuthCard>
+          }
+        />
       );
     }
 
     if (verifyMutation.data?.verifyEmail.ok?.verified) {
       return (
-        <AuthCard>
-          <AuthCardHeader
-            title="Success!"
-            description="Your email address has been successfully verified."
-          />
-          <AuthCardContent>
+        <AuthCard
+          title="Success!"
+          description="Your email address has been successfully verified."
+          content={
             <AuthCardStack>
               <Button className="w-full" asChild>
                 <Link to="/" data-button-verify-email-continue>
@@ -148,16 +146,16 @@ function AuthVerifyEmail() {
                 </Link>
               </Button>
             </AuthCardStack>
-          </AuthCardContent>
-        </AuthCard>
+          }
+        />
       );
     }
 
     if (verifyMutation.data?.verifyEmail.error) {
       return (
-        <AuthCard>
-          <AuthCardHeader title="Email verification" />
-          <AuthCardContent>
+        <AuthCard
+          title="Email verification"
+          content={
             <AuthCardStack>
               <p>{verifyMutation.data?.verifyEmail.error.message}</p>
               <Button asChild className="w-full">
@@ -166,32 +164,30 @@ function AuthVerifyEmail() {
                 </Link>
               </Button>
             </AuthCardStack>
-          </AuthCardContent>
-        </AuthCard>
+          }
+        />
       );
     }
 
     return (
-      <AuthCard>
-        <AuthCardHeader
-          title="Verifying your email address"
-          description="This should only take a few seconds."
-        />
-        <AuthCardContent>
+      <AuthCard
+        title="Verifying your email address"
+        description="This should only take a few seconds."
+        content={
           <AuthCardStack>
             <div className="flex justify-center">
               <div className="size-8 animate-spin rounded-full border-2 border-t-[#3c3c3c]" />
             </div>
           </AuthCardStack>
-        </AuthCardContent>
-      </AuthCard>
+        }
+      />
     );
   }
 
   return (
-    <AuthCard>
-      <AuthCardHeader title="Verify your email address" />
-      <AuthCardContent>
+    <AuthCard
+      title="Verify your email address"
+      content={
         <AuthCardStack>
           <p>
             <span className="font-semibold">Please click on the link</span> in the email we just
@@ -209,8 +205,8 @@ function AuthVerifyEmail() {
             <Link to="/logout">Logout</Link>
           </Button>
         </AuthCardStack>
-      </AuthCardContent>
-    </AuthCard>
+      }
+    />
   );
 }
 

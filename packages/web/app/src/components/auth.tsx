@@ -1,26 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export function AuthCardHeader(props: {
-  title: React.ReactNode;
-  description?: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <CardHeader>
-      <CardTitle className="text-2xl" data-cy="auth-card-header-title">
-        {props.title}
-      </CardTitle>
-      {props.description ? (
-        <CardDescription data-cy="auth-card-header-description">
-          {props.description}
-        </CardDescription>
-      ) : null}
-    </CardHeader>
-  );
-}
-
-export const AuthCardContent = CardContent;
-
 export function AuthCardStack(props: { children: React.ReactNode }) {
   return <div className="grid gap-y-4">{props.children}</div>;
 }
@@ -35,6 +14,29 @@ export function AuthOrSeparator() {
   );
 }
 
-export function AuthCard(props: { children: React.ReactNode; className?: string }) {
-  return <Card className="mx-auto w-full md:max-w-md">{props.children}</Card>;
+export function AuthCard({
+  children,
+  title,
+  description,
+  content,
+}: {
+  children?: React.ReactNode;
+  title: string;
+  description?: string;
+  content?: React.ReactNode;
+}) {
+  return (
+    <Card className="mx-auto w-full md:max-w-md">
+      <CardHeader>
+        <CardTitle className="text-2xl" data-cy="auth-card-header-title">
+          {title}
+        </CardTitle>
+        {description ? (
+          <CardDescription data-cy="auth-card-header-description">{description}</CardDescription>
+        ) : null}
+      </CardHeader>
+      {content && <CardContent>{content}</CardContent>}
+      {children}
+    </Card>
+  );
 }

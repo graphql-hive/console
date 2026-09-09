@@ -5,13 +5,7 @@ import { SiGithub, SiGoogle, SiOkta } from 'react-icons/si';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { emailPasswordSignIn as superEmailPasswordSignIn } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import z from 'zod';
-import {
-  AuthCard,
-  AuthCardContent,
-  AuthCardHeader,
-  AuthCardStack,
-  AuthOrSeparator,
-} from '@/components/auth';
+import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -201,138 +195,141 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
   return (
     <>
       <Meta title="Sign in" />
-      <AuthCard>
-        <AuthCardHeader title="Login" description="Sign in to your account" />
-        <AuthCardContent>
-          <AuthCardStack>
-            <TooltipProvider delayDuration={200}>
-              <Form {...form}>
-                <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="m@example.com"
-                            type="email"
-                            {...form.register('email')}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={() => (
-                      <FormItem>
-                        <div className="flex items-center">
-                          <FormLabel>Password</FormLabel>
-                          <Link
-                            tabIndex={-1}
-                            to="/auth/reset-password"
-                            search={{
-                              email: form.getValues().email || undefined,
-                              redirectToPath: props.redirectToPath,
-                            }}
-                            className="ml-auto inline-block text-sm underline"
-                          >
-                            Forgot your password?
-                          </Link>
-                        </div>
-                        <FormControl>
-                          <Input type="password" {...form.register('password')} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <SignInButton previousSignIn={lastAuthMethod === 'email'}>
-                    <Button type="submit" className="w-full" disabled={isPending}>
-                      {emailPasswordSignIn.data?.status === 'OK'
-                        ? 'Redirecting...'
-                        : emailPasswordSignIn.isPending
-                          ? 'Signing in...'
-                          : 'Sign in'}
+      <AuthCard
+        title="Login"
+        description="Sign in to your account"
+        content={
+          <>
+            <AuthCardStack>
+              <TooltipProvider delayDuration={200}>
+                <Form {...form}>
+                  <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={() => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="m@example.com"
+                              type="email"
+                              {...form.register('email')}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={() => (
+                        <FormItem>
+                          <div className="flex items-center">
+                            <FormLabel>Password</FormLabel>
+                            <Link
+                              tabIndex={-1}
+                              to="/auth/reset-password"
+                              search={{
+                                email: form.getValues().email || undefined,
+                                redirectToPath: props.redirectToPath,
+                              }}
+                              className="ml-auto inline-block text-sm underline"
+                            >
+                              Forgot your password?
+                            </Link>
+                          </div>
+                          <FormControl>
+                            <Input type="password" {...form.register('password')} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <SignInButton previousSignIn={lastAuthMethod === 'email'}>
+                      <Button type="submit" className="w-full" disabled={isPending}>
+                        {emailPasswordSignIn.data?.status === 'OK'
+                          ? 'Redirecting...'
+                          : emailPasswordSignIn.isPending
+                            ? 'Signing in...'
+                            : 'Sign in'}
+                      </Button>
+                    </SignInButton>
+                  </form>
+                </Form>
+                {enabledProviders.length ? <AuthOrSeparator /> : null}
+                {isProviderEnabled('google') ? (
+                  <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'google'}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => thirdPartySignIn.mutate('google')}
+                      disabled={isPending}
+                    >
+                      <SiGoogle className="mr-4 size-4" /> Login with Google
                     </Button>
                   </SignInButton>
-                </form>
-              </Form>
-              {enabledProviders.length ? <AuthOrSeparator /> : null}
-              {isProviderEnabled('google') ? (
-                <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'google'}>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => thirdPartySignIn.mutate('google')}
-                    disabled={isPending}
-                  >
-                    <SiGoogle className="mr-4 size-4" /> Login with Google
-                  </Button>
-                </SignInButton>
-              ) : null}
-              {isProviderEnabled('github') ? (
-                <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'github'}>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => thirdPartySignIn.mutate('github')}
-                    disabled={isPending}
-                  >
-                    <SiGithub className="mr-4 size-4" /> Login with Github
-                  </Button>
-                </SignInButton>
-              ) : null}
-
-              {isProviderEnabled('okta') ? (
-                <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'okta'}>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => thirdPartySignIn.mutate('okta')}
-                    disabled={isPending}
-                  >
-                    <SiOkta className="mr-4 size-4" /> Login with Okta
-                  </Button>
-                </SignInButton>
-              ) : null}
-              {isProviderEnabled('oidc') ? (
-                <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'oidc'}>
-                  <Button asChild variant="outline" className="w-full" disabled={isPending}>
-                    <Link
-                      to="/auth/sso"
-                      search={{
-                        redirectToPath: props.redirectToPath,
-                      }}
+                ) : null}
+                {isProviderEnabled('github') ? (
+                  <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'github'}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => thirdPartySignIn.mutate('github')}
+                      disabled={isPending}
                     >
-                      <FaRegUserCircle className="mr-4 size-4" /> Login with SSO
-                    </Link>
-                  </Button>
-                </SignInButton>
-              ) : null}
-            </TooltipProvider>
-          </AuthCardStack>
-          <div className="mt-4">
-            <Text arrangement="block" align="center" size="small" color="secondary">
-              Don't have an account?{' '}
-              <Link
-                to="/auth/sign-up"
-                search={{
-                  redirectToPath: props.redirectToPath,
-                }}
-                data-auth-link="sign-up"
-                className="underline"
-              >
-                Sign up
-              </Link>
-            </Text>
-          </div>
-        </AuthCardContent>
-      </AuthCard>
+                      <SiGithub className="mr-4 size-4" /> Login with Github
+                    </Button>
+                  </SignInButton>
+                ) : null}
+
+                {isProviderEnabled('okta') ? (
+                  <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'okta'}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => thirdPartySignIn.mutate('okta')}
+                      disabled={isPending}
+                    >
+                      <SiOkta className="mr-4 size-4" /> Login with Okta
+                    </Button>
+                  </SignInButton>
+                ) : null}
+                {isProviderEnabled('oidc') ? (
+                  <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'oidc'}>
+                    <Button asChild variant="outline" className="w-full" disabled={isPending}>
+                      <Link
+                        to="/auth/sso"
+                        search={{
+                          redirectToPath: props.redirectToPath,
+                        }}
+                      >
+                        <FaRegUserCircle className="mr-4 size-4" /> Login with SSO
+                      </Link>
+                    </Button>
+                  </SignInButton>
+                ) : null}
+              </TooltipProvider>
+            </AuthCardStack>
+            <div className="mt-4">
+              <Text arrangement="block" align="center" size="small" color="secondary">
+                Don't have an account?{' '}
+                <Link
+                  to="/auth/sign-up"
+                  search={{
+                    redirectToPath: props.redirectToPath,
+                  }}
+                  data-auth-link="sign-up"
+                  className="underline"
+                >
+                  Sign up
+                </Link>
+              </Text>
+            </div>
+          </>
+        }
+      />
     </>
   );
 }

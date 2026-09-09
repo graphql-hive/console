@@ -6,7 +6,7 @@ import {
   submitNewPassword,
 } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import z from 'zod';
-import { AuthCard, AuthCardContent, AuthCardHeader, AuthCardStack } from '@/components/auth';
+import { AuthCard, AuthCardStack } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -123,9 +123,9 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
 
   if (isSent) {
     return (
-      <AuthCard>
-        <AuthCardHeader title="Email sent" />
-        <AuthCardContent>
+      <AuthCard
+        title="Email sent"
+        content={
           <AuthCardStack>
             <p>
               A password reset email has been sent to{' '}
@@ -140,57 +140,57 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
               .
             </p>
           </AuthCardStack>
-        </AuthCardContent>
-      </AuthCard>
+        }
+      />
     );
   }
 
   return (
-    <AuthCard>
-      <AuthCardHeader
-        title="Reset your password"
-        description="We will send you an email to reset your password"
-      />
-      <AuthCardContent>
-        <Form {...form}>
-          <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="m@example.com" type="email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={resetEmail.isPending}>
-              {resetEmail.data?.status === 'OK'
-                ? 'Redirecting...'
-                : resetEmail.isPending
-                  ? '...'
-                  : 'Email me'}
-            </Button>
-          </form>
-        </Form>
+    <AuthCard
+      title="Reset your password"
+      description="We will send you an email to reset your password"
+      content={
+        <>
+          <Form {...form}>
+            <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="m@example.com" type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={resetEmail.isPending}>
+                {resetEmail.data?.status === 'OK'
+                  ? 'Redirecting...'
+                  : resetEmail.isPending
+                    ? '...'
+                    : 'Email me'}
+              </Button>
+            </form>
+          </Form>
 
-        <div className="mt-4 text-center text-sm">
-          <Link
-            to="/auth/sign-in"
-            search={{
-              redirectToPath: props.redirectToPath,
-            }}
-            data-auth-link="sign-up"
-            className="underline"
-          >
-            Back to login
-          </Link>
-        </div>
-      </AuthCardContent>
-    </AuthCard>
+          <div className="mt-4 text-center text-sm">
+            <Link
+              to="/auth/sign-in"
+              search={{
+                redirectToPath: props.redirectToPath,
+              }}
+              data-auth-link="sign-up"
+              className="underline"
+            >
+              Back to login
+            </Link>
+          </div>
+        </>
+      }
+    />
   );
 }
 
@@ -293,48 +293,51 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
   }
 
   return (
-    <AuthCard>
-      <AuthCardHeader title="Change your password" description="Enter your new password" />
-      <AuthCardContent>
-        <Form {...form}>
-          <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-            <FormField
-              control={form.control}
-              name="newPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>New password</FormLabel>
-                  <FormControl>
-                    <Input type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={changePassword.isPending}>
-              {changePassword.data?.status === 'OK'
-                ? 'Redirecting...'
-                : changePassword.isPending
-                  ? '...'
-                  : 'Change password'}
-            </Button>
-          </form>
-        </Form>
+    <AuthCard
+      title="Change your password"
+      description="Enter your new password"
+      content={
+        <>
+          <Form {...form}>
+            <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+              <FormField
+                control={form.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={changePassword.isPending}>
+                {changePassword.data?.status === 'OK'
+                  ? 'Redirecting...'
+                  : changePassword.isPending
+                    ? '...'
+                    : 'Change password'}
+              </Button>
+            </form>
+          </Form>
 
-        <div className="mt-4 text-center text-sm">
-          <Link
-            to="/auth/sign-in"
-            search={{
-              redirectToPath: props.redirectToPath,
-            }}
-            data-auth-link="sign-up"
-            className="underline"
-          >
-            Back to login
-          </Link>
-        </div>
-      </AuthCardContent>
-    </AuthCard>
+          <div className="mt-4 text-center text-sm">
+            <Link
+              to="/auth/sign-in"
+              search={{
+                redirectToPath: props.redirectToPath,
+              }}
+              data-auth-link="sign-up"
+              className="underline"
+            >
+              Back to login
+            </Link>
+          </div>
+        </>
+      }
+    />
   );
 }
 
