@@ -92,7 +92,28 @@
       "statusCode": 200,
       "headers": { "Content-Type": ["application/json"] },
       "body": {
-        "tickets": [],
+        "tickets": [
+          {
+            "id": 3000,
+            "organization_id": 1000,
+            "priority": "normal",
+            "status": "open",
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z",
+            "subject": "Mock ticket",
+            "description": "Mock ticket description"
+          },
+          {
+            "id": 3001,
+            "organization_id": 1000,
+            "priority": "urgent",
+            "status": "solved",
+            "created_at": "2024-01-02T00:00:00Z",
+            "updated_at": "2024-01-03T00:00:00Z",
+            "subject": "Another mock ticket",
+            "description": "Another mock ticket description"
+          }
+        ],
         "meta": { "has_more": false }
       }
     }
