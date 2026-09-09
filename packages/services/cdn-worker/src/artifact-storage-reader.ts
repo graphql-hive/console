@@ -134,9 +134,6 @@ export class ArtifactStorageReader {
       .fetch(primaryObjectEndpoint, {
         method: args.method,
         headers: args.headers,
-        aws: {
-          signQuery: true,
-        },
         timeout: this.timeout,
         retries: this.s3Mirror ? 1 : undefined,
         isResponseOk: response =>
@@ -189,9 +186,6 @@ export class ArtifactStorageReader {
             .fetch(primaryObjectEndpoint, {
               method: args.method,
               headers: args.headers,
-              aws: {
-                signQuery: true,
-              },
               timeout: this.timeout,
               signal: primaryController.signal,
               isResponseOk: response =>
@@ -212,9 +206,6 @@ export class ArtifactStorageReader {
             .fetch(mirrorObjectEndpoint, {
               method: args.method,
               headers: args.headers,
-              aws: {
-                signQuery: true,
-              },
               timeout: this.timeout,
               signal: mirrorController.signal,
               isResponseOk: response =>

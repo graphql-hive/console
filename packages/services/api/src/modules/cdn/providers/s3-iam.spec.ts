@@ -264,6 +264,7 @@ describe('AwsClient signing', () => {
       const signed = await (client as any).sign('https://s3.us-east-1.amazonaws.com/bucket/key', {
         method: 'GET',
         headers: {},
+        aws: { signQuery: false },
       });
 
       expect(mockProvider.getCredentials).toHaveBeenCalledOnce();
@@ -292,11 +293,13 @@ describe('AwsClient signing', () => {
       const signed1 = await (client as any).sign('https://s3.us-east-1.amazonaws.com/bucket/key', {
         method: 'GET',
         headers: {},
+        aws: { signQuery: false },
       });
       const signed2 = await (client as any).sign('https://s3.us-east-1.amazonaws.com/bucket/key', {
         method: 'PUT',
         headers: {},
         body: 'artifact-content',
+        aws: { signQuery: false },
       });
 
       expect(signed1.init.headers['authorization']).toContain('KEY_1');
@@ -321,6 +324,7 @@ describe('AwsClient signing', () => {
       const signed = await (client as any).sign('https://s3.us-east-1.amazonaws.com/bucket/key', {
         method: 'GET',
         headers: {},
+        aws: { signQuery: false },
       });
 
       expect(signed.init.headers['x-amz-security-token']).toBe('MY_SESSION_TOKEN');
@@ -344,6 +348,7 @@ describe('AwsClient signing', () => {
         method: 'PUT',
         headers: {},
         body: 'artifact-data',
+        aws: { signQuery: false },
       });
 
       expect(signed.init.headers['x-amz-content-sha256']).toBe('UNSIGNED-PAYLOAD');
@@ -366,6 +371,7 @@ describe('AwsClient signing', () => {
       const signed = await (client as any).sign('https://s3.eu-west-1.amazonaws.com/bucket/key', {
         method: 'GET',
         headers: {},
+        aws: { signQuery: false },
       });
 
       expect(signed.init.headers['authorization']).toContain('eu-west-1/s3/aws4_request');
