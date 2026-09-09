@@ -5,7 +5,7 @@ import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-export const nav: NavPath = 'Components/RadioGroup';
+export const nav: NavPath = 'Base/FormControls/RadioGroup/Component Examples';
 
 /**
  * Every RadioGroup call site in the app, transcribed with its real copy so a change to the
@@ -14,10 +14,6 @@ export const nav: NavPath = 'Components/RadioGroup';
  * The pages themselves cannot be imported: they mount react-hook-form or Formik, run GraphQL
  * queries, and several sit behind permission flags. Each preview reproduces the call site's
  * `items` and variant props and holds the selection in local state.
- *
- * `alert-form.tsx` is deliberately absent. It still uses an older shape, passing `<RadioItem>`
- * children with an `indicator` prop rather than an `items` array, and `RadioItem` is not
- * exported, so that file does not currently compile. It joins this list once Card is reconciled.
  */
 
 // ---------------------------------------------------------------------------
@@ -250,6 +246,45 @@ export const BreakingChanges = createPreview({
 export const BreakingChangesSubmitting = createPreview({
   label: 'Breaking change formula (submitting)',
   render: () => <BreakingChangeFormula disabled />,
+});
+
+// ---------------------------------------------------------------------------
+// components/target/alerts/alert-form.tsx:766 - alert severity
+// The only `as-button` call site, and the only one whose `content` is a status dot
+// rather than a card body.
+// ---------------------------------------------------------------------------
+
+const SEVERITIES = [
+  { value: 'INFO', label: 'Info', dotClass: 'bg-blue-400' },
+  { value: 'WARNING', label: 'Warning', dotClass: 'bg-yellow-400' },
+  { value: 'CRITICAL', label: 'Critical', dotClass: 'bg-red-400' },
+];
+
+function SeverityPicker() {
+  const [value, setValue] = useState('WARNING');
+
+  return (
+    <RadioGroup
+      variant="as-button"
+      value={value}
+      onValueChange={setValue}
+      items={SEVERITIES.map(sev => ({
+        value: sev.value,
+        ariaLabel: sev.label,
+        content: (
+          <>
+            <span className={cn('size-2 rounded-full', sev.dotClass)} />
+            {sev.label}
+          </>
+        ),
+      }))}
+    />
+  );
+}
+
+export const AlertSeverity = createPreview({
+  label: 'Alert severity',
+  render: () => <SeverityPicker />,
 });
 
 // ---------------------------------------------------------------------------

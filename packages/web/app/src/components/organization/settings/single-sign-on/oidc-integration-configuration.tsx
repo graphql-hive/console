@@ -1,13 +1,7 @@
 import { ReactElement, useState } from 'react';
 import { AlertOctagonIcon, BugPlayIcon, CheckIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/base/card/card';
+import { Card } from '@/components/base/card/card';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import {
   AlertDialog,
@@ -561,68 +555,62 @@ function OIDCDomainConfiguration(props: {
           )}
         </Table.Table>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle title="Domain Settings" />
-          <CardDescription description="Settings for the verified domains." />
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between space-x-4">
-            <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-              <p>Require OIDC Login</p>
-              <p className="max-w-[500px] text-xs font-normal leading-snug">
-                Enforce sign in/up through OIDC for verified domains. Any other login method will be
-                blocked. The organization owner is excluded from this restriction.
-              </p>
-            </div>
-            <AlertDialog>
-              <AlertDialogContent>
-                {oidcIntegration.oidcForVerifiedDomainsRequired ? (
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Disable enforced OIDC login</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Users will be able to login with any method, such as email + password or
-                      social logins.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                ) : (
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Enforce OIDC login</AlertDialogTitle>{' '}
-                    <AlertDialogDescription>
-                      Users will no longer be able to login with email+password or social logins.
-                      <Callout type="warning">
-                        This action can potentially lock you out of the organization. Make sure your
-                        OIDC provider is configured properly and you can log in using it.
-                      </Callout>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                )}
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    variant="destructive"
-                    onClick={() =>
-                      props.onRestrictionChange(
-                        'oidcForVerifiedDomainsRequired',
-                        !oidcIntegration.oidcForVerifiedDomainsRequired,
-                      )
-                    }
-                  >
-                    {oidcIntegration.oidcForVerifiedDomainsRequired
-                      ? 'Disable enforced ODIC login'
-                      : 'Enforce OIDC login'}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-              <AlertDialogTrigger>
-                <Switch
-                  checked={oidcIntegration.oidcForVerifiedDomainsRequired}
-                  data-cy="oidc-require-verified-domain-login-toggle"
-                />
-              </AlertDialogTrigger>
-            </AlertDialog>
+      <Card title="Domain Settings" description="Settings for the verified domains.">
+        <div className="flex items-center justify-between space-x-4">
+          <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+            <p>Require OIDC Login</p>
+            <p className="max-w-[500px] text-xs font-normal leading-snug">
+              Enforce sign in/up through OIDC for verified domains. Any other login method will be
+              blocked. The organization owner is excluded from this restriction.
+            </p>
           </div>
-        </CardContent>
+          <AlertDialog>
+            <AlertDialogContent>
+              {oidcIntegration.oidcForVerifiedDomainsRequired ? (
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Disable enforced OIDC login</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Users will be able to login with any method, such as email + password or social
+                    logins.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+              ) : (
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Enforce OIDC login</AlertDialogTitle>{' '}
+                  <AlertDialogDescription>
+                    Users will no longer be able to login with email+password or social logins.
+                    <Callout type="warning">
+                      This action can potentially lock you out of the organization. Make sure your
+                      OIDC provider is configured properly and you can log in using it.
+                    </Callout>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+              )}
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={() =>
+                    props.onRestrictionChange(
+                      'oidcForVerifiedDomainsRequired',
+                      !oidcIntegration.oidcForVerifiedDomainsRequired,
+                    )
+                  }
+                >
+                  {oidcIntegration.oidcForVerifiedDomainsRequired
+                    ? 'Disable enforced ODIC login'
+                    : 'Enforce OIDC login'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+            <AlertDialogTrigger>
+              <Switch
+                checked={oidcIntegration.oidcForVerifiedDomainsRequired}
+                data-cy="oidc-require-verified-domain-login-toggle"
+              />
+            </AlertDialogTrigger>
+          </AlertDialog>
+        </div>
       </Card>
       {state && (
         <OIDCRegisteredDomainSheet
@@ -790,207 +778,199 @@ function OIDCAccessSettings(props: {
         </AlertDialog>
         {isSCIMProvisioningEnabled ? (
           <>
-            <Card>
-              <CardHeader>
-                <CardTitle title="SCIM Provision Defaults" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-5">
-                  <div className="flex items-center justify-between space-x-4">
-                    <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                      <p>Organization access restricted to (active) provisioned users</p>
-                      <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
-                        Only (active) users provisioned via SCIM can access the organization.
-                        <br />
-                        <span className="font-bold">
-                          The organization owner is excluded from this restriction.
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between space-x-4">
-                    <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                      <p>Sync groups via SCIM</p>
-                      <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
-                        Groups are provisioned and updated via SCIM.{' '}
-                        <Link
-                          to="/$organizationSlug/view/members"
-                          params={{ organizationSlug: organization.slug }}
-                          search={{ page: 'groups' }}
-                          className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
-                        >
-                          Manage Groups
-                        </Link>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between space-x-4">
-                    <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                      <p>Sync users via SCIM</p>
-                      <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
-                        Users are provisioned and updated via SCIM.{' '}
-                        <Link
-                          to="/$organizationSlug/view/members"
-                          params={{ organizationSlug: organization.slug }}
-                          search={{ page: 'list' }}
-                          className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
-                        >
-                          Manage Users
-                        </Link>
-                      </p>
-                    </div>
-                    {organization.pendingSCIMManagementConfirmationsCount > 0 && (
-                      <div>
-                        <TooltipProvider delayDuration={100}>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <div className="flex text-xs text-yellow-500">
-                                {organization.pendingSCIMManagementConfirmationsCount} SCIM
-                                provisioning conflict
-                                {organization.pendingSCIMManagementConfirmationsCount === 1
-                                  ? ''
-                                  : 's'}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-[250px] space-y-2">
-                              <p>
-                                SCIM provisioning matched existing organization members. Review each
-                                match before allowing SCIM to manage the account.
-                              </p>
-                              <Link
-                                to="/$organizationSlug/view/members"
-                                params={{ organizationSlug: organization.slug }}
-                                search={{
-                                  page: 'list',
-                                  showPendingSCIMManagementConfirmations: true,
-                                }}
-                                className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
-                              >
-                                Review conflicts
-                              </Link>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between space-x-4">
-                    <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                      <p>Assign permissions via groups</p>
-                      <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
-                        Assign role mappings to groups to grant permissions to group members.{' '}
-                        <Link
-                          to="/$organizationSlug/view/members"
-                          params={{ organizationSlug: organization.slug }}
-                          search={{ page: 'groups' }}
-                          className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
-                        >
-                          Manage Groups
-                        </Link>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle title="OIDC Provision Settings" />
-              <CardDescription description="Customize the provision behaviour vor OIDC." />
-            </CardHeader>
-            <CardContent>
+            <Card title="SCIM Provision Defaults">
               <div className="space-y-5">
                 <div className="flex items-center justify-between space-x-4">
                   <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                    <p>Require OIDC to Join</p>
-                    <p className="text-neutral-10 text-xs font-normal leading-snug">
-                      Restricts new accounts joining the organization to be authenticated via OIDC.
+                    <p>Organization access restricted to (active) provisioned users</p>
+                    <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                      Only (active) users provisioned via SCIM can access the organization.
                       <br />
                       <span className="font-bold">
-                        Existing non-OIDC members will keep their access.
+                        The organization owner is excluded from this restriction.
                       </span>
                     </p>
                   </div>
-                  <Switch
-                    checked={oidcIntegration.oidcUserJoinOnly}
-                    onCheckedChange={checked =>
-                      props.onRestrictionChange('oidcUserJoinOnly', checked)
-                    }
-                  />
                 </div>
                 <div className="flex items-center justify-between space-x-4">
                   <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                    <p>Require OIDC to Access</p>
-                    <p className="text-neutral-10 text-xs font-normal leading-snug">
-                      Prompt users to authenticate with OIDC before accessing the organization.
-                      <br />
-                      <span className="font-bold">
-                        Existing users without OIDC credentials will not be able to access the
-                        organization.
-                      </span>
+                    <p>Sync groups via SCIM</p>
+                    <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                      Groups are provisioned and updated via SCIM.{' '}
+                      <Link
+                        to="/$organizationSlug/view/members"
+                        params={{ organizationSlug: organization.slug }}
+                        search={{ page: 'groups' }}
+                        className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                      >
+                        Manage Groups
+                      </Link>
                     </p>
                   </div>
-                  <Switch
-                    checked={oidcIntegration.oidcUserAccessOnly}
-                    onCheckedChange={checked =>
-                      props.onRestrictionChange('oidcUserAccessOnly', checked)
-                    }
-                  />
                 </div>
                 <div className="flex items-center justify-between space-x-4">
                   <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                    <p>Require Invitation to Join</p>
-                    <p className="text-neutral-10 text-xs font-normal leading-snug">
-                      Restricts only invited OIDC accounts to join the organization.
+                    <p>Sync users via SCIM</p>
+                    <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                      Users are provisioned and updated via SCIM.{' '}
+                      <Link
+                        to="/$organizationSlug/view/members"
+                        params={{ organizationSlug: organization.slug }}
+                        search={{ page: 'list' }}
+                        className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                      >
+                        Manage Users
+                      </Link>
                     </p>
                   </div>
-                  <Switch
-                    checked={oidcIntegration.requireInvitation}
-                    data-cy="oidc-require-invitation-toggle"
-                    onCheckedChange={checked =>
-                      props.onRestrictionChange('requireInvitation', checked)
-                    }
-                  />
-                </div>
-                <div
-                  className={cn(
-                    'space-y-1 text-sm font-medium leading-none',
-                    isAdmin ? null : 'cursor-not-allowed',
+                  {organization.pendingSCIMManagementConfirmationsCount > 0 && (
+                    <div>
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <div className="flex text-xs text-yellow-500">
+                              {organization.pendingSCIMManagementConfirmationsCount} SCIM
+                              provisioning conflict
+                              {organization.pendingSCIMManagementConfirmationsCount === 1
+                                ? ''
+                                : 's'}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[250px] space-y-2">
+                            <p>
+                              SCIM provisioning matched existing organization members. Review each
+                              match before allowing SCIM to manage the account.
+                            </p>
+                            <Link
+                              to="/$organizationSlug/view/members"
+                              params={{ organizationSlug: organization.slug }}
+                              search={{
+                                page: 'list',
+                                showPendingSCIMManagementConfirmations: true,
+                              }}
+                              className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                            >
+                              Review conflicts
+                            </Link>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   )}
-                >
-                  <p>Default Member Role</p>
-                  <div className="flex items-start justify-between space-x-4">
-                    <div className="flex basis-2/3 flex-col md:basis-1/2">
-                      <p className="text-neutral-10 text-xs font-normal leading-snug">
-                        This role is assigned to new members who sign in via OIDC.{' '}
-                        <span className="font-medium">
-                          Only members with the Admin role can modify it.
-                        </span>
-                      </p>
-                    </div>
-                    <div className="flex min-w-[150px] basis-1/3 md:basis-1/2">
-                      <OIDCDefaultRoleSelector
-                        className="w-full"
-                        disabled={!isAdmin}
-                        oidcIntegrationId={oidcIntegration.id}
-                        defaultRole={oidcIntegration.defaultMemberRole}
-                        memberRoles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
-                      />
-                    </div>
+                </div>
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                    <p>Assign permissions via groups</p>
+                    <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                      Assign role mappings to groups to grant permissions to group members.{' '}
+                      <Link
+                        to="/$organizationSlug/view/members"
+                        params={{ organizationSlug: organization.slug }}
+                        search={{ page: 'groups' }}
+                        className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                      >
+                        Manage Groups
+                      </Link>
+                    </p>
                   </div>
                 </div>
               </div>
-              <div className="mt-2">
-                <OIDCDefaultResourceSelector
-                  oidcIntegrationId={oidcIntegration.id}
-                  organization={organization}
-                  resourceAssignment={oidcIntegration.defaultResourceAssignment ?? {}}
-                  disabled={!isAdmin}
+            </Card>
+          </>
+        ) : (
+          <Card
+            title="OIDC Provision Settings"
+            description="Customize the provision behaviour vor OIDC."
+          >
+            <div className="space-y-5">
+              <div className="flex items-center justify-between space-x-4">
+                <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                  <p>Require OIDC to Join</p>
+                  <p className="text-neutral-10 text-xs font-normal leading-snug">
+                    Restricts new accounts joining the organization to be authenticated via OIDC.
+                    <br />
+                    <span className="font-bold">
+                      Existing non-OIDC members will keep their access.
+                    </span>
+                  </p>
+                </div>
+                <Switch
+                  checked={oidcIntegration.oidcUserJoinOnly}
+                  onCheckedChange={checked =>
+                    props.onRestrictionChange('oidcUserJoinOnly', checked)
+                  }
                 />
               </div>
-            </CardContent>
+              <div className="flex items-center justify-between space-x-4">
+                <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                  <p>Require OIDC to Access</p>
+                  <p className="text-neutral-10 text-xs font-normal leading-snug">
+                    Prompt users to authenticate with OIDC before accessing the organization.
+                    <br />
+                    <span className="font-bold">
+                      Existing users without OIDC credentials will not be able to access the
+                      organization.
+                    </span>
+                  </p>
+                </div>
+                <Switch
+                  checked={oidcIntegration.oidcUserAccessOnly}
+                  onCheckedChange={checked =>
+                    props.onRestrictionChange('oidcUserAccessOnly', checked)
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between space-x-4">
+                <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                  <p>Require Invitation to Join</p>
+                  <p className="text-neutral-10 text-xs font-normal leading-snug">
+                    Restricts only invited OIDC accounts to join the organization.
+                  </p>
+                </div>
+                <Switch
+                  checked={oidcIntegration.requireInvitation}
+                  data-cy="oidc-require-invitation-toggle"
+                  onCheckedChange={checked =>
+                    props.onRestrictionChange('requireInvitation', checked)
+                  }
+                />
+              </div>
+              <div
+                className={cn(
+                  'space-y-1 text-sm font-medium leading-none',
+                  isAdmin ? null : 'cursor-not-allowed',
+                )}
+              >
+                <p>Default Member Role</p>
+                <div className="flex items-start justify-between space-x-4">
+                  <div className="flex basis-2/3 flex-col md:basis-1/2">
+                    <p className="text-neutral-10 text-xs font-normal leading-snug">
+                      This role is assigned to new members who sign in via OIDC.{' '}
+                      <span className="font-medium">
+                        Only members with the Admin role can modify it.
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex min-w-[150px] basis-1/3 md:basis-1/2">
+                    <OIDCDefaultRoleSelector
+                      className="w-full"
+                      disabled={!isAdmin}
+                      oidcIntegrationId={oidcIntegration.id}
+                      defaultRole={oidcIntegration.defaultMemberRole}
+                      memberRoles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-2">
+              <OIDCDefaultResourceSelector
+                oidcIntegrationId={oidcIntegration.id}
+                organization={organization}
+                resourceAssignment={oidcIntegration.defaultResourceAssignment ?? {}}
+                disabled={!isAdmin}
+              />
+            </div>
           </Card>
         )}
       </div>

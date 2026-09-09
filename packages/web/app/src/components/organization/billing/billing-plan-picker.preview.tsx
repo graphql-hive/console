@@ -6,7 +6,7 @@ import {
 import { makeFragmentData } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 
-export const nav: NavPath = 'Migration/Live/BillingPlanPicker';
+export const nav: NavPath = 'Components/BillingPlanPicker';
 
 /**
  * The real `BillingPlanPicker` from the Manage Subscription page, rendered without the app.

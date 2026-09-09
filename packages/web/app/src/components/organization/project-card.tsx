@@ -59,7 +59,7 @@ export const ProjectCard = (props: {
   const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
 
   return (
-    <Card className="hover:bg-neutral-4 hover:shadow-neutral-3/50 h-full self-start p-5 px-0 pt-4 hover:shadow-md">
+    <Card className="hover:bg-neutral-1 dark:hover:bg-neutral-4 hover:border-neutral-5 h-full self-start p-5 px-0 pt-4">
       <Link
         to="/$organizationSlug/$projectSlug"
         disabled={props.cleanOrganizationId == null || project?.slug == null}
