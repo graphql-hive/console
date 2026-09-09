@@ -1,7 +1,7 @@
 import { ReactElement, useMemo } from 'react';
 import { AlertCircleIcon, RefreshCw } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Section } from '@/components/common';
+import { Card } from '@/components/base/card/card';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsStats } from '@/components/target/insights/stats';
@@ -130,13 +130,14 @@ function OperationView({
           </AlertDescription>
         </Alert>
       )}
-      <div className="border-neutral-5 bg-neutral-2/50 mt-12 w-full rounded-md border p-5">
-        <Section.Title>Operation body</Section.Title>
-        {result.fetching ? (
-          <div>Loading...</div>
-        ) : (
-          <GraphQLOperationBody operation={result.data?.target?.operation ?? null} />
-        )}
+      <div className="mt-12 w-full">
+        <Card variants={{ onSurface: 'raised', titleSize: 'large' }} title="Operation body">
+          {result.fetching ? (
+            <div>Loading...</div>
+          ) : (
+            <GraphQLOperationBody operation={result.data?.target?.operation ?? null} />
+          )}
+        </Card>
       </div>
     </>
   );

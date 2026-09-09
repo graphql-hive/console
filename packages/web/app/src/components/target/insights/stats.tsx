@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Card } from '@/components/base/card/card';
 import { StatCard } from '@/components/base/stat-card/stat-card';
-import { Section } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { OperationStatsFilterInput } from '@/gql/graphql';
@@ -266,9 +266,11 @@ function OverTimeStats({
   }, [failuresOverTime]);
 
   return (
-    <div className="border-neutral-5 bg-neutral-2/50 rounded-md border p-5">
-      <Section.Title>Operations over time</Section.Title>
-      <Section.Subtitle>Timeline of GraphQL requests and failures</Section.Subtitle>
+    <Card
+      variants={{ onSurface: 'raised', titleSize: 'large' }}
+      title="Operations over time"
+      description="Timeline of GraphQL requests and failures"
+    >
       <AutoSizer disableHeight>
         {size => (
           <ReactECharts
@@ -358,7 +360,7 @@ function OverTimeStats({
           />
         )}
       </AutoSizer>
-    </div>
+    </Card>
   );
 }
 
@@ -564,9 +566,11 @@ function ClientsStats(props: {
   );
 
   return (
-    <div className="border-neutral-5 bg-neutral-2/50 w-full rounded-md border p-5">
-      <Section.Title>Clients</Section.Title>
-      <Section.Subtitle>Top 5 - GraphQL API consumers</Section.Subtitle>
+    <Card
+      variants={{ onSurface: 'raised', titleSize: 'large' }}
+      title="Clients"
+      description="Top 5 - GraphQL API consumers"
+    >
       <AutoSizer disableHeight className="mt-5 flex w-full flex-row gap-x-4">
         {size => {
           if (!size.width) {
@@ -761,7 +765,7 @@ function ClientsStats(props: {
           )}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -837,9 +841,11 @@ function LatencyOverTimeStats({
   ];
 
   return (
-    <div className="border-neutral-5 bg-neutral-2/50 rounded-md border p-5">
-      <Section.Title>Latency over time</Section.Title>
-      <Section.Subtitle>Timeline of latency of GraphQL requests</Section.Subtitle>
+    <Card
+      variants={{ onSurface: 'raised', titleSize: 'large' }}
+      title="Latency over time"
+      description="Timeline of latency of GraphQL requests"
+    >
       <AutoSizer disableHeight>
         {size => (
           <ReactECharts
@@ -895,7 +901,7 @@ function LatencyOverTimeStats({
           />
         )}
       </AutoSizer>
-    </div>
+    </Card>
   );
 }
 
@@ -937,9 +943,11 @@ function RpmOverTimeStats({
   }, [requests, windowInM]);
 
   return (
-    <div className="border-neutral-5 bg-neutral-2/50 rounded-md border p-5">
-      <Section.Title>RPM over time</Section.Title>
-      <Section.Subtitle>Requests per minute</Section.Subtitle>
+    <Card
+      variants={{ onSurface: 'raised', titleSize: 'large' }}
+      title="RPM over time"
+      description="Requests per minute"
+    >
       <AutoSizer disableHeight>
         {size => (
           <ReactECharts
@@ -1012,7 +1020,7 @@ function RpmOverTimeStats({
           />
         )}
       </AutoSizer>
-    </div>
+    </Card>
   );
 }
 
