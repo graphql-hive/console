@@ -21,6 +21,11 @@ export const action: Action = async exec => {
       total_ok UInt32 CODEC(T64, ZSTD(1)),
       duration_avg AggregateFunction(avg, UInt64) CODEC(ZSTD(1)),
       duration_quantiles AggregateFunction(quantilesTDigest(0.75, 0.9, 0.95, 0.99), UInt64) CODEC(ZSTD(1)),
+      PROJECTION by_hash
+      (
+        SELECT *
+        ORDER BY (target, graph_id, hash, timestamp, client_name, client_version, graph_version_id)
+      ),
       PROJECTION by_graph_version_id
       (
         SELECT *
@@ -29,8 +34,8 @@ export const action: Action = async exec => {
     )
     ENGINE = SummingMergeTree
     PARTITION BY tuple()
-    PRIMARY KEY (target, graph_id, hash)
-    ORDER BY (target, graph_id, hash, client_name, client_version, timestamp, graph_version_id)
+    PRIMARY KEY (target, graph_id, timestamp)
+    ORDER BY (target, graph_id, timestamp, hash, client_name, client_version, graph_version_id)
     TTL timestamp + INTERVAL 24 HOUR
     SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1, deduplicate_merge_projection_mode = 'rebuild'
   `);
@@ -76,6 +81,11 @@ export const action: Action = async exec => {
       total_ok UInt32 CODEC(T64, ZSTD(1)),
       duration_avg AggregateFunction(avg, UInt64) CODEC(ZSTD(1)),
       duration_quantiles AggregateFunction(quantilesTDigest(0.75, 0.9, 0.95, 0.99), UInt64) CODEC(ZSTD(1)),
+      PROJECTION by_hash
+      (
+        SELECT *
+        ORDER BY (target, graph_id, hash, timestamp, client_name, client_version, graph_version_id)
+      ),
       PROJECTION by_graph_version_id
       (
         SELECT *
@@ -84,8 +94,8 @@ export const action: Action = async exec => {
     )
     ENGINE = SummingMergeTree
     PARTITION BY toYYYYMMDD(timestamp)
-    PRIMARY KEY (target, graph_id, hash)
-    ORDER BY (target, graph_id, hash, client_name, client_version, timestamp, graph_version_id)
+    PRIMARY KEY (target, graph_id, timestamp)
+    ORDER BY (target, graph_id, timestamp, hash, client_name, client_version, graph_version_id)
     TTL timestamp + INTERVAL 30 DAY
     SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1, deduplicate_merge_projection_mode = 'rebuild'
   `);
@@ -132,6 +142,11 @@ export const action: Action = async exec => {
       total_ok UInt32 CODEC(T64, ZSTD(1)),
       duration_avg AggregateFunction(avg, UInt64) CODEC(ZSTD(1)),
       duration_quantiles AggregateFunction(quantilesTDigest(0.75, 0.9, 0.95, 0.99), UInt64) CODEC(ZSTD(1)),
+      PROJECTION by_hash
+      (
+        SELECT *
+        ORDER BY (target, graph_id, hash, timestamp, client_name, client_version, graph_version_id, expires_at)
+      ),
       PROJECTION by_graph_version_id
       (
         SELECT *
@@ -140,8 +155,8 @@ export const action: Action = async exec => {
     )
     ENGINE = SummingMergeTree
     PARTITION BY toYYYYMM(timestamp)
-    PRIMARY KEY (target, graph_id, hash)
-    ORDER BY (target, graph_id, hash, client_name, client_version, timestamp, expires_at, graph_version_id)
+    PRIMARY KEY (target, graph_id, timestamp)
+    ORDER BY (target, graph_id, timestamp, hash, client_name, client_version, graph_version_id, expires_at)
     TTL expires_at
     SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1, deduplicate_merge_projection_mode = 'rebuild'
   `);
