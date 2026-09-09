@@ -101,8 +101,7 @@ const ZendeskSupportModel = zod.union([
     ZENDESK_SUPPORT: zod.literal('1'),
     ZENDESK_USERNAME: zod.string(),
     ZENDESK_PASSWORD: zod.string(),
-    ZENDESK_SUBDOMAIN: zod.string(),
-    ZENDESK_BASE_URL: emptyString(zod.string().optional()),
+    ZENDESK_BASE_URL: zod.string(),
   }),
 ]);
 
@@ -737,7 +736,6 @@ export const env = {
       ? {
           username: zendeskSupport.ZENDESK_USERNAME,
           password: zendeskSupport.ZENDESK_PASSWORD,
-          subdomain: zendeskSupport.ZENDESK_SUBDOMAIN,
           baseUrl: zendeskSupport.ZENDESK_BASE_URL,
         }
       : null,

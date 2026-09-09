@@ -4,7 +4,7 @@ import { HiveHttpClientError } from '../../shared/providers/http-client';
 import { SupportManager } from './support-manager';
 
 function createSupportManager(overrides?: {
-  config?: Partial<{ username: string; password: string; subdomain: string; baseUrl?: string }>;
+  config?: Partial<{ username: string; password: string; baseUrl: string }>;
   httpClient?: Partial<{ get: any; post: any; put: any; delete: any }>;
   organizationManager?: Partial<{ getOrganization: any; getOrganizationMember: any }>;
   storage?: Partial<Record<string, any>>;
@@ -14,7 +14,7 @@ function createSupportManager(overrides?: {
   const config = {
     username: 'zendesk-user',
     password: 'zendesk-pass',
-    subdomain: 'my-subdomain',
+    baseUrl: 'http://localhost:3043/acme',
     ...overrides?.config,
   };
 
@@ -94,52 +94,6 @@ function mockZendesk(httpClient: { get: any; post: any }) {
   });
   httpClient.get.mockResolvedValue({ users: [] });
 }
-
-describe('SupportManager: apiRoot', () => {
-  it('uses the real Zendesk host when baseUrl is not set', async () => {
-    const { manager, httpClient } = createSupportManager({
-      config: { subdomain: 'acme' },
-      organizationManager: {
-        getOrganization: vi.fn().mockResolvedValue({
-          id: 'org-1',
-          name: 'Test Org',
-          billingPlan: 'PRO',
-          zendeskId: null,
-        }),
-      },
-    });
-    httpClient.post.mockResolvedValue({ organization: { id: 42 } });
-
-    await (manager as any).ensureZendeskOrganizationId('org-1');
-
-    expect(httpClient.post).toHaveBeenCalledWith(
-      'https://acme.zendesk.com/api/v2/organizations',
-      expect.anything(),
-    );
-  });
-
-  it('routes through baseUrl while keeping the subdomain in the path when overridden', async () => {
-    const { manager, httpClient } = createSupportManager({
-      config: { subdomain: 'acme', baseUrl: 'http://localhost:3043' },
-      organizationManager: {
-        getOrganization: vi.fn().mockResolvedValue({
-          id: 'org-1',
-          name: 'Test Org',
-          billingPlan: 'PRO',
-          zendeskId: null,
-        }),
-      },
-    });
-    httpClient.post.mockResolvedValue({ organization: { id: 42 } });
-
-    await (manager as any).ensureZendeskOrganizationId('org-1');
-
-    expect(httpClient.post).toHaveBeenCalledWith(
-      'http://localhost:3043/acme/api/v2/organizations',
-      expect.anything(),
-    );
-  });
-});
 
 describe('SupportManager.createTicket', () => {
   it('creates a ticket, records an audit log, and returns the ticket id', async () => {

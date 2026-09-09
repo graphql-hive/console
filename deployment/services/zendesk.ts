@@ -3,7 +3,7 @@ import { ServiceSecret } from '../utils/secrets';
 import { Environment } from './environment';
 
 export class ZendeskSecret extends ServiceSecret<{
-  subdomain: string | Output<string>;
+  baseUrl: string | Output<string>;
   username: string | Output<string>;
   password: string | Output<string>;
 }> {}
@@ -19,7 +19,7 @@ export function configureZendesk(input: { environment: Environment }) {
   const zendeskConfig = new Config('zendesk');
 
   const secret = new ZendeskSecret('zendesk', {
-    subdomain: zendeskConfig.require('subdomain'),
+    baseUrl: zendeskConfig.require('baseUrl'),
     username: zendeskConfig.require('username'),
     password: zendeskConfig.requireSecret('password'),
   });

@@ -226,7 +226,7 @@ export function deployGraphQL({
       .withSecret('SUPERTOKENS_ACCESS_TOKEN_KEY', supertokensSecrets, 'accessTokenKey')
       .withSecret('SUPERTOKENS_RATE_LIMIT_BYPASS_KEY', supertokensSecrets, 'bypassRateLimitKey')
       // Zendesk
-      .withConditionalSecret(zendesk.enabled, 'ZENDESK_SUBDOMAIN', zendesk.secret, 'subdomain')
+      .withConditionalSecret(zendesk.enabled, 'ZENDESK_BASE_URL', zendesk.secret, 'baseUrl')
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_USERNAME', zendesk.secret, 'username')
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_PASSWORD', zendesk.secret, 'password')
       // Sentry

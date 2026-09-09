@@ -196,14 +196,10 @@ First set these variables in your `.env`:
 ZENDESK_SUPPORT=1
 ZENDESK_USERNAME=mock
 ZENDESK_PASSWORD=mock
-ZENDESK_SUBDOMAIN=local
-ZENDESK_BASE_URL=http://localhost:3043
+ZENDESK_BASE_URL=http://localhost:3043/local
 ```
 
-`ZENDESK_BASE_URL` overrides the Zendesk API host; requests still route through
-`${ZENDESK_BASE_URL}/${ZENDESK_SUBDOMAIN}/api/v2/...` so the mock server's request log stays grouped
-by subdomain. After submitting a ticket, confirm the request reached the mock by querying its
-recorded requests:
+After submitting a ticket, confirm the request reached the mock by querying its recorded requests:
 
 ```bash
 curl -s -X PUT 'http://localhost:3043/mockserver/retrieve?type=REQUESTS' | jq
