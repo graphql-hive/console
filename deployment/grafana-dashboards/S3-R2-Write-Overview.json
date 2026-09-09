@@ -656,7 +656,7 @@
           "description": "",
           "id": 4,
           "links": [],
-          "title": "Overall write error rate (401s, all mirrors)",
+          "title": "Overall write error rate (all mirrors)",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -1093,7 +1093,7 @@
           "description": "",
           "id": 9,
           "links": [],
-          "title": "Overall write error rate trend (401s, all mirrors)",
+          "title": "Overall write error rate trend (all mirrors)",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
