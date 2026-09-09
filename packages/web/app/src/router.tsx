@@ -6,13 +6,14 @@ import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
 import Session from 'supertokens-auth-react/recipe/session';
 import { Provider as UrqlProvider } from 'urql';
 import { z } from 'zod';
+import { NotFound } from '@/components/base/not-found/not-found';
 import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
 import { urqlClient } from '@/lib/urql';
-import { getCurrentScope, init } from '@sentry/react';
+import { captureMessage, getCurrentScope, init } from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   createRootRoute,
@@ -25,9 +26,9 @@ import {
   stringifySearchWith,
   useNavigate,
   useParams,
+  useRouter,
 } from '@tanstack/react-router';
 import { ErrorComponent } from './components/error';
-import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Meta } from '@/components/ui/meta';
@@ -180,9 +181,28 @@ function RootComponent() {
   );
 }
 
+/**
+ * The route-level 404. Owns the viewport rather than a layout's content region, and reports the
+ * miss to Sentry, which is why it wraps `NotFound` instead of being registered directly.
+ */
+function RouteNotFound() {
+  const router = useRouter();
+
+  captureMessage('404 Not Found', {
+    level: 'warning',
+    extra: {
+      href1: router.history.location.href,
+      href2: window.location.href,
+      href3: router.latestLocation.href,
+    },
+  });
+
+  return <NotFound bigHeading="404" title="Page Not Found" variants={{ fullScreen: true }} />;
+}
+
 const root = createRootRoute({
   component: RootComponent,
-  notFoundComponent: NotFound,
+  notFoundComponent: RouteNotFound,
 });
 
 const anonymousRoute = createRoute({
@@ -196,7 +216,7 @@ const authenticatedRoute = createRoute({
   component: authenticated(function AuthenticatedRoute() {
     return <Outlet />;
   }),
-  notFoundComponent: NotFound,
+  notFoundComponent: RouteNotFound,
   errorComponent: ErrorComponent,
 });
 
@@ -204,7 +224,7 @@ const authRoute = createRoute({
   getParentRoute: () => anonymousRoute,
   path: 'auth',
   component: AuthPage,
-  notFoundComponent: NotFound,
+  notFoundComponent: RouteNotFound,
   errorComponent: ErrorComponent,
 });
 
@@ -341,7 +361,7 @@ const indexRoute = createRoute({
 const notFoundRoute = createRoute({
   getParentRoute: () => root,
   path: '404',
-  component: NotFound,
+  component: RouteNotFound,
 });
 
 const devRoute = createRoute({
@@ -398,7 +418,7 @@ const transferOrganizationRoute = createRoute({
 const organizationRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '$organizationSlug',
-  notFoundComponent: NotFound,
+  notFoundComponent: RouteNotFound,
   errorComponent: ErrorComponent,
 });
 
@@ -441,7 +461,7 @@ const organizationIndexRoute = createRoute({
       />
     );
   },
-  notFoundComponent: NotFound,
+  notFoundComponent: RouteNotFound,
   errorComponent: ErrorComponent,
 });
 
@@ -547,7 +567,7 @@ export const organizationMembersRoute = createRoute({
 const projectRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '$organizationSlug/$projectSlug',
-  notFoundComponent: NotFound,
+  notFoundComponent: RouteNotFound,
   errorComponent: ErrorComponent,
 });
 
@@ -606,7 +626,7 @@ const projectAlertsRoute = createRoute({
 const targetRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '$organizationSlug/$projectSlug/$targetSlug',
-  notFoundComponent: NotFound,
+  notFoundComponent: RouteNotFound,
   errorComponent: ErrorComponent,
 });
 

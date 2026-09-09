@@ -21,8 +21,8 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { NotFound } from '@/components/base/not-found/not-found';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
-import { NotFoundContent } from '@/components/common/not-found-content';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1132,7 +1132,7 @@ function TargetInsightsNewPageContent(props: {
       {!trace && !isFetching && (
         <>
           <Meta title="Trace Not found" />
-          <NotFoundContent heading="Trace not found." subheading="This trace does not exist." />
+          <NotFound title="Trace not found." description="This trace does not exist." />
         </>
       )}
     </div>

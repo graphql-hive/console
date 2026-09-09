@@ -3,8 +3,8 @@ import { BlocksIcon, BoxIcon, FoldVerticalIcon } from 'lucide-react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { NotFound } from '@/components/base/not-found/not-found';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { NotFoundContent } from '@/components/common/not-found-content';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
@@ -202,10 +202,10 @@ export function OrganizationLayout({
         ) : null}
 
         {shouldShowNoOrg ? (
-          <NotFoundContent
-            heading="Organization not found"
-            subheading="Use the empty dropdown in the header to select an organization to which you have access."
-            includeBackButton={false}
+          <NotFound
+            title="Organization not found"
+            description="Use the empty dropdown in the header to select an organization to which you have access."
+            showBackButton={false}
           />
         ) : (
           <div className={className}>{children}</div>

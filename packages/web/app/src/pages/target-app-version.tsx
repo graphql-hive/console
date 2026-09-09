@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/AppFilter';
-import { NotFoundContent } from '@/components/common/not-found-content';
+import { NotFound } from '@/components/base/not-found/not-found';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
@@ -210,9 +210,9 @@ function TargetAppVersionContent(props: {
     return (
       <>
         <Meta title="App Version Not found" />
-        <NotFoundContent
-          heading="App Version not found."
-          subheading="This app does not seem to exist anymore."
+        <NotFound
+          title="App Version not found."
+          description="This app does not seem to exist anymore."
         />
       </>
     );

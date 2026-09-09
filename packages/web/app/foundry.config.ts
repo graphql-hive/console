@@ -54,6 +54,7 @@ export default defineConfig({
         { label: 'DataTable' },
         { label: 'DescriptionList' },
         { label: 'PageLead' },
+        { label: 'NotFound' },
       ],
     },
     // App components, as opposed to the design-system primitives above. Each preview

@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,6 @@ import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
-import { ResourceNotFoundComponent } from '../resource-not-found';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
 import { ProjectSelector } from './project-selector';
@@ -112,7 +112,11 @@ export function ProjectLayout({
       {query.fetching === false &&
       query.stale === false &&
       (currentProject === null || currentOrganization === null) ? (
-        <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
+        <NotFound
+          variants={{ layout: 'horizontal', illustration: 'connection' }}
+          title="404 - This project does not seem to exist."
+          description={resourceAccessDescription}
+        />
       ) : (
         <>
           <SecondaryNavigation
