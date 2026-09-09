@@ -8,14 +8,18 @@ import {
   useState,
 } from 'react';
 import {
-  GraphQLEnumType,
-  GraphQLObjectType,
-  GraphQLScalarType,
+  getNamedType,
   GraphQLSchema,
-  GraphQLUnionType,
+  isEnumType,
+  isInterfaceType,
+  isObjectType,
+  isScalarType,
+  isUnionType,
   OperationTypeNode,
   type GraphQLArgument,
   type GraphQLField,
+  type GraphQLNamedType,
+  type GraphQLObjectType,
 } from 'graphql';
 import { throttle } from 'lodash';
 import {
@@ -40,6 +44,7 @@ import {
   mergeOpenPaths,
   searchSchemaPaths,
 } from '../../lib/operations.utils';
+import { decodeTypeConditionSegment, encodeTypeConditionSegment } from '../../lib/schema-path';
 import { cn, splitIdentifier } from '../../lib/utils';
 import { GraphQLType } from '../graphql-type';
 import { GraphQLIcon } from '../icons';
@@ -177,8 +182,13 @@ export const BuilderScalarField = (props: {
   label?: React.ReactNode;
   disableChildren?: boolean;
 }) => {
-  const { activeOperation, addPathToActiveOperation, deletePathFromActiveOperation, activeTab } =
-    useLaboratory();
+  const {
+    schema,
+    activeOperation,
+    addPathToActiveOperation,
+    deletePathFromActiveOperation,
+    activeTab,
+  } = useLaboratory();
 
   const operation = useMemo(() => {
     return props.operation ?? activeOperation ?? null;
@@ -251,7 +261,7 @@ export const BuilderScalarField = (props: {
             onCheckedChange={checked => {
               if (checked) {
                 setIsOpen(true);
-                addPathToActiveOperation(path, props.operationName);
+                addPathToActiveOperation(path, props.operationName, schema ?? undefined);
               } else {
                 deletePathFromActiveOperation(path, props.operationName);
               }
@@ -306,7 +316,7 @@ export const BuilderScalarField = (props: {
                 onCheckedChange={checked => {
                   if (checked) {
                     setIsOpen(true);
-                    addPathToActiveOperation(path, props.operationName);
+                    addPathToActiveOperation(path, props.operationName, schema ?? undefined);
                   } else {
                     deletePathFromActiveOperation(path, props.operationName);
                   }
@@ -401,7 +411,11 @@ export const BuilderScalarField = (props: {
           disabled={activeTab?.type !== 'operation'}
           onCheckedChange={checked => {
             if (checked) {
-              addPathToActiveOperation(props.path.join('.'), props.operationName);
+              addPathToActiveOperation(
+                props.path.join('.'),
+                props.operationName,
+                schema ?? undefined,
+              );
             } else {
               deletePathFromActiveOperation(props.path.join('.'), props.operationName);
             }
@@ -467,15 +481,28 @@ export const BuilderObjectField = (props: {
     [path, props],
   );
 
+  const namedType = useMemo(() => getNamedType(props.field.type), [props.field.type]);
+
   const fields = useMemo(
     () =>
-      Object.values(
-        (
-          schema?.getType(props.field.type.toString().replace(/\[|\]|!/g, '')) as GraphQLObjectType
-        )?.getFields?.() ?? {},
-      ),
-    [schema, props.field.type],
+      isObjectType(namedType) || isInterfaceType(namedType)
+        ? Object.values(namedType.getFields())
+        : [],
+    [namedType],
   );
+
+  /**
+   * A union selects nothing without a type condition, and an interface can only
+   * reach an implementation's own fields through one, so each possible type gets
+   * a row that writes `... on Type`.
+   */
+  const possibleTypes = useMemo(() => {
+    if (isUnionType(namedType)) {
+      return namedType.getTypes();
+    }
+
+    return isInterfaceType(namedType) ? (schema?.getPossibleTypes(namedType) ?? []) : [];
+  }, [namedType, schema]);
 
   const args = useMemo(() => {
     return (props.field as GraphQLField<unknown, unknown, unknown>).args ?? [];
@@ -525,7 +552,7 @@ export const BuilderObjectField = (props: {
             onCheckedChange={checked => {
               if (checked) {
                 setIsOpen(true);
-                addPathToActiveOperation(path, props.operationName);
+                addPathToActiveOperation(path, props.operationName, schema ?? undefined);
               } else {
                 deletePathFromActiveOperation(path, props.operationName);
               }
@@ -579,7 +606,7 @@ export const BuilderObjectField = (props: {
               onCheckedChange={checked => {
                 if (checked) {
                   setIsOpen(true);
-                  addPathToActiveOperation(path, props.operationName);
+                  addPathToActiveOperation(path, props.operationName, schema ?? undefined);
                 } else {
                   deletePathFromActiveOperation(path, props.operationName);
                 }
@@ -661,6 +688,162 @@ export const BuilderObjectField = (props: {
                 searchValue={props.searchValue}
               />
             ))}
+            {possibleTypes.map(possibleType => (
+              <BuilderTypeConditionField
+                key={possibleType.name}
+                type={possibleType}
+                parentType={namedType}
+                path={[...props.path, encodeTypeConditionSegment(possibleType.name)]}
+                openPaths={props.openPaths}
+                setOpenPaths={props.setOpenPaths}
+                visiblePaths={props.visiblePaths}
+                forcedOpenPaths={props.forcedOpenPaths}
+                isSearchActive={props.isSearchActive}
+                isReadOnly={props.isReadOnly}
+                operation={operation}
+                operationName={props.operationName}
+                searchValue={props.searchValue}
+              />
+            ))}
+          </div>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+/**
+ * One possible type of an abstract field, written as `... on Type`.
+ *
+ * Like the `[arguments]` row this is not a field, so its checkbox only reports
+ * whether anything below it is selected. Ticking it on its own would mean writing
+ * an inline fragment with no selections, which does not parse, so the fragment is
+ * created and pruned by its children instead.
+ *
+ * Unlike that row it is a real level in the path, so its open state is tracked in
+ * `openPaths` and it can be forced open by a search.
+ */
+export const BuilderTypeConditionField = (props: {
+  type: GraphQLObjectType;
+  parentType: GraphQLNamedType;
+  path: string[];
+  openPaths: string[];
+  setOpenPaths: (openPaths: string[]) => void;
+  visiblePaths?: Set<string> | null;
+  forcedOpenPaths?: Set<string> | null;
+  isSearchActive?: boolean;
+  isReadOnly?: boolean;
+  operation?: LaboratoryOperation | null;
+  operationName?: string | null;
+  searchValue?: string;
+}) => {
+  const { activeOperation } = useLaboratory();
+
+  const operation = useMemo(
+    () => props.operation ?? activeOperation ?? null,
+    [props.operation, activeOperation],
+  );
+
+  const path = useMemo(() => props.path.join('.'), [props.path]);
+
+  const isOpen = useMemo(
+    () => props.openPaths.includes(path) || !!props.forcedOpenPaths?.has(path),
+    [props.openPaths, props.forcedOpenPaths, path],
+  );
+
+  const setIsOpen = useCallback(
+    (isOpen: boolean) => {
+      props.setOpenPaths(
+        isOpen ? [...props.openPaths, path] : props.openPaths.filter(openPath => openPath !== path),
+      );
+    },
+    [path, props],
+  );
+
+  /**
+   * An implementation only adds what the interface does not already declare; those
+   * fields are on the rows above. A union has no such parent level, and members
+   * sharing a field name is exactly what the branch exists to separate.
+   */
+  const fields = useMemo(() => {
+    const own = Object.values(props.type.getFields());
+
+    if (!isInterfaceType(props.parentType)) {
+      return own;
+    }
+
+    const inherited = new Set(Object.keys(props.parentType.getFields()));
+
+    return own.filter(field => !inherited.has(field.name));
+  }, [props.type, props.parentType]);
+
+  const isInQuery = useMemo(
+    () => isPathInQuery(operation?.query ?? '', path, props.operationName),
+    [operation?.query, path, props.operationName],
+  );
+
+  if (props.isSearchActive && props.visiblePaths && !props.visiblePaths.has(path)) {
+    return null;
+  }
+
+  // A row that opens onto nothing is worse than no row.
+  if (fields.length === 0) {
+    return null;
+  }
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <BuilderRowContextMenu path={props.path}>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            className={cn(
+              'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+              {
+                'text-foreground-primary': isInQuery,
+              },
+            )}
+            style={{
+              top: `${(props.path.length - 2) * 32}px`,
+            }}
+            size="sm"
+          >
+            <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
+            <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+            <ChevronDownIcon
+              className={cn('text-muted-foreground size-4 transition-all', {
+                '-rotate-90': !isOpen,
+              })}
+            />
+            {/* A spacer, not a checkbox: a type condition groups fields rather than
+                being one you select, so there is nothing here to tick. The row still
+                highlights while something inside it is selected. Aligns the label with
+                the field rows below, the way BuilderArgument spaces its chevron. */}
+            <div className="size-4" />
+            <CuboidIcon className="size-4 text-amber-400" />
+            ... on <GraphQLType type={props.type} />
+          </Button>
+        </CollapsibleTrigger>
+      </BuilderRowContextMenu>
+      <CollapsibleContent className="border-border relative z-0 ml-4 flex flex-col border-l pl-1">
+        {isOpen && (
+          <div>
+            {fields.map(child => (
+              <BuilderField
+                key={child.name}
+                field={child}
+                path={[...props.path, child.name]}
+                openPaths={props.openPaths}
+                setOpenPaths={props.setOpenPaths}
+                visiblePaths={props.visiblePaths}
+                forcedOpenPaths={props.forcedOpenPaths}
+                isSearchActive={props.isSearchActive}
+                isReadOnly={props.isReadOnly}
+                operation={operation}
+                operationName={props.operationName}
+                searchValue={props.searchValue}
+              />
+            ))}
           </div>
         )}
       </CollapsibleContent>
@@ -683,16 +866,11 @@ export const BuilderField = (props: {
   label?: React.ReactNode;
   disableChildren?: boolean;
 }) => {
-  const { schema } = useLaboratory();
+  // Unions and interfaces are expandable: they get a row per possible type. Only
+  // scalars and enums genuinely have nothing underneath them.
+  const type = getNamedType(props.field.type);
 
-  const type = schema?.getType(props.field.type.toString().replace(/\[|\]|!/g, ''));
-
-  if (
-    !type ||
-    type instanceof GraphQLScalarType ||
-    type instanceof GraphQLEnumType ||
-    type instanceof GraphQLUnionType
-  ) {
+  if (!type || isScalarType(type) || isEnumType(type)) {
     return (
       <BuilderScalarField
         field={props.field}
@@ -834,6 +1012,20 @@ export const BuilderSearchResults = (props: {
           label={
             <span>
               {path.split('.').map((part, index) => {
+                const typeName = decodeTypeConditionSegment(part);
+
+                // The encoded form is internal. Show the type condition as GraphQL,
+                // and never highlight it: matching runs on field names, so a hit
+                // here would be claiming a match the search never made.
+                if (typeName !== null) {
+                  return (
+                    <Fragment key={index}>
+                      <span className="text-amber-400">on {typeName}</span>
+                      {index < path.split('.').length - 1 && '.'}
+                    </Fragment>
+                  );
+                }
+
                 const splittedPart = splitIdentifier(part);
 
                 const isMatch = splittedPart.some(p =>
