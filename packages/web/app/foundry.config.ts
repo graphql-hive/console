@@ -64,18 +64,6 @@ export default defineConfig({
       label: 'Components',
       children: [{ label: 'BillingPlanPicker' }],
     },
-    // Temporary. A per-call-site inventory of the two older Card components, kept while
-    // base/card is built out to absorb them. Delete this group and
-    // src/components/base/migration/ once ui/card and v2/card are gone.
-    {
-      label: 'Migration',
-      children: [
-        {
-          label: 'Card',
-          children: [{ label: 'ui-card' }, { label: 'v2-card' }],
-        },
-      ],
-    },
   ],
   theme: {
     colors: {
