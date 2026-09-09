@@ -1,5 +1,6 @@
 import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'urql';
+import { Card } from '@/components/base/card/card';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import {
   BillingPaymentMethodForm,
@@ -14,7 +15,6 @@ import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { Card } from '@/components/v2/card';
 import { Input } from '@/components/v2/input';
 import { Slider } from '@/components/v2/slider';
 import Stat from '@/components/v2/stat';
@@ -331,84 +331,88 @@ function Inner(props: {
 
   return (
     <div className="flex w-full flex-col gap-5">
-      <Card className="w-full">
-        <Heading className="mb-4">Choose Your Plan</Heading>
-        {missingBillingUpdatePermissions ? (
-          <div className="text-neutral-10 mb-3 text-sm">
-            You lack the necessary permission 'billing:update' to update the subscription plan.
-          </div>
-        ) : null}
-        <BillingPlanPicker
-          disabled={!organization.billingConfiguration.canUpdateSubscription}
-          activePlan={organization.plan}
-          value={plan}
-          plans={billingPlans}
-          onPlanChange={onPlan}
-        />
-      </Card>
-      <Card className="w-full self-start" ref={planSummaryRef}>
-        <Heading className="mb-2">Plan Summary</Heading>
-        <div>
-          <div className="flex flex-col">
-            <div>
-              <PlanSummary plan={selectedPlan} operationsRateLimit={operationsRateLimit}>
-                {selectedPlan.planType === BillingPlanType.Pro && (
-                  <Stat>
-                    <Stat.Label>Free Trial</Stat.Label>
-                    <Stat.Number>30</Stat.Number>
-                    <Stat.HelpText>days</Stat.HelpText>
-                  </Stat>
-                )}
-              </PlanSummary>
+      <div className="w-full">
+        <Card variants={{ onSurface: 'base' }}>
+          <Heading className="mb-4">Choose Your Plan</Heading>
+          {missingBillingUpdatePermissions ? (
+            <div className="text-neutral-10 mb-3 text-sm">
+              You lack the necessary permission 'billing:update' to update the subscription plan.
             </div>
+          ) : null}
+          <BillingPlanPicker
+            disabled={!organization.billingConfiguration.canUpdateSubscription}
+            activePlan={organization.plan}
+            value={plan}
+            plans={billingPlans}
+            onPlanChange={onPlan}
+          />
+        </Card>
+      </div>
+      <div className="w-full self-start" ref={planSummaryRef}>
+        <Card variants={{ onSurface: 'base' }}>
+          <Heading className="mb-2">Plan Summary</Heading>
+          <div>
+            <div className="flex flex-col">
+              <div>
+                <PlanSummary plan={selectedPlan} operationsRateLimit={operationsRateLimit}>
+                  {selectedPlan.planType === BillingPlanType.Pro && (
+                    <Stat>
+                      <Stat.Label>Free Trial</Stat.Label>
+                      <Stat.Number>30</Stat.Number>
+                      <Stat.HelpText>days</Stat.HelpText>
+                    </Stat>
+                  )}
+                </PlanSummary>
+              </div>
 
-            {plan === BillingPlanType.Pro &&
-              organization.billingConfiguration.canUpdateSubscription && (
-                <>
-                  <div className="my-8 w-1/2">
-                    <Heading>Define your reserved volume</Heading>
-                    <p className="text-neutral-10 text-sm">
-                      Pro plan requires to defined quota of reported operations.
-                    </p>
-                    <p className="text-neutral-10 text-sm">
-                      Pick a volume a little higher than you think you'll need to avoid being rate
-                      limited.
-                    </p>
-                    <p className="text-neutral-10 text-sm">
-                      Don't worry, you can always adjust it later.
-                    </p>
-                    <div className="mt-5 pl-2.5">
-                      <SubscriptionSlider
-                        isFetching={isFetching}
-                        operationsRateLimit={operationsRateLimit}
-                        onOperationsRateLimitChange={onOperationsRateLimitChange}
-                      />
+              {plan === BillingPlanType.Pro &&
+                organization.billingConfiguration.canUpdateSubscription && (
+                  <>
+                    <div className="my-8 w-1/2">
+                      <Heading>Define your reserved volume</Heading>
+                      <p className="text-neutral-10 text-sm">
+                        Pro plan requires to defined quota of reported operations.
+                      </p>
+                      <p className="text-neutral-10 text-sm">
+                        Pick a volume a little higher than you think you'll need to avoid being rate
+                        limited.
+                      </p>
+                      <p className="text-neutral-10 text-sm">
+                        Don't worry, you can always adjust it later.
+                      </p>
+                      <div className="mt-5 pl-2.5">
+                        <SubscriptionSlider
+                          isFetching={isFetching}
+                          operationsRateLimit={operationsRateLimit}
+                          onOperationsRateLimitChange={onOperationsRateLimitChange}
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  {plan === organization.plan ? (
-                    <div>
-                      <Button
-                        type="button"
-                        onClick={updateLimits}
-                        disabled={
-                          isFetching ||
-                          organization.monthlyOperationsLimit === operationsRateLimit * 1_000_000
-                        }
-                      >
-                        Update Limits
-                      </Button>
-                      <ManagePaymentMethod organization={organization} plan={plan} />
-                    </div>
-                  ) : null}
-                </>
-              )}
+                    {plan === organization.plan ? (
+                      <div>
+                        <Button
+                          type="button"
+                          onClick={updateLimits}
+                          disabled={
+                            isFetching ||
+                            organization.monthlyOperationsLimit === operationsRateLimit * 1_000_000
+                          }
+                        >
+                          Update Limits
+                        </Button>
+                        <ManagePaymentMethod organization={organization} plan={plan} />
+                      </div>
+                    ) : null}
+                  </>
+                )}
 
-            {error && <QueryError organizationSlug={organization.slug} showError error={error} />}
-            <div>{renderActions()}</div>
+              {error && <QueryError organizationSlug={organization.slug} showError error={error} />}
+              <div>{renderActions()}</div>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

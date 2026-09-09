@@ -1,7 +1,6 @@
 export { Accordion } from '@/components/v2/accordion';
 export { Autocomplete } from '@/components/v2/autocomplete';
 export { Avatar } from '@/components/v2/avatar';
-export { Card } from '@/components/v2/card';
 export { DataWrapper } from '@/components/v2/data-wrapper';
 export { DiffEditor } from '@/components/v2/diff-editor';
 export { Input } from '@/components/v2/input';
