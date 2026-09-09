@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Section } from '@/components/common';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { OperationStatsFilterInput } from '@/gql/graphql';
 import { createAdaptiveTimeFormatter } from '@/lib/date-time';
@@ -76,16 +76,13 @@ function RequestsStats({
   const value = useFormattedNumber(requests);
 
   return (
-    <Card className="bg-neutral-2/50">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Requests</CardTitle>
-        <GlobeIcon className="text-neutral-10 size-4" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-neutral-10 text-xs">Total requests served</p>
-      </CardContent>
-    </Card>
+    <StatCard
+      variants={{ onSurface: 'raised' }}
+      title="Requests"
+      icon={GlobeIcon}
+      value={value}
+      caption="Total requests served"
+    />
   );
 }
 
@@ -99,16 +96,13 @@ function UniqueOperationsStats({
   const value = useFormattedNumber(operations);
 
   return (
-    <Card className="bg-neutral-2/50">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Operations</CardTitle>
-        <BookIcon className="text-neutral-10 size-4" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-neutral-10 text-xs">Distinct GraphQL operations in {dateRangeText}</p>
-      </CardContent>
-    </Card>
+    <StatCard
+      variants={{ onSurface: 'raised' }}
+      title="Operations"
+      icon={BookIcon}
+      value={value}
+      caption={`Distinct GraphQL operations in ${dateRangeText}`}
+    />
   );
 }
 
@@ -125,16 +119,13 @@ function OperationRelativeFrequency({
     : '-';
 
   return (
-    <Card className="bg-neutral-2/50">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Relative Request Frequency</CardTitle>
-        <PercentIcon className="text-neutral-10 size-4" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{rate}</div>
-        <p className="text-neutral-10 text-xs">The impact on the overall API traffic</p>
-      </CardContent>
-    </Card>
+    <StatCard
+      variants={{ onSurface: 'raised' }}
+      title="Relative Request Frequency"
+      icon={PercentIcon}
+      value={rate}
+      caption="The impact on the overall API traffic"
+    />
   );
 }
 
@@ -150,18 +141,13 @@ function PercentileStats({
   const formatted = useFormattedDuration(value);
 
   return (
-    <Card className="bg-neutral-2/50">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">p{percentile}</CardTitle>
-        <GaugeIcon className="text-neutral-10 size-4" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{formatted}</div>
-        <p className="text-neutral-10 text-xs">
-          Latency p{percentile} in {dateRangeText}
-        </p>
-      </CardContent>
-    </Card>
+    <StatCard
+      variants={{ onSurface: 'raised' }}
+      title={`p${percentile}`}
+      icon={GaugeIcon}
+      value={formatted}
+      caption={`Latency p${percentile} in ${dateRangeText}`}
+    />
   );
 }
 
@@ -183,16 +169,13 @@ function RPM({
   });
 
   return (
-    <Card className="bg-neutral-2/50">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
-        <ActivityIcon className="text-neutral-10 size-4" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{throughput}</div>
-        <p className="text-neutral-10 text-xs">Throughput in {dateRangeText}</p>
-      </CardContent>
-    </Card>
+    <StatCard
+      variants={{ onSurface: 'raised' }}
+      title="Requests per minute"
+      icon={ActivityIcon}
+      value={throughput}
+      caption={`Throughput in ${dateRangeText}`}
+    />
   );
 }
 
@@ -211,16 +194,13 @@ function SuccessRateStats({
       : '-';
 
   return (
-    <Card className="bg-neutral-2/50">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-emerald-500">Success rate</CardTitle>
-        <SmileIcon className="text-neutral-10 size-4" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{rate}</div>
-        <p className="text-neutral-10 text-xs">Successful requests in {dateRangeText}</p>
-      </CardContent>
-    </Card>
+    <StatCard
+      variants={{ onSurface: 'raised', tone: 'success' }}
+      title="Success rate"
+      icon={SmileIcon}
+      value={rate}
+      caption={`Successful requests in ${dateRangeText}`}
+    />
   );
 }
 
@@ -236,16 +216,13 @@ function FailureRateStats({
   const rate = requests || totalFailures ? `${toDecimal((totalFailures * 100) / requests)}%` : '-';
 
   return (
-    <Card className="bg-neutral-2/50">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-red-500">Failure rate</CardTitle>
-        <FrownIcon className="text-neutral-10 size-4" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{rate}</div>
-        <p className="text-neutral-10 text-xs">Failed requests in {dateRangeText}</p>
-      </CardContent>
-    </Card>
+    <StatCard
+      variants={{ onSurface: 'raised', tone: 'danger' }}
+      title="Failure rate"
+      icon={FrownIcon}
+      value={rate}
+      caption={`Failed requests in ${dateRangeText}`}
+    />
   );
 }
 

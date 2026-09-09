@@ -8,11 +8,11 @@ import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filte
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import { Menu, MenuItem } from '@/components/base/floating/menu/menu';
 import { PageLead } from '@/components/base/page-lead';
+import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BackLink } from '@/components/navigation/back-link';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   availablePresets,
   buildDateRangeString,
@@ -850,9 +850,21 @@ function ManageFiltersContent(props: {
   return (
     <>
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Filters" value={stats.total} />
-        <StatCard label="Shared Filters" value={stats.shared} />
-        <StatCard label="Total Views" value={stats.totalViews} />
+        <StatCard
+          variants={{ onSurface: 'raised', tone: 'muted' }}
+          title="Total Filters"
+          value={stats.total.toLocaleString()}
+        />
+        <StatCard
+          variants={{ onSurface: 'raised', tone: 'muted' }}
+          title="Shared Filters"
+          value={stats.shared.toLocaleString()}
+        />
+        <StatCard
+          variants={{ onSurface: 'raised', tone: 'muted' }}
+          title="Total Views"
+          value={stats.totalViews.toLocaleString()}
+        />
       </div>
 
       <div className="mt-8">
@@ -873,19 +885,6 @@ function ManageFiltersContent(props: {
         />
       </div>
     </>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-neutral-10 text-sm font-medium">{label}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value.toLocaleString()}</div>
-      </CardContent>
-    </Card>
   );
 }
 

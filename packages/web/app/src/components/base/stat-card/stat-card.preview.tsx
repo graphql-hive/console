@@ -13,8 +13,8 @@ import { StatCard } from './stat-card';
 export const nav: NavPath = 'Base/Primitives/StatCard';
 
 /**
- * The shape all 17 insights stat cards share. `raised` is the surface they ship on; the one
- * outlier (target-insights-manage-filters.tsx) uses `base` with a muted title and no icon.
+ * The shape all 17 insights stat cards share. Every one of them is `raised`: the pages that set
+ * `bg-neutral-2/50` and the one that took ui/card's default fill both land on the same surface.
  */
 export const Default = createPreview(() => (
   <StatCard
@@ -63,12 +63,9 @@ export const Tones = createPreview(() => (
   </div>
 ));
 
-/**
- * `muted` on the `base` surface with no icon and no caption: the manage-filters outlier, which is
- * the only stat card today that is not `raised`.
- */
+/** The manage-filters outlier: muted title, no icon, no caption. */
 export const NoIconNoCaption = createPreview(() => (
-  <StatCard variants={{ tone: 'muted' }} title="Total operations" value="18" />
+  <StatCard variants={{ onSurface: 'raised', tone: 'muted' }} title="Total Filters" value="18" />
 ));
 
 /** The coordinate page suffixes the figure with an error count, so `value` takes a node. */
