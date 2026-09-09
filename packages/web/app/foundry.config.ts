@@ -22,6 +22,7 @@ export default defineConfig({
             { label: 'Badge' },
             { label: 'Button' },
             { label: 'Card' },
+            { label: 'StatCard' },
             { label: 'Input' },
             { label: 'CopyChip' },
           ],
@@ -30,7 +31,10 @@ export default defineConfig({
           label: 'FormControls',
           children: [
             { label: 'Checkbox' },
-            { label: 'RadioGroup' },
+            // The component's own previews sit on `RadioGroup`; the call-site
+            // transcriptions hang underneath it rather than in a separate top-level group,
+            // so a change can be judged against both without leaving the subtree.
+            { label: 'RadioGroup', children: [{ label: 'Component Examples' }] },
             { label: 'Switch' },
             { label: 'Form' },
           ],
@@ -57,17 +61,18 @@ export default defineConfig({
     // compositions that actually ship.
     {
       label: 'Components',
-      children: [{ label: 'Auth' }, { label: 'RadioGroup' }],
+      children: [{ label: 'BillingPlanPicker' }],
     },
-    // Temporary. Working notes for the Card consolidation; delete this group and
+    // Temporary. A per-call-site inventory of the two older Card components, kept while
+    // base/card is built out to absorb them. Delete this group and
     // src/components/base/migration/ once ui/card and v2/card are gone.
     {
       label: 'Migration',
       children: [
-        { label: 'Inventory', children: [{ label: 'Card' }] },
-        // Real app components reproduced with stub data, so a call site can be checked
-        // without running Hive locally.
-        { label: 'Live', children: [{ label: 'ProjectCard' }, { label: 'BillingPlanPicker' }] },
+        {
+          label: 'Card',
+          children: [{ label: 'ui-card' }, { label: 'v2-card' }],
+        },
       ],
     },
   ],
