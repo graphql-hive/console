@@ -98,7 +98,7 @@ export const Interactive = createPreview(() => (
 export const BodyPadding = createPreview(() => (
   <div className="grid w-[36rem] grid-cols-2 gap-4">
     <Card variants={{ onSurface: 'raised' }} title="Default">
-      <div className="bg-accent/20 text-neutral-11 rounded p-4 text-center text-xs">
+      <div className="bg-accent/20 text-neutral-11 rounded-sm p-4 text-center text-xs">
         Inset by the card's p-5
       </div>
     </Card>
