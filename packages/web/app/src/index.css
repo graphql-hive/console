@@ -519,6 +519,30 @@
   @apply border-b-accent bg-accent_80 absolute right-2 size-1.5 rounded-full border content-[''];
 }
 
+/*
+ * Thin, muted scrollbar. The standard properties cover Firefox, Chromium 121+ and Safari 18.2+;
+ * the -webkit- rules cover older Chromium and Safari, which ignore the standard ones. Browsers
+ * that support both prefer the standard properties, so the two never fight.
+ *
+ * `@utility` rather than a plain class in `@layer utilities`: both emit working CSS, but only
+ * `@utility` registers the name with Tailwind, which is what lets tooling resolve it.
+ */
+@utility thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-7) transparent;
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-neutral-7);
+    border-radius: 4px;
+  }
+}
+
 /* Custom container - matches v3 config: full-width until 2xl, then 1800px max */
 @utility container {
   width: 100%;
@@ -628,27 +652,6 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
-  }
-
-  /*
-   * Thin, muted scrollbar. The standard properties cover Firefox, Chromium 121+ and Safari 18.2+;
-   * the -webkit- rules cover older Chromium and Safari, which ignore the standard ones. Browsers
-   * that support both prefer the standard properties, so the two never fight.
-   */
-  .thin-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-neutral-7) transparent;
-  }
-  .thin-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  .thin-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .thin-scrollbar::-webkit-scrollbar-thumb {
-    background-color: var(--color-neutral-7);
-    border-radius: 4px;
   }
 
   /* Animation utilities (replaces tailwindcss-animate) */
