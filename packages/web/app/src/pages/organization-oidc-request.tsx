@@ -24,8 +24,6 @@ export function OrganizationOIDCRequestPage(props: {
       <OrganizationLayout organizationSlug={props.organizationSlug} minimal>
         <div className="my-6">
           <Card variants={{ onSurface: 'raised' }}>
-            {/* The min-height sits inside the card's padding now rather than on its root, so the
-                card ends up `p-5` taller than it was. */}
             <div className="min-h-140 flex flex-col items-center justify-center gap-y-6">
               <Lock className="size-20 stroke-amber-400" />
               <div className="flex flex-col gap-y-2 text-center">

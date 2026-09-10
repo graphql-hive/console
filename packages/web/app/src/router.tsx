@@ -181,10 +181,6 @@ function RootComponent() {
   );
 }
 
-/**
- * The route-level 404. Owns the viewport rather than a layout's content region, and reports the
- * miss to Sentry, which is why it wraps `NotFound` instead of being registered directly.
- */
 function RouteNotFound() {
   const router = useRouter();
 

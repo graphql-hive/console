@@ -163,8 +163,6 @@ function NewTicketForm(props: {
               </SheetDescription>
             </SheetHeader>
 
-            {/* min-h-0 so this flex child can shrink below its content and let the inner
-                overflow-y-auto actually scroll. */}
             <div className="flex min-h-0 flex-1">
               <div className={cn('w-full space-y-6 text-ellipsis px-2 text-sm', scrollArea)}>
                 <FormField

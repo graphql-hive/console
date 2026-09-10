@@ -245,8 +245,6 @@ function ClientView(props: {
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          {/* `grid` on the wrapper, not `flex flex-col`: grid items stretch on the block axis, so
-              the two cards in this row stay the same height without a class on Card itself. */}
           <div className="col-span-4 grid">
             <Card
               variants={{ onSurface: 'raised', titleSize: 'large' }}

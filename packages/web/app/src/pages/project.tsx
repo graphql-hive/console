@@ -47,8 +47,6 @@ const TargetCard = (props: {
       days={props.days}
       renderLink={children => (
         <Link
-          // Vertical only: the card drops its body padding so the sparkline runs to the edge, and
-          // the text row below supplies its own `px-4`.
           className="block pb-5 pt-4"
           to="/$organizationSlug/$projectSlug/$targetSlug"
           disabled={

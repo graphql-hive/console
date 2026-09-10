@@ -14,7 +14,6 @@ export const floatingBaseClass =
   // element that outranks the positioner. It goes on the positioner instead.
   'text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 max-h-[var(--available-height)] overflow-y-auto overflow-x-hidden thin-scrollbar';
 
-/** Floating panel variant with configurable padding and width constraints. */
 export const floatingVariants = cva(floatingBaseClass, {
   variants: {
     padding: {
@@ -54,7 +53,6 @@ export const floatingVariants = cva(floatingBaseClass, {
   },
 });
 
-/** Base classes shared by all interactive list items. */
 export const itemVariants = cva(
   'flex h-7 cursor-pointer select-none items-center rounded-sm outline-none gap-2',
   {
