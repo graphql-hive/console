@@ -14,8 +14,10 @@ import { cva } from 'class-variance-authority';
 /** Base classes shared by all floating panels (menu, select, popover). */
 export const floatingBaseClass =
   // `--available-height` comes from the positioner: the room left between the anchor and the
-  // viewport edge. Without the cap a long menu runs off screen instead of scrolling.
-  'z-50 text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 max-h-[var(--available-height)] overflow-y-auto thin-scrollbar';
+  // viewport edge. Without the cap a long panel runs off screen instead of scrolling.
+  // `overflow-x-hidden` is not redundant: once `overflow-y` is not `visible`, the spec computes
+  // `overflow-x` to `auto`, so the vertical scrollbar's own width brings on a horizontal one.
+  'z-50 text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 max-h-[var(--available-height)] overflow-y-auto overflow-x-hidden thin-scrollbar';
 
 /** Floating panel variant with configurable padding and width constraints. */
 export const floatingVariants = cva(floatingBaseClass, {
