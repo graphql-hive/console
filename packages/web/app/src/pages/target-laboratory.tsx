@@ -238,7 +238,6 @@ function Save(props: {
           ],
         ]}
       />
-      {/* No longer a child of the menu: it is a modal, not a row. */}
       <CreateOperationModal
         organizationSlug={props.organizationSlug}
         projectSlug={props.projectSlug}
