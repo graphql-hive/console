@@ -28,7 +28,7 @@ import {
 import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
-import { NotFoundContent } from '@/components/common/not-found-content';
+import { NotFound } from '@/components/base/not-found/not-found';
 import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
@@ -107,10 +107,10 @@ export function TargetHistorySchemaVersionPage(props: {
 
   if (!schemaVersion) {
     return (
-      <NotFoundContent
-        heading="Schema Version not found."
-        subheading="This schema version does not seem to exist anymore."
-        includeBackButton={false}
+      <NotFound
+        title="Schema Version not found."
+        description="This schema version does not seem to exist anymore."
+        showBackButton={false}
       />
     );
   }

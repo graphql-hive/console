@@ -11,11 +11,12 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Card } from '@/components/base/card/card';
+import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Link as LegacyLink } from '@/components/ui/link';
@@ -268,178 +269,150 @@ function SchemaCoordinateView(props: {
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-8">
           <div className="col-span-4">
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
-              <Card className="bg-neutral-2/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total calls</CardTitle>
-                  <GlobeIcon className="text-neutral-10 size-4" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {isLoading ? '-' : formatNumber(totalRequests)}
-                  </div>
-                  <p className="text-neutral-10 text-xs">
-                    Requests in {dateRangeController.selectedPreset.label.toLowerCase()}
-                  </p>
-                </CardContent>
-              </Card>
+              <StatCard
+                variants={{ onSurface: 'raised' }}
+                title="Total calls"
+                icon={GlobeIcon}
+                value={isLoading ? '-' : formatNumber(totalRequests)}
+                caption={`Requests in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
+              />
               {showFieldLevelMetrics ? (
-                <Card className="bg-neutral-2/50">
-                  <CardHeader
-                    className="flex flex-row items-center justify-between space-y-0 pb-2"
-                    title="Resolution Count is the total number of times this specific field (schema coordinate) was executed and returned.
-
-This differs from Request Count because a single request can resolve a field multiple times (e.g., inside an array) or skip it entirely (due to errors or conditional directives)."
-                  >
-                    <CardTitle className="text-sm font-medium">Total resolutions</CardTitle>
-                    <GlobeIcon className="text-neutral-10 size-4" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
+                <StatCard
+                  variants={{ onSurface: 'raised' }}
+                  title="Total resolutions"
+                  icon={GlobeIcon}
+                  hint={
+                    <>
+                      <p className="mb-2">
+                        Resolution Count is the total number of times this specific field (schema
+                        coordinate) was executed and returned.
+                      </p>
+                      <p>
+                        This differs from Request Count because a single request can resolve a field
+                        multiple times (e.g., inside an array) or skip it entirely (due to errors or
+                        conditional directives).
+                      </p>
+                    </>
+                  }
+                  value={
+                    <>
                       {isLoading ? '-' : formatNumber(totalResolutions)}
                       {totalFailures ? (
                         <span className="ml-2 text-sm font-normal text-red-500">
                           ({formatNumber(totalFailures)} errors)
                         </span>
                       ) : null}
-                    </div>
-                    <p className="text-neutral-10 text-xs">
-                      Resolved in {dateRangeController.selectedPreset.label.toLowerCase()}
-                    </p>
-                  </CardContent>
-                </Card>
+                    </>
+                  }
+                  caption={`Resolved in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
+                />
               ) : null}
-              <Card className="bg-neutral-2/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
-                  <ActivityIcon className="text-neutral-10 size-4" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {isLoading
-                      ? '-'
-                      : formatThroughput(
-                          totalRequests,
-                          differenceInMilliseconds(
-                            new Date(dateRangeController.resolvedRange.to),
-                            new Date(dateRangeController.resolvedRange.from),
-                          ),
-                        )}
-                  </div>
-                  <p className="text-neutral-10 text-xs">
-                    RPM in {dateRangeController.selectedPreset.label.toLowerCase()}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="bg-neutral-2/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Operations</CardTitle>
-                  <BookIcon className="text-neutral-10 size-4" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{isLoading ? '-' : totalOperations}</div>
-                  <p className="text-neutral-10 text-xs">
-                    GraphQL documents with selected coordinate
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="bg-neutral-2/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Consumers</CardTitle>
-                  <TabletSmartphoneIcon className="text-neutral-10 size-4" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{isLoading ? '-' : totalClients}</div>
-                  <p className="text-neutral-10 text-xs">
-                    GraphQL clients in {dateRangeController.selectedPreset.label.toLowerCase()}
-                  </p>
-                </CardContent>
-              </Card>
+              <StatCard
+                variants={{ onSurface: 'raised' }}
+                title="Requests per minute"
+                icon={ActivityIcon}
+                value={
+                  isLoading
+                    ? '-'
+                    : formatThroughput(
+                        totalRequests,
+                        differenceInMilliseconds(
+                          new Date(dateRangeController.resolvedRange.to),
+                          new Date(dateRangeController.resolvedRange.from),
+                        ),
+                      )
+                }
+                caption={`RPM in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
+              />
+              <StatCard
+                variants={{ onSurface: 'raised' }}
+                title="Operations"
+                icon={BookIcon}
+                value={isLoading ? '-' : totalOperations}
+                caption="GraphQL documents with selected coordinate"
+              />
+              <StatCard
+                variants={{ onSurface: 'raised' }}
+                title="Consumers"
+                icon={TabletSmartphoneIcon}
+                value={isLoading ? '-' : totalClients}
+                caption={`GraphQL clients in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
+              />
             </div>
           </div>
           <div className="col-span-4">
-            <Card className="bg-neutral-2/50 flex h-full flex-col">
-              <CardHeader>
-                <CardTitle>Activity</CardTitle>
-                <CardDescription>
-                  GraphQL requests with {props.coordinate} over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="min-h-[150px] grow basis-0">
-                <AutoSizer>
-                  {size => (
-                    <ReactECharts
-                      style={{ width: size.width, height: size.height }}
-                      option={{
-                        ...styles,
-                        grid: {
-                          left: 20,
-                          top: 5,
-                          right: 5,
-                          bottom: 5,
-                          containLabel: true,
+            <Card
+              variants={{ onSurface: 'raised', titleSize: 'large' }}
+              title="Activity"
+              description={<>GraphQL requests with {props.coordinate} over time</>}
+            >
+              <AutoSizer disableHeight>
+                {size => (
+                  <ReactECharts
+                    style={{ width: size.width, height: 200 }}
+                    option={{
+                      ...styles,
+                      grid: {
+                        left: 20,
+                        top: 5,
+                        right: 5,
+                        bottom: 5,
+                        containLabel: true,
+                      },
+                      tooltip: {
+                        trigger: 'axis',
+                      },
+                      legend: {
+                        show: false,
+                      },
+                      xAxis: [
+                        {
+                          type: 'time',
+                          boundaryGap: false,
                         },
-                        tooltip: {
-                          trigger: 'axis',
-                        },
-                        legend: {
-                          show: false,
-                        },
-                        xAxis: [
-                          {
-                            type: 'time',
-                            boundaryGap: false,
-                          },
-                        ],
-                        yAxis: [
-                          {
-                            type: 'value',
-                            min: 0,
-                            splitLine: {
-                              lineStyle: {
-                                color: colors.grid,
-                                type: 'dashed',
-                              },
-                            },
-                            axisLabel: {
-                              formatter: (value: number) => formatNumber(value),
+                      ],
+                      yAxis: [
+                        {
+                          type: 'value',
+                          min: 0,
+                          splitLine: {
+                            lineStyle: {
+                              color: colors.grid,
+                              type: 'dashed',
                             },
                           },
-                        ],
-                        series: [
-                          {
-                            type: 'line',
-                            name: 'Requests',
-                            showSymbol: false,
-                            smooth: false,
-                            color: colors.primary,
-                            areaStyle: {},
-                            emphasis: {
-                              focus: 'series',
-                            },
-                            large: true,
-                            data: requestsOverTime,
+                          axisLabel: {
+                            formatter: (value: number) => formatNumber(value),
                           },
-                        ],
-                      }}
-                    />
-                  )}
-                </AutoSizer>
-              </CardContent>
-              <CardHeader className="pt-0">
-                <CardDescription>
-                  Number of times the coordinate {props.coordinate} has resolved over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent
-                className={cn(
-                  'min-h-[150px] grow basis-0',
-                  showFieldLevelMetrics ? 'show' : 'hidden',
+                        },
+                      ],
+                      series: [
+                        {
+                          type: 'line',
+                          name: 'Requests',
+                          showSymbol: false,
+                          smooth: false,
+                          color: colors.primary,
+                          areaStyle: {},
+                          emphasis: {
+                            focus: 'series',
+                          },
+                          large: true,
+                          data: requestsOverTime,
+                        },
+                      ],
+                    }}
+                  />
                 )}
-              >
-                <AutoSizer>
+              </AutoSizer>
+              <div className={cn('pt-5', showFieldLevelMetrics ? 'show' : 'hidden')}>
+                <p className="text-neutral-10 pb-4 text-[13px]">
+                  Number of times the coordinate {props.coordinate} has resolved over time
+                </p>
+                <AutoSizer disableHeight>
                   {size => (
                     <ReactECharts
-                      style={{ width: size.width, height: size.height }}
+                      style={{ width: size.width, height: 200 }}
                       option={{
                         ...styles,
                         grid: {
@@ -512,100 +485,111 @@ This differs from Request Count because a single request can resolve a field mul
                     />
                   )}
                 </AutoSizer>
-              </CardContent>
+              </div>
             </Card>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="bg-neutral-2/50 col-span-4 flex h-full flex-col">
-            <CardHeader>
-              <CardTitle>Operations</CardTitle>
-              <CardDescription>
-                {props.coordinate} was used by {isLoading ? '-' : totalOperations}{' '}
-                {totalOperations > 1 ? 'operations' : 'operation'} in{' '}
-                {dateRangeController.selectedPreset.label.toLowerCase()}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="min-h-[120px] grow basis-0 overflow-y-auto">
-              {isLoading
-                ? null
-                : query.data?.target?.schemaCoordinateStats.operations.edges.map(
-                    ({ node: operation }) => (
-                      <Link
-                        key={operation.id}
-                        className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
-                        to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                          operationName: operation.name,
-                          operationHash: operation.operationHash ?? '_',
-                        }}
-                      >
-                        <p className="truncate text-sm font-medium">{operation.name}</p>
-                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                          <div>{formatNumber(operation.count)}</div>{' '}
-                          <div className="min-w-[70px] text-right">
-                            {toDecimal((operation.count * 100) / totalRequests)}%
+          <div className="col-span-4 grid">
+            <Card
+              variants={{ onSurface: 'raised', titleSize: 'large' }}
+              title="Operations"
+              description={
+                <>
+                  {props.coordinate} was used by {isLoading ? '-' : totalOperations}{' '}
+                  {totalOperations > 1 ? 'operations' : 'operation'} in{' '}
+                  {dateRangeController.selectedPreset.label.toLowerCase()}
+                </>
+              }
+            >
+              <div className="max-h-[360px] overflow-y-auto">
+                {isLoading
+                  ? null
+                  : query.data?.target?.schemaCoordinateStats.operations.edges.map(
+                      ({ node: operation }) => (
+                        <Link
+                          key={operation.id}
+                          className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                          to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                            targetSlug: props.targetSlug,
+                            operationName: operation.name,
+                            operationHash: operation.operationHash ?? '_',
+                          }}
+                        >
+                          <p className="truncate text-sm font-medium">{operation.name}</p>
+                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                            <div>{formatNumber(operation.count)}</div>{' '}
+                            <div className="min-w-[70px] text-right">
+                              {toDecimal((operation.count * 100) / totalRequests)}%
+                            </div>
                           </div>
-                        </div>
-                      </Link>
-                    ),
-                  )}
-            </CardContent>
-          </Card>
+                        </Link>
+                      ),
+                    )}
+              </div>
+            </Card>
+          </div>
 
-          <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
-            <CardHeader>
-              <CardTitle>Clients</CardTitle>
-              <CardDescription>
-                {props.coordinate} was used by {isLoading ? '-' : totalClients}{' '}
-                {totalClients > 1 ? 'clients' : 'client'} in{' '}
-                {dateRangeController.selectedPreset.label.toLowerCase()}.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
-              {isLoading
-                ? null
-                : query.data?.target?.schemaCoordinateStats.clients.edges.map(
-                    ({ node: client }) => (
-                      <Link
-                        key={client.name}
-                        className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
-                        to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                          name: client.name,
-                        }}
-                      >
-                        <p className="truncate text-sm font-medium">{client.name}</p>
-                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                          <div>{formatNumber(client.count)}</div>
-                          <div className="min-w-[70px] text-right">
-                            {toDecimal((client.count * 100) / totalRequests)}%
+          <div className="col-span-3 grid">
+            <Card
+              variants={{ onSurface: 'raised', titleSize: 'large' }}
+              title="Clients"
+              description={
+                <>
+                  {props.coordinate} was used by {isLoading ? '-' : totalClients}{' '}
+                  {totalClients > 1 ? 'clients' : 'client'} in{' '}
+                  {dateRangeController.selectedPreset.label.toLowerCase()}.
+                </>
+              }
+            >
+              <div className="max-h-[360px] overflow-y-auto">
+                {isLoading
+                  ? null
+                  : query.data?.target?.schemaCoordinateStats.clients.edges.map(
+                      ({ node: client }) => (
+                        <Link
+                          key={client.name}
+                          className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                          to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                            targetSlug: props.targetSlug,
+                            name: client.name,
+                          }}
+                        >
+                          <p className="truncate text-sm font-medium">{client.name}</p>
+                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                            <div>{formatNumber(client.count)}</div>
+                            <div className="min-w-[70px] text-right">
+                              {toDecimal((client.count * 100) / totalRequests)}%
+                            </div>
                           </div>
-                        </div>
-                      </Link>
-                    ),
-                  )}
-            </CardContent>
-          </Card>
+                        </Link>
+                      ),
+                    )}
+              </div>
+            </Card>
+          </div>
 
           {showFieldLevelMetrics ? (
             <>
-              <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
-                <CardHeader>
-                  <CardTitle>Errors</CardTitle>
-                  <CardDescription>
-                    {props.coordinate} resulted in a GraphQL error {isLoading ? '-' : totalFailures}{' '}
-                    times in {dateRangeController.selectedPreset.label.toLowerCase()}.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
-                  <div className="space-y-2">
+              <div className="col-span-3 grid">
+                <Card
+                  variants={{ onSurface: 'raised', titleSize: 'large' }}
+                  title="Errors"
+                  description={
+                    <>
+                      {props.coordinate} resulted in a GraphQL error{' '}
+                      {isLoading ? '-' : totalFailures} times in{' '}
+                      {dateRangeController.selectedPreset.label.toLowerCase()}.
+                    </>
+                  }
+                >
+                  <div className="max-h-[360px] space-y-2 overflow-y-auto">
                     {isLoading
                       ? null
                       : query.data?.target?.schemaCoordinateStats.errorCodes?.edges.map(
@@ -622,20 +606,18 @@ This differs from Request Count because a single request can resolve a field mul
                           ),
                         )}
                   </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-neutral-2/50 col-span-4 flex h-full flex-col">
-                <CardHeader>
-                  <CardTitle>Error Activity</CardTitle>
-                  <CardDescription>
-                    Error codes returned by {props.coordinate} over time
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
-                  <AutoSizer>
+                </Card>
+              </div>
+              <div className="col-span-4 grid">
+                <Card
+                  variants={{ onSurface: 'raised', titleSize: 'large' }}
+                  title="Error Activity"
+                  description={<>Error codes returned by {props.coordinate} over time</>}
+                >
+                  <AutoSizer disableHeight>
                     {size => (
                       <ReactECharts
-                        style={{ width: size.width, height: size.height }}
+                        style={{ width: size.width, height: 200 }}
                         option={{
                           ...styles,
                           grid: {
@@ -689,8 +671,8 @@ This differs from Request Count because a single request can resolve a field mul
                       />
                     )}
                   </AutoSizer>
-                </CardContent>
-              </Card>
+                </Card>
+              </div>
             </>
           ) : null}
         </div>

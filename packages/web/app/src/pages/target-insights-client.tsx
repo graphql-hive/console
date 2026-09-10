@@ -4,9 +4,10 @@ import ReactECharts from 'echarts-for-react';
 import { ActivityIcon, BookIcon, GlobeIcon, HistoryIcon, RefreshCw } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Card } from '@/components/base/card/card';
+import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -135,205 +136,189 @@ function ClientView(props: {
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-8">
           <div className="col-span-4">
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
-              <Card className="bg-neutral-2/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total calls</CardTitle>
-                  <GlobeIcon className="text-neutral-10 size-4" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {isLoading ? '-' : formatNumber(totalRequests)}
-                  </div>
-                  <p className="text-neutral-10 text-xs">
-                    Requests in {dateRangeController.selectedPreset.label.toLowerCase()}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="bg-neutral-2/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
-                  <ActivityIcon className="text-neutral-10 size-4" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {isLoading
-                      ? '-'
-                      : formatThroughput(
-                          totalRequests,
-                          differenceInMilliseconds(
-                            new Date(dateRangeController.resolvedRange.to),
-                            new Date(dateRangeController.resolvedRange.from),
-                          ),
-                        )}
-                  </div>
-                  <p className="text-neutral-10 text-xs">
-                    RPM in {dateRangeController.selectedPreset.label.toLowerCase()}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="bg-neutral-2/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Operations</CardTitle>
-                  <BookIcon className="text-neutral-10 size-4" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{isLoading ? '-' : totalOperations}</div>
-                  <p className="text-neutral-10 text-xs">Documents requested by selected client</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-neutral-2/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Versions</CardTitle>
-                  <HistoryIcon className="text-neutral-10 size-4" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{isLoading ? '-' : totalVersions}</div>
-                  <p className="text-neutral-10 text-xs">
-                    Versions in {dateRangeController.selectedPreset.label.toLowerCase()}
-                  </p>
-                </CardContent>
-              </Card>
+              <StatCard
+                variants={{ onSurface: 'raised' }}
+                title="Total calls"
+                icon={GlobeIcon}
+                value={isLoading ? '-' : formatNumber(totalRequests)}
+                caption={`Requests in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
+              />
+              <StatCard
+                variants={{ onSurface: 'raised' }}
+                title="Requests per minute"
+                icon={ActivityIcon}
+                value={
+                  isLoading
+                    ? '-'
+                    : formatThroughput(
+                        totalRequests,
+                        differenceInMilliseconds(
+                          new Date(dateRangeController.resolvedRange.to),
+                          new Date(dateRangeController.resolvedRange.from),
+                        ),
+                      )
+                }
+                caption={`RPM in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
+              />
+              <StatCard
+                variants={{ onSurface: 'raised' }}
+                title="Operations"
+                icon={BookIcon}
+                value={isLoading ? '-' : totalOperations}
+                caption="Documents requested by selected client"
+              />
+              <StatCard
+                variants={{ onSurface: 'raised' }}
+                title="Versions"
+                icon={HistoryIcon}
+                value={isLoading ? '-' : totalVersions}
+                caption={`Versions in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
+              />
             </div>
           </div>
           <div className="col-span-4">
-            <Card className="bg-neutral-2/50 flex h-full flex-col">
-              <CardHeader>
-                <CardTitle>Activity</CardTitle>
-                <CardDescription>
-                  GraphQL requests from {props.clientName} over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="min-h-[150px] grow basis-0">
-                <AutoSizer>
-                  {size => (
-                    <ReactECharts
-                      style={{ width: size.width, height: size.height }}
-                      option={{
-                        ...styles,
-                        grid: {
-                          left: 20,
-                          top: 5,
-                          right: 5,
-                          bottom: 5,
-                          containLabel: true,
+            <Card
+              variants={{ onSurface: 'raised', titleSize: 'large' }}
+              title="Activity"
+              description={`GraphQL requests from ${props.clientName} over time`}
+            >
+              <AutoSizer disableHeight>
+                {size => (
+                  <ReactECharts
+                    style={{ width: size.width, height: 200 }}
+                    option={{
+                      ...styles,
+                      grid: {
+                        left: 20,
+                        top: 5,
+                        right: 5,
+                        bottom: 5,
+                        containLabel: true,
+                      },
+                      tooltip: {
+                        trigger: 'axis',
+                      },
+                      legend: {
+                        show: false,
+                      },
+                      xAxis: [
+                        {
+                          type: 'time',
+                          boundaryGap: false,
                         },
-                        tooltip: {
-                          trigger: 'axis',
-                        },
-                        legend: {
-                          show: false,
-                        },
-                        xAxis: [
-                          {
-                            type: 'time',
-                            boundaryGap: false,
-                          },
-                        ],
-                        yAxis: [
-                          {
-                            type: 'value',
-                            min: 0,
-                            splitLine: {
-                              lineStyle: {
-                                color: colors.grid,
-                                type: 'dashed',
-                              },
-                            },
-                            axisLabel: {
-                              formatter: (value: number) => formatNumber(value),
+                      ],
+                      yAxis: [
+                        {
+                          type: 'value',
+                          min: 0,
+                          splitLine: {
+                            lineStyle: {
+                              color: colors.grid,
+                              type: 'dashed',
                             },
                           },
-                        ],
-                        series: [
-                          {
-                            type: 'line',
-                            name: 'Requests',
-                            showSymbol: false,
-                            smooth: false,
-                            color: colors.primary,
-                            areaStyle: {},
-                            emphasis: {
-                              focus: 'series',
-                            },
-                            large: true,
-                            data: requestsOverTime,
+                          axisLabel: {
+                            formatter: (value: number) => formatNumber(value),
                           },
-                        ],
-                      }}
-                    />
-                  )}
-                </AutoSizer>
-              </CardContent>
+                        },
+                      ],
+                      series: [
+                        {
+                          type: 'line',
+                          name: 'Requests',
+                          showSymbol: false,
+                          smooth: false,
+                          color: colors.primary,
+                          areaStyle: {},
+                          emphasis: {
+                            focus: 'series',
+                          },
+                          large: true,
+                          data: requestsOverTime,
+                        },
+                      ],
+                    }}
+                  />
+                )}
+              </AutoSizer>
             </Card>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="bg-neutral-2/50 col-span-4 flex h-full flex-col">
-            <CardHeader>
-              <CardTitle>Operations</CardTitle>
-              <CardDescription>
-                {props.clientName} requested {isLoading ? '-' : totalOperations}{' '}
-                {totalOperations > 1 ? 'operations' : 'operation'} in{' '}
-                {dateRangeController.selectedPreset.label.toLowerCase()}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="min-h-[120px] grow basis-0 overflow-y-auto">
-              {isLoading
-                ? null
-                : query.data?.target?.clientStats.operations.edges.map(({ node: operation }) => (
-                    <Link
-                      key={operation.id}
-                      className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
-                      to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                      params={{
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                        operationName: operation.name,
-                        operationHash: operation.operationHash ?? '_',
-                      }}
-                      search={searchParams => pick(searchParams, ['from', 'to'])}
-                    >
-                      <p className="truncate text-sm font-medium">{operation.name}</p>
-                      <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                        <div>{formatNumber(operation.count)}</div>{' '}
-                        <div className="min-w-[70px] text-right">
-                          {toDecimal((operation.count * 100) / totalRequests)}%
+          <div className="col-span-4 grid">
+            <Card
+              variants={{ onSurface: 'raised', titleSize: 'large' }}
+              title="Operations"
+              description={
+                <>
+                  {props.clientName} requested {isLoading ? '-' : totalOperations}{' '}
+                  {totalOperations > 1 ? 'operations' : 'operation'} in{' '}
+                  {dateRangeController.selectedPreset.label.toLowerCase()}
+                </>
+              }
+            >
+              <div className="max-h-[360px] overflow-y-auto">
+                {isLoading
+                  ? null
+                  : query.data?.target?.clientStats.operations.edges.map(({ node: operation }) => (
+                      <Link
+                        key={operation.id}
+                        className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                        to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                          targetSlug: props.targetSlug,
+                          operationName: operation.name,
+                          operationHash: operation.operationHash ?? '_',
+                        }}
+                        search={searchParams => pick(searchParams, ['from', 'to'])}
+                      >
+                        <p className="truncate text-sm font-medium">{operation.name}</p>
+                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                          <div>{formatNumber(operation.count)}</div>{' '}
+                          <div className="min-w-[70px] text-right">
+                            {toDecimal((operation.count * 100) / totalRequests)}%
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  ))}
-            </CardContent>
-          </Card>
+                      </Link>
+                    ))}
+              </div>
+            </Card>
+          </div>
 
-          <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
-            <CardHeader>
-              <CardTitle>Versions</CardTitle>
-              <CardDescription>
-                {props.clientName} had {isLoading ? '-' : totalVersions}{' '}
-                {totalVersions > 1 ? 'versions' : 'version'} in{' '}
-                {dateRangeController.selectedPreset.label.toLowerCase()}.
-                {!isLoading && totalVersions > 25
-                  ? 'Displaying only 25 most popular versions'
-                  : null}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="min-h-[170px] grow basis-0 overflow-y-auto">
-              {isLoading
-                ? null
-                : query.data?.target?.clientStats.versions.map(version => (
-                    <div key={version.version} className="flex items-center py-1">
-                      <p className="truncate text-sm font-medium">{version.version}</p>
-                      <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                        <div>{formatNumber(version.count)}</div>
-                        <div className="min-w-[70px] text-right">
-                          {toDecimal((version.count * 100) / totalRequests)}%
+          <div className="col-span-3 grid">
+            <Card
+              variants={{ onSurface: 'raised', titleSize: 'large' }}
+              title="Versions"
+              description={
+                <>
+                  {props.clientName} had {isLoading ? '-' : totalVersions}{' '}
+                  {totalVersions > 1 ? 'versions' : 'version'} in{' '}
+                  {dateRangeController.selectedPreset.label.toLowerCase()}.
+                  {!isLoading && totalVersions > 25
+                    ? 'Displaying only 25 most popular versions'
+                    : null}
+                </>
+              }
+            >
+              <div className="max-h-[360px] overflow-y-auto">
+                {isLoading
+                  ? null
+                  : query.data?.target?.clientStats.versions.map(version => (
+                      <div key={version.version} className="flex items-center py-1">
+                        <p className="truncate text-sm font-medium">{version.version}</p>
+                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                          <div>{formatNumber(version.count)}</div>
+                          <div className="min-w-[70px] text-right">
+                            {toDecimal((version.count * 100) / totalRequests)}%
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-            </CardContent>
-          </Card>
+                    ))}
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </>

@@ -2,7 +2,7 @@
 @plugin "./lib/tailwind-plugins.js";
 
 /* Configure dark mode to use .dark class instead of prefers-color-scheme */
-@variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* Typography */
@@ -225,6 +225,13 @@
   --color-teal-950: #042f2e;
 
   --color-ring: hsl(var(--ring));
+
+  --color-card-bg: var(--color-neutral-3);
+  --color-card-border: var(--color-neutral-4);
+  --color-card-bg-hover: var(--color-neutral-4);
+  --color-card-border-hover: var(--color-neutral-5);
+  --color-floating-bg: var(--color-neutral-4);
+  --color-floating-border: var(--color-neutral-5);
 
   /* Border Radius */
   --radius: 0.5rem;
@@ -510,6 +517,30 @@
 
 .hive-badge-is-changed:after {
   @apply border-b-accent bg-accent_80 absolute right-2 size-1.5 rounded-full border content-[''];
+}
+
+/*
+ * Thin, muted scrollbar. The standard properties cover Firefox, Chromium 121+ and Safari 18.2+;
+ * the -webkit- rules cover older Chromium and Safari, which ignore the standard ones. Browsers
+ * that support both prefer the standard properties, so the two never fight.
+ *
+ * `@utility` rather than a plain class in `@layer utilities`: both emit working CSS, but only
+ * `@utility` registers the name with Tailwind, which is what lets tooling resolve it.
+ */
+@utility thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-7) transparent;
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-neutral-7);
+    border-radius: 4px;
+  }
 }
 
 /* Custom container - matches v3 config: full-width until 2xl, then 1800px max */

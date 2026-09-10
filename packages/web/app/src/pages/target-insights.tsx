@@ -376,7 +376,6 @@ function OperationsView({
         resolution={dateRangeController.resolution}
       />
       <OperationsList
-        className="mt-12"
         period={dateRangeController.resolvedRange}
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}

@@ -26,9 +26,7 @@ function composeTooltipContent(input: {
       <Markdown key="docs" className="text-sm" content={input.description} />
     ) : null,
     input.documentationUrl ? (
-      <DocsLink key="link" href={input.documentationUrl}>
-        read more
-      </DocsLink>
+      <DocsLink key="link" href={input.documentationUrl} text="read more" />
     ) : null,
   ].filter(Boolean);
 

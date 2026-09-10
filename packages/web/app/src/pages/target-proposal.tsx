@@ -10,7 +10,6 @@ import {
 } from '@/components/target/proposals';
 import { SaveProposalProvider } from '@/components/target/proposals/save-proposal-modal';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
-import { CardDescription } from '@/components/ui/card';
 import { CheckIcon, DiffIcon, EditIcon, GraphQLIcon, XIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -414,11 +413,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 )}
               </span>
             }
-            description={
-              <CardDescription>
-                Collaborate on schema changes to reduce friction during development.
-              </CardDescription>
-            }
+            description="Collaborate on schema changes to reduce friction during development."
           />
         </div>
       </div>

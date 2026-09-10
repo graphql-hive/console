@@ -666,22 +666,24 @@ export function OrganizationMembers(props: {
       <SubPageLayoutHeader
         subPageTitle="List of organization members"
         description="Manage the members of your organization and their permissions."
-      >
-        <div className="flex flex-row gap-4">
-          <Input
-            className="w-[220px] grow cursor-text"
-            placeholder="Search by username or email"
-            onChange={handleSearchChange}
-            defaultValue={searchValue}
-          />
-          {organization.viewerCanManageInvitations && (
-            <MemberInvitationButton
-              refetchInvitations={props.refetchMembers}
-              organization={organization}
+        sideContent={
+          <>
+            <Input
+              className="w-[220px] grow cursor-text"
+              placeholder="Search by username or email"
+              onChange={handleSearchChange}
+              defaultValue={searchValue}
             />
-          )}
-        </div>
-      </SubPageLayoutHeader>
+            {organization.viewerCanManageInvitations && (
+              <MemberInvitationButton
+                refetchInvitations={props.refetchMembers}
+                organization={organization}
+              />
+            )}
+          </>
+        }
+      />
+
       {search.showPendingSCIMManagementConfirmations && (
         <Callout type="warning">
           Showing members with unresolved SCIM provisioning conflicts.{' '}

@@ -3,6 +3,8 @@ import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { RadioGroup } from '@/components/base/radio-group/radio-group';
+import { scrollArea } from '@/components/base/shared-styles';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { Priority, priorityDescription, Status } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
@@ -19,7 +21,6 @@ import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Sheet,
   SheetContent,
@@ -45,6 +46,16 @@ import { useNotifications, useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
+
+const PRIORITY_ITEMS = [
+  SupportTicketPriority.Normal,
+  SupportTicketPriority.High,
+  SupportTicketPriority.Urgent,
+].map(priority => ({
+  value: priority,
+  label: priority.charAt(0) + priority.slice(1).toLowerCase(),
+  description: priorityDescription[priority],
+}));
 
 const newTicketFormSchema = z.object({
   subject: z.string().min(2, {
@@ -152,49 +163,21 @@ function NewTicketForm(props: {
               </SheetDescription>
             </SheetHeader>
 
-            <div className="flex flex-1">
-              <div className="w-full space-y-6 overflow-y-auto text-ellipsis px-2 text-sm">
+            <div className="flex min-h-0 flex-1">
+              <div className={cn('w-full space-y-6 text-ellipsis px-2 text-sm', scrollArea)}>
                 <FormField
                   control={form.control}
                   name="priority"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormLabel>Priority level</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-1"
-                        >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value={SupportTicketPriority.Normal} />
-                            </FormControl>
-                            <FormLabel className="text-neutral-10 font-normal">
-                              <span className="text-neutral-12 font-semibold">Normal</span> -{' '}
-                              {priorityDescription[SupportTicketPriority.Normal]}
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value={SupportTicketPriority.High} />
-                            </FormControl>
-                            <FormLabel className="text-neutral-10 font-normal">
-                              <span className="text-neutral-12 font-semibold">High</span> -{' '}
-                              {priorityDescription[SupportTicketPriority.High]}
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value={SupportTicketPriority.Urgent} />
-                            </FormControl>
-                            <FormLabel className="text-neutral-10 font-normal">
-                              <span className="text-neutral-12 font-semibold">Urgent</span> -{' '}
-                              {priorityDescription[SupportTicketPriority.Urgent]}
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
+                      <RadioGroup
+                        variant="as-card"
+                        orientation="vertical"
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        items={PRIORITY_ITEMS}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}

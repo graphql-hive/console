@@ -1,58 +1,74 @@
-import { type ComponentProps, type ReactElement, type ReactNode } from 'react';
+import { type ReactElement, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
-const cardVariants = cva('rounded-lg border', {
+export const cardVariants = cva('rounded-md border', {
   variants: {
-    variant: {
-      default: '',
-      selectable: 'hover:border-neutral-10 flex-1 cursor-pointer transition-colors',
-      selected: 'border-border-neutral-10 bg-neutral-3 flex-1 cursor-pointer transition-colors',
+    onSurface: {
+      base: 'border-neutral-5',
+      raised: 'bg-neutral-2 dark:bg-neutral-3 border-neutral-4',
+    },
+    // For a card that is itself a link or button. The hover fill moves one step in the same
+    // direction the surface already inverts, so it reads as "lifted" in both themes.
+    interactive: {
+      true: 'hover:bg-neutral-1 dark:hover:bg-neutral-4 hover:border-neutral-5',
     },
   },
   defaultVariants: {
-    variant: 'default',
+    onSurface: 'base',
   },
 });
 
-export function Card({
-  children,
-  variant,
-  ...props
-}: Omit<ComponentProps<'div'>, 'className' | 'style'> & VariantProps<typeof cardVariants>) {
+const cardBodyVariants = cva('', {
+  variants: {
+    // `none` is for content that runs edge to edge (a chart, a table, a full-bleed image) and
+    // supplies its own insets where it needs them.
+    bodyPadding: {
+      default: 'p-5',
+      none: '',
+    },
+  },
+  defaultVariants: {
+    bodyPadding: 'default',
+  },
+});
+
+const cardTitleVariants = cva('text-neutral-12 font-medium leading-none', {
+  variants: {
+    titleSize: {
+      default: 'text-sm',
+      large: 'text-lg',
+      xlarge: 'text-2xl',
+    },
+  },
+  defaultVariants: {
+    titleSize: 'default',
+  },
+});
+
+type CardProps = {
+  title?: string;
+  description?: ReactElement | string;
+  children?: ReactNode;
+  variants?: VariantProps<typeof cardVariants> &
+    VariantProps<typeof cardTitleVariants> &
+    VariantProps<typeof cardBodyVariants>;
+};
+
+export function Card({ children, title, description, variants }: CardProps) {
+  const hasHeader = !!(title || description);
+
   return (
-    <div className={cardVariants({ variant })} {...props}>
-      {children}
+    <div className={cardVariants({ ...variants })}>
+      {hasHeader ? (
+        <div className="flex flex-col space-y-1.5 p-5">
+          {title ? <h3 className={cardTitleVariants({ ...variants })}>{title}</h3> : null}
+          {description ? <p className="text-neutral-10 text-[13px]">{description}</p> : null}
+        </div>
+      ) : null}
+      {children ? (
+        <div className={cn(cardBodyVariants({ ...variants }), hasHeader && 'pt-0')}>{children}</div>
+      ) : null}
     </div>
   );
-}
-
-export function CardHeader({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col space-y-1.5 p-5">{children}</div>;
-}
-
-export function CardTitle({ title }: { title: string }) {
-  return <h3 className="text-neutral-12 text-sm font-medium leading-none">{title}</h3>;
-}
-
-export function CardDescription({ description }: { description: ReactElement | string }) {
-  return <p className="text-neutral-10 text-[13px]">{description}</p>;
-}
-
-const cardContentVariants = cva('', {
-  variants: {
-    variant: {
-      default: 'p-6 pt-0',
-      selection: 'flex items-start gap-3 p-4',
-    },
-  },
-  defaultVariants: {
-    variant: 'default',
-  },
-});
-
-export function CardContent({
-  children,
-  variant,
-}: { children: ReactNode } & VariantProps<typeof cardContentVariants>) {
-  return <div className={cardContentVariants({ variant })}>{children}</div>;
 }

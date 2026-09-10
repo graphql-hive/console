@@ -7,15 +7,10 @@
  */
 import { cva } from 'class-variance-authority';
 
-// ---------------------------------------------------------------------------
-// Floating panel
-// ---------------------------------------------------------------------------
-
 /** Base classes shared by all floating panels (menu, select, popover). */
 export const floatingBaseClass =
   'z-50 text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5';
 
-/** Floating panel variant with configurable padding and width constraints. */
 export const floatingVariants = cva(floatingBaseClass, {
   variants: {
     padding: {
@@ -43,11 +38,6 @@ export const floatingVariants = cva(floatingBaseClass, {
   },
 });
 
-// ---------------------------------------------------------------------------
-// Items (menu items, select items, filter list items, etc.)
-// ---------------------------------------------------------------------------
-
-/** Base classes shared by all interactive list items. */
 export const itemVariants = cva(
   'flex h-7 cursor-pointer select-none items-center rounded-sm outline-none gap-2',
   {
@@ -81,10 +71,6 @@ export const itemVariants = cva(
   },
 );
 
-// ---------------------------------------------------------------------------
-// Shared floating component props
-// ---------------------------------------------------------------------------
-
 /** Common props shared by all floating components (popover, menu, select). */
 export type FloatingProps = {
   /** Element that triggers the floating panel */
@@ -101,13 +87,8 @@ export type FloatingProps = {
   onOpenChange?: (open: boolean) => void;
 };
 
-// ---------------------------------------------------------------------------
-// Scrollable lists inside floating panels
-// ---------------------------------------------------------------------------
-
 /** Scrollbar styling for lists inside floating panels. */
-export const floatingScrollArea =
-  'overflow-y-auto [scrollbar-color:var(--color-neutral-7)_transparent] [scrollbar-width:thin]';
+export { scrollArea as floatingScrollArea } from '../shared-styles';
 
 /** Empty state text inside a floating panel. */
 export const floatingEmptyState = 'text-neutral-8 px-2 py-4 text-center text-sm italic';

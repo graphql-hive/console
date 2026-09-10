@@ -1,6 +1,6 @@
 import { ReactElement, ReactNode } from 'react';
+import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Label, Section } from '@/components/common';
-import { Radio, RadioGroup } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 import { CheckIcon } from '@radix-ui/react-icons';
@@ -72,7 +72,9 @@ function Plan(plan: {
   footer?: ReactNode;
 }): ReactElement {
   return (
-    <div className="flex h-full flex-col justify-between">
+    // `self-stretch` because the radio item centers its content, and a plan body must fill the
+    // card so the footers line up across plans with different feature counts.
+    <div className="flex h-full w-full flex-col justify-between self-stretch">
       <div>
         <Section.BigTitle className="flex items-center justify-between">
           {plan.name}
@@ -114,7 +116,7 @@ const billingPlanLookUpMap = {
   [BillingPlanType.Hobby]: 'Free',
 } as Record<BillingPlanType, string | undefined>;
 
-const BillingPlanPicker_PlanFragment = graphql(`
+export const BillingPlanPicker_PlanFragment = graphql(`
   fragment BillingPlanPicker_PlanFragment on BillingPlan {
     planType
     id
@@ -138,16 +140,16 @@ export function BillingPlanPicker({
 }): ReactElement {
   const plans = useFragment(BillingPlanPicker_PlanFragment, props.plans);
   return (
-    <RadioGroup value={value} onValueChange={onPlanChange} className="md:flex-row! flex gap-4">
-      {plans.map(plan => (
-        <Radio
-          disabled={disabled}
-          value={plan.planType}
-          key={plan.id}
-          className="rounded-md! border p-4 md:w-1/3"
-        >
+    <RadioGroup
+      variant="as-card"
+      orientation="horizontal"
+      disabled={disabled}
+      value={value}
+      onValueChange={nextPlan => onPlanChange(nextPlan as BillingPlanType)}
+      items={plans.map(plan => ({
+        value: plan.planType,
+        content: (
           <Plan
-            key={plan.id}
             name={plan.name}
             price={billingPlanLookUpMap[plan.planType] ?? plan.basePrice ?? 'Contact Us'}
             isActive={activePlan === plan.planType}
@@ -155,8 +157,8 @@ export function BillingPlanPicker({
             description={planCollection[plan.planType].description}
             footer={planCollection[plan.planType].footer}
           />
-        </Radio>
-      ))}
-    </RadioGroup>
+        ),
+      }))}
+    />
   );
 }

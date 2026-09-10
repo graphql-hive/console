@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from 'urql';
-import { CardDescription } from '@/components/ui/card';
 import { CheckIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
@@ -95,8 +94,8 @@ export const CompositionSettings = (props: {
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
-        subPageTitle={<a id="composition">Schema Composition</a>}
-        description={<CardDescription>Configure how your schemas are composed.</CardDescription>}
+        subPageTitle="Schema Composition"
+        description="Configure how your schemas are composed"
       />
       <div>
         {projectQuery.fetching ? (

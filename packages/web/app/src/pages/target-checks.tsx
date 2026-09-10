@@ -368,10 +368,8 @@ function NoSchemaChecks(props: { projectType: ProjectType | null }) {
       </div>
       <DocsLink
         href="/features/schema-registry#check-a-schema"
-        className="flex flex-row items-center"
-      >
-        Learn how to check your first schema
-      </DocsLink>
+        text="Learn how to check your first schema"
+      />
     </>
   );
 }

@@ -11,7 +11,6 @@ export function GraphQLHighlight({
   const pretty = usePrettify(code);
   return (
     <SchemaEditor
-      theme="vs-dark"
       options={{
         readOnly: true,
       }}

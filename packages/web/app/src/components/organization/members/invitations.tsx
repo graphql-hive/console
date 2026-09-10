@@ -14,7 +14,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -479,20 +478,21 @@ export function OrganizationInvitations(props: {
       <SubPageLayoutHeader
         subPageTitle="Member Invitations"
         description={
-          <CardDescription className="pb-4">
-            Send an invite to add a new non-OIDC member to your Organization. Invitations expire
-            after 7 days.
-            <br />
-            <br />
-            To accept, the user must have an account and log in before using the sent link.
-          </CardDescription>
+          <>
+            <p>
+              Send an invite to add a new non-OIDC member to your Organization. Invitations expire
+              after 7 days.
+            </p>
+            <p>To accept, the user must have an account and log in before using the sent link.</p>
+          </>
         }
-      >
-        <MemberInvitationButton
-          refetchInvitations={props.refetchInvitations}
-          organization={organization}
-        />
-      </SubPageLayoutHeader>
+        sideContent={
+          <MemberInvitationButton
+            refetchInvitations={props.refetchInvitations}
+            organization={organization}
+          />
+        }
+      />
       {organization.invitations.edges.length > 0 ? (
         <table className="divide-neutral-10/20 w-full table-fixed divide-y">
           <thead>

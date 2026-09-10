@@ -1,12 +1,10 @@
 export { Accordion } from '@/components/v2/accordion';
 export { Autocomplete } from '@/components/v2/autocomplete';
 export { Avatar } from '@/components/v2/avatar';
-export { Card } from '@/components/v2/card';
 export { DataWrapper } from '@/components/v2/data-wrapper';
 export { DiffEditor } from '@/components/v2/diff-editor';
 export { Input } from '@/components/v2/input';
 export { Modal } from '@/components/v2/modal';
-export { Radio, RadioGroup } from '@/components/v2/radio-group';
 export { RadixSelect } from '@/components/v2/radix-select';
 export { Select } from '@/components/v2/select';
 export { Sortable } from '@/components/v2/sortable';

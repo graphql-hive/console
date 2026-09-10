@@ -24,7 +24,9 @@ export const TriggerVariants = createPreview(() => (
 
 export const Sizes = createPreview(() => (
   <div className="flex items-center gap-4">
-    <Button variant="primary">Default</Button>
+    <Button variant="primary" size="default">
+      Default
+    </Button>
     <Button variant="primary" size="sm">
       Small
     </Button>

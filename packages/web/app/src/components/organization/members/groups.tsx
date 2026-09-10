@@ -91,16 +91,15 @@ export function Groups(props: {
       <SubPageLayoutHeader
         subPageTitle="Groups"
         description="Manage group to role and resource mappings."
-      >
-        <div className="flex flex-row gap-4">
+        sideContent={
           <Input
             className="w-[220px] grow cursor-text"
             placeholder="Search by group name"
             onChange={handleSearchChange}
             defaultValue={searchValue}
           />
-        </div>
-      </SubPageLayoutHeader>
+        }
+      />
       <div className="mt-4 overflow-hidden rounded-lg border">
         <div className="bg-neutral-3 grid grid-cols-[1fr_auto_auto] gap-4 border-b px-4 py-3 text-sm font-medium">
           <div>Group</div>

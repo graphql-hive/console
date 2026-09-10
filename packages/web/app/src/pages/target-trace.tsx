@@ -21,12 +21,11 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { NotFound } from '@/components/base/not-found/not-found';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
-import { NotFoundContent } from '@/components/common/not-found-content';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -1084,7 +1083,7 @@ function TargetInsightsNewPageContent(props: {
         }
         description={
           <>
-            <CardDescription>
+            <p>
               Trace ID:{' '}
               {trace?.id ? (
                 <>
@@ -1094,7 +1093,7 @@ function TargetInsightsNewPageContent(props: {
               ) : (
                 <Skeleton className="inline-block h-4 w-[200px]" />
               )}
-            </CardDescription>
+            </p>
             {trace && (
               <div className="mt-2 flex items-center gap-3 text-xs">
                 <div className="flex items-center gap-1">
@@ -1133,7 +1132,7 @@ function TargetInsightsNewPageContent(props: {
       {!trace && !isFetching && (
         <>
           <Meta title="Trace Not found" />
-          <NotFoundContent heading="Trace not found." subheading="This trace does not exist." />
+          <NotFound title="Trace not found." description="This trace does not exist." />
         </>
       )}
     </div>

@@ -27,15 +27,15 @@ export const buttonVariants = cva(
         // Standard button styles (for form actions)
         primary: 'bg-neutral-12 text-neutral-1 hover:bg-neutral-11 border-transparent',
         outline:
-          'border-neutral-5 bg-transparent text-neutral-11 hover:bg-neutral-3 hover:text-neutral-12',
+          'border-neutral-5 bg-transparent text-neutral-11 hover:bg-neutral-4 hover:text-neutral-12',
         ghost:
           'border-transparent bg-transparent text-neutral-11 hover:bg-neutral-3 hover:text-neutral-12',
         destructive: [
-          'bg-critical_08 border-critical_30 text-critical hover:bg-critical_10 hover:border-critical hover:text-critical',
+          'bg-critical_08 border-critical_30 text-critical_80 hover:bg-critical_10 hover:border-critical hover:text-critical',
         ],
       },
       size: {
-        default: '',
+        default: 'h-7.5',
         sm: '',
         'icon-sm': 'size-7 justify-center',
       },

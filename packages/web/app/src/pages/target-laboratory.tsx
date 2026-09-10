@@ -482,9 +482,7 @@ function LaboratoryPageContent(props: {
           </div>
           <Subtitle>Explore your GraphQL schema and run queries against your GraphQL API.</Subtitle>
           <p>
-            <DocsLink className="text-neutral-10 text-sm" href="/schema-registry/laboratory">
-              Learn more about the Laboratory
-            </DocsLink>
+            <DocsLink href="/schema-registry/laboratory" text="Learn more about the Laboratory" />
           </p>
         </div>
         <div className="ml-auto mr-0 flex flex-col justify-center">

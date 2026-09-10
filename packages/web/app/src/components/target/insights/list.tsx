@@ -1,9 +1,9 @@
 import { ReactElement, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
-import clsx from 'clsx';
 import { InfoIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
-import { Scale, Section } from '@/components/common';
+import { Card } from '@/components/base/card/card';
+import { Scale } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from '@/components/ui/link';
@@ -185,7 +185,6 @@ function OperationsTable({
   operations,
   pagination,
   setPagination,
-  className,
   organizationSlug,
   projectSlug,
   targetSlug,
@@ -194,7 +193,6 @@ function OperationsTable({
   operations: Operation[];
   pagination: PaginationState;
   setPagination: SetPaginationFn;
-  className?: string;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -230,119 +228,117 @@ function OperationsTable({
   const { headers } = tableInstance.getHeaderGroups()[0];
 
   return (
-    <div
-      className={clsx(
-        'border-neutral-5 bg-neutral-2/50 overflow-x-scroll rounded-md border p-5',
-        className,
-      )}
-    >
-      <Section.Title>Operations</Section.Title>
-      <Section.Subtitle>
-        List of all operations with their statistics, filtered by selected clients.
-      </Section.Subtitle>
-
-      <Table>
-        <THead>
-          <TooltipProvider>
-            {headers.map(header => {
-              const canSort = header.column.getCanSort();
-              const align: 'center' | 'left' | 'right' =
-                (header.column.columnDef.meta as any)?.align || 'left';
-              const name = flexRender(header.column.columnDef.header, header.getContext());
-              return (
-                <Th key={header.id} className="text-sm font-semibold" align={align}>
-                  <div className="inline-flex items-center gap-x-2">
-                    {canSort ? (
-                      <Sortable
-                        sortOrder={header.column.getIsSorted()}
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        {name}
-                      </Sortable>
-                    ) : (
-                      name
-                    )}
-                    {header.column.columnDef.header === 'Impact' ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <InfoIcon className="text-neutral-10 size-4" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-[300px] text-left text-sm">
-                            <p className="mb-4">
-                              Equals to the total time spent on this operation in the selected
-                              period in seconds.
-                            </p>
-                            <code>Impact = Requests * avg/1000</code>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ) : null}
-                  </div>
-                </Th>
-              );
-            })}
-          </TooltipProvider>
-        </THead>
-        <TBody>
-          {tableInstance
-            .getRowModel()
-            .rows.map(
-              row =>
-                row.original && (
-                  <OperationRow
-                    operation={row.original}
-                    key={row.original.id}
-                    organizationSlug={organizationSlug}
-                    projectSlug={projectSlug}
-                    targetSlug={targetSlug}
-                    selectedPeriod={selectedPeriod}
-                  />
-                ),
-            )}
-        </TBody>
-      </Table>
-      <div className="mt-6 flex items-center gap-2">
-        <Button
-          onClick={firstPage}
-          variant="outline"
-          disabled={!tableInstance.getCanPreviousPage()}
-        >
-          First
-        </Button>
-        <Button
-          aria-label="Go to previous page"
-          variant="outline"
-          onClick={tableInstance.previousPage}
-          disabled={!tableInstance.getCanPreviousPage()}
-        >
-          <ChevronUpIcon className="h-5 w-auto -rotate-90" />
-        </Button>
-        <span className="whitespace-nowrap text-sm font-bold">
-          {tableInstance.getState().pagination.pageIndex + 1} / {tableInstance.getPageCount()}
-        </span>
-        <Button
-          aria-label="Go to next page"
-          variant="outline"
-          onClick={tableInstance.nextPage}
-          disabled={!tableInstance.getCanNextPage()}
-        >
-          <ChevronUpIcon className="h-5 w-auto rotate-90" />
-        </Button>
-        <Button variant="outline" onClick={lastPage} disabled={!tableInstance.getCanNextPage()}>
-          Last
-        </Button>
-        <div className="ml-6">Go to:</div>
-        <Input
-          id="page"
-          className="w-16"
-          type="number"
-          defaultValue={tableInstance.getState().pagination.pageIndex + 1}
-          onChange={e => {
-            debouncedSetPage(e.target.valueAsNumber ? e.target.valueAsNumber - 1 : 0);
-          }}
-        />
-      </div>
+    <div className="mt-12">
+      <Card
+        variants={{ onSurface: 'raised', titleSize: 'large' }}
+        title="Operations"
+        description="List of all operations with their statistics, filtered by selected clients."
+      >
+        <div className="overflow-x-scroll">
+          <Table>
+            <THead>
+              <TooltipProvider>
+                {headers.map(header => {
+                  const canSort = header.column.getCanSort();
+                  const align: 'center' | 'left' | 'right' =
+                    (header.column.columnDef.meta as any)?.align || 'left';
+                  const name = flexRender(header.column.columnDef.header, header.getContext());
+                  return (
+                    <Th key={header.id} className="text-sm font-semibold" align={align}>
+                      <div className="inline-flex items-center gap-x-2">
+                        {canSort ? (
+                          <Sortable
+                            sortOrder={header.column.getIsSorted()}
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {name}
+                          </Sortable>
+                        ) : (
+                          name
+                        )}
+                        {header.column.columnDef.header === 'Impact' ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <InfoIcon className="text-neutral-10 size-4" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-[300px] text-left text-sm">
+                                <p className="mb-4">
+                                  Equals to the total time spent on this operation in the selected
+                                  period in seconds.
+                                </p>
+                                <code>Impact = Requests * avg/1000</code>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : null}
+                      </div>
+                    </Th>
+                  );
+                })}
+              </TooltipProvider>
+            </THead>
+            <TBody>
+              {tableInstance
+                .getRowModel()
+                .rows.map(
+                  row =>
+                    row.original && (
+                      <OperationRow
+                        operation={row.original}
+                        key={row.original.id}
+                        organizationSlug={organizationSlug}
+                        projectSlug={projectSlug}
+                        targetSlug={targetSlug}
+                        selectedPeriod={selectedPeriod}
+                      />
+                    ),
+                )}
+            </TBody>
+          </Table>
+        </div>
+        <div className="mt-6 flex items-center gap-2">
+          <Button
+            onClick={firstPage}
+            variant="outline"
+            disabled={!tableInstance.getCanPreviousPage()}
+          >
+            First
+          </Button>
+          <Button
+            aria-label="Go to previous page"
+            variant="outline"
+            onClick={tableInstance.previousPage}
+            disabled={!tableInstance.getCanPreviousPage()}
+          >
+            <ChevronUpIcon className="h-5 w-auto -rotate-90" />
+          </Button>
+          <span className="whitespace-nowrap text-sm font-bold">
+            {tableInstance.getState().pagination.pageIndex + 1} / {tableInstance.getPageCount()}
+          </span>
+          <Button
+            aria-label="Go to next page"
+            variant="outline"
+            onClick={tableInstance.nextPage}
+            disabled={!tableInstance.getCanNextPage()}
+          >
+            <ChevronUpIcon className="h-5 w-auto rotate-90" />
+          </Button>
+          <Button variant="outline" onClick={lastPage} disabled={!tableInstance.getCanNextPage()}>
+            Last
+          </Button>
+          <div className="ml-6">Go to:</div>
+          <Input
+            id="page"
+            className="w-16"
+            type="number"
+            defaultValue={tableInstance.getState().pagination.pageIndex + 1}
+            onChange={e => {
+              debouncedSetPage(e.target.valueAsNumber ? e.target.valueAsNumber - 1 : 0);
+            }}
+          />
+        </div>
+      </Card>
     </div>
   );
 }
@@ -384,7 +380,6 @@ function OperationsTableContainer({
   targetSlug,
   clientFilter,
   setClientFilter,
-  className,
   selectedPeriod,
   ...props
 }: {
@@ -448,7 +443,6 @@ function OperationsTableContainer({
   return (
     <OperationsTable
       operations={data}
-      className={className}
       pagination={pagination}
       setPagination={safeSetPagination}
       organizationSlug={organizationSlug}
@@ -491,7 +485,6 @@ const OperationsList_OperationsStatsQuery = graphql(`
 `);
 
 export function OperationsList({
-  className,
   organizationSlug,
   projectSlug,
   targetSlug,
@@ -499,7 +492,6 @@ export function OperationsList({
   filter,
   selectedPeriod,
 }: {
-  className?: string;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -536,7 +528,6 @@ export function OperationsList({
     >
       <OperationsTableContainer
         operationStats={query.data?.target?.operationsStats ?? null}
-        className={className}
         setClientFilter={setClientFilter}
         clientFilter={clientFilter}
         organizationSlug={organizationSlug}

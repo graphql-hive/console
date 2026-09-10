@@ -1,8 +1,8 @@
 import { ReactElement, ReactNode } from 'react';
 import magnifier from '../../../public/images/figures/magnifier.svg?url';
+import { Card } from '@/components/base/card/card';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { Card } from './card';
 import { Code } from './code';
 import { DocsLink } from './docs-note';
 import { Heading } from './heading';
@@ -21,25 +21,27 @@ export const EmptyList = ({
   className?: string;
 }): ReactElement => {
   return (
-    <Card
-      className={cn(
-        'flex max-h-screen min-h-[400px] grow cursor-default flex-col items-center gap-y-2 p-4',
-        className,
-      )}
-      data-cy="empty-list"
-    >
-      <img
-        src={magnifier}
-        alt="Magnifier illustration"
-        width="200"
-        height="200"
-        className="drag-none"
-      />
-      <Heading className="text-center">{title}</Heading>
-      <span className="text-neutral-10 text-center text-sm font-medium">{description}</span>
-      {children}
-      {docsUrl && <DocsLink href={docsUrl}>Read about it in the documentation</DocsLink>}
-    </Card>
+    <div className={cn('grid max-h-screen min-h-[400px] grow', className)}>
+      <Card variants={{ onSurface: 'raised', bodyPadding: 'none' }}>
+        <div className="flex cursor-default flex-col items-center gap-y-2 p-4">
+          <img
+            src={magnifier}
+            alt="Magnifier illustration"
+            width="200"
+            height="200"
+            className="drag-none"
+          />
+          <Heading className="text-center">{title}</Heading>
+          <span className="text-neutral-10 text-center text-sm font-medium">{description}</span>
+          <div className="py-4">{children}</div>
+          {docsUrl && (
+            <div className="pb-4">
+              <DocsLink href={docsUrl} text="Read more in the documentation" />
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
   );
 };
 

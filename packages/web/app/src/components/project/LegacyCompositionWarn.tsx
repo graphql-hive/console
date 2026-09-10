@@ -55,9 +55,7 @@ export function LegacyCompositionWarn(props: {
       </Link>
       {' to change it.'}
       <br />
-      <ProductUpdatesLink href="2023-10-10-native-federation-2">
-        Read the announcement
-      </ProductUpdatesLink>
+      <ProductUpdatesLink href="2023-10-10-native-federation-2" text="Read the announcement" />
     </Callout>
   );
 }

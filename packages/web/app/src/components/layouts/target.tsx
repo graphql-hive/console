@@ -1,6 +1,7 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,6 @@ import { useToggle } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { cn } from '@/lib/utils';
-import { ResourceNotFoundComponent } from '../resource-not-found';
 import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { TargetSelector } from './target-selector';
@@ -146,7 +146,11 @@ export const TargetLayout = ({
       {query.fetching === false &&
       query.stale === false &&
       (currentProject === null || currentOrganization === null || currentTarget === null) ? (
-        <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
+        <NotFound
+          variants={{ layout: 'horizontal', illustration: 'connection' }}
+          title="404 - This project does not seem to exist."
+          description={resourceAccessDescription}
+        />
       ) : (
         <>
           <SecondaryNavigation

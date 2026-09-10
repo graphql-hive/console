@@ -3,7 +3,10 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  previews: 'src/components/base/**/*.preview.tsx',
+  // Widened past `base/` so real app components can be previewed too, not just design-system
+  // primitives. Previews of app components render inside the stand-in router in
+  // `foundry.router.tsx` and stand in for query data with `makeFragmentData`.
+  previews: 'src/components/**/*.preview.tsx',
   title: 'Hive Console Components',
   // Declaration order is display order, so this groups the shelf by kind rather than
   // alphabetically. It also narrows `NavPath` to these exact paths, which turns a typo in
@@ -19,6 +22,7 @@ export default defineConfig({
             { label: 'Badge' },
             { label: 'Button' },
             { label: 'Card' },
+            { label: 'StatCard' },
             { label: 'Input' },
             { label: 'CopyChip' },
           ],
@@ -27,7 +31,10 @@ export default defineConfig({
           label: 'FormControls',
           children: [
             { label: 'Checkbox' },
-            { label: 'RadioGroup' },
+            // The component's own previews sit on `RadioGroup`; the call-site
+            // transcriptions hang underneath it rather than in a separate top-level group,
+            // so a change can be judged against both without leaving the subtree.
+            { label: 'RadioGroup', children: [{ label: 'Component Examples' }] },
             { label: 'Switch' },
             { label: 'Form' },
           ],
@@ -47,7 +54,15 @@ export default defineConfig({
         { label: 'DataTable' },
         { label: 'DescriptionList' },
         { label: 'PageLead' },
+        { label: 'NotFound' },
       ],
+    },
+    // App components, as opposed to the design-system primitives above. Each preview
+    // reproduces a real call site so a base-component change can be judged against the
+    // compositions that actually ship.
+    {
+      label: 'Components',
+      children: [{ label: 'BillingPlanPicker' }],
     },
   ],
   theme: {

@@ -3,10 +3,9 @@ import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/AppFilter';
-import { NotFoundContent } from '@/components/common/not-found-content';
+import { NotFound } from '@/components/base/not-found/not-found';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import {
   DropdownMenu,
@@ -211,9 +210,9 @@ function TargetAppVersionContent(props: {
     return (
       <>
         <Meta title="App Version Not found" />
-        <NotFoundContent
-          heading="App Version not found."
-          subheading="This app does not seem to exist anymore."
+        <NotFound
+          title="App Version not found."
+          description="This app does not seem to exist anymore."
         />
       </>
     );
@@ -244,25 +243,13 @@ function TargetAppVersionContent(props: {
               )}
             </span>
           }
-          description={
-            <>
-              <CardDescription>
-                Group your GraphQL operations by app version for app version statistics and
-                persisted operations.
-              </CardDescription>
-              {/* <CardDescription>
-                  <DocsLink
-                    href="/schema-registry/management/targets#cdn-access-tokens"
-                    className="text-neutral-10 hover:text-neutral-11"
-                  >
-                    Learn more about App Deployments
-                  </DocsLink>
-                </CardDescription> */}
-            </>
-          }
-        >
-          <AppFilter />
-        </SubPageLayoutHeader>
+          description="Group your GraphQL operations by app version for app version statistics and persisted operations."
+          docsLink={{
+            href: '/schema-registry/management/targets#cdn-access-tokens',
+            text: 'Learn more about App Deployments',
+          }}
+          sideContent={<AppFilter />}
+        />
         {coordinates ? (
           <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
             <span>
