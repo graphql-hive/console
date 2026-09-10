@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { buttonVariants } from '@/components/base/button/button';
 import { disabledStyle, segmentButton, segmentSeparator } from '@/components/base/shared-styles';
 import { pluralize } from '@/lib/utils';
-import { Menu, MenuItem } from '../menu/menu';
+import { Menu } from '../menu/menu';
 import { FilterContent } from './filter-content';
 import type { FilterItem, FilterSelection } from './types';
 
@@ -100,12 +100,8 @@ export function FilterDropdown({
             minWidth="none"
             sections={[
               [
-                <MenuItem key="is" onClick={() => onExcludeModeChange(false)}>
-                  is
-                </MenuItem>,
-                <MenuItem key="is-not" onClick={() => onExcludeModeChange(true)}>
-                  is not
-                </MenuItem>,
+                { label: 'is', onClick: () => onExcludeModeChange(false) },
+                { label: 'is not', onClick: () => onExcludeModeChange(true) },
               ],
             ]}
           />
@@ -128,9 +124,8 @@ export function FilterDropdown({
           align="start"
           maxWidth="lg"
           stableWidth
-          sections={[
+          content={
             <FilterContent
-              key="content"
               label={label}
               items={items}
               selectedItems={selectedItems}
@@ -138,8 +133,8 @@ export function FilterDropdown({
               valuesLabel={valuesLabel}
               singleSelect={singleSelect}
               alwaysShowSearch={alwaysShowSearch}
-            />,
-          ]}
+            />
+          }
         />
       </span>
 

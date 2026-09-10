@@ -78,7 +78,7 @@ export function Popover(props: PopoverProps) {
           side={side}
           align={align}
           sideOffset={sideOffset}
-          className="outline-none"
+          className="z-50 outline-none"
         >
           <BasePopover.Popup className={floatingVariants({ padding: 'none' })}>
             {arrow && <PopoverArrow />}

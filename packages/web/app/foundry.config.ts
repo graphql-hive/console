@@ -48,6 +48,7 @@ export default defineConfig({
             { label: 'FilterDropdown' },
             { label: 'FilterMenu' },
             { label: 'Search' },
+            { label: 'Tooltip' },
           ],
         },
         // Data and layout

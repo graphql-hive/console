@@ -1,8 +1,8 @@
 import cookies from 'js-cookie';
-import { LifeBuoyIcon } from 'lucide-react';
-import { FaUsersSlash } from 'react-icons/fa';
+import { LifeBuoyIcon, UserRoundMinus } from 'lucide-react';
 import { useMutation } from 'urql';
-import { ThemeSwitcher } from '@/components/theme/theme-switcher';
+import { Menu } from '@/components/base/floating/menu/menu';
+import { useThemeMenuEntry } from '@/components/theme/theme-switcher';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,17 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   AlertTriangleIcon,
   CalendarIcon,
@@ -97,6 +86,7 @@ export function UserMenu(props: {
     props.organizations,
   )?.nodes;
   const currentOrganization = useFragment(UserMenu_OrganizationFragment, props.currentOrganization);
+  const themeEntry = useThemeMenuEntry();
   const [isUserSettingsModalOpen, toggleUserSettingsModalOpen] = useToggle();
   const [isLeaveOrganizationModalOpen, toggleLeaveOrganizationModalOpen] = useToggle();
 
@@ -118,149 +108,122 @@ export function UserMenu(props: {
         {currentOrganization ? (
           <GetStartedProgress className="hidden md:block" tasks={currentOrganization.getStarted} />
         ) : null}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <Menu
+          align="end"
+          sideOffset={5}
+          minWidth="md"
+          trigger={
             <div
               className={cn('cursor-pointer', currentOrganization ? '' : 'animate-pulse')}
               data-cy="user-menu-trigger"
             >
               <Avatar shape="circle" className="border-accent_80 border-2" />
             </div>
-          </DropdownMenuTrigger>
-
-          {me && organizations ? (
-            <DropdownMenuContent sideOffset={5} align="end" className="min-w-[240px]">
-              <DropdownMenuLabel className="flex items-center justify-between">
-                <div className="flex flex-col space-y-1">
-                  <div className="truncate text-sm font-medium leading-none">{me?.displayName}</div>
-                  <div className="text-neutral-10 truncate text-xs font-normal leading-none">
-                    {me?.email}
-                  </div>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuSub>
-                {me?.canSwitchOrganization ? (
-                  <DropdownMenuSubTrigger>
-                    <GridIcon className="mr-2 size-4" />
-                    Switch organization
-                  </DropdownMenuSubTrigger>
-                ) : null}
-                <DropdownMenuSubContent className="max-w-[300px]">
-                  {organizations.length ? (
-                    <DropdownMenuLabel>Organizations</DropdownMenuLabel>
-                  ) : null}
-                  <DropdownMenuSeparator />
-                  {organizations.map(org => (
-                    <DropdownMenuItem
-                      asChild
-                      key={org.slug}
-                      active={currentOrganization?.slug === org.slug}
-                    >
-                      <Link
-                        to="/$organizationSlug"
-                        params={{
-                          organizationSlug: org.slug,
-                        }}
-                      >
-                        {org.slug}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/org/new">
-                      Create organization
-                      <PlusIcon className="ml-2 size-4" />
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              <DropdownMenuItem asChild>
-                <a
-                  href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3KSfa5HXLUJKSoxdziqD_2rWPlDevQgWHeSNGEUN5GqafDw7ezvWlvKYjmxOo5_0hcB4_8W8G2"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <CalendarIcon className="mr-2 size-4" />
-                  Schedule a meeting
-                </a>
-              </DropdownMenuItem>
-
-              {me?.provisionInfo ? null : (
-                <DropdownMenuItem
-                  onClick={() => {
-                    toggleUserSettingsModalOpen();
-                  }}
-                >
-                  <SettingsIcon className="mr-2 size-4" />
-                  Profile settings
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <ThemeSwitcher />
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <a href={docsUrl} target="_blank" rel="noreferrer">
-                  <FileTextIcon className="mr-2 size-4" />
-                  Documentation
-                </a>
-              </DropdownMenuItem>
-              {currentOrganization && env.zendeskSupport ? (
-                <DropdownMenuItem asChild>
-                  <Link
-                    to="/$organizationSlug/view/support"
-                    params={{
-                      organizationSlug: currentOrganization.slug,
-                    }}
-                  >
-                    <LifeBuoyIcon className="mr-2 size-4" />
-                    Support
-                  </Link>
-                </DropdownMenuItem>
-              ) : null}
-              <DropdownMenuItem asChild>
-                <a href="https://status.graphql-hive.com" target="_blank" rel="noreferrer">
-                  <AlertTriangleIcon className="mr-2 size-4" />
-                  Status page
-                </a>
-              </DropdownMenuItem>
-              {me.isAdmin && (
-                <Link to="/manage">
-                  <DropdownMenuItem>
-                    <TrendingUpIcon className="mr-2 size-4" />
-                    Manage Instance
-                  </DropdownMenuItem>
-                </Link>
-              )}
-              {env.nodeEnv === 'development' && (
-                <DropdownMenuItem asChild>
-                  <Link to="/dev">
-                    <GraphQLIcon className="mr-2 size-4" />
-                    Dev GraphiQL
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              {currentOrganization?.me?.canLeaveOrganization ? (
-                <DropdownMenuItem
-                  onClick={() => {
-                    toggleLeaveOrganizationModalOpen();
-                  }}
-                >
-                  <FaUsersSlash className="mr-2 size-4" />
-                  Leave organization
-                </DropdownMenuItem>
-              ) : null}
-              <DropdownMenuItem asChild>
-                <a href="/logout" data-cy="user-menu-logout">
-                  <LogOutIcon className="mr-2 size-4" />
-                  Log out
-                </a>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          ) : null}
-        </DropdownMenu>
+          }
+          sections={
+            me && organizations
+              ? [
+                  [{ kind: 'header', title: me.displayName, subtitle: me.email }],
+                  [
+                    me.canSwitchOrganization && {
+                      kind: 'submenu',
+                      label: 'Switch organization',
+                      icon: GridIcon,
+                      maxWidth: 'default',
+                      items: [
+                        organizations.length
+                          ? {
+                              label: 'Organizations',
+                              items: organizations.map(org => ({
+                                label: org.slug,
+                                selected: currentOrganization?.slug === org.slug,
+                                render: (
+                                  <Link
+                                    to="/$organizationSlug"
+                                    params={{ organizationSlug: org.slug }}
+                                  />
+                                ),
+                              })),
+                            }
+                          : [],
+                        [
+                          {
+                            label: 'Create organization',
+                            trailingIcon: PlusIcon,
+                            render: <Link to="/org/new" />,
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      kind: 'link',
+                      label: 'Schedule a meeting',
+                      icon: CalendarIcon,
+                      external: true,
+                      href: 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3KSfa5HXLUJKSoxdziqD_2rWPlDevQgWHeSNGEUN5GqafDw7ezvWlvKYjmxOo5_0hcB4_8W8G2',
+                    },
+                    !me.provisionInfo && {
+                      label: 'Profile settings',
+                      icon: SettingsIcon,
+                      onClick: toggleUserSettingsModalOpen,
+                    },
+                  ],
+                  [themeEntry],
+                  [
+                    {
+                      kind: 'link',
+                      label: 'Documentation',
+                      icon: FileTextIcon,
+                      href: docsUrl,
+                      external: true,
+                    },
+                    currentOrganization &&
+                      env.zendeskSupport && {
+                        label: 'Support',
+                        icon: LifeBuoyIcon,
+                        render: (
+                          <Link
+                            to="/$organizationSlug/view/support"
+                            params={{ organizationSlug: currentOrganization.slug }}
+                          />
+                        ),
+                      },
+                    {
+                      kind: 'link',
+                      label: 'Status page',
+                      icon: AlertTriangleIcon,
+                      href: 'https://status.graphql-hive.com',
+                      external: true,
+                    },
+                    me.isAdmin && {
+                      label: 'Manage Instance',
+                      icon: TrendingUpIcon,
+                      render: <Link to="/manage" />,
+                    },
+                    env.nodeEnv === 'development' && {
+                      label: 'Dev GraphiQL',
+                      icon: GraphQLIcon,
+                      render: <Link to="/dev" />,
+                    },
+                  ],
+                  [
+                    currentOrganization?.me?.canLeaveOrganization && {
+                      label: 'Leave organization',
+                      icon: UserRoundMinus,
+                      onClick: toggleLeaveOrganizationModalOpen,
+                    },
+                    {
+                      kind: 'link',
+                      label: 'Log out',
+                      icon: LogOutIcon,
+                      href: '/logout',
+                      attrs: { 'data-cy': 'user-menu-logout' },
+                    },
+                  ],
+                ]
+              : []
+          }
+        />
       </div>
     </>
   );
