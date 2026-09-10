@@ -300,6 +300,60 @@ test('does not fall back to standard introspection when federation introspection
   expect(fetch).toHaveBeenCalledTimes(1);
 });
 
+test('opens the circuit breaker after repeated composition failures, preventing further composition attempts', async () => {
+  let introspectionCalls = 0;
+  let composeCalls = 0;
+  const fetch = vi.fn().mockImplementation(async (url: string) => {
+    if (url === 'http://a') {
+      introspectionCalls++;
+      return jsonResponse({ data: { _service: { sdl: 'type Query { hello: String }' } } });
+    }
+
+    composeCalls++;
+    return jsonResponse({
+      data: {
+        schemaCompose: { __typename: 'SchemaComposeError', message: 'composition unavailable' },
+      },
+    });
+  });
+
+  const fetcher = createDevFetcher({
+    services: [{ name: 'a', url: 'http://a' }],
+    remote: true,
+    registry: 'http://registry.localhost',
+    token: 'secret-token',
+    version: '1.2.3',
+    fetch,
+    circuitBreaker: {
+      volumeThreshold: 1,
+      errorThresholdPercentage: 1,
+      resetTimeout: 30_000,
+    },
+  });
+
+  await expect(fetcher.fetch()).rejects.toThrow(SupergraphRegistryApiError);
+  expect(composeCalls).toBe(1);
+
+  // The breaker is now open: composition is not attempted again until `resetTimeout` elapses.
+  await expect(fetcher.fetch()).rejects.toThrow('Breaker is open');
+  expect(introspectionCalls).toBe(2);
+  expect(composeCalls).toBe(1);
+});
+
+test('dispose() shuts down the circuit breaker, so `fetch` can no longer compose', async () => {
+  const fetch = vi
+    .fn()
+    .mockImplementation(async () =>
+      jsonResponse({ data: { _service: { sdl: 'type Query { hello: String }' } } }),
+    );
+
+  const fetcher = createDevFetcher({ services: [{ name: 'a', url: 'http://a' }], fetch });
+
+  fetcher.dispose();
+
+  await expect(fetcher.fetch()).rejects.toThrow('shutdown');
+});
+
 test('resolves each service with its own source', async () => {
   const cwd = await mkdtemp(join(tmpdir(), 'hive-dev-fetcher-'));
   await writeFile(join(cwd, 'a.graphql'), 'type Query { fileField: String }', 'utf8');

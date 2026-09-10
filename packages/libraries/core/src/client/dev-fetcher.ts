@@ -9,6 +9,11 @@ import {
 } from 'graphql';
 import { composeServices, compositionHasErrors } from '@theguild/federation-composition';
 import type { CompositionFailure, CompositionResult } from '@theguild/federation-composition';
+import CircuitBreaker from '../circuit-breaker/circuit.js';
+import {
+  CircuitBreakerConfiguration,
+  defaultCircuitBreakerConfiguration,
+} from './circuit-breaker.js';
 import { http } from './http-client.js';
 import type { LegacyLogger } from './types.js';
 
@@ -20,7 +25,6 @@ type Service = {
   sdl: string;
 };
 
-/** A target reference, already parsed from a slug or UUID. */
 export type DevFetcherTargetReference =
   | { byId: string | number; bySelector?: never }
   | {
@@ -68,6 +72,8 @@ export interface HiveDevFetcherOptions {
   fetch?: FetchImplementation;
   /** Base directory used to resolve relative service schema file paths. Defaults to `process.cwd()`. */
   cwd?: string;
+  /** Guards composition so it isn't attempted more frequently than the circuit breaker allows. */
+  circuitBreaker?: CircuitBreakerConfiguration;
   /** Used to avoid recomposing the supergraph when resolved service SDLs are unchanged. */
   cache?: {
     get(key: string): Promise<CachedSupergraph | undefined> | CachedSupergraph | undefined;
@@ -75,7 +81,6 @@ export interface HiveDevFetcherOptions {
   };
 }
 
-/** Local composition (via `@theguild/federation-composition`) produced errors. */
 export class LocalSupergraphCompositionError extends Error {
   constructor(public compositionResult: CompositionFailure) {
     super('Local composition failed.');
@@ -334,6 +339,8 @@ function servicesUnchanged(previous: Service[], next: Service[]): boolean {
 export type HiveDevFetcher = {
   /** Resolve the configured services and return the (possibly cached) composed supergraph SDL. */
   fetch(): Promise<string>;
+  /** Dispose the fetcher and cleanup existing timers (e.g. used for circuit breaker) */
+  dispose(): void;
 };
 
 /**
@@ -354,6 +361,34 @@ export function createDevFetcher(options: HiveDevFetcherOptions): HiveDevFetcher
     debug: () => {},
   };
   const cwd = options.cwd ?? process.cwd();
+  const circuitBreakerConfig = options.circuitBreaker ?? defaultCircuitBreakerConfiguration;
+
+  const composeBreaker = new CircuitBreaker(
+    async (services: Service[]) => {
+      if (options.remote) {
+        if (!options.registry || !options.token) {
+          throw new Error('`registry` and `token` are required when `remote` is enabled.');
+        }
+
+        return await composeSupergraphRemotely({
+          services,
+          registry: options.registry,
+          token: options.token,
+          unstable__forceLatest: options.unstable__forceLatest ?? false,
+          target: options.target ?? null,
+          version: options.version ?? 'unknown',
+          logger,
+          fetch: options.fetch,
+        });
+      }
+
+      return await composeSupergraphLocally(services);
+    },
+    {
+      ...circuitBreakerConfig,
+      timeout: false,
+    },
+  );
 
   return {
     async fetch(): Promise<string> {
@@ -364,29 +399,14 @@ export function createDevFetcher(options: HiveDevFetcherOptions): HiveDevFetcher
         return cached.supergraphSdl;
       }
 
-      let supergraphSdl: string;
-      if (options.remote) {
-        if (!options.registry || !options.token) {
-          throw new Error('`registry` and `token` are required when `remote` is enabled.');
-        }
-
-        supergraphSdl = await composeSupergraphRemotely({
-          services,
-          registry: options.registry,
-          token: options.token,
-          unstable__forceLatest: options.unstable__forceLatest ?? false,
-          target: options.target ?? null,
-          version: options.version ?? 'unknown',
-          logger,
-          fetch: options.fetch,
-        });
-      } else {
-        supergraphSdl = await composeSupergraphLocally(services);
-      }
+      const supergraphSdl: string = await composeBreaker.fire(services);
 
       await options.cache?.set(CACHE_KEY, { services, supergraphSdl });
 
       return supergraphSdl;
+    },
+    dispose() {
+      composeBreaker.shutdown();
     },
   };
 }
