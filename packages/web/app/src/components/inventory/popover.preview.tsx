@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarIcon, ChevronsUpDown } from 'lucide-react';
+import { CalendarDays, CalendarIcon, ChevronsUpDown, SearchIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,15 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverArrow,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Popover';
@@ -700,67 +707,129 @@ export const TagSuggestionPopovers = createPreview({
 // The date range pickers. The hardest call sites in this migration.
 // ---------------------------------------------------------------------------
 
+const QUICK_RANGES = [
+  'Last 24 hours',
+  'Last 7 days',
+  'Last 14 days',
+  'Last 30 days',
+  'Last 90 days',
+  'Last 6 months',
+  'Last 1 year',
+];
+
+/**
+ * `DateRangePickerPanel`, the content of the outer popover. Two columns inside a fixed
+ * `h-[380px]`: the absolute-range form on the left (which is also the anchor for the calendar
+ * popover) and the filterable quick-range list on the right.
+ */
+function DateRangePickerPanel() {
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [fromValue, setFromValue] = useState('now-30d');
+  const [toValue, setToValue] = useState('now');
+  const [quickRangeFilter, setQuickRangeFilter] = useState('');
+  const [activePreset, setActivePreset] = useState('Last 7 days');
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline">Last 30 days</Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <div className="flex h-[380px]">
+          <Popover modal open={showCalendar} onOpenChange={setShowCalendar}>
+            <PopoverAnchor asChild>
+              <div className="flex flex-col py-2">
+                <div className="flex flex-col items-center justify-end gap-2 lg:flex-row lg:items-start">
+                  <div className="flex flex-col gap-1 pl-3">
+                    <div className="mb-2 mt-1 text-sm">Absolute date range</div>
+                    <div className="space-y-2">
+                      {[
+                        { id: 'from', label: 'From', value: fromValue, set: setFromValue },
+                        { id: 'to', label: 'To', value: toValue, set: setToValue },
+                      ].map(field => (
+                        <div key={field.id} className="grid w-full max-w-sm items-center gap-1.5">
+                          <label className="text-neutral-10 text-xs" htmlFor={field.id}>
+                            {field.label}
+                          </label>
+                          <div className="flex w-full max-w-sm items-center space-x-2">
+                            <div className="relative flex w-full">
+                              <Input
+                                type="text"
+                                id={field.id}
+                                value={field.value}
+                                onChange={ev => field.set(ev.target.value)}
+                                className="font-mono text-xs"
+                              />
+                              <Button
+                                variant="ghost"
+                                className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
+                                onClick={() => setShowCalendar(true)}
+                              >
+                                <CalendarDays className="size-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="text-red-500" />
+                        </div>
+                      ))}
+                      <Button variant="primary" className="w-full text-center">
+                        Apply date range
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </PopoverAnchor>
+            <PopoverContent side="left" sideOffset={4} collisionPadding={8} className="w-auto">
+              <div className="text-neutral-10 p-4 text-xs">
+                react-day-picker calendar, with a close button pinned top-right.
+              </div>
+            </PopoverContent>
+          </Popover>
+          <div className="ml-3 flex flex-col gap-1 border-l py-2 pl-3 pr-2">
+            <div className="relative flex items-center">
+              <SearchIcon className="text-neutral-10 absolute left-2 size-3.5" />
+              <Input
+                placeholder="Filter quick ranges"
+                className="w-full pl-7"
+                value={quickRangeFilter}
+                onChange={ev => setQuickRangeFilter(ev.target.value)}
+              />
+            </div>
+            <div className="flex w-full flex-1 flex-col items-start gap-1 overflow-y-scroll pb-2 pt-1">
+              {QUICK_RANGES.filter(preset =>
+                preset.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
+              ).map(preset => (
+                <Button
+                  key={preset}
+                  variant="ghost"
+                  onClick={() => setActivePreset(preset)}
+                  className={cn(
+                    'w-full justify-start text-left',
+                    preset === activePreset && 'bg-neutral-2',
+                  )}
+                >
+                  {preset}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export const DateRangePicker = createPreview({
   label: 'Date range picker',
   render: () => (
     <div className="flex flex-col gap-8">
       <CallSite
-        source="components/ui/date-range-picker.tsx:368"
+        source="components/ui/date-range-picker.tsx:557 and :368"
         origin="ui"
-        note="The only PopoverAnchor in the app. There is NO trigger: the popover is anchored to the panel beside it and opened by a button inside that panel. It is also `modal`, and sets collisionPadding. Reached from 13 pages."
+        note="The whole picker as it appears on the explorer filter. The outer Popover is `modal` and its trigger is `props.trigger ?? <default>`. Inside, the left column is the PopoverAnchor: the calendar popover has NO trigger of its own, positioning against that panel and opened by the calendar button inside a From or To field. Reached from 13 pages."
       >
-        <div className="border-neutral-5 rounded-md border border-dashed p-4">
-          <p className="text-neutral-10 mb-3 text-xs">
-            Anchor element (the absolute-range panel). The calendar opens to its left, positioned
-            against this box rather than against any trigger.
-          </p>
-          <div className="flex flex-col gap-1 pl-3">
-            <div className="mb-2 mt-1 text-sm">Absolute date range</div>
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <label className="text-neutral-10 text-xs" htmlFor="from">
-                From
-              </label>
-              <div className="flex w-full max-w-sm items-center space-x-2">
-                <Input id="from" defaultValue="2026-09-01 00:00:00" />
-                <Button variant="outline" size="icon">
-                  <CalendarIcon className="size-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </CallSite>
-
-      <CallSite
-        source="components/ui/date-range-picker.tsx:557"
-        origin="ui"
-        note="The outer picker. `modal`, and its trigger is `props.trigger ?? <default Button>`, so the trigger is caller-supplied and optional."
-      >
-        <Popover modal>
-          <PopoverTrigger asChild>
-            <Button variant="outline">
-              Last 7 days
-              <span className="-mr-2 scale-125 pl-1 opacity-60">▾</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <div className="flex">
-              <ul className="border-neutral-5 flex flex-col border-r p-2 text-sm">
-                {['Last hour', 'Last 24 hours', 'Last 7 days', 'Last 30 days'].map(preset => (
-                  <li
-                    key={preset}
-                    className="hover:bg-neutral-3 cursor-pointer rounded-sm px-3 py-1.5"
-                  >
-                    {preset}
-                  </li>
-                ))}
-              </ul>
-              <div className="text-neutral-10 p-4 text-xs">
-                Absolute range panel and calendar live here.
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <DateRangePickerPanel />
       </CallSite>
 
       <CallSite
