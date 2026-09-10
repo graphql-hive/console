@@ -20,9 +20,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import * as Sheet from '@/components/ui/sheet';
+import { Input as V2Input } from '@/components/v2/input';
+import { Modal } from '@/components/v2/modal';
+import { Select as V2Select } from '@/components/v2/select';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Overlays';
@@ -89,9 +93,10 @@ const ENTRIES = [
     coveredBy: 'Sheet',
   },
   {
-    source: 'components/target/laboratory/connect-lab-modal.tsx and 5 more',
+    source:
+      'create-alert.tsx:94, create-channel.tsx:112, user/settings.tsx:88, cdn-access-tokens.tsx:167 and :289, transfer-organization-ownership.tsx:171',
     origin: 'v2',
-    what: 'Modal with sm/md/lg width sizes and a trigger prop',
+    what: '6 render sites: 1 sets size, 3 default, 2 override width with a className',
     coveredBy: 'v2 modal',
   },
   {
@@ -114,8 +119,23 @@ export const Inventory = createPreview({
           <code>v2/modal</code> (6) all wrap <code>@radix-ui/react-dialog</code>, and they disagree
           on nearly everything: fill (<code>neutral-3</code> vs <code>neutral-1</code>), radius,
           padding, how width is set, and whether a close button is opt-in or opt-out. Sheet is
-          namespace-imported in 12 files and named-imported in 11. Only <code>v2/modal</code> solves
-          portalling tooltips out of an overlay.
+          namespace-imported in 12 files and named-imported in 11. <code>v2/modal</code> is the only
+          one that solves portalling tooltips out of an overlay, and the only one with a named width
+          scale — which two of its six call sites bypass anyway.
+          <br />
+          <br />
+          <strong>Dead exports, delete rather than port:</strong> <code>DialogOverlay</code>,{' '}
+          <code>DialogPortal</code>, <code>SheetClose</code>, <code>SheetOverlay</code>,{' '}
+          <code>SheetPortal</code>, <code>AlertDialogPortal</code>, <code>AlertDialogOverlay</code>{' '}
+          — zero call sites each. Same for Sheet&apos;s <code>noOverlay</code> prop and v2
+          Modal&apos;s <code>trigger</code> prop.
+          <br />
+          <br />
+          <strong>Triggers are the exception, not the rule.</strong> <code>DialogTrigger</code> 3,{' '}
+          <code>SheetTrigger</code> 4, <code>AlertDialogTrigger</code> 2, against 27 Dialogs, 15
+          Sheets and 7 AlertDialogs. The app controls overlays with <code>open</code> state and a
+          button elsewhere, so a base API that leads with a trigger prop would be designing for the
+          minority case.
         </>
       }
       entries={ENTRIES}
@@ -317,42 +337,151 @@ function SheetExamples() {
 // v2/modal — the only overlay with a size scale, and the only one that solves portalled tooltips.
 // ---------------------------------------------------------------------------
 
-export const V2ModalNotes = createPreview({
+export const V2ModalPreview = createPreview({
   label: 'v2 modal',
-  render: () => (
-    <div className="flex max-w-3xl flex-col gap-4 text-sm">
-      <p className="text-neutral-11">
-        <code>v2/modal</code> is not rendered here: it mounts a Radix <code>TooltipProvider</code>{' '}
-        and a <code>ModalTooltipContext</code> around its content, and reproducing that faithfully
-        means reproducing the tooltip plumbing it exists for. Its source is{' '}
-        <code>components/v2/modal.tsx</code>. What matters for the migration:
-      </p>
-      <ul className="text-neutral-11 flex flex-col gap-3">
-        <li>
-          <strong className="text-neutral-12">A size scale, not a className.</strong>{' '}
-          <code>sm</code> is <code>w-[450px]</code>, <code>md</code> <code>w-[600px]</code>,{' '}
-          <code>lg</code> <code>w-[800px]</code>. It is the only one of the four that names its
-          widths instead of leaving each call site to invent one.
-        </li>
-        <li>
-          <strong className="text-neutral-12">A different surface.</strong>{' '}
-          <code>bg-neutral-1</code> against ui/dialog&apos;s <code>bg-neutral-3</code>, a{' '}
-          <code>neutral-5/80</code> overlay, <code>rounded-md</code> and <code>p-7</code>. Two
-          modals open side by side would not look related.
-        </li>
-        <li>
-          <strong className="text-neutral-12">A trigger prop.</strong> It takes <code>trigger</code>{' '}
-          as a prop rather than a <code>Trigger</code> child, which is already the props-based shape
-          base wants.
-        </li>
-        <li>
-          <strong className="text-neutral-12">ModalTooltipContext.</strong> It captures its content
-          ref and publishes it, so a tooltip inside the modal portals into the modal rather than to{' '}
-          <code>&lt;body&gt;</code> behind the overlay. <code>base/floating</code> already solves
-          this with <code>FloatingPortalContainerProvider</code>, so the context is replaced rather
-          than ported.
-        </li>
-      </ul>
-    </div>
-  ),
+  render: () => <V2ModalExamples />,
 });
+
+function V2ModalExamples() {
+  const [openAlert, setOpenAlert] = useState(false);
+  const [openCdn, setOpenCdn] = useState(false);
+  const [openTransfer, setOpenTransfer] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-8">
+      <CallSite
+        source="components/project/alerts/create-alert.tsx:94"
+        origin="v2"
+        note="The default: size sm (w-[450px]), bg-neutral-1 on a neutral-5/80 overlay, rounded-md, p-7. Compare the surface against the ui Dialog above: they do not read as the same system. Three v2 native Selects inside, each with its own label and error slot."
+      >
+        <Button variant="outline" onClick={() => setOpenAlert(true)}>
+          Open create-alert modal
+        </Button>
+        <Modal open={openAlert} onOpenChange={setOpenAlert}>
+          <form className="flex flex-col gap-8" onSubmit={e => e.preventDefault()}>
+            <Heading className="text-center">Create an alert</Heading>
+            <div className="flex flex-col gap-4">
+              <label className="text-sm font-semibold" htmlFor="name">
+                Type
+              </label>
+              <V2Select
+                name="type"
+                placeholder="Select alert type"
+                options={[
+                  { value: 'SCHEMA_CHANGE_NOTIFICATIONS', name: 'Schema Change Notifications' },
+                ]}
+              />
+            </div>
+            <div className="flex flex-col gap-4">
+              <label className="text-sm font-semibold" htmlFor="name">
+                Channel
+              </label>
+              <V2Select
+                name="channel"
+                placeholder="Select channel"
+                options={[
+                  { value: 'c1', name: 'Slack #alerts' },
+                  { value: 'c2', name: 'Webhook' },
+                ]}
+              />
+            </div>
+            <div className="flex flex-col gap-4">
+              <label className="text-sm font-semibold" htmlFor="name">
+                Target
+              </label>
+              <V2Select
+                name="target"
+                placeholder="Select target"
+                options={[
+                  { value: 'production', name: 'production' },
+                  { value: 'staging', name: 'staging' },
+                ]}
+              />
+            </div>
+            <div className="flex w-full gap-2">
+              <Button
+                type="button"
+                size="lg"
+                className="w-full justify-center"
+                onClick={() => setOpenAlert(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" size="lg" className="w-full justify-center" variant="primary">
+                Create Alert
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      </CallSite>
+
+      <CallSite
+        source="components/target/settings/cdn-access-tokens.tsx:167"
+        origin="v2"
+        note='The source passes a bare `open` and lets the parent mount or unmount it; a button stands in for that here. It overrides the size scale with className="w-[650px]", a width that is not on the scale at all. Two of the six v2 modals do this.'
+      >
+        <Button variant="outline" onClick={() => setOpenCdn(true)}>
+          Open CDN token modal
+        </Button>
+        <Modal open={openCdn} className="w-[650px]" onOpenChange={setOpenCdn}>
+          <form
+            className="flex flex-1 flex-col items-stretch gap-12"
+            onSubmit={e => e.preventDefault()}
+          >
+            <div className="flex flex-col gap-5">
+              <Heading className="text-center">Create CDN Access Token</Heading>
+            </div>
+            <div className="flex flex-col gap-4">
+              <label className="text-sm font-semibold" htmlFor="alias">
+                CDN Access Token Alias
+              </label>
+              <V2Input placeholder="Alias" name="alias" />
+            </div>
+            <div className="mt-auto flex w-full gap-2 self-end">
+              <Button variant="secondary" className="ml-auto" onClick={() => setOpenCdn(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Create</Button>
+            </div>
+          </form>
+        </Modal>
+      </CallSite>
+
+      <CallSite
+        source="components/v2/modals/transfer-organization-ownership.tsx:171"
+        origin="v2"
+        note="The only call site that passes size (lg, w-[800px]), and it still adds a className for layout. The real body is a Headless UI Combobox for picking the new owner; a v2 Input stands in for it here since Headless UI is its own migration."
+      >
+        <Button variant="outline" onClick={() => setOpenTransfer(true)}>
+          Open transfer-ownership modal
+        </Button>
+        <Modal
+          open={openTransfer}
+          onOpenChange={setOpenTransfer}
+          size="lg"
+          className="flex flex-col gap-5"
+        >
+          <Heading>Transfer ownership</Heading>
+          <p>Transferring is completed after the new owner approves the transfer.</p>
+          <div className="flex flex-col gap-2">
+            <div className="font-bold">New owner</div>
+            <V2Input placeholder="Search by name or email" />
+          </div>
+          <div className="flex w-full gap-2">
+            <Button
+              type="button"
+              size="lg"
+              className="w-full justify-center"
+              onClick={() => setOpenTransfer(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" size="lg" className="w-full justify-center" variant="primary">
+              Transfer this organization
+            </Button>
+          </div>
+        </Modal>
+      </CallSite>
+    </div>
+  );
+}
