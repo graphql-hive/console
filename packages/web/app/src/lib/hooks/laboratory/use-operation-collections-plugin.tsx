@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { FolderIcon, FolderOpenIcon, SquareTerminalIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { Menu } from '@/components/base/floating/menu/menu';
 import { CreateCollectionModal } from '@/components/target/laboratory/create-collection-modal';
 import { DeleteCollectionModal } from '@/components/target/laboratory/delete-collection-modal';
 import { DeleteOperationModal } from '@/components/target/laboratory/delete-operation-modal';
@@ -14,13 +15,6 @@ import {
   AccordionTriggerPrimitive,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { PlusIcon } from '@/components/ui/icon';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
@@ -247,9 +241,7 @@ export function Content() {
   const [createOperationState, createOperation] = useMutation(CreateOperationMutation);
   const notify = useNotifications();
 
-  const addOperation = async (e: { currentTarget: { dataset: DOMStringMap } }) => {
-    const collectionId = e.currentTarget.dataset.collectionId!;
-
+  const addOperation = async (collectionId: string) => {
     const result = await createOperation({
       input: {
         collectionId,
@@ -311,45 +303,49 @@ export function Content() {
           {collection.name}
         </AccordionTriggerPrimitive>
         {shouldShowMenu && (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label="More"
-              className="graphiql-toolbar-button"
-              data-cy="collection-menu-trigger"
-            >
-              <DotsHorizontalIcon />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                data-cy="add-operation-to-collection"
-                onClick={addOperation}
-                disabled={createOperationState.fetching}
-                data-collection-id={collection.id}
+          <Menu
+            align="end"
+            trigger={
+              <button
+                type="button"
+                aria-label="More"
+                className="graphiql-toolbar-button"
+                data-cy="collection-menu-trigger"
               >
-                Add operation <PlusIcon className="ml-2 size-4" />
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                data-cy="edit-collection"
-                onClick={() => {
-                  setCollectionId(collection.id);
-                  toggleCollectionModal();
-                }}
-              >
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                data-cy="delete-collection"
-                onClick={() => {
-                  setCollectionId(collection.id);
-                  toggleDeleteCollectionModalOpen();
-                }}
-                className="text-red-500"
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DotsHorizontalIcon />
+              </button>
+            }
+            sections={[
+              [
+                {
+                  label: 'Add operation',
+                  trailingIcon: PlusIcon,
+                  onClick: () => void addOperation(collection.id),
+                  disabled: createOperationState.fetching,
+                  attrs: { 'data-cy': 'add-operation-to-collection' },
+                },
+              ],
+              [
+                {
+                  label: 'Edit',
+                  onClick: () => {
+                    setCollectionId(collection.id);
+                    toggleCollectionModal();
+                  },
+                  attrs: { 'data-cy': 'edit-collection' },
+                },
+                {
+                  label: 'Delete',
+                  variant: 'destructiveAction',
+                  onClick: () => {
+                    setCollectionId(collection.id);
+                    toggleDeleteCollectionModalOpen();
+                  },
+                  attrs: { 'data-cy': 'delete-collection' },
+                },
+              ],
+            ]}
+          />
         )}
       </AccordionHeader>
       <AccordionContent className="space-y-0 pb-2 pl-2">
@@ -379,53 +375,53 @@ export function Content() {
                 <SquareTerminalIcon className="size-4" />
                 {node.name}
               </Link>
-              <DropdownMenu modal={false}>
-                <DropdownMenuTrigger className="graphiql-toolbar-button text-neutral-12 opacity-0 transition-opacity [div:hover>&]:opacity-100">
-                  <DotsHorizontalIcon />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    data-cy="copy-operation-link"
-                    onClick={async () => {
-                      const url = new URL(window.location.href);
-                      await copyToClipboard(`${url.origin}${url.pathname}?operation=${node.id}`);
-                    }}
+              <Menu
+                modal={false}
+                align="end"
+                trigger={
+                  <button
+                    type="button"
+                    className="graphiql-toolbar-button text-neutral-12 opacity-0 transition-opacity [div:hover>&]:opacity-100"
                   >
-                    Copy link to operation
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {canEdit && (
-                    <DropdownMenuItem
-                      data-cy="edit-operation"
-                      onClick={() => {
-                        setOperationToEditId(node.id);
-                      }}
-                    >
-                      Edit
-                    </DropdownMenuItem>
-                  )}
-                  {canDelete && (
-                    <DropdownMenuItem
-                      data-cy="delete-operation"
-                      onClick={() => {
+                    <DotsHorizontalIcon />
+                  </button>
+                }
+                sections={[
+                  [
+                    {
+                      label: 'Copy link to operation',
+                      onClick: async () => {
+                        const url = new URL(window.location.href);
+                        await copyToClipboard(`${url.origin}${url.pathname}?operation=${node.id}`);
+                      },
+                      attrs: { 'data-cy': 'copy-operation-link' },
+                    },
+                  ],
+                  [
+                    canEdit && {
+                      label: 'Edit',
+                      onClick: () => setOperationToEditId(node.id),
+                      attrs: { 'data-cy': 'edit-operation' },
+                    },
+                    canDelete && {
+                      label: 'Delete',
+                      variant: 'destructiveAction' as const,
+                      onClick: () => {
                         setOperationToDeleteId(node.id);
                         toggleDeleteOperationModalOpen();
-                      }}
-                      className="text-red-500"
-                    >
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      },
+                      attrs: { 'data-cy': 'delete-operation' },
+                    },
+                  ],
+                ]}
+              />
             </div>
           ))
         ) : (
           <Button
             variant="orangeLink"
             className="mx-auto block"
-            onClick={addOperation}
-            data-collection-id={collection.id}
+            onClick={() => void addOperation(collection.id)}
           >
             <PlusIcon className="mr-1 inline size-4" /> Add Operation
           </Button>
