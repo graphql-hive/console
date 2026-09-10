@@ -8,7 +8,7 @@ import {
   Accordion,
   AccordionContent,
   AccordionHeader,
-  AccordionItem,
+  AccordionItem,2
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -79,6 +79,7 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
     message(withSafeBasedOnUsageNote: false)
     severityLevel
     severityReason
+    criticalityReason
     approval {
       ...ChangesBlock_SchemaChangeApprovalFragment
     }
@@ -128,6 +129,8 @@ export const ChangesBlock_SchemaChangeFragment = graphql(`
     message(withSafeBasedOnUsageNote: false)
     severityLevel
     severityReason
+    criticalityReason
+
     approval {
       ...ChangesBlock_SchemaChangeApprovalFragment
     }
@@ -243,6 +246,16 @@ function ChangeItem(
                     <CheckIcon className="inline size-3" /> Safe based on usage data
                   </span>
                 )}
+                {change.isSafeBasedOnUsage && change.criticalityReason && (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({change.criticalityReason})
+                  </span>
+                )}
+                
+                
+
+
+                
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
