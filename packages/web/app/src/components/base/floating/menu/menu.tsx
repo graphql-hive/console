@@ -440,7 +440,7 @@ function renderSections(sections: MenuSection[]): ReactNode {
     if (labelled) {
       result.push(
         <BaseMenu.Group key={`group-${result.length}`}>
-          <BaseMenu.GroupLabel className="text-neutral-8 px-2 pb-1 pt-2 text-xs font-normal">
+          <BaseMenu.GroupLabel className="text-neutral-9 px-2 pb-1 pt-2 text-xs font-normal">
             {section.label}
           </BaseMenu.GroupLabel>
           {entries.map(renderEntry)}

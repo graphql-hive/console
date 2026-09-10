@@ -69,7 +69,7 @@ export const itemVariants = cva(
   {
     variants: {
       variant: {
-        default: 'px-2 text-neutral-10',
+        default: 'px-2 text-neutral-11',
         navigationLink: 'hover:text-accent text-accent_80 justify-end pr-2 hover:bg-transparent',
         action: 'pl-2 hover:bg-accent_10 hover:text-accent text-accent_80',
         destructiveAction: 'pl-2 text-red-400 hover:bg-red-300/10',
