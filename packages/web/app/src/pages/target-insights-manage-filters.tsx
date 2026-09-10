@@ -322,8 +322,6 @@ function ActionsCell({
                 />
               ),
             },
-            // Only shared filters can be attached to an alert, so don't offer
-            // "Create alert" from a private one (the alert form would reject it).
             filter.visibility === SavedFilterVisibilityType.Shared && {
               label: 'Create alert',
               render: (
@@ -336,11 +334,9 @@ function ActionsCell({
             },
             filter.viewerCanUpdate && { label: 'Rename', onClick: onRename },
             filter.viewerCanDelete &&
-              // In use by an alert -> deletion is blocked (the server also enforces this).
-              // Disable the row; the table's "In use" indicator explains why.
               (filter.usedByAlertRulesCount > 0
-                ? { label: 'Delete', variant: 'destructiveAction' as const, disabled: true }
-                : { label: 'Delete', variant: 'destructiveAction' as const, onClick: onDelete }),
+                ? { label: 'Delete', variant: 'destructiveAction', disabled: true }
+                : { label: 'Delete', variant: 'destructiveAction', onClick: onDelete }),
           ],
         ]}
       />

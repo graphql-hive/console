@@ -3,6 +3,7 @@ import { MailIcon, MailQuestionIcon, MoreHorizontalIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Menu } from '@/components/base/floating/menu/menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,12 +24,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -426,18 +421,26 @@ function Invitation(props: {
           {DateFormatter.format(new Date(invitation.expiresAt))}
         </td>
         <td className="py-3 text-right text-sm">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
+          <Menu
+            align="end"
+            width="sm"
+            trigger={
+              <Button variant="ghost" className="data-[popup-open]:bg-neutral-3 flex size-8 p-0">
                 <MoreHorizontalIcon className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[160px]">
-              <DropdownMenuItem onClick={copyLink}>Copy invitation link</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setOpen(true)}>Delete invitation</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            }
+            sections={[
+              [
+                { label: 'Copy invitation link', onClick: copyLink },
+                {
+                  label: 'Delete invitation',
+                  variant: 'destructiveAction',
+                  onClick: () => setOpen(true),
+                },
+              ],
+            ]}
+          />
         </td>
       </tr>
     </>

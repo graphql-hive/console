@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Menu } from '@/components/base/floating/menu/menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,12 +26,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Form,
   FormControl,
@@ -688,55 +683,42 @@ function OrganizationMemberRoleRow(props: {
         {role.membersCount} {role.membersCount === 1 ? 'member' : 'members'}
       </td>
       <td className="py-3 text-right text-sm">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
+        <Menu
+          align="end"
+          width="sm"
+          trigger={
+            <Button variant="ghost" className="data-[popup-open]:bg-neutral-3 flex size-8 p-0">
               <MoreHorizontalIcon className="size-4" />
               <span className="sr-only">Open menu</span>
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[160px]">
-            <DropdownMenuItem onClick={() => props.onShow(props.role)}>Show</DropdownMenuItem>
-            <TooltipProvider>
-              <Tooltip delayDuration={200} {...(role.canUpdate ? { open: false } : {})}>
-                <TooltipTrigger className="block w-full">
-                  <DropdownMenuItem
-                    onClick={() => props.onEdit(props.role)}
-                    disabled={!role.canUpdate}
-                  >
-                    Edit
-                  </DropdownMenuItem>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {role.canUpdate
-                    ? null
-                    : "You cannot edit this role as you don't have enough permissions."}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip delayDuration={200} {...(role.canDelete ? { open: false } : {})}>
-                <TooltipTrigger className="block w-full">
-                  <DropdownMenuItem
-                    onClick={() => props.onDelete(props.role)}
-                    disabled={!role.canDelete}
-                  >
-                    Delete
-                  </DropdownMenuItem>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {role.canDelete
-                    ? null
-                    : `You cannot delete this role as ${
-                        role.membersCount > 0
-                          ? 'it has members.'
-                          : "you don't have enough permissions."
-                      }`}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          }
+          sections={[
+            [
+              { label: 'Show', onClick: () => props.onShow(props.role) },
+              {
+                label: 'Edit',
+                onClick: () => props.onEdit(props.role),
+                disabled: !role.canUpdate,
+                // Only set when it applies, so an allowed row gets no tooltip wrapper at all.
+                tooltip: role.canUpdate
+                  ? undefined
+                  : "You cannot edit this role as you don't have enough permissions.",
+              },
+              {
+                label: 'Delete',
+                onClick: () => props.onDelete(props.role),
+                disabled: !role.canDelete,
+                tooltip: role.canDelete
+                  ? undefined
+                  : `You cannot delete this role as ${
+                      role.membersCount > 0
+                        ? 'it has members.'
+                        : "you don't have enough permissions."
+                    }`,
+              },
+            ],
+          ]}
+        />
       </td>
     </tr>
   );

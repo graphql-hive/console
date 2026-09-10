@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { EllipsisIcon, LoaderCircleIcon } from 'lucide-react';
 import { useClient } from 'urql';
+import { Menu } from '@/components/base/floating/menu/menu';
 import { DeleteAccessTokenConfirmationDialogue } from '@/components/organization/settings/access-tokens/delete-access-token-confirmation-dialogue';
 import { TokenExpiration } from '@/components/organization/settings/access-tokens/token-expiration';
 import { Button } from '@/components/ui/button';
-import * as DropDownMenu from '@/components/ui/dropdown-menu';
 import * as Table from '@/components/ui/table';
 import { TimeAgo } from '@/components/v2';
 import { graphql, useFragment, type FragmentType } from '@/gql';
@@ -131,22 +131,22 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
               <TokenExpiration expiresAt={edge.node.expiresAt ?? null} />
             </Table.TableCell>
             <Table.TableCell className="text-right align-middle">
-              <DropDownMenu.DropdownMenu>
-                <DropDownMenu.DropdownMenuTrigger className="ml-auto block">
-                  <EllipsisIcon className="size-4" />
-                </DropDownMenu.DropdownMenuTrigger>
-                <DropDownMenu.DropdownMenuContent>
-                  <DropDownMenu.DropdownMenuLabel>Options</DropDownMenu.DropdownMenuLabel>
-                  <DropDownMenu.DropdownMenuItem onClick={() => setDetailViewId(edge.node.id)}>
-                    View Details
-                  </DropDownMenu.DropdownMenuItem>
-                  <DropDownMenu.DropdownMenuItem
-                    onClick={() => setDeleteAccessTokenId(edge.node.id)}
-                  >
-                    Delete
-                  </DropDownMenu.DropdownMenuItem>
-                </DropDownMenu.DropdownMenuContent>
-              </DropDownMenu.DropdownMenu>
+              <Menu
+                trigger={
+                  <button type="button" className="ml-auto block">
+                    <EllipsisIcon className="size-4" />
+                  </button>
+                }
+                sections={[
+                  {
+                    label: 'Options',
+                    items: [
+                      { label: 'View Details', onClick: () => setDetailViewId(edge.node.id) },
+                      { label: 'Delete', onClick: () => setDeleteAccessTokenId(edge.node.id) },
+                    ],
+                  },
+                ]}
+              />
             </Table.TableCell>
           </Table.TableRow>
         ))}
