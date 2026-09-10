@@ -26,6 +26,8 @@
     "dev:integration": "cd integration-tests && pnpm dev:integration",
     "dev:observability": "docker compose -f ./docker/docker-compose.dev.yml --profile observability up -d",
     "dev:observability:down": "docker compose -f ./docker/docker-compose.dev.yml --profile observability down",
+    "dev:zendesk-mock": "docker compose -f ./docker/docker-compose.dev.yml --profile zendesk up -d",
+    "dev:zendesk-mock:down": "docker compose -f ./docker/docker-compose.dev.yml --profile zendesk down",
     "docker:build": "NODE_VERSION_TAG=\":$(< .node-version)-slim\" docker buildx bake -f docker/docker.hcl --load build",
     "docker:override-up": "docker compose -f ./docker/docker-compose.override.yml up -d --remove-orphans",
     "env:sync": "tsx scripts/sync-env-files.ts",
