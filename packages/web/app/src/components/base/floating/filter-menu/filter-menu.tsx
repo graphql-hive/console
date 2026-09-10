@@ -33,21 +33,6 @@ function isNotToggle(d: FilterDimension): d is ItemsFilterDimension | TextFilter
   return d.kind !== 'toggle';
 }
 
-/**
- * The trigger that opens a menu of dimensions. Each dimension opens a
- * sub-menu containing a `FilterContent` panel for picking items, or a text
- * input for `kind: 'text'`. `kind: 'toggle'` dimensions are switch rows and
- * are grouped into their own section below the rest, since they set a
- * preference rather than narrow the result set.
- *
- * Default trigger reads "Filter" with a list-filter icon. To swap the
- * trigger to a custom label with a clear-X icon (e.g. for an active saved
- * view), pass *both* `activeLabel` and `onClearActive` — they're a
- * matched pair, the trigger only morphs when both are present.
- *
- * Pass `extraSections` to inject additional menu content (e.g. saved-filter
- * sub-menus) below the dimensions list.
- */
 export function FilterMenu({
   dimensions,
   extraSections = [],

@@ -8,7 +8,7 @@ const DEFAULT_PATH_PROPS = {
   strokeLinejoin: 'round',
 } as const;
 
-type IconProps = { className?: string };
+export type IconProps = { className?: string };
 
 export const GraphQLIcon = ({ className }: IconProps): ReactElement => (
   <svg

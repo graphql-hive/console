@@ -2,18 +2,27 @@ import {
   useCallback,
   useEffect,
   useRef,
+  type ComponentType,
   type MouseEventHandler,
   type ReactElement,
   type ReactNode,
 } from 'react';
 import { type VariantProps } from 'class-variance-authority';
-import { ArrowRight, Check, ChevronRight, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Check, ChevronRight } from 'lucide-react';
 import { Switch } from '@/components/base/switch/switch';
+import { type IconProps } from '@/components/ui/icon';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { floatingVariants, itemVariants, type FloatingProps } from '../shared-styles';
 import { Tooltip } from '../tooltip/tooltip';
 
 type ItemVariant = VariantProps<typeof itemVariants>['variant'];
+
+/**
+ * An icon as this app defines one, via `IconProps` in `ui/icon.tsx`. Not `LucideIcon`: lucide,
+ * react-icons and our own hand-rolled SVGs have incompatible signatures, and menus only ever
+ * hand an icon a `className`.
+ */
+type MenuIcon = ComponentType<IconProps>;
 
 /** Width controls, shared by a menu and any submenu inside it. */
 type WidthProps = {
@@ -31,9 +40,9 @@ type WidthProps = {
 /** A row you can act on. The default entry shape, so it carries no `kind`. */
 type MenuAction = {
   label: ReactNode;
-  icon?: LucideIcon;
+  icon?: MenuIcon;
   /** Pushed to the right of the row, for a badge-like affordance such as "Create". */
-  trailingIcon?: LucideIcon;
+  trailingIcon?: MenuIcon;
   onClick?: MouseEventHandler<HTMLElement>;
   disabled?: boolean;
   /**
@@ -58,7 +67,7 @@ type MenuAction = {
 type MenuSubmenu = WidthProps & {
   kind: 'submenu';
   label: ReactNode;
-  icon?: LucideIcon;
+  icon?: MenuIcon;
   disabled?: boolean;
   /** Open on hover rather than click, with optional open/close delays in ms. */
   openOnHover?: boolean;
@@ -77,7 +86,7 @@ type MenuCheckbox = {
   label: ReactNode;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
-  icon?: LucideIcon;
+  icon?: MenuIcon;
   disabled?: boolean;
   /** Defaults to false: a checkbox row usually toggles without dismissing the menu. */
   closeOnClick?: boolean;
@@ -97,7 +106,7 @@ type MenuToggle = {
   label: ReactNode;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
-  icon?: LucideIcon;
+  icon?: MenuIcon;
   disabled?: boolean;
   /** Defaults to false: a toggle row flips in place without dismissing the menu. */
   closeOnClick?: boolean;
@@ -107,10 +116,45 @@ type MenuRadio = {
   kind: 'radio';
   value: string;
   onValueChange: (value: string) => void;
-  options: Array<{ value: string; label: ReactNode; icon?: LucideIcon; disabled?: boolean }>;
+  options: Array<{ value: string; label: ReactNode; icon?: MenuIcon; disabled?: boolean }>;
 };
 
-type MenuEntry = MenuAction | MenuSubmenu | MenuCheckbox | MenuToggle | MenuRadio;
+/**
+ * A non-interactive block at the top of a section, for identity rather than a heading: the user
+ * menu's name and email pair. For naming a group of rows, use a section's `label` instead.
+ */
+type MenuHeader = {
+  kind: 'header';
+  title: ReactNode;
+  subtitle?: ReactNode;
+};
+
+/**
+ * A row that navigates to an href. For a typed app route use a `render` on an action row with a
+ * TanStack `Link`: its `to` constrains `params` and `search` through inference at the call site,
+ * which a data field cannot carry.
+ */
+type MenuLink = {
+  kind: 'link';
+  label: ReactNode;
+  href: string;
+  /** Opens in a new tab, with `rel="noreferrer"`. */
+  external?: boolean;
+  icon?: MenuIcon;
+  trailingIcon?: MenuIcon;
+  disabled?: boolean;
+  /** Passed through to the anchor. For test hooks. */
+  attrs?: Record<string, string>;
+};
+
+type MenuEntry =
+  | MenuAction
+  | MenuLink
+  | MenuSubmenu
+  | MenuCheckbox
+  | MenuToggle
+  | MenuRadio
+  | MenuHeader;
 
 /**
  * Falsy entries are dropped, so a row can be written as `cond && { label: … }` without the call
@@ -169,10 +213,7 @@ function ActionRow({
     return row;
   }
 
-  return (
-    // The span takes the hover, because a disabled row sets `pointer-events-none`.
-    <Tooltip trigger={<span className="block">{row}</span>} content={tooltip} side="right" />
-  );
+  return <Tooltip trigger={<span className="block">{row}</span>} content={tooltip} side="right" />;
 }
 
 function CheckboxRow({
@@ -195,7 +236,6 @@ function CheckboxRow({
       {Icon ? <Icon className="size-4" /> : null}
       <span className="flex-1">{label}</span>
       {indicator === 'switch' ? (
-        // Visual only: the row owns the click, so the switch must not take focus of its own.
         <Switch
           checked={checked}
           size="small"
@@ -209,6 +249,48 @@ function CheckboxRow({
         </BaseMenu.CheckboxItemIndicator>
       )}
     </BaseMenu.CheckboxItem>
+  );
+}
+
+function LinkRow({
+  label,
+  href,
+  external,
+  icon: Icon,
+  trailingIcon: TrailingIcon,
+  disabled,
+  attrs,
+}: MenuLink) {
+  return (
+    <BaseMenu.Item
+      className={(state: BaseMenu.Item.State) => menuItemClassName(state, {})}
+      disabled={disabled}
+      render={props => (
+        <a
+          {...props}
+          href={href}
+          {...(external ? { target: '_blank', rel: 'noreferrer' } : null)}
+          {...attrs}
+        >
+          {props.children}
+        </a>
+      )}
+    >
+      {Icon ? <Icon className="size-4" /> : null}
+      {label}
+      {TrailingIcon ? <TrailingIcon className="ml-auto size-4" /> : null}
+    </BaseMenu.Item>
+  );
+}
+
+function HeaderRow({ title, subtitle }: MenuHeader) {
+  return (
+    <div className="flex flex-col gap-y-1 px-2 pb-1 pt-3">
+      <span className="text-neutral-12 truncate text-sm font-medium leading-none">{title}</span>
+      {subtitle ? (
+        <span className="text-neutral-10 truncate text-xs leading-none">{subtitle}</span>
+      ) : null}
+    </div>
   );
 }
 
@@ -230,7 +312,6 @@ function ToggleRow({
     >
       {Icon ? <Icon className="size-4" /> : null}
       <span className="flex-1">{label}</span>
-      {/* Visual only: the row owns the click, so the switch must not take focus of its own. */}
       <Switch
         checked={checked}
         size="small"
@@ -254,7 +335,6 @@ function RadioRows({ value, onValueChange, options }: MenuRadio) {
         >
           {option.icon ? <option.icon className="size-4" /> : null}
           {option.label}
-          {/* Trailing, so rows keep the same left edge as icon-first rows around them. */}
           <BaseMenu.RadioItemIndicator className="ml-auto inline-flex items-center">
             <Check className="size-3.5" />
           </BaseMenu.RadioItemIndicator>
@@ -327,6 +407,10 @@ function renderEntry(entry: MenuEntry, key: number): ReactNode {
         return <ToggleRow key={key} {...entry} />;
       case 'radio':
         return <RadioRows key={key} {...entry} />;
+      case 'header':
+        return <HeaderRow key={key} {...entry} />;
+      case 'link':
+        return <LinkRow key={key} {...entry} />;
     }
   }
 
@@ -355,7 +439,6 @@ function renderSections(sections: MenuSection[]): ReactNode {
 
     if (labelled) {
       result.push(
-        // The rows sit inside the group, not beside it, so the label actually names them.
         <BaseMenu.Group key={`group-${result.length}`}>
           <BaseMenu.GroupLabel className="text-neutral-8 px-2 pb-1 pt-2 text-xs font-normal">
             {section.label}
@@ -558,6 +641,8 @@ export type {
   MenuCheckbox,
   MenuEntry,
   MenuEntryList,
+  MenuHeader,
+  MenuLink,
   MenuRadio,
   MenuSection,
   MenuSubmenu,

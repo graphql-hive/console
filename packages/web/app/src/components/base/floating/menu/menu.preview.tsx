@@ -51,6 +51,8 @@ export const Anatomy = createPreview(() => {
     const [showArchived, setShowArchived] = useState(true);
 
     const sections: MenuSection[] = [
+      // A `header` names who or what the menu belongs to. Not a row, and not a section label.
+      [{ kind: 'header', title: 'User', subtitle: 'user@the-guild.dev' }],
       // An object section adds a heading and puts its rows in a labelled group.
       {
         label: 'Workspace',
@@ -144,6 +146,23 @@ export const LabelledSection = createPreview(() => (
     sections={[
       { label: 'Options', items: [{ label: 'View details' }, { label: 'Duplicate' }] },
       [{ label: 'Delete', icon: Trash2, variant: 'destructiveAction' }],
+    ]}
+  />
+));
+
+/**
+ * `header` versus a section `label`. The header identifies who the menu belongs to and is not a
+ * row; the label names the rows beneath it. Both are non-interactive, which is why they sit next
+ * to each other here.
+ */
+export const Header = createPreview(() => (
+  <Menu
+    trigger={<Button label="Account" />}
+    minWidth="md"
+    sections={[
+      [{ kind: 'header', title: 'User', subtitle: 'user@the-guild.dev' }],
+      { label: 'Workspace', items: [{ label: 'Settings' }, { label: 'Members' }] },
+      [{ label: 'Sign out', variant: 'destructiveAction' }],
     ]}
   />
 ));
