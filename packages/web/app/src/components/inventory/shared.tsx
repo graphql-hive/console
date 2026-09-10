@@ -22,6 +22,8 @@ import { type ReactNode } from 'react';
 export function CallSite(props: {
   /** Repo-relative path and line, e.g. `pages/organization.tsx:224`. */
   source: string;
+  /** Which legacy folder the component being rendered comes from. */
+  origin: Origin;
   /** What makes this call site worth its own entry, when that is not obvious. */
   note?: ReactNode;
   children: ReactNode;
@@ -29,7 +31,10 @@ export function CallSite(props: {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <code className="text-neutral-10 font-mono text-xs">{props.source}</code>
+        <span className="flex items-center gap-1.5">
+          <OriginTag origin={props.origin} />
+          <code className="text-neutral-10 font-mono text-xs">{props.source}</code>
+        </span>
         {props.note ? <p className="text-neutral-11 max-w-prose text-xs">{props.note}</p> : null}
       </div>
       {props.children}
@@ -47,9 +52,17 @@ export function CallSiteGroup(props: { label: string; children: ReactNode }) {
   );
 }
 
+/**
+ * Which of the two legacy folders the call site imports from. Several components exist in both
+ * with different APIs, so the folder is part of identifying what a call site actually uses.
+ */
+export type Origin = 'ui' | 'v2';
+
 export type InventoryEntry = {
   /** Repo-relative path and line. */
   source: string;
+  /** Which legacy folder the component being used comes from. */
+  origin: Origin;
   /** What the call site does, in a few words. */
   what: string;
   /**
@@ -58,6 +71,21 @@ export type InventoryEntry = {
    */
   coveredBy?: string;
 };
+
+/** Folder tag, so a v2 call site is not mistaken for a ui one when skimming the list. */
+export function OriginTag(props: { origin: Origin }) {
+  return (
+    <span
+      className={
+        props.origin === 'v2'
+          ? 'bg-neutral-5 text-neutral-12 rounded-xs px-1 py-px font-mono text-[10px] leading-none'
+          : 'bg-neutral-4 text-neutral-11 rounded-xs px-1 py-px font-mono text-[10px] leading-none'
+      }
+    >
+      {props.origin}
+    </span>
+  );
+}
 
 /**
  * The "where is this used" screen: every call site of the old component, whether or not it has a
@@ -84,7 +112,10 @@ export function InventoryList(props: {
             key={entry.source}
             className="border-neutral-5 flex flex-col gap-0.5 border-b py-2 last:border-b-0"
           >
-            <code className="text-neutral-11 font-mono text-xs">{entry.source}</code>
+            <span className="flex items-center gap-1.5">
+              <OriginTag origin={entry.origin} />
+              <code className="text-neutral-11 font-mono text-xs">{entry.source}</code>
+            </span>
             <span className="text-neutral-10 text-xs">
               {entry.what}
               {entry.coveredBy ? ` — covered by "${entry.coveredBy}"` : null}

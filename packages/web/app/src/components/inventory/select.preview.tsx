@@ -26,72 +26,102 @@ export const nav: NavPath = 'Inventory/Select';
 const ENTRIES = [
   {
     source: 'components/layouts/organization-selectors.tsx:33',
+    origin: 'ui',
     what: 'Organization picker in the top nav',
     coveredBy: 'Navigation pickers',
   },
   {
     source: 'components/layouts/project-selector.tsx:60',
+    origin: 'ui',
     what: 'Project picker in the top nav',
     coveredBy: 'Navigation pickers',
   },
   {
     source: 'components/layouts/target-selector.tsx:105',
+    origin: 'ui',
     what: 'Target picker in the top nav',
     coveredBy: 'Navigation pickers',
   },
-  { source: 'pages/organization.tsx:224', what: 'Sort projects by requests / versions / name' },
-  { source: 'pages/project.tsx:237', what: 'Sort targets, same options, different trigger chrome' },
-  { source: 'components/organization/Permissions.tsx:50', what: 'Legacy access scope picker' },
+  {
+    source: 'pages/organization.tsx:224',
+    origin: 'ui',
+    what: 'Sort projects by requests / versions / name',
+    coveredBy: 'Sort selects',
+  },
+  {
+    source: 'pages/project.tsx:237',
+    origin: 'ui',
+    what: 'Sort targets, same options, different trigger chrome',
+    coveredBy: 'Sort selects',
+  },
+  {
+    source: 'components/organization/Permissions.tsx:50',
+    origin: 'ui',
+    what: 'Legacy access scope picker',
+    coveredBy: 'Permission selects',
+  },
   {
     source: 'components/organization/members/permission-selector.tsx:226',
+    origin: 'ui',
     what: 'Per-permission Not Selected / Allow',
   },
   {
     source: 'components/layouts/target.tsx:375',
+    origin: 'ui',
     what: 'CDN artifact modal, graph picker',
     coveredBy: 'CDN artifact modal',
   },
   {
     source: 'components/layouts/target.tsx:403',
+    origin: 'ui',
     what: 'CDN artifact modal, artifact picker with disabled options',
     coveredBy: 'CDN artifact modal',
   },
   {
-    source: 'components/organization/settings/access-tokens/create-access-token-sheet-content.tsx:276',
+    source:
+      'components/organization/settings/access-tokens/create-access-token-sheet-content.tsx:276',
+    origin: 'ui',
     what: 'Token expiration, spread from a react-hook-form field',
     coveredBy: 'Access token expiration',
   },
   {
     source:
       'components/organization/settings/personal-access-tokens/create-personal-access-token-sheet-content.tsx:268',
+    origin: 'ui',
     what: 'Same expiration select, personal tokens',
     coveredBy: 'Access token expiration',
   },
   {
     source:
       'components/project/settings/access-tokens/create-project-access-token-sheet-content.tsx:288',
+    origin: 'ui',
     what: 'Same expiration select, project tokens',
     coveredBy: 'Access token expiration',
   },
   {
     source: 'components/target/insights/save-filter-button.tsx:210',
+    origin: 'ui',
     what: 'Save location, the only variant="inset" in the app',
   },
   {
     source: 'components/target/laboratory/create-operation-modal.tsx:226',
+    origin: 'ui',
     what: 'Collection picker, popup width matched to trigger',
   },
   {
     source: 'components/target/proposals/editor.tsx:459',
+    origin: 'ui',
     what: 'Service picker held permanently at value=""',
   },
   {
     source: 'pages/traces/target-traces-filter.tsx:528',
+    origin: 'ui',
     what: 'Time period presets, remounted by key to reset the trigger',
   },
   {
     source: 'components/project/alerts/create-alert.tsx + create-channel.tsx',
-    what: 'v2/select, a native <select> rather than the Radix one',
+    origin: 'v2',
+    what: 'A native <select> rather than the Radix one',
     coveredBy: 'v2 native select',
   },
 ] as const;
@@ -151,18 +181,20 @@ export const NavigationPickers = createPreview({
     <div className="flex flex-col gap-8">
       <CallSite
         source="components/layouts/organization-selectors.tsx:33"
+        origin="ui"
         note="Trigger has no width of its own here, so it fills whatever the nav gives it."
       >
         <NavigationPicker kind="organization" options={['the-guild', 'acme-corp', 'personal']} />
       </CallSite>
-      <CallSite source="components/layouts/project-selector.tsx:60">
+      <CallSite source="components/layouts/project-selector.tsx:60" origin="ui">
         <NavigationPicker kind="project" options={['graphql-api', 'internal-tools', 'website']} />
       </CallSite>
-      <CallSite source="components/layouts/target-selector.tsx:105">
+      <CallSite source="components/layouts/target-selector.tsx:105" origin="ui">
         <NavigationPicker kind="target" options={['production', 'staging', 'development']} />
       </CallSite>
       <CallSite
         source="components/layouts/project-selector.tsx:91"
+        origin="ui"
         note="What renders while the query is in flight, in place of the select."
       >
         <div className="bg-neutral-5 h-5 w-48 animate-pulse rounded-full" />
@@ -185,7 +217,9 @@ function SortSelect(props: { scope: 'project' | 'target'; transparentTrigger?: b
 
   return (
     <Select value={sortBy} onValueChange={setSortBy}>
-      <SelectTrigger className={props.transparentTrigger ? 'hover:bg-neutral-2 bg-transparent' : ''}>
+      <SelectTrigger
+        className={props.transparentTrigger ? 'hover:bg-neutral-2 bg-transparent' : ''}
+      >
         {sortBy === 'versions' ? 'Schema Versions' : sortBy === 'name' ? 'Name' : 'Requests'}
       </SelectTrigger>
       <SelectContent>
@@ -214,12 +248,14 @@ export const SortSelects = createPreview({
     <div className="flex flex-col gap-8">
       <CallSite
         source="pages/organization.tsx:224"
+        origin="ui"
         note="Bare trigger, so it takes the default bordered treatment."
       >
         <SortSelect scope="project" />
       </CallSite>
       <CallSite
         source="pages/project.tsx:237"
+        origin="ui"
         note="Same control one level down, but the trigger is overridden to transparent with a hover fill. One of the two is drift; worth deciding which."
       >
         <SortSelect scope="target" transparentTrigger />
@@ -273,23 +309,26 @@ export const PermissionSelects = createPreview({
   label: 'Permission selects',
   render: () => (
     <div className="flex flex-col gap-8">
-      <CallSite source="components/organization/Permissions.tsx:50">
+      <CallSite source="components/organization/Permissions.tsx:50" origin="ui">
         <LegacyScopePicker />
       </CallSite>
       <CallSite
         source="components/organization/Permissions.tsx:50"
+        origin="ui"
         note="noDowngrade: options below the member's current scope are disabled and explain themselves on a second line."
       >
         <LegacyScopePicker noDowngrade />
       </CallSite>
       <CallSite
         source="components/organization/Permissions.tsx:51"
+        origin="ui"
         note="Disabled outright when the viewer cannot manage the scope. The whole select is then wrapped in a tooltip that says why."
       >
         <LegacyScopePicker disabled />
       </CallSite>
       <CallSite
         source="components/organization/members/permission-selector.tsx:226"
+        origin="ui"
         note="Two fixed options, one per permission row, disabled when the permission is read-only or has an unmet dependency."
       >
         <PermissionRowSelect />
@@ -382,6 +421,7 @@ export const CdnArtifactModal = createPreview({
   render: () => (
     <CallSite
       source="components/layouts/target.tsx:375, :403"
+      origin="ui"
       note="Pick a non-default graph and the artifact options below collapse to SDL and Supergraph. Nothing explains why the others went grey."
     >
       <CdnArtifactSelects />
@@ -435,6 +475,7 @@ export const AccessTokenExpiration = createPreview({
   render: () => (
     <CallSite
       source="create-access-token-sheet-content.tsx:276 (and the personal + project sheets)"
+      origin="ui"
       note="Three byte-identical copies. The label, description and validation message around it come from base/form, which is what makes this the awkward one to migrate."
     >
       <ExpirationSelect />
@@ -545,30 +586,35 @@ export const OneOffs = createPreview({
     <div className="flex flex-col gap-8">
       <CallSite
         source="components/target/insights/save-filter-button.tsx:210"
+        origin="ui"
         note='The only variant="inset" pair in the app: transparent trigger, and a popup tinted to sit on the popover it lives inside.'
       >
         <SaveLocationSelect />
       </CallSite>
       <CallSite
         source="components/target/laboratory/create-operation-modal.tsx:226"
+        origin="ui"
         note="The only popup sized to its trigger rather than its content, and the only one with a description line that can be empty."
       >
         <CollectionSelect />
       </CallSite>
       <CallSite
         source="components/target/proposals/editor.tsx:459"
+        origin="ui"
         note='Held at value="" forever, so the trigger always reads "Select a service...". It behaves as an action, not a selection.'
       >
         <ServiceSelect />
       </CallSite>
       <CallSite
         source="components/target/proposals/editor.tsx:464"
+        origin="ui"
         note="Disabled when there is nothing left to add. The trigger keeps its prompt text either way."
       >
         <ServiceSelect empty />
       </CallSite>
       <CallSite
         source="pages/traces/target-traces-filter.tsx:528"
+        origin="ui"
         note='Choosing "Custom" reveals a date-range popover beside it. The select is remounted by key to reset the trigger when filters are cleared.'
       >
         <div className="w-[280px]">
@@ -590,6 +636,7 @@ export const V2NativeSelect = createPreview({
   render: () => (
     <CallSite
       source="components/project/alerts/create-alert.tsx:7, create-channel.tsx:7"
+      origin="v2"
       note="v2/select is a native element styled to look close to the Radix one. Replacing it changes the open-state appearance on both alert forms."
     >
       <div className="flex flex-col gap-4">
