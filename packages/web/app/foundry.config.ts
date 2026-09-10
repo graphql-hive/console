@@ -25,6 +25,7 @@ export default defineConfig({
             { label: 'StatCard' },
             { label: 'Form' },
             { label: 'Input' },
+            { label: 'Overlays' },
             { label: 'CopyChip' },
           ],
         },
@@ -65,6 +66,7 @@ export default defineConfig({
       children: [
         { label: 'Form' },
         { label: 'Input' },
+        { label: 'Overlays' },
         { label: 'Popover' },
         { label: 'Select' },
         { label: 'Switch' },
