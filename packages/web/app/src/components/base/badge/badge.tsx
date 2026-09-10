@@ -1,20 +1,14 @@
-import { type ComponentProps } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
-import { Slot } from '@radix-ui/react-slot';
 
 const badgeVariants = cva(
-  'inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-accent focus-visible:ring-accent_30 focus-visible:ring-[3px] aria-invalid:ring-critical_30 aria-invalid:border-critical transition-[color,box-shadow] overflow-hidden',
+  'inline-flex cursor-default items-center justify-center overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 text-xs w-fit shrink-0',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-neutral-6 text-white [a&]:hover:bg-neutral-7',
-        secondary:
-          'border-transparent bg-neutral-2 text-neutral-11 [a&]:hover:bg-neutral-3 [a&]:hover:text-neutral-12',
-        destructive:
-          'border-transparent bg-red-800 text-white [a&]:hover:bg-red-800_80 focus-visible:ring-red-800_30',
-        outline:
-          'border-neutral-5 text-neutral-11 [a&]:hover:bg-neutral-3 [a&]:hover:text-neutral-12',
+        default: 'border-transparent bg-neutral-6 font-medium text-neutral-11',
+        secondary: 'border-transparent bg-neutral-4 font-medium text-neutral-11',
+        destructive: 'border-transparent bg-red-600 font-medium text-neutral-2',
+        outline: 'border-neutral-5 font-normal text-neutral-11',
       },
     },
     defaultVariants: {
@@ -23,17 +17,11 @@ const badgeVariants = cva(
   },
 );
 
-function Badge({
-  className,
-  variant,
-  asChild = false,
-  ...props
-}: ComponentProps<'span'> & VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : 'span';
+type BadgeProps = {
+  content: string;
+  variants?: VariantProps<typeof badgeVariants>;
+};
 
-  return (
-    <Comp data-slot="badge" className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+export function Badge({ content, variants }: BadgeProps) {
+  return <span className={badgeVariants({ ...variants })}>{content}</span>;
 }
-
-export { Badge, badgeVariants };

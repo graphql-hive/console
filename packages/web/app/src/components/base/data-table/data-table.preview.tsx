@@ -38,7 +38,10 @@ const COLUMNS: ColumnDef<Check, any>[] = [
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => (
-      <Badge variant={STATUS_VARIANT[row.original.status]}>{row.original.status}</Badge>
+      <Badge
+        content={row.original.status}
+        variants={{ variant: STATUS_VARIANT[row.original.status] }}
+      />
     ),
   },
   { accessorKey: 'changes', header: 'Changes' },

@@ -1,4 +1,4 @@
-import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Card } from './card';
 
 export const nav: NavPath = 'Base/Primitives/Card';
@@ -134,25 +134,18 @@ export const TitleSize = createPreview(() => (
 ));
 
 export const Playground = createPreview({
-  controls: defineControls({
-    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
-    titleSize: { type: 'radio', options: ['default', 'large', 'xlarge'], default: 'default' },
-    bodyPadding: { type: 'radio', options: ['default', 'none'], default: 'default' },
-    interactive: { type: 'boolean', default: false },
+  controls: controlsFor(Card, {
+    variants: {
+      onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
+      titleSize: { type: 'radio', options: ['default', 'large', 'xlarge'], default: 'default' },
+      bodyPadding: { type: 'radio', options: ['default', 'none'], default: 'default' },
+      interactive: { type: 'boolean', default: false },
+    },
     title: { type: 'text', default: 'Alert rule' },
     description: { type: 'text', default: 'Notify the team when p99 latency crosses.' },
   }),
   render: v => (
-    <Card
-      variants={{
-        onSurface: v.onSurface,
-        titleSize: v.titleSize,
-        bodyPadding: v.bodyPadding,
-        interactive: v.interactive,
-      }}
-      title={v.title}
-      description={v.description}
-    >
+    <Card variants={v.variants} title={v.title} description={v.description}>
       {/* Tinted so `bodyPadding` is visible; a card with no children has no body to inset. */}
       <div className="bg-accent/20 text-neutral-11 p-4 text-center text-xs">Body</div>
     </Card>

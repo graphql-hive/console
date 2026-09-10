@@ -2404,8 +2404,8 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
       react-foundry:
-        specifier: 0.0.14
-        version: 0.0.14(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3)
+        specifier: 0.0.15
+        version: 0.0.15(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3)
       react-helmet-async:
         specifier: 2.0.5
         version: 2.0.5(react@18.3.1)
@@ -17100,8 +17100,8 @@ packages:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
 
-  react-foundry@0.0.14:
-    resolution: {integrity: sha512-DkB9UO600j8uyXAV48E2w0P8qi6GuqQyoW3vRdPJP/vjbDqCF8nWJBSAYQUnXcBePNrxZ03taQ1+70fpyU77Dw==}
+  react-foundry@0.0.15:
+    resolution: {integrity: sha512-VZr5d2F4XPWRr8J4hUHMLNpexZVWly+simTmCeo+qayJFOUCvvtXFsiXB7gsGvYY/nxd2kg974+z/MeHWe1dfw==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -39369,7 +39369,7 @@ snapshots:
       - tsx
       - yaml
 
-  react-foundry@0.0.14(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3):
+  react-foundry@0.0.15(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3):
     dependencies:
       '@vitejs/plugin-react': 6.0.3(vite@8.1.5(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       axe-core: 4.11.0
