@@ -4,10 +4,6 @@ import { cn } from '@/lib/utils';
 
 export const cardVariants = cva('rounded-md border', {
   variants: {
-    // `base` has no fill, so it leans on the stronger border to read against the page.
-    // `raised` inverts with the theme because the page does: index.css sets the body to
-    // neutral-3 in light and neutral-2 in dark, so a flat fill would vanish in one of them.
-    // These two values keep the card one step off the page either way.
     onSurface: {
       base: 'border-neutral-5',
       raised: 'bg-neutral-2 dark:bg-neutral-3 border-neutral-4',
@@ -70,9 +66,6 @@ export function Card({ children, title, description, variants }: CardProps) {
           {description ? <p className="text-neutral-10 text-[13px]">{description}</p> : null}
         </div>
       ) : null}
-      {/* The header already supplies the top inset when it is present, so the body drops it to
-          avoid doubling the gap. Without a header the body owns all four sides. `pt-0` is inert
-          under `bodyPadding: 'none'`, so the two variants need no compound case. */}
       {children ? (
         <div className={cn(cardBodyVariants({ ...variants }), hasHeader && 'pt-0')}>{children}</div>
       ) : null}

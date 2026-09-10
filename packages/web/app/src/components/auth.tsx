@@ -28,7 +28,6 @@ export function AuthCard({
       <Card
         variants={{ onSurface: 'raised', titleSize: 'xlarge' }}
         title={title}
-        // The span carries the test hook, since the surrounding `p` is Card's own.
         description={
           description ? (
             <span data-cy="auth-card-header-description">{description}</span>

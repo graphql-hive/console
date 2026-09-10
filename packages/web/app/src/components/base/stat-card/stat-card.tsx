@@ -46,8 +46,6 @@ export function StatCard({ title, value, caption, icon: Icon, hint, variants }: 
             </TooltipProvider>
           ) : null}
         </div>
-        {/* `shrink-0` so a title that wraps to two lines ("Relative Request Frequency") pushes the
-            icon rather than squashing it. */}
         {Icon ? <Icon className="text-neutral-10 size-4 shrink-0" /> : null}
       </div>
       <div className="text-neutral-12 mt-2 text-2xl font-bold">{value}</div>

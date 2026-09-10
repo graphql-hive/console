@@ -11,12 +11,10 @@ const radioItemVariants = cva(
         'as-button': 'gap-1.5 rounded-xs px-3 py-1.5 text-[13px] font-medium',
         'as-card': 'gap-4 rounded-md p-4 text-left text-sm',
       },
-      // Surfaces differ only in resting/hover fill, so the pairing lives in compoundVariants.
       onSurface: { base: '', floating: '' },
       orientation: { horizontal: '', vertical: '' },
     },
     compoundVariants: [
-      // Cards fill the stack when stacked, and share the row evenly when side by side.
       { variant: 'as-card', orientation: 'vertical', class: 'w-full' },
       { variant: 'as-card', orientation: 'horizontal', class: 'flex-1 basis-0' },
       {
@@ -53,19 +51,16 @@ const radioItemVariants = cva(
 
 const radioGroupVariants = cva('flex', {
   variants: {
-    // Direction is the orientation's job; variant sets spacing and cross-axis sizing.
     orientation: {
       horizontal: 'flex-row',
       vertical: 'flex-col',
     },
     variant: {
-      // Cards stretch so a row of them shares one height and a stack shares one width.
       'as-card': 'items-stretch gap-2',
       'as-button': 'gap-1',
     },
   },
   compoundVariants: [
-    // Buttons hug their content on the cross axis instead of stretching.
     { variant: 'as-button', orientation: 'horizontal', class: 'items-center' },
     { variant: 'as-button', orientation: 'vertical', class: 'items-start' },
   ],
@@ -74,11 +69,6 @@ const radioGroupVariants = cva('flex', {
 
 type RadioVariants = VariantProps<typeof radioItemVariants>;
 
-/**
- * `value` identifies the option either way. Past that an item is one of two shapes: the built-in
- * label/description layout, or arbitrary `content` when a call site needs its own body (e.g. the
- * billing plan cards, or a label preceded by a status dot).
- */
 export type RadioItemProps = {
   value: string;
   /**
@@ -162,11 +152,9 @@ export function RadioGroup({
   value,
   disabled,
   variant,
-  // Only `as-card` has a floating treatment in the design.
   onSurface,
   orientation,
 }: RadioGroupProps) {
-  // Buttons read as a segmented row, cards as a stack, so each variant picks its own default.
   const flow = orientation ?? (variant === 'as-card' ? 'vertical' : 'horizontal');
 
   return (

@@ -5,10 +5,6 @@
  * `./floating/shared-styles.ts`.
  */
 
-// ---------------------------------------------------------------------------
-// Segmented triggers (trigger-button, select trigger, filter-dropdown chip)
-// ---------------------------------------------------------------------------
-
 /** Separator between segments in a segmented trigger (label | icon, label | count | ×). */
 export const segmentSeparator = 'border-l [border-left-color:inherit]';
 
@@ -16,12 +12,7 @@ export const segmentSeparator = 'border-l [border-left-color:inherit]';
 export const segmentButton =
   'px-2.5 py-1.5 text-[13px] transition-colors cursor-pointer hover:bg-neutral-4/50 hover:text-neutral-12';
 
-/** Disabled styling for any interactive base component. */
 export const disabledStyle = { opacity: 0.5, pointerEvents: 'none' } as const;
-
-// ---------------------------------------------------------------------------
-// Scrolling
-// ---------------------------------------------------------------------------
 
 /**
  * Vertical scroll container with a thin, muted scrollbar. Use anywhere content can overflow

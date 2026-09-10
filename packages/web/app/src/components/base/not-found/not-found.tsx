@@ -10,11 +10,6 @@ const illustrations = {
   connection,
 };
 
-/**
- * The copy the project and target layouts and the alert-rule page all show for a resource that is
- * missing or not visible to you. Shared rather than repeated, since all three are word for word
- * identical and it used to be hardcoded inside `ResourceNotFoundComponent`.
- */
 export const resourceAccessDescription = (
   <>
     <p>It seems like you do not have access to this resource or it does not exist.</p>
@@ -26,14 +21,11 @@ export const resourceAccessDescription = (
 // viewport is narrow enough for a long title to reach the edges.
 export const notFoundVariants = cva('flex items-center justify-center px-6', {
   variants: {
-    // `centered` stacks illustration over text. `horizontal` puts them side by side above the
-    // `sm` breakpoint and falls back to stacked below it, so narrow viewports get one shape.
     layout: {
       centered: 'flex-col gap-2.5',
       horizontal: '',
     },
-    // The route-level 404 replaces the whole page, so it owns the viewport. Every other call site
-    // sits inside a layout and fills the content region instead.
+
     fullScreen: {
       true: 'h-screen',
       false: 'h-full flex-1 py-6',
@@ -68,7 +60,6 @@ export function NotFound({
   const router = useRouter();
 
   const image = (
-    // Decorative: the title states what was not found, so alt text would only repeat it.
     <img
       src={illustrations[variants?.illustration ?? 'ghost']}
       alt=""
@@ -83,7 +74,6 @@ export function NotFound({
   const descriptionEl = description ? (
     <div className="text-neutral-10 text-sm">{description}</div>
   ) : null;
-  // Wrapped for the margin, since base/button takes no className.
   const backButton = showBackButton ? (
     <div className="mt-2">
       <Button variant="outline" onClick={router.history.back}>

@@ -21,7 +21,6 @@ export const EmptyList = ({
   className?: string;
 }): ReactElement => {
   return (
-    // `grid` so the card fills the height `grow` claims; grid items stretch on the block axis.
     <div className={cn('grid max-h-screen min-h-[400px] grow', className)}>
       <Card variants={{ onSurface: 'raised', bodyPadding: 'none' }}>
         <div className="flex cursor-default flex-col items-center gap-y-2 p-4">

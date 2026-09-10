@@ -9,13 +9,6 @@ import { subDays } from '@/lib/date-time';
 import { useFormattedNumber } from '@/lib/hooks';
 import { pluralize } from '@/lib/utils';
 
-/**
- * The summary tile used for a project on the organization page and for a target on the project
- * page: a full-bleed request sparkline over a name, with request and schema-version counts.
- *
- * The link is a render prop rather than `to`/`params` props, so each call site keeps TanStack's
- * route and param checking on its own literal route.
- */
 export function ResourceCard(props: {
   /** Names the resource in the schema-versions tooltip, and reserves a skeleton line for `subtitle`. */
   kind: 'project' | 'target';

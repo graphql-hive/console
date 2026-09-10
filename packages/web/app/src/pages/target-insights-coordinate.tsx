@@ -405,8 +405,6 @@ function SchemaCoordinateView(props: {
                   />
                 )}
               </AutoSizer>
-              {/* Caption and chart share one gate. They were two elements with two conditions,
-                  which is how the caption came to render while the chart was hidden. */}
               <div className={cn('pt-5', showFieldLevelMetrics ? 'show' : 'hidden')}>
                 <p className="text-neutral-10 pb-4 text-[13px]">
                   Number of times the coordinate {props.coordinate} has resolved over time
