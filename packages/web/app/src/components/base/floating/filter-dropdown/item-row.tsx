@@ -49,25 +49,25 @@ export const ItemRow = memo(function ItemRow({
 
   return (
     <Menu
+      submenu
       trigger={
-        <MenuItem onClick={() => onToggle(item)}>
+        <div onClick={() => onToggle(item)}>
           <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
           <ItemName name={item.name} unavailable={unavailable} />
-        </MenuItem>
+        </div>
       }
       openOnHover
       delay={100}
       closeDelay={150}
-      sections={[
+      content={
         <ValuesSubPanel
-          key="values"
           itemName={item.name}
           values={item.values}
           selectedValues={selected ? (selection?.values ?? null) : []}
           onValuesChange={values => onValuesChange(item, values)}
           valuesLabel={valuesLabel}
-        />,
-      ]}
+        />
+      }
     />
   );
 });

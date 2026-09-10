@@ -42,16 +42,15 @@ export function TextFilterChip({
           align="start"
           maxWidth="lg"
           stableWidth
-          sections={[
+          content={
             <FloatingSearch
-              key="input"
               label={label}
               value={value}
               onSearch={onChange}
               placeholder={placeholder}
               standalone
-            />,
-          ]}
+            />
+          }
         />
       </span>
 

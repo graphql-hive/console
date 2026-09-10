@@ -13,7 +13,9 @@ import { cva } from 'class-variance-authority';
 
 /** Base classes shared by all floating panels (menu, select, popover). */
 export const floatingBaseClass =
-  'z-50 text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5';
+  // `--available-height` comes from the positioner: the room left between the anchor and the
+  // viewport edge. Without the cap a long menu runs off screen instead of scrolling.
+  'z-50 text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 max-h-[var(--available-height)] overflow-y-auto thin-scrollbar';
 
 /** Floating panel variant with configurable padding and width constraints. */
 export const floatingVariants = cva(floatingBaseClass, {
@@ -34,12 +36,24 @@ export const floatingVariants = cva(floatingBaseClass, {
     minWidth: {
       default: 'min-w-[12rem]',
       none: 'min-w-0',
+      sm: 'min-w-40',
+      md: 'min-w-60',
+    },
+    /**
+     * A fixed width, for panels that should not resize with their content. `minWidth`/`maxWidth`
+     * are the usual choice; reach for this only when every state of the panel wants one width,
+     * as the row-action menus in the settings tables do.
+     */
+    width: {
+      none: '',
+      sm: 'w-40',
     },
   },
   defaultVariants: {
     padding: 'sm',
     maxWidth: 'none',
     minWidth: 'none',
+    width: 'none',
   },
 });
 

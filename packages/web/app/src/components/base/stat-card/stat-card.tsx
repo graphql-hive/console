@@ -2,7 +2,7 @@ import { type ComponentType, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { InfoIcon } from 'lucide-react';
 import { Card, cardVariants } from '@/components/base/card/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 
 const statTitleVariants = cva('text-sm font-medium', {
   variants: {
@@ -36,14 +36,14 @@ export function StatCard({ title, value, caption, icon: Icon, hint, variants }: 
         <div className="flex items-center gap-1.5">
           <h3 className={statTitleVariants({ ...variants })}>{title}</h3>
           {hint ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
+            <Tooltip
+              trigger={
+                <button type="button" aria-label="What this measures">
                   <InfoIcon className="text-neutral-10 size-4" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[300px] text-left text-sm">{hint}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </button>
+              }
+              content={hint}
+            />
           ) : null}
         </div>
         {/* `shrink-0` so a title that wraps to two lines ("Relative Request Frequency") pushes the
