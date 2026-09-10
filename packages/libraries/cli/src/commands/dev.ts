@@ -1,14 +1,17 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { parse } from 'graphql';
-import { Flags } from '@oclif/core';
 import {
-  composeServices,
-  compositionHasErrors,
-  CompositionResult,
-} from '@theguild/federation-composition';
+  composeSupergraphLocally,
+  composeSupergraphRemotely,
+  InvalidSupergraphResultError,
+  LocalSupergraphCompositionError,
+  RemoteSupergraphCompositionError,
+  SupergraphRegistryApiError,
+  type Logger as LegacyLogger,
+} from '@graphql-hive/core';
+import { Flags } from '@oclif/core';
 import Command from '../base-command';
-import { graphql } from '../gql';
+import { makeFragmentData } from '../gql';
 import * as GraphQLSchema from '../gql/graphql';
 import { graphqlEndpoint } from '../helpers/config';
 import {
@@ -24,40 +27,20 @@ import {
   ServiceAndUrlLengthMismatch,
   UnexpectedError,
 } from '../helpers/errors';
-import { loadSchema } from '../helpers/schema';
+import { loadSchema, RenderErrors_SchemaErrorConnectionFragment } from '../helpers/schema';
 import * as TargetInput from '../helpers/target-input';
 import { invariant } from '../helpers/validation';
-
-const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
-  mutation CLI_SchemaComposeMutation($input: SchemaComposeInput!) {
-    schemaCompose(input: $input) {
-      __typename
-      ... on SchemaComposeSuccess {
-        valid
-        compositionResult {
-          supergraphSdl
-          errors {
-            ...RenderErrors_SchemaErrorConnectionFragment
-          }
-        }
-      }
-      ... on SchemaComposeError {
-        message
-      }
-    }
-  }
-`);
 
 type ServiceName = string;
 type Sdl = string;
 
-type ServiceInput = {
+export type ServiceInput = {
   name: ServiceName;
   url: string;
   sdl?: string;
 };
 
-type Service = {
+export type Service = {
   name: ServiceName;
   url: string;
   sdl: Sdl;
@@ -77,6 +60,57 @@ type ServiceWithSource = {
         url: string;
       };
 };
+
+export async function resolveServices(
+  services: ServiceInput[],
+  logger: LegacyLogger,
+): Promise<Array<ServiceWithSource>> {
+  return await Promise.all(
+    services.map(async input => {
+      if (input.sdl) {
+        return {
+          name: input.name,
+          url: input.url,
+          sdl: await resolveSdlFromPath(input.sdl, logger),
+          input: {
+            kind: 'file' as const,
+            path: input.sdl,
+          },
+        };
+      }
+
+      return {
+        name: input.name,
+        url: input.url,
+        sdl: await resolveSdlFromUrl(input.name, input.url, logger),
+        input: {
+          kind: 'url' as const,
+          url: input.url,
+        },
+      };
+    }),
+  );
+}
+
+async function resolveSdlFromPath(path: string, logger: LegacyLogger) {
+  const sdl = await loadSchema(null, path, { logger });
+  invariant(typeof sdl === 'string' && sdl.length > 0, `Read empty schema from ${path}`);
+
+  return sdl;
+}
+
+async function resolveSdlFromUrl(serviceName: string, url: string, logger: LegacyLogger) {
+  const sdl = await loadSchema('only-federation-introspection', url, { logger }).catch(err => {
+    logger.error(err);
+    throw err;
+  });
+
+  if (!sdl) {
+    throw new IntrospectionError(serviceName);
+  }
+
+  return sdl;
+}
 
 export default class Dev extends Command<typeof Dev> {
   static description = [
@@ -309,49 +343,28 @@ export default class Dev extends Command<typeof Dev> {
   }
 
   private async composeLocally(input: {
-    services: Array<{
-      name: string;
-      url: string;
-      sdl: string;
-    }>;
+    services: Service[];
     write: string;
     onError: (error: HiveCLIError) => void | never;
   }) {
-    const compositionResult = await new Promise<CompositionResult>((resolve, reject) => {
-      try {
-        resolve(
-          composeServices(
-            input.services.map(service => ({
-              name: service.name,
-              url: service.url,
-              typeDefs: parse(service.sdl),
-            })),
-          ),
-        );
-      } catch (error) {
-        // @note: composeServices should not throw.
-        // This reject is for the offchance that something happens under the hood that was not expected.
-        // Without it, if something happened then the promise would hang.
-        reject(error);
+    let supergraphSdl: string;
+    try {
+      supergraphSdl = await composeSupergraphLocally(input.services);
+    } catch (error) {
+      if (error instanceof LocalSupergraphCompositionError) {
+        input.onError(new LocalCompositionError(error.compositionResult));
+        return;
       }
-    });
-
-    if (compositionHasErrors(compositionResult)) {
-      input.onError(new LocalCompositionError(compositionResult));
-      return;
+      throw error;
     }
 
     this.logSuccess('Composition successful');
     this.log(`Saving supergraph schema to ${input.write}`);
-    await writeFile(resolve(process.cwd(), input.write), compositionResult.supergraphSdl, 'utf-8');
+    await writeFile(resolve(process.cwd(), input.write), supergraphSdl, 'utf-8');
   }
 
   private async compose(input: {
-    services: Array<{
-      name: string;
-      url: string;
-      sdl: string;
-    }>;
+    services: Service[];
     registry: string;
     token: string;
     write: string;
@@ -359,52 +372,44 @@ export default class Dev extends Command<typeof Dev> {
     target: GraphQLSchema.TargetReferenceInput | null;
     onError: (error: HiveCLIError) => void | never;
   }) {
-    const result = await this.registryApi(input.registry, input.token).request({
-      operation: CLI_SchemaComposeMutation,
-      variables: {
-        input: {
-          useLatestComposableVersion: !input.unstable__forceLatest,
-          services: input.services.map(service => ({
-            name: service.name,
-            url: service.url,
-            sdl: service.sdl,
-          })),
-          target: input.target,
-        },
-      },
-    });
-
-    if (result.schemaCompose.__typename === 'SchemaComposeError') {
-      input.onError(new APIError(result.schemaCompose.message));
-      return;
-    }
-
-    const { valid, compositionResult } = result.schemaCompose;
-
-    if (!valid) {
-      // @note: Can this actually be invalid without any errors?
-      if (compositionResult.errors) {
-        input.onError(new RemoteCompositionError(compositionResult.errors));
+    let supergraphSdl: string;
+    try {
+      supergraphSdl = await composeSupergraphRemotely({
+        services: input.services,
+        registry: input.registry,
+        token: input.token,
+        unstable__forceLatest: input.unstable__forceLatest,
+        target: input.target,
+        version: this.config.version,
+        logger: this.logger,
+      });
+    } catch (error) {
+      if (error instanceof SupergraphRegistryApiError) {
+        input.onError(new APIError(error.message));
         return;
       }
-
-      input.onError(new InvalidCompositionResultError(compositionResult.supergraphSdl));
-      return;
-    }
-
-    if (typeof compositionResult.supergraphSdl !== 'string') {
-      input.onError(new InvalidCompositionResultError(compositionResult.supergraphSdl));
-      return;
+      if (error instanceof RemoteSupergraphCompositionError) {
+        input.onError(
+          new RemoteCompositionError(
+            makeFragmentData(
+              { edges: error.errors.map(e => ({ node: { message: e.message } })) },
+              RenderErrors_SchemaErrorConnectionFragment,
+            ),
+          ),
+        );
+        return;
+      }
+      if (error instanceof InvalidSupergraphResultError) {
+        input.onError(new InvalidCompositionResultError(error.supergraphSdl));
+        return;
+      }
+      throw error;
     }
 
     this.logSuccess('Composition successful');
     this.log(`Saving supergraph schema to ${input.write}`);
     try {
-      await writeFile(
-        resolve(process.cwd(), input.write),
-        compositionResult.supergraphSdl,
-        'utf-8',
-      );
+      await writeFile(resolve(process.cwd(), input.write), supergraphSdl, 'utf-8');
     } catch (e) {
       input.onError(new UnexpectedError(e));
     }
@@ -471,54 +476,6 @@ export default class Dev extends Command<typeof Dev> {
   }
 
   private async resolveServices(services: ServiceInput[]): Promise<Array<ServiceWithSource>> {
-    return await Promise.all(
-      services.map(async input => {
-        if (input.sdl) {
-          return {
-            name: input.name,
-            url: input.url,
-            sdl: await this.resolveSdlFromPath(input.sdl),
-            input: {
-              kind: 'file' as const,
-              path: input.sdl,
-            },
-          };
-        }
-
-        return {
-          name: input.name,
-          url: input.url,
-          sdl: await this.resolveSdlFromUrl(input.name, input.url),
-          input: {
-            kind: 'url' as const,
-            url: input.url,
-          },
-        };
-      }),
-    );
-  }
-
-  private async resolveSdlFromPath(path: string) {
-    const sdl = await loadSchema(null, path, {
-      logger: this.logger,
-    });
-    invariant(typeof sdl === 'string' && sdl.length > 0, `Read empty schema from ${path}`);
-
-    return sdl;
-  }
-
-  private async resolveSdlFromUrl(serviceName: string, url: string) {
-    const sdl = await loadSchema('only-federation-introspection', url, {
-      logger: this.logger,
-    }).catch(err => {
-      this.logFailure(err);
-      throw err;
-    });
-
-    if (!sdl) {
-      throw new IntrospectionError(serviceName);
-    }
-
-    return sdl;
+    return await resolveServices(services, this.logger);
   }
 }
