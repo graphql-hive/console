@@ -53,8 +53,6 @@ export default defineConfig({
         // Data and layout
         { label: 'DataTable' },
         { label: 'DescriptionList' },
-        { label: 'PageLead' },
-        { label: 'NotFound' },
       ],
     },
     // The `ui/` and `v2/` primitives queued for migration to `base/`, rendered as they ship
@@ -68,6 +66,7 @@ export default defineConfig({
         { label: 'Popover' },
         { label: 'Select' },
         { label: 'Switch' },
+        { label: 'Textarea' },
         { label: 'Tooltip' },
       ],
     },
@@ -76,7 +75,7 @@ export default defineConfig({
     // compositions that actually ship.
     {
       label: 'Components',
-      children: [{ label: 'BillingPlanPicker' }],
+      children: [{ label: 'BillingPlanPicker' }, { label: 'PageLead' }, { label: 'NotFound' }],
     },
   ],
   theme: {
