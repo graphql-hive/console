@@ -17,7 +17,7 @@ export const DocsLink = ({ href, icon, text }: DocsLinkProps) => {
       href={fullUrl}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center whitespace-pre-wrap p-0"
+      className="hover:text-neutral-12 mt-2 inline-flex items-center whitespace-pre-wrap p-0"
     >
       {icon ?? <Book className="mr-2 size-4" />}
       {text}

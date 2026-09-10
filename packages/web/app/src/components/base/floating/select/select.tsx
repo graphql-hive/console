@@ -80,7 +80,6 @@ export function Select({
           trigger ??
           ((
             <Button
-              size="default"
               label={selectedLabel ?? placeholder}
               rightIcon={{ icon: ChevronDown, withSeparator: true }}
               disabled={disabled}

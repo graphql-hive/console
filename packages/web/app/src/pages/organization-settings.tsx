@@ -267,23 +267,23 @@ const OrganizationSettingsContent = (props: {
     <div className="space-y-12">
       <ResourceDetails id={organization.id} label="Organization ID" />
       {organization.viewerCanModifySlug && (
-        <Form {...slugForm}>
-          <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
-            <SubPageLayout>
-              <SubPageLayoutHeader
-                subPageTitle="Organization Slug"
-                description={
-                  <p>
-                    This is your organization's URL namespace on Hive Console. Changing it{' '}
-                    <span className="font-bold">will invalidate</span> any existing links to your
-                    organization.
-                  </p>
-                }
-                docsLink={{
-                  href: '/schema-registry/management/organizations#change-slug-of-organization',
-                  text: 'Read more in the documentation',
-                }}
-              />
+        <>
+          <SubPageLayoutHeader
+            subPageTitle="Organization Slug"
+            description={
+              <p>
+                This is your organization's URL namespace on Hive Console. Changing it{' '}
+                <span className="font-bold">will invalidate</span> any existing links to your
+                organization.
+              </p>
+            }
+            docsLink={{
+              href: '/schema-registry/management/organizations#change-slug-of-organization',
+              text: 'Read more in the documentation',
+            }}
+          />
+          <Form {...slugForm}>
+            <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
               <FormField
                 control={slugForm.control}
                 name="slug"
@@ -304,9 +304,9 @@ const OrganizationSettingsContent = (props: {
               <Button disabled={slugForm.formState.isSubmitting} className="px-10" type="submit">
                 Save
               </Button>
-            </SubPageLayout>
-          </form>
-        </Form>
+            </form>
+          </Form>
+        </>
       )}
 
       {organization.viewerCanModifySlackIntegration && (

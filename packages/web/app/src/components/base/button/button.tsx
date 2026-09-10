@@ -120,7 +120,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
           ? '' // segmented/icon buttons handle their own padding
           : 'h-9 px-4 gap-1.5 text-[13px]';
 
-  console.log('sizClass', { sizeClass, size });
   return (
     <button
       ref={ref}
