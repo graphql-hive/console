@@ -48,6 +48,7 @@ export default defineConfig({
             { label: 'FilterDropdown' },
             { label: 'FilterMenu' },
             { label: 'Search' },
+            { label: 'Tooltip' },
           ],
         },
         // Data and layout
@@ -63,6 +64,13 @@ export default defineConfig({
     {
       label: 'Components',
       children: [{ label: 'BillingPlanPicker' }],
+    },
+    // Temporary. Old and new side by side for the menu migration, one entry per distinct shape
+    // rather than per call site. Delete this group and src/components/base/migration/ once
+    // ui/dropdown-menu is gone.
+    {
+      label: 'Migration',
+      children: [{ label: 'Menu' }],
     },
   ],
   theme: {
