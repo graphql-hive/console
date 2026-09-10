@@ -1,9 +1,9 @@
-import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Badge } from './badge/badge';
 import { Button } from './button/button';
 import { PageLead } from './page-lead';
 
-export const nav: NavPath = 'Base/PageLead';
+export const nav: NavPath = 'Components/PageLead';
 
 export const Default = createPreview(() => (
   <div className="w-[36rem]">
@@ -49,22 +49,20 @@ export const LongDescription = createPreview(() => (
 ));
 
 export const Playground = createPreview({
-  controls: defineControls({
+  controls: controlsFor(PageLead, {
     title: { type: 'text', default: 'Alerts' },
     description: {
       type: 'text',
       default: "Get notified when your API's traffic or latency crosses a threshold.",
     },
-    accessory: { type: 'boolean', default: false },
+    titleAccessory: { type: 'text', default: '' },
   }),
   render: v => (
     <div className="w-[36rem]">
       <PageLead
         title={v.title}
         description={v.description}
-        titleAccessory={
-          v.accessory ? <Badge content="Beta" variants={{ variant: 'secondary' }} /> : undefined
-        }
+        titleAccessory={v.titleAccessory || undefined}
       />
     </div>
   ),

@@ -1,7 +1,7 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { NotFound } from './not-found';
 
-export const nav: NavPath = 'Base/NotFound';
+export const nav: NavPath = 'Components/NotFound';
 
 /**
  * The centred layout, which is what seven of the eight existing call sites use. Sits inside a
