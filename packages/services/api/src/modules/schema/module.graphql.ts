@@ -1104,7 +1104,7 @@ export default gql`
     This is only available for non monolithic projects.
     """
     subgraphDiffs: [SubgraphDiff!]
-    origin: SchemaVersionOrigin!
+    origin: SchemaVersionOrigin! @tag(name: "public")
     """
     Additional metadata associated with the schema version that help identifying it.
     """
@@ -2051,7 +2051,7 @@ export default gql`
   """
   Describes the action that caused the creation of a new SchemaVersion.
   """
-  union SchemaVersionOrigin =
+  union SchemaVersionOrigin @tag(name: "public") =
     | SchemaVersionPublishOrigin
     | SchemaVersionSubgraphRemoveOrigin
     | SchemaVersionPromoteOrigin
@@ -2060,7 +2060,7 @@ export default gql`
     """
     The ID of the target from which the promotion originated.
     """
-    targetId: ID!
+    targetId: ID! @tag(name: "public")
     """
     The slug of the target from which the promotion originated.
     """
@@ -2068,19 +2068,19 @@ export default gql`
     """
     The exact ID of the schema version that was promoted from within the target.
     """
-    schemaVersionId: ID!
+    schemaVersionId: ID! @tag(name: "public")
   }
 
   type SubgraphOriginSubgraphReference {
-    name: String!
-    versionId: ID!
+    name: String! @tag(name: "public")
+    versionId: ID! @tag(name: "public")
   }
 
   type SchemaVersionSubgraphRemoveOrigin {
     """
     The subgraphs that were removed in this version.
     """
-    removedSubgraphs: [SubgraphOriginSubgraphReference!]!
+    removedSubgraphs: [SubgraphOriginSubgraphReference!]! @tag(name: "public")
   }
 
   type SchemaVersionPublishOrigin {
@@ -2088,7 +2088,7 @@ export default gql`
     The subgraphs published as part of this version.
     This value is 'null' for non-federation projects.
     """
-    publishedSubgraphs: [SubgraphOriginSubgraphReference!]
+    publishedSubgraphs: [SubgraphOriginSubgraphReference!] @tag(name: "public")
   }
 
   input SchemaVersionPromoteTargetInput @oneOf {
