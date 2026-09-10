@@ -1,5 +1,15 @@
 # hive
 
+## 11.14.0
+
+### Minor Changes
+
+- [#8461](https://github.com/graphql-hive/console/pull/8461)
+  [`9422d5a`](https://github.com/graphql-hive/console/commit/9422d5a0bed09a86ca23c6b9bd2c148d6c11d4e0)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add SchemaVersion.origin to public schema. This
+  provides necessary info to determine which subgraph was added or removed, or whether a target was
+  promoted to create the schema version.
+
 ## 11.13.0
 
 ### Minor Changes
