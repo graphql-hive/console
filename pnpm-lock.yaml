@@ -584,6 +584,9 @@ importers:
       typescript:
         specifier: 5.7.3
         version: 5.7.3
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(happy-dom@20.10.6)(jsdom@30.0.1(@noble/hashes@2.2.0))(msw@2.12.7(@types/node@25.5.0)(typescript@5.7.3))(vite@8.1.5(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
 
   packages/libraries/core:
     dependencies:
@@ -596,6 +599,9 @@ importers:
       '@graphql-tools/utils':
         specifier: ^12.0.0
         version: 12.0.0(graphql@16.9.0)
+      '@theguild/federation-composition':
+        specifier: ^0.26.1
+        version: 0.26.2(graphql@16.9.0)
       '@whatwg-node/fetch':
         specifier: ^0.10.13
         version: 0.10.13

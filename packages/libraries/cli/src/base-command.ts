@@ -173,15 +173,13 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   }
 
   registryApi(registry: string, token: string) {
-    const requestHeaders = {
-      Authorization: `Bearer ${token}`,
-      'graphql-client-name': 'Hive CLI',
-      'graphql-client-version': this.config.version,
-    };
-
     return graphqlRequest({
       endpoint: registry,
-      additionalHeaders: requestHeaders,
+      additionalHeaders: {
+        Authorization: `Bearer ${token}`,
+        'graphql-client-name': 'Hive CLI',
+        'graphql-client-version': this.config.version,
+      },
       version: this.config.version,
       logger: this.logger,
     });

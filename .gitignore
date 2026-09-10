@@ -145,3 +145,4 @@ docker/docker-compose.override.yml
 test-results/
 
 playwright-report
+CLAUDE.md

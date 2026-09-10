@@ -27,3 +27,18 @@ export {
   hideInjectedTypenames,
   getDefinedRootType,
 } from './client/add-hive-typenames.js';
+export {
+  createDevFetcher,
+  composeSupergraphLocally,
+  composeSupergraphRemotely,
+  SupergraphCompositionError,
+  RegistryApiError,
+  RemoteCompositionError,
+  InvalidRemoteCompositionResultError,
+} from './client/dev-fetcher.js';
+export type {
+  HiveDevFetcher,
+  HiveDevFetcherOptions,
+  HiveDevService,
+  DevFetcherTargetReference,
+} from './client/dev-fetcher.js';
