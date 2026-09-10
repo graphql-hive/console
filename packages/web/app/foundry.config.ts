@@ -81,6 +81,7 @@ export default defineConfig({
         { label: 'Textarea' },
         { label: 'Toast' },
         { label: 'Tooltip' },
+        { label: 'V2Leftovers' },
       ],
     },
     // App components, as opposed to the design-system primitives above. Each preview
