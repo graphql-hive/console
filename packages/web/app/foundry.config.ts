@@ -57,6 +57,14 @@ export default defineConfig({
         { label: 'NotFound' },
       ],
     },
+    // The `ui/` and `v2/` primitives queued for migration to `base/`, rendered as they ship
+    // today. Each entry transcribes every real call site, so a replacement can be judged
+    // against the current thing rather than against invented examples, and so there is a
+    // coverage checklist to migrate through. Entries are deleted as their component lands.
+    {
+      label: 'Inventory',
+      children: [{ label: 'Select' }],
+    },
     // App components, as opposed to the design-system primitives above. Each preview
     // reproduces a real call site so a base-component change can be judged against the
     // compositions that actually ship.
