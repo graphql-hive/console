@@ -1,5 +1,18 @@
 # @graphql-hive/laboratory
 
+## 0.3.0
+
+### Minor Changes
+
+- [#8450](https://github.com/graphql-hive/console/pull/8450)
+  [`017aee2`](https://github.com/graphql-hive/console/commit/017aee21212244951cc8643d93b5d33d1a0f4a6e)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Union and interface fields are
+  now expandable in the query builder: each abstract field lists its possible types as a
+  `... on Type` row, with `__typename` selected automatically so the operation stays valid.
+  Previously an abstract field was written with no selection set and servers rejected the request.
+  Search now finds fields inside those branches, and a field selected inside a hand-written inline
+  fragment checks the row under its own type rather than the parent's.
+
 ## 0.2.7
 
 ### Patch Changes
