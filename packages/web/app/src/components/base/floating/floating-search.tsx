@@ -6,14 +6,9 @@ type FloatingSearchProps = {
   value: string;
   placeholder?: string;
   /**
-   * The input is the panel's only content, rather than a header above a list.
-   *
-   * The menu panel is padded `px-2 pb-2` for item rows, and its top spacing
-   * comes from `first:mt-2` on those items — which an input never gets. So a
-   * lone input sits flush at the top with 8px of dead space beneath it. This
-   * cancels that bottom padding the same way `-mx-2` already cancels the
-   * horizontal padding, and rounds all four corners to match the panel since
-   * there's no list below to divide from.
+   * The input is the panel's only content, rather than a header above a list. Such a panel has no
+   * padding of its own, so there is none for the `-mx-2` bleed to cancel, and all four corners
+   * round since there's no list below to divide from.
    */
   standalone?: boolean;
 };
@@ -26,7 +21,7 @@ export function FloatingSearch({
   standalone = false,
 }: FloatingSearchProps) {
   return (
-    <div className={cn('relative -mx-2', standalone && '-mb-2')}>
+    <div className={cn('relative', !standalone && '-mx-2')}>
       <input
         type="text"
         role="searchbox"
