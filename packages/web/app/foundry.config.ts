@@ -23,6 +23,7 @@ export default defineConfig({
             { label: 'Button' },
             { label: 'Card' },
             { label: 'StatCard' },
+            { label: 'Form' },
             { label: 'Input' },
             { label: 'CopyChip' },
           ],
@@ -62,6 +63,7 @@ export default defineConfig({
     {
       label: 'Inventory',
       children: [
+        { label: 'Form' },
         { label: 'Input' },
         { label: 'Popover' },
         { label: 'Select' },
