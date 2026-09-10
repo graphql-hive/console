@@ -5,10 +5,10 @@ import {
   composeSupergraphLocally,
   composeSupergraphRemotely,
   createDevFetcher,
-  InvalidRemoteCompositionResultError,
-  RegistryApiError,
-  RemoteCompositionError,
-  SupergraphCompositionError,
+  InvalidSupergraphResultError,
+  LocalSupergraphCompositionError,
+  RemoteSupergraphCompositionError,
+  SupergraphRegistryApiError,
 } from '../src/client/dev-fetcher';
 
 function jsonResponse(body: unknown, init?: ResponseInit) {
@@ -26,13 +26,13 @@ test('composes a valid supergraph from local services', async () => {
   expect(supergraphSdl).toContain('hello');
 });
 
-test('throws a SupergraphCompositionError when local composition fails', async () => {
+test('throws a LocalSupergraphCompositionError when local composition fails', async () => {
   await expect(
     composeSupergraphLocally([
       { name: 'a', url: 'http://a', sdl: 'type Query { hello: String }' },
       { name: 'b', url: 'http://b', sdl: 'type Query { hello: Int }' },
     ]),
-  ).rejects.toThrow(SupergraphCompositionError);
+  ).rejects.toThrow(LocalSupergraphCompositionError);
 });
 
 const remoteComposeArgs = {
@@ -68,7 +68,7 @@ test('composes remotely and returns the supergraph SDL', async () => {
   );
 });
 
-test('throws a RegistryApiError when the registry returns a SchemaComposeError', async () => {
+test('throws a SupergraphRegistryApiError when the registry returns a SchemaComposeError', async () => {
   const fetch = vi.fn().mockResolvedValue(
     jsonResponse({
       data: {
@@ -78,11 +78,11 @@ test('throws a RegistryApiError when the registry returns a SchemaComposeError',
   );
 
   await expect(composeSupergraphRemotely({ ...remoteComposeArgs, fetch })).rejects.toThrow(
-    RegistryApiError,
+    SupergraphRegistryApiError,
   );
 });
 
-test('throws a RemoteCompositionError when remote composition is invalid with errors', async () => {
+test('throws a RemoteSupergraphCompositionError when remote composition is invalid with errors', async () => {
   const fetch = vi.fn().mockResolvedValue(
     jsonResponse({
       data: {
@@ -100,11 +100,11 @@ test('throws a RemoteCompositionError when remote composition is invalid with er
 
   const error = await composeSupergraphRemotely({ ...remoteComposeArgs, fetch }).catch(e => e);
 
-  expect(error).toBeInstanceOf(RemoteCompositionError);
+  expect(error).toBeInstanceOf(RemoteSupergraphCompositionError);
   expect(error.errors).toEqual([{ message: 'field conflict' }]);
 });
 
-test('throws an InvalidRemoteCompositionResultError when composition is valid but has no supergraph SDL', async () => {
+test('throws an InvalidSupergraphResultError when composition is valid but has no supergraph SDL', async () => {
   const fetch = vi.fn().mockResolvedValue(
     jsonResponse({
       data: {
@@ -118,7 +118,7 @@ test('throws an InvalidRemoteCompositionResultError when composition is valid bu
   );
 
   await expect(composeSupergraphRemotely({ ...remoteComposeArgs, fetch })).rejects.toThrow(
-    InvalidRemoteCompositionResultError,
+    InvalidSupergraphResultError,
   );
 });
 
@@ -151,9 +151,9 @@ test('does not recompose when resolved service SDLs are unchanged', async () => 
 
 test('recomposes when a resolved service SDL changes', async () => {
   let sdl = 'type Query { hello: String }';
-  const fetch = vi.fn().mockImplementation(async () =>
-    jsonResponse({ data: { _service: { sdl } } }),
-  );
+  const fetch = vi
+    .fn()
+    .mockImplementation(async () => jsonResponse({ data: { _service: { sdl } } }));
   const store = new Map<string, unknown>();
 
   const fetcher = createDevFetcher({
@@ -231,9 +231,11 @@ test('resolves a relative schema file path against `cwd`', async () => {
 });
 
 test('uses federation introspection (`_service { sdl }`) by default', async () => {
-  const fetch = vi.fn().mockImplementation(async () =>
-    jsonResponse({ data: { _service: { sdl: 'type Query { hello: String }' } } }),
-  );
+  const fetch = vi
+    .fn()
+    .mockImplementation(async () =>
+      jsonResponse({ data: { _service: { sdl: 'type Query { hello: String }' } } }),
+    );
 
   const fetcher = createDevFetcher({ services: [{ name: 'a', url: 'http://a' }], fetch });
   const supergraphSdl = await fetcher.fetch();
@@ -307,7 +309,9 @@ test('resolves each service with its own source', async () => {
 
     if (url === 'http://b') {
       expect(query).toContain('_service');
-      return jsonResponse({ data: { _service: { sdl: 'type Query { federationField: String }' } } });
+      return jsonResponse({
+        data: { _service: { sdl: 'type Query { federationField: String }' } },
+      });
     }
 
     expect(url).toBe('http://c');

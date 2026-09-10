@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  InvalidRemoteCompositionResultError,
-  RegistryApiError,
-  RemoteCompositionError as CoreRemoteCompositionError,
-  SupergraphCompositionError,
+  InvalidSupergraphResultError,
+  LocalSupergraphCompositionError,
+  RemoteSupergraphCompositionError,
+  SupergraphRegistryApiError,
 } from '@graphql-hive/core';
 import {
   APIError,
@@ -41,10 +41,10 @@ beforeEach(() => {
 });
 
 describe('Dev.composeLocally', () => {
-  it('maps a SupergraphCompositionError to a LocalCompositionError', async () => {
+  it('maps a LocalSupergraphCompositionError to a LocalCompositionError', async () => {
     const compositionResult = { errors: [{ message: 'field conflict' }] } as any;
     mockComposeSupergraphLocally.mockRejectedValue(
-      new SupergraphCompositionError(compositionResult),
+      new LocalSupergraphCompositionError(compositionResult),
     );
 
     const dev = createDevInstance();
@@ -78,8 +78,8 @@ describe('Dev.compose', () => {
     target: null,
   };
 
-  it('maps a RegistryApiError to an APIError', async () => {
-    mockComposeSupergraphRemotely.mockRejectedValue(new RegistryApiError('bad request'));
+  it('maps a SupergraphRegistryApiError to an APIError', async () => {
+    mockComposeSupergraphRemotely.mockRejectedValue(new SupergraphRegistryApiError('bad request'));
 
     const dev = createDevInstance();
     const onError = vi.fn();
@@ -89,9 +89,9 @@ describe('Dev.compose', () => {
     expect(onError).toHaveBeenCalledWith(expect.any(APIError));
   });
 
-  it('maps a core RemoteCompositionError to the CLI RemoteCompositionError', async () => {
+  it('maps a RemoteSupergraphCompositionError to a CLI RemoteCompositionError', async () => {
     mockComposeSupergraphRemotely.mockRejectedValue(
-      new CoreRemoteCompositionError([{ message: 'field conflict' }]),
+      new RemoteSupergraphCompositionError([{ message: 'field conflict' }]),
     );
 
     const dev = createDevInstance();
@@ -102,8 +102,8 @@ describe('Dev.compose', () => {
     expect(onError).toHaveBeenCalledWith(expect.any(RemoteCompositionError));
   });
 
-  it('maps an InvalidRemoteCompositionResultError to an InvalidCompositionResultError', async () => {
-    mockComposeSupergraphRemotely.mockRejectedValue(new InvalidRemoteCompositionResultError(null));
+  it('maps an InvalidSupergraphResultError to an InvalidCompositionResultError', async () => {
+    mockComposeSupergraphRemotely.mockRejectedValue(new InvalidSupergraphResultError(null));
 
     const dev = createDevInstance();
     const onError = vi.fn();

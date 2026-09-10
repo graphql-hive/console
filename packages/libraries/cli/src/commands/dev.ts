@@ -3,10 +3,10 @@ import { resolve } from 'node:path';
 import {
   composeSupergraphLocally,
   composeSupergraphRemotely,
-  RemoteCompositionError as CoreRemoteCompositionError,
-  InvalidRemoteCompositionResultError,
-  RegistryApiError,
-  SupergraphCompositionError,
+  InvalidSupergraphResultError,
+  LocalSupergraphCompositionError,
+  RemoteSupergraphCompositionError,
+  SupergraphRegistryApiError,
   type Logger as LegacyLogger,
 } from '@graphql-hive/core';
 import { Flags } from '@oclif/core';
@@ -351,7 +351,7 @@ export default class Dev extends Command<typeof Dev> {
     try {
       supergraphSdl = await composeSupergraphLocally(input.services);
     } catch (error) {
-      if (error instanceof SupergraphCompositionError) {
+      if (error instanceof LocalSupergraphCompositionError) {
         input.onError(new LocalCompositionError(error.compositionResult));
         return;
       }
@@ -384,11 +384,11 @@ export default class Dev extends Command<typeof Dev> {
         logger: this.logger,
       });
     } catch (error) {
-      if (error instanceof RegistryApiError) {
+      if (error instanceof SupergraphRegistryApiError) {
         input.onError(new APIError(error.message));
         return;
       }
-      if (error instanceof CoreRemoteCompositionError) {
+      if (error instanceof RemoteSupergraphCompositionError) {
         input.onError(
           new RemoteCompositionError(
             makeFragmentData(
@@ -399,7 +399,7 @@ export default class Dev extends Command<typeof Dev> {
         );
         return;
       }
-      if (error instanceof InvalidRemoteCompositionResultError) {
+      if (error instanceof InvalidSupergraphResultError) {
         input.onError(new InvalidCompositionResultError(error.supergraphSdl));
         return;
       }

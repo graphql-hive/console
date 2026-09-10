@@ -31,10 +31,10 @@ export {
   createDevFetcher,
   composeSupergraphLocally,
   composeSupergraphRemotely,
-  SupergraphCompositionError,
-  RegistryApiError,
-  RemoteCompositionError,
-  InvalidRemoteCompositionResultError,
+  LocalSupergraphCompositionError,
+  SupergraphRegistryApiError,
+  RemoteSupergraphCompositionError,
+  InvalidSupergraphResultError,
 } from './client/dev-fetcher.js';
 export type {
   HiveDevFetcher,

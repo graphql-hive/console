@@ -76,24 +76,24 @@ export interface HiveDevFetcherOptions {
 }
 
 /** Local composition (via `@theguild/federation-composition`) produced errors. */
-export class SupergraphCompositionError extends Error {
+export class LocalSupergraphCompositionError extends Error {
   constructor(public compositionResult: CompositionFailure) {
     super('Local composition failed.');
   }
 }
 
 /** The registry API returned a GraphQL/API-level error while composing remotely. */
-export class RegistryApiError extends Error {}
+export class SupergraphRegistryApiError extends Error {}
 
 /** Remote composition finished but produced composition errors. */
-export class RemoteCompositionError extends Error {
+export class RemoteSupergraphCompositionError extends Error {
   constructor(public errors: Array<{ message: string }>) {
     super(`Remote composition failed:\n${errors.map(error => error.message).join('\n')}`);
   }
 }
 
 /** Remote composition reported success but did not return a usable supergraph SDL. */
-export class InvalidRemoteCompositionResultError extends Error {
+export class InvalidSupergraphResultError extends Error {
   constructor(public supergraphSdl: string | null | undefined) {
     super(`Remote composition resulted in an invalid supergraph: ${supergraphSdl}`);
   }
@@ -119,7 +119,7 @@ export async function composeSupergraphLocally(services: Service[]): Promise<str
   });
 
   if (compositionHasErrors(compositionResult)) {
-    throw new SupergraphCompositionError(compositionResult);
+    throw new LocalSupergraphCompositionError(compositionResult);
   }
 
   return compositionResult.supergraphSdl;
@@ -202,30 +202,32 @@ export async function composeSupergraphRemotely(input: {
   } = await response.json();
 
   if (body.errors?.length) {
-    throw new RegistryApiError(body.errors.map(error => error.message).join(', '));
+    throw new SupergraphRegistryApiError(body.errors.map(error => error.message).join(', '));
   }
 
   const schemaCompose = body.data?.schemaCompose;
   if (!schemaCompose) {
-    throw new RegistryApiError('Received an unexpected response from the registry.');
+    throw new SupergraphRegistryApiError('Received an unexpected response from the registry.');
   }
 
   if (schemaCompose.__typename === 'SchemaComposeError') {
-    throw new RegistryApiError(schemaCompose.message);
+    throw new SupergraphRegistryApiError(schemaCompose.message);
   }
 
   const { valid, compositionResult } = schemaCompose;
 
   if (!valid) {
     if (compositionResult.errors) {
-      throw new RemoteCompositionError(compositionResult.errors.edges.map(edge => edge.node));
+      throw new RemoteSupergraphCompositionError(
+        compositionResult.errors.edges.map(edge => edge.node),
+      );
     }
 
-    throw new InvalidRemoteCompositionResultError(compositionResult.supergraphSdl);
+    throw new InvalidSupergraphResultError(compositionResult.supergraphSdl);
   }
 
   if (typeof compositionResult.supergraphSdl !== 'string') {
-    throw new InvalidRemoteCompositionResultError(compositionResult.supergraphSdl);
+    throw new InvalidSupergraphResultError(compositionResult.supergraphSdl);
   }
 
   return compositionResult.supergraphSdl;
