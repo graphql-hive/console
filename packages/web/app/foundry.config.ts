@@ -64,6 +64,7 @@ export default defineConfig({
     {
       label: 'Inventory',
       children: [
+        { label: 'Input' },
         { label: 'Popover' },
         { label: 'Select' },
         { label: 'Switch' },
