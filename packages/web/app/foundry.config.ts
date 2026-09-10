@@ -63,7 +63,7 @@ export default defineConfig({
     // coverage checklist to migrate through. Entries are deleted as their component lands.
     {
       label: 'Inventory',
-      children: [{ label: 'Select' }],
+      children: [{ label: 'Popover' }, { label: 'Select' }],
     },
     // App components, as opposed to the design-system primitives above. Each preview
     // reproduces a real call site so a base-component change can be judged against the
