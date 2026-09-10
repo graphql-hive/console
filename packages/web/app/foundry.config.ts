@@ -23,6 +23,7 @@ export default defineConfig({
             { label: 'Button' },
             { label: 'Card' },
             { label: 'StatCard' },
+            { label: 'DataLayout' },
             { label: 'Form' },
             { label: 'Input' },
             { label: 'Overlays' },
@@ -39,6 +40,7 @@ export default defineConfig({
             // so a change can be judged against both without leaving the subtree.
             { label: 'RadioGroup', children: [{ label: 'Component Examples' }] },
             { label: 'Switch' },
+            { label: 'DataLayout' },
             { label: 'Form' },
           ],
         },
@@ -65,6 +67,7 @@ export default defineConfig({
     {
       label: 'Inventory',
       children: [
+        { label: 'DataLayout' },
         { label: 'Form' },
         { label: 'Input' },
         { label: 'Overlays' },
