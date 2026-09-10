@@ -79,6 +79,7 @@ export default defineConfig({
         { label: 'Select' },
         { label: 'Switch' },
         { label: 'Textarea' },
+        { label: 'Toast' },
         { label: 'Tooltip' },
       ],
     },
