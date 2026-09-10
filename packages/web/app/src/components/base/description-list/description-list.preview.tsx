@@ -41,7 +41,7 @@ export const MixedColumns = createPreview(() => (
         {
           items: [
             { term: 'Created', description: '3 Aug 2026' },
-            { term: 'Created by', description: 'jon@safetyjon.com' },
+            { term: 'Created by', description: 'user@the-guild.dev' },
           ],
         },
       ]}

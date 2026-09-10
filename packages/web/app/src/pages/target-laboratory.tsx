@@ -1,5 +1,4 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cx } from 'class-variance-authority';
 import clsx from 'clsx';
 import { GraphiQL } from 'graphiql';
 import { buildSchema } from 'graphql';
@@ -12,13 +11,6 @@ import { CreateOperationModal } from '@/components/target/laboratory/create-oper
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DocsLink } from '@/components/ui/docs-note';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { SaveIcon, ShareIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -57,6 +49,7 @@ import { Repeater } from '@repeaterjs/repeater';
 import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
+import { Menu } from '@/components/base/floating/menu/menu';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRedirect } from '@/lib/access/common';
@@ -167,85 +160,84 @@ function Save(props: {
   const label = 'Save operation';
 
   return (
-    <DropdownMenu>
-      <GraphiQLTooltip label={label}>
-        <DropdownMenuTrigger asChild>
-          <GraphiQLButton
-            data-cy="save-operation"
-            className={cn(
-              'graphiql-toolbar-button',
-              currentOperation && !isSame && 'hive-badge-is-changed relative after:top-1',
-            )}
-            aria-label={label}
-          >
-            <SaveIcon className="graphiql-toolbar-icon h-5" />
-          </GraphiQLButton>
-        </DropdownMenuTrigger>
-      </GraphiQLTooltip>
-      <DropdownMenuContent align="end">
-        {!isSame && currentOperation && (
-          <>
-            <DropdownMenuItem
-              disabled={isSame || !currentOperation}
-              className="mb-0 text-red-600"
-              onClick={() => {
-                queryEditor?.setValue(currentOperation.query);
-                clearOperation();
-              }}
+    <>
+      <Menu
+        align="end"
+        trigger={props => (
+          // A function, not an element: `GraphiQLTooltip` forwards nothing, so it cannot carry
+          // the trigger props down. Applying them to the button lets the tooltip wrap it.
+          <GraphiQLTooltip label={label}>
+            <GraphiQLButton
+              {...props}
+              data-cy="save-operation"
+              className={cn(
+                'graphiql-toolbar-button',
+                currentOperation && !isSame && 'hive-badge-is-changed relative after:top-1',
+              )}
+              aria-label={label}
             >
-              Discard changes
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
+              <SaveIcon className="graphiql-toolbar-icon h-5" />
+            </GraphiQLButton>
+          </GraphiQLTooltip>
         )}
-        <DropdownMenuItem
-          disabled={isSame || !currentOperation}
-          className={cx(
-            (isSame || !currentOperation) && 'text-neutral-10 cursor-default hover:bg-transparent',
-          )}
-          onClick={async () => {
-            if (!currentOperation || isSame) {
-              return;
-            }
-            const { error, data } = await mutateUpdate({
-              selector: {
-                targetSlug: props.targetSlug,
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
+        sections={[
+          [
+            !isSame &&
+              currentOperation && {
+                label: 'Discard changes',
+                variant: 'destructiveAction' as const,
+                onClick: () => {
+                  queryEditor?.setValue(currentOperation.query);
+                  clearOperation();
+                },
               },
-              input: {
-                name: currentOperation.name,
-                collectionId: currentOperation.collection.id,
-                query: queryEditor?.getValue(),
-                variables: variableEditor?.getValue(),
-                headers: headerEditor?.getValue(),
-                operationId: currentOperation.id,
+          ],
+          [
+            {
+              label: 'Save',
+              disabled: isSame || !currentOperation,
+              onClick: async () => {
+                if (!currentOperation || isSame) {
+                  return;
+                }
+                const { error, data } = await mutateUpdate({
+                  selector: {
+                    targetSlug: props.targetSlug,
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                  },
+                  input: {
+                    name: currentOperation.name,
+                    collectionId: currentOperation.collection.id,
+                    query: queryEditor?.getValue(),
+                    variables: variableEditor?.getValue(),
+                    headers: headerEditor?.getValue(),
+                    operationId: currentOperation.id,
+                  },
+                });
+                if (data) {
+                  clearOperation();
+                  notify('Updated!', 'success');
+                }
+                if (error) {
+                  notify(error.message, 'error');
+                }
               },
-            });
-            if (data) {
-              clearOperation();
-              notify('Updated!', 'success');
-            }
-            if (error) {
-              notify(error.message, 'error');
-            }
-          }}
-        >
-          Save
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          data-cy="save-operation-as"
-          onClick={async () => {
-            if (!collections.length) {
-              notify('Please create a collection first.', 'error');
-              return;
-            }
-            toggleOperationModal();
-          }}
-        >
-          Save as
-        </DropdownMenuItem>
-      </DropdownMenuContent>
+            },
+            {
+              label: 'Save as',
+              onClick: () => {
+                if (!collections.length) {
+                  notify('Please create a collection first.', 'error');
+                  return;
+                }
+                toggleOperationModal();
+              },
+              attrs: { 'data-cy': 'save-operation-as' },
+            },
+          ],
+        ]}
+      />
       <CreateOperationModal
         organizationSlug={props.organizationSlug}
         projectSlug={props.projectSlug}
@@ -254,7 +246,7 @@ function Save(props: {
         close={toggleOperationModal}
         onSaveSuccess={onSaveSuccess}
       />
-    </DropdownMenu>
+    </>
   );
 }
 

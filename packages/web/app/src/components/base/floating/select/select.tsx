@@ -94,7 +94,7 @@ export function Select({
           align={align}
           sideOffset={sideOffset}
           alignItemWithTrigger={false}
-          className="outline-none"
+          className="z-50 outline-none"
         >
           <BaseSelect.Popup className={floatingVariants({ padding: 'sm' })}>
             {searchable && <FloatingSearch label="options" onSearch={setSearch} value={search} />}

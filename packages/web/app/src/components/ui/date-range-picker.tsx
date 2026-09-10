@@ -515,7 +515,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
             onChange={ev => setQuickRangeFilter(ev.target.value)}
           />
         </div>
-        <div className="flex w-full flex-1 flex-col items-start gap-1 overflow-y-scroll pb-2 pt-1">
+        <div className="thin-scrollbar flex w-full flex-1 flex-col items-start gap-1 overflow-y-scroll pb-2 pt-1">
           {dynamicPresets.length > 0
             ? dynamicPresets
                 .filter(preset =>

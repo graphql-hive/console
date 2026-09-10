@@ -4,6 +4,7 @@ import { Check, MoreHorizontal, X } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Menu } from '@/components/base/floating/menu/menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
@@ -17,13 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -281,23 +275,27 @@ export function SchemaContracts(props: {
                 </TableCell>
                 <TableCell className="text-end">
                   {node.viewerCanDisableContract && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                    <Menu
+                      align="end"
+                      trigger={
                         <Button variant="ghost" className="size-8 p-0">
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="size-4" />
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          className="text-red-500"
-                          onClick={() => onDisable(node.id)}
-                        >
-                          Disable
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      }
+                      sections={[
+                        {
+                          label: 'Actions',
+                          items: [
+                            {
+                              label: 'Disable',
+                              variant: 'destructiveAction',
+                              onClick: () => onDisable(node.id),
+                            },
+                          ],
+                        },
+                      ]}
+                    />
                   )}
                 </TableCell>
               </TableRow>

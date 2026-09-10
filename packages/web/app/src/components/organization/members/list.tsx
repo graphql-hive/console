@@ -16,6 +16,7 @@ import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
+import { Menu } from '@/components/base/floating/menu/menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,12 +30,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { KeyIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -487,20 +482,20 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
               </TooltipProvider>
             ) : (
               member.viewerCanRemove && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                <Menu
+                  align="end"
+                  width="sm"
+                  trigger={
                     <Button
                       variant="ghost"
-                      className="data-[state=open]:bg-neutral-3 ml-auto flex p-0"
+                      className="data-[popup-open]:bg-neutral-3 ml-auto flex p-0"
                     >
                       <MoreHorizontalIcon className="size-4" />
                       <span className="sr-only">Open menu</span>
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[160px]">
-                    <DropdownMenuItem onSelect={() => setOpen(true)}>Delete</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  }
+                  sections={[[{ label: 'Delete', onClick: () => setOpen(true) }]]}
+                />
               )
             ))}
         </td>

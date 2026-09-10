@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import type { MenuSection } from '../menu/menu';
 import { FilterChips, FilterMenu } from './filter-menu';
 import type { FilterDimension } from './types';
 
@@ -22,7 +23,7 @@ export function Filters({
 }: {
   dimensions: FilterDimension[];
   /** Forwarded to FilterMenu — e.g. saved-filter sub-menus + manage link. */
-  extraSections?: Array<ReactNode | ReactNode[]>;
+  extraSections?: MenuSection[];
   /** Always-rendered controls between the trigger and the chips. */
   pinnedControls?: ReactNode;
   /** Rendered after the chips. */

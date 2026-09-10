@@ -32,12 +32,38 @@ export const Default = createPreview(() => {
   );
 });
 
+/**
+ * The `standalone` form, as the filter menu's text dimension renders it: the input is the whole
+ * panel, and the panel is unpadded and scrolls. It should fill the panel with no scrollbar.
+ */
+export const Standalone = createPreview(() => {
+  const [search, setSearch] = useState('');
+
+  return (
+    <div className="bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 thin-scrollbar w-64 overflow-y-auto overflow-x-hidden rounded-md border">
+      <FloatingSearch
+        label="fields"
+        value={search}
+        onSearch={setSearch}
+        placeholder="Find field"
+        standalone
+      />
+    </div>
+  );
+});
+
 export const WithValue = createPreview(() => {
   const [search, setSearch] = useState('prod');
 
   return (
-    <div className="bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 w-64 rounded-md border px-2 pb-2">
-      <FloatingSearch label="targets" value={search} onSearch={setSearch} />
+    <div className="bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 thin-scrollbar w-64 overflow-y-auto overflow-x-hidden rounded-md border">
+      <FloatingSearch
+        label="targets"
+        value={search}
+        onSearch={setSearch}
+        placeholder="Find field"
+        standalone
+      />
     </div>
   );
 });

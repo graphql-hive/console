@@ -25,7 +25,6 @@ export const notFoundVariants = cva('flex items-center justify-center px-6', {
       centered: 'flex-col gap-2.5',
       horizontal: '',
     },
-
     fullScreen: {
       true: 'h-screen',
       false: 'h-full flex-1 py-6',
