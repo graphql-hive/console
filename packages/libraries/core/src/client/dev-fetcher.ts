@@ -16,6 +16,7 @@ import {
 } from './circuit-breaker.js';
 import { http } from './http-client.js';
 import type { LegacyLogger } from './types.js';
+import { chooseLogger } from './utils.js';
 
 export type FetchImplementation = typeof globalThis.fetch;
 
@@ -350,16 +351,13 @@ export type HiveDevFetcher = {
  *
  * This is an alternative to using `@graphql-hive/cli`'s dev command.
  *
- * The compsed supergraph is cached and is only recomposed if the provided service SDLs change. But
+ * The composed supergraph is cached and is only recomposed if the provided service SDLs change. But
  * introspection and file reading is ran on every call, so if using Hive Gateway's polling interval,
- * set the interval accordingly.
+ * set the interval accordingly. Composition is also CircuitBreaked, so that the expensive composition
+ * request is guaranteed not to run too frequently.
  */
 export function createDevFetcher(options: HiveDevFetcherOptions): HiveDevFetcher {
-  const logger: LegacyLogger = options.logger ?? {
-    info: () => {},
-    error: () => {},
-    debug: () => {},
-  };
+  const logger = chooseLogger(options.logger);
   const cwd = options.cwd ?? process.cwd();
   const circuitBreakerConfig = options.circuitBreaker ?? defaultCircuitBreakerConfiguration;
 
