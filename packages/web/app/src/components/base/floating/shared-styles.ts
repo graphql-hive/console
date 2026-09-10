@@ -7,17 +7,12 @@
  */
 import { cva } from 'class-variance-authority';
 
-// ---------------------------------------------------------------------------
-// Floating panel
-// ---------------------------------------------------------------------------
-
 /** Base classes shared by all floating panels (menu, select, popover). */
 export const floatingBaseClass =
-  // `--available-height` comes from the positioner: the room left between the anchor and the
-  // viewport edge. Without the cap a long panel runs off screen instead of scrolling.
-  // `overflow-x-hidden` is not redundant: once `overflow-y` is not `visible`, the spec computes
-  // `overflow-x` to `auto`, so the vertical scrollbar's own width brings on a horizontal one.
-  'z-50 text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 max-h-[var(--available-height)] overflow-y-auto overflow-x-hidden thin-scrollbar';
+  // No z-index here. The positioner is transformed for placement, which makes it a stacking
+  // context, so a z-index on the popup would only compete inside it and lose to any page
+  // element that outranks the positioner. It goes on the positioner instead.
+  'text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 max-h-[var(--available-height)] overflow-y-auto overflow-x-hidden thin-scrollbar';
 
 /** Floating panel variant with configurable padding and width constraints. */
 export const floatingVariants = cva(floatingBaseClass, {
@@ -59,10 +54,6 @@ export const floatingVariants = cva(floatingBaseClass, {
   },
 });
 
-// ---------------------------------------------------------------------------
-// Items (menu items, select items, filter list items, etc.)
-// ---------------------------------------------------------------------------
-
 /** Base classes shared by all interactive list items. */
 export const itemVariants = cva(
   'flex h-7 cursor-pointer select-none items-center rounded-sm outline-none gap-2',
@@ -97,14 +88,28 @@ export const itemVariants = cva(
   },
 );
 
-// ---------------------------------------------------------------------------
-// Shared floating component props
-// ---------------------------------------------------------------------------
-
 /** Common props shared by all floating components (popover, menu, select). */
 export type FloatingProps = {
-  /** Element that triggers the floating panel */
-  trigger: React.ReactElement;
+  /**
+   * Element that triggers the floating panel.
+   *
+   * A function when the trigger has to be composed with another wrapper that owns the same
+   * element. `GraphiQLTooltip` in `pages/target-laboratory.tsx` is the case this exists for: it
+   * destructures only `{ children, align, side, sideOffset, label }` and forwards nothing, so
+   * passing it as an element would swallow the trigger props and the panel would never open.
+   * Given a function you apply the props yourself, and any wrapper can sit outside:
+   *
+   * ```tsx
+   * trigger={props => (
+   *   <GraphiQLTooltip label={label}>
+   *     <GraphiQLButton {...props} />
+   *   </GraphiQLTooltip>
+   * )}
+   * ```
+   */
+  // `any` on the params because this has to satisfy every Base UI trigger, and each one has its
+  // own props and state types that the package does not export a subpath for.
+  trigger: React.ReactElement | ((props: any, state: any) => React.ReactElement);
   /** Which side of the trigger to position on */
   side?: 'top' | 'bottom' | 'left' | 'right';
   /** Alignment along the side */
@@ -116,10 +121,6 @@ export type FloatingProps = {
   /** Callback when open state changes */
   onOpenChange?: (open: boolean) => void;
 };
-
-// ---------------------------------------------------------------------------
-// Scrollable lists inside floating panels
-// ---------------------------------------------------------------------------
 
 /** Scrollbar styling for lists inside floating panels. */
 export { scrollArea as floatingScrollArea } from '../shared-styles';

@@ -8,7 +8,7 @@ import { type FloatingProps } from '../shared-styles';
  * lines rather than one wide band across the viewport.
  */
 const tooltipPopupClass =
-  'z-50 max-w-64 rounded-md border px-2.5 py-1.5 text-xs shadow-md shadow-neutral-1/30 outline-none bg-neutral-4 border-neutral-5 text-neutral-11';
+  'max-w-64 rounded-md border px-2.5 py-1.5 text-xs shadow-md shadow-neutral-1/30 outline-none bg-neutral-4 border-neutral-5 text-neutral-11';
 
 type TooltipProps = Omit<FloatingProps, 'open' | 'onOpenChange'> & {
   /** What the tooltip says. Keep it to a sentence or two. */
@@ -52,7 +52,9 @@ export function Tooltip({
             side={side}
             align={align}
             sideOffset={sideOffset}
-            className="outline-none"
+            // z-index goes here, not on the popup: the positioner is transformed for placement,
+            // which makes it a stacking context that would trap a z-index set inside it.
+            className="z-50 outline-none"
           >
             <BaseTooltip.Popup className={tooltipPopupClass}>
               {arrow ? <BaseTooltip.Arrow className="fill-neutral-4 stroke-neutral-5" /> : null}

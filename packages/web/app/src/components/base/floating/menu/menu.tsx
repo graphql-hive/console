@@ -373,7 +373,12 @@ function SubmenuRow({
         <ChevronRight className="ml-auto size-3.5" />
       </BaseMenu.SubmenuTrigger>
       <BaseMenu.Portal>
-        <BaseMenu.Positioner side="right" align="start" sideOffset={6} className="outline-none">
+        <BaseMenu.Positioner
+          side="right"
+          align="start"
+          sideOffset={6}
+          className="z-50 outline-none"
+        >
           <BaseMenu.Popup
             ref={popupRef}
             className={floatingVariants({
@@ -572,7 +577,7 @@ function Menu(props: MenuProps) {
         side={resolvedSide}
         align={resolvedAlign}
         sideOffset={resolvedSideOffset}
-        className="outline-none"
+        className="z-50 outline-none"
       >
         <BaseMenu.Popup
           ref={popupRef}
