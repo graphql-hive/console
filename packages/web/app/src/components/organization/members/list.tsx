@@ -91,22 +91,18 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
 
         <div className="flex flex-wrap items-center gap-1.5">
           {visibleGroups.map(group => (
-            <Badge className="cursor-default text-xs" key={group.id}>
-              {group.name}
-            </Badge>
+            <Badge key={group.id} content={group.name} />
           ))}
           {remainingCount > 0 && (
             <Tooltip>
               <TooltipTrigger>
-                <Badge variant="outline" className="cursor-default text-xs font-normal">
-                  +{remainingCount} more
-                </Badge>
+                <Badge variants={{ variant: 'outline' }} content={`+${remainingCount} more`} />
               </TooltipTrigger>
               <TooltipContent side="top">
                 <ul className="space-y-1 text-left">
                   {groups.slice(2).map(group => (
                     <li key={group.id}>
-                      <Badge>{group.name}</Badge>
+                      <Badge content={group.name} />
                     </li>
                   ))}
                 </ul>
@@ -365,7 +361,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <Badge variant="destructive">Disabled</Badge>
+                    <Badge content="Disabled" variants={{ variant: 'destructive' }} />
                   </TooltipTrigger>
                   <TooltipContent className="text-xs">This user is disabled.</TooltipContent>
                 </Tooltip>

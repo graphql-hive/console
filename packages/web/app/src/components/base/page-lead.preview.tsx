@@ -20,7 +20,7 @@ export const WithBadge = createPreview(() => (
     <PageLead
       title="Schema checks"
       description="Every check run against this target, newest first."
-      titleAccessory={<Badge variant="secondary">42 this month</Badge>}
+      titleAccessory={<Badge content="42 this month" variants={{ variant: 'secondary' }} />}
     />
   </div>
 ));
@@ -62,7 +62,9 @@ export const Playground = createPreview({
       <PageLead
         title={v.title}
         description={v.description}
-        titleAccessory={v.accessory ? <Badge variant="secondary">Beta</Badge> : undefined}
+        titleAccessory={
+          v.accessory ? <Badge content="Beta" variants={{ variant: 'secondary' }} /> : undefined
+        }
       />
     </div>
   ),
