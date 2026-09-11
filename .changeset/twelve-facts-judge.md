@@ -22,6 +22,6 @@ ORDER BY
 LIMIT 1
 ```
 
-If `null` is returned, no further action is required. Otherwise, set `SCHEMA_VERSION_ORIGIN_CUTOFF` to the ISO timestamp returned
+If `null` is returned, no further action is required. Otherwise, set `SCHEMA_VERSION_ORIGIN_CUTOFF` to the returned ISO timestamp.
 
 **Note**: When unset, publish counts use only schema version origin information, which can lead to inaccurate results if you have schema version records without `origin`.
