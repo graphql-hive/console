@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Button } from '@/components/base/button/button';
+import { DialogContent, DialogTitle, Dialog as UiDialog } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Modal } from '@/components/v2/modal';
 import * as Dialog from '@radix-ui/react-dialog';
 import { FloatingPortalContainerProvider } from './floating-portal-container';
@@ -20,8 +22,9 @@ export const nav: NavPath = 'Base/Floating/PortalContainer';
  * same modal and the same three components; only the provider differs. Open each one and click an
  * option.
  *
- * The Radix `Dialog` and `v2/modal` imports are fixture scaffolding: the base Dialog replaces the
- * former in round 6, and the latter is here to prove its wiring. Neither belongs in a component.
+ * The Radix `Dialog`, `ui/dialog`, `ui/sheet` and `v2/modal` imports are fixture scaffolding: the
+ * base Dialog replaces them in round 6, and they are here to prove their wiring until then. None
+ * belongs in a component.
  */
 
 const OPTIONS = [
@@ -137,9 +140,44 @@ export const WithoutProvider = createPreview(() => {
 });
 
 /**
- * `v2/modal` now publishes its content ref through the provider, so the six v2 modals in the app
- * can host base floating components without any per-call-site work.
+ * `ui/dialog`, `ui/sheet` and `v2/modal` each publish their content element through the
+ * provider, so every overlay in the app can host base floating components without per-call-site
+ * wiring. One case per overlay.
  */
+export const InsideUiDialog = createPreview(() => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        Open ui/dialog
+      </Button>
+      <UiDialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogTitle>Inside ui/dialog</DialogTitle>
+          <FloatingTrio />
+        </DialogContent>
+      </UiDialog>
+    </>
+  );
+});
+
+export const InsideUiSheet = createPreview(() => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        Open ui/sheet
+      </Button>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent className="flex flex-col gap-4">
+          <SheetTitle>Inside ui/sheet</SheetTitle>
+          <FloatingTrio />
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+});
+
 export const InsideV2Modal = createPreview(() => {
   const [open, setOpen] = useState(false);
   return (

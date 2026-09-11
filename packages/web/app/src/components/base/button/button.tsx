@@ -52,7 +52,7 @@ export const buttonVariants = cva(
       // that needs them (a Select trigger), which sizes its wrapper and passes `full` down.
       width: {
         auto: '',
-        full: 'w-full justify-center',
+        full: 'w-full',
       },
       // Which surface the button sits on. Only `default` changes: it is the one variant with a
       // fill of its own to drop, and it is the variant Select uses for its trigger.
@@ -66,6 +66,9 @@ export const buttonVariants = cva(
       { variant: 'default', onSurface: 'raised', class: controlOnSurface.raised },
       { layout: 'children', size: 'compact', class: 'gap-1 px-3' },
       { layout: 'children', size: 'default', class: 'gap-1.5 px-4' },
+      // A plain button centres its content when stretched; a segmented one keeps the label at the
+      // leading edge and its icon at the trailing edge (the label segment grows to push it there).
+      { layout: 'children', width: 'full', class: 'justify-center' },
     ],
     defaultVariants: {
       variant: 'default',
@@ -160,7 +163,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         </span>
       ) : props.label != null ? (
         <>
-          <span className="flex items-center self-stretch px-3">{props.label}</span>
+          <span className="flex grow items-center self-stretch px-3">{props.label}</span>
 
           {props.accessoryInformation != null && (
             <span className={`${segmentSeparator} flex items-center self-stretch px-3`}>
