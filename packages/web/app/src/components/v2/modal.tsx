@@ -1,5 +1,6 @@
 import { createContext, ReactElement, ReactNode, useState } from 'react';
 import clsx from 'clsx';
+import { FloatingPortalContainerProvider } from '@/components/base/floating/floating-portal-container';
 import { XIcon } from '@/components/ui/icon';
 import {
   Close,
@@ -42,35 +43,38 @@ const Modal = ({
   const [state, setState] = useState<HTMLDivElement | null>(null);
   return (
     <ModalTooltipContext.Provider value={state}>
-      <Root open={open} onOpenChange={onOpenChange}>
-        <Trigger asChild>{trigger}</Trigger>
-        <Portal>
-          <Overlay className="hive-modal-overlay bg-neutral-5/80 fixed inset-0 z-50">
-            <TooltipProvider>
-              <Content
-                ref={ref => setState(ref)}
-                className={clsx(
-                  'hive-modal bg-neutral-1 relative left-1/2 top-1/2 max-h-[95%] max-w-[95%] overflow-auto rounded-md p-7',
-                  className,
-                  widthBySize[size],
-                )}
-              >
-                {children}
+      {/* Same ref, published for base's floating components so they portal into the modal too. */}
+      <FloatingPortalContainerProvider container={state}>
+        <Root open={open} onOpenChange={onOpenChange}>
+          <Trigger asChild>{trigger}</Trigger>
+          <Portal>
+            <Overlay className="hive-modal-overlay bg-neutral-5/80 fixed inset-0 z-50">
+              <TooltipProvider>
+                <Content
+                  ref={ref => setState(ref)}
+                  className={clsx(
+                    'hive-modal bg-neutral-1 relative left-1/2 top-1/2 max-h-[95%] max-w-[95%] overflow-auto rounded-md p-7',
+                    className,
+                    widthBySize[size],
+                  )}
+                >
+                  {children}
 
-                <Close asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-neutral-10 hover:border-neutral-10 hover:text-neutral-12 absolute right-5 top-5"
-                  >
-                    <XIcon />
-                  </Button>
-                </Close>
-              </Content>
-            </TooltipProvider>
-          </Overlay>
-        </Portal>
-      </Root>
+                  <Close asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-neutral-10 hover:border-neutral-10 hover:text-neutral-12 absolute right-5 top-5"
+                    >
+                      <XIcon />
+                    </Button>
+                  </Close>
+                </Content>
+              </TooltipProvider>
+            </Overlay>
+          </Portal>
+        </Root>
+      </FloatingPortalContainerProvider>
     </ModalTooltipContext.Provider>
   );
 };

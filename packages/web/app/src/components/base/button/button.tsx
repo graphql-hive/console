@@ -39,10 +39,18 @@ export const buttonVariants = cva(
         sm: '',
         'icon-sm': 'size-7 justify-center',
       },
+      // Only `full` exists because only full-width is a thing buttons ask for: 116 of the
+      // legacy call sites set w-full and nothing else. Fixed widths belong to the component
+      // that needs them (a Select trigger), which sizes its wrapper and passes `full` down.
+      width: {
+        auto: '',
+        full: 'w-full justify-center',
+      },
     },
     defaultVariants: {
       variant: 'default',
       size: 'default',
+      width: 'auto',
     },
   },
 );
@@ -100,7 +108,7 @@ type ButtonProps = ChildrenLayout | LabelLayout | IconOnlyLayout;
  * which passes a ref to the trigger element.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(props, ref) {
-  const { variant, size, disabled, ...rest } = props;
+  const { variant, size, width, disabled, ...rest } = props;
 
   // Remove custom props so they don't get spread onto the DOM element
   const domProps = rest as Record<string, unknown>;
@@ -123,14 +131,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return (
     <button
       ref={ref}
-      className={`${buttonVariants({ variant, size })} ${sizeClass}`}
+      className={`${buttonVariants({ variant, size, width })} ${sizeClass}`}
       disabled={disabled}
       style={disabled ? disabledStyle : undefined}
       {...domProps}
     >
       {props.layout === 'iconOnly' ? (
         <span className="flex items-center p-1.5">
-          <props.icon className="size-4" />
+          <props.icon className="size-3" />
         </span>
       ) : props.label != null ? (
         <>
@@ -173,7 +181,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
               }
               className={`${props.rightIcon.withSeparator && segmentSeparator} text-neutral-8 ${props.rightIcon.action ? 'hover:text-neutral-11' : 'group-hover:text-neutral-12'} flex items-center px-2 py-1.5`}
             >
-              <props.rightIcon.icon className="size-4" />
+              <props.rightIcon.icon className="size-3" />
             </span>
           )}
         </>

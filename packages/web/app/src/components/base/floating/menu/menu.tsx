@@ -12,6 +12,7 @@ import { ArrowRight, Check, ChevronRight } from 'lucide-react';
 import { Switch } from '@/components/base/switch/switch';
 import { type IconProps } from '@/components/ui/icon';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
+import { useFloatingPortalContainer } from '../floating-portal-container';
 import { floatingVariants, itemVariants, type FloatingProps } from '../shared-styles';
 import { Tooltip } from '../tooltip/tooltip';
 
@@ -345,6 +346,7 @@ function SubmenuRow({
   stableWidth,
   ...body
 }: MenuSubmenu) {
+  const portalContainer = useFloatingPortalContainer();
   const popupRef = useStableWidth(stableWidth ?? false);
 
   return (
@@ -360,7 +362,7 @@ function SubmenuRow({
         {label}
         <ChevronRight className="ml-auto size-3.5" />
       </BaseMenu.SubmenuTrigger>
-      <BaseMenu.Portal>
+      <BaseMenu.Portal container={portalContainer ?? undefined}>
         <BaseMenu.Positioner
           side="right"
           align="start"
@@ -517,6 +519,7 @@ type MenuProps =
   | (MenuBaseProps & { content: ReactNode; sections?: never });
 
 function Menu(props: MenuProps) {
+  const portalContainer = useFloatingPortalContainer();
   const {
     trigger,
     open,
@@ -560,7 +563,7 @@ function Menu(props: MenuProps) {
   const resolvedSideOffset = sideOffset ?? (submenu ? 6 : 8);
 
   const popup = (
-    <BaseMenu.Portal>
+    <BaseMenu.Portal container={portalContainer ?? undefined}>
       <BaseMenu.Positioner
         side={resolvedSide}
         align={resolvedAlign}

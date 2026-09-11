@@ -49,6 +49,7 @@ export default defineConfig({
             { label: 'FilterMenu' },
             { label: 'Search' },
             { label: 'Tooltip' },
+            { label: 'PortalContainer' },
           ],
         },
         // Data and layout

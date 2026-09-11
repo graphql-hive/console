@@ -73,6 +73,26 @@ export const Disabled = createPreview(() => (
   </div>
 ));
 
+/**
+ * `width="full"` is the modal-footer and auth-form shape: a pair of full-width buttons sharing a
+ * row. It replaces the `className="w-full justify-center"` that 116 legacy call sites set by hand.
+ */
+export const FullWidth = createPreview(() => (
+  <div className="flex w-96 flex-col gap-3">
+    <Button variant="primary" width="full">
+      Create organization
+    </Button>
+    <div className="flex gap-2">
+      <Button variant="outline" width="full">
+        Cancel
+      </Button>
+      <Button variant="primary" width="full">
+        Save changes
+      </Button>
+    </div>
+  </div>
+));
+
 export const Playground = createPreview({
   controls: controlsFor(Button, {
     children: { type: 'text', default: 'Save alert' },
@@ -91,11 +111,14 @@ export const Playground = createPreview({
       default: 'primary',
     },
     size: { type: 'radio', options: ['default', 'sm'], default: 'default' },
+    width: { type: 'radio', options: ['auto', 'full'], default: 'auto' },
     disabled: { type: 'boolean', default: false },
   }),
   render: v => (
-    <Button variant={v.variant} size={v.size} disabled={v.disabled}>
-      {v.children}
-    </Button>
+    <div className="w-80">
+      <Button variant={v.variant} size={v.size} width={v.width} disabled={v.disabled}>
+        {v.children}
+      </Button>
+    </div>
   ),
 });
