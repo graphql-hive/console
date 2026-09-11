@@ -1,7 +1,5 @@
 import {
-  useCallback,
   useEffect,
-  useRef,
   type ComponentType,
   type MouseEventHandler,
   type ReactElement,
@@ -73,8 +71,6 @@ type MenuSubmenu = WidthProps & {
   openOnHover?: boolean;
   delay?: number;
   closeDelay?: number;
-  /** Lock the popup width after first layout. For virtualized or filtered lists. */
-  stableWidth?: boolean;
 } & (
     | { items: MenuSection[]; content?: never }
     /** A submenu whose body is a custom panel rather than rows, like a filter's value list. */
@@ -354,11 +350,8 @@ function SubmenuRow({
   maxWidth,
   minWidth,
   width,
-  stableWidth,
   ...body
 }: MenuSubmenu) {
-  const popupRef = useStableWidth(stableWidth ?? false);
-
   return (
     <BaseMenu.SubmenuRoot>
       <BaseMenu.SubmenuTrigger
@@ -380,7 +373,6 @@ function SubmenuRow({
           className="z-50 outline-none"
         >
           <BaseMenu.Popup
-            ref={popupRef}
             className={floatingVariants({
               // Rows bring their own top inset via `first:mt-2`, so `menu` padding has none. A
               // custom panel has no rows, so it would sit flush at the top and padded at the
@@ -462,37 +454,6 @@ function renderSections(sections: MenuSection[]): ReactNode {
   return result;
 }
 
-/**
- * Returns a callback ref that locks a popup's width after first layout.
- * Reads the natural width from the initial visible content and freezes it,
- * so the popup never changes size as virtualized items scroll in/out of view.
- * Resets when the element unmounts (i.e. popup closes).
- */
-function useStableWidth(enabled: boolean) {
-  const observerRef = useRef<ResizeObserver | null>(null);
-
-  return useCallback(
-    (node: HTMLElement | null) => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
-      }
-
-      if (!node || !enabled) return;
-
-      const observer = new ResizeObserver(() => {
-        observer.disconnect();
-        observerRef.current = null;
-        node.style.width = `${node.offsetWidth}px`;
-      });
-
-      observer.observe(node);
-      observerRef.current = observer;
-    },
-    [enabled],
-  );
-}
-
 type MenuBaseProps = FloatingProps &
   WidthProps & {
     modal?: boolean;
@@ -511,12 +472,6 @@ type MenuBaseProps = FloatingProps &
      * layout shift.
      */
     lockScroll?: boolean;
-    /**
-     * Lock the popup width after the first layout so it never changes while open.
-     * Useful for virtualized lists where items scroll in/out of view.
-     * Resets each time the popup reopens.
-     */
-    stableWidth?: boolean;
   };
 
 /**
@@ -541,7 +496,6 @@ function Menu(props: MenuProps) {
     minWidth,
     width,
     lockScroll,
-    stableWidth,
     submenu,
     openOnHover,
     delay,
@@ -562,8 +516,6 @@ function Menu(props: MenuProps) {
     };
   }, [lockScroll, open]);
 
-  const popupRef = useStableWidth(stableWidth ?? false);
-
   // Resolved rather than defaulted in the destructure, so `submenu` can pick its own values and
   // an explicit prop still wins. A submenu opens beside its row; a root menu below its trigger.
   const resolvedSide = side ?? (submenu ? 'right' : 'bottom');
@@ -580,7 +532,6 @@ function Menu(props: MenuProps) {
         className="z-50 outline-none"
       >
         <BaseMenu.Popup
-          ref={popupRef}
           className={floatingVariants({
             // See `SubmenuRow`: a custom panel owns its own insets.
             padding: props.sections ? 'menu' : 'none',

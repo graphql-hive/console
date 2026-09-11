@@ -123,10 +123,24 @@ export function FilterContent({
 
   const showSearch = alwaysShowSearch || items.length >= SEARCH_VISIBILITY_THRESHOLD;
 
+  const allNames = useMemo(() => items.map(item => item.name).join('\n'), [items]);
+  const hasSubmenus = items.some(item => item.values.length > 0);
+
   return (
     // Modest min-width so the popover doesn't collapse to a single 1–2 char
     // item, but still sizes naturally to fit the content of small lists.
     <div role="group" className="min-w-[120px]">
+      {/*
+        Only the rows in view are in the DOM, so left to itself the popup would size to whichever
+        happen to be rendered. This zero-height row carries every name, one per line, so the popup
+        is as wide as its widest item (up to the popup's max-width) from the start and stays put
+        through scrolling and search. Laid out like an ItemRow: checkbox, gap, name, chevron.
+      */}
+      <div aria-hidden className="invisible flex h-0 gap-2.5 overflow-hidden px-2">
+        <span className="size-3.5 shrink-0" />
+        <span className="whitespace-pre">{allNames}</span>
+        {hasSubmenus ? <span className="ml-auto size-3.5 shrink-0" /> : null}
+      </div>
       {showSearch && <FloatingSearch label={label} onSearch={setSearch} value={search} />}
       {/* Note about unavailable items */}
       {items.some(item => item.unavailable) && (

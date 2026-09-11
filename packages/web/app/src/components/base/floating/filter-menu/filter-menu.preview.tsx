@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { FilterChips, FilterMenu } from './filter-menu';
 import type { FilterDimension, FilterItem, FilterSelection } from './types';
@@ -249,6 +249,40 @@ export const InsightsDimensions = createPreview(() => {
     <div className="flex flex-wrap items-center gap-2">
       <FilterMenu dimensions={dimensions} />
       <FilterChips dimensions={dimensions} />
+    </div>
+  );
+});
+
+/**
+ * Insights on a slow connection: the picker query resolves after the page is
+ * interactive, so the submenu can be open on an empty list when the items land.
+ * Open Filter → Client within the first few seconds to see it.
+ */
+export const InsightsDimensionsLoading = createPreview(() => {
+  const [loaded, setLoaded] = useState(false);
+  const [clients, setClients] = useState<FilterSelection[]>([]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoaded(true), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const dimensions: FilterDimension[] = [
+    {
+      key: 'client',
+      label: 'Client',
+      items: loaded ? INSIGHTS_CLIENTS : [],
+      selectedItems: clients,
+      onChange: setClients,
+      valuesLabel: 'versions',
+    },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <FilterMenu dimensions={dimensions} />
+      <FilterChips dimensions={dimensions} />
+      <span className="text-neutral-8 text-xs">{loaded ? 'items loaded' : 'loading items…'}</span>
     </div>
   );
 });
