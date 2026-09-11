@@ -61,5 +61,6 @@ services:
     environment:
       SUPERTOKENS_RATE_LIMIT: '0'
       AUTH_REQUIRE_EMAIL_VERIFICATION: '1'
+      CLICKHOUSE_TDIGEST_ROLLUPS_START: '1970-01-01T00:00:00.000Z'
 networks:
   stack: {}
