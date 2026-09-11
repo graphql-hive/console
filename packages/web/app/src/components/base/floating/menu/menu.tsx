@@ -377,7 +377,8 @@ function SubmenuRow({
             className={floatingVariants({
               // Rows bring their own top inset via `first:mt-2`, so `menu` padding has none. A
               // custom panel has no rows, so it would sit flush at the top and padded at the
-              // bottom; give it none and let the panel own its insets, as the filter panels do.
+              // bottom; give it none and let the panel own its insets (`menuPanelInset`, or
+              // nothing for a lone search field).
               padding: body.items ? 'menu' : 'none',
               maxWidth,
               // A submenu is usually a few short labels, and left to itself it comes out

@@ -1,7 +1,7 @@
 import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FloatingSearch } from '../floating-search';
-import { floatingEmptyState } from '../shared-styles';
+import { floatingEmptyState, menuPanelInset } from '../shared-styles';
 import { ItemRow, ListScrollContext } from './item-row';
 import type { FilterItem, FilterSelection } from './types';
 
@@ -129,7 +129,7 @@ export function FilterContent({
   return (
     // Modest min-width so the popover doesn't collapse to a single 1–2 char
     // item, but still sizes naturally to fit the content of small lists.
-    <div role="group" className="min-w-[120px]">
+    <div role="group" className={`min-w-[120px] ${menuPanelInset}`}>
       {/*
         Only the rows in view are in the DOM, so left to itself the popup would size to whichever
         happen to be rendered. This zero-height row carries every name, one per line, so the popup
