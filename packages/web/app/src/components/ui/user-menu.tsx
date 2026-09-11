@@ -23,7 +23,7 @@ import {
   SettingsIcon,
   TrendingUpIcon,
 } from '@/components/ui/icon';
-import { Avatar } from '@/components/v2';
+import { Avatar } from '@/components/v2/avatar';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';

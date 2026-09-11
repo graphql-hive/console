@@ -1,17 +1,14 @@
 export { Accordion } from '@/components/v2/accordion';
-export { Autocomplete } from '@/components/v2/autocomplete';
 export { Avatar } from '@/components/v2/avatar';
 export { DataWrapper } from '@/components/v2/data-wrapper';
 export { DiffEditor } from '@/components/v2/diff-editor';
 export { Input } from '@/components/v2/input';
 export { Modal } from '@/components/v2/modal';
-export { RadixSelect } from '@/components/v2/radix-select';
 export { Select } from '@/components/v2/select';
 export { Sortable } from '@/components/v2/sortable';
 export { default as Stat } from '@/components/v2/stat';
 export { Switch } from '@/components/v2/switch';
 export { Table, TBody, THead, TFoot, Th, Td, Tr } from '@/components/v2/table';
 export { Tag } from '@/components/v2/tag';
-export { TimeAgo } from '@/components/ui/time-ago';
 export { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 export { Tooltip } from '@/components/v2/tooltip';

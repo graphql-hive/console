@@ -89,8 +89,8 @@ export const Inventory = createPreview({
           <br />
           <br />
           <strong>Combobox drags in react-select.</strong> Three call sites, all multi-select tag
-          pickers over the same shape. It is the last consumer of that dependency now that{' '}
-          <code>v2/autocomplete</code> is dead.
+          pickers over the same shape. With <code>v2/autocomplete</code> deleted it is the last
+          consumer of that dependency.
         </>
       }
       entries={ENTRIES}
@@ -294,7 +294,7 @@ function ComboboxExample() {
       <CallSite
         source="components/policy/rules-configuration/multiselect-config.tsx:42"
         origin="v2"
-        note="The third site, w-full inside a policy rule row. Same shape again: three call sites, one pattern, and react-select carried for all of it. With v2/autocomplete dead, this is the dependency's last consumer."
+        note="The third site, w-full inside a policy rule row. Same shape again: three call sites, one pattern, and react-select carried for all of it. With v2/autocomplete deleted, this is the dependency's last consumer."
       >
         <div className="w-[28rem]">
           <Combobox
