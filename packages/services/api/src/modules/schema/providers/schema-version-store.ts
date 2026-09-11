@@ -719,6 +719,44 @@ export class SchemaVersionStore {
     return result?.total ?? 0;
   }
 
+  async getLegacySchemaPublishCountOfTarget(
+    target: Target,
+    period: {
+      from: Date;
+      to: Date;
+    },
+    subgraphNames: ReadonlyArray<string> | null,
+  ): Promise<number> {
+    const result = await this.pg
+      .maybeOne(
+        psql`/* getLegacySchemaPublishCountOfTarget */
+          SELECT
+            COUNT(*) as "total"
+          FROM "schema_versions" AS "sv"
+          INNER JOIN "schema_log" AS "sl"
+            ON "sl"."id" = "sv"."action_id"
+          WHERE
+            "sv"."target_id" = ${target.id}
+            AND "sv"."created_at" >= ${period.from.toISOString()}
+            AND "sv"."created_at" < ${period.to.toISOString()}
+            AND "sl"."action" = 'PUSH'
+            ${
+              subgraphNames?.length
+                ? psql`
+                    AND lower("sl"."service_name") = ANY(${psql.array(
+                      subgraphNames.map(name => name.toLowerCase()),
+                      'text',
+                    )})
+            `
+                : psql``
+            }
+        `,
+      )
+      .then(z.object({ total: z.number() }).nullable().parse);
+
+    return result?.total ?? 0;
+  }
+
   async anyVersionExistsForTarget(target: Target) {
     return this.pg.exists(
       psql`/* hasSchema */

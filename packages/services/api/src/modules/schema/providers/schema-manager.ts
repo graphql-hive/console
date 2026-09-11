@@ -650,13 +650,36 @@ export class SchemaManager {
     return this.schemaVersions.countSchemaVersionsOfTarget(target, period);
   }
 
-  getSchemaPublishCountOfTarget(
+  async getSchemaPublishCountOfTarget(
     target: Target,
     period: DateRange,
     subgraphNames: ReadonlyArray<string> | null,
   ): Promise<number> {
     this.logger.debug('Fetching schema publishes count of target (targetId=%s)', target.id);
-    return this.schemaVersions.getSchemaPublishCountOfTarget(target, period, subgraphNames);
+    const cutoff = this.schemaModuleConfig.schemaVersionOriginCutoff;
+
+    if (!cutoff || period.from >= cutoff) {
+      return this.schemaVersions.getSchemaPublishCountOfTarget(target, period, subgraphNames);
+    }
+
+    if (period.to <= cutoff) {
+      return this.schemaVersions.getLegacySchemaPublishCountOfTarget(target, period, subgraphNames);
+    }
+
+    const [legacyCount, originCount] = await Promise.all([
+      this.schemaVersions.getLegacySchemaPublishCountOfTarget(
+        target,
+        { from: period.from, to: cutoff },
+        subgraphNames,
+      ),
+      this.schemaVersions.getSchemaPublishCountOfTarget(
+        target,
+        { from: cutoff, to: period.to },
+        subgraphNames,
+      ),
+    ]);
+
+    return legacyCount + originCount;
   }
 
   async completeGetStartedCheck(
