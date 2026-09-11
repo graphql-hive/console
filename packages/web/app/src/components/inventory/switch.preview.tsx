@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Switch as BaseSwitch } from '@/components/base/switch/switch';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -65,8 +66,8 @@ const ENTRIES = [
   },
   {
     source: 'components/target/alerts/alert-rule-enabled-toggle.tsx:34',
-    origin: 'ui',
-    what: 'Inside a clickable table row, so it stops propagation and carries an aria-label',
+    origin: 'base',
+    what: 'Already on base/switch. Inside a clickable table row, so it stops propagation and carries an aria-label',
     coveredBy: 'In a table row',
   },
   {
@@ -96,11 +97,13 @@ export const Inventory = createPreview({
       component="ui/switch and v2/switch"
       summary={
         <>
-          <strong>13 instances across 7 files.</strong> Ten use <code>ui/switch</code> and three use{' '}
-          <code>v2/switch</code>, which is visibly larger and turns orange rather than neutral — so
-          three target-settings rows already look unlike every other toggle in the app. Two call
-          sites make the switch itself a trigger (a tooltip and an alert dialog), which is the shape
-          most likely to break on a component swap. Two carry <code>data-cy</code> hooks.
+          <strong>13 instances across 7 files.</strong> Nine use <code>ui/switch</code>, three use{' '}
+          <code>v2/switch</code>, and one (<code>alert-rule-enabled-toggle</code>) is already on{' '}
+          <code>base/switch</code>. <code>v2/switch</code> is visibly larger and turns orange rather
+          than neutral — so three target-settings rows already look unlike every other toggle in the
+          app. Two call sites make the switch itself a trigger (a tooltip and an alert dialog),
+          which is the shape most likely to break on a component swap. Two carry{' '}
+          <code>data-cy</code> hooks.
         </>
       }
       entries={ENTRIES}
@@ -113,7 +116,7 @@ export const Inventory = createPreview({
 // ---------------------------------------------------------------------------
 
 export const BothImplementations = createPreview({
-  label: 'ui vs v2',
+  label: 'ui vs v2 vs base',
   render: () => {
     return (
       <div className="flex flex-col gap-6">
@@ -131,10 +134,28 @@ export const BothImplementations = createPreview({
         >
           <V2SwitchPair />
         </CallSite>
+        <CallSite
+          source="components/base/switch/switch.tsx"
+          origin="ui"
+          note="The replacement. 20x40, neutral-6 track, fills success_80 green when on, thumb stays neutral-12. Smaller than both legacy switches by ~4px on each axis, and the only one whose on-state is a semantic colour. Decided 2026-09-10: keep as-is."
+        >
+          <BaseSwitchPair />
+        </CallSite>
       </div>
     );
   },
 });
+
+function BaseSwitchPair() {
+  const [on, setOn] = useState(true);
+  return (
+    <div className="flex items-center gap-6">
+      <BaseSwitch checked={on} onCheckedChange={setOn} />
+      <BaseSwitch checked={false} onCheckedChange={() => {}} />
+      <BaseSwitch checked disabled />
+    </div>
+  );
+}
 
 function UiSwitchPair() {
   const [on, setOn] = useState(true);
@@ -342,8 +363,8 @@ export const InATableRow = createPreview({
   render: () => (
     <CallSite
       source="components/target/alerts/alert-rule-enabled-toggle.tsx:34"
-      origin="ui"
-      note="The only switch with an aria-label rather than a visible one, and the only one calling stopPropagation, because the alert-rules row navigates on click. Toggling must not open the rule."
+      origin="base"
+      note="Already migrated: this is the base Switch, which is why it is green. The only switch with an aria-label rather than a visible one. It used to stop propagation itself because the alert-rules row navigates on click; base Switch now does that for every switch, so the call site no longer needs to. It also threaded a className prop that no caller ever passed; that prop is gone."
     >
       <AlertRuleRow />
     </CallSite>
@@ -362,10 +383,9 @@ function AlertRuleRow() {
         <span className="text-sm font-medium">p99 latency over 500ms</span>
         <span className="text-neutral-10 text-xs">Evaluated every 5 minutes</span>
       </div>
-      <Switch
+      <BaseSwitch
         checked={enabled}
         aria-label={enabled ? 'Disable alert rule' : 'Enable alert rule'}
-        onClick={e => e.stopPropagation()}
         onCheckedChange={setEnabled}
       />
     </div>

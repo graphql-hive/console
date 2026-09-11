@@ -236,13 +236,7 @@ function CheckboxRow({
       {Icon ? <Icon className="size-4" /> : null}
       <span className="flex-1">{label}</span>
       {indicator === 'switch' ? (
-        <Switch
-          checked={checked}
-          size="small"
-          tabIndex={-1}
-          aria-hidden
-          style={{ cursor: 'inherit' }}
-        />
+        <Switch checked={checked} size="small" decorative />
       ) : (
         <BaseMenu.CheckboxItemIndicator className="ml-auto inline-flex items-center">
           <Check className="size-3.5" />
@@ -312,13 +306,7 @@ function ToggleRow({
     >
       {Icon ? <Icon className="size-4" /> : null}
       <span className="flex-1">{label}</span>
-      <Switch
-        checked={checked}
-        size="small"
-        tabIndex={-1}
-        aria-hidden
-        style={{ cursor: 'inherit' }}
-      />
+      <Switch checked={checked} size="small" decorative />
     </BaseMenu.CheckboxItem>
   );
 }

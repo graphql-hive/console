@@ -48,11 +48,26 @@ export const InSettingsRow = createPreview(() => {
   );
 });
 
+/**
+ * `decorative` is for a switch that shows state but is not itself the control: the menu row or
+ * card around it owns the click. Not focusable, hidden from assistive tech, and the cursor is the
+ * row's. Tab through this and the switch is skipped; hover it and the cursor does not change.
+ */
+export const Decorative = createPreview(() => (
+  <div className="hover:bg-neutral-3 flex w-64 cursor-pointer items-center justify-between rounded-md px-3 py-2 text-[13px]">
+    <span>Show deprecated fields</span>
+    <Switch size="small" checked decorative />
+  </div>
+));
+
 export const Playground = createPreview({
   controls: controlsFor(Switch, {
     size: { type: 'radio', options: ['standard', 'small'], default: 'standard' },
     checked: { type: 'boolean', default: true },
     disabled: { type: 'boolean', default: false },
+    decorative: { type: 'boolean', default: false },
   }),
-  render: v => <Switch size={v.size} checked={v.checked} disabled={v.disabled} />,
+  render: v => (
+    <Switch size={v.size} checked={v.checked} disabled={v.disabled} decorative={v.decorative} />
+  ),
 });

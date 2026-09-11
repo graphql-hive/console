@@ -25,17 +25,14 @@ export function AlertRuleEnabledToggle(props: {
   enabled: boolean;
   organizationSlug: string;
   projectSlug: string;
-  className?: string;
 }) {
   const [, mutate] = useMutation(AlertRuleEnabledToggle_Mutation);
   const { toast } = useToast();
 
   return (
     <Switch
-      className={props.className}
       checked={props.enabled}
       aria-label={props.enabled ? 'Disable alert rule' : 'Enable alert rule'}
-      onClick={e => e.stopPropagation()}
       onCheckedChange={checked =>
         void mutate({
           input: {
