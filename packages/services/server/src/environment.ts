@@ -49,6 +49,12 @@ const EnvironmentModel = zod.object({
     .url(),
   SCHEMA_POLICY_ENDPOINT: emptyString(zod.string().url().optional()),
   SCHEMA_ENDPOINT: zod.string().url(),
+  SCHEMA_VERSION_ORIGIN_CUTOFF: emptyString(
+    zod
+      .string()
+      .transform(value => new Date(value))
+      .optional(),
+  ),
   AUTH_ORGANIZATION_OIDC: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_ORGANIZATION_SCIM: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
@@ -582,7 +588,10 @@ export const env = {
           endpoint: base.SCHEMA_POLICY_ENDPOINT,
         }
       : null,
-    schema: { endpoint: base.SCHEMA_ENDPOINT },
+    schema: {
+      endpoint: base.SCHEMA_ENDPOINT,
+      schemaVersionOriginCutoff: base.SCHEMA_VERSION_ORIGIN_CUTOFF,
+    },
   },
   http: {
     port: base.PORT ?? 3001,

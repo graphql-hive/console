@@ -650,6 +650,40 @@ export class SchemaManager {
     return this.schemaVersions.countSchemaVersionsOfTarget(target, period);
   }
 
+  async getSchemaPublishCountOfTarget(
+    target: Target,
+    period: DateRange,
+    subgraphNames: ReadonlyArray<string> | null,
+  ): Promise<number> {
+    this.logger.debug('Fetching schema publishes count of target (targetId=%s)', target.id);
+    const cutoff = this.schemaModuleConfig.schemaVersionOriginCutoff;
+
+    if (!cutoff || period.from >= cutoff) {
+      this.logger.debug('use origin based method');
+      return this.schemaVersions.getSchemaPublishCountOfTarget(target, period, subgraphNames);
+    }
+
+    if (period.to <= cutoff) {
+      this.logger.debug('use legacy based method');
+      return this.schemaVersions.getLegacySchemaPublishCountOfTarget(target, period, subgraphNames);
+    }
+    this.logger.debug('use dual legacy and origin based method');
+    const [legacyCount, originCount] = await Promise.all([
+      this.schemaVersions.getLegacySchemaPublishCountOfTarget(
+        target,
+        { from: period.from, to: cutoff },
+        subgraphNames,
+      ),
+      this.schemaVersions.getSchemaPublishCountOfTarget(
+        target,
+        { from: cutoff, to: period.to },
+        subgraphNames,
+      ),
+    ]);
+
+    return legacyCount + originCount;
+  }
+
   async completeGetStartedCheck(
     selector: OrganizationSelector & {
       step: 'publishingSchema' | 'checkingSchema';

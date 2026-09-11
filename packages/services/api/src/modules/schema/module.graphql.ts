@@ -153,6 +153,17 @@ export default gql`
   }
 
   extend type Target {
+    """
+    Number of schema publishes within a time period, optionally filtered by subgraph names.
+    """
+    schemaPublishCount(
+      period: DateRangeInput! @tag(name: "public")
+      """
+      List of subgraphs to filter for.
+      Useful to narrow down how many publishes happened for a specific subgraph or a subset of subgraphs.
+      """
+      subgraphNames: [String!] @tag(name: "public")
+    ): Int! @tag(name: "public")
     schemaVersionsCount(period: DateRangeInput): Int!
   }
 
