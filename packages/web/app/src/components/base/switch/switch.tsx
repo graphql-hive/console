@@ -2,7 +2,14 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Switch as BaseSwitch } from '@base-ui/react/switch';
 
 const switchRootVariants = cva(
-  'data-[unchecked]:bg-neutral-6 relative inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-2 disabled:cursor-not-allowed disabled:opacity-50 data-[checked]:bg-success_80',
+  [
+    'group relative inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors',
+    'data-[unchecked]:bg-neutral-6 data-[unchecked]:hover:bg-neutral-8 data-[checked]:hover:bg-success_80',
+    'data-[checked]:bg-success',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+    'focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-2',
+    'disabled:cursor-not-allowed disabled:opacity-50',
+  ],
   {
     variants: {
       size: {
@@ -20,7 +27,7 @@ const switchRootVariants = cva(
 );
 
 const switchThumbVariants = cva(
-  'pointer-events-none block rounded-full bg-neutral-12 shadow-sm transition-transform',
+  'pointer-events-none block rounded-full dark:bg-neutral-12 bg-neutral-1 shadow-sm transition-transform data-[unchecked]:dark:bg-neutral-10 data-[unchecked]:bg-neutral-4',
   {
     variants: {
       size: {

@@ -7,7 +7,6 @@ export { Modal } from '@/components/v2/modal';
 export { Select } from '@/components/v2/select';
 export { Sortable } from '@/components/v2/sortable';
 export { default as Stat } from '@/components/v2/stat';
-export { Switch } from '@/components/v2/switch';
 export { Table, TBody, THead, TFoot, Th, Td, Tr } from '@/components/v2/table';
 export { Tag } from '@/components/v2/tag';
 export { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';

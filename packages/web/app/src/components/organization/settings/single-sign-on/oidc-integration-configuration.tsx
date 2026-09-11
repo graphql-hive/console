@@ -3,6 +3,7 @@ import { AlertOctagonIcon, BugPlayIcon, CheckIcon, PlusIcon, SettingsIcon } from
 import { useMutation } from 'urql';
 import { Card } from '@/components/base/card/card';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
+import { Switch } from '@/components/base/switch/switch';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +20,6 @@ import { Callout } from '@/components/ui/callout';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
-import { Switch } from '@/components/ui/switch';
 import * as Table from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';

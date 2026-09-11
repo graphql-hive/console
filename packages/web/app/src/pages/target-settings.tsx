@@ -16,6 +16,7 @@ import * as Yup from 'yup';
 import { z } from 'zod';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
+import { Switch } from '@/components/base/switch/switch';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { SchemaEditor } from '@/components/schema-editor';
@@ -48,7 +49,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { useToast } from '@/components/ui/use-toast';
 import { Combobox } from '@/components/v2/combobox';
-import { Switch } from '@/components/v2/switch';
 import { Table, TBody, Td, Tr } from '@/components/v2/table';
 import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
@@ -744,7 +744,6 @@ const BreakingChanges = (props: {
               <Spinner />
             ) : (
               <Switch
-                className="shrink-0"
                 checked={considerDangerousAsBreaking}
                 onCheckedChange={async failDiffOnDangerousChange => {
                   await updateTargetDangerousChangeClassification({
@@ -797,7 +796,6 @@ const BreakingChanges = (props: {
                 <Spinner />
               ) : (
                 <Switch
-                  className="shrink-0"
                   checked={isEnabled}
                   onCheckedChange={async isEnabled => {
                     await updateValidation({
@@ -1210,7 +1208,6 @@ const AppDeploymentProtection = (props: {
               <Spinner />
             ) : (
               <Switch
-                className="shrink-0"
                 checked={isEnabled}
                 onCheckedChange={async isEnabled => {
                   await updateProtection({
