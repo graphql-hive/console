@@ -52,7 +52,6 @@ const EnvironmentModel = zod.object({
   SCHEMA_VERSION_ORIGIN_CUTOFF: emptyString(
     zod
       .string()
-      .datetime()
       .transform(value => new Date(value))
       .optional(),
   ),

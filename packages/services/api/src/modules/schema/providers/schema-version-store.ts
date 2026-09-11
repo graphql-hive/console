@@ -343,7 +343,7 @@ export class SchemaVersionStore {
           services: args.service
             ? [
                 {
-                  name: args.service.name,
+                  name: args.service.name.toLowerCase(),
                   versionId: newLog.id,
                 },
               ]
@@ -707,7 +707,10 @@ export class SchemaVersionStore {
                     AND EXISTS (
                       SELECT 1
                         FROM jsonb_array_elements("origin"->'services') AS service
-                        WHERE "service"->>'name' = ANY(${psql.array([...subgraphNames], 'text')})
+                        WHERE "service"->>'name' = ANY(${psql.array(
+                          subgraphNames.map(name => name.toLowerCase()),
+                          'text',
+                        )})
                     )
                   `
                 : psql``

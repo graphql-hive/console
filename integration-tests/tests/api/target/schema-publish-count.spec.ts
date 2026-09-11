@@ -6,7 +6,7 @@ import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
 
-const skipLegacyTests = !!process.env.SCHEMA_VERSION_ORIGIN_CUTOFF;
+const skipLegacyTests = !process.env.SCHEMA_VERSION_ORIGIN_CUTOFF;
 const originCutoff = new Date(process.env.SCHEMA_VERSION_ORIGIN_CUTOFF ?? new Date());
 
 const SchemaPublishCountQuery = graphql(/* GraphQL */ `
@@ -47,63 +47,43 @@ test
     const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
     const token = await createTargetAccessToken({});
 
-    await token
+    const result = await token
       .publishSchema({
         service: 'Products',
-        sdl: /* GraphQL */ `
-          type Product @key(fields: "id") {
-            id: ID!
-          }
-
-          type Query {
-            product: Product
-          }
-        `,
+        url: 'http://localhost/products',
+        sdl: `type Query { products: String }`,
       })
       .then(r => r.expectNoGraphQLErrors());
+    expect(result.schemaPublish).toMatchObject({ __typename: 'SchemaPublishSuccess' });
     await token
       .publishSchema({
         service: 'Reviews',
-        sdl: /* GraphQL */ `
-          type Review @key(fields: "id") {
-            id: ID!
-          }
-
-          type Query {
-            review: Review
-          }
-        `,
+        url: 'http://localhost/reviews',
+        sdl: `type Query { products: String }`,
       })
       .then(r => r.expectNoGraphQLErrors());
     await token
       .publishSchema({
         service: 'Products',
-        sdl: /* GraphQL */ `
-          type Product @key(fields: "id") {
-            id: ID!
-            name: String
-          }
-
-          type Query {
-            product: Product
-          }
-        `,
+        url: 'http://localhost/products',
+        sdl: `type Query { products: Int }`,
       })
       .then(r => r.expectNoGraphQLErrors());
 
     await using connection = await seed.createDbConnection();
     await connection.pool.query(psql`
-    UPDATE "schema_versions"
-    SET
-      "origin" = NULL,
-      "created_at" = ${addDays(originCutoff, -1).toISOString()}
-    WHERE "target_id" = ${target.id}
-  `);
+      UPDATE "schema_versions"
+      SET
+        "origin" = NULL,
+        "created_at" = ${addDays(originCutoff, -1).toISOString()}
+      WHERE "target_id" = ${target.id}
+    `);
 
     const period = {
       from: addDays(originCutoff, -2).toISOString(),
       to: originCutoff.toISOString(),
     };
+
     const getCount = (subgraphNames?: string[]) =>
       getSchemaPublishCount({ authToken: ownerToken, targetId: target.id, period, subgraphNames });
 
@@ -126,13 +106,15 @@ test.concurrent('counts schema publishes from origin data by subgraph', async ({
   await token
     .publishSchema({
       service: 'Products',
-      sdl: 'type Query { product: String }',
+      url: 'http://localhost/products',
+      sdl: `type Query { products: String }`,
     })
     .then(r => r.expectNoGraphQLErrors());
   await token
     .publishSchema({
       service: 'Reviews',
-      sdl: 'type Query { review: String }',
+      url: 'http://localhost/reviews',
+      sdl: `type Query { reviews: String }`,
     })
     .then(r => r.expectNoGraphQLErrors());
 
@@ -167,12 +149,17 @@ test
     const token = await createTargetAccessToken({});
 
     await token
-      .publishSchema({ service: 'Products', sdl: 'type Query { product: String }' })
+      .publishSchema({
+        service: 'Products',
+        url: 'http://localhost/products',
+        sdl: `type Query { products: String }`,
+      })
       .then(r => r.expectNoGraphQLErrors());
     await token
       .publishSchema({
         service: 'Products',
-        sdl: 'type Query { product: String, products: [String!]! }',
+        url: 'http://localhost/products',
+        sdl: `type Query { products: Int }`,
       })
       .then(r => r.expectNoGraphQLErrors());
 
@@ -180,29 +167,30 @@ test
     const versions = await connection.pool
       .any(
         psql`
-      SELECT "id"
-      FROM "schema_versions"
-      WHERE "target_id" = ${target.id}
-      ORDER BY "created_at" ASC
-    `,
+          SELECT "id"
+          FROM "schema_versions"
+          WHERE "target_id" = ${target.id}
+          ORDER BY "created_at" ASC
+        `,
       )
       .then(z.array(z.object({ id: z.string() })).parse);
+
     expect(versions).toHaveLength(2);
 
     await connection.pool.query(psql`
-    UPDATE "schema_versions"
-    SET
-      "origin" = NULL,
-      "created_at" = ${addDays(originCutoff, -1).toISOString()}
-    WHERE "id" = ${versions[0]!.id}
-  `);
+      UPDATE "schema_versions"
+      SET
+        "origin" = NULL,
+        "created_at" = ${addDays(originCutoff, -1).toISOString()}
+      WHERE "id" = ${versions[0]!.id}
+    `);
     await connection.pool.query(psql`
-    UPDATE "schema_versions"
-    SET "created_at" = ${addDays(originCutoff, 1).toISOString()}
-    WHERE "id" = ${versions[1]!.id}
-  `);
+      UPDATE "schema_versions"
+      SET "created_at" = ${addDays(originCutoff, 1).toISOString()}
+      WHERE "id" = ${versions[1]!.id}
+    `);
 
-    const countResult = getSchemaPublishCount({
+    const countResult = await getSchemaPublishCount({
       authToken: ownerToken,
       targetId: target.id,
       period: {

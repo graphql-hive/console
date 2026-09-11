@@ -659,13 +659,15 @@ export class SchemaManager {
     const cutoff = this.schemaModuleConfig.schemaVersionOriginCutoff;
 
     if (!cutoff || period.from >= cutoff) {
+      this.logger.debug('use origin based method');
       return this.schemaVersions.getSchemaPublishCountOfTarget(target, period, subgraphNames);
     }
 
     if (period.to <= cutoff) {
+      this.logger.debug('use legacy based method');
       return this.schemaVersions.getLegacySchemaPublishCountOfTarget(target, period, subgraphNames);
     }
-
+    this.logger.debug('use dual legacy and origin based method');
     const [legacyCount, originCount] = await Promise.all([
       this.schemaVersions.getLegacySchemaPublishCountOfTarget(
         target,
