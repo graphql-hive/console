@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useState,
   type ComponentType,
   type MouseEventHandler,
   type ReactElement,
@@ -501,10 +502,18 @@ function Menu(props: MenuProps) {
     delay,
     closeDelay,
   } = props;
+  // Mirrors Base UI's state for an uncontrolled menu, so `lockScroll` knows when it is open.
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isOpen = open ?? uncontrolledOpen;
+  const handleOpenChange = (next: boolean) => {
+    setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  };
+
   // Lock page scroll when the menu is open to prevent scroll-through
   // (wheel events on the popup propagating to the page behind it).
   useEffect(() => {
-    if (!lockScroll || !open) return;
+    if (!lockScroll || !isOpen) return;
 
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     document.documentElement.style.overflow = 'hidden';
@@ -514,7 +523,7 @@ function Menu(props: MenuProps) {
       document.documentElement.style.overflow = '';
       document.documentElement.style.paddingRight = '';
     };
-  }, [lockScroll, open]);
+  }, [lockScroll, isOpen]);
 
   // Resolved rather than defaulted in the destructure, so `submenu` can pick its own values and
   // an explicit prop still wins. A submenu opens beside its row; a root menu below its trigger.
@@ -562,7 +571,7 @@ function Menu(props: MenuProps) {
   }
 
   return (
-    <BaseMenu.Root open={open} onOpenChange={onOpenChange} modal={modal}>
+    <BaseMenu.Root open={open} onOpenChange={handleOpenChange} modal={modal}>
       <BaseMenu.Trigger render={trigger} />
       {popup}
     </BaseMenu.Root>
