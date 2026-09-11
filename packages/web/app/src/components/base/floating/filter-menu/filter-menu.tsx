@@ -50,7 +50,6 @@ export function FilterMenu({
     kind: 'submenu',
     label: d.label,
     maxWidth: 'lg',
-    stableWidth: true,
     content: isText(d) ? (
       <FloatingSearch
         label={d.label.toLowerCase()}
