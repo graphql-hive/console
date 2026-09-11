@@ -95,6 +95,10 @@ export const Disabled = createPreview(() => <Select options={METRICS} value="TRA
  */
 export const WithLabel = createPreview(() => {
   const [value, setValue] = useState('requests');
+  // The editor's shape: each pick moves a service out of the options and into the list, and
+  // the trigger is disabled once nothing is left to add.
+  const [added, setAdded] = useState<string[]>([]);
+  const remaining = ['products', 'reviews', 'inventory'].filter(s => !added.includes(s));
   return (
     <div className="flex items-center gap-6">
       <Select
@@ -107,15 +111,18 @@ export const WithLabel = createPreview(() => {
         onValueChange={setValue}
         label={`Sort by ${value}`}
       />
-      <Select
-        options={[
-          { value: 'products', label: 'products' },
-          { value: 'reviews', label: 'reviews' },
-        ]}
-        value=""
-        onValueChange={() => {}}
-        label="Select a service…"
-      />
+      <div className="flex items-center gap-3">
+        <Select
+          options={remaining.map(s => ({ value: s, label: s }))}
+          value=""
+          onValueChange={s => setAdded(prev => [...prev, s])}
+          label="Select a service…"
+          disabled={remaining.length === 0}
+        />
+        <span className="text-neutral-11 text-xs">
+          {added.length ? `Added: ${added.join(', ')}` : 'Nothing added yet'}
+        </span>
+      </div>
     </div>
   );
 });
