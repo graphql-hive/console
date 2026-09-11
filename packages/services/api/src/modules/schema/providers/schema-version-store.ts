@@ -709,7 +709,7 @@ export class SchemaVersionStore {
                         FROM jsonb_array_elements("origin"->'services') AS service
                         WHERE "service"->>'name' = ANY(${psql.array([...subgraphNames], 'text')})
                     )
-            `
+                  `
                 : psql``
             }
         `,
@@ -747,7 +747,7 @@ export class SchemaVersionStore {
                       subgraphNames.map(name => name.toLowerCase()),
                       'text',
                     )})
-            `
+                  `
                 : psql``
             }
         `,
