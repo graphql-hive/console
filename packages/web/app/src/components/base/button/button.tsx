@@ -1,10 +1,13 @@
 import { forwardRef, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type LucideIcon } from 'lucide-react';
-import { disabledStyle, segmentSeparator } from '../shared-styles';
+import { controlOnSurface, controlSize, disabledStyle, segmentSeparator } from '../shared-styles';
 
 export const buttonVariants = cva(
-  'group inline-flex items-center rounded-sm border text-xs font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
+  [
+    'group inline-flex items-center rounded-sm border font-medium transition-colors',
+    'focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
+  ],
   {
     variants: {
       variant: {
@@ -35,9 +38,16 @@ export const buttonVariants = cva(
         ],
       },
       size: {
-        default: 'h-7.5',
-        sm: '',
+        compact: controlSize.compact,
+        default: controlSize.default,
         'icon-sm': 'size-7 justify-center',
+      },
+      // What is inside. `label` and `iconOnly` pad their own segments, so the separators between
+      // segments can run the full height; only `children` pads the button itself, by size.
+      layout: {
+        children: '',
+        label: '',
+        iconOnly: '',
       },
       // Only `full` exists because only full-width is a thing buttons ask for: 116 of the
       // legacy call sites set w-full and nothing else. Fixed widths belong to the component
@@ -46,17 +56,32 @@ export const buttonVariants = cva(
         auto: '',
         full: 'w-full justify-center',
       },
+      // Which surface the button sits on. Only `default` changes: it is the one variant with a
+      // fill of its own to drop, and it is the variant Select uses for its trigger.
+      onSurface: {
+        base: '',
+        raised: '',
+      },
     },
+    compoundVariants: [
+      { variant: 'default', onSurface: 'raised', class: controlOnSurface.raised },
+      { layout: 'children', size: 'compact', class: 'gap-1 px-3' },
+      { layout: 'children', size: 'default', class: 'gap-1.5 px-4' },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',
+      layout: 'children',
       width: 'auto',
+      onSurface: 'base',
     },
   },
 );
 
+// `layout` is a cva variant so padding can key on it, but as a prop it is the discriminant of
+// the union below, so the union defines it rather than cva.
 type CommonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'style'> &
-  VariantProps<typeof buttonVariants>;
+  Omit<VariantProps<typeof buttonVariants>, 'layout'>;
 
 /** Simple button with children content */
 type ChildrenLayout = CommonProps & {
@@ -108,7 +133,7 @@ type ButtonProps = ChildrenLayout | LabelLayout | IconOnlyLayout;
  * which passes a ref to the trigger element.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(props, ref) {
-  const { variant, size, width, disabled, ...rest } = props;
+  const { variant, size, width, onSurface, disabled, ...rest } = props;
 
   // Remove custom props so they don't get spread onto the DOM element
   const domProps = rest as Record<string, unknown>;
@@ -119,19 +144,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   delete domProps.icon;
   delete domProps.children;
 
-  const sizeClass =
-    size === 'icon-sm'
-      ? ''
-      : size === 'sm'
-        ? 'h-8 px-3 gap-1 text-[13px]'
-        : props.label != null || props.layout === 'iconOnly'
-          ? '' // segmented/icon buttons handle their own padding
-          : 'h-9 px-4 gap-1.5 text-[13px]';
+  const layout =
+    props.layout === 'iconOnly' ? 'iconOnly' : props.label != null ? 'label' : 'children';
 
   return (
     <button
       ref={ref}
-      className={`${buttonVariants({ variant, size, width })} ${sizeClass}`}
+      className={buttonVariants({ variant, size, layout, width, onSurface })}
       disabled={disabled}
       style={disabled ? disabledStyle : undefined}
       {...domProps}
@@ -142,10 +161,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         </span>
       ) : props.label != null ? (
         <>
-          <span className="px-3 py-1.5 text-[13px]">{props.label}</span>
+          <span className="flex items-center self-stretch px-3">{props.label}</span>
 
           {props.accessoryInformation != null && (
-            <span className={`${segmentSeparator} px-3 py-1.5`}>{props.accessoryInformation}</span>
+            <span className={`${segmentSeparator} flex items-center self-stretch px-3`}>
+              {props.accessoryInformation}
+            </span>
           )}
           {props.rightIcon && (
             <span
@@ -179,7 +200,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
                     }
                   : undefined
               }
-              className={`${props.rightIcon.withSeparator && segmentSeparator} text-neutral-8 ${props.rightIcon.action ? 'hover:text-neutral-11' : 'group-hover:text-neutral-12'} flex items-center px-2 py-1.5`}
+              className={`${props.rightIcon.withSeparator && segmentSeparator} text-neutral-8 ${props.rightIcon.action ? 'hover:text-neutral-11' : 'group-hover:text-neutral-12'} flex items-center self-stretch px-2`}
             >
               <props.rightIcon.icon className="size-3" />
             </span>

@@ -39,7 +39,7 @@ export type FilterDropdownProps = {
 };
 
 /** Outer shell shared by every filter chip. */
-export const chipClass = buttonVariants({ variant: 'default' });
+export const chipClass = buttonVariants({ variant: 'default', size: 'compact', layout: 'label' });
 
 /** The chip's trailing remove button. */
 export const chipRemoveButtonClass =

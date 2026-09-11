@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Select as BaseSelect } from '@/components/base/floating/select/select';
 import {
   Select,
   SelectContent,
@@ -647,5 +648,267 @@ export const V2NativeSelect = createPreview({
         </select>
       </div>
     </CallSite>
+  ),
+});
+
+// ---------------------------------------------------------------------------
+// The gate: each legacy shape beside its base replacement. Left is what ships, right is what the
+// migration produces. Every new prop on base Select exists because of one of these rows.
+// ---------------------------------------------------------------------------
+
+function Pair(props: { old: React.ReactNode; base: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-2 items-start gap-6">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-neutral-10 font-mono text-[10px]">ui</span>
+        {props.old}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-success_80 font-mono text-[10px]">base</span>
+        {props.base}
+      </div>
+    </div>
+  );
+}
+
+function NavPickerPair() {
+  const [value, setValue] = useState('the-guild');
+  const orgs = ['the-guild', 'acme-corp', 'personal'];
+  return (
+    <Pair
+      old={<NavigationPicker kind="organization" options={orgs} />}
+      base={
+        <BaseSelect
+          options={orgs.map(slug => ({ value: slug, label: slug }))}
+          value={value}
+          onValueChange={setValue}
+          data-cy="organization-picker-trigger"
+        />
+      }
+    />
+  );
+}
+
+function SortPair() {
+  const [value, setValue] = useState('requests');
+  const labels: Record<string, string> = {
+    requests: 'Requests',
+    versions: 'Schema Versions',
+    name: 'Name',
+  };
+  return (
+    <Pair
+      old={<SortSelect scope="project" />}
+      base={
+        <BaseSelect
+          options={[
+            {
+              value: 'requests',
+              label: 'Requests',
+              description: `GraphQL requests made in the last ${DAYS} days.`,
+            },
+            {
+              value: 'versions',
+              label: 'Schema Versions',
+              description: `Schemas published in last ${DAYS} days.`,
+            },
+            { value: 'name', label: 'Name', description: 'Sort by project name.' },
+          ]}
+          value={value}
+          onValueChange={setValue}
+          label={labels[value]}
+        />
+      }
+    />
+  );
+}
+
+function PermissionPair() {
+  const [value, setValue] = useState('read-only');
+  return (
+    <Pair
+      old={<LegacyScopePicker noDowngrade />}
+      base={
+        <BaseSelect
+          options={[
+            {
+              value: 'no-access',
+              label: 'No access',
+              description: "Can't downgrade",
+              disabled: true,
+              'data-cy': 'select-option-no-access',
+            },
+            { value: 'read-only', label: 'Read-only', 'data-cy': 'select-option-read-only' },
+            { value: 'read-write', label: 'Read & write', 'data-cy': 'select-option-read-write' },
+          ]}
+          value={value}
+          onValueChange={setValue}
+          width="sm"
+          data-cy="select-trigger"
+          popupDataCy="target-select-content"
+        />
+      }
+    />
+  );
+}
+
+function CdnPair() {
+  const [value, setValue] = useState('DEFAULT_GRAPH');
+  return (
+    <Pair
+      old={
+        <Select value={value} onValueChange={setValue}>
+          <SelectTrigger className="w-[250px] max-w-[300px]">
+            <SelectValue placeholder="Select Graph" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="DEFAULT_GRAPH">Default Graph</SelectItem>
+            <SelectItem value="public-api">public-api</SelectItem>
+          </SelectContent>
+        </Select>
+      }
+      base={
+        <BaseSelect
+          options={[
+            { value: 'DEFAULT_GRAPH', label: 'Default Graph' },
+            { value: 'public-api', label: 'public-api' },
+          ]}
+          value={value}
+          onValueChange={setValue}
+          placeholder="Select Graph"
+          width="lg"
+        />
+      }
+    />
+  );
+}
+
+function CollectionPair() {
+  const [value, setValue] = useState('');
+  const collections = [
+    { id: 'c1', name: 'Onboarding', description: 'Queries used in the getting-started guide' },
+    { id: 'c2', name: 'Regression', description: 'Operations we replay before every release' },
+  ];
+  return (
+    <Pair
+      old={<CollectionSelect />}
+      base={
+        <BaseSelect
+          options={collections.map(c => ({
+            value: c.id,
+            label: c.name,
+            description: c.description,
+            'data-cy': 'collection-select-item',
+          }))}
+          value={value}
+          onValueChange={setValue}
+          placeholder="Select a Collection"
+          matchTriggerWidth
+          data-cy="collection-select-trigger"
+        />
+      }
+    />
+  );
+}
+
+function InsetPair() {
+  const [value, setValue] = useState('private');
+  const options = [
+    { value: 'private', label: 'My views' },
+    { value: 'shared', label: 'Shared views' },
+  ];
+  return (
+    <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 rounded-md border p-4">
+      <Pair
+        old={<SaveLocationSelect />}
+        base={
+          <BaseSelect options={options} value={value} onValueChange={setValue} onSurface="raised" />
+        }
+      />
+    </div>
+  );
+}
+
+function FormPair() {
+  const [value, setValue] = useState('30');
+  return (
+    <Pair
+      old={<ExpirationSelect />}
+      base={
+        <div className="grid w-full max-w-sm items-center gap-1.5">
+          <label className="text-neutral-12 text-sm font-medium" htmlFor="expiresAt-base">
+            Expiration
+          </label>
+          <BaseSelect
+            options={EXPIRATION_PERIODS.map(c => ({ value: c.value, label: c.name }))}
+            value={value}
+            onValueChange={setValue}
+            id="expiresAt-base"
+            name="expirationPeriod"
+            width="full"
+          />
+          <p className="text-neutral-11 text-xs">
+            Expire the token automatically after a period of time.
+          </p>
+        </div>
+      }
+    />
+  );
+}
+
+export const UiVsBase = createPreview({
+  label: 'ui vs base',
+  render: () => (
+    <div className="flex w-[52rem] flex-col gap-10">
+      <CallSite
+        source="layouts/organization-selectors.tsx:33"
+        origin="ui"
+        note="Nav picker. No width, sizes to the slug. data-cy moves from an inner div to the trigger itself."
+      >
+        <NavPickerPair />
+      </CallSite>
+      <CallSite
+        source="pages/organization.tsx:224"
+        origin="ui"
+        note="Sort select. `label` keeps the short trigger text; `description` replaces the hand-built second line in each option."
+      >
+        <SortPair />
+      </CallSite>
+      <CallSite
+        source="organization/Permissions.tsx:50"
+        origin="ui"
+        note="Permission scope with noDowngrade. `disabled` + `description` replace the inline italic note. Playwright's three hooks land on trigger, popup and option via data-cy props."
+      >
+        <PermissionPair />
+      </CallSite>
+      <CallSite
+        source="layouts/target.tsx:375"
+        origin="ui"
+        note="CDN artifact modal. w-[250px] max-w-[300px] becomes width='lg'; the max cap is dropped."
+      >
+        <CdnPair />
+      </CallSite>
+      <CallSite
+        source="target/laboratory/create-operation-modal.tsx:226"
+        origin="ui"
+        note="Collection picker. `matchTriggerWidth` replaces w-(--radix-select-trigger-width); the description line that can be empty is now a prop."
+      >
+        <CollectionPair />
+      </CallSite>
+      <CallSite
+        source="target/insights/save-filter-button.tsx:210"
+        origin="ui"
+        note="The one inset call site, on a raised panel. `onSurface='raised'` is the shared token; the old `variant='inset'` on both trigger and content collapses to it."
+      >
+        <InsetPair />
+      </CallSite>
+      <CallSite
+        source="create-access-token-sheet-content.tsx:276"
+        origin="ui"
+        note="Form select. `id` lands on the trigger for the label's htmlFor; `name` for the form. No field spread: the three sheets map their react-hook-form field explicitly."
+      >
+        <FormPair />
+      </CallSite>
+    </div>
   ),
 });
