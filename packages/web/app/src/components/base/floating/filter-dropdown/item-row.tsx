@@ -1,9 +1,12 @@
-import { memo } from 'react';
+import { createContext, memo, useContext, useEffect, useState, type RefObject } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Menu, MenuItem } from '../menu/menu';
 import type { FilterItem, FilterSelection } from './types';
 import { ValuesSubPanel } from './values-sub-panel';
+
+/** The list's scroll container, so a row can close its values panel when the list scrolls. */
+export const ListScrollContext = createContext<RefObject<HTMLDivElement> | null>(null);
 
 interface ItemRowProps {
   item: FilterItem;
@@ -38,6 +41,18 @@ export const ItemRow = memo(function ItemRow({
   unavailable,
 }: ItemRowProps) {
   const hasValues = item.values.length > 0;
+  const scrollRef = useContext(ListScrollContext);
+  const [open, setOpen] = useState(false);
+
+  // Scrolling the list moves the pointer off the row that opened the panel.
+  useEffect(() => {
+    const list = scrollRef?.current;
+    if (!open || !list) return;
+
+    const close = () => setOpen(false);
+    list.addEventListener('scroll', close, { passive: true });
+    return () => list.removeEventListener('scroll', close);
+  }, [open, scrollRef]);
 
   if (!hasValues) {
     return (
@@ -51,6 +66,8 @@ export const ItemRow = memo(function ItemRow({
   return (
     <Menu
       submenu
+      open={open}
+      onOpenChange={setOpen}
       trigger={
         <div onClick={() => onToggle(item)}>
           <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />

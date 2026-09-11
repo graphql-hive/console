@@ -548,7 +548,7 @@ function Menu(props: MenuProps) {
 
   if (submenu) {
     return (
-      <BaseMenu.SubmenuRoot>
+      <BaseMenu.SubmenuRoot open={open} onOpenChange={onOpenChange}>
         <BaseMenu.SubmenuTrigger
           className={(state: BaseMenu.SubmenuTrigger.State) => menuItemClassName(state, {})}
           openOnHover={openOnHover}

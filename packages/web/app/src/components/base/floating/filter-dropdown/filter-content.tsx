@@ -2,7 +2,7 @@ import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FloatingSearch } from '../floating-search';
 import { floatingEmptyState } from '../shared-styles';
-import { ItemRow } from './item-row';
+import { ItemRow, ListScrollContext } from './item-row';
 import type { FilterItem, FilterSelection } from './types';
 
 const ITEM_HEIGHT = 28; // h-7
@@ -168,28 +168,30 @@ export function FilterContent({
                 transform: `translateY(${virtualizer.getVirtualItems()[0]?.start ?? 0}px)`,
               }}
             >
-              {virtualizer.getVirtualItems().map(virtualItem => {
-                const item = filteredItems[virtualItem.index];
-                const selected = isItemSelected(item, selectedItems);
-                const selection = getItemSelection(item, selectedItems);
-                const hasPartialValues =
-                  selected && selection?.values !== null && (selection?.values?.length ?? 0) > 0;
+              <ListScrollContext.Provider value={scrollRef}>
+                {virtualizer.getVirtualItems().map(virtualItem => {
+                  const item = filteredItems[virtualItem.index];
+                  const selected = isItemSelected(item, selectedItems);
+                  const selection = getItemSelection(item, selectedItems);
+                  const hasPartialValues =
+                    selected && selection?.values !== null && (selection?.values?.length ?? 0) > 0;
 
-                return (
-                  <div key={getKey(item)} style={{ height: virtualItem.size }}>
-                    <ItemRow
-                      item={item}
-                      selected={selected}
-                      indeterminate={hasPartialValues}
-                      onToggle={toggleItem}
-                      selection={selection}
-                      onValuesChange={updateItemValues}
-                      valuesLabel={valuesLabel}
-                      unavailable={item.unavailable}
-                    />
-                  </div>
-                );
-              })}
+                  return (
+                    <div key={getKey(item)} style={{ height: virtualItem.size }}>
+                      <ItemRow
+                        item={item}
+                        selected={selected}
+                        indeterminate={hasPartialValues}
+                        onToggle={toggleItem}
+                        selection={selection}
+                        onValuesChange={updateItemValues}
+                        valuesLabel={valuesLabel}
+                        unavailable={item.unavailable}
+                      />
+                    </div>
+                  );
+                })}
+              </ListScrollContext.Provider>
             </div>
           </div>
         </div>
