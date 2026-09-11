@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Menu, MenuItem } from '../menu/menu';
 import type { FilterItem, FilterSelection } from './types';
@@ -54,6 +55,7 @@ export const ItemRow = memo(function ItemRow({
         <div onClick={() => onToggle(item)}>
           <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
           <ItemName name={item.name} unavailable={unavailable} />
+          <ChevronRight className="ml-auto size-3.5" />
         </div>
       }
       openOnHover
