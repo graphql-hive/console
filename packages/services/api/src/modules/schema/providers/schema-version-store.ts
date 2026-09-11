@@ -682,6 +682,43 @@ export class SchemaVersionStore {
     return result?.total ?? 0;
   }
 
+  async getSchemaPublishCountOfTarget(
+    target: Target,
+    period: {
+      from: Date;
+      to: Date;
+    },
+    subgraphNames: ReadonlyArray<string> | null,
+  ): Promise<number> {
+    const result = await this.pg
+      .maybeOne(
+        psql`/* countSchemaPublishesOfTarget */
+          SELECT
+            COUNT(*) as "total"
+          FROM "schema_versions"
+          WHERE
+            "target_id" = ${target.id}
+            AND "created_at" >= ${period.from.toISOString()}
+            AND "created_at" < ${period.to.toISOString()}
+            AND "origin" @> ${psql.jsonb({ type: 'publish' })}
+            ${
+              subgraphNames?.length
+                ? psql`
+                    AND EXISTS (
+                      SELECT 1
+                        FROM jsonb_array_elements("origin"->'services') AS service
+                        WHERE "service"->>'name' = ANY(${psql.array([...subgraphNames], 'text')})
+                    )
+            `
+                : psql``
+            }
+        `,
+      )
+      .then(z.object({ total: z.number() }).nullable().parse);
+
+    return result?.total ?? 0;
+  }
+
   async anyVersionExistsForTarget(target: Target) {
     return this.pg.exists(
       psql`/* hasSchema */

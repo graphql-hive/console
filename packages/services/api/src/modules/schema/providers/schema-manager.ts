@@ -650,6 +650,15 @@ export class SchemaManager {
     return this.schemaVersions.countSchemaVersionsOfTarget(target, period);
   }
 
+  getSchemaPublishCountOfTarget(
+    target: Target,
+    period: DateRange,
+    subgraphNames: ReadonlyArray<string> | null,
+  ): Promise<number> {
+    this.logger.debug('Fetching schema publishes count of target (targetId=%s)', target.id);
+    return this.schemaVersions.getSchemaPublishCountOfTarget(target, period, subgraphNames);
+  }
+
   async completeGetStartedCheck(
     selector: OrganizationSelector & {
       step: 'publishingSchema' | 'checkingSchema';

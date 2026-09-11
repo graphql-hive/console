@@ -19,6 +19,7 @@ export const Target: Pick<
   | 'latestValidSchemaVersion'
   | 'schemaCheck'
   | 'schemaChecks'
+  | 'schemaPublishCount'
   | 'schemaVersion'
   | 'schemaVersions'
   | 'schemaVersionsCount'
@@ -105,6 +106,11 @@ export const Target: Pick<
     return injector
       .get(SchemaManager)
       .countSchemaVersionsOfTarget(target, period ? parseDateRangeInput(period) : null);
+  },
+  schemaPublishCount: (target, { period, subgraphNames }, { injector }) => {
+    return injector
+      .get(SchemaManager)
+      .getSchemaPublishCountOfTarget(target, parseDateRangeInput(period), subgraphNames ?? null);
   },
   contracts: async (target, args, { injector }) => {
     return await injector.get(ContractsManager).getPaginatedContractsForTarget({
