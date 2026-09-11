@@ -226,8 +226,10 @@ export const MatchTriggerWidth = createPreview(() => {
 });
 
 /**
- * `onSurface="raised"` drops the trigger's fill for a select sitting on a popover or card, so it
- * does not stack a third layer. Both are on a raised panel here; compare the fills.
+ * `onSurface="raised"` lifts the trigger's fill one step above a card or a floating panel, where
+ * the base fill would match the surface and leave only a border. The two panels are the two
+ * raised surfaces in the app, which differ in dark (a card is neutral-3, a popover neutral-4);
+ * each holds a base trigger above a raised one.
  */
 export const OnSurface = createPreview(() => {
   const [value, setValue] = useState('private');
@@ -235,11 +237,22 @@ export const OnSurface = createPreview(() => {
     { value: 'private', label: 'My views' },
     { value: 'shared', label: 'Shared views' },
   ];
-  return (
-    <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 flex w-[26rem] flex-col gap-3 rounded-md border p-4">
-      <span className="text-neutral-11 text-xs">A raised panel</span>
+  const pair = (
+    <>
       <Select options={options} value={value} onValueChange={setValue} />
       <Select options={options} value={value} onValueChange={setValue} onSurface="raised" />
+    </>
+  );
+  return (
+    <div className="flex flex-wrap gap-6">
+      <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-4 flex w-[20rem] flex-col gap-3 rounded-md border p-4">
+        <span className="text-neutral-11 text-xs">A card</span>
+        {pair}
+      </div>
+      <div className="bg-neutral-2 dark:bg-neutral-4 border-neutral-5 flex w-[20rem] flex-col gap-3 rounded-md border p-4 shadow-md">
+        <span className="text-neutral-11 text-xs">A floating panel</span>
+        {pair}
+      </div>
     </div>
   );
 });

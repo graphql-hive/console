@@ -11,11 +11,9 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Segmented trigger style (for selects, menus, popovers, filters)
-        default: [
-          'bg-neutral-2 border-neutral-5 hover:bg-neutral-1 hover:border-neutral-5 text-neutral-9 hover:text-neutral-11',
-          'dark:text-neutral-11 dark:bg-neutral-3 dark:border-neutral-4 dark:hover:bg-neutral-4 dark:hover:border-neutral-5',
-        ],
+        // Segmented trigger style (for selects, menus, popovers, filters). Fill and border come
+        // from `controlOnSurface` in the compound variants below.
+        default: 'text-neutral-9 hover:text-neutral-11 dark:text-neutral-11',
         active: [
           'border-neutral-5 dark:border-neutral-6 text-neutral-12',
           'bg-neutral-3 dark:bg-neutral-5',
@@ -64,6 +62,7 @@ export const buttonVariants = cva(
       },
     },
     compoundVariants: [
+      { variant: 'default', onSurface: 'base', class: controlOnSurface.base },
       { variant: 'default', onSurface: 'raised', class: controlOnSurface.raised },
       { layout: 'children', size: 'compact', class: 'gap-1 px-3' },
       { layout: 'children', size: 'default', class: 'gap-1.5 px-4' },
