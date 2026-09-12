@@ -42,6 +42,8 @@ export function buildResolvers(
 
   // ['org', slug] | ['project', org, slug] | ['target', org, project, slug]
   const parts = (ref: Ref) => keyOf(ref).split('_');
+  const targetsOf = (o: string, p: string) =>
+    connection(WORLD.targets.map(t => target(o, p, t.slug)));
 
   const base: ResolverMap = {
     Query: {
@@ -71,6 +73,20 @@ export function buildResolvers(
         const slug = WORLD.organizations[0].slug;
         return { selector: { organizationSlug: slug }, organization: org(slug) };
       },
+      // The project page lists targets through this root field, not Project.targets. Both
+      // must agree or the breadcrumb cannot find the target you navigated to.
+      targets: (_p, { selector }) => targetsOf(selector.organizationSlug, selector.projectSlug),
+      latestValidVersion: (_p, { target: reference }) =>
+        reference?.bySelector
+          ? store.get(
+              target(
+                reference.bySelector.organizationSlug,
+                reference.bySelector.projectSlug,
+                reference.bySelector.targetSlug,
+              ),
+              'latestSchemaVersion',
+            )
+          : undefined,
       // Root Booleans (hasCollectedOperations, isCDNEnabled, ...) are deliberately not
       // resolved here: a resolver would beat a scenario's field pin, the Boolean rule does not.
     },
@@ -87,16 +103,34 @@ export function buildResolvers(
       },
       targets: parent => {
         const [, o, p] = parts(parent);
-        return connection(WORLD.targets.map(t => target(o, p, t.slug)));
+        return targetsOf(o, p);
       },
+    },
+    Target: {
+      // The latest version is composable by default, so the two are the same entity. A
+      // scenario returns a distinct one to show the "outdated schema" banner.
+      latestValidSchemaVersion: parent => store.get(parent, 'latestSchemaVersion'),
     },
   };
 
   return mergeResolverMaps(
-    base,
+    withoutPinnedFields(base, scenario),
     paginationInsensitive(schema, store),
     scenario.resolvers?.({ store }) ?? {},
   );
+}
+
+/** A resolver would beat a scenario's field pin, so pinned fields fall through to the mock. */
+function withoutPinnedFields(map: ResolverMap, scenario: Scenario): ResolverMap {
+  const out: ResolverMap = {};
+  for (const [typeName, fields] of Object.entries(map)) {
+    out[typeName] = Object.fromEntries(
+      Object.entries(fields).filter(
+        ([field]) => !(`${typeName}.${field}` in (scenario.fields ?? {})),
+      ),
+    );
+  }
+  return out;
 }
 
 /**

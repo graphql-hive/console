@@ -105,6 +105,61 @@ describe('createMockEngine', () => {
     expect((second.data as any).organization).toEqual({ id, slug });
   });
 
+  test('the project page target list and the breadcrumb tree agree', async () => {
+    // The project page lists targets via Query.targets(selector); the breadcrumb walks
+    // organizations -> projects -> targets. A target reached from one must exist in the other.
+    const result = await engineFor(scenarios.default).execute({
+      query: `query($s: ProjectSelectorInput!) {
+        targets(selector: $s) { edges { node { id slug } } }
+        organizations { nodes { slug projects { edges { node { slug targets { edges { node { id slug } } } } } } } }
+      }`,
+      variables: { s: { organizationSlug: 'acme', projectSlug: 'api' } },
+    });
+    const data = result.data as any;
+    const fromRoot = data.targets.edges.map((e: any) => e.node);
+    const fromTree = data.organizations.nodes
+      .find((o: any) => o.slug === 'acme')
+      .projects.edges.find((e: any) => e.node.slug === 'api')
+      .node.targets.edges.map((e: any) => e.node);
+
+    expect(fromRoot.map((t: any) => t.slug)).toEqual(WORLD.targets.map(t => t.slug));
+    expect(fromTree).toEqual(fromRoot);
+  });
+
+  test('the latest schema version is valid by default, so no outdated-schema banner', async () => {
+    const result = await engineFor(scenarios.default).execute({
+      query: `query($s: TargetSelectorInput!) {
+        target(reference: { bySelector: $s }) {
+          latestSchemaVersion { id isComposable }
+          latestValidSchemaVersion { id }
+        }
+        latestValidVersion(target: { bySelector: $s }) { id }
+      }`,
+      variables: { s: selector },
+    });
+    const data = result.data as any;
+
+    expect(data.target.latestSchemaVersion.isComposable).toBe(true);
+    expect(data.target.latestValidSchemaVersion.id).toBe(data.target.latestSchemaVersion.id);
+    expect(data.latestValidVersion.id).toBe(data.target.latestSchemaVersion.id);
+  });
+
+  test('a field pin beats a base consistency resolver', async () => {
+    const result = await engineFor({
+      ...scenarios.default,
+      fields: { 'Target.latestValidSchemaVersion': null },
+    }).execute({
+      query: `query($s: TargetSelectorInput!) {
+        target(reference: { bySelector: $s }) { latestSchemaVersion { id } latestValidSchemaVersion { id } }
+      }`,
+      variables: { s: selector },
+    });
+    const data = result.data as any;
+
+    expect(data.target.latestSchemaVersion).not.toBeNull();
+    expect(data.target.latestValidSchemaVersion).toBeNull();
+  });
+
   test('applies curated enum defaults', async () => {
     const result = await engineFor(scenarios.default).execute({
       query: `query($s: TargetSelectorInput!) {
@@ -248,6 +303,25 @@ describe('createMockEngine', () => {
       });
       expect(data.target.hasSchema).toBe(false);
       expect(data.target.latestSchemaVersion).toBeNull();
+    });
+
+    test('outdated-schema makes the latest version distinct from, and less valid than, the last valid one', async () => {
+      const result = await engineFor(scenarios['outdated-schema']).execute({
+        query: `query($s: TargetSelectorInput!) {
+          target(reference: { bySelector: $s }) {
+            latestSchemaVersion { id isComposable isValid }
+            latestValidSchemaVersion { id isComposable isValid }
+          }
+        }`,
+        variables: { s: selector },
+      });
+      const { latestSchemaVersion: latest, latestValidSchemaVersion: valid } = (result.data as any)
+        .target;
+
+      expect(result.errors).toBeUndefined();
+      expect(latest.id).not.toBe(valid.id);
+      expect(latest).toMatchObject({ isComposable: false, isValid: false });
+      expect(valid).toMatchObject({ isComposable: true, isValid: true });
     });
 
     test('over-quota raises the billing warnings', async () => {

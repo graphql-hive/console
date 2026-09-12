@@ -1,4 +1,4 @@
-import type { IMockStore } from '@graphql-tools/mock';
+import type { IMockStore, Ref } from '@graphql-tools/mock';
 import { supportTickets } from './fixtures/support-tickets';
 
 type Resolver = (parent: any, args: any) => unknown;
@@ -65,6 +65,24 @@ export const scenarios: Record<string, Scenario> = {
       Organization: {
         projects: emptyConnection,
         supportTickets: () => supportTickets({ count: 0 }),
+      },
+    }),
+  },
+
+  'outdated-schema': {
+    name: 'outdated-schema',
+    description:
+      'Latest schema version failed composition, so the explorer shows the last valid one',
+    resolvers: ({ store }) => ({
+      Target: {
+        // Flags go on the latest entity only; the valid one stays composable.
+        latestSchemaVersion: parent => {
+          const latest = store.get(parent, 'latestSchemaVersion') as Ref;
+          store.set(latest, { isComposable: false, isValid: false, valid: false });
+          return latest;
+        },
+        // A distinct entity from latestSchemaVersion is what triggers the banner.
+        latestValidSchemaVersion: parent => store.get('SchemaVersion', `valid_${parent.$ref.key}`),
       },
     }),
   },
