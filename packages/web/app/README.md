@@ -93,5 +93,5 @@ in cookies; `?latency=0` and `?error=` clear them.
 Mock data is realistic in shape, not in content: the schema is real, the values are faker. Mutations
 return success but nothing persists. Build UI against the mock; verify behaviour on the real stack
 (`pnpm dev:hive`) or in e2e. Nothing in mock mode ships to production: it is gated on
-`NODE_ENV=development` plus `HIVE_MOCK=1`, and `src/server/mock-server` is excluded from the server
+`NODE_ENV=development` plus `HIVE_MOCK=1`, and `src/dev/mock-server` is excluded from the server
 bundle.

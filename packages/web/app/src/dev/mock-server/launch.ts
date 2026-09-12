@@ -1,12 +1,12 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import * as readline from 'node:readline/promises';
-import { DEFAULT_SCENARIO, scenarios } from '../dev/scenarios';
+import { DEFAULT_SCENARIO, scenarios } from '../scenarios';
 
 /**
  * Launcher for `pnpm dev:mock`. Asks which scenario to start with, then runs the watched
- * server (./dev-mock-server.ts) with the answers in env. Prompting here rather than in the
- * server means a file save restarts the server without asking again.
+ * server (./start.ts) with the answers in env. Prompting here rather than in the server
+ * means a file save restarts the server without asking again.
  *
  * Skipped when stdin is not a terminal or HIVE_MOCK_SCENARIO is already set.
  */
@@ -83,7 +83,7 @@ const server = spawn(
     '--clear-screen=false',
     '--exclude',
     './**/*.mjs',
-    'src/server/dev-mock-server.ts',
+    'src/dev/mock-server/start.ts',
   ],
   { stdio: 'inherit', env },
 );

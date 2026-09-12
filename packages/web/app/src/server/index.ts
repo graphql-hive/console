@@ -15,8 +15,9 @@ const __dirname = new URL('.', import.meta.url).pathname;
 // eslint-disable-next-line no-process-env
 const isDev = process.env.NODE_ENV === 'development';
 /**
- * Whether to serve a mock GraphQL API instead of proxying to a backend.
- * See the ./dev-mock.ts file. Never true outside development.
+ * Mock mode (`pnpm dev:mock`): this server also hosts a fake GraphQL API so the UI runs with
+ * no backend. Everything for it lives in src/dev/mock-server; this file only hooks it in.
+ * Never true outside development.
  */
 // eslint-disable-next-line no-process-env
 const isMock = isDev && process.env.HIVE_MOCK === '1';
@@ -108,11 +109,13 @@ async function main() {
   connectGithub(server);
   connectLab(server);
 
+  // Mock mode hook (see isMock above). Registered before the HTML fallback so its request
+  // hooks apply to page loads. The dynamic import is excluded from the production bundle via
+  // buildOptions.external in package.json.
   let mock: { defaultScenario: string; defaultLatency: number } | null = null;
   if (isMock) {
     server.log.warn('HIVE_MOCK=1: serving a mock GraphQL API at /graphql, no backend is used');
-    // Dynamic and excluded from the production bundle via buildOptions.external in package.json.
-    const { connectMockServer } = await import('./mock-server');
+    const { connectMockServer } = await import('../dev/mock-server');
     /* eslint-disable no-process-env */
     mock = await connectMockServer(server, {
       session: process.env.HIVE_MOCK_SESSION,
