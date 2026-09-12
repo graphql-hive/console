@@ -16,6 +16,8 @@ export type SelectOption = {
   value: string;
   label: string;
   icon?: ReactNode;
+  /** Muted second line under the label in the popup. Not shown on the trigger. */
+  description?: string;
 };
 
 type SelectProps = Partial<
@@ -110,7 +112,10 @@ export function Select({
                       itemVariants({
                         highlighted: state.highlighted,
                         selected: state.selected,
-                        className: 'relative pl-7',
+                        // A description makes the item two lines, so it grows past h-7.
+                        className: option.description
+                          ? 'relative h-auto py-1.5 pl-7'
+                          : 'relative pl-7',
                       })
                     }
                   >
@@ -122,6 +127,11 @@ export function Select({
                         {option.icon}
                         {option.label}
                       </span>
+                      {option.description && (
+                        <span className="text-neutral-9 mt-0.5 block max-w-[320px] whitespace-normal text-xs leading-snug">
+                          {option.description}
+                        </span>
+                      )}
                     </BaseSelect.ItemText>
                   </BaseSelect.Item>
                 ))

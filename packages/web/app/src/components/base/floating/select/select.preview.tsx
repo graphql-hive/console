@@ -68,6 +68,30 @@ export const WithIcons = createPreview(() => {
   );
 });
 
+/** `description` adds a muted second line in the popup; the trigger still shows only the label. */
+export const WithDescriptions = createPreview(() => {
+  const [value, setValue] = useState('TRAFFIC');
+  return (
+    <Select
+      options={[
+        { value: 'TRAFFIC', label: 'Total requests', description: 'Every operation, any outcome' },
+        {
+          value: 'ERROR_RATE',
+          label: 'Error rate',
+          description: 'Share of operations that returned at least one error',
+        },
+        {
+          value: 'LATENCY:p99',
+          label: 'p99 latency',
+          description: 'The slowest one percent of operations, which is what timeouts feel like',
+        },
+      ]}
+      value={value}
+      onValueChange={setValue}
+    />
+  );
+});
+
 export const CustomTrigger = createPreview(() => {
   const [value, setValue] = useState('TRAFFIC');
   return (
