@@ -45,3 +45,53 @@ This is only important if you are hosting Hive for getting 💰.
 ```bash
 docker build . --build-arg RELEASE=stable-main -t graphql-hive/app
 ```
+
+## Local UI development without a backend
+
+```bash
+pnpm dev:mock
+```
+
+Asks which scenario to start with, then starts only this app's dev server, hosting a mock GraphQL
+API at `/graphql` built from the real API schema
+(`packages/services/api/src/modules/*/module.graphql.ts`). No docker, no other services. You are
+signed in automatically, every feature flag and permission is on, and every list is populated, so
+any gated view can be opened straight away. The last log line tells you the URL.
+
+It loads `src/dev/.env.mock` instead of `.env`, so it behaves the same on every machine. To skip the
+prompt (scripts, CI, or a non-interactive shell): `HIVE_MOCK_SCENARIO=empty-org pnpm dev:mock`,
+optionally with `HIVE_MOCK_LATENCY=<ms>`.
+
+### Scenarios
+
+A scenario is a named preset for what the fake backend returns. Pick one at the prompt, with
+`?scenario=<name>` on any page, or with the switcher in the bottom-right corner. URL and switcher
+choices stick in a cookie for the rest of the run; `?scenario=` (empty) goes back to the one you
+chose at startup. Cookies from a previous run are ignored, so the prompt always wins on a fresh
+start.
+
+| Name                   | What you get                                                    |
+| ---------------------- | --------------------------------------------------------------- |
+| `default`              | PRO plan, every gate open, realistic data                       |
+| `support-with-tickets` | Support page with open and solved tickets and comment threads   |
+| `empty-org`            | Fresh organization: no projects, schemas, operations or tickets |
+| `over-quota`           | Monthly operations limit exceeded and a failing payment method  |
+| `read-only-member`     | A member with no permissions: every `viewerCan*` is false       |
+| `logged-out`           | No session, so the sign-in, sign-up and reset pages render      |
+
+Scenarios live in `src/dev/scenarios.ts`; fixtures they use live in `src/dev/fixtures/`.
+
+### Loading and error states
+
+`?latency=2000` delays every response, which is how to see skeletons and debounced spinners.
+`?error=<OperationName>|<kind>` (or `*|<kind>`) fails matching operations, where `kind` is
+`graphql`, `network` (a non-JSON 503) or `unexpected` (hits that branch of `QueryError`). Both stick
+in cookies; `?latency=0` and `?error=` clear them.
+
+### What it is not
+
+Mock data is realistic in shape, not in content: the schema is real, the values are faker. Mutations
+return success but nothing persists. Build UI against the mock; verify behaviour on the real stack
+(`pnpm dev:hive`) or in e2e. Nothing in mock mode ships to production: it is gated on
+`NODE_ENV=development` plus `HIVE_MOCK=1`, and `src/server/mock-server` is excluded from the server
+bundle.

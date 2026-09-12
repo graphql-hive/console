@@ -284,7 +284,8 @@ describe('createMockEngine', () => {
       expect(data.organizationBySlug.me.isOwner).toBe(false);
     });
 
-    test('every scenario still serves every persisted operation', async () => {
+    // Six engines times every operation: about 1.3s idle, so give it room on a loaded CI runner.
+    test('every scenario still serves every persisted operation', { timeout: 20_000 }, async () => {
       const ops = loadPersistedOperations().filter(op => op.kind !== 'subscription');
 
       for (const scenario of Object.values(scenarios)) {

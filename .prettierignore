@@ -1,5 +1,6 @@
 .env
 .env.template
+.env.mock
 dist/
 .next/
 __generated__/

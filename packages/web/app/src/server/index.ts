@@ -14,6 +14,12 @@ const __dirname = new URL('.', import.meta.url).pathname;
  */
 // eslint-disable-next-line no-process-env
 const isDev = process.env.NODE_ENV === 'development';
+/**
+ * Whether to serve a mock GraphQL API instead of proxying to a backend.
+ * See the ./dev-mock.ts file. Never true outside development.
+ */
+// eslint-disable-next-line no-process-env
+const isMock = isDev && process.env.HIVE_MOCK === '1';
 
 const server = Fastify({
   disableRequestLogging: true,
@@ -102,6 +108,20 @@ async function main() {
   connectGithub(server);
   connectLab(server);
 
+  let mock: { defaultScenario: string; defaultLatency: number } | null = null;
+  if (isMock) {
+    server.log.warn('HIVE_MOCK=1: serving a mock GraphQL API at /graphql, no backend is used');
+    // Dynamic and excluded from the production bundle via buildOptions.external in package.json.
+    const { connectMockServer } = await import('./mock-server');
+    /* eslint-disable no-process-env */
+    mock = await connectMockServer(server, {
+      session: process.env.HIVE_MOCK_SESSION,
+      defaultScenario: process.env.HIVE_MOCK_SCENARIO,
+      defaultLatency: Number(process.env.HIVE_MOCK_LATENCY) || 0,
+    });
+    /* eslint-enable no-process-env */
+  }
+
   server.get(preflightWorkerEmbed.path, (_req, reply) => {
     if (isDev) {
       // If in development mode, return the Vite preflight-worker-embed.html.
@@ -131,6 +151,13 @@ async function main() {
     host: env.host,
     ipv6Only: env.ipv6Only,
   });
+
+  if (mock) {
+    const latency = mock.defaultLatency > 0 ? `, latency ${mock.defaultLatency}ms` : '';
+    server.log.warn(
+      `Mock mode ready. Open ${env.appBaseUrl} (scenario: ${mock.defaultScenario}${latency}; switch with ?scenario=<name>)`,
+    );
+  }
 }
 
 main().catch(err => {

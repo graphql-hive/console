@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsx ../../../scripts/runify.ts src/server/index.ts && NODE_OPTIONS='--max-old-space-size=8192' vite build",
     "dev": "tsx watch --clear-screen=false --exclude \"./**/*.mjs\" src/server/dev.ts",
+    "dev:mock": "tsx src/server/dev-mock.ts",
     "foundry": "foundry dev",
     "generate-changelog": "node ../../../scripts/generate-changelog.js",
     "postinstall": "pnpm generate-changelog",
@@ -159,7 +160,8 @@
   },
   "buildOptions": {
     "external": [
-      "vite"
+      "vite",
+      "./mock-server"
     ]
   }
 }

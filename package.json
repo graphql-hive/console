@@ -24,6 +24,7 @@
     "build:web": "pnpm prebuild && pnpm turbo build --filter=./packages/web/* --color",
     "dev:hive": "turbo dev:hive --ui tui --concurrency 100",
     "dev:integration": "cd integration-tests && pnpm dev:integration",
+    "dev:mock": "pnpm --filter @hive/app dev:mock",
     "dev:observability": "docker compose -f ./docker/docker-compose.dev.yml --profile observability up -d",
     "dev:observability:down": "docker compose -f ./docker/docker-compose.dev.yml --profile observability down",
     "docker:build": "NODE_VERSION_TAG=\":$(< .node-version)-slim\" docker buildx bake -f docker/docker.hcl --load build",
