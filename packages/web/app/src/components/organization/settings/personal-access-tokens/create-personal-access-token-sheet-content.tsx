@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Select } from '@/components/base/floating/select/select';
 import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,13 +11,6 @@ import * as Form from '@/components/ui/form';
 import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
 import { InputCopy } from '@/components/ui/input-copy';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
@@ -265,18 +259,17 @@ export function CreatePersonalAccessTokenSheetContent(
                               <Form.FormItem aria-invalid={fieldState.invalid}>
                                 <Form.FormLabel>Expiration</Form.FormLabel>
                                 <Form.FormControl>
-                                  <Select {...field} onValueChange={field.onChange}>
-                                    <SelectTrigger id={field.name}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {expirationPeriods.map(c => (
-                                        <SelectItem key={c.value} value={c.value}>
-                                          {c.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                  <Select
+                                    options={expirationPeriods.map(c => ({
+                                      value: c.value,
+                                      label: c.name,
+                                    }))}
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    onBlur={field.onBlur}
+                                    name={field.name}
+                                    width="full"
+                                  />
                                 </Form.FormControl>
                                 <Form.FormDescription>
                                   Expire the token automatically after a period of time.

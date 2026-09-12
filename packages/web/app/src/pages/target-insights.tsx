@@ -310,6 +310,7 @@ function OperationsView({
                   <Button
                     label={dateRangeController.selectedPreset.label}
                     variant="default"
+                    size="compact"
                     rightIcon={{ icon: ChevronDown, withSeparator: true }}
                   />
                 }
@@ -359,6 +360,7 @@ function OperationsView({
             <Button
               layout="iconOnly"
               icon={RefreshCw}
+              size="compact"
               aria-label="Refresh"
               onClick={() => dateRangeController.refreshResolvedRange()}
             />

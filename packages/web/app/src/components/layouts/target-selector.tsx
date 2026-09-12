@@ -1,5 +1,5 @@
+import { Select } from '@/components/base/floating/select/select';
 import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
 import { resolveTargetSwitchTo, TARGET_ROUTE_PREFIX } from './target-selector.utils';
@@ -101,26 +101,12 @@ export function TargetSelector(props: {
       )}
       <div className="text-neutral-10 italic">/</div>
       {targetEdges?.length && currentOrganization && currentProject && currentTarget ? (
-        <>
-          <Select value={props.currentTargetSlug} onValueChange={onTargetChange}>
-            <SelectTrigger variant="default" data-cy="target-picker-trigger">
-              <div className="font-medium" data-cy="target-picker-current">
-                {currentTarget.slug}
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {targetEdges.map(edge => (
-                <SelectItem
-                  key={edge.node.slug}
-                  value={edge.node.slug}
-                  data-cy={`target-picker-option-${edge.node.slug}`}
-                >
-                  {edge.node.slug}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </>
+        <Select
+          options={targetEdges.map(edge => ({ value: edge.node.slug, label: edge.node.slug }))}
+          value={props.currentTargetSlug}
+          onValueChange={onTargetChange}
+          data-cy="target-picker-trigger"
+        />
       ) : (
         <div className="bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
       )}

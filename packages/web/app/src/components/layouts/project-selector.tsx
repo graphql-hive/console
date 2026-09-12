@@ -1,5 +1,5 @@
+import { Select } from '@/components/base/floating/select/select';
 import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
 
@@ -58,6 +58,7 @@ export function ProjectSelector(props: {
         <>
           <div className="text-neutral-10 italic">/</div>
           <Select
+            options={projectEdges.map(edge => ({ value: edge.node.slug, label: edge.node.slug }))}
             value={props.currentProjectSlug}
             onValueChange={id => {
               void router.navigate({
@@ -68,24 +69,8 @@ export function ProjectSelector(props: {
                 },
               });
             }}
-          >
-            <SelectTrigger variant="default" data-cy="project-picker-trigger">
-              <div className="font-medium" data-cy="project-picker-current">
-                {currentProject.slug}
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {projectEdges.map(edge => (
-                <SelectItem
-                  key={edge.node.slug}
-                  value={edge.node.slug}
-                  data-cy={`project-picker-option-${edge.node.slug}`}
-                >
-                  {edge.node.slug}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            data-cy="project-picker-trigger"
+          />
         </>
       ) : (
         <div className="bg-neutral-5 h-5 w-48 animate-pulse rounded-full" />

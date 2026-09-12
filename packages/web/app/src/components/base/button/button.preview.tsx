@@ -22,17 +22,37 @@ export const TriggerVariants = createPreview(() => (
   </div>
 ));
 
+/**
+ * The two rungs of `controlSize`, one row each, across the three layouts. `default` (36px) is a
+ * form control; `compact` (30px) is filter chrome. `icon-sm` (28px) is the square for a close or
+ * clear icon inside something else and sits outside the ladder.
+ */
 export const Sizes = createPreview(() => (
-  <div className="flex items-center gap-4">
-    <Button variant="primary" size="default">
-      Default
-    </Button>
-    <Button variant="primary" size="sm">
-      Small
-    </Button>
-    <Button variant="ghost" size="icon-sm">
-      <X className="size-4" />
-    </Button>
+  <div className="flex flex-col gap-4">
+    <div className="flex items-center gap-4">
+      <span className="text-neutral-9 w-16 text-xs">default</span>
+      <Button variant="primary">Save alert</Button>
+      <Button label="Last 7 days" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
+      <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" />
+    </div>
+    <div className="flex items-center gap-4">
+      <span className="text-neutral-9 w-16 text-xs">compact</span>
+      <Button variant="primary" size="compact">
+        Save alert
+      </Button>
+      <Button
+        label="Last 7 days"
+        size="compact"
+        rightIcon={{ icon: ChevronDown, withSeparator: true }}
+      />
+      <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" size="compact" />
+    </div>
+    <div className="flex items-center gap-4">
+      <span className="text-neutral-9 w-16 text-xs">icon-sm</span>
+      <Button variant="ghost" size="icon-sm">
+        <X className="size-4" />
+      </Button>
+    </div>
   </div>
 ));
 
@@ -110,7 +130,7 @@ export const Playground = createPreview({
       ],
       default: 'primary',
     },
-    size: { type: 'radio', options: ['default', 'sm'], default: 'default' },
+    size: { type: 'radio', options: ['default', 'compact'], default: 'default' },
     width: { type: 'radio', options: ['auto', 'full'], default: 'auto' },
     disabled: { type: 'boolean', default: false },
   }),
