@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '@/components/base/badge/badge';
+import { Select } from '@/components/base/floating/select/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +27,6 @@ import { Label } from '@/components/ui/label';
 import * as Sheet from '@/components/ui/sheet';
 import { Input as V2Input } from '@/components/v2/input';
 import { Modal } from '@/components/v2/modal';
-import { Select as V2Select } from '@/components/v2/select';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Overlays';
@@ -352,7 +352,7 @@ function V2ModalExamples() {
       <CallSite
         source="components/project/alerts/create-alert.tsx:94"
         origin="v2"
-        note="The default: size sm (w-[450px]), bg-neutral-1 on a neutral-5/80 overlay, rounded-md, p-7. Compare the surface against the ui Dialog above: they do not read as the same system. Three v2 native Selects inside, each with its own label and error slot."
+        note="The default: size sm (w-[450px]), bg-neutral-1 on a neutral-5/80 overlay, rounded-md, p-7. Compare the surface against the ui Dialog above: they do not read as the same system. Three Selects inside, each with its own label and error slot (base since round 3; they were v2 native selects)."
       >
         <Button variant="outline" onClick={() => setOpenAlert(true)}>
           Open create-alert modal
@@ -364,38 +364,41 @@ function V2ModalExamples() {
               <label className="text-sm font-semibold" htmlFor="name">
                 Type
               </label>
-              <V2Select
+              <Select
                 name="type"
                 placeholder="Select alert type"
                 options={[
-                  { value: 'SCHEMA_CHANGE_NOTIFICATIONS', name: 'Schema Change Notifications' },
+                  { value: 'SCHEMA_CHANGE_NOTIFICATIONS', label: 'Schema Change Notifications' },
                 ]}
+                width="full"
               />
             </div>
             <div className="flex flex-col gap-4">
               <label className="text-sm font-semibold" htmlFor="name">
                 Channel
               </label>
-              <V2Select
+              <Select
                 name="channel"
                 placeholder="Select channel"
                 options={[
-                  { value: 'c1', name: 'Slack #alerts' },
-                  { value: 'c2', name: 'Webhook' },
+                  { value: 'c1', label: 'Slack #alerts' },
+                  { value: 'c2', label: 'Webhook' },
                 ]}
+                width="full"
               />
             </div>
             <div className="flex flex-col gap-4">
               <label className="text-sm font-semibold" htmlFor="name">
                 Target
               </label>
-              <V2Select
+              <Select
                 name="target"
                 placeholder="Select target"
                 options={[
-                  { value: 'production', name: 'production' },
-                  { value: 'staging', name: 'staging' },
+                  { value: 'production', label: 'production' },
+                  { value: 'staging', label: 'staging' },
                 ]}
+                width="full"
               />
             </div>
             <div className="flex w-full gap-2">
