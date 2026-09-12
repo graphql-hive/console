@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { TimeAgo } from '@/components/v2';
+import { TimeAgo } from '@/components/ui/time-ago';
 
 export function DateWithTimeAgo(props: {
   date: string;

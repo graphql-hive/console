@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { TimeAgo } from '@/components/v2';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { useRouter, useSearch } from '@tanstack/react-router';

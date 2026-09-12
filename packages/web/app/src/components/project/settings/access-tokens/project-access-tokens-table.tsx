@@ -6,7 +6,7 @@ import { DeleteAccessTokenConfirmationDialogue } from '@/components/organization
 import { TokenExpiration } from '@/components/organization/settings/access-tokens/token-expiration';
 import { Button } from '@/components/ui/button';
 import * as Table from '@/components/ui/table';
-import { TimeAgo } from '@/components/v2';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import { ProjectAccessTokenDetailViewSheet } from './project-access-token-detail-view-sheet';
 
