@@ -46,3 +46,9 @@ window.addEventListener('unhandledrejection', event => {
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<RouterProvider router={router} />);
+
+// Mock mode (`pnpm dev:mock`) scenario switcher. Double-gated: import.meta.env.DEV folds this
+// out of production builds, and the global is only ever injected by the mock server.
+if (import.meta.env.DEV && (window as any).__HIVE_MOCK__) {
+  void import('./dev/mock-switcher').then(m => m.mount());
+}

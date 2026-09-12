@@ -70,23 +70,23 @@ choices stick in a cookie for the rest of the run; `?scenario=` (empty) goes bac
 chose at startup. Cookies from a previous run are ignored, so the prompt always wins on a fresh
 start.
 
-| Name                   | What you get                                                    |
-| ---------------------- | --------------------------------------------------------------- |
-| `default`              | PRO plan, every gate open, realistic data                       |
-| `support-with-tickets` | Support page with open and solved tickets and comment threads   |
-| `empty-org`            | Fresh organization: no projects, schemas, operations or tickets |
-| `over-quota`           | Monthly operations limit exceeded and a failing payment method  |
-| `read-only-member`     | A member with no permissions: every `viewerCan*` is false       |
-| `logged-out`           | No session, so the sign-in, sign-up and reset pages render      |
+| Name               | What you get                                                         |
+| ------------------ | -------------------------------------------------------------------- |
+| `default`          | PRO plan, every gate open, realistic data                            |
+| `empty-org`        | Fresh organization: no projects, schemas, operations or tickets      |
+| `outdated-schema`  | Latest version failed composition; explorer shows the last valid one |
+| `over-quota`       | Monthly operations limit exceeded and a failing payment method       |
+| `read-only-member` | A member with no permissions: every `viewerCan*` is false            |
+| `logged-out`       | No session, so the sign-in, sign-up and reset pages render           |
 
 Scenarios live in `src/dev/scenarios.ts`; fixtures they use live in `src/dev/fixtures/`.
 
 ### Loading and error states
 
-`?latency=2000` delays every response, which is how to see skeletons and debounced spinners.
-`?error=<OperationName>|<kind>` (or `*|<kind>`) fails matching operations, where `kind` is
-`graphql`, `network` (a non-JSON 503) or `unexpected` (hits that branch of `QueryError`). Both stick
-in cookies; `?latency=0` and `?error=` clear them.
+Both are in the switcher's Controls section, or by URL: `?latency=2000` delays every response, which
+is how to see skeletons and debounced spinners. `?error=<OperationName>|<kind>` (or `*|<kind>`)
+fails matching operations, where `kind` is `graphql`, `network` (a non-JSON 503) or `unexpected`
+(hits that branch of `QueryError`). Both stick in cookies; `?latency=0` and `?error=` clear them.
 
 ### What it is not
 
