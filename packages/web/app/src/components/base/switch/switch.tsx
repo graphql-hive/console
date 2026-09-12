@@ -4,11 +4,13 @@ import { Switch as BaseSwitch } from '@base-ui/react/switch';
 const switchRootVariants = cva(
   [
     'group relative inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors',
-    'data-[unchecked]:bg-neutral-6 data-[unchecked]:hover:bg-neutral-8 data-[checked]:hover:bg-success_80',
-    'data-[checked]:bg-success',
+    'data-[unchecked]:bg-neutral-6 data-[checked]:bg-success',
+    'not-data-[disabled]:data-[unchecked]:hover:bg-neutral-8',
+    'not-data-[disabled]:data-[checked]:hover:bg-success_80',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
     'focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-2',
-    'disabled:cursor-not-allowed disabled:opacity-50',
+    // Base UI renders a span, so `:disabled` never matches; the state is a data attribute.
+    'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
   ],
   {
     variants: {
@@ -27,7 +29,13 @@ const switchRootVariants = cva(
 );
 
 const switchThumbVariants = cva(
-  'pointer-events-none block rounded-full dark:bg-neutral-12 bg-neutral-1 shadow-sm transition-transform data-[unchecked]:dark:bg-neutral-10 data-[unchecked]:bg-neutral-4',
+  [
+    'pointer-events-none block rounded-full transition-transform',
+    'bg-neutral-1 dark:bg-neutral-12 data-[unchecked]:bg-neutral-4 data-[unchecked]:dark:bg-neutral-10',
+    // A 1px dark ring plus a short drop shadow. The checked track is a bright green in dark mode,
+    // so a light thumb needs an edge of its own; the default shadow-sm is too faint to give one.
+    'shadow-[0_1px_3px_rgba(0,0,0,0.5),0_0_0_1px_rgba(0,0,0,0.25)]',
+  ],
   {
     variants: {
       size: {
