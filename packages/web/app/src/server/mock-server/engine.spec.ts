@@ -4,6 +4,7 @@ import { scenarios, type Scenario } from '@/dev/scenarios';
 import { WORLD } from '@/dev/world';
 import { createMockEngine } from './engine';
 import { loadPersistedOperations } from './persisted-operations';
+import { plausibleVariables } from './plausible-variables';
 import { loadHiveSchema } from './schema';
 
 const selector = { organizationSlug: 'acme', projectSlug: 'api', targetSlug: 'production' };
@@ -194,5 +195,109 @@ describe('createMockEngine', () => {
 
     expect((await engine.execute({ query: '{ nope }' })).errors).toHaveLength(1);
     expect((await engine.execute({ query: '{ me {' })).errors).toHaveLength(1);
+  });
+
+  describe('named scenarios', () => {
+    test('support-with-tickets serves the fixture through the real support pages', async () => {
+      const engine = engineFor(scenarios['support-with-tickets']);
+
+      const list = await engine.execute({
+        query: persisted('SupportPageQuery'),
+        variables: { organizationSlug: 'acme' },
+      });
+      const tickets = (list.data as any).organization.supportTickets.edges.map((e: any) => e.node);
+
+      expect(list.errors).toBeUndefined();
+      expect(tickets).toHaveLength(8);
+      expect(new Set(tickets.map((t: any) => t.status))).toEqual(new Set(['OPEN', 'SOLVED']));
+
+      const detail = await engine.execute({
+        query: persisted('SupportTicketPageQuery'),
+        variables: { organizationSlug: 'acme', ticketId: tickets[0].id },
+      });
+      const ticket = (detail.data as any).organization.supportTicket;
+
+      expect(detail.errors).toBeUndefined();
+      expect(ticket.id).toBe(tickets[0].id);
+      expect(ticket.subject).toBe(tickets[0].subject);
+      expect(ticket.comments.edges).toHaveLength(3);
+    });
+
+    test('empty-org has nothing to show', async () => {
+      const result = await engineFor(scenarios['empty-org']).execute({
+        query: `query($s: TargetSelectorInput!) {
+          hasCollectedOperations(selector: $s)
+          organizationBySlug(organizationSlug: "acme") {
+            projects { edges { node { id } } }
+            supportTickets { edges { node { id } } }
+            getStarted { creatingProject publishingSchema }
+          }
+          target(reference: { bySelector: $s }) { hasSchema latestSchemaVersion { id } }
+        }`,
+        variables: { s: selector },
+      });
+      const data = result.data as any;
+
+      expect(result.errors).toBeUndefined();
+      expect(data.hasCollectedOperations).toBe(false);
+      expect(data.organizationBySlug.projects.edges).toEqual([]);
+      expect(data.organizationBySlug.supportTickets.edges).toEqual([]);
+      expect(data.organizationBySlug.getStarted).toEqual({
+        creatingProject: false,
+        publishingSchema: false,
+      });
+      expect(data.target.hasSchema).toBe(false);
+      expect(data.target.latestSchemaVersion).toBeNull();
+    });
+
+    test('over-quota raises the billing warnings', async () => {
+      const result = await engineFor(scenarios['over-quota']).execute({
+        query: `query {
+          organizationBySlug(organizationSlug: "acme") {
+            isMonthlyOperationsLimitExceeded
+            billingConfiguration { hasPaymentIssues }
+            rateLimit { limitedForOperations }
+          }
+        }`,
+      });
+      const org = (result.data as any).organizationBySlug;
+
+      expect(org.isMonthlyOperationsLimitExceeded).toBe(true);
+      expect(org.billingConfiguration.hasPaymentIssues).toBe(true);
+      expect(org.rateLimit.limitedForOperations).toBe(true);
+    });
+
+    test('read-only-member closes every gate and drops owner and admin status', async () => {
+      const engine = engineFor(scenarios['read-only-member']);
+      const layout = await engine.execute({
+        query: persisted('TargetLayoutQuery'),
+        variables: selector,
+      });
+      const who = await engine.execute({
+        query:
+          'query { me { isAdmin } organizationBySlug(organizationSlug: "acme") { me { isOwner } } }',
+      });
+      const data = who.data as any;
+
+      expect(new Set(Object.values(collectViewerCan(layout.data)))).toEqual(new Set([false]));
+      expect(data.me.isAdmin).toBe(false);
+      expect(data.organizationBySlug.me.isOwner).toBe(false);
+    });
+
+    test('every scenario still serves every persisted operation', async () => {
+      const ops = loadPersistedOperations().filter(op => op.kind !== 'subscription');
+
+      for (const scenario of Object.values(scenarios)) {
+        const engine = engineFor(scenario);
+        for (const op of ops) {
+          const result = await engine.execute({
+            query: op.source,
+            operationName: op.name,
+            variables: plausibleVariables(engine.schema, op.operation),
+          });
+          expect(result.errors, `${scenario.name}: ${op.name}`).toBeUndefined();
+        }
+      }
+    });
   });
 });

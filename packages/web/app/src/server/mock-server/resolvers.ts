@@ -71,12 +71,12 @@ export function buildResolvers(
         const slug = WORLD.organizations[0].slug;
         return { selector: { organizationSlug: slug }, organization: org(slug) };
       },
-      hasCollectedOperations: () => true,
-      isCDNEnabled: () => true,
-      isGitHubIntegrationFeatureEnabled: () => true,
+      // Root Booleans (hasCollectedOperations, isCDNEnabled, ...) are deliberately not
+      // resolved here: a resolver would beat a scenario's field pin, the Boolean rule does not.
     },
     Organization: {
-      me: parent => store.get('Member', `member_${keyOf(parent)}`, { user: me(), isOwner: true }),
+      // isOwner is left to the Boolean rule (true) so a scenario can pin it false.
+      me: parent => store.get('Member', `member_${keyOf(parent)}`, { user: me() }),
       projectBySlug: (parent, args) => project(parts(parent)[1], args.projectSlug),
       projects: parent => connection(WORLD.projects.map(p => project(parts(parent)[1], p.slug))),
     },

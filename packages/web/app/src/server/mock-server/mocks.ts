@@ -9,7 +9,7 @@ import {
   type GraphQLObjectType,
   type GraphQLSchema,
 } from 'graphql';
-import { en, Faker } from '@faker-js/faker';
+import { base, en, Faker } from '@faker-js/faker';
 import { MockList, type IMocks } from '@graphql-tools/mock';
 
 export type MockOptions = {
@@ -43,7 +43,7 @@ const looksLikeError = (type: GraphQLObjectType) =>
   type.getInterfaces().some(i => i.name === 'Error') || /Error$|Retry$|NotFound/.test(type.name);
 
 export function buildMocks(schema: GraphQLSchema, options: MockOptions = {}): IMocks {
-  const faker = new Faker({ locale: [en] });
+  const faker = new Faker({ locale: [en, base] });
   faker.seed(options.seed ?? 1);
 
   const mocks: Record<string, unknown> = {
