@@ -31,21 +31,6 @@ export const scenarios: Record<string, Scenario> = {
     description: 'PRO plan, every gate open, realistic data',
   },
 
-  'support-with-tickets': {
-    name: 'support-with-tickets',
-    description: 'Support page with open and solved tickets and comment threads',
-    resolvers: () => {
-      const tickets = supportTickets({ count: 8, commentsPerTicket: 3 });
-      return {
-        Organization: {
-          supportTickets: () => tickets,
-          supportTicket: (_parent, args) =>
-            tickets.edges.find(e => e.node.id === args.id)?.node ?? null,
-        },
-      };
-    },
-  },
-
   'empty-org': {
     name: 'empty-org',
     description: 'Fresh organization: no projects, schemas, operations or tickets',

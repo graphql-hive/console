@@ -1,4 +1,5 @@
 import { isObjectType, type GraphQLSchema } from 'graphql';
+import { supportTickets } from '@/dev/fixtures/support-tickets';
 import { MOCK_USER } from '@/dev/mock-user';
 import type { ResolverMap, Scenario } from '@/dev/scenarios';
 import { WORLD } from '@/dev/world';
@@ -44,6 +45,7 @@ export function buildResolvers(
   const parts = (ref: Ref) => keyOf(ref).split('_');
   const targetsOf = (o: string, p: string) =>
     connection(WORLD.targets.map(t => target(o, p, t.slug)));
+  const tickets = supportTickets({ count: 8, commentsPerTicket: 3, seed: scenario.seed });
 
   const base: ResolverMap = {
     Query: {
@@ -95,6 +97,10 @@ export function buildResolvers(
       me: parent => store.get('Member', `member_${keyOf(parent)}`, { user: me() }),
       projectBySlug: (parent, args) => project(parts(parent)[1], args.projectSlug),
       projects: parent => connection(WORLD.projects.map(p => project(parts(parent)[1], p.slug))),
+      // Zendesk has no local data source, so the fixture is the default here, not a scenario.
+      supportTickets: () => tickets,
+      supportTicket: (_parent, args) =>
+        tickets.edges.find(e => e.node.id === args.id)?.node ?? null,
     },
     Project: {
       targetBySlug: (parent, args) => {
@@ -113,9 +119,10 @@ export function buildResolvers(
     },
   };
 
+  // Generic first so an explicit base resolver beats it, and the scenario beats everything.
   return mergeResolverMaps(
-    withoutPinnedFields(base, scenario),
     paginationInsensitive(schema, store),
+    withoutPinnedFields(base, scenario),
     scenario.resolvers?.({ store }) ?? {},
   );
 }

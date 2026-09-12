@@ -315,7 +315,7 @@ describe('connectMockServer', () => {
       expect(body.active).toBe('empty-org');
       expect(body.default).toBe('default');
       expect(body.controls).toEqual({ latency: 250, error: null });
-      expect(body.scenarios.map((s: any) => s.name)).toContain('support-with-tickets');
+      expect(body.scenarios.map((s: any) => s.name)).toContain('outdated-schema');
     });
 
     test('sets the scenario cookie, clears it for null, and rejects unknown names', async () => {

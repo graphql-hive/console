@@ -252,32 +252,33 @@ describe('createMockEngine', () => {
     expect((await engine.execute({ query: '{ me {' })).errors).toHaveLength(1);
   });
 
-  describe('named scenarios', () => {
-    test('support-with-tickets serves the fixture through the real support pages', async () => {
-      const engine = engineFor(scenarios['support-with-tickets']);
+  test('serves the support fixture through the real support pages by default', async () => {
+    // Zendesk-backed, so there is no seed path and the fixture is the default, not a scenario.
+    const engine = engineFor(scenarios.default);
 
-      const list = await engine.execute({
-        query: persisted('SupportPageQuery'),
-        variables: { organizationSlug: 'acme' },
-      });
-      const tickets = (list.data as any).organization.supportTickets.edges.map((e: any) => e.node);
-
-      expect(list.errors).toBeUndefined();
-      expect(tickets).toHaveLength(8);
-      expect(new Set(tickets.map((t: any) => t.status))).toEqual(new Set(['OPEN', 'SOLVED']));
-
-      const detail = await engine.execute({
-        query: persisted('SupportTicketPageQuery'),
-        variables: { organizationSlug: 'acme', ticketId: tickets[0].id },
-      });
-      const ticket = (detail.data as any).organization.supportTicket;
-
-      expect(detail.errors).toBeUndefined();
-      expect(ticket.id).toBe(tickets[0].id);
-      expect(ticket.subject).toBe(tickets[0].subject);
-      expect(ticket.comments.edges).toHaveLength(3);
+    const list = await engine.execute({
+      query: persisted('SupportPageQuery'),
+      variables: { organizationSlug: 'acme' },
     });
+    const tickets = (list.data as any).organization.supportTickets.edges.map((e: any) => e.node);
 
+    expect(list.errors).toBeUndefined();
+    expect(tickets).toHaveLength(8);
+    expect(new Set(tickets.map((t: any) => t.status))).toEqual(new Set(['OPEN', 'SOLVED']));
+
+    const detail = await engine.execute({
+      query: persisted('SupportTicketPageQuery'),
+      variables: { organizationSlug: 'acme', ticketId: tickets[0].id },
+    });
+    const ticket = (detail.data as any).organization.supportTicket;
+
+    expect(detail.errors).toBeUndefined();
+    expect(ticket.id).toBe(tickets[0].id);
+    expect(ticket.subject).toBe(tickets[0].subject);
+    expect(ticket.comments.edges).toHaveLength(3);
+  });
+
+  describe('named scenarios', () => {
     test('empty-org has nothing to show', async () => {
       const result = await engineFor(scenarios['empty-org']).execute({
         query: `query($s: TargetSelectorInput!) {
