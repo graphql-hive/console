@@ -12,26 +12,12 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { addDays, formatDate, setHours, setMinutes } from 'date-fns';
 import debounce from 'lodash.debounce';
-import { CalendarIcon, ChevronRightIcon, CircleXIcon, PlusIcon } from 'lucide-react';
-import type { DateRange } from 'react-day-picker';
+import { ChevronRightIcon, CircleXIcon, PlusIcon } from 'lucide-react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { findMatchingPreset, Preset } from '@/components/ui/date-range-picker';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -41,10 +27,8 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { formatNumber } from '@/lib/hooks';
-import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import * as SliderPrimitive from '@radix-ui/react-slider';
-import * as dateMath from '../../lib/date-math';
 
 type FilterInputProps = InputHTMLAttributes<HTMLInputElement>;
 
@@ -445,231 +429,6 @@ export const DurationFilter = memo(
               onValueChange={handleSliderChange}
               className="**:[[role=slider]]:size-4"
             />
-          </div>
-        </FilterContent>
-      </Filter>
-    );
-  },
-);
-
-const availableTimelineFilterPresets: Array<Preset> = [
-  { name: 'last5m', label: 'Last 5 minutes', range: { from: 'now-5m', to: 'now' } },
-  { name: 'last1hour', label: 'Last 1 hour', range: { from: 'now-1h', to: 'now' } },
-  { name: 'last3hours', label: 'Last 3 hours', range: { from: 'now-3h', to: 'now' } },
-  { name: 'last12hours', label: 'Last 12 hours', range: { from: 'now-12h', to: 'now' } },
-  { name: 'last24hours', label: 'Last 24 hours', range: { from: 'now-24h', to: 'now' } },
-];
-
-export const TimelineFilter = memo(
-  (props: { value: [string, string] | []; onChange(value: [string, string] | []): void }) => {
-    const selectedPreset = useMemo<Preset | null>(() => {
-      if (!props.value.length) {
-        return null;
-      }
-
-      return (
-        findMatchingPreset(
-          {
-            from: props.value[0],
-            to: props.value[1],
-          },
-          availableTimelineFilterPresets,
-        ) ?? {
-          name: 'custom',
-          label: 'Custom',
-          range: {
-            from: props.value[0],
-            to: props.value[1],
-          },
-        }
-      );
-    }, [props.value]);
-
-    const [isRangeSelectorPopupOpen, setIsRangeSelectorPopupOpen] = useState(false);
-
-    const [dateRange, setDateRange] = useResetState<DateRange | undefined>(
-      () =>
-        selectedPreset?.name === 'custom'
-          ? {
-              from: new Date(selectedPreset.range.from),
-              to: new Date(selectedPreset.range.to),
-            }
-          : {
-              from: addDays(new Date(), -3),
-              to: new Date(),
-            },
-      [props.value[0], props.value[1], isRangeSelectorPopupOpen],
-    );
-
-    const formatted = useMemo(() => {
-      if (!dateRange?.from || !dateRange.to || selectedPreset?.name !== 'custom') {
-        return 'Select time period';
-      }
-
-      const fromDate = formatDate(dateRange.from, 'MMM d');
-      const fromTime = formatDate(dateRange.from, 'HH:mm');
-      const toDate = formatDate(dateRange.to, 'MMM d');
-      const toTime = formatDate(dateRange.to, 'HH:mm');
-
-      if (fromDate === toDate) {
-        return `${fromDate}, ${fromTime} - ${toTime}`;
-      }
-
-      return `${fromDate}, ${fromTime} - ${toDate}, ${toTime}`;
-    }, [dateRange, selectedPreset]);
-
-    return (
-      <Filter name="Timeline">
-        <FilterTitle changes={props.value.length ? 1 : 0} onReset={() => props.onChange([])}>
-          Timeline
-        </FilterTitle>
-        <FilterContent>
-          <div className="space-y-2 p-2">
-            <Select
-              // The key is needed to reset the select state to show the SelectTrigger after resetting the filters.
-              key={`${props.value.at(0)}_${props.value.at(1)}`}
-              value={selectedPreset?.name ?? undefined}
-              onValueChange={value => {
-                if (value === 'custom') {
-                  const preset = selectedPreset ?? availableTimelineFilterPresets[0];
-                  props.onChange([
-                    dateMath.parse(preset.range.from)?.toISOString() ?? new Date().toISOString(),
-                    dateMath.parse(preset.range.to)?.toISOString() ?? new Date().toISOString(),
-                  ]);
-                  return;
-                }
-                const preset = availableTimelineFilterPresets.find(preset => preset.name === value);
-                if (preset) {
-                  props.onChange([preset.range.from, preset.range.to]);
-                }
-              }}
-            >
-              <SelectTrigger className="bg-neutral-3 w-full">
-                <SelectValue placeholder="Select time period" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTimelineFilterPresets.map(preset => (
-                  <SelectItem value={preset.name} key={preset.name}>
-                    {preset.label}
-                  </SelectItem>
-                ))}
-                <SelectItem value="custom">Custom</SelectItem>
-              </SelectContent>
-            </Select>
-            {selectedPreset?.name === 'custom' ? (
-              <>
-                <Popover
-                  open={isRangeSelectorPopupOpen}
-                  onOpenChange={isOpen => {
-                    setIsRangeSelectorPopupOpen(isOpen);
-                  }}
-                >
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start px-2 text-left">
-                      <CalendarIcon className="mr-2 size-4" />{' '}
-                      <span className="text-xs">{formatted}</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="center">
-                    <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={dateRange?.from}
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      numberOfMonths={1}
-                      className="p-2 pb-0"
-                    />
-                    <div className="border-neutral-5 mt-4 space-y-2 border-t p-2">
-                      <div>
-                        <Label className="text-neutral-10 text-sm font-normal">Start</Label>
-                        <div className="flex items-center gap-x-2">
-                          <Input
-                            className="h-8 w-[152px] py-0"
-                            value={dateRange?.from ? formatDate(dateRange.from, 'yyyy-MM-dd') : ''}
-                          />
-                          <Input
-                            className="h-8 w-16 py-0"
-                            value={dateRange?.from ? formatDate(dateRange.from, 'HH:mm') : ''}
-                            type="time"
-                            min="00:00"
-                            max="23:59"
-                            onChange={ev => {
-                              setDateRange(range =>
-                                range
-                                  ? {
-                                      ...range,
-                                      from: setMinutes(
-                                        setHours(
-                                          range.from ?? new Date(),
-                                          parseInt(ev.target.value.substr(0, 2)),
-                                        ),
-                                        parseInt(ev.target.value.substr(3, 5)),
-                                      ),
-                                    }
-                                  : undefined,
-                              );
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-neutral-10 text-sm font-normal">End</Label>
-                        <div className="flex items-center gap-x-2">
-                          <Input
-                            className="h-8 w-[152px] py-0"
-                            value={dateRange?.to ? formatDate(dateRange.to, 'yyyy-MM-dd') : ''}
-                          />
-                          <Input
-                            className="h-8 w-16 py-0"
-                            value={dateRange?.to ? formatDate(dateRange.to, 'HH:mm') : ''}
-                            type="time"
-                            min="00:00"
-                            max="23:59"
-                            onChange={ev => {
-                              setDateRange(range =>
-                                range
-                                  ? {
-                                      ...range,
-                                      to: setMinutes(
-                                        setHours(
-                                          range.to ?? new Date(),
-                                          parseInt(ev.target.value.substr(0, 2)),
-                                        ),
-                                        parseInt(ev.target.value.substr(3, 5)),
-                                      ),
-                                    }
-                                  : undefined,
-                              );
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          if (!dateRange?.from || !dateRange.to) {
-                            return;
-                          }
-                          props.onChange([
-                            dateRange.from.toISOString(),
-                            dateRange.to.toISOString(),
-                          ]);
-                          setIsRangeSelectorPopupOpen(false);
-                        }}
-                      >
-                        <span className="relative">
-                          Apply
-                          <span className="absolute top-[4px] ml-2 text-xs">↵</span>
-                        </span>
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </>
-            ) : null}
           </div>
         </FilterContent>
       </Filter>

@@ -193,7 +193,9 @@ export function Select({
                           {option.label}
                         </span>
                         {option.description ? (
-                          <span className="text-neutral-9 block text-xs">{option.description}</span>
+                          <span className="text-neutral-9 block truncate text-xs">
+                            {option.description}
+                          </span>
                         ) : null}
                       </BaseSelect.ItemText>
                     </BaseSelect.Item>

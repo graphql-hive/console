@@ -1,10 +1,10 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
+import { Select } from '@/components/base/floating/select/select';
 import { Button } from '@/components/ui/button';
 import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiffEditor } from '@/components/v2';
@@ -438,15 +438,7 @@ function ServiceSelect(props: {
     return (
       schemaEdges
         ?.filter(s => !props.selected.includes(s.node.id))
-        .map((edge, i) => (
-          <SelectItem
-            key={`${edge.cursor}-${i}`}
-            value={`${edge.node.id}`}
-            data-cy={`project-picker-option-${edge.node.id}`}
-          >
-            {schemaTitle(edge.node)}
-          </SelectItem>
-        )) ?? []
+        .map(edge => ({ value: `${edge.node.id}`, label: schemaTitle(edge.node) })) ?? []
     );
   }, [props.selected, schemaEdges]);
 
@@ -456,17 +448,14 @@ function ServiceSelect(props: {
 
   return schemaEdges && schemaEdges.length > 1 ? (
     <div className="flex grow flex-row">
-      <Select onValueChange={props.onSelect} value="">
-        <SelectTrigger
-          variant="default"
-          data-cy="project-picker-trigger"
-          className="min-w-[200px] max-w-[15vw] font-medium"
-          disabled={selectableServices.length === 0}
-        >
-          Select a service...
-        </SelectTrigger>
-        <SelectContent>{selectableServices}</SelectContent>
-      </Select>
+      <Select
+        options={selectableServices}
+        value=""
+        onValueChange={props.onSelect}
+        label="Select a service..."
+        disabled={selectableServices.length === 0}
+        width="md"
+      />
       <Button variant="orangeLink" className="ml-0 whitespace-nowrap" onClick={props.onSelectNew}>
         + New<span className="hidden sm:inline-block">&nbsp;Service</span>
       </Button>

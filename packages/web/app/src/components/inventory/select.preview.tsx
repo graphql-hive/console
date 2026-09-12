@@ -21,7 +21,10 @@ export const nav: NavPath = 'Inventory/Select';
  * and holds the selection in local state.
  *
  * `SelectGroup`, `SelectLabel` and `SelectSeparator` are exported by `ui/select` but have zero
- * call sites, so nothing here exercises them. They should be deleted, not ported.
+ * call sites, so nothing here exercises them. They should be deleted, not ported. The same goes
+ * for `TimelineFilter` in `pages/traces/target-traces-filter.tsx`: it held a select, but nothing
+ * ever mounted the component (the traces page uses `DateRangePicker`), so it was deleted in
+ * round 3 rather than migrated.
  */
 
 const ENTRIES = [
@@ -115,11 +118,6 @@ const ENTRIES = [
     what: 'Service picker held permanently at value=""',
   },
   {
-    source: 'pages/traces/target-traces-filter.tsx:528',
-    origin: 'ui',
-    what: 'Time period presets, remounted by key to reset the trigger',
-  },
-  {
     source: 'components/project/alerts/create-alert.tsx + create-channel.tsx',
     origin: 'v2',
     what: 'A native <select> rather than the Radix one',
@@ -134,11 +132,12 @@ export const Inventory = createPreview({
       component="ui/select and v2/select"
       summary={
         <>
-          17 instances. Every one passes a custom trigger child or sets a trigger width, so none is
-          covered by today's <code>base/floating/select</code> API as written. Three exports (
-          <code>SelectGroup</code>, <code>SelectLabel</code>, <code>SelectSeparator</code>) have
-          zero call sites. Four call sites carry <code>data-cy</code> hooks the Playwright suite
-          asserts on.
+          16 live instances. Every one passes a custom trigger child or sets a trigger width, so
+          none is covered by today's <code>base/floating/select</code> API as written. Three exports
+          (<code>SelectGroup</code>, <code>SelectLabel</code>, <code>SelectSeparator</code>) have
+          zero call sites, and a seventeenth instance sat in a component nothing mounts (
+          <code>TimelineFilter</code>), now deleted. Four call sites carry <code>data-cy</code>{' '}
+          hooks the Playwright suite asserts on.
         </>
       }
       entries={ENTRIES}
@@ -555,32 +554,6 @@ function ServiceSelect(props: { empty?: boolean }) {
   );
 }
 
-function TimePeriodSelect() {
-  const [value, setValue] = useState('last-7-days');
-  const presets = [
-    { name: 'last-hour', label: 'Last hour' },
-    { name: 'last-24-hours', label: 'Last 24 hours' },
-    { name: 'last-7-days', label: 'Last 7 days' },
-    { name: 'last-30-days', label: 'Last 30 days' },
-  ];
-
-  return (
-    <Select value={value} onValueChange={setValue}>
-      <SelectTrigger className="bg-neutral-3 w-full">
-        <SelectValue placeholder="Select time period" />
-      </SelectTrigger>
-      <SelectContent>
-        {presets.map(preset => (
-          <SelectItem value={preset.name} key={preset.name}>
-            {preset.label}
-          </SelectItem>
-        ))}
-        <SelectItem value="custom">Custom</SelectItem>
-      </SelectContent>
-    </Select>
-  );
-}
-
 export const OneOffs = createPreview({
   label: 'One-offs',
   render: () => (
@@ -612,15 +585,6 @@ export const OneOffs = createPreview({
         note="Disabled when there is nothing left to add. The trigger keeps its prompt text either way."
       >
         <ServiceSelect empty />
-      </CallSite>
-      <CallSite
-        source="pages/traces/target-traces-filter.tsx:528"
-        origin="ui"
-        note='Choosing "Custom" reveals a date-range popover beside it. The select is remounted by key to reset the trigger when filters are cleared.'
-      >
-        <div className="w-[280px]">
-          <TimePeriodSelect />
-        </div>
       </CallSite>
     </div>
   ),
