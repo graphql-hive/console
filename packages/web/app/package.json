@@ -27,6 +27,8 @@
     "@graphql-hive/laboratory": "workspace:*",
     "@graphql-inspector/core": "8.0.0",
     "@graphql-inspector/patch": "1.0.0",
+    "@graphql-tools/code-file-loader": "8.1.37",
+    "@graphql-tools/load": "8.1.16",
     "@graphql-tools/mock": "9.1.13",
     "@graphql-typed-document-node/core": "3.2.0",
     "@headlessui/react": "2.2.0",

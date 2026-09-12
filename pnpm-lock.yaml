@@ -2115,6 +2115,12 @@ importers:
       '@graphql-inspector/patch':
         specifier: 1.0.0
         version: 1.0.0(graphql@16.9.0)
+      '@graphql-tools/code-file-loader':
+        specifier: 8.1.37
+        version: 8.1.37(graphql@16.9.0)
+      '@graphql-tools/load':
+        specifier: 8.1.16
+        version: 8.1.16(graphql@16.9.0)
       '@graphql-tools/mock':
         specifier: 9.1.13
         version: 9.1.13(graphql@16.9.0)
