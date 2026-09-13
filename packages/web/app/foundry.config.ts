@@ -17,7 +17,7 @@ export default defineConfig({
       children: [
         {
           label: 'Foundations',
-          children: [{ label: 'TypeScale' }],
+          children: [{ label: 'TypeScale' }, { label: 'Focus' }],
         },
         {
           label: 'Primitives',

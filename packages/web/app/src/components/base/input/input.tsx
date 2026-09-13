@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { controlSize } from '../shared-styles';
+import { controlSize, focusRing } from '../shared-styles';
 
 type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'className'>;
 
@@ -15,6 +15,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(pro
         'text-neutral-12 placeholder:text-neutral-8 bg-neutral-2 border-neutral-5 dark:bg-neutral-3 dark:border-neutral-4',
         `rounded-sm border px-3 transition-colors ${controlSize.default}`,
         'hover:border-neutral-6 focus:border-neutral-7 focus:outline-none',
+        focusRing,
         'disabled:cursor-not-allowed disabled:opacity-50',
       ].join(' ')}
       {...props}

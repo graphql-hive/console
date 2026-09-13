@@ -1,12 +1,19 @@
 import { forwardRef, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type LucideIcon } from 'lucide-react';
-import { controlOnSurface, controlSize, disabledStyle, segmentSeparator } from '../shared-styles';
+import {
+  controlOnSurface,
+  controlSize,
+  disabledStyle,
+  focusRing,
+  segmentSeparator,
+} from '../shared-styles';
 
 export const buttonVariants = cva(
   [
     'group inline-flex items-center rounded-sm border font-medium transition-colors',
-    'focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
+    'disabled:pointer-events-none disabled:opacity-50',
+    focusRing,
   ],
   {
     variants: {

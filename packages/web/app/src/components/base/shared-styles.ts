@@ -15,6 +15,14 @@ export const segmentButton =
 export const disabledStyle = { opacity: 0.5, pointerEvents: 'none' } as const;
 
 /**
+ * Keyboard focus for every control: a 2px accent outline, 2px off the edge, on `:focus-visible`
+ * only. An outline rather than a box-shadow ring because it needs no offset colour, so it reads
+ * the same on the page, on a card and inside a popover.
+ */
+export const focusRing =
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
+
+/**
  * Vertical scroll container with a thin, muted scrollbar. Use anywhere content can overflow
  * (sheets, dialogs, floating lists). `thin-scrollbar` is a utility in `index.css` rather than
  * arbitrary Tailwind properties, because older Chromium and Safari need `::-webkit-scrollbar`
