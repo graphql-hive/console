@@ -1,6 +1,7 @@
 import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'urql';
 import { Card } from '@/components/base/card/card';
+import { Slider } from '@/components/base/slider/slider';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import {
   BillingPaymentMethodForm,
@@ -16,7 +17,6 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Input } from '@/components/v2/input';
-import { Slider } from '@/components/v2/slider';
 import Stat from '@/components/v2/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
@@ -159,8 +159,8 @@ function Inner(props: {
   );
 
   const onOperationsRateLimitChange = useCallback(
-    (limit: number[]) => {
-      setOperationsRateLimit(limit[0]);
+    (limit: number) => {
+      setOperationsRateLimit(limit);
     },
     [setOperationsRateLimit],
   );
@@ -423,7 +423,7 @@ function SubscriptionSlider({
   isFetching,
 }: {
   operationsRateLimit: number;
-  onOperationsRateLimitChange: (value: number[]) => void;
+  onOperationsRateLimitChange: (value: number) => void;
   isFetching: boolean;
 }) {
   const min = 1;
@@ -453,7 +453,7 @@ function SubscriptionSlider({
 
     if (valueInMillions !== null) {
       setInputError(null);
-      onOperationsRateLimitChange([valueInMillions]);
+      onOperationsRateLimitChange(valueInMillions);
     } else {
       setInputError('Invalid format (e.g., "100M", "1.5B").');
     }
@@ -471,8 +471,9 @@ function SubscriptionSlider({
         max={max}
         step={1}
         disabled={isFetching}
-        value={[Math.min(operationsRateLimit, max)]}
+        value={Math.min(operationsRateLimit, max)}
         onValueChange={onOperationsRateLimitChange}
+        aria-label="Operations per month, in millions"
       />
 
       <span>{formatMillionOrBillion(operationsRateLimit)}</span>

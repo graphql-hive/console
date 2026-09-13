@@ -1,5 +1,4 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import clsx from 'clsx';
 import { GraphiQL } from 'graphiql';
 import { buildSchema } from 'graphql';
 import { ChevronDownIcon, EraserIcon } from 'lucide-react';
@@ -15,7 +14,6 @@ import { SaveIcon, ShareIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 import { graphql } from '@/gql';
 import { useClipboard, useNotifications, useToggle } from '@/lib/hooks';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
@@ -50,6 +48,7 @@ import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
 import { Menu } from '@/components/base/floating/menu/menu';
+import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRedirect } from '@/lib/access/common';
@@ -501,43 +500,26 @@ function LaboratoryPageContent(props: {
           <div className="self-end pt-2">
             <span className="mr-2 text-xs font-bold">Query</span>
             <ToggleGroup
-              defaultValue="list"
+              options={[
+                {
+                  value: 'mockApi',
+                  label: 'Mock',
+                  tooltip: 'Use Mock Schema',
+                  disabled: query.fetching,
+                },
+                {
+                  value: 'linkedApi',
+                  label: 'API',
+                  tooltip: 'Use API endpoint',
+                  disabled: !query.data?.target?.graphqlEndpointUrl || query.fetching,
+                },
+              ]}
+              value={actualSelectedApiEndpoint}
               onValueChange={newValue => {
                 setEndpointType(newValue as 'mockApi' | 'linkedApi');
               }}
-              value="mock"
-              type="single"
-              className="text-neutral-10 bg-neutral-2/50"
-            >
-              <ToggleGroupItem
-                key="mockApi"
-                value="mockApi"
-                title="Use Mock Schema"
-                className={clsx(
-                  'hover:text-neutral-12 text-xs',
-                  !query.fetching &&
-                    actualSelectedApiEndpoint === 'mockApi' &&
-                    'bg-neutral-5 text-neutral-12',
-                )}
-                disabled={query.fetching}
-              >
-                Mock
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                key="linkedApi"
-                value="linkedApi"
-                title="Use API endpoint"
-                className={cn(
-                  'hover:text-neutral-12 text-xs',
-                  !query.fetching &&
-                    actualSelectedApiEndpoint === 'linkedApi' &&
-                    'bg-neutral-5 text-neutral-12',
-                )}
-                disabled={!query.data?.target?.graphqlEndpointUrl || query.fetching}
-              >
-                API
-              </ToggleGroupItem>
-            </ToggleGroup>
+              aria-label="Query endpoint"
+            />
           </div>
         </div>
       </div>

@@ -51,16 +51,17 @@ export type ToggleGroupOption = {
 
 type ToggleGroupProps = VariantProps<typeof groupVariants> & {
   options: ToggleGroupOption[];
-  value: string;
+  /** `undefined` presses nothing, for a setting that has not been chosen yet. */
+  value: string | undefined;
   onValueChange: (value: string) => void;
   disabled?: boolean;
   'aria-label'?: string;
 };
 
 /**
- * A single-select segmented control: exactly one option is pressed at all times. Pressing the
- * current option again is ignored rather than clearing the group, because every call site holds
- * a setting that has no "unset" state.
+ * A single-select segmented control. Once an option is pressed the group cannot be cleared:
+ * pressing the current option again is ignored, because every call site holds a setting that
+ * has no "unset" state once chosen.
  */
 export function ToggleGroup({
   options,
@@ -73,7 +74,7 @@ export function ToggleGroup({
 }: ToggleGroupProps) {
   return (
     <BaseToggleGroup
-      value={[value]}
+      value={value === undefined ? [] : [value]}
       onValueChange={groupValue => {
         const next = groupValue[0] as string | undefined;
         if (next !== undefined && next !== value) {
