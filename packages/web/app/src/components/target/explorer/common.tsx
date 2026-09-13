@@ -1,14 +1,14 @@
 import React, { ReactElement, ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { PulseIcon, UsersIcon } from '@/components/ui/icon';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { formatNumber, toDecimal } from '@/lib/hooks';
 import { capitalize, cn } from '@/lib/utils';
-import { Link as NextLink, useRouter } from '@tanstack/react-router';
+import { Link, useRouter } from '@tanstack/react-router';
 import AvailabilityBar from './availability-bar';
 import { useDescriptionsVisibleToggle, useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
@@ -153,7 +153,7 @@ export function SchemaExplorerUsageStats(props: {
                         {usage.topOperations.map(op => (
                           <tr key={op.hash}>
                             <td className="px-2 pl-0 text-left">
-                              <NextLink
+                              <Link
                                 className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
                                 to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                                 params={{
@@ -165,7 +165,7 @@ export function SchemaExplorerUsageStats(props: {
                                 }}
                               >
                                 {op.hash.substring(0, 4)}_{op.name}
-                              </NextLink>
+                              </Link>
                             </td>
                             <td className="px-2 text-center font-bold">{formatNumber(op.count)}</td>
                             <td className="px-2 text-center font-bold">
@@ -198,7 +198,7 @@ export function SchemaExplorerUsageStats(props: {
                   <ul>
                     {usage.usedByClients.map(clientName => (
                       <li key={clientName} className="font-bold">
-                        <NextLink
+                        <Link
                           className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                           params={{
@@ -209,7 +209,7 @@ export function SchemaExplorerUsageStats(props: {
                           }}
                         >
                           {clientName}
-                        </NextLink>
+                        </Link>
                       </li>
                     ))}
                   </ul>
@@ -466,15 +466,22 @@ export function GraphQLTypeAsLink(props: {
   const typename = props.type.replace(/[[\]!]+/g, '');
 
   return (
-    <Popover>
-      <PopoverTrigger className={cn('hover:underline hover:underline-offset-4', props.className)}>
-        {props.type}
-      </PopoverTrigger>
-      <PopoverContent side="right">
+    <Popover
+      trigger={
+        <button
+          type="button"
+          className={cn('hover:underline hover:underline-offset-4', props.className)}
+        >
+          {props.type}
+        </button>
+      }
+      side="right"
+      arrow
+      content={
         <div className="flex flex-col gap-y-2">
           <p>
-            <NextLink
-              className="text-sm font-normal hover:underline hover:underline-offset-2"
+            <Link
+              className="text-xs font-normal hover:underline hover:underline-offset-2"
               to="/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename"
               params={{
                 organizationSlug: props.organizationSlug,
@@ -484,13 +491,13 @@ export function GraphQLTypeAsLink(props: {
               }}
               search={router.latestLocation.search}
             >
-              Visit in <span className="font-bold">Explorer</span>
-            </NextLink>
+              Visit in <span className="font-medium">Explorer</span>
+            </Link>
             <span className="text-neutral-10 text-xs"> - displays a full type</span>
           </p>
           <p>
-            <NextLink
-              className="text-sm font-normal hover:underline hover:underline-offset-2"
+            <Link
+              className="text-xs font-normal hover:underline hover:underline-offset-2"
               to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
               params={{
                 organizationSlug: props.organizationSlug,
@@ -500,14 +507,13 @@ export function GraphQLTypeAsLink(props: {
               }}
               search={router.latestLocation.search}
             >
-              Visit in <span className="font-bold">Insights</span>
-            </NextLink>
+              Visit in <span className="font-medium">Insights</span>
+            </Link>
             <span className="text-neutral-10 text-xs"> - usage insights</span>
           </p>
         </div>
-        <PopoverArrow />
-      </PopoverContent>
-    </Popover>
+      }
+    />
   );
 }
 
@@ -525,7 +531,7 @@ export const LinkToCoordinatePage = React.forwardRef<
   const router = useRouter();
 
   return (
-    <NextLink
+    <Link
       ref={ref}
       className={cn('hover:underline hover:underline-offset-2', props.className)}
       to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
@@ -538,7 +544,7 @@ export const LinkToCoordinatePage = React.forwardRef<
       search={router.latestLocation.search}
     >
       {props.children}
-    </NextLink>
+    </Link>
   );
 });
 

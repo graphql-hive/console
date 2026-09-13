@@ -13,6 +13,7 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { Switch } from '@/components/base/switch/switch';
 import {
   ChangesBlock,
@@ -31,7 +32,6 @@ import { AlertTriangleIcon, DiffIcon } from '@/components/ui/icon';
 import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { QueryError } from '@/components/ui/query-error';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
@@ -458,13 +458,13 @@ function ConditionalBreakingChangesMetadataSection(props: {
               </Fragment>
             ))}
             {' and '}
-            <Popover>
-              <PopoverTrigger asChild>
+            <Popover
+              trigger={
                 <Button variant="link" className="p-0">
                   {excludedTargets.length} more
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent>
+              }
+              content={
                 <div className="p-2">
                   <h4 className="text-neutral-12 mb-2 text-sm font-semibold">All Targets</h4>
                   <ScrollArea className="h-44 w-full">
@@ -477,8 +477,8 @@ function ConditionalBreakingChangesMetadataSection(props: {
                     </div>
                   </ScrollArea>
                 </div>
-              </PopoverContent>
-            </Popover>
+              }
+            />
           </>
         )}
         . <br />
@@ -1505,8 +1505,10 @@ const ActiveSchemaCheck = (props: {
           {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.canBeApproved ? (
             <div className="ml-auto mr-0 pl-4">
               {schemaCheck.canBeApprovedByViewer ? (
-                <Popover open={approvalOpen} onOpenChange={setApprovalOpen}>
-                  <PopoverTrigger asChild>
+                <Popover
+                  open={approvalOpen}
+                  onOpenChange={setApprovalOpen}
+                  trigger={
                     <Button variant="destructive" disabled={approvalOpen}>
                       Approve{' '}
                       {approvalOpen ? (
@@ -1515,9 +1517,11 @@ const ActiveSchemaCheck = (props: {
                         <ChevronDown className="ml-2 size-4" />
                       )}
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[450px]" align="end">
-                    <PopoverArrow />
+                  }
+                  width="lg"
+                  align="end"
+                  arrow
+                  content={
                     <ApproveFailedSchemaCheckModal
                       onClose={() => setApprovalOpen(false)}
                       organizationSlug={props.organizationSlug}
@@ -1526,8 +1530,8 @@ const ActiveSchemaCheck = (props: {
                       schemaCheckId={schemaCheck.id}
                       contextId={schemaCheck.contextId}
                     />
-                  </PopoverContent>
-                </Popover>
+                  }
+                />
               ) : null}
             </div>
           ) : null}

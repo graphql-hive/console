@@ -188,11 +188,13 @@ export const SimpleContent = createPreview({
                 <a className="text-sm font-normal hover:underline" href="#">
                   Visit in <span className="font-bold">Explorer</span>
                 </a>
+                <span className="text-neutral-10 text-xs"> - displays a full type</span>
               </p>
               <p>
                 <a className="text-sm font-normal hover:underline" href="#">
                   Visit in <span className="font-bold">Insights</span>
                 </a>
+                <span className="text-neutral-10 text-xs"> - usage insights</span>
               </p>
             </div>
             <PopoverArrow />
@@ -860,11 +862,13 @@ const TYPE_LINKS = (
       <a className="text-sm font-normal hover:underline" href="#">
         Visit in <span className="font-bold">Explorer</span>
       </a>
+      <span className="text-neutral-10 text-xs"> - displays a full type</span>
     </p>
     <p>
       <a className="text-sm font-normal hover:underline" href="#">
         Visit in <span className="font-bold">Insights</span>
       </a>
+      <span className="text-neutral-10 text-xs"> - usage insights</span>
     </p>
   </div>
 );

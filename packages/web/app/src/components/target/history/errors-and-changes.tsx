@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { format } from 'date-fns';
 import { BoxIcon, CheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { Label, Label as LegacyLabel } from '@/components/common';
 import {
   Accordion,
@@ -14,7 +15,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { PulseIcon } from '@/components/ui/icon';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Table,
   TableBody,
@@ -360,11 +360,18 @@ function ChangeItem(
                       ({ hash, name, countFormatted, percentageFormatted }) => (
                         <TableRow key={hash}>
                           <TableCell className="font-medium">
-                            <Popover>
-                              <PopoverTrigger className="text-orange-800 hover:text-orange-800 hover:underline-offset-4 dark:text-orange-500 dark:hover:text-orange-500">
-                                {hash.substring(0, 4)}_{name}
-                              </PopoverTrigger>
-                              <PopoverContent side="right">
+                            <Popover
+                              trigger={
+                                <button
+                                  type="button"
+                                  className="text-orange-800 hover:text-orange-800 hover:underline-offset-4 dark:text-orange-500 dark:hover:text-orange-500"
+                                >
+                                  {hash.substring(0, 4)}_{name}
+                                </button>
+                              }
+                              side="right"
+                              arrow
+                              content={
                                 <div className="flex flex-col gap-y-2 text-sm">
                                   View live usage on
                                   {metadata.settings.targets.map((target, i) =>
@@ -389,9 +396,8 @@ function ChangeItem(
                                     ) : null,
                                   )}
                                 </div>
-                                <PopoverArrow />
-                              </PopoverContent>
-                            </Popover>
+                              }
+                            />
                           </TableCell>
                           <TableCell className="text-right">{countFormatted}</TableCell>
                           <TableCell className="text-right">{percentageFormatted}</TableCell>
@@ -489,16 +495,19 @@ function ChangeItem(
                             )}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Popover>
-                              <PopoverTrigger asChild>
+                            <Popover
+                              trigger={
                                 <Button variant="link" className="h-auto p-0">
                                   {deployment.totalAffectedOperations}{' '}
                                   {deployment.totalAffectedOperations === 1
                                     ? 'operation'
                                     : 'operations'}
                                 </Button>
-                              </PopoverTrigger>
-                              <PopoverContent side="left" className="w-80">
+                              }
+                              side="left"
+                              width="md"
+                              arrow
+                              content={
                                 <div className="space-y-2">
                                   <h5 className="text-neutral-12 font-medium">
                                     Affected Operations
@@ -526,9 +535,8 @@ function ChangeItem(
                                     operations
                                   </Link>
                                 </div>
-                                <PopoverArrow />
-                              </PopoverContent>
-                            </Popover>
+                              }
+                            />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -617,16 +625,19 @@ function ChangeItem(
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Popover>
-                          <PopoverTrigger asChild>
+                        <Popover
+                          trigger={
                             <Button variant="link" className="h-auto p-0">
                               {deployment.totalAffectedOperations}{' '}
                               {deployment.totalAffectedOperations === 1
                                 ? 'operation'
                                 : 'operations'}
                             </Button>
-                          </PopoverTrigger>
-                          <PopoverContent side="left" className="w-80">
+                          }
+                          side="left"
+                          width="md"
+                          arrow
+                          content={
                             <div className="space-y-2">
                               <h5 className="text-neutral-12 font-medium">Affected Operations</h5>
                               <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
@@ -651,9 +662,8 @@ function ChangeItem(
                                 Show all ({deployment.totalAffectedOperations}) affected operations
                               </Link>
                             </div>
-                            <PopoverArrow />
-                          </PopoverContent>
-                        </Popover>
+                          }
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
