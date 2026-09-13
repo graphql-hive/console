@@ -12,6 +12,7 @@ import {
   itemVariants,
   type FloatingProps,
 } from '../shared-styles';
+import { Tooltip } from '../tooltip/tooltip';
 
 export type SelectOption = {
   value: string;
@@ -24,6 +25,11 @@ export type SelectOption = {
    */
   description?: ReactNode;
   disabled?: boolean;
+  /**
+   * Explains the option on hover. Shown for disabled options too, which is the case it exists
+   * for: the description says what the option is, the tooltip says why it cannot be picked now.
+   */
+  tooltip?: ReactNode;
   'data-cy'?: string;
 };
 
@@ -162,44 +168,58 @@ export function Select({
               data-cy={popupDataCy}
             >
               {searchable && <FloatingSearch label="options" onSearch={setSearch} value={search} />}
-              <div className={searchable ? `${floatingScrollArea} h-64` : ''}>
+              <div className={searchable ? `${floatingScrollArea} max-h-64` : ''}>
                 {displayedOptions.length === 0 ? (
                   <div className={floatingEmptyState}>No matches</div>
                 ) : (
-                  displayedOptions.map(option => (
-                    <BaseSelect.Item
-                      key={option.value}
-                      value={option.value}
-                      disabled={option.disabled}
-                      data-cy={option['data-cy']}
-                      className={state =>
-                        itemVariants({
-                          highlighted: state.highlighted,
-                          selected: state.selected,
-                          disabled: state.disabled,
-                          // A row with a description grows past the fixed item height.
-                          className: option.description
-                            ? 'relative h-auto py-1.5 pl-7'
-                            : 'relative pl-7',
-                        })
-                      }
-                    >
-                      <BaseSelect.ItemIndicator className="absolute left-2 top-2 inline-flex items-center">
-                        <Check className="size-3" />
-                      </BaseSelect.ItemIndicator>
-                      <BaseSelect.ItemText>
-                        <span className="flex items-center gap-1.5">
-                          {option.icon}
-                          {option.label}
-                        </span>
-                        {option.description ? (
-                          <span className="text-neutral-9 block truncate text-xs">
-                            {option.description}
+                  displayedOptions.map(option => {
+                    const item = (
+                      <BaseSelect.Item
+                        key={option.value}
+                        value={option.value}
+                        disabled={option.disabled}
+                        data-cy={option['data-cy']}
+                        className={state =>
+                          itemVariants({
+                            highlighted: state.highlighted,
+                            selected: state.selected,
+                            disabled: state.disabled,
+                            // A row with a description grows past the fixed item height.
+                            className: option.description
+                              ? 'relative h-auto py-1.5 pl-7'
+                              : 'relative pl-7',
+                          })
+                        }
+                      >
+                        <BaseSelect.ItemIndicator className="absolute left-2 top-2 inline-flex items-center">
+                          <Check className="size-3" />
+                        </BaseSelect.ItemIndicator>
+                        <BaseSelect.ItemText>
+                          <span className="flex items-center gap-1.5">
+                            {option.icon}
+                            {option.label}
                           </span>
-                        ) : null}
-                      </BaseSelect.ItemText>
-                    </BaseSelect.Item>
-                  ))
+                          {option.description ? (
+                            <span className="text-neutral-9 block truncate text-xs">
+                              {option.description}
+                            </span>
+                          ) : null}
+                        </BaseSelect.ItemText>
+                      </BaseSelect.Item>
+                    );
+                    // Same wrap as a Menu row: a disabled item has pointer-events-none, so the
+                    // tooltip's trigger has to be an element around it.
+                    return option.tooltip ? (
+                      <Tooltip
+                        key={option.value}
+                        trigger={<span className="block">{item}</span>}
+                        content={option.tooltip}
+                        side="right"
+                      />
+                    ) : (
+                      item
+                    );
+                  })
                 )}
               </div>
             </BaseSelect.Popup>

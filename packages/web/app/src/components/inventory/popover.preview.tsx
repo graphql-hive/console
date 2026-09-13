@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { CalendarDays, CalendarIcon, ChevronsUpDown, SearchIcon } from 'lucide-react';
+import { CalendarDays, ChevronsUpDown, SearchIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Button as BaseButton } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Popover as BasePopover } from '@/components/base/floating/popover/popover';
+import { Select as BaseSelect } from '@/components/base/floating/select/select';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -100,7 +103,7 @@ const ENTRIES = [
   {
     source: 'components/target/proposals/version-select.tsx:45',
     origin: 'ui',
-    what: 'Version picker, three-column rows',
+    what: 'Version picker, three-column rows. DEAD: its only usage is commented out in pages/target-proposal.tsx since #7706; deleted in round 3',
     coveredBy: 'Comboboxes',
   },
   {
@@ -139,12 +142,6 @@ const ENTRIES = [
     what: 'Outer picker, modal, trigger falls back to a default',
     coveredBy: 'Date range picker',
   },
-  {
-    source: 'pages/traces/target-traces-filter.tsx:561',
-    origin: 'ui',
-    what: 'Custom range calendar, revealed by the preset select',
-    coveredBy: 'Date range picker',
-  },
 ] as const;
 
 export const Inventory = createPreview({
@@ -154,11 +151,12 @@ export const Inventory = createPreview({
       component="ui/popover"
       summary={
         <>
-          18 instances across 14 files. Seven are <code>Popover</code> + <code>Command</code>{' '}
-          comboboxes, the only consumers of <code>ui/command.tsx</code> and <code>cmdk</code>. Every
-          raw-content call site sets its own width, which today&apos;s{' '}
-          <code>base/floating/popover</code> only supports in structured mode.{' '}
-          <code>PopoverAnchor</code> has exactly one user and <code>PopoverArrow</code> four.
+          17 live instances across 12 files, plus one dead (<code>VersionSelect</code>, commented
+          out at its only mount) and one that went with <code>TimelineFilter</code> in #8473. Six
+          live ones are <code>Popover</code> + <code>Command</code> comboboxes, the only consumers
+          of <code>ui/command.tsx</code> and <code>cmdk</code>. Every raw-content call site sets its
+          own width. <code>PopoverAnchor</code> has exactly one user and <code>PopoverArrow</code>{' '}
+          six.
         </>
       }
       entries={ENTRIES}
@@ -564,7 +562,7 @@ export const Comboboxes = createPreview({
       <CallSite
         source="components/target/proposals/version-select.tsx:45"
         origin="ui"
-        note="Rows are commit / time / author, and each option's value is the PREVIOUS edge's cursor because of how pagination reads. Does not fit a flat label + description."
+        note="Dead: the only <VersionSelect> in the app is inside a JSX comment in pages/target-proposal.tsx. Kept here as the record of what it looked like; it is deleted, not migrated."
       >
         <Combobox
           triggerLabel="Invalid version"
@@ -831,25 +829,383 @@ export const DateRangePicker = createPreview({
       >
         <DateRangePickerPanel />
       </CallSite>
+    </div>
+  ),
+});
 
-      <CallSite
-        source="pages/traces/target-traces-filter.tsx:561"
-        origin="ui"
-        note='Only revealed once the preset select is set to "Custom", so the popover and the select are one interaction across two components.'
-      >
+// ---------------------------------------------------------------------------
+// The gate: each legacy shape beside its base replacement. Left is what ships, right is what the
+// migration produces. Every new prop on base Popover, and `tooltip` on base Select, exists
+// because of one of these rows.
+// ---------------------------------------------------------------------------
+
+function Pair(props: { old: React.ReactNode; base: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-2 items-start gap-6">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-neutral-10 font-mono text-[10px]">ui</span>
+        {props.old}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-success_80 font-mono text-[10px]">base</span>
+        {props.base}
+      </div>
+    </div>
+  );
+}
+
+const TYPE_LINKS = (
+  <div className="flex flex-col gap-y-2">
+    <p>
+      <a className="text-sm font-normal hover:underline" href="#">
+        Visit in <span className="font-bold">Explorer</span>
+      </a>
+    </p>
+    <p>
+      <a className="text-sm font-normal hover:underline" href="#">
+        Visit in <span className="font-bold">Insights</span>
+      </a>
+    </p>
+  </div>
+);
+
+function TypeLinkPair() {
+  return (
+    <Pair
+      old={
         <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-full justify-start px-2 text-left">
-              <CalendarIcon className="mr-2 size-4" />
-              <span className="text-xs">2026-09-01 → 2026-09-10</span>
-            </Button>
+          <PopoverTrigger className="hover:underline hover:underline-offset-4">
+            ProductConnection
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="center">
-            <div className="text-neutral-10 p-4 text-xs">
-              Calendar, then Start/End inputs below.
-            </div>
+          <PopoverContent side="right">
+            {TYPE_LINKS}
+            <PopoverArrow />
           </PopoverContent>
         </Popover>
+      }
+      base={
+        <BasePopover
+          trigger={
+            <button type="button" className="hover:underline hover:underline-offset-4">
+              ProductConnection
+            </button>
+          }
+          side="right"
+          arrow
+          content={TYPE_LINKS}
+        />
+      }
+    />
+  );
+}
+
+const AFFECTED_OPERATIONS = (
+  <div className="space-y-2">
+    <h5 className="text-neutral-12 font-medium">Affected Operations</h5>
+    <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
+      {['getProducts', 'getReviews', 'addToCart', '[anonymous] (9f3a11c2...)'].map(op => (
+        <li key={op} className="text-neutral-11">
+          {op}
+        </li>
+      ))}
+    </ul>
+    <a className="text-accent_80 hover:text-accent text-sm" href="#">
+      View app version
+    </a>
+  </div>
+);
+
+function AffectedOperationsPair() {
+  return (
+    <Pair
+      old={
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="link" className="h-auto p-0">
+              12 operations
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="left" className="w-80">
+            {AFFECTED_OPERATIONS}
+            <PopoverArrow />
+          </PopoverContent>
+        </Popover>
+      }
+      base={
+        <BasePopover
+          trigger={
+            <Button variant="link" className="h-auto p-0">
+              12 operations
+            </Button>
+          }
+          side="left"
+          width="md"
+          arrow
+          content={AFFECTED_OPERATIONS}
+        />
+      }
+    />
+  );
+}
+
+function ApprovalPair() {
+  const [openOld, setOpenOld] = useState(false);
+  const [openBase, setOpenBase] = useState(false);
+  const body = (close: () => void) => (
+    <div className="space-y-3">
+      <h4 className="text-neutral-12 text-sm font-medium">Approve failed schema check</h4>
+      <p className="text-neutral-11 text-sm">
+        Approving this check will mark the breaking changes as accepted for this context.
+      </p>
+      <Input placeholder="Approval reason (optional)" />
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={close}>
+          Cancel
+        </Button>
+        <Button variant="destructive">Approve</Button>
+      </div>
+    </div>
+  );
+  return (
+    <Pair
+      old={
+        <Popover open={openOld} onOpenChange={setOpenOld}>
+          <PopoverTrigger asChild>
+            <Button variant="destructive" disabled={openOld}>
+              Approve
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[450px]" align="end">
+            <PopoverArrow />
+            {body(() => setOpenOld(false))}
+          </PopoverContent>
+        </Popover>
+      }
+      base={
+        <BasePopover
+          open={openBase}
+          onOpenChange={setOpenBase}
+          trigger={
+            <Button variant="destructive" disabled={openBase}>
+              Approve
+            </Button>
+          }
+          width="lg"
+          align="end"
+          arrow
+          content={body(() => setOpenBase(false))}
+        />
+      }
+    />
+  );
+}
+
+const CHANGELOG_BODY = (
+  <div className="grid">
+    <div className="space-y-2 p-4">
+      <h4 className="text-neutral-12 font-medium leading-none">What&apos;s new in Hive Console</h4>
+      <p className="text-neutral-11 text-sm">
+        Find out about the newest features, and enhancements
+      </p>
+    </div>
+    <ol className="relative m-0">
+      {[
+        { title: 'Metric alerts are generally available', date: '3 days ago' },
+        { title: 'Schema proposals now support stages', date: '2 weeks ago' },
+      ].map(change => (
+        <li key={change.title} className="border-accent_80 border-l-2 pl-4">
+          <div className="py-2 pr-4">
+            <div className="text-neutral-12 text-sm font-medium">{change.title}</div>
+            <div className="text-neutral-10 text-xs">{change.date}</div>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+);
+
+function ChangelogPair() {
+  const trigger = (
+    <Button variant="outline" className="relative text-sm">
+      Latest changes
+      <div className="absolute right-0 top-0 -mr-1 -mt-1 flex size-2">
+        <div className="bg-accent absolute inline-flex size-full animate-pulse rounded-full" />
+      </div>
+    </Button>
+  );
+  return (
+    <Pair
+      old={
+        <Popover>
+          <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+          <PopoverContent className="w-[550px] p-0" collisionPadding={20}>
+            <PopoverArrow />
+            {CHANGELOG_BODY}
+          </PopoverContent>
+        </Popover>
+      }
+      base={
+        <BasePopover
+          trigger={trigger}
+          width="xl"
+          padding="none"
+          collisionPadding={20}
+          arrow
+          content={CHANGELOG_BODY}
+        />
+      }
+    />
+  );
+}
+
+const ROLES = [
+  { id: 'admin', name: 'Admin', description: 'Full access to the organization', canInvite: false },
+  {
+    id: 'developer',
+    name: 'Developer',
+    description: 'Can publish schemas and manage targets',
+    canInvite: true,
+  },
+  { id: 'viewer', name: 'Viewer', description: 'Read-only access', canInvite: true },
+];
+
+function RoleSelectorPair() {
+  const [value, setValue] = useState('viewer');
+  return (
+    <Pair
+      old={
+        <Combobox
+          triggerLabel="Viewer"
+          triggerVariant="outline"
+          triggerClass="flex w-[400px] items-center justify-between"
+          contentClass="w-[400px] p-0"
+          align="end"
+          searchPlaceholder="Search roles..."
+          items={ROLES.map(r => ({
+            value: r.id,
+            label: r.name,
+            description: r.description,
+            disabled: !r.canInvite,
+          }))}
+        />
+      }
+      base={
+        <BaseSelect
+          options={ROLES.map(r => ({
+            value: r.id,
+            label: r.name,
+            description: r.description,
+            disabled: !r.canInvite,
+            tooltip: r.canInvite ? undefined : 'Not enough permissions',
+            'data-cy': 'role-selector-item',
+          }))}
+          value={value}
+          onValueChange={setValue}
+          searchable
+          align="end"
+          data-cy="role-selector-trigger"
+        />
+      }
+    />
+  );
+}
+
+function TagSuggestionsPair() {
+  const [value, setValue] = useState('');
+  const [open, setOpen] = useState(false);
+  const suggestions = ['public', 'internal', 'beta'].filter(t => t.includes(value));
+  return (
+    <Pair
+      old={<TagSuggestions label="Include" />}
+      base={
+        <div className="flex w-full max-w-sm items-center space-x-2">
+          <BasePopover
+            open={open && suggestions.length > 0}
+            onOpenChange={setOpen}
+            initialFocus={false}
+            padding="none"
+            width="auto"
+            align="start"
+            trigger={
+              <Input
+                placeholder="Include tag"
+                value={value}
+                onChange={e => {
+                  setValue(e.target.value);
+                  setOpen(true);
+                }}
+                onFocus={() => setOpen(true)}
+              />
+            }
+            content={
+              <div className="w-[200px]">
+                <div className="text-neutral-10 px-2 pb-1 pt-2 text-xs font-medium">
+                  Tags from latest schema version
+                </div>
+                <ul className="text-neutral-11 pb-1 text-sm">
+                  {suggestions.map(t => (
+                    <li key={t} className="hover:bg-neutral-4 cursor-pointer px-3 py-1.5">
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            }
+          />
+          <BaseButton variant="outline" onClick={() => setValue('')}>
+            Add
+          </BaseButton>
+        </div>
+      }
+    />
+  );
+}
+
+export const UiVsBase = createPreview({
+  label: 'ui vs base',
+  render: () => (
+    <div className="flex w-[56rem] flex-col gap-10">
+      <CallSite
+        source="target/explorer/common.tsx:469"
+        origin="ui"
+        note="Text trigger, side right, arrow. The trigger becomes a plain button element; base raw mode now pads by default (p-4), matching the old default."
+      >
+        <TypeLinkPair />
+      </CallSite>
+      <CallSite
+        source="target/history/errors-and-changes.tsx:492"
+        origin="ui"
+        note="w-80 becomes width='md'. Same content, same side."
+      >
+        <AffectedOperationsPair />
+      </CallSite>
+      <CallSite
+        source="pages/target-checks-single.tsx:1508"
+        origin="ui"
+        note="Controlled. w-[450px] becomes width='lg' (448). Trigger still disables itself while open."
+      >
+        <ApprovalPair />
+      </CallSite>
+      <CallSite
+        source="ui/changelog/changelog.tsx:57"
+        origin="ui"
+        note="w-[550px] p-0 becomes width='xl' padding='none'; collisionPadding passes through. In the app the trigger is conditional, which base now allows."
+      >
+        <ChangelogPair />
+      </CallSite>
+      <CallSite
+        source="organization/members/common.tsx:47"
+        origin="ui"
+        note="RoleSelector becomes a base Select: description per row, disabled rows carry a tooltip with the reason, search kept, Playwright hooks on trigger and items."
+      >
+        <RoleSelectorPair />
+      </CallSite>
+      <CallSite
+        source="target/settings/schema-contracts.tsx:446"
+        origin="ui"
+        note="Input as trigger with initialFocus={false}, so typing keeps filtering. Interim until the base Combobox in round 9."
+      >
+        <TagSuggestionsPair />
       </CallSite>
     </div>
   ),
