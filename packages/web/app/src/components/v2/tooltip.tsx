@@ -1,7 +1,7 @@
-import { ComponentProps, ReactElement, ReactNode, useContext } from 'react';
+import { ComponentProps, ReactElement, ReactNode } from 'react';
 import { clsx } from 'clsx';
+import { useFloatingPortalContainer } from '@/components/base/floating/floating-portal-container';
 import * as T from '@radix-ui/react-tooltip';
-import { ModalTooltipContext } from './modal';
 
 function Wrapper({
   children,
@@ -12,7 +12,8 @@ function Wrapper({
   content: ReactNode;
   contentProps?: ComponentProps<typeof T.Content>;
 }): ReactElement {
-  const container = useContext(ModalTooltipContext);
+  // Kept only for the inventory's old-side transcriptions until 6.12 deletes this file.
+  const container = useFloatingPortalContainer();
   const innerContent = (
     <T.Content
       sideOffset={4}

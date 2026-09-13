@@ -500,8 +500,8 @@ export const StrayProviders = createPreview({
 
 // ---------------------------------------------------------------------------
 // components/v2/tooltip.tsx — a separate implementation with its own defaults, reached through
-// the v2 barrel. Also supplies ModalTooltipContext, which base already solves with
-// FloatingPortalContainerProvider.
+// the v2 barrel. Its modal portalling now goes through FloatingPortalContainerProvider, the same
+// as base; the file survives only for this transcription until 6.12.
 // ---------------------------------------------------------------------------
 
 export const V2Tooltip = createPreview({

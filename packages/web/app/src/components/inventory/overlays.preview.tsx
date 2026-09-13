@@ -102,7 +102,7 @@ const ENTRIES = [
   {
     source: 'components/v2/modal.tsx:26',
     origin: 'v2',
-    what: 'Supplies ModalTooltipContext so tooltips inside portal correctly',
+    what: 'Supplied ModalTooltipContext for v2 tooltips; now only the FloatingPortalContainerProvider from round 3',
     coveredBy: 'v2 modal',
   },
 ] as const;
