@@ -23,7 +23,7 @@ export default defineConfig({
           label: 'Primitives',
           children: [
             { label: 'Accordion' },
-            { label: 'Avatar' },
+            { label: 'Avatar', children: [{ label: 'Component Examples' }] },
             { label: 'Badge' },
             { label: 'Button' },
             { label: 'Card' },
@@ -44,8 +44,8 @@ export default defineConfig({
             // so a change can be judged against both without leaving the subtree.
             { label: 'RadioGroup', children: [{ label: 'Component Examples' }] },
             { label: 'Switch', children: [{ label: 'Component Examples' }] },
-            { label: 'Slider' },
-            { label: 'ToggleGroup' },
+            { label: 'Slider', children: [{ label: 'Component Examples' }] },
+            { label: 'ToggleGroup', children: [{ label: 'Component Examples' }] },
             { label: 'Form' },
           ],
         },
