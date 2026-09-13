@@ -411,9 +411,11 @@
 }
 
 @layer components {
+  /* No !important: the utilities layer sits above this one, so a component's own
+     focus-visible outline wins, while anything without one stays outline-free. */
   *:active,
   *:focus {
-    outline: none !important;
+    outline: none;
   }
 
   #root {
