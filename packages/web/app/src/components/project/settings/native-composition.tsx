@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import { FlaskConicalIcon, HeartCrackIcon, PartyPopperIcon, RefreshCcwIcon } from 'lucide-react';
 import { CombinedError, useMutation, useQuery } from 'urql';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Switch } from '@/components/base/switch/switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
@@ -55,9 +55,9 @@ const IncrementalNativeCompositionSwitch = (props: {
         </div>
       </div>
       <div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
+        <Tooltip
+          trigger={
+            <span className="inline-flex">
               <Switch
                 disabled={mutation.fetching}
                 onCheckedChange={nativeComposition => {
@@ -72,15 +72,18 @@ const IncrementalNativeCompositionSwitch = (props: {
                 }}
                 checked={!target.experimental_forcedLegacySchemaComposition}
               />
-            </TooltipTrigger>
-            <TooltipContent sideOffset={2}>
+            </span>
+          }
+          sideOffset={2}
+          content={
+            <>
               <span className="font-semibold">
                 {target.experimental_forcedLegacySchemaComposition ? 'Enable' : 'Disable'}
               </span>{' '}
               native composition for the target
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+            </>
+          }
+        />
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { ExternalLink, Info } from 'lucide-react';
 import { Button } from '@/components/base/button/button';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { FloatingPortalContainerProvider } from '@/components/base/floating/floating-portal-container';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { BadgeRounded } from '@/components/ui/badge';
 import {
@@ -13,7 +14,6 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar } from '@/components/v2/avatar';
 import {
   AlertChannelType,
@@ -137,16 +137,16 @@ function RelativeTimestamp({ iso }: { iso: string }) {
   return (
     <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[10px]">
       <TimeAgo date={iso} />
-      <TooltipProvider delayDuration={100}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info className="text-neutral-10 size-3" />
-          </TooltipTrigger>
-          <TooltipContent>
-            <span className="text-xs">{new Date(iso).toUTCString()}</span>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Popover
+        trigger={
+          <button type="button" aria-label="Exact time" className="text-neutral-10 inline-flex">
+            <Info className="size-3" />
+          </button>
+        }
+        openOnHover
+        width="auto"
+        content={<span className="text-neutral-11 text-xs">{new Date(iso).toUTCString()}</span>}
+      />
     </span>
   );
 }
