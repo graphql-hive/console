@@ -81,6 +81,34 @@ start.
 
 Scenarios live in `src/dev/scenarios.ts`; fixtures they use live in `src/dev/fixtures/`.
 
+### Pins: one field, one value
+
+A pin sets a single schema field to a value on top of whatever scenario is active, which is how to
+see one page's empty or edge state without switching everything else.
+
+In the switcher, the Pins section lists **the fields the current page actually queries**, and
+picking one offers the values that make sense for its type: `true` / `false` for a boolean, the
+members of an enum, `Empty` for a list, `null` for anything nullable. Pick, add, apply. The list
+comes from the operations the server has seen for this page path, so a page you have never loaded in
+this run shows nothing until you load it once.
+
+By URL, for scripting or sharing: `?pin=Type.field:value`, repeatable; a bare `?pin=` clears them
+all. Values parse as JSON when they can (`true`, `null`, `42`) and stay strings otherwise, so enum
+members need no quotes; `@empty` is the URL spelling of Empty.
+
+| Pin                                                  | Shows                                 |
+| ---------------------------------------------------- | ------------------------------------- |
+| `Organization.supportTickets:@empty`                 | the Support list with no tickets      |
+| `Query.hasCollectedOperations:false`                 | the Insights "no usage yet" state     |
+| `Target.latestSchemaVersion:null`                    | the "publish your first schema" state |
+| `Organization.plan:ENTERPRISE`                       | enterprise copy on the billing pages  |
+| `Organization.isMonthlyOperationsLimitExceeded:true` | the rate-limit warning                |
+
+Pins are per type, not per entity: emptying `Organization.supportTickets` empties it for every
+organization, which is fine when you are looking at one page. A set of pins you keep coming back to
+is a scenario waiting to be written: paste them into a scenario's `fields` in
+`src/dev/scenarios.ts`.
+
 ### Loading and error states
 
 Both are in the switcher's Controls section, or by URL: `?latency=2000` delays every response, which

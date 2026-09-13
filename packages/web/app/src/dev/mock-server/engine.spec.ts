@@ -1,5 +1,6 @@
 import type { GraphQLSchema } from 'graphql';
 import { MOCK_USER } from '@/dev/mock-user';
+import { EMPTY } from '@/dev/pins';
 import { scenarios, type Scenario } from '@/dev/scenarios';
 import { WORLD } from '@/dev/world';
 import { createMockEngine } from './engine';
@@ -158,6 +159,37 @@ describe('createMockEngine', () => {
 
     expect(data.target.latestSchemaVersion).not.toBeNull();
     expect(data.target.latestValidSchemaVersion).toBeNull();
+  });
+
+  test('@empty pins produce a well-formed empty list or connection for the field type', async () => {
+    const result = await engineFor({
+      ...scenarios.default,
+      fields: {
+        'Organization.supportTickets': EMPTY,
+        'Organization.projects': EMPTY,
+        'Query.organizations': EMPTY,
+      },
+    }).execute({
+      query: `query {
+        organizationBySlug(organizationSlug: "acme") {
+          supportTickets { edges { node { id } } pageInfo { hasNextPage } }
+          projects { edges { node { id } } pageInfo { hasNextPage endCursor } }
+        }
+        organizations { total nodes { id } }
+      }`,
+    });
+    const data = result.data as any;
+
+    expect(result.errors).toBeUndefined();
+    // Nullable connection, and the base fixture resolver is bypassed by the pin.
+    expect(data.organizationBySlug.supportTickets.edges).toEqual([]);
+    // Non-null connection: must be an object, not null, or the query would error.
+    expect(data.organizationBySlug.projects).toEqual({
+      edges: [],
+      pageInfo: { hasNextPage: false, endCursor: '' },
+    });
+    // nodes + total shape, no pageInfo.
+    expect(data.organizations).toEqual({ total: 0, nodes: [] });
   });
 
   test('applies curated enum defaults', async () => {

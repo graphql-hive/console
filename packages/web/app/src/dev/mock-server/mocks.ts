@@ -9,6 +9,7 @@ import {
   type GraphQLObjectType,
   type GraphQLSchema,
 } from 'graphql';
+import { EMPTY } from '@/dev/pins';
 import { base, en, Faker } from '@faker-js/faker';
 import { MockList, type IMocks } from '@graphql-tools/mock';
 
@@ -90,10 +91,35 @@ export function buildMocks(schema: GraphQLSchema, options: MockOptions = {}): IM
   for (const [path, value] of Object.entries(options.fields ?? {})) {
     const [typeName, fieldName] = path.split('.');
     const bucket = (mocks[typeName] ??= {}) as Record<string, () => unknown>;
-    bucket[fieldName] = typeof value === 'function' ? (value as () => unknown) : () => value;
+    const resolved = value === EMPTY ? emptyValueFor(schema, typeName, fieldName) : value;
+    bucket[fieldName] =
+      typeof resolved === 'function' ? (resolved as () => unknown) : () => resolved;
   }
 
   return mocks as IMocks;
+}
+
+/**
+ * What "@empty" means for a field: [] for a list, a connection with no edges or nodes for a
+ * connection type, otherwise null. Lets a pin empty any list without knowing its shape.
+ */
+export function emptyValueFor(schema: GraphQLSchema, typeName: string, fieldName: string): unknown {
+  const parent = schema.getType(typeName);
+  const field = isObjectType(parent) ? parent.getFields()[fieldName] : undefined;
+  if (!field) return null;
+  const type = getNullableType(field.type);
+  if (isListType(type)) return [];
+  if (!isObjectType(type)) return null;
+
+  const fields = type.getFields();
+  const empty: Record<string, unknown> = {};
+  if ('edges' in fields) empty.edges = [];
+  if ('nodes' in fields) empty.nodes = [];
+  for (const name of ['total', 'totalCount', 'count']) if (name in fields) empty[name] = 0;
+  if ('pageInfo' in fields) {
+    empty.pageInfo = { hasNextPage: false, hasPreviousPage: false, startCursor: '', endCursor: '' };
+  }
+  return Object.keys(empty).length > 0 ? empty : null;
 }
 
 function fieldMock(

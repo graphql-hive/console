@@ -1,8 +1,11 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { isObjectType, parse, type DocumentNode } from 'graphql';
 import { z } from 'zod';
+import { decodePins, encodePins, isPinKey, parsePinAssignment, type Pins } from '@/dev/pins';
 import { DEFAULT_SCENARIO, scenarios } from '@/dev/scenarios';
 import { createMockEngine, type MockEngine } from './engine';
+import { collectPinnableFields } from './page-fields';
 import { loadHiveSchema } from './schema';
 import {
   expiredSessionCookies,
@@ -15,6 +18,7 @@ import {
 export const SCENARIO_COOKIE = 'hive-mock-scenario';
 export const LATENCY_COOKIE = 'hive-mock-latency';
 export const ERROR_COOKIE = 'hive-mock-error';
+export const PINS_COOKIE = 'hive-mock-pins';
 
 export const ERROR_KINDS = ['graphql', 'network', 'unexpected'] as const;
 export type ErrorKind = (typeof ERROR_KINDS)[number];
@@ -43,6 +47,8 @@ const GraphQLBody = z.object({
 const ControlsBody = z.object({
   latency: z.number().int().min(0).nullish(),
   error: z.string().nullish(),
+  /** Replaces the whole pin set; null clears it. */
+  pins: z.record(z.unknown()).nullish(),
 });
 
 /** "<operationName>|<kind>", operationName may be "*". */
@@ -69,6 +75,29 @@ export async function connectMockServer(server: FastifyInstance, options: MockSe
   const baseSchema = await loadHiveSchema();
   const engines = new Map<string, MockEngine>();
 
+  // Which operations each page sends, keyed by the page path the request came from (the
+  // Referer, which follows SPA navigation). Backs the switcher's "fields on this page".
+  const pageOperations = new Map<string, Map<string, DocumentNode>>();
+  const recordOperation = (req: FastifyRequest, name: string, query: string) => {
+    const referer = req.headers.referer;
+    if (!referer) return;
+    let path: string;
+    try {
+      path = new URL(referer).pathname;
+    } catch {
+      return;
+    }
+    let operations = pageOperations.get(path);
+    if (!operations) pageOperations.set(path, (operations = new Map()));
+    if (!operations.has(name)) {
+      try {
+        operations.set(name, parse(query));
+      } catch {
+        // The engine reports the parse error to the client; nothing to record.
+      }
+    }
+  };
+
   // Control cookies carry "<session>.<value>"; a value from another run reads as absent.
   const setControl = (name: string, value: string) =>
     `${name}=${session}.${value}; ${COOKIE_ATTRS}`;
@@ -86,17 +115,40 @@ export async function connectMockServer(server: FastifyInstance, options: MockSe
     const raw = readControl(req, LATENCY_COOKIE);
     return raw === undefined ? defaultLatency : parseLatencyControl(raw);
   };
-  const engineFor = (name: string) => {
-    let engine = engines.get(name);
+
+  // A pin must name a real field, or the mock layer would carry it silently forever.
+  const isSchemaField = (key: string) => {
+    const [typeName, fieldName] = key.split('.');
+    const type = baseSchema.getType(typeName);
+    return isObjectType(type) && fieldName in type.getFields();
+  };
+  const validPins = (pins: Pins): Pins =>
+    Object.fromEntries(Object.entries(pins).filter(([key]) => isPinKey(key) && isSchemaField(key)));
+  const pinsOf = (req: FastifyRequest) => validPins(decodePins(readControl(req, PINS_COOKIE)));
+
+  // One engine per scenario and pin set: pins are mock rules, so they need their own store.
+  const engineFor = (name: string, pins: Pins) => {
+    const sorted = Object.fromEntries(Object.entries(pins).sort(([a], [b]) => a.localeCompare(b)));
+    const key = `${name}|${JSON.stringify(sorted)}`;
+    let engine = engines.get(key);
     if (!engine) {
-      engine = createMockEngine(baseSchema, scenarios[name]);
-      engines.set(name, engine);
+      const scenario = scenarios[name];
+      engine = createMockEngine(baseSchema, {
+        ...scenario,
+        fields: { ...scenario.fields, ...sorted },
+      });
+      engines.set(key, engine);
     }
     return engine;
   };
 
-  // HTML navigations: ?scenario= / ?latency= / ?error= become cookies (an empty value
-  // clears one), then the session is planted, or cleared for a scenario without one.
+  const pinsCookie = (pins: Pins) =>
+    Object.keys(pins).length > 0
+      ? setControl(PINS_COOKIE, encodePins(pins))
+      : clearControl(PINS_COOKIE);
+
+  // HTML navigations: ?scenario= / ?latency= / ?error= / ?pin= become cookies (an empty
+  // value clears one), then the session is planted, or cleared for a scenario without one.
   server.addHook('onRequest', async (req, reply) => {
     if (req.method !== 'GET' || !(req.headers.accept ?? '').includes('text/html')) return;
 
@@ -121,8 +173,18 @@ export async function connectMockServer(server: FastifyInstance, options: MockSe
         parseErrorControl(error) ? setControl(ERROR_COOKIE, error) : clearControl(ERROR_COOKIE),
       );
     }
+    // ?pin=Type.field:value adds to the current pins, repeatable; a bare ?pin= clears them.
+    const pinParams = url.searchParams.getAll('pin');
+    if (pinParams.length > 0) {
+      const next = pinParams.includes('') ? {} : { ...pinsOf(req) };
+      for (const assignment of pinParams) {
+        const parsed = parsePinAssignment(assignment);
+        if (parsed && isSchemaField(parsed[0])) next[parsed[0]] = parsed[1];
+      }
+      cookies.push(pinsCookie(next));
+    }
     if (cookies.length > 0) {
-      for (const key of ['scenario', 'latency', 'error']) url.searchParams.delete(key);
+      for (const key of ['scenario', 'latency', 'error', 'pin']) url.searchParams.delete(key);
       return reply.header('set-cookie', cookies).redirect(url.pathname + url.search);
     }
 
@@ -158,9 +220,11 @@ export async function connectMockServer(server: FastifyInstance, options: MockSe
     }
 
     const name = scenarioNameOf(req);
-    req.log.info({ operationName, scenario: name }, 'mock graphql');
+    const pins = pinsOf(req);
+    recordOperation(req, operationName || 'anonymous', body.data.query);
+    req.log.info({ operationName, scenario: name, pins: Object.keys(pins) }, 'mock graphql');
     // Always 200 with no auth-shaped extensions.code, or the client's authExchange signs out.
-    return reply.status(200).send(await engineFor(name).execute(body.data));
+    return reply.status(200).send(await engineFor(name, pins).execute(body.data));
   });
 
   server.get('/__mock/scenarios', (req, reply) =>
@@ -170,10 +234,23 @@ export async function connectMockServer(server: FastifyInstance, options: MockSe
       controls: {
         latency: latencyOf(req),
         error: readControl(req, ERROR_COOKIE) ?? null,
+        pins: pinsOf(req),
       },
       scenarios: Object.values(scenarios).map(({ name, description }) => ({ name, description })),
     }),
   );
+
+  // The pinnable fields a page selects, from the operations recorded for its path.
+  server.get('/__mock/fields', (req, reply) => {
+    const path = (req.query as { path?: string }).path;
+    if (!path) return reply.status(400).send({ error: 'path is required' });
+    const operations = pageOperations.get(path);
+    return reply.send({
+      path,
+      operations: operations ? [...operations.keys()] : [],
+      fields: operations ? collectPinnableFields(baseSchema, [...operations.values()]) : [],
+    });
+  });
 
   // { name: null } goes back to the startup default.
   server.post('/__mock/scenario', (req, reply) => {
@@ -207,13 +284,27 @@ export async function connectMockServer(server: FastifyInstance, options: MockSe
         valid ? setControl(ERROR_COOKIE, parsed.data.error!) : clearControl(ERROR_COOKIE),
       );
     }
+    if ('pins' in parsed.data) {
+      const pins = validPins(parsed.data.pins ?? {});
+      const rejected = Object.keys(parsed.data.pins ?? {}).filter(key => !(key in pins));
+      if (rejected.length > 0) {
+        return reply.status(400).send({ error: 'unknown fields', rejected });
+      }
+      cookies.push(pinsCookie(pins));
+    }
     return reply.header('set-cookie', cookies).send({ ok: true });
   });
 
   server.post('/__mock/reset', (req, reply) => {
-    engines.delete(scenarioNameOf(req));
+    for (const key of engines.keys()) {
+      if (key.startsWith(`${scenarioNameOf(req)}|`)) engines.delete(key);
+    }
     return reply
-      .header('set-cookie', [clearControl(LATENCY_COOKIE), clearControl(ERROR_COOKIE)])
+      .header('set-cookie', [
+        clearControl(LATENCY_COOKIE),
+        clearControl(ERROR_COOKIE),
+        clearControl(PINS_COOKIE),
+      ])
       .send({ ok: true });
   });
 

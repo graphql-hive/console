@@ -1,5 +1,12 @@
 import Fastify, { type FastifyInstance } from 'fastify';
-import { connectMockServer, ERROR_COOKIE, LATENCY_COOKIE, SCENARIO_COOKIE } from './index';
+import { EMPTY, encodePins } from '@/dev/pins';
+import {
+  connectMockServer,
+  ERROR_COOKIE,
+  LATENCY_COOKIE,
+  PINS_COOKIE,
+  SCENARIO_COOKIE,
+} from './index';
 import { createFrontToken, FRONT_TOKEN_COOKIE, LAST_UPDATE_COOKIE } from './session';
 
 const HTML = '<html><head></head><body></body></html>';
@@ -130,6 +137,38 @@ describe('connectMockServer', () => {
       expect(res.statusCode).toBe(503);
       expect(res.headers['content-type']).toContain('text/plain');
       expect(() => res.json()).toThrow();
+    });
+
+    test('applies pins from the cookie, on top of the scenario', async () => {
+      const query = `query {
+        organizationBySlug(organizationSlug: "acme") {
+          plan
+          isMonthlyOperationsLimitExceeded
+          supportTickets { edges { node { id } } }
+        }
+      }`;
+      const pins = encodePins({
+        'Organization.plan': 'ENTERPRISE',
+        'Organization.supportTickets': EMPTY,
+      });
+      const res = await graphql(server, query, {
+        cookie: `${ctl(SCENARIO_COOKIE, 'over-quota')}; ${ctl(PINS_COOKIE, pins)}`,
+      });
+      const org = res.json().data.organizationBySlug;
+
+      expect(org.plan).toBe('ENTERPRISE');
+      expect(org.supportTickets.edges).toEqual([]);
+      // The scenario still applies underneath.
+      expect(org.isMonthlyOperationsLimitExceeded).toBe(true);
+    });
+
+    test('ignores pins on fields the schema does not have', async () => {
+      const res = await graphql(server, 'query { me { id } }', {
+        cookie: ctl(PINS_COOKIE, encodePins({ 'User.nope': true, 'Nope.id': 1 })),
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().data.me.id).toBe('mock-user');
     });
 
     test('forces a plain graphql error for every operation with *', async () => {
@@ -276,6 +315,34 @@ describe('connectMockServer', () => {
       for (const cookie of setCookies(clear)) expect(cookie).toContain('Max-Age=0');
     });
 
+    test('?pin= adds to the current pins, and a bare ?pin= clears them', async () => {
+      const existing = ctl(PINS_COOKIE, encodePins({ 'Organization.plan': 'ENTERPRISE' }));
+      const add = await server.inject({
+        method: 'GET',
+        url: '/acme?pin=Query.hasCollectedOperations:false&pin=Target.latestSchemaVersion:null&pin=Nope.x:1',
+        headers: { ...asBrowser, cookie: existing },
+      });
+      const clear = await server.inject({
+        method: 'GET',
+        url: '/acme?pin=',
+        headers: { ...asBrowser, cookie: existing },
+      });
+
+      expect(add.statusCode).toBe(302);
+      expect(add.headers.location).toBe('/acme');
+      expect(setCookies(add)).toEqual([
+        setCtl(
+          PINS_COOKIE,
+          encodePins({
+            'Organization.plan': 'ENTERPRISE',
+            'Query.hasCollectedOperations': false,
+            'Target.latestSchemaVersion': null,
+          }),
+        ),
+      ]);
+      expect(setCookies(clear)[0]).toMatch(new RegExp(`^${PINS_COOKIE}=; .*Max-Age=0`));
+    });
+
     test('ignore an unknown scenario name', async () => {
       const res = await server.inject({
         method: 'GET',
@@ -314,7 +381,7 @@ describe('connectMockServer', () => {
 
       expect(body.active).toBe('empty-org');
       expect(body.default).toBe('default');
-      expect(body.controls).toEqual({ latency: 250, error: null });
+      expect(body.controls).toEqual({ latency: 250, error: null, pins: {} });
       expect(body.scenarios.map((s: any) => s.name)).toContain('outdated-schema');
     });
 
@@ -350,11 +417,64 @@ describe('connectMockServer', () => {
       for (const cookie of setCookies(clear)) expect(cookie).toContain('Max-Age=0');
     });
 
+    test('lists the pinnable fields of a page from the operations it sent', async () => {
+      const page = 'http://localhost:3000/acme/view/support';
+      await server.inject({
+        method: 'POST',
+        url: '/graphql',
+        headers: { referer: page },
+        payload: {
+          query:
+            'query SupportPageQuery { organizationBySlug(organizationSlug: "acme") { viewerCanManageSupportTickets supportTickets { edges { node { id status } } } } }',
+          operationName: 'SupportPageQuery',
+        },
+      });
+
+      const res = await server.inject({
+        method: 'GET',
+        url: '/__mock/fields?path=/acme/view/support',
+      });
+      const body = res.json();
+      const keys = body.fields.map((f: any) => f.key);
+
+      expect(body.operations).toEqual(['SupportPageQuery']);
+      expect(keys).toContain('Organization.viewerCanManageSupportTickets');
+      expect(keys).toContain('Organization.supportTickets');
+      expect(body.fields.find((f: any) => f.key === 'SupportTicket.status')).toMatchObject({
+        kind: 'enum',
+        enumValues: ['OPEN', 'SOLVED'],
+      });
+    });
+
+    test('a page nothing was recorded for has no fields, and path is required', async () => {
+      const empty = await server.inject({ method: 'GET', url: '/__mock/fields?path=/never' });
+      const missing = await server.inject({ method: 'GET', url: '/__mock/fields' });
+
+      expect(empty.json()).toEqual({ path: '/never', operations: [], fields: [] });
+      expect(missing.statusCode).toBe(400);
+    });
+
+    test('sets pins, rejects unknown fields, and clears them for null', async () => {
+      const post = (pins: unknown) =>
+        server.inject({ method: 'POST', url: '/__mock/controls', payload: { pins } });
+      const ok = await post({ 'Organization.plan': 'ENTERPRISE' });
+      const bad = await post({ 'Organization.plan': 'PRO', 'Organization.nope': 1, 'x.y': 2 });
+      const clear = await post(null);
+
+      expect(ok.statusCode).toBe(200);
+      expect(setCookies(ok)).toEqual([
+        setCtl(PINS_COOKIE, encodePins({ 'Organization.plan': 'ENTERPRISE' })),
+      ]);
+      expect(bad.statusCode).toBe(400);
+      expect(bad.json().rejected).toEqual(['Organization.nope', 'x.y']);
+      expect(setCookies(clear)[0]).toMatch(new RegExp(`^${PINS_COOKIE}=; .*Max-Age=0`));
+    });
+
     test('reset clears the controls', async () => {
       const res = await server.inject({ method: 'POST', url: '/__mock/reset' });
 
       expect(res.json()).toEqual({ ok: true });
-      expect(cookieNames(res)).toEqual([LATENCY_COOKIE, ERROR_COOKIE]);
+      expect(cookieNames(res)).toEqual([LATENCY_COOKIE, ERROR_COOKIE, PINS_COOKIE]);
     });
   });
 
