@@ -4,6 +4,7 @@ import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/AppFilter';
 import { Menu } from '@/components/base/floating/menu/menu';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { graphql } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
@@ -386,16 +386,10 @@ function TargetAppVersionContent(props: {
                       </TableCell>
                       <TableCell>
                         {!edge.node.operationName ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help italic">anonymous</span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>The operation within the document has no name.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Tooltip
+                            trigger={<span className="cursor-help italic">anonymous</span>}
+                            content="The operation within the document has no name."
+                          />
                         ) : (
                           <span className="bg-neutral-5 rounded-sm p-1 font-mono text-xs">
                             {edge.node.operationName}

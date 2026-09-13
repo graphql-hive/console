@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { useMutation, useQuery } from 'urql';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -18,7 +19,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
@@ -427,17 +427,21 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 {/* <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} /> */}
                 <Title className="flex grow flex-row items-center gap-2 truncate">
                   <div className="truncate">{proposal.title}</div>
-                  <TooltipProvider delayDuration={0}>
-                    <Tooltip>
-                      <TooltipTrigger>
+                  <Tooltip
+                    align="start"
+                    maxWidth="lg"
+                    trigger={
+                      <span className="inline-flex">
                         {proposal?.compositionStatus === 'ERROR' ? (
                           <XIcon className="text-red-600" />
                         ) : null}
                         {proposal?.compositionStatus === 'SUCCESS' ? (
                           <CheckIcon className="text-emerald-500" />
                         ) : null}
-                      </TooltipTrigger>
-                      <TooltipContent align="start">
+                      </span>
+                    }
+                    content={
+                      <>
                         {proposal?.compositionStatus === 'ERROR' ? (
                           <>
                             Composition Error{' '}
@@ -452,9 +456,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                           </>
                         ) : null}
                         {proposal?.compositionStatus === 'SUCCESS' ? 'Composes Successfully' : null}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                      </>
+                    }
+                  />
                 </Title>
                 <div className="flex-col justify-end">
                   <StageTransitionSelect

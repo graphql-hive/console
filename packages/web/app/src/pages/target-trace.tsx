@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -40,7 +41,6 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
@@ -533,8 +533,10 @@ function SpanNode(props: SpanNodeProps) {
             ) : null}
           </div>
           <div className="relative w-full">
-            <Tooltip disableHoverableContent delayDuration={100}>
-              <TooltipTrigger asChild>
+            <Tooltip
+              disableHoverablePopup
+              side="bottom"
+              trigger={
                 <Link
                   className={cn(
                     'relative flex h-full grow cursor-pointer items-center overflow-hidden',
@@ -557,13 +559,9 @@ function SpanNode(props: SpanNodeProps) {
                     durationStr={formatNanoseconds(props.span.durationNs)}
                   />
                 </Link>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[200px]"
-              >
-                {/* Content */}
-                <div className="space-y-3">
+              }
+              content={
+                <div className="min-w-[200px] space-y-3">
                   <div className="grid grid-cols-2 gap-y-2">
                     <div className="text-neutral-10">Duration</div>
                     <div className="text-right font-mono">
@@ -618,8 +616,8 @@ function SpanNode(props: SpanNodeProps) {
                     )}
                   </div>
                 </div>
-              </TooltipContent>
-            </Tooltip>
+              }
+            />
 
             {props.span.events.map(event => {
               if (highlightedEvent && event.id !== highlightedEvent.eventId) {
@@ -634,8 +632,11 @@ function SpanNode(props: SpanNodeProps) {
               const isError = event.name === 'exception';
 
               return (
-                <Tooltip delayDuration={100} key={event.id}>
-                  <TooltipTrigger asChild>
+                <Tooltip
+                  key={event.id}
+                  side="bottom"
+                  maxWidth="lg"
+                  trigger={
                     <Link
                       className={cn(
                         'absolute inset-y-0 z-50 translate-x-[-50%] cursor-pointer px-1',
@@ -666,12 +667,9 @@ function SpanNode(props: SpanNodeProps) {
                         </div>
                       </div>
                     </Link>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    className="text-neutral-11 overflow-hidden rounded-lg border-none p-1 text-xs shadow-lg sm:min-w-[200px]"
-                  >
-                    <div className="z-20">
+                  }
+                  content={
+                    <div className="min-w-[200px]">
                       <ExceptionTeaser
                         type={String(event.attributes['exception.type'] ?? '')}
                         message={String(event.attributes['exception.message'] ?? '')}
@@ -679,8 +677,8 @@ function SpanNode(props: SpanNodeProps) {
                         name={event.name}
                       />
                     </div>
-                  </TooltipContent>
-                </Tooltip>
+                  }
+                />
               );
             })}
           </div>
@@ -799,7 +797,7 @@ export function TraceSheet(props: TraceSheetProps) {
 
   return (
     <div className="h-full">
-      <TooltipProvider>
+      <>
         <ResizablePanelGroup direction="vertical">
           <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
             <WidthSyncProvider defaultWidth={251}>
@@ -982,7 +980,7 @@ export function TraceSheet(props: TraceSheetProps) {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
-      </TooltipProvider>
+      </>
       {props.activeSpanId && (
         <SpanSheet
           span={trace.spans.find(trace => trace.id === props.activeSpanId) ?? null}
@@ -1710,16 +1708,15 @@ function AttributeRow(props: AttributeRowProps) {
   const actionsNode = (
     <span className="text-neutral-12 ml-auto mr-0 flex">
       <CopyIconButton value={props.value} label="Copy attribute value" />
-      <TooltipProvider>
-        <Tooltip delayDuration={0} disableHoverableContent>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon-xs" onClick={() => setIsExpanded(bool => !bool)}>
-              {isExpanded ? <ChevronUp size="14" /> : <ChevronDown size="14" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent className="text-xs">{isExpanded ? 'Collapse' : 'Expand'}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip
+        trigger={
+          <Button variant="ghost" size="icon-xs" onClick={() => setIsExpanded(bool => !bool)}>
+            {isExpanded ? <ChevronUp size="14" /> : <ChevronDown size="14" />}
+          </Button>
+        }
+        content={isExpanded ? 'Collapse' : 'Expand'}
+        disableHoverablePopup
+      />
     </span>
   );
 

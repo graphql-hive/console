@@ -3,11 +3,11 @@ import { InfoIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Card } from '@/components/base/card/card';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { Scale } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from '@/components/ui/link';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sortable, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -87,16 +87,19 @@ function OperationRow({
               </Link>
             </Button>
             {operation.name === 'anonymous' && (
-              <TooltipProvider delayDuration={200}>
-                <Tooltip>
-                  <TooltipTrigger>
+              <Popover
+                trigger={
+                  <button type="button" aria-label="Anonymous operation">
                     <ExclamationTriangleIcon className="text-yellow-500" />
-                  </TooltipTrigger>
-                  <TooltipContent>
+                  </button>
+                }
+                openOnHover
+                content={
+                  <p className="text-neutral-11 text-sm">
                     Anonymous operation detected. Naming your operations is a recommended practice
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                  </p>
+                }
+              />
             )}
           </div>
         </Td>
@@ -237,7 +240,7 @@ function OperationsTable({
         <div className="overflow-x-scroll">
           <Table>
             <THead>
-              <TooltipProvider>
+              <>
                 {headers.map(header => {
                   const canSort = header.column.getCanSort();
                   const align: 'center' | 'left' | 'right' =
@@ -257,26 +260,30 @@ function OperationsTable({
                           name
                         )}
                         {header.column.columnDef.header === 'Impact' ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
+                          <Popover
+                            trigger={
+                              <button type="button" aria-label="How impact is calculated">
                                 <InfoIcon className="text-neutral-10 size-4" />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-[300px] text-left text-sm">
+                              </button>
+                            }
+                            openOnHover
+                            width="md"
+                            content={
+                              <div className="text-neutral-11 text-left text-xs">
                                 <p className="mb-4">
                                   Equals to the total time spent on this operation in the selected
                                   period in seconds.
                                 </p>
-                                <code>Impact = Requests * avg/1000</code>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                                <code className="text-xs">Impact = Requests * avg/1000</code>
+                              </div>
+                            }
+                          />
                         ) : null}
                       </div>
                     </Th>
                   );
                 })}
-              </TooltipProvider>
+              </>
             </THead>
             <TBody>
               {tableInstance
