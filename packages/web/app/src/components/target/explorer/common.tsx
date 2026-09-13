@@ -1,9 +1,9 @@
 import React, { ReactElement, ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { PulseIcon, UsersIcon } from '@/components/ui/icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { formatNumber, toDecimal } from '@/lib/hooks';
@@ -61,172 +61,177 @@ export function SchemaExplorerUsageStats(props: {
   const kindLabel = useMemo(() => props.kindLabel ?? 'field', [props.kindLabel]);
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <div className="ml-3 flex flex-row items-center gap-2 text-xs">
-        <div className="grow">
-          <div className="min-w-[25px] text-center">{formatNumber(usage.total)}</div>
+    <div className="ml-3 flex flex-row items-center gap-2 text-xs">
+      <div className="grow">
+        <div className="min-w-[25px] text-center">{formatNumber(usage.total)}</div>
+      </div>
+      {availability !== null ? (
+        <div className="min-w-[25px]">
+          <Popover
+            trigger={
+              <button type="button" aria-label="Field stats" className="block w-full cursor-help">
+                <AvailabilityBar availability={availability} />
+              </button>
+            }
+            openOnHover
+            align="end"
+            width="auto"
+            content={
+              <div className="text-left">
+                <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Stats</div>
+                {hasFieldLevelMetrics ? (
+                  <div className="max-w-60">
+                    <span className="font-bold">Requests</span> counts how many client requests
+                    asked for a field, whereas <span className="font-bold">Resolutions</span> counts
+                    the actual number of times your backend executed code to fetch that field's data
+                    (which can multiply within lists or drop to zero if a parent returned null).
+                  </div>
+                ) : null}
+                <table className="mt-4 table-auto">
+                  <thead>
+                    <tr>
+                      <th className="px-2 pl-0 text-left font-normal">
+                        <span className="font-bold">{formatNumber(usage.total)} Requests</span>{' '}
+                        {hasFieldLevelMetrics ? 'with' : null}
+                      </th>
+                    </tr>
+                    {usage.totalResolutions ? (
+                      <tr>
+                        <th className="pl-0 text-left">
+                          {formatNumber(usage.totalResolutions)} Resolutions
+                        </th>
+                      </tr>
+                    ) : null}
+                    {usage.errorTotal ? (
+                      <tr>
+                        <th className="pl-0 text-left">{formatNumber(usage.errorTotal)} Errors</th>
+                      </tr>
+                    ) : null}
+                    <tr>
+                      <td className="pl-0 text-left">
+                        for{' '}
+                        <span className="text-orange-800 dark:text-orange-500">
+                          {availability.toFixed(2)}% Availability
+                        </span>
+                      </td>
+                    </tr>
+                  </thead>
+                </table>
+              </div>
+            }
+          />
         </div>
-        {availability !== null ? (
-          <div className="min-w-[25px]">
-            <Tooltip>
-              <TooltipContent align="end">
-                <div className="z-10 text-left">
-                  <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Stats</div>
-                  {hasFieldLevelMetrics ? (
-                    <div className="max-w-60">
-                      <span className="font-bold">Requests</span> counts how many client requests
-                      asked for a field, whereas <span className="font-bold">Resolutions</span>{' '}
-                      counts the actual number of times your backend executed code to fetch that
-                      field's data (which can multiply within lists or drop to zero if a parent
-                      returned null).
-                    </div>
-                  ) : null}
+      ) : null}
+      <Popover
+        trigger={
+          <button type="button" aria-label="Usage" className="cursor-help text-xl">
+            <PulseIcon className="h-6 w-auto" />
+          </button>
+        }
+        openOnHover
+        align="end"
+        width="auto"
+        content={
+          <div>
+            <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Usage</div>
+            {usage.isUsed === false ? (
+              <div>This {kindLabel} is currently not in use.</div>
+            ) : (
+              <div>
+                <ul>
+                  <li>
+                    This {kindLabel} has been queried in{' '}
+                    <strong>{formatNumber(usage.total)}</strong> requests.
+                  </li>
+                  <li>
+                    <strong>{toDecimal(percentage)}%</strong> of all requests use this {kindLabel}.
+                  </li>
+                </ul>
+
+                {Array.isArray(usage.topOperations) && (
                   <table className="mt-4 table-auto">
                     <thead>
                       <tr>
-                        <th className="px-2 pl-0 text-left font-normal">
-                          <span className="font-bold">{formatNumber(usage.total)} Requests</span>{' '}
-                          {hasFieldLevelMetrics ? 'with' : null}
-                        </th>
-                      </tr>
-                      {usage.totalResolutions ? (
-                        <tr>
-                          <th className="pl-0 text-left">
-                            {formatNumber(usage.totalResolutions)} Resolutions
-                          </th>
-                        </tr>
-                      ) : null}
-                      {usage.errorTotal ? (
-                        <tr>
-                          <th className="pl-0 text-left">
-                            {formatNumber(usage.errorTotal)} Errors
-                          </th>
-                        </tr>
-                      ) : null}
-                      <tr>
-                        <td className="pl-0 text-left">
-                          for{' '}
-                          <span className="text-orange-800 dark:text-orange-500">
-                            {availability.toFixed(2)}% Availability
-                          </span>
-                        </td>
+                        <th className="p-2 pl-0 text-left">Top 5 Operations</th>
+                        <th className="p-2 text-center">Reqs</th>
+                        <th className="p-2 text-center">Of total</th>
                       </tr>
                     </thead>
-                  </table>
-                </div>
-              </TooltipContent>
-              <TooltipTrigger className="block w-full cursor-help">
-                <AvailabilityBar availability={availability} />
-              </TooltipTrigger>
-            </Tooltip>
-          </div>
-        ) : null}
-        <Tooltip>
-          <TooltipContent align="end">
-            <div className="z-10">
-              <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Usage</div>
-              {usage.isUsed === false ? (
-                <div>This {kindLabel} is currently not in use.</div>
-              ) : (
-                <div>
-                  <ul>
-                    <li>
-                      This {kindLabel} has been queried in{' '}
-                      <strong>{formatNumber(usage.total)}</strong> requests.
-                    </li>
-                    <li>
-                      <strong>{toDecimal(percentage)}%</strong> of all requests use this {kindLabel}
-                      .
-                    </li>
-                  </ul>
-
-                  {Array.isArray(usage.topOperations) && (
-                    <table className="mt-4 table-auto">
-                      <thead>
-                        <tr>
-                          <th className="p-2 pl-0 text-left">Top 5 Operations</th>
-                          <th className="p-2 text-center">Reqs</th>
-                          <th className="p-2 text-center">Of total</th>
+                    <tbody>
+                      {usage.topOperations.map(op => (
+                        <tr key={op.hash}>
+                          <td className="px-2 pl-0 text-left">
+                            <Link
+                              className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
+                              to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
+                              params={{
+                                organizationSlug: props.organizationSlug,
+                                projectSlug: props.projectSlug,
+                                targetSlug: props.targetSlug,
+                                operationName: `${op.hash.substring(0, 4)}_${op.name}`,
+                                operationHash: op.hash,
+                              }}
+                            >
+                              {op.hash.substring(0, 4)}_{op.name}
+                            </Link>
+                          </td>
+                          <td className="px-2 text-center font-bold">{formatNumber(op.count)}</td>
+                          <td className="px-2 text-center font-bold">
+                            {toDecimal((op.count / props.totalRequests) * 100)}%
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {usage.topOperations.map(op => (
-                          <tr key={op.hash}>
-                            <td className="px-2 pl-0 text-left">
-                              <Link
-                                className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
-                                to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                                params={{
-                                  organizationSlug: props.organizationSlug,
-                                  projectSlug: props.projectSlug,
-                                  targetSlug: props.targetSlug,
-                                  operationName: `${op.hash.substring(0, 4)}_${op.name}`,
-                                  operationHash: op.hash,
-                                }}
-                              >
-                                {op.hash.substring(0, 4)}_{op.name}
-                              </Link>
-                            </td>
-                            <td className="px-2 text-center font-bold">{formatNumber(op.count)}</td>
-                            <td className="px-2 text-center font-bold">
-                              {toDecimal((op.count / props.totalRequests) * 100)}%
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
-            </div>
-          </TooltipContent>
-          <TooltipTrigger>
-            <div className="cursor-help text-xl">
-              <PulseIcon className="h-6 w-auto" />
-            </div>
-          </TooltipTrigger>
-        </Tooltip>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+          </div>
+        }
+      />
 
-        <Tooltip>
-          <TooltipContent align="end">
-            <>
-              <div className="mb-1 text-lg font-bold">Client Usage</div>
+      <Popover
+        trigger={
+          <button type="button" aria-label="Client usage" className="cursor-help p-1 text-xl">
+            <UsersIcon size={16} className="h-6 w-auto" />
+          </button>
+        }
+        openOnHover
+        align="end"
+        width="auto"
+        content={
+          <>
+            <div className="mb-1 text-lg font-bold">Client Usage</div>
 
-              {Array.isArray(usage.usedByClients) && usage.usedByClients.length > 0 ? (
-                <>
-                  <div className="mb-2">This {kindLabel} is used by the following clients:</div>
-                  <ul>
-                    {usage.usedByClients.map(clientName => (
-                      <li key={clientName} className="font-bold">
-                        <Link
-                          className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
-                          to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
-                            name: clientName,
-                          }}
-                        >
-                          {clientName}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : (
-                <div>This {kindLabel} is not used by any client.</div>
-              )}
-            </>
-          </TooltipContent>
-          <TooltipTrigger>
-            <div className="cursor-help p-1 text-xl">
-              <UsersIcon size={16} className="h-6 w-auto" />
-            </div>
-          </TooltipTrigger>
-        </Tooltip>
-      </div>
-    </TooltipProvider>
+            {Array.isArray(usage.usedByClients) && usage.usedByClients.length > 0 ? (
+              <>
+                <div className="mb-2">This {kindLabel} is used by the following clients:</div>
+                <ul>
+                  {usage.usedByClients.map(clientName => (
+                    <li key={clientName} className="font-bold">
+                      <Link
+                        className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
+                        to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                          targetSlug: props.targetSlug,
+                          name: clientName,
+                        }}
+                      >
+                        {clientName}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <div>This {kindLabel} is not used by any client.</div>
+            )}
+          </>
+        }
+      />
+    </div>
   );
 }
 
@@ -267,17 +272,18 @@ export function DeprecationNote(props: {
   }
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <Tooltip>
-        <TooltipTrigger className="line-through hover:line-through">
-          {props.children}
-        </TooltipTrigger>
-        <TooltipContent className="min-w-6 max-w-screen-md" side="right" sideOffset={5}>
+    <Tooltip
+      trigger={<span className="line-through">{props.children}</span>}
+      side="right"
+      sideOffset={5}
+      maxWidth="screen"
+      content={
+        <>
           <div className="mb-2">Deprecation reason</div>
           <Markdown className="text-neutral-10" content={props.deprecationReason} />
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+        </>
+      }
+    />
   );
 }
 
