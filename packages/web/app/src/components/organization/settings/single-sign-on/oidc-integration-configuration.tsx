@@ -2,6 +2,8 @@ import { ReactElement, useState } from 'react';
 import { AlertOctagonIcon, BugPlayIcon, CheckIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
 import { Card } from '@/components/base/card/card';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Switch } from '@/components/base/switch/switch';
 import {
@@ -21,7 +23,6 @@ import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
 import * as Table from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { Tag } from '@/components/v2';
 import { env } from '@/env/frontend';
@@ -211,20 +212,18 @@ export function OIDCIntegrationConfiguration(props: {
       <div className="space-y-2">
         <div className="flex">
           <Heading size="lg">Overview</Heading>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  className="ml-auto"
-                  onClick={() => setModalState(ModalState.openDebugLogs)}
-                >
-                  <BugPlayIcon size="12" />{' '}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Debug OIDC Integration</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip
+            trigger={
+              <Button
+                size="icon-sm"
+                className="ml-auto"
+                onClick={() => setModalState(ModalState.openDebugLogs)}
+              >
+                <BugPlayIcon size="12" />{' '}
+              </Button>
+            }
+            content="Debug OIDC Integration"
+          />
         </div>
         <p>Endpoints for configuring the OIDC provider.</p>
         <Table.Table>
@@ -269,20 +268,18 @@ export function OIDCIntegrationConfiguration(props: {
       <div className="space-y-2">
         <div className="flex">
           <Heading size="lg">OIDC Configuration</Heading>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  className="ml-auto"
-                  onClick={() => setModalState(ModalState.openSettings)}
-                >
-                  <SettingsIcon size="12" />{' '}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Update endpoint configuration</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip
+            trigger={
+              <Button
+                size="icon-sm"
+                className="ml-auto"
+                onClick={() => setModalState(ModalState.openSettings)}
+              >
+                <SettingsIcon size="12" />{' '}
+              </Button>
+            }
+            content="Update endpoint configuration"
+          />
         </div>
         <Table.Table>
           <Table.TableHeader>
@@ -316,14 +313,10 @@ export function OIDCIntegrationConfiguration(props: {
             </Table.TableRow>
             <Table.TableRow>
               <Table.TableCell className="font-medium">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>User ID Claim</TooltipTrigger>
-                    <TooltipContent className="text-xs">
-                      The claim that should be used to uniquely identify an user.
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip
+                  trigger="User ID Claim"
+                  content="The claim that should be used to uniquely identify an user."
+                />
               </Table.TableCell>
               <Table.TableCell className="font-mono">
                 {oidcIntegration.userIdClaim ?? <span className="text-neutral-10">none set</span>}
@@ -331,14 +324,10 @@ export function OIDCIntegrationConfiguration(props: {
             </Table.TableRow>
             <Table.TableRow>
               <Table.TableCell className="font-medium">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>Additional Scopes</TooltipTrigger>
-                    <TooltipContent className="text-xs">
-                      Additional scopes that are requested from the OIDC provider.
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip
+                  trigger="Additional Scopes"
+                  content="Additional scopes that are requested from the OIDC provider."
+                />
               </Table.TableCell>
               <Table.TableCell>
                 {oidcIntegration.additionalScopes.length ? (
@@ -476,21 +465,19 @@ function OIDCDomainConfiguration(props: {
       <div className="space-y-2">
         <div className="flex">
           <Heading size="lg">Registered Domains</Heading>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  data-button-add-new-domain
-                  size="icon-sm"
-                  className="ml-auto"
-                  onClick={() => setState({ type: 'create' })}
-                >
-                  <PlusIcon size="12" />{' '}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Add new domain</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip
+            trigger={
+              <Button
+                data-button-add-new-domain
+                size="icon-sm"
+                className="ml-auto"
+                onClick={() => setState({ type: 'create' })}
+              >
+                <PlusIcon size="12" />{' '}
+              </Button>
+            }
+            content="Add new domain"
+          />
         </div>
         <p>
           Verify domain ownership to skip mandatory email confirmation for organization members.
@@ -515,21 +502,20 @@ function OIDCDomainConfiguration(props: {
                       Verified <CheckIcon size="12" className="inline-block" />
                     </>
                   ) : (
-                    <TooltipProvider>
-                      <Tooltip delayDuration={0} disableHoverableContent>
-                        <TooltipTrigger>
+                    <Tooltip
+                      trigger={
+                        <span>
                           Pending <AlertOctagonIcon size="12" className="inline-block" />
-                        </TooltipTrigger>
-                        <TooltipContent className="text-xs">
-                          The domain ownership challenge has not been completed.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                        </span>
+                      }
+                      content="The domain ownership challenge has not been completed."
+                      disableHoverablePopup
+                    />
                   )}
                 </Table.TableCell>
                 <Table.TableCell className="text-right">
-                  <TooltipProvider>
-                    <Tooltip delayDuration={0} disableHoverableContent>
+                  <Tooltip
+                    trigger={
                       <Button
                         variant="ghost"
                         size="icon-xs"
@@ -543,9 +529,10 @@ function OIDCDomainConfiguration(props: {
                       >
                         <SettingsIcon size="10" />
                       </Button>
-                      <TooltipContent className="text-xs">Manage</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                    }
+                    content="Manage"
+                    disableHoverablePopup
+                  />
                 </Table.TableCell>
               </Table.TableRow>
             ))}
@@ -825,18 +812,17 @@ function OIDCAccessSettings(props: {
                   </div>
                   {organization.pendingSCIMManagementConfirmationsCount > 0 && (
                     <div>
-                      <TooltipProvider delayDuration={100}>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <div className="flex text-xs text-yellow-500">
-                              {organization.pendingSCIMManagementConfirmationsCount} SCIM
-                              provisioning conflict
-                              {organization.pendingSCIMManagementConfirmationsCount === 1
-                                ? ''
-                                : 's'}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-[250px] space-y-2">
+                      <Popover
+                        trigger={
+                          <button type="button" className="flex text-xs text-yellow-500">
+                            {organization.pendingSCIMManagementConfirmationsCount} SCIM provisioning
+                            conflict
+                            {organization.pendingSCIMManagementConfirmationsCount === 1 ? '' : 's'}
+                          </button>
+                        }
+                        openOnHover
+                        content={
+                          <div className="text-neutral-11 space-y-2 text-sm">
                             <p>
                               SCIM provisioning matched existing organization members. Review each
                               match before allowing SCIM to manage the account.
@@ -852,9 +838,9 @@ function OIDCAccessSettings(props: {
                             >
                               Review conflicts
                             </Link>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                          </div>
+                        }
+                      />
                     </div>
                   )}
                 </div>
