@@ -1,4 +1,19 @@
+import { useState } from 'react';
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  CircleXIcon,
+  EraserIcon,
+  MoveDownIcon,
+  SearchIcon,
+} from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Button as BaseButton } from '@/components/base/button/button';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Collapsible as BaseCollapsible } from '@/components/base/collapsible/collapsible';
+import { Select } from '@/components/base/floating/select/select';
+import { ScrollArea as BaseScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Separator as BaseSeparator } from '@/components/base/separator/separator';
 import {
   Accordion,
   AccordionContent,
@@ -6,9 +21,19 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import {
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarSeparator,
+} from '@/components/ui/sidebar';
 import {
   Table,
   TableBody,
@@ -20,6 +45,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion as V2Accordion } from '@/components/v2/accordion';
 import { TBody, Td, Th, THead, Tr, Table as V2Table } from '@/components/v2/table';
+import { formatNumber } from '@/lib/hooks';
+import { cn } from '@/lib/utils';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/DataLayout';
@@ -68,19 +95,19 @@ const ENTRIES = [
     coveredBy: 'Accordions',
   },
   {
-    source: 'target.tsx, target-checks-single.tsx, target-trace.tsx ×2 and the 4 proposal filters',
+    source: 'target-checks-single.tsx:498, target-trace.tsx:107, target-trace.tsx:882',
     origin: 'ui',
-    what: 'ScrollArea — 8 sites, every one setting its own height by className',
+    what: 'ScrollArea — 3 live sites (5 more were inside the Popover comboboxes that became Selects in round 3), every one setting its own height by className',
     coveredBy: 'ScrollArea',
   },
   {
-    source: 'ui/sidebar.tsx, pages/project.tsx, pages/organization.tsx',
+    source: 'pages/organization.tsx:223, pages/project.tsx:236, ui/sidebar.tsx:367',
     origin: 'ui',
-    what: 'Separator — 3 sites, 2 of them vertical',
+    what: 'Separator — 3 sites, 2 of them the same vertical toolbar divider; the third is the sidebar wrapper, deleted with the sidebar',
     coveredBy: 'Separator',
   },
   {
-    source: 'pages/target-laboratory.tsx, pages/traces/target-traces-filter.tsx',
+    source: 'pages/target-laboratory.tsx:730, pages/traces/target-traces-filter.tsx:304',
     origin: 'ui',
     what: 'Collapsible — a 9-line re-export of Radix with no styling of its own',
     coveredBy: 'Collapsible',
@@ -407,67 +434,474 @@ export const Accordions = createPreview({
 // sub-cases, but grouping them under a vague heading told a reader nothing.
 // ---------------------------------------------------------------------------
 
+const ALL_TARGETS = [
+  'production',
+  'staging',
+  'development',
+  'canary',
+  'preview',
+  'sandbox',
+  'qa',
+  'demo',
+];
+
+const SPAN_ATTRIBUTES = [
+  ['graphql.operation.name', 'DashboardGet'],
+  ['graphql.operation.type', 'query'],
+  ['graphql.document', '{ hero { name } }'],
+  ['http.status_code', '200'],
+  ['hive.client.name', 'web-app'],
+  ['hive.client.version', '3.4.1'],
+  ['server.address', 'api.internal'],
+  ['url.path', '/graphql'],
+];
+
+/** The tab strip and attribute rows from target-trace.tsx, minus each row's copy and expand actions. */
+function SpanAttributesPanel(props: { scroller: (children: React.ReactNode) => React.ReactNode }) {
+  return (
+    <div className="border-neutral-5 flex h-64 w-[24rem] flex-col rounded-md border">
+      <div className="border-neutral-5 flex shrink-0 border-b px-2 text-sm">
+        <button type="button" className="border-b-2 border-[#2662d8] p-2">
+          <div className="flex items-center gap-x-2">
+            <div>Attributes</div>
+          </div>
+        </button>
+        <button type="button" className="hover:border-neutral-5 border-b-2 border-transparent p-2">
+          <div className="flex items-center gap-x-2">
+            <div>Events</div>
+            <div>
+              <Badge variant="secondary" className="text-2xs rounded-md px-2 py-0.5 font-thin">
+                3
+              </Badge>
+            </div>
+          </div>
+        </button>
+      </div>
+      {props.scroller(
+        <div className="h-full">
+          {SPAN_ATTRIBUTES.map(([key, value]) => (
+            <div
+              key={key}
+              className="border-neutral-5 flex items-center justify-between border-b p-3 text-xs last:border-0"
+            >
+              <div className="text-neutral-10 flex flex-1 pr-2">{key}</div>
+              <div className="text-neutral-12 truncate">{value}</div>
+            </div>
+          ))}
+        </div>,
+      )}
+    </div>
+  );
+}
+
 export const ScrollAreaPreview = createPreview({
   label: 'ScrollArea',
   render: () => (
-    <CallSite
-      source="pages/target-checks-single.tsx:470 and 7 more"
-      origin="ui"
-      note="ScrollArea sets no height of its own, so all 8 call sites pass one: h-44 w-full, h-80 w-full, max-h-screen, max-h-[calc(100vh-300px)]. Four of the eight are inside the Popover comboboxes already transcribed under Inventory > Popover. ScrollBar is exported and never used."
-    >
-      <div className="border-neutral-5 w-[20rem] rounded-md border p-2">
-        <ScrollArea className="h-44 w-full">
-          <div className="divide-neutral-5 grid grid-cols-1 divide-y">
-            {['production', 'staging', 'development', 'canary', 'preview', 'sandbox'].map(t => (
-              <div key={t} className="py-2">
-                <div className="text-neutral-10 line-clamp-3 text-sm">{t}</div>
+    <div className="flex flex-col gap-8">
+      <CallSite
+        source="pages/target-checks-single.tsx:498"
+        origin="ui"
+        note="The 'All Targets' list in a popover on a check's page, h-44 w-full. Three live sites remain of the eight Phase 0 counted: the other five were inside the Popover comboboxes that became Selects in round 3. ScrollBar is exported and never used."
+      >
+        <div className="border-neutral-5 w-[20rem] rounded-md border">
+          <div className="p-2">
+            <h4 className="text-neutral-12 mb-2 text-sm font-semibold">All Targets</h4>
+            <ScrollArea className="h-44 w-full">
+              <div className="divide-neutral-5 grid grid-cols-1 divide-y">
+                {ALL_TARGETS.map((target, index) => (
+                  <div key={index} className="py-2">
+                    <div className="text-neutral-10 line-clamp-3 text-sm">{target}</div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </ScrollArea>
           </div>
-        </ScrollArea>
-      </div>
-    </CallSite>
+        </div>
+      </CallSite>
+
+      <CallSite
+        source="base/scroll-area (proposed for target-checks-single.tsx:498)"
+        origin="base"
+        note="height=sm, 160px where the old one was 176. The scrollbar is overlaid and appears on hover or while scrolling."
+      >
+        <div className="border-neutral-5 w-[20rem] rounded-md border">
+          <div className="p-2">
+            <h4 className="text-neutral-12 mb-2 text-sm font-semibold">All Targets</h4>
+            <BaseScrollArea height="sm">
+              <div className="divide-neutral-5 grid grid-cols-1 divide-y">
+                {ALL_TARGETS.map((target, index) => (
+                  <div key={index} className="py-2">
+                    <div className="text-neutral-10 line-clamp-3 text-sm">{target}</div>
+                  </div>
+                ))}
+              </div>
+            </BaseScrollArea>
+          </div>
+        </div>
+      </CallSite>
+
+      <CallSite
+        source="pages/target-trace.tsx:882 (and :107, the trace tree, same shape)"
+        origin="ui"
+        note="The span attributes panel: a tab strip, then a ScrollArea with relative grow filling the rest of the column. The rows here drop each attribute's copy and expand buttons."
+      >
+        <SpanAttributesPanel
+          scroller={children => <ScrollArea className="relative grow">{children}</ScrollArea>}
+        />
+      </CallSite>
+
+      <CallSite
+        source="base/scroll-area (proposed for target-trace.tsx:107 and :882)"
+        origin="base"
+        note="fill takes the rest of the flex column."
+      >
+        <SpanAttributesPanel
+          scroller={children => <BaseScrollArea fill>{children}</BaseScrollArea>}
+        />
+      </CallSite>
+    </div>
   ),
 });
+
+const SORT_OPTIONS = [
+  {
+    value: 'requests',
+    label: 'Requests',
+    description: 'GraphQL requests made in the last 7 days.',
+  },
+  {
+    value: 'versions',
+    label: 'Schema Versions',
+    description: 'Schemas published in last 7 days.',
+  },
+  { value: 'name', label: 'Name', description: 'Sort by project name.' },
+];
+
+/** The projects-list toolbar from pages/organization.tsx; the targets one in project.tsx is identical. */
+function ListToolbar(props: { gap: 'gap-x-2' | 'gap-x-4'; separator: React.ReactNode }) {
+  const [sortBy, setSortBy] = useState('requests');
+  return (
+    <div className={cn('flex flex-row items-center', props.gap)}>
+      <div className="relative">
+        <SearchIcon className="text-neutral-10 absolute left-2.5 top-2.5 size-4" />
+        <Input
+          type="search"
+          placeholder="Search..."
+          className="dark:bg-neutral-3 bg-neutral-2 h-9 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
+        />
+      </div>
+      {props.separator}
+      <Select options={SORT_OPTIONS} value={sortBy} onValueChange={setSortBy} />
+      <Button className="size-9 shrink-0" variant="outline" size="icon">
+        <MoveDownIcon className="size-4" />
+      </Button>
+    </div>
+  );
+}
 
 export const SeparatorPreview = createPreview({
   label: 'Separator',
   render: () => (
-    <CallSite
-      source="pages/organization.tsx, pages/project.tsx, components/ui/sidebar.tsx"
-      origin="ui"
-      note="Three call sites only, two of them vertical dividers in a toolbar. A naive grep reports six because SelectSeparator and DropdownMenuSeparator match the same pattern."
-    >
-      <div className="flex h-8 items-center gap-3 text-sm">
-        <span>Sort</span>
-        <Separator orientation="vertical" />
-        <span>Filter</span>
-        <Separator orientation="vertical" />
-        <span>Search</span>
-      </div>
-    </CallSite>
+    <div className="flex flex-col gap-8">
+      <CallSite
+        source="pages/organization.tsx:223 and pages/project.tsx:236"
+        origin="ui"
+        note="The same toolbar on both pages: search, a divider, the sort Select, the direction button. The divider carries mx-4 h-8 on top of the row's gap-x-2, so it sits 24px from each neighbour. The third importer is ui/sidebar.tsx's SidebarSeparator, which goes with the sidebar."
+      >
+        <ListToolbar
+          gap="gap-x-2"
+          separator={<Separator orientation="vertical" className="mx-4 h-8" />}
+        />
+      </CallSite>
+
+      <CallSite
+        source="base/separator (proposed), row unchanged at gap-x-2"
+        origin="base"
+        note="The divider has no margin of its own, so with the row left as is it sits 8px from each neighbour instead of 24."
+      >
+        <ListToolbar gap="gap-x-2" separator={<BaseSeparator orientation="vertical" />} />
+      </CallSite>
+
+      <CallSite
+        source="base/separator (proposed), row moved to gap-x-4"
+        origin="base"
+        note="The alternative: widen the row's gap, which also spaces the Select from the direction button."
+      >
+        <ListToolbar gap="gap-x-4" separator={<BaseSeparator orientation="vertical" />} />
+      </CallSite>
+    </div>
   ),
 });
+
+const PREFLIGHT_LOGS = [
+  'log: preflight script executed in 12ms',
+  'info: 1',
+  'warn: true',
+  'error: Fatal',
+  'log: setting header x-tenant',
+  'info: done',
+  'log: preflight script executed in 9ms',
+  'info: done',
+];
+
+/** PreflightLogs from pages/target-laboratory.tsx:721, with plain lines standing in for LogLine. */
+function OldPreflightLogs() {
+  const [isOpen, setIsOpen] = useState(true);
+  return (
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className={cn('flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]')}
+    >
+      <div
+        className={cn(
+          'flex shrink-0 items-center justify-between px-4 py-3',
+          isOpen ? 'border-b' : 'border-b-0',
+        )}
+      >
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex h-auto items-center gap-2 p-0 hover:bg-transparent"
+            data-cy="trigger"
+          >
+            <ChevronDownIcon
+              className={`text-neutral-10 size-4 transition-transform ${
+                isOpen ? 'rotate-0' : '-rotate-90'
+              }`}
+            />
+            <h2 className="text-[15px] font-normal">Preflight Script Logs</h2>
+          </Button>
+        </CollapsibleTrigger>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            data-cy="erase-logs"
+            className={cn(
+              'text-neutral-10 hover:text-neutral-12 size-8',
+              isOpen ? 'visible' : 'invisible',
+            )}
+          >
+            <EraserIcon className="size-4" />
+            <span className="sr-only">Clear logs</span>
+          </Button>
+        </div>
+      </div>
+      <CollapsibleContent
+        className="grow overflow-auto p-4 font-mono text-xs/[18px]"
+        data-cy="logs"
+      >
+        {PREFLIGHT_LOGS.map((line, index) => (
+          <div key={index}>{line}</div>
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function NewPreflightLogs() {
+  const [isOpen, setIsOpen] = useState(true);
+  return (
+    <div className="flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]">
+      <BaseCollapsible
+        variant="panel"
+        trigger="Preflight Script Logs"
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        actions={
+          isOpen ? (
+            <BaseButton
+              layout="iconOnly"
+              icon={EraserIcon}
+              aria-label="Clear logs"
+              variant="ghost"
+            />
+          ) : null
+        }
+        panelDataCy="logs"
+      >
+        <BaseScrollArea fill>
+          <div className="p-4 font-mono text-xs/[18px]">
+            {PREFLIGHT_LOGS.map((line, index) => (
+              <div key={index}>{line}</div>
+            ))}
+          </div>
+        </BaseScrollArea>
+      </BaseCollapsible>
+    </div>
+  );
+}
+
+const STATUS_OPTIONS = [
+  { label: 'ok', value: 'ok', count: 1204 },
+  { label: 'error', value: 'error', count: 37 },
+];
+
+/**
+ * Filter + FilterTitle + FilterContent + FilterOption from target-traces-filter.tsx:68-310, the
+ * "Status" group, rendered with the real sidebar parts. The coloured status dot that
+ * LabelWithColor adds in target-traces.tsx is left out.
+ */
+function OldTracesFilterGroup() {
+  const [selected, setSelected] = useState<string[]>(['ok']);
+  return (
+    <div className="text-neutral-11 flex w-64 flex-col">
+      <SidebarGroup className="py-0">
+        <Collapsible className="group/collapsible" defaultOpen>
+          <SidebarGroupLabel
+            asChild
+            className="group/label text-neutral-11 hover:bg-neutral-5 hover:text-neutral-11 w-full text-sm"
+          >
+            <CollapsibleTrigger>
+              <ChevronRightIcon className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+              Status
+              {selected.length ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="hover:bg-neutral-2 text-neutral-10 group ml-auto h-6 w-8 px-1 py-0 text-xs"
+                  onClick={e => {
+                    e.preventDefault();
+                    setSelected([]);
+                  }}
+                  asChild
+                >
+                  <div>
+                    <CircleXIcon className="hidden size-3 group-hover:block" />
+                    <span className="block group-hover:hidden">{selected.length}</span>
+                  </div>
+                </Button>
+              ) : null}
+            </CollapsibleTrigger>
+          </SidebarGroupLabel>
+          <CollapsibleContent>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {STATUS_OPTIONS.map(option => (
+                  <SidebarMenuButton
+                    key={option.value}
+                    onClick={() =>
+                      setSelected(prev =>
+                        prev.includes(option.value)
+                          ? prev.filter(value => value !== option.value)
+                          : prev.concat(option.value),
+                      )
+                    }
+                    className="hover:bg-neutral-5/50 flex-row items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <Checkbox visual checked={selected.includes(option.value)} size="sm" />
+                      {option.label}
+                    </div>
+                    <Badge variant="secondary" className="rounded-sm px-1 font-mono font-normal">
+                      {formatNumber(option.count)}
+                    </Badge>
+                  </SidebarMenuButton>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </SidebarGroup>
+      <SidebarSeparator className="mx-0" />
+    </div>
+  );
+}
+
+function NewTracesFilterGroup() {
+  const [selected, setSelected] = useState<string[]>(['ok']);
+  return (
+    <div className="text-neutral-11 flex w-64 flex-col">
+      <div className="px-2">
+        <BaseCollapsible
+          trigger="Status"
+          defaultOpen
+          actions={
+            selected.length ? (
+              <button
+                type="button"
+                className="hover:bg-neutral-2 text-neutral-10 group flex h-6 w-8 items-center justify-center rounded-md px-1 text-xs"
+                onClick={() => setSelected([])}
+              >
+                <CircleXIcon className="hidden size-3 group-hover:block" />
+                <span className="block group-hover:hidden">{selected.length}</span>
+              </button>
+            ) : null
+          }
+        >
+          <ul className="flex w-full min-w-0 flex-col gap-1 text-sm">
+            {STATUS_OPTIONS.map(option => (
+              <li key={option.value}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelected(prev =>
+                      prev.includes(option.value)
+                        ? prev.filter(value => value !== option.value)
+                        : prev.concat(option.value),
+                    )
+                  }
+                  className="hover:bg-neutral-5/50 flex h-8 w-full items-center justify-between gap-2 overflow-hidden rounded-md p-2 text-left"
+                >
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <Checkbox visual checked={selected.includes(option.value)} size="sm" />
+                    {option.label}
+                  </div>
+                  <Badge variant="secondary" className="rounded-sm px-1 font-mono font-normal">
+                    {formatNumber(option.count)}
+                  </Badge>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </BaseCollapsible>
+      </div>
+      <BaseSeparator />
+    </div>
+  );
+}
 
 export const CollapsiblePreview = createPreview({
   label: 'Collapsible',
   render: () => (
-    <CallSite
-      source="pages/target-laboratory.tsx, pages/traces/target-traces-filter.tsx"
-      origin="ui"
-      note="ui/collapsible is 9 lines: three re-exports of Radix with no styling at all. Both call sites therefore build the entire disclosure themselves. It is the clearest delete-and-use-base-directly candidate in this bucket."
-    >
-      <div className="w-[24rem]">
-        <Collapsible defaultOpen>
-          <CollapsibleTrigger className="text-neutral-12 flex w-full items-center justify-between py-2 text-sm">
-            Filters
-            <span className="text-neutral-10 text-xs">toggle</span>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="text-neutral-11 pt-2 text-sm">
-            Entirely unstyled by the component: this padding and type came from the call site.
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
-    </CallSite>
+    <div className="flex flex-col gap-8">
+      <CallSite
+        source="pages/target-laboratory.tsx:730"
+        origin="ui"
+        note="The preflight logs panel in the GraphiQL footer. ui/collapsible is three re-exports of Radix with no styling, so the site builds the header itself: a ghost Button as trigger, the erase button beside it (invisible while closed), a border under the header while open, and the content pane scrolling on its own. The page also restyles it through a #preflight-logs style block keyed on Radix's data-state attribute."
+      >
+        <div className="w-[36rem]">
+          <OldPreflightLogs />
+        </div>
+      </CallSite>
+
+      <CallSite
+        source="base/collapsible variant=panel (proposed for target-laboratory.tsx:730)"
+        origin="base"
+        note="The header is the component's; the erase button is its actions slot, the logs a fill ScrollArea inside the panel. The wrapper keeps the page's background and 200px cap. Title goes from 15px regular to the control size, medium."
+      >
+        <div className="w-[36rem]">
+          <NewPreflightLogs />
+        </div>
+      </CallSite>
+
+      <CallSite
+        source="pages/traces/target-traces-filter.tsx:304"
+        origin="ui"
+        note="One filter group from the traces column, built from sidebar parts: the group label is the trigger, with the reset count nested inside it as a div-rendered Button that preventDefaults so it does not toggle the group."
+      >
+        <OldTracesFilterGroup />
+      </CallSite>
+
+      <CallSite
+        source="base/collapsible variant=section (proposed for target-traces-filter.tsx:304)"
+        origin="base"
+        note="The reset count moves to the actions slot beside the trigger, so it is a real button outside another button. The hover fill is on the trigger only, not the whole row."
+      >
+        <NewTracesFilterGroup />
+      </CallSite>
+    </div>
   ),
 });

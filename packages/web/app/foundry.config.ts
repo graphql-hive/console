@@ -30,6 +30,9 @@ export default defineConfig({
             { label: 'StatCard' },
             { label: 'Input' },
             { label: 'CopyChip' },
+            { label: 'Collapsible' },
+            { label: 'ScrollArea' },
+            { label: 'Separator' },
           ],
         },
         {

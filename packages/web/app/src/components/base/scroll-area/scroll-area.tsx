@@ -1,0 +1,99 @@
+import { forwardRef, type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import { ScrollArea as BaseScrollArea } from '@base-ui/react/scroll-area';
+
+const heightClass = {
+  sm: 'h-40',
+  md: 'h-60',
+  lg: 'h-90',
+} as const;
+
+const maxHeightClass = {
+  sm: 'max-h-40',
+  md: 'max-h-60',
+  lg: 'max-h-90',
+  screen: 'max-h-screen',
+} as const;
+
+const viewportOverflowClass = {
+  vertical: 'overflow-y-auto overflow-x-hidden',
+  horizontal: 'overflow-x-auto overflow-y-hidden',
+  both: 'overflow-auto',
+} as const;
+
+// Overlaid, and only drawn while the pointer is over the area or it is scrolling. Base UI sets
+// `position: absolute` itself; the placement classes below say which edge.
+const scrollbarClass = [
+  'flex touch-none select-none rounded-full',
+  'opacity-0 transition-opacity delay-300 duration-200',
+  'data-[hovering]:opacity-100 data-[hovering]:delay-0 data-[hovering]:duration-100',
+  'data-[scrolling]:opacity-100 data-[scrolling]:delay-0 data-[scrolling]:duration-100',
+  'hover:opacity-100 hover:delay-0',
+].join(' ');
+
+const thumbClass = 'bg-neutral-7 hover:bg-neutral-8 rounded-full';
+
+type ScrollAreaProps = {
+  children: ReactNode;
+  /** Which way the content can overflow. The other axis is clipped. */
+  axis?: keyof typeof viewportOverflowClass;
+  height?: keyof typeof heightClass;
+  /** Scroll only once the content is taller than this. */
+  maxHeight?: keyof typeof maxHeightClass;
+  /** Take the remaining height of a flex column, for a panel that fills what is left of a page or a card. */
+  fill?: boolean;
+  'data-cy'?: string;
+};
+
+/**
+ * The ref lands on the scrolling element, for code that reads or sets the scroll position (a
+ * log pane that follows its tail).
+ */
+export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(function ScrollArea(
+  { children, axis = 'vertical', height, maxHeight, fill, 'data-cy': dataCy },
+  ref,
+) {
+  return (
+    <BaseScrollArea.Root
+      data-cy={dataCy}
+      // A flex column so a max-height on the root constrains the viewport, which a percentage
+      // height on the viewport would not.
+      className={cn(
+        'group/scroll-area relative flex flex-col overflow-hidden',
+        height && heightClass[height],
+        maxHeight && maxHeightClass[maxHeight],
+        fill && 'min-h-0 grow',
+      )}
+    >
+      <BaseScrollArea.Viewport
+        ref={ref}
+        // The scrollbar is overlaid, so the viewport gives up the same gutter a native one would
+        // take, but only once there is something to scroll, so short content sits flush.
+        className={cn(
+          'min-h-0 flex-1 overscroll-contain',
+          'group-data-[has-overflow-x]/scroll-area:pb-2.5 group-data-[has-overflow-y]/scroll-area:pr-2.5',
+          viewportOverflowClass[axis],
+        )}
+      >
+        <BaseScrollArea.Content>{children}</BaseScrollArea.Content>
+      </BaseScrollArea.Viewport>
+      {axis !== 'horizontal' ? (
+        <BaseScrollArea.Scrollbar
+          orientation="vertical"
+          className={cn(scrollbarClass, 'inset-y-1 right-0.5 w-2 justify-center')}
+        >
+          <BaseScrollArea.Thumb className={cn(thumbClass, 'w-full')} />
+        </BaseScrollArea.Scrollbar>
+      ) : null}
+      {axis !== 'vertical' ? (
+        <BaseScrollArea.Scrollbar
+          orientation="horizontal"
+          className={cn(scrollbarClass, 'inset-x-1 bottom-0.5 h-2 flex-col justify-center')}
+        >
+          <BaseScrollArea.Thumb className={cn(thumbClass, 'h-full')} />
+        </BaseScrollArea.Scrollbar>
+      ) : null}
+      {axis === 'both' ? <BaseScrollArea.Corner /> : null}
+    </BaseScrollArea.Root>
+  );
+});
