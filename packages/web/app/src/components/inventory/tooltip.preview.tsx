@@ -1,8 +1,12 @@
-import { CopyIcon, UsersIcon } from 'lucide-react';
+import { CopyIcon, Info, UsersIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '@/components/base/badge/badge';
+import { Button as BaseButton } from '@/components/base/button/button';
+import { Popover as BasePopover } from '@/components/base/floating/popover/popover';
+import { Tooltip as BaseTooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip as V2TooltipComponent } from '@/components/v2/tooltip';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { CallSite, InventoryList } from './shared';
 
@@ -403,9 +407,9 @@ export const DisabledTrigger = createPreview({
   render: () => (
     <div className="flex flex-col gap-8">
       <CallSite
-        source="components/organization/members/common.tsx:99"
+        source="pages/target-checks-single.tsx:982 (a disabled TabsTrigger), project/settings/native-composition.tsx:60"
         origin="ui"
-        note="The trigger wraps a disabled CommandItem. A disabled control carries pointer-events-none, so it never fires hover and the tooltip explaining WHY it is disabled never appears. This is a live bug, not just a migration hazard."
+        note="The trigger wraps a disabled control. A disabled control carries pointer-events-none, so it never fires hover and the tooltip explaining WHY it is disabled never appears. This is a live bug, not just a migration hazard. (The RoleSelector case this used to cite became a base Select in #8475.)"
       >
         <TooltipProvider>
           <Tooltip>
@@ -508,18 +512,342 @@ export const V2Tooltip = createPreview({
       origin="v2"
       note="Different defaults from ui/tooltip: always-on arrow, p-4 rather than px-3 py-1.5, and a bg-neutral-5 surface. Its API is <Tooltip content={...}>{trigger}</Tooltip>, which is already close to the base shape."
     >
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span>
+      <V2TooltipComponent content="Requires all types and fields to carry a description.">
+        <span>
+          <Badge content="require-description" variants={{ variant: 'outline' }} />
+        </span>
+      </V2TooltipComponent>
+    </CallSite>
+  ),
+});
+
+// ---------------------------------------------------------------------------
+// The gate: each legacy shape beside its base replacement. Left is what ships, right is what the
+// migration produces. One app-wide delay (300ms) replaces the per-site 0/100/200/300; text is
+// 12px everywhere; the traces look and the v2 look fold into the one tooltip; an info icon whose
+// only job is the hint becomes a Popover with a button, per Base UI's guidance.
+// ---------------------------------------------------------------------------
+
+function Pair(props: { old: React.ReactNode; base: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-2 items-start gap-6">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-neutral-10 font-mono text-[10px]">ui</span>
+        {props.old}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-success_80 font-mono text-[10px]">base</span>
+        {props.base}
+      </div>
+    </div>
+  );
+}
+
+function DefaultPair() {
+  return (
+    <Pair
+      old={
+        <TooltipProvider>
+          <Tooltip delayDuration={100}>
+            <TooltipTrigger asChild>
+              <div className="flex flex-row items-center gap-2">
+                <Button variant="outline" disabled>
+                  Read-only
+                </Button>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Your user account does not have these permissions.</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      }
+      base={
+        <BaseTooltip
+          trigger={
+            <div className="flex flex-row items-center gap-2">
+              <Button variant="outline" disabled>
+                Read-only
+              </Button>
+            </div>
+          }
+          content="Your user account does not have these permissions."
+        />
+      }
+    />
+  );
+}
+
+function IconButtonPair() {
+  return (
+    <Pair
+      old={
+        <TooltipProvider>
+          <Tooltip delayDuration={0} disableHoverableContent>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon-xs" className="ml-auto">
+                <CopyIcon size={10} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="text-xs">Copy access token</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      }
+      base={
+        <BaseTooltip
+          trigger={<BaseButton layout="iconOnly" icon={CopyIcon} aria-label="Copy access token" />}
+          content="Copy access token"
+          disableHoverablePopup
+        />
+      }
+    />
+  );
+}
+
+const CONTRACT_INACTIVE = (
+  <p>
+    This Contract is no longer active and no more contract versions or artifacts will be published
+    for it.
+  </p>
+);
+
+function ParagraphPair() {
+  return (
+    <Pair
+      old={
+        <TooltipProvider>
+          <div className="flex items-center">
+            <span className="text-yellow-500">Inactive</span>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button variant="ghost" size="icon-sm" className="ml-2 text-yellow-500">
+                  <InfoCircledIcon className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-md p-4 font-normal">
+                {CONTRACT_INACTIVE}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
+      }
+      base={
+        <div className="flex items-center">
+          <span className="text-yellow-500">Inactive</span>
+          <BasePopover
+            trigger={
+              <button type="button" className="ml-2 text-yellow-500" aria-label="Why inactive">
+                <Info className="size-4" />
+              </button>
+            }
+            width="lg"
+            openOnHover
+            content={<div className="text-neutral-11 text-sm">{CONTRACT_INACTIVE}</div>}
+          />
+        </div>
+      }
+    />
+  );
+}
+
+function VeryWidePair() {
+  const coordinate = 'Query.productsConnection.edges.node.reviews.author.displayName';
+  return (
+    <Pair
+      old={
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline">Coordinate</Button>
+            </TooltipTrigger>
+            <TooltipContent className="min-w-6 max-w-screen-md">{coordinate}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      }
+      base={
+        <BaseTooltip
+          trigger={<Button variant="outline">Coordinate</Button>}
+          content={coordinate}
+          maxWidth="screen"
+        />
+      }
+    />
+  );
+}
+
+function TracesPair() {
+  return (
+    <Pair
+      old={
+        <TooltipProvider>
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <div className="px-4 font-mono text-xs uppercase">Sep 10 14:22:07</div>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              className="text-neutral-11 cursor-auto overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
+            >
+              2026-09-10T14:22:07.481Z
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      }
+      base={
+        <div className="px-4 font-mono text-xs uppercase">
+          <BaseTooltip trigger="Sep 10 14:22:07" content="2026-09-10T14:22:07.481Z" side="bottom" />
+        </div>
+      }
+    />
+  );
+}
+
+function DisabledControlPair() {
+  return (
+    <Pair
+      old={
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" disabled>
+                Approve
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Only reviewers can approve.</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      }
+      base={
+        <BaseTooltip
+          trigger={
+            <span className="inline-flex">
+              <Button variant="outline" disabled>
+                Approve
+              </Button>
+            </span>
+          }
+          content="Only reviewers can approve."
+        />
+      }
+    />
+  );
+}
+
+function InfotipPair() {
+  const text = 'Your membership has insufficient authority for assigning this permission.';
+  return (
+    <Pair
+      old={
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger>
+              <InfoCircledIcon />
+            </TooltipTrigger>
+            <TooltipContent>{text}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      }
+      base={
+        <BasePopover
+          trigger={
+            <button
+              type="button"
+              aria-label="Why can I not assign this"
+              className="text-neutral-10"
+            >
+              <Info className="size-4" />
+            </button>
+          }
+          openOnHover
+          content={<p className="text-neutral-11 text-sm">{text}</p>}
+        />
+      }
+    />
+  );
+}
+
+function V2Pair() {
+  return (
+    <Pair
+      old={
+        <V2TooltipComponent content="Requires all types and fields to carry a description.">
+          <span>
+            <Badge content="require-description" variants={{ variant: 'outline' }} />
+          </span>
+        </V2TooltipComponent>
+      }
+      base={
+        <BaseTooltip
+          trigger={
+            <span className="inline-flex">
               <Badge content="require-description" variants={{ variant: 'outline' }} />
             </span>
-          </TooltipTrigger>
-          <TooltipContent className="bg-neutral-5 p-4 text-xs">
-            Requires all types and fields to carry a description.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </CallSite>
+          }
+          content="Requires all types and fields to carry a description."
+        />
+      }
+    />
+  );
+}
+
+export const UiVsBase = createPreview({
+  label: 'ui vs base',
+  render: () => (
+    <div className="flex w-[52rem] flex-col gap-10">
+      <CallSite
+        source="organization/Permissions.tsx:109"
+        origin="ui"
+        note="The asChild shape carries straight over. delayDuration={100} goes: one 300ms delay app-wide, no prop."
+      >
+        <DefaultPair />
+      </CallSite>
+      <CallSite
+        source="ui/copy-icon-button.tsx:15"
+        origin="ui"
+        note="Icon button hint. text-xs is now the default; disableHoverableContent becomes disableHoverablePopup; the 0ms delay goes."
+      >
+        <IconButtonPair />
+      </CallSite>
+      <CallSite
+        source="target/settings/schema-contracts.tsx:217"
+        origin="ui"
+        note="An info icon whose only job is to open the explanation. Per Base UI, that is a Popover with a button, not a tooltip. openOnHover keeps it discoverable on hover; click makes it keyboard and touch reachable."
+      >
+        <ParagraphPair />
+      </CallSite>
+      <CallSite
+        source="target/explorer/common.tsx:275"
+        origin="ui"
+        note="maxWidth='screen' for a coordinate that must not wrap."
+      >
+        <VeryWidePair />
+      </CallSite>
+      <CallSite
+        source="pages/target-traces.tsx:429 (and 4 more)"
+        origin="ui"
+        note="The traces look folds into the standard tooltip. The trigger is a string, so it gets a focusable span."
+      >
+        <TracesPair />
+      </CallSite>
+      <CallSite
+        source="pages/target-checks-single.tsx:982, project/settings/native-composition.tsx:60"
+        origin="ui"
+        note="A hint on a disabled control. The old one never opens; the base one wraps the control in a span that takes the hover. Neither is keyboard-reachable: a disabled button never was."
+      >
+        <DisabledControlPair />
+      </CallSite>
+      <CallSite
+        source="organization/members/permission-selector.tsx:155 (16 bare info-icon triggers across 6 files)"
+        origin="ui"
+        note="Same rule as the paragraph above: an info icon is a Popover trigger. The old one is a bare TooltipTrigger, so Radix wrapped the icon in its own button."
+      >
+        <InfotipPair />
+      </CallSite>
+      <CallSite
+        source="policy/rules-configuration/string-config.tsx:29 (8 v2 sites)"
+        origin="v2"
+        note="v2's always-on arrow, p-4 and neutral-5 surface fold into the standard tooltip."
+      >
+        <V2Pair />
+      </CallSite>
+    </div>
   ),
 });

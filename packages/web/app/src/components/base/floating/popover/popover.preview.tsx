@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Info } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../../button/button';
 import { Input } from '../../input/input';
@@ -222,6 +223,31 @@ export const InputTrigger = createPreview(() => {
     </div>
   );
 });
+
+/**
+ * `openOnHover` for an infotip: an icon whose only job is to open the explanation. Hover opens
+ * it after the tooltip delay, click toggles it, so it is reachable by keyboard and touch too.
+ * Base UI's rule: if the trigger exists to open the popup, it is a popover, not a tooltip.
+ */
+export const Infotip = createPreview(() => (
+  <div className="flex items-center gap-2">
+    <span className="text-neutral-11 text-sm">Resolution count</span>
+    <Popover
+      trigger={
+        <button type="button" aria-label="What resolution count means" className="text-neutral-10">
+          <Info className="size-4" />
+        </button>
+      }
+      openOnHover
+      content={
+        <p className="text-neutral-11 text-sm">
+          The number of times this field was executed. A single request can resolve a field many
+          times, or skip it entirely.
+        </p>
+      }
+    />
+  </div>
+));
 
 /** `modal` blocks the page behind the popup. For a panel that is a task, not a glance. */
 export const Modal = createPreview(() => (
