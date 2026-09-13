@@ -1,5 +1,5 @@
 import { cva } from 'class-variance-authority';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 
@@ -22,14 +22,14 @@ export const statusDescription: Record<SupportTicketStatus, string> = {
 
 export function Status({ className, status }: { status: SupportTicketStatus; className?: string }) {
   return (
-    <Tooltip>
-      <TooltipTrigger>
+    <Tooltip
+      trigger={
         <div className={cn(statusVariants({ variant: status }), className)}>
           <div>{status}</div>
         </div>
-      </TooltipTrigger>
-      <TooltipContent>{statusDescription[status]}</TooltipContent>
-    </Tooltip>
+      }
+      content={statusDescription[status]}
+    />
   );
 }
 
@@ -66,11 +66,9 @@ export function Priority({
   className?: string;
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger>
-        <div className={cn(priorityVariants({ variant: level }), className)}>{level}</div>
-      </TooltipTrigger>
-      <TooltipContent>{priorityDescription[level]}</TooltipContent>
-    </Tooltip>
+    <Tooltip
+      trigger={<div className={cn(priorityVariants({ variant: level }), className)}>{level}</div>}
+      content={priorityDescription[level]}
+    />
   );
 }
