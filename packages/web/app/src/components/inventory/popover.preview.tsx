@@ -91,7 +91,7 @@ const ENTRIES = [
   {
     source: 'components/target/proposals/user-filter.tsx:74',
     origin: 'ui',
-    what: 'Proposed-by filter, checkbox list with search',
+    what: 'Proposed-by filter, checkbox list with search. DEAD: its only mount is commented out in pages/target-proposals.tsx since #6836; deleted in round 3',
     coveredBy: 'Checkbox filters',
   },
   {
@@ -151,12 +151,12 @@ export const Inventory = createPreview({
       component="ui/popover"
       summary={
         <>
-          17 live instances across 12 files, plus one dead (<code>VersionSelect</code>, commented
-          out at its only mount) and one that went with <code>TimelineFilter</code> in #8473. Six
-          live ones are <code>Popover</code> + <code>Command</code> comboboxes, the only consumers
-          of <code>ui/command.tsx</code> and <code>cmdk</code>. Every raw-content call site sets its
-          own width. <code>PopoverAnchor</code> has exactly one user and <code>PopoverArrow</code>{' '}
-          six.
+          16 live instances across 11 files, plus two dead (<code>VersionSelect</code> and{' '}
+          <code>UserFilter</code>, each commented out at its only mount) and one that went with{' '}
+          <code>TimelineFilter</code> in #8473. Five live ones are <code>Popover</code> +{' '}
+          <code>Command</code> comboboxes, the only consumers of <code>ui/command.tsx</code> and{' '}
+          <code>cmdk</code>. Every raw-content call site sets its own width.{' '}
+          <code>PopoverAnchor</code> has exactly one user and <code>PopoverArrow</code> six.
         </>
       }
       entries={ENTRIES}
@@ -460,7 +460,7 @@ export const CheckboxFilters = createPreview({
       <CallSite
         source="components/target/proposals/user-filter.tsx:74"
         origin="ui"
-        note="Same shape with a search input. No width class, so it sizes to content."
+        note="Dead: the only <UserFilter> in the app is inside a JSX comment in pages/target-proposals.tsx. Kept as the record of what it looked like; deleted, not migrated."
       >
         <CheckboxFilter
           label="Proposed by"
