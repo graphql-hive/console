@@ -10,6 +10,7 @@ import { Markdown } from '@/components/v2/markdown';
 import { Slider } from '@/components/v2/slider';
 import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 import { cn } from '@/lib/utils';
+import * as SliderPrimitive from '@radix-ui/react-slider';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/V2Leftovers';
@@ -181,8 +182,69 @@ export const AvatarPreview = createPreview({
 
 export const SliderPreview = createPreview({
   label: 'Slider',
-  render: () => <SliderExample />,
+  render: () => (
+    <div className="flex flex-col gap-8">
+      <SliderExample />
+      <DurationSliderExample />
+    </div>
+  ),
 });
+
+/**
+ * Not a v2 component at all: the traces duration filter builds its own two-thumb slider straight
+ * on @radix-ui/react-slider (DoubleSlider in target-traces-filter.tsx:311), which is the second
+ * importer of that package and so blocks dropping it.
+ */
+function DurationSliderExample() {
+  const [range, setRange] = useState<[number, number]>([0, 100_000]);
+  return (
+    <>
+      <CallSite
+        source="pages/traces/target-traces-filter.tsx:423"
+        origin="ui"
+        note="The DoubleSlider under the MIN / MAX inputs of the Duration filter: neutral-5 track, neutral-10 range, neutral-5 thumbs with a neutral-2 border and no focus style."
+      >
+        <div className="w-56">
+          <SliderPrimitive.Root
+            className="**:[[role=slider]]:size-4 relative flex w-full touch-none select-none items-center"
+            max={100_000}
+            min={0}
+            step={1}
+            value={range}
+            onValueChange={value => setRange([value[0], value[1]])}
+          >
+            <SliderPrimitive.Track className="bg-neutral-5 relative h-1 w-full grow overflow-hidden rounded-full">
+              <SliderPrimitive.Range className="bg-neutral-10 absolute h-full" />
+            </SliderPrimitive.Track>
+            {range.map((_, index) => (
+              <SliderPrimitive.Thumb
+                key={index}
+                className="bg-neutral-5 border-neutral-2 block size-4 rounded-full border transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+              />
+            ))}
+          </SliderPrimitive.Root>
+        </div>
+      </CallSite>
+
+      <CallSite
+        source="base/slider range mode (proposed for target-traces-filter.tsx:423)"
+        origin="base"
+        note="A two-element value gives two thumbs; the rest is the single slider's styling."
+      >
+        <div className="w-56">
+          <BaseSlider
+            max={100_000}
+            min={0}
+            step={1}
+            value={range}
+            onValueChange={setRange}
+            aria-label="Duration"
+          />
+        </div>
+      </CallSite>
+    </>
+  );
+}
 
 function SliderExample() {
   const [value, setValue] = useState([12]);

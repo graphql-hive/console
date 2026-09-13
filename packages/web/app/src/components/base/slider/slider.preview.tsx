@@ -36,6 +36,19 @@ export const Stepped = createPreview(() => {
   );
 });
 
+/** A two-element value gives two thumbs, for a bounded range such as the traces duration filter. */
+export const Range = createPreview(() => {
+  const [range, setRange] = useState<[number, number]>([2000, 60_000]);
+  return (
+    <div className="flex w-[28rem] flex-col gap-2">
+      <Slider min={0} max={100_000} value={range} onValueChange={setRange} aria-label="Duration" />
+      <span className="text-neutral-11 font-mono text-xs">
+        {range[0]} ms to {range[1]} ms
+      </span>
+    </div>
+  );
+});
+
 export const Disabled = createPreview(() => (
   <div className="w-[28rem]">
     <Slider

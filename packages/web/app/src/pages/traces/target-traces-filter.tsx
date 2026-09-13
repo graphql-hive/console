@@ -1,7 +1,5 @@
 import {
   ChangeEventHandler,
-  ComponentPropsWithoutRef,
-  ElementRef,
   forwardRef,
   Fragment,
   InputHTMLAttributes,
@@ -15,6 +13,7 @@ import {
 import debounce from 'lodash.debounce';
 import { ChevronRightIcon, CircleXIcon, PlusIcon } from 'lucide-react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Slider } from '@/components/base/slider/slider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -28,7 +27,6 @@ import {
 } from '@/components/ui/sidebar';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-import * as SliderPrimitive from '@radix-ui/react-slider';
 
 type FilterInputProps = InputHTMLAttributes<HTMLInputElement>;
 
@@ -308,27 +306,6 @@ function Filter(props: { name: string; children: ReactNode }) {
   );
 }
 
-const DoubleSlider = forwardRef<
-  ElementRef<typeof SliderPrimitive.Root>,
-  ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <SliderPrimitive.Root
-    ref={ref}
-    className={cn('relative flex w-full touch-none select-none items-center', className)}
-    {...props}
-  >
-    <SliderPrimitive.Track className="bg-neutral-5 relative h-1 w-full grow overflow-hidden rounded-full">
-      <SliderPrimitive.Range className="bg-neutral-10 absolute h-full" />
-    </SliderPrimitive.Track>
-    {props.value?.map((_, index) => (
-      <SliderPrimitive.Thumb
-        key={index}
-        className="bg-neutral-5 border-neutral-2 block size-4 rounded-full border transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-      />
-    ))}
-  </SliderPrimitive.Root>
-));
-
 export const DurationFilter = memo(
   (props: { value: [number, number] | []; onChange(value: [number, number]): void }) => {
     const minValue = 0;
@@ -420,14 +397,13 @@ export const DurationFilter = memo(
                 </div>
               </div>
             </div>
-            <DoubleSlider
-              defaultValue={defaultValues}
+            <Slider
               max={maxValue}
               min={minValue}
               step={1}
               value={values}
               onValueChange={handleSliderChange}
-              className="**:[[role=slider]]:size-4"
+              aria-label="Duration"
             />
           </div>
         </FilterContent>
