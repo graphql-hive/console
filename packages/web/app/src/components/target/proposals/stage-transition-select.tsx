@@ -1,11 +1,7 @@
-import { useState } from 'react';
 import { ChevronsUpDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/base/button/button';
+import { Menu } from '@/components/base/floating/menu/menu';
 import { SchemaProposalStage } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
 
 const STAGE_TRANSITIONS: ReadonlyArray<
   Readonly<{
@@ -54,54 +50,34 @@ const STAGE_TITLES = {
   [SchemaProposalStage.Implemented]: 'IMPLEMENTED',
 } as const;
 
+/**
+ * The trigger reads the current stage; the rows are the transitions legal from it. They are
+ * actions, not a held value, so this is a Menu rather than a Select.
+ */
 export function StageTransitionSelect(props: {
   stage: SchemaProposalStage;
   onSelect: (stage: SchemaProposalStage) => void | Promise<void>;
-  className?: string;
+  width?: 'auto' | 'full';
 }) {
-  const [open, setOpen] = useState(false);
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Menu
+      trigger={
         <Button
           variant="outline"
-          role="combobox"
-          className={cn('flex min-w-[200px] justify-between truncate', props.className)}
-          aria-expanded={open}
-        >
-          <div className="truncate">{STAGE_TITLES[props.stage]}</div>
-          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="truncate p-0">
-        <Command>
-          <CommandGroup>
-            <ScrollArea className="relative max-h-screen">
-              {STAGE_TRANSITIONS.filter(s => s.fromStates.includes(props.stage))?.map(s => (
-                <CommandItem
-                  key={s.value}
-                  value={s.value}
-                  onSelect={async value => {
-                    // @todo debounce...
-                    await props.onSelect(value.toUpperCase() as SchemaProposalStage);
-                    setOpen(false);
-                  }}
-                  className="cursor-pointer truncate"
-                >
-                  <div
-                    className={cn(
-                      'hover:text-neutral-12 text-neutral-10 flex flex-row truncate p-1',
-                      s.value === props.stage && 'underline',
-                    )}
-                  >
-                    {s.label}
-                  </div>
-                </CommandItem>
-              ))}
-            </ScrollArea>
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
+          label={STAGE_TITLES[props.stage]}
+          rightIcon={{ icon: ChevronsUpDown, withSeparator: false }}
+          width={props.width}
+        />
+      }
+      align="end"
+      minWidth="default"
+      sections={[
+        STAGE_TRANSITIONS.filter(s => s.fromStates.includes(props.stage)).map(s => ({
+          label: s.label,
+          // @todo debounce...
+          onClick: () => void props.onSelect(s.value),
+        })),
+      ]}
+    />
   );
 }

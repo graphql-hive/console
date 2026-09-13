@@ -953,7 +953,7 @@ function OIDCAccessSettings(props: {
                   </div>
                   <div className="flex min-w-[150px] basis-1/3 md:basis-1/2">
                     <OIDCDefaultRoleSelector
-                      className="w-full"
+                      width="full"
                       disabled={!isAdmin}
                       oidcIntegrationId={oidcIntegration.id}
                       defaultRole={oidcIntegration.defaultMemberRole}

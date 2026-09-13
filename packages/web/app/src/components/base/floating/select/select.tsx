@@ -60,6 +60,8 @@ type SelectProps = Partial<
   disabled?: boolean;
   /** A search field at the top of the popup. For lists long enough to need one. */
   searchable?: boolean;
+  /** Placeholder for that search field. Defaults to "Search...". */
+  searchPlaceholder?: string;
   /** The surface the trigger sits on. `raised` for a select inside a popover or card. */
   onSurface?: OnSurface;
   /** `compact` for a select that is part of filter chrome, beside chips and date pickers. */
@@ -95,6 +97,7 @@ export function Select({
   open,
   onOpenChange,
   searchable,
+  searchPlaceholder,
   onSurface,
   size,
   width = 'auto',
@@ -167,7 +170,14 @@ export function Select({
               })}
               data-cy={popupDataCy}
             >
-              {searchable && <FloatingSearch label="options" onSearch={setSearch} value={search} />}
+              {searchable && (
+                <FloatingSearch
+                  label="options"
+                  onSearch={setSearch}
+                  value={search}
+                  placeholder={searchPlaceholder}
+                />
+              )}
               <div className={searchable ? `${floatingScrollArea} max-h-64` : ''}>
                 {displayedOptions.length === 0 ? (
                   <div className={floatingEmptyState}>No matches</div>
