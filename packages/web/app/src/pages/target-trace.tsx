@@ -830,7 +830,7 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>
                         <Badge
                           variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                          className="text-2xs rounded-md px-2 py-0.5 font-thin"
                         >
                           {spanAttributes.length}
                         </Badge>
@@ -846,7 +846,7 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>
                         <Badge
                           variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                          className="text-2xs rounded-md px-2 py-0.5 font-thin"
                         >
                           {resourceAttributes.length}
                         </Badge>
@@ -862,7 +862,7 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>
                         <Badge
                           variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                          className="text-2xs rounded-md px-2 py-0.5 font-thin"
                         >
                           {events.length}
                         </Badge>
@@ -1530,7 +1530,7 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>
                       <Badge
                         variant="secondary"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                        className="text-2xs rounded-md px-2 py-0.5 font-thin"
                       >
                         {Array.from(Object.keys(span.spanAttributes)).length}
                       </Badge>
@@ -1546,7 +1546,7 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>
                       <Badge
                         variant="secondary"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                        className="text-2xs rounded-md px-2 py-0.5 font-thin"
                       >
                         {resourceAttributes.length}
                       </Badge>
@@ -1562,7 +1562,7 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>
                       <Badge
                         variant="secondary"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                        className="text-2xs rounded-md px-2 py-0.5 font-thin"
                       >
                         {span.events.length}
                       </Badge>
@@ -1734,7 +1734,7 @@ function AttributeRow(props: AttributeRowProps) {
       </div>
       <div
         className={cn(
-          'text-neutral-12 w-full flex-1 pt-2 font-mono text-[10px]',
+          'text-neutral-12 text-2xs w-full flex-1 pt-2 font-mono',
           !isExpanded && 'overflow-hidden text-ellipsis text-nowrap pt-0',
         )}
       >
@@ -1755,14 +1755,14 @@ function ExceptionTeaser(props: {
     <div className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20">
       <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
         <span className="font-mono text-xs font-medium text-red-300">{props.type}</span>
-        <Badge variant="outline" className="border-red-700 bg-red-900 text-[10px] text-red-300">
+        <Badge variant="outline" className="text-2xs border-red-700 bg-red-900 text-red-300">
           {props.name}
         </Badge>
       </div>
       <div className="p-3 text-xs">
         <p className="text-neutral-11">{props.message}</p>
         {props.stacktrace && (
-          <pre className="bg-neutral-1/50 text-neutral-10 mt-2 overflow-x-auto rounded-sm p-2 font-mono text-[10px] leading-tight">
+          <pre className="bg-neutral-1/50 text-neutral-10 text-2xs mt-2 overflow-x-auto rounded-sm p-2 font-mono leading-tight">
             {props.stacktrace}
           </pre>
         )}

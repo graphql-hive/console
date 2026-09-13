@@ -135,7 +135,7 @@ export type AlertConditionsPanelProps = {
 
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
-    <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[10px]">
+    <span className="text-neutral-12 text-2xs inline-flex items-center gap-1 font-mono">
       <TimeAgo date={iso} />
       <Popover
         trigger={

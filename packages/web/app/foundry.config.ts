@@ -16,6 +16,10 @@ export default defineConfig({
       label: 'Base',
       children: [
         {
+          label: 'Foundations',
+          children: [{ label: 'TypeScale' }],
+        },
+        {
           label: 'Primitives',
           children: [
             { label: 'Accordion' },

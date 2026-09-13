@@ -28,7 +28,7 @@ export function TextFilterChip({
 }: TextFilterChipProps) {
   return (
     <div role="group" aria-label={`${label} filter`} className={chipClass}>
-      <span className="px-2.5 py-1.5 text-[13px]">{label}</span>
+      <span className="text-control px-2.5 py-1.5">{label}</span>
 
       <span className={segmentSeparator}>
         <Menu

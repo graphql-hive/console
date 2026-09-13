@@ -351,7 +351,7 @@ export const Changelog = createPreview({
                 <h4 className="text-neutral-12 text-sm font-medium leading-none">
                   What&apos;s new in Hive Console
                 </h4>
-                <p className="text-neutral-11 text-[13px]">
+                <p className="text-neutral-11 text-control">
                   Find out about the newest features, and enhancements
                 </p>
               </div>

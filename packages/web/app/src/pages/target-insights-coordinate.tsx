@@ -406,7 +406,7 @@ function SchemaCoordinateView(props: {
                 )}
               </AutoSizer>
               <div className={cn('pt-5', showFieldLevelMetrics ? 'show' : 'hidden')}>
-                <p className="text-neutral-10 pb-4 text-[13px]">
+                <p className="text-neutral-10 text-control pb-4">
                   Number of times the coordinate {props.coordinate} has resolved over time
                 </p>
                 <AutoSizer disableHeight>

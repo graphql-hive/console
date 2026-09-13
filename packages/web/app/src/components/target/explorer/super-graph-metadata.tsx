@@ -70,7 +70,7 @@ function SubgraphChip(props: {
         service: props.text,
       }}
       style={subgraphChipColors(props.text, resolvedTheme)}
-      className="my-0.5 ml-1.5 inline-flex h-6 max-w-24 cursor-pointer items-center gap-1 rounded-full px-2 text-[10px] font-normal leading-none"
+      className="text-2xs my-0.5 ml-1.5 inline-flex h-6 max-w-24 cursor-pointer items-center gap-1 rounded-full px-2 font-normal leading-none"
     >
       <span className="min-w-0 truncate">{props.text}</span>
       <PackageIcon size={10} className="shrink-0" />

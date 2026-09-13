@@ -10,7 +10,7 @@ export const segmentSeparator = 'border-l [border-left-color:inherit]';
 
 /** Interactive segment within a segmented trigger (clickable text area). */
 export const segmentButton =
-  'px-2.5 py-1.5 text-[13px] transition-colors cursor-pointer hover:bg-neutral-4/50 hover:text-neutral-12';
+  'px-2.5 py-1.5 text-control transition-colors cursor-pointer hover:bg-neutral-4/50 hover:text-neutral-12';
 
 export const disabledStyle = { opacity: 0.5, pointerEvents: 'none' } as const;
 
@@ -64,6 +64,6 @@ export const controlOnSurface = {
 export type ControlSize = 'compact' | 'default';
 
 export const controlSize = {
-  compact: 'h-7.5 text-[13px]',
-  default: 'h-9 text-[13px]',
+  compact: 'h-7.5 text-control',
+  default: 'h-9 text-control',
 } as const satisfies Record<ControlSize, string>;

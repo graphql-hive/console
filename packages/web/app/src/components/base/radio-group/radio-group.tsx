@@ -8,7 +8,7 @@ const radioItemVariants = cva(
   {
     variants: {
       variant: {
-        'as-button': 'gap-1.5 rounded-xs px-3 py-1.5 text-[13px] font-medium',
+        'as-button': 'gap-1.5 rounded-xs px-3 py-1.5 text-control font-medium',
         'as-card': 'gap-4 rounded-md p-4 text-left text-sm',
       },
       onSurface: { base: '', floating: '' },

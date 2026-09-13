@@ -264,7 +264,7 @@ function VisibilityCell({ filter }: { filter: SavedFilterNode }) {
       )}
       {filter.usedByAlertRulesCount > 0 && (
         <span
-          className="text-neutral-10 ml-1.5 inline-flex items-center gap-1 text-[13px]"
+          className="text-neutral-10 text-control ml-1.5 inline-flex items-center gap-1"
           title={`Used by ${filter.usedByAlertRulesCount} alert rule${
             filter.usedByAlertRulesCount === 1 ? '' : 's'
           }. Detach it from those alerts to delete.`}

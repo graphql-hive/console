@@ -68,7 +68,7 @@ export const Expandable = createPreview(() => (
       columns={COLUMNS}
       getRowId={row => row.id}
       renderSubComponent={row => (
-        <div className="text-neutral-11 space-y-1 text-[13px]">
+        <div className="text-neutral-11 text-control space-y-1">
           <div>
             Composition for <span className="text-neutral-12">{row.original.service}</span> produced{' '}
             {row.original.changes} schema changes.

@@ -175,14 +175,14 @@ export const Pills = createPreview({
       <CallSite
         source="pages/target-trace.tsx ×6"
         origin="ui"
-        note="The most-repeated className in the app: rounded-md px-2 py-0.5 text-[10px] font-thin, six times. It overrides the pill radius, the padding and the type scale - at which point almost nothing of the component survives except the border."
+        note="The most-repeated className in the app: rounded-md px-2 py-0.5 text-2xs font-thin, six times. It overrides the pill radius, the padding and the type scale - at which point almost nothing of the component survives except the border."
       >
         <div className="flex flex-wrap items-center gap-2">
           {['http.method', 'http.status_code', 'graphql.operation.type'].map(attr => (
             <Badge
               key={attr}
               variant="secondary"
-              className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+              className="text-2xs rounded-md px-2 py-0.5 font-thin"
             >
               {attr}
             </Badge>

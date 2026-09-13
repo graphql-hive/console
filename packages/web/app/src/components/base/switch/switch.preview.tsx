@@ -12,7 +12,7 @@ export const Sizes = createPreview(() => (
 ));
 
 export const States = createPreview(() => (
-  <div className="flex flex-col gap-4 text-[13px]">
+  <div className="text-control flex flex-col gap-4">
     <label className="flex items-center gap-3">
       <Switch />
       Off
@@ -39,7 +39,7 @@ export const InSettingsRow = createPreview(() => {
     <div className="border-neutral-5 flex w-96 items-center justify-between rounded-lg border p-4">
       <div>
         <div className="text-neutral-12 text-sm font-medium">Alert enabled</div>
-        <div className="text-neutral-10 text-[13px]">
+        <div className="text-neutral-10 text-control">
           {enabled ? 'Evaluating every 5 minutes.' : 'Paused, no notifications will be sent.'}
         </div>
       </div>
@@ -54,7 +54,7 @@ export const InSettingsRow = createPreview(() => {
  * row's. Tab through this and the switch is skipped; hover it and the cursor does not change.
  */
 export const Decorative = createPreview(() => (
-  <div className="hover:bg-neutral-3 flex w-64 cursor-pointer items-center justify-between rounded-md px-3 py-2 text-[13px]">
+  <div className="hover:bg-neutral-3 text-control flex w-64 cursor-pointer items-center justify-between rounded-md px-3 py-2">
     <span>Show deprecated fields</span>
     <Switch size="small" checked decorative />
   </div>

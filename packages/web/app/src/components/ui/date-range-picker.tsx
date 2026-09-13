@@ -369,7 +369,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
       <div ref={calendarAnchor} className="flex flex-col py-2">
         <div className="flex flex-col items-center justify-end gap-2 lg:flex-row lg:items-start">
           <div className="flex flex-col gap-1 pl-3">
-            <div className="mb-2 mt-1 text-[13px]">Absolute date range</div>
+            <div className="text-control mb-2 mt-1">Absolute date range</div>
             <div className="space-y-2">
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor="from" className="text-neutral-10 text-xs">

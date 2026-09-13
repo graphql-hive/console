@@ -130,17 +130,17 @@ function ListPage(props: {
                 {version.id.substring(0, 8)}
               </div>
               {version.origin.__typename === 'SchemaVersionPublishOrigin' && (
-                <span className="font-mono text-[10px] text-xs uppercase tracking-wide text-emerald-400">
+                <span className="text-2xs font-mono uppercase tracking-wide text-emerald-400">
                   Published
                 </span>
               )}
               {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
-                <span className="font-mono text-[10px] text-xs uppercase tracking-wide text-red-500">
+                <span className="text-2xs font-mono uppercase tracking-wide text-red-500">
                   Removed
                 </span>
               )}
               {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-                <span className="font-mono text-[10px] text-xs uppercase tracking-wide text-blue-500">
+                <span className="text-2xs font-mono uppercase tracking-wide text-blue-500">
                   Promoted
                 </span>
               )}
