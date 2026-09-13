@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { Label } from '@/components/ui/label';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Switch } from './switch';
 
 export const nav: NavPath = 'Base/FormControls/Switch/Component Examples';
@@ -47,7 +47,7 @@ const ENTRIES = [
   {
     source: 'components/project/settings/native-composition.tsx:61',
     origin: 'base',
-    what: 'Wrapped in a TooltipTrigger whose copy flips with the state',
+    what: 'Wrapped in a Tooltip whose copy flips with the state',
     coveredBy: 'Switch as trigger',
   },
   {
@@ -193,7 +193,7 @@ export const SwitchAsTrigger = createPreview({
       <CallSite
         source="components/project/settings/native-composition.tsx:61"
         origin="base"
-        note="Bare TooltipTrigger around the switch, and the tooltip copy flips between Enable and Disable with the state. Hover it in both positions. Base Switch renders a span, not a button, so this is no longer a button nested in a button."
+        note="A span around the switch is the tooltip trigger, and the copy flips between Enable and Disable with the state. Hover it in both positions."
       >
         <NativeCompositionSwitch />
       </CallSite>
@@ -215,17 +215,20 @@ function NativeCompositionSwitch() {
   const [enabled, setEnabled] = useState(true);
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger>
+    <Tooltip
+      trigger={
+        <span className="inline-flex">
           <Switch onCheckedChange={setEnabled} checked={enabled} />
-        </TooltipTrigger>
-        <TooltipContent sideOffset={2}>
+        </span>
+      }
+      sideOffset={2}
+      content={
+        <>
           <span className="font-semibold">{enabled ? 'Disable' : 'Enable'}</span> native composition
           for the target
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+        </>
+      }
+    />
   );
 }
 

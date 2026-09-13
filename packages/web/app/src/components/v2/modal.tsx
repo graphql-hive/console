@@ -14,7 +14,6 @@ import {
   Title,
   Trigger,
 } from '@radix-ui/react-dialog';
-import { Provider as TooltipProvider } from '@radix-ui/react-tooltip';
 import { Button } from '../ui/button';
 
 const widthBySize = {
@@ -45,28 +44,26 @@ const Modal = ({
         <Trigger asChild>{trigger}</Trigger>
         <Portal>
           <Overlay className="hive-modal-overlay bg-neutral-5/80 fixed inset-0 z-50">
-            <TooltipProvider>
-              <Content
-                ref={ref => setState(ref)}
-                className={clsx(
-                  'hive-modal bg-neutral-1 relative left-1/2 top-1/2 max-h-[95%] max-w-[95%] overflow-auto rounded-md p-7',
-                  className,
-                  widthBySize[size],
-                )}
-              >
-                {children}
+            <Content
+              ref={ref => setState(ref)}
+              className={clsx(
+                'hive-modal bg-neutral-1 relative left-1/2 top-1/2 max-h-[95%] max-w-[95%] overflow-auto rounded-md p-7',
+                className,
+                widthBySize[size],
+              )}
+            >
+              {children}
 
-                <Close asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-neutral-10 hover:border-neutral-10 hover:text-neutral-12 absolute right-5 top-5"
-                  >
-                    <XIcon />
-                  </Button>
-                </Close>
-              </Content>
-            </TooltipProvider>
+              <Close asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-neutral-10 hover:border-neutral-10 hover:text-neutral-12 absolute right-5 top-5"
+                >
+                  <XIcon />
+                </Button>
+              </Close>
+            </Content>
           </Overlay>
         </Portal>
       </Root>
