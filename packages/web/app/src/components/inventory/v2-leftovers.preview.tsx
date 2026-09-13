@@ -1,5 +1,9 @@
 import { useState } from 'react';
+import { CircleMinus, CircleX, TriangleAlert } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Avatar as BaseAvatar } from '@/components/base/avatar/avatar';
+import { Slider as BaseSlider } from '@/components/base/slider/slider';
+import { ToggleGroup as BaseToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { Avatar } from '@/components/v2/avatar';
 import { Combobox } from '@/components/v2/combobox';
 import { Markdown } from '@/components/v2/markdown';
@@ -118,11 +122,33 @@ export const AvatarPreview = createPreview({
       </CallSite>
 
       <CallSite
+        source="base/avatar (proposed for the three table cells)"
+        origin="base"
+        note="Same 20px circle, now with the person's initials from alt in place of the icon."
+      >
+        <span className="text-neutral-12 inline-flex items-center gap-2">
+          <BaseAvatar size="xs" alt="User" />
+          User
+        </span>
+      </CallSite>
+
+      <CallSite
         source="components/ui/user-menu.tsx:127"
         origin="v2"
         note="The only site with a className, adding a 2px accent ring. Default size md, still no src."
       >
         <Avatar shape="circle" className="border-accent_80 border-2" />
+      </CallSite>
+
+      <CallSite
+        source="base/avatar (proposed for the user menu)"
+        origin="base"
+        note="The ring is variant=outlined. The menu has the viewer's name, so it can pass alt and get initials; while the viewer is still loading there is no name and it shows the icon."
+      >
+        <div className="flex items-center gap-4">
+          <BaseAvatar variant="outlined" alt="User" />
+          <BaseAvatar variant="outlined" />
+        </div>
       </CallSite>
 
       <CallSite
@@ -162,23 +188,43 @@ function SliderExample() {
   const [value, setValue] = useState([12]);
 
   return (
-    <CallSite
-      source="pages/organization-subscription-manage.tsx:469"
-      origin="v2"
-      note="The only Slider in the app: the operations rate-limit picker, paired with a text input that shows the same number. The component adds no props of its own - min, max, step, value, onValueChange and disabled all pass straight through to Radix."
-    >
-      <div className="w-[28rem] space-y-2">
-        <Slider
-          min={1}
-          max={300}
-          step={1}
-          value={value}
-          onValueChange={setValue}
-          aria-label="value"
-        />
-        <div className="text-neutral-11 text-sm">{value[0]}M operations per month</div>
-      </div>
-    </CallSite>
+    <div className="flex flex-col gap-8">
+      <CallSite
+        source="pages/organization-subscription-manage.tsx:469"
+        origin="v2"
+        note="The only Slider in the app: the operations rate-limit picker, paired with a text input that shows the same number. The component adds no props of its own - min, max, step, value, onValueChange and disabled all pass straight through to Radix."
+      >
+        <div className="w-[28rem] space-y-2">
+          <Slider
+            min={1}
+            max={300}
+            step={1}
+            value={value}
+            onValueChange={setValue}
+            aria-label="value"
+          />
+          <div className="text-neutral-11 text-sm">{value[0]}M operations per month</div>
+        </div>
+      </CallSite>
+
+      <CallSite
+        source="base/slider (proposed)"
+        origin="base"
+        note="Single-value API (a number, not an array). Neutral track, accent filled range, neutral-12 thumb with the shared focus outline; the old one painted all three neutral-12 so the range never showed."
+      >
+        <div className="w-[28rem] space-y-2">
+          <BaseSlider
+            min={1}
+            max={300}
+            step={1}
+            value={value[0]}
+            onValueChange={next => setValue([next])}
+            aria-label="Operations per month"
+          />
+          <div className="text-neutral-11 text-sm">{value[0]}M operations per month</div>
+        </div>
+      </CallSite>
+    </div>
   );
 }
 
@@ -232,6 +278,25 @@ function ToggleGroupExamples() {
       </CallSite>
 
       <CallSite
+        source="base/toggle-group (proposed for the laboratory pair and enum-config)"
+        origin="base"
+        note="Options as data; the pressed state is the component's own. The title attributes become tooltips. Sized and bordered like a compact segmented Button."
+      >
+        <div className="self-end pt-2">
+          <span className="mr-2 text-xs font-bold">Query</span>
+          <BaseToggleGroup
+            options={[
+              { value: 'mockApi', label: 'Mock', tooltip: 'Use Mock Schema' },
+              { value: 'linkedApi', label: 'API', tooltip: 'Use API endpoint' },
+            ]}
+            value={endpoint}
+            onValueChange={setEndpoint}
+            aria-label="Query"
+          />
+        </div>
+      </CallSite>
+
+      <CallSite
         source="components/policy/rules-configuration/severity-toggle.tsx"
         origin="v2"
         note="The policy severity picker, same pattern with three options. Every ToggleGroupItem in the app carries a className because the component ships no selected state of its own."
@@ -250,6 +315,47 @@ function ToggleGroupExamples() {
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
+      </CallSite>
+
+      <CallSite
+        source="base/toggle-group (proposed for severity-toggle)"
+        origin="base"
+        note="What the severity picker actually ships is icon-only items with a Tooltip each, which the transcription above simplified to words. The pressed colour differs per option, so the call site keeps computing it and passes the icon as the label."
+      >
+        <BaseToggleGroup
+          options={[
+            {
+              value: 'off',
+              tooltip: 'Disables a rule defined at the organization level',
+              label: (
+                <CircleMinus
+                  className={`size-[15px] ${severity === 'off' ? 'text-neutral-12' : 'text-neutral-8'}`}
+                />
+              ),
+            },
+            {
+              value: 'warning',
+              tooltip: 'Warning',
+              label: (
+                <TriangleAlert
+                  className={`size-[15px] ${severity === 'warning' ? 'text-orange-500' : 'text-neutral-8'}`}
+                />
+              ),
+            },
+            {
+              value: 'error',
+              tooltip: 'Error',
+              label: (
+                <CircleX
+                  className={`size-[15px] ${severity === 'error' ? 'text-red-600' : 'text-neutral-8'}`}
+                />
+              ),
+            },
+          ]}
+          value={severity}
+          onValueChange={setSeverity}
+          aria-label="Severity"
+        />
       </CallSite>
     </div>
   );

@@ -49,14 +49,22 @@ export type OnSurface = 'base' | 'raised';
 // Dark `raised` is `base` shifted +2: a card sits at 3 and a floating panel at 4, and 5 clears
 // both. Light has no room above neutral-1, so a raised control rests there and hover moves the
 // border instead of the fill.
+//
+// `controlSurface` is the resting half on its own, for a control whose hover belongs to the
+// segments inside it (a toggle group) rather than to the whole.
+export const controlSurface = {
+  base: 'bg-neutral-2 border-neutral-5 dark:bg-neutral-3 dark:border-neutral-4',
+  raised: 'bg-neutral-1 border-neutral-5 dark:bg-neutral-5 dark:border-neutral-6',
+} as const satisfies Record<OnSurface, string>;
+
 export const controlOnSurface = {
   base: [
-    'bg-neutral-2 border-neutral-5 hover:bg-neutral-1',
-    'dark:bg-neutral-3 dark:border-neutral-4 dark:hover:bg-neutral-4 dark:hover:border-neutral-5',
+    controlSurface.base,
+    'hover:bg-neutral-1 dark:hover:bg-neutral-4 dark:hover:border-neutral-5',
   ].join(' '),
   raised: [
-    'bg-neutral-1 border-neutral-5 hover:border-neutral-6',
-    'dark:bg-neutral-5 dark:border-neutral-6 dark:hover:bg-neutral-6 dark:hover:border-neutral-7',
+    controlSurface.raised,
+    'hover:border-neutral-6 dark:hover:bg-neutral-6 dark:hover:border-neutral-7',
   ].join(' '),
 } as const satisfies Record<OnSurface, string>;
 
