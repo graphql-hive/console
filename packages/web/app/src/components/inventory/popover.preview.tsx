@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { CalendarDays, ChevronsUpDown, SearchIcon } from 'lucide-react';
+import { CalendarDays, Check, ChevronsUpDown, SearchIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
-import { Button as BaseButton } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Popover as BasePopover } from '@/components/base/floating/popover/popover';
 import { Select as BaseSelect } from '@/components/base/floating/select/select';
+import { itemVariants } from '@/components/base/floating/shared-styles';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -632,6 +632,12 @@ export const Comboboxes = createPreview({
 function TagSuggestions(props: { label: string }) {
   const [value, setValue] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const add = () => {
+    if (value) {
+      setTags(prev => (prev.includes(value) ? prev : [...prev, value]));
+      setValue('');
+    }
+  };
 
   return (
     <Popover>
@@ -639,19 +645,19 @@ function TagSuggestions(props: { label: string }) {
         <div className="flex w-full max-w-sm items-center space-x-2">
           <Input
             autoComplete="off"
-            placeholder={props.label}
+            placeholder={`Add ${props.label.toLowerCase()}d tag`}
             value={value}
             onChange={e => setValue(e.target.value)}
             onKeyDown={event => {
               if (event.key === 'Enter') {
                 event.preventDefault();
-                if (value) {
-                  setTags(prev => [...prev, value]);
-                  setValue('');
-                }
+                add();
               }
             }}
           />
+          <Button type="button" onClick={add} disabled={value === ''}>
+            Add
+          </Button>
         </div>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0" onOpenAutoFocus={ev => ev.preventDefault()}>
@@ -669,8 +675,10 @@ function TagSuggestions(props: { label: string }) {
                   }
                   className="cursor-pointer"
                 >
-                  <Checkbox size="sm" checked={tags.includes(tag)} />
-                  <span className="ml-1.5">{tag}</span>
+                  <Check
+                    className={cn('mr-2 size-4', tags.includes(tag) ? 'opacity-100' : 'opacity-0')}
+                  />
+                  {tag}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -1116,50 +1124,69 @@ function RoleSelectorPair() {
 
 function TagSuggestionsPair() {
   const [value, setValue] = useState('');
-  const [open, setOpen] = useState(false);
-  const suggestions = ['public', 'internal', 'beta'].filter(t => t.includes(value));
+  const [tags, setTags] = useState<string[]>([]);
+  const all = ['public', 'internal', 'experimental', 'deprecated'];
+  const add = () => {
+    if (value) {
+      setTags(prev => (prev.includes(value) ? prev : [...prev, value]));
+      setValue('');
+    }
+  };
   return (
     <Pair
       old={<TagSuggestions label="Include" />}
       base={
-        <div className="flex w-full max-w-sm items-center space-x-2">
-          <BasePopover
-            open={open && suggestions.length > 0}
-            onOpenChange={setOpen}
-            initialFocus={false}
-            padding="none"
-            width="auto"
-            align="start"
-            trigger={
+        <BasePopover
+          initialFocus={false}
+          padding="none"
+          width="auto"
+          trigger={
+            <div className="flex w-full max-w-sm items-center space-x-2">
               <Input
-                placeholder="Include tag"
+                autoComplete="off"
+                placeholder="Add included tag"
                 value={value}
-                onChange={e => {
-                  setValue(e.target.value);
-                  setOpen(true);
+                onChange={e => setValue(e.target.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    add();
+                  }
                 }}
-                onFocus={() => setOpen(true)}
               />
-            }
-            content={
-              <div className="w-[200px]">
-                <div className="text-neutral-10 px-2 pb-1 pt-2 text-xs font-medium">
-                  Tags from latest schema version
-                </div>
-                <ul className="text-neutral-11 pb-1 text-sm">
-                  {suggestions.map(t => (
-                    <li key={t} className="hover:bg-neutral-4 cursor-pointer px-3 py-1.5">
-                      {t}
-                    </li>
-                  ))}
-                </ul>
+              <Button type="button" onClick={add} disabled={value === ''}>
+                Add
+              </Button>
+            </div>
+          }
+          content={
+            <div className="w-[200px] p-1">
+              <div className="text-neutral-10 px-2 py-1.5 text-xs font-medium">
+                Tags from latest schema version
               </div>
-            }
-          />
-          <BaseButton variant="outline" onClick={() => setValue('')}>
-            Add
-          </BaseButton>
-        </div>
+              {all.map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() =>
+                    setTags(prev =>
+                      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag],
+                    )
+                  }
+                  className={itemVariants({
+                    selected: tags.includes(tag),
+                    className: 'hover:bg-neutral-5 hover:text-neutral-12 w-full',
+                  })}
+                >
+                  <Check
+                    className={cn('mr-2 size-4', tags.includes(tag) ? 'opacity-100' : 'opacity-0')}
+                  />
+                  {tag}
+                </button>
+              ))}
+            </div>
+          }
+        />
       }
     />
   );
@@ -1207,7 +1234,7 @@ export const UiVsBase = createPreview({
       <CallSite
         source="target/settings/schema-contracts.tsx:446"
         origin="ui"
-        note="Input as trigger with initialFocus={false}, so typing keeps filtering. Interim until the base Combobox in round 9."
+        note="The whole field row is the trigger; the list is every tag on the latest version with a check on the picked ones, and never filters by what is typed. initialFocus={false} keeps the caret in the field. Interim until the base Combobox in round 9."
       >
         <TagSuggestionsPair />
       </CallSite>

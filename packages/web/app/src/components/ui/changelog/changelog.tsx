@@ -77,7 +77,9 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
         <>
           <div className="grid">
             <div className="space-y-2 p-4">
-              <h4 className="text-neutral-12 text-sm leading-none">What's new in Hive Console</h4>
+              <h4 className="text-neutral-12 text-sm font-medium leading-none">
+                What's new in Hive Console
+              </h4>
               <p className="text-neutral-11 text-[13px]">
                 Find out about the newest features, and enhancements
               </p>
