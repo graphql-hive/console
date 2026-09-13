@@ -3,6 +3,7 @@ import { ChevronRightIcon, UserIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { priorityDescription, statusDescription } from '@/components/organization/support';
@@ -13,7 +14,6 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useNotifications } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
@@ -130,8 +130,8 @@ function Comment({ node }: { node: FragmentType<typeof Comment_SupportTicketComm
       )}
     >
       {isSupport ? null : <UserIcon className="text-accent size-6" />}
-      <Tooltip>
-        <TooltipTrigger asChild>
+      <Tooltip
+        trigger={
           <div
             className={cn(
               'text-neutral-11 bg-neutral-5 inline-block max-w-[70%] rounded-lg p-2 text-left',
@@ -140,11 +140,10 @@ function Comment({ node }: { node: FragmentType<typeof Comment_SupportTicketComm
           >
             {comment.body}
           </div>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <TimeAgo date={comment.createdAt} className="text-neutral-10" />
-        </TooltipContent>
-      </Tooltip>
+        }
+        content={<TimeAgo date={comment.createdAt} className="text-neutral-10" />}
+        side="bottom"
+      />
       {isSupport ? (
         <img className="block size-6" src="/just-logo.svg" alt="Hive Console logo" />
       ) : null}
@@ -189,7 +188,7 @@ function SupportTicket(props: {
   }, [commentEdges]);
 
   return (
-    <TooltipProvider>
+    <>
       <div className="py-6">
         <div className="flex flex-row items-start justify-between gap-x-6">
           <div className="border-neutral-5 flex-1 border-r pr-6">
@@ -258,7 +257,7 @@ function SupportTicket(props: {
           </div>
         </div>
       </div>
-    </TooltipProvider>
+    </>
   );
 }
 

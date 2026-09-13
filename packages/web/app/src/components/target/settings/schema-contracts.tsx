@@ -31,7 +31,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
@@ -203,18 +202,21 @@ export function SchemaContracts(props: {
                     {node.isDisabled ? (
                       <>
                         <span className="text-yellow-500">Inactive</span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                className="ml-2 text-yellow-500"
-                              >
-                                <InfoCircledIcon className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-md p-4 font-normal">
+                        <Popover
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="ml-2 text-yellow-500"
+                              aria-label="Why inactive"
+                            >
+                              <InfoCircledIcon className="size-4" />
+                            </Button>
+                          }
+                          openOnHover
+                          width="lg"
+                          content={
+                            <div className="text-neutral-11 text-sm font-normal">
                               <p>
                                 This Contract is no longer active and no more contract versions or
                                 contract checks will be published for it.
@@ -223,28 +225,33 @@ export function SchemaContracts(props: {
                                 It is not possible to enable a contract again. Please create a new
                                 contract instead.
                               </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                            </div>
+                          }
+                        />
                       </>
                     ) : (
                       <>
                         <span>Active</span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Button variant="ghost" size="icon-sm" className="ml-2">
-                                <InfoCircledIcon className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-md p-4 font-normal">
-                              <p>
-                                This Contract is active. Schema publishes and checks will attempt to
-                                also build the contract schema.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Popover
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="ml-2"
+                              aria-label="About active contracts"
+                            >
+                              <InfoCircledIcon className="size-4" />
+                            </Button>
+                          }
+                          openOnHover
+                          width="lg"
+                          content={
+                            <p className="text-neutral-11 text-sm font-normal">
+                              This Contract is active. Schema publishes and checks will attempt to
+                              also build the contract schema.
+                            </p>
+                          }
+                        />
                       </>
                     )}
                   </div>

@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { FolderIcon, FolderOpenIcon, SquareTerminalIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Menu } from '@/components/base/floating/menu/menu';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { CreateCollectionModal } from '@/components/target/laboratory/create-collection-modal';
 import { DeleteCollectionModal } from '@/components/target/laboratory/delete-collection-modal';
 import { DeleteOperationModal } from '@/components/target/laboratory/delete-operation-modal';
@@ -18,7 +19,6 @@ import { Button } from '@/components/ui/button';
 import { PlusIcon } from '@/components/ui/icon';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { graphql } from '@/gql';
 import { useClipboard, useNotifications, useToggle } from '@/lib/hooks';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
@@ -437,31 +437,29 @@ export function Content() {
       <div className="mb-5 flex items-center justify-between gap-1">
         <div className="graphiql-doc-explorer-title">Operations</div>
         {target?.viewerCanModifyLaboratory && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="orangeLink"
-                  size="icon-sm"
-                  data-cy="new-collection"
-                  className={clsx(
-                    'flex w-auto items-center gap-1',
-                    'min-w-0', // trick to make work truncate
-                  )}
-                  onClick={() => {
-                    if (collectionId) {
-                      setCollectionId('');
-                    }
-                    toggleCollectionModal();
-                  }}
-                >
-                  <PlusIcon className="size-4 shrink-0" />
-                  <span className="truncate">New collection</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Create a new collection of GraphQL Operations</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip
+            trigger={
+              <Button
+                variant="orangeLink"
+                size="icon-sm"
+                data-cy="new-collection"
+                className={clsx(
+                  'flex w-auto items-center gap-1',
+                  'min-w-0', // trick to make work truncate
+                )}
+                onClick={() => {
+                  if (collectionId) {
+                    setCollectionId('');
+                  }
+                  toggleCollectionModal();
+                }}
+              >
+                <PlusIcon className="size-4 shrink-0" />
+                <span className="truncate">New collection</span>
+              </Button>
+            }
+            content="Create a new collection of GraphQL Operations"
+          />
         )}
       </div>
       {loading ? (
