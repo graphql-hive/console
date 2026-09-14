@@ -10,6 +10,7 @@ import {
 import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +25,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
@@ -457,24 +457,22 @@ function GroupRoleMappingRow(props: {
         </div>
       </div>
       <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickEdit}>
-                <PencilIcon className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="text-xs">Edit mapping</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickDelete}>
-                <Trash2Icon className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="text-xs">Remove mapping</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip
+          trigger={
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickEdit}>
+              <PencilIcon className="h-3 w-3" />
+            </Button>
+          }
+          content="Edit mapping"
+        />
+        <Tooltip
+          trigger={
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickDelete}>
+              <Trash2Icon className="h-3 w-3" />
+            </Button>
+          }
+          content="Remove mapping"
+        />
       </div>
     </div>
   );

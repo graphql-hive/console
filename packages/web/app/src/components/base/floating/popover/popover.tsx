@@ -41,6 +41,12 @@ type PopoverCommonProps = Omit<FloatingProps, 'trigger'> & {
    * popup reacts to, so typing continues uninterrupted. Base UI's name for the same switch.
    */
   initialFocus?: boolean;
+  /**
+   * Also open on hover, after the same delay tooltips use. For an infotip: an icon whose only
+   * job is to open the explanation. Hover keeps it discoverable, click keeps it reachable by
+   * keyboard and touch.
+   */
+  openOnHover?: boolean;
 };
 
 /** Raw mode: full control over content */
@@ -85,6 +91,7 @@ export function Popover(props: PopoverProps) {
     collisionPadding,
     modal,
     initialFocus = true,
+    openOnHover,
     open,
     onOpenChange,
   } = props;
@@ -120,7 +127,9 @@ export function Popover(props: PopoverProps) {
 
   return (
     <BasePopover.Root open={open} onOpenChange={onOpenChange} modal={modal}>
-      {trigger ? <BasePopover.Trigger render={trigger as ReactElement} /> : null}
+      {trigger ? (
+        <BasePopover.Trigger render={trigger as ReactElement} openOnHover={openOnHover} />
+      ) : null}
       <BasePopover.Portal container={portalContainer ?? undefined}>
         <BasePopover.Positioner
           anchor={anchor}

@@ -1,8 +1,9 @@
 import { ReactElement } from 'react';
 import clsx from 'clsx';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
 import { CrossCircledIcon, ExclamationTriangleIcon, MinusCircledIcon } from '@radix-ui/react-icons';
-import { ToggleGroup, ToggleGroupItem, Tooltip } from '../../v2';
+import { ToggleGroup, ToggleGroupItem } from '../../v2';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 
@@ -65,9 +66,14 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
                   config.severity === level.value && 'bg-neutral-5 text-neutral-12',
                 )}
               >
-                <Tooltip content={level.label}>
-                  {level.icon(config.severity === level.value)}
-                </Tooltip>
+                <Tooltip
+                  trigger={
+                    <span className="inline-flex">
+                      {level.icon(config.severity === level.value)}
+                    </span>
+                  }
+                  content={level.label}
+                />
               </ToggleGroupItem>
             ),
         )}

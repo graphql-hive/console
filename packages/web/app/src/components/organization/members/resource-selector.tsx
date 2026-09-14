@@ -3,9 +3,9 @@ import { produce } from 'immer';
 import { ChevronRightIcon, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { ArrowDownIcon } from '@/components/ui/icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
@@ -1195,24 +1195,23 @@ function RowItem(props: {
       </span>
 
       {props.onDelete && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => {
-                  props.onDelete?.();
-                }}
-              >
-                <XIcon
-                  size={12}
-                  data-active={props.isActive}
-                  className="text-neutral-10 data-[active=true]:text-neutral-2"
-                />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Remove</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip
+          trigger={
+            <button
+              type="button"
+              onClick={() => {
+                props.onDelete?.();
+              }}
+            >
+              <XIcon
+                size={12}
+                data-active={props.isActive}
+                className="text-neutral-10 data-[active=true]:text-neutral-2"
+              />
+            </button>
+          }
+          content="Remove"
+        />
       )}
     </div>
   );

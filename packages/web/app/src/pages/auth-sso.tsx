@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import z from 'zod';
 import { AuthCard, AuthCardStack } from '@/components/auth';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -15,7 +16,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
 import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
@@ -149,12 +149,15 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
                       <FormItem>
                         <FormLabel className="flex flex-row items-center gap-x-2">
                           Organization slug{' '}
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
+                          <Popover
+                            trigger={
+                              <button type="button" aria-label="What the organization slug is">
                                 <CircleHelpIcon className="size-4" />
-                              </TooltipTrigger>
-                              <TooltipContent>
+                              </button>
+                            }
+                            openOnHover
+                            content={
+                              <div className="text-neutral-11 text-sm">
                                 <p>
                                   The organization slug is the unique identifier used in your
                                   organization's URLs.
@@ -162,9 +165,9 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
                                 <p>
                                   For instance, in app.graphql-hive.com/acme, "acme" is the slug.
                                 </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                              </div>
+                            }
+                          />
                         </FormLabel>
                         <FormControl>
                           <Input placeholder="acme" {...form.register('slug')} />

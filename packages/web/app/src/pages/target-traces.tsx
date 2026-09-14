@@ -23,6 +23,7 @@ import {
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,7 +60,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
@@ -377,16 +377,16 @@ const TracesList = memo(function TracesList(
           const timestamp = row.getValue('timestamp') as number;
 
           return (
-            <TooltipProvider>
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <div className="px-4 font-mono text-xs uppercase">
-                    {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="text-neutral-11 cursor-auto overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
+            <Tooltip
+              side="bottom"
+              trigger={
+                <div className="px-4 font-mono text-xs uppercase">
+                  {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
+                </div>
+              }
+              content={
+                <div
+                  className="min-w-[150px] cursor-auto"
                   onClick={e => {
                     // Prevent the click event from bubbling up to the row,
                     // which would trigger the sheet with trace details to open
@@ -413,9 +413,9 @@ const TracesList = memo(function TracesList(
                       },
                     ]}
                   />
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </div>
+              }
+            />
           );
         },
       },
@@ -425,24 +425,23 @@ const TracesList = memo(function TracesList(
           return <div className="text-neutral-10 px-4">Operation Name</div>;
         },
         cell: ({ row }) => (
-          <TooltipProvider>
-            <Tooltip disableHoverableContent delayDuration={100}>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 px-4 text-xs">
-                  <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
-                    {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
-                  </span>
-                  <span>
-                    {row.getValue('operationName') ?? (
-                      <span className="text-neutral-10">{'<unknown>'}</span>
-                    )}
-                  </span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
-              >
+          <Tooltip
+            side="bottom"
+            disableHoverablePopup
+            trigger={
+              <div className="flex items-center gap-2 px-4 text-xs">
+                <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
+                  {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
+                </span>
+                <span>
+                  {row.getValue('operationName') ?? (
+                    <span className="text-neutral-10">{'<unknown>'}</span>
+                  )}
+                </span>
+              </div>
+            }
+            content={
+              <div className="min-w-[150px]">
                 <GridTable
                   rows={[
                     {
@@ -459,9 +458,9 @@ const TracesList = memo(function TracesList(
                     },
                   ]}
                 />
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              </div>
+            }
+          />
         ),
       },
       {
@@ -519,17 +518,16 @@ const TracesList = memo(function TracesList(
         header: () => <div className="text-center">Subgraphs</div>,
         cell: ({ row }) => {
           return (
-            <TooltipProvider>
-              <Tooltip disableHoverableContent delayDuration={100}>
-                <TooltipTrigger asChild>
-                  <div className="text-center font-mono text-xs font-medium">
-                    {(row.getValue('subgraphs') as Array<string>).length}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
-                >
+            <Tooltip
+              side="bottom"
+              disableHoverablePopup
+              trigger={
+                <div className="text-center font-mono text-xs font-medium">
+                  {(row.getValue('subgraphs') as Array<string>).length}
+                </div>
+              }
+              content={
+                <div className="min-w-[150px]">
                   <GridTable
                     rows={[
                       {
@@ -540,9 +538,9 @@ const TracesList = memo(function TracesList(
                       },
                     ]}
                   />
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </div>
+              }
+            />
           );
         },
       },

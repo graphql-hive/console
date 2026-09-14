@@ -6,6 +6,7 @@ import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { emailPasswordSignIn as superEmailPasswordSignIn } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import z from 'zod';
 import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -18,7 +19,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Text } from '@/components/ui/text';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
 import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';
@@ -33,12 +33,11 @@ export function SignInButton(props: {
   children: React.ReactNode;
   previousSignIn: boolean;
   variant?: 'outline' | 'default';
-  tooltipClassName?: string;
 }) {
   if (props.previousSignIn) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
+      <Tooltip
+        trigger={
           <Slot
             className={cn(
               'animate-shimmer bg-size-[200%_100%] transition-colors',
@@ -47,14 +46,10 @@ export function SignInButton(props: {
           >
             {props.children}
           </Slot>
-        </TooltipTrigger>
-        <TooltipContent
-          className={cn('text-neutral-3 bg-neutral-12', props.tooltipClassName)}
-          side="top"
-        >
-          You signed in with it last time.
-        </TooltipContent>
-      </Tooltip>
+        }
+        content="You signed in with it last time."
+        side="top"
+      />
     );
   }
 
@@ -201,7 +196,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
         content={
           <>
             <AuthCardStack>
-              <TooltipProvider delayDuration={200}>
+              <>
                 <Form {...form}>
                   <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
                     <FormField
@@ -310,7 +305,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                     </Button>
                   </SignInButton>
                 ) : null}
-              </TooltipProvider>
+              </>
             </AuthCardStack>
             <div className="mt-4">
               <Text arrangement="block" align="center" size="small" color="secondary">

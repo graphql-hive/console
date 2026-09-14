@@ -4,7 +4,9 @@ import { format } from 'date-fns';
 import { BoxIcon, CheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Label, Label as LegacyLabel } from '@/components/common';
+import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import {
   Accordion,
   AccordionContent,
@@ -24,10 +26,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
-import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
+import { CheckCircledIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
 export function labelize(message: string) {
@@ -313,12 +314,11 @@ function ChangeItem(
                     {metadata.settings.targets.map((target, index, arr) => (
                       <>
                         {!target.target ? (
-                          <TooltipProvider key={index}>
-                            <Tooltip>
-                              <TooltipTrigger>{target.slug}</TooltipTrigger>
-                              <TooltipContent>Target does no longer exist.</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Tooltip
+                            key={index}
+                            trigger={target.slug}
+                            content="Target does no longer exist."
+                          />
                         ) : (
                           <Link
                             key={index}
@@ -478,18 +478,14 @@ function ChangeItem(
                           </TableCell>
                           <TableCell className="text-end">
                             {deployment.lastUsed ? (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <span className="text-neutral-11 cursor-help text-xs">
-                                      <TimeAgo date={deployment.lastUsed} />
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>{format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <Tooltip
+                                trigger={
+                                  <span className="text-neutral-11 cursor-help text-xs">
+                                    <TimeAgo date={deployment.lastUsed} />
+                                  </span>
+                                }
+                                content={format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
+                              />
                             ) : (
                               <span className="text-neutral-10 text-xs">—</span>
                             )}
@@ -608,18 +604,14 @@ function ChangeItem(
                       </TableCell>
                       <TableCell className="text-end">
                         {deployment.lastUsed ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <span className="text-neutral-11 cursor-help text-xs">
-                                  <TimeAgo date={deployment.lastUsed} />
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Tooltip
+                            trigger={
+                              <span className="text-neutral-11 cursor-help text-xs">
+                                <TimeAgo date={deployment.lastUsed} />
+                              </span>
+                            }
+                            content={format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
+                          />
                         ) : (
                           <span className="text-neutral-10 text-xs">—</span>
                         )}
@@ -784,28 +776,10 @@ export function CompositionErrorsList(props: {
 }) {
   return (
     <div className="mb-2 px-2">
-      <TooltipProvider>
-        <Heading className="my-2">
-          {props.title}
-          <Tooltip>
-            <TooltipTrigger>
-              <Button variant="ghost" size="icon-sm" className="ml-2">
-                <InfoCircledIcon className="size-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-md p-4 font-normal">
-              <p>
-                If composition errors occur it is impossible to generate a supergraph and public API
-                schema.
-              </p>
-              <p className="mt-1">
-                Composition errors can be caused by changes to the underlying schemas that causes
-                conflicts with other subgraphs.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </Heading>
-      </TooltipProvider>
+      <Heading className="my-2">
+        {props.title}
+        <CompositionErrorsPopover />
+      </Heading>
       {props.description ? (
         <p className="text-neutral-11 mb-2 text-sm">{props.description}</p>
       ) : null}

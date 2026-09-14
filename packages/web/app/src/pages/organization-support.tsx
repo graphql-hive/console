@@ -39,7 +39,6 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
 import { useNotifications, useToggle } from '@/lib/hooks';
@@ -311,7 +310,7 @@ function Support(props: {
   const tickets = supportTicketsConnection?.edges.map(e => e.node);
 
   return (
-    <TooltipProvider>
+    <>
       <div>
         <div className="flex flex-row items-center justify-between py-6">
           <div>
@@ -354,7 +353,7 @@ function Support(props: {
           </Table>
         </div>
       </div>
-    </TooltipProvider>
+    </>
   );
 }
 

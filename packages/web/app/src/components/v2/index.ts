@@ -9,4 +9,3 @@ export { default as Stat } from '@/components/v2/stat';
 export { Table, TBody, THead, TFoot, Th, Td, Tr } from '@/components/v2/table';
 export { Tag } from '@/components/v2/tag';
 export { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
-export { Tooltip } from '@/components/v2/tooltip';

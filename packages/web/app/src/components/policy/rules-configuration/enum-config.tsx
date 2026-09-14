@@ -1,7 +1,8 @@
 import { ReactElement, useEffect } from 'react';
 import clsx from 'clsx';
 import { InfoIcon } from 'lucide-react';
-import { ToggleGroup, ToggleGroupItem, Tooltip } from '../../v2';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { ToggleGroup, ToggleGroupItem } from '../../v2';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 
@@ -31,9 +32,15 @@ export const PolicyEnumSelect = (props: {
         <div className="flex items-center">
           <div>{props.title}</div>
           {props.tooltip ? (
-            <Tooltip content={props.tooltip}>
-              <InfoIcon className="text-accent ml-2 size-4" />
-            </Tooltip>
+            <Popover
+              trigger={
+                <button type="button" aria-label="About this option" className="text-accent ml-2">
+                  <InfoIcon className="size-4" />
+                </button>
+              }
+              openOnHover
+              content={<p className="text-neutral-11 text-sm">{props.tooltip}</p>}
+            />
           ) : null}
         </div>
       }

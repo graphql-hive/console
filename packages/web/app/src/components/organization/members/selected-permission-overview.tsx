@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import {
   Accordion,
   AccordionContent,
@@ -6,7 +7,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { PermissionLevelType } from '@/gql/graphql';
 import { ResultOf } from '@graphql-typed-document-node/core';
@@ -176,14 +176,14 @@ function PermissionLevelGroup(props: {
                         <td className="ml-2 text-right">
                           {props.activePermissionIds.has(permission.id) || permission.isReadOnly ? (
                             permission.warning ? (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger>
+                              <Tooltip
+                                trigger={
+                                  <span className="inline-flex">
                                     <Badge variant="warning">Allowed</Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>{permission.warning}</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                                  </span>
+                                }
+                                content={permission.warning}
+                              />
                             ) : (
                               <Badge variant="success">Allowed</Badge>
                             )

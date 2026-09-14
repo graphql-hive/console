@@ -1,7 +1,8 @@
 import { Fragment, useMemo } from 'react';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { useTheme } from '@/components/theme/theme-provider';
 import { PackageIcon } from '@/components/ui/icon';
-import { Tooltip } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { LayersIcon as MetadataIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
@@ -26,19 +27,24 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
     return null;
   }
   return (
-    <Tooltip
+    <Popover
+      trigger={
+        <button type="button" aria-label="Supergraph metadata" className="my-[5px]">
+          <MetadataIcon className="text-neutral-12" />
+        </button>
+      }
+      openOnHover
+      width="auto"
       content={
-        <>
+        <div className="text-neutral-11 text-xs">
           {props.supergraphMetadata.map((m, i) => (
             <div key={i}>
               <span className="font-bold">{m.name}:</span> {m.content}
             </div>
           ))}
-        </>
+        </div>
       }
-    >
-      <MetadataIcon className="text-neutral-12 my-[5px] cursor-pointer" />
-    </Tooltip>
+    />
   );
 }
 
@@ -78,6 +84,7 @@ function SubgraphChip(props: {
 
   return (
     <Tooltip
+      trigger={inner}
       content={
         <>
           <span className="font-bold">{props.text}</span> subgraph
@@ -89,9 +96,7 @@ function SubgraphChip(props: {
           )) ?? null}
         </>
       }
-    >
-      {inner}
-    </Tooltip>
+    />
   );
 }
 
@@ -204,21 +209,26 @@ export function SupergraphMetadataList(props: {
       {meta}
       {previewItems}
       {allItems && (
-        <Tooltip
+        <Popover
+          trigger={
+            <button
+              type="button"
+              className="text-neutral-12 flex items-center pl-1 text-xs font-bold"
+            >
+              + {allItems.length - previewItems.length} more
+            </button>
+          }
+          openOnHover
+          width="auto"
           content={
-            <>
+            <div className="text-neutral-11 text-xs">
               <div className="mb-2 font-bold">All Subgraphs</div>
               <div className="flex max-h-[250px] w-[250px] flex-wrap gap-1 overflow-y-auto py-1">
                 {allItems}
               </div>
-            </>
+            </div>
           }
-          contentProps={{ className: 'z-10' }}
-        >
-          <span className="text-neutral-12 flex cursor-pointer items-center pl-1 text-xs font-bold">
-            + {allItems.length - previewItems.length} more
-          </span>
-        </Tooltip>
+        />
       )}
     </div>
   );

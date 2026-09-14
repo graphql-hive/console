@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { Select } from '@/components/base/floating/select/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@/gql/graphql';
 import { NoAccess, Scope } from '@/lib/access/common';
 import { truthy } from '@/lib/utils';
@@ -89,11 +89,6 @@ export const PermissionScopeItem = <
   return props.canManageScope ? (
     inner
   ) : (
-    <TooltipProvider>
-      <Tooltip delayDuration={100}>
-        <TooltipTrigger asChild>{inner}</TooltipTrigger>
-        <TooltipContent>Your user account does not have these permissions.</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip trigger={inner} content="Your user account does not have these permissions." />
   );
 };

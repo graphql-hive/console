@@ -1,12 +1,12 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import { Button } from '@/components/ui/button';
 import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -321,16 +321,20 @@ export function ProposalEditor(props: {
                             s =>
                               s.__typename === 'CompositeSchema' && s.service === service.service,
                           ) && (
-                            <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-                              <Tooltip>
-                                <TooltipTrigger>
+                            <Popover
+                              trigger={
+                                <button type="button" aria-label="Name conflict">
                                   <AlertTriangleIcon className="size-4 text-red-600" />
-                                </TooltipTrigger>
-                                <TooltipContent>
+                                </button>
+                              }
+                              openOnHover
+                              width="auto"
+                              content={
+                                <p className="text-neutral-11 text-sm">
                                   New service name cannot match an existing service name
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                                </p>
+                              }
+                            />
                           )}
                         </>
                       ) : (

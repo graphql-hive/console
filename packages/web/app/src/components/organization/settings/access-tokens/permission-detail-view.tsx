@@ -1,6 +1,6 @@
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import * as Accordion from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import * as Tooltip from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { permissionLevelToResourceName } from './shared-helpers';
 
@@ -65,16 +65,14 @@ export function PermissionDetailView(props: {
                     <td className="ml-2 pb-1 text-right">
                       {permission.isGranted ? (
                         permission.permission.warning ? (
-                          <Tooltip.TooltipProvider>
-                            <Tooltip.Tooltip>
-                              <Tooltip.TooltipTrigger>
+                          <Tooltip
+                            trigger={
+                              <span className="inline-flex">
                                 <Badge variant="warning">Allowed</Badge>
-                              </Tooltip.TooltipTrigger>
-                              <Tooltip.TooltipContent>
-                                {permission.permission.warning}
-                              </Tooltip.TooltipContent>
-                            </Tooltip.Tooltip>
-                          </Tooltip.TooltipProvider>
+                              </span>
+                            }
+                            content={permission.permission.warning}
+                          />
                         ) : (
                           <Badge className="w-[69px] justify-center" variant="success">
                             Allowed

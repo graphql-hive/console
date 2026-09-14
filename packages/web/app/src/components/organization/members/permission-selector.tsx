@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { InfoIcon, TriangleAlert } from 'lucide-react';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import {
   Accordion,
@@ -8,7 +9,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { ResultOf } from '@graphql-typed-document-node/core';
@@ -144,76 +144,83 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                       </div>
                       {permission.isAssignableByViewer === false ? (
                         <div className="flex grow justify-end">
-                          <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                              <TooltipTrigger>
+                          <Popover
+                            trigger={
+                              <button type="button" aria-label="Why this cannot be assigned">
                                 <InfoIcon />
-                              </TooltipTrigger>
-                              <TooltipContent>
+                              </button>
+                            }
+                            openOnHover
+                            content={
+                              <p className="text-neutral-11 text-sm">
                                 Your membership has insufficient authority for assigning this
                                 permission.
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                              </p>
+                            }
+                          />
                         </div>
                       ) : permission.warning && props.selectedPermissionIds.has(permission.id) ? (
                         <div className="flex grow justify-end">
-                          <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                              <TooltipTrigger>
+                          <Popover
+                            trigger={
+                              <button type="button" aria-label="Warning">
                                 <TriangleAlert className="text-yellow-700" />
-                              </TooltipTrigger>
-                              <TooltipContent>{permission.warning}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                              </button>
+                            }
+                            openOnHover
+                            content={
+                              <p className="text-neutral-11 text-sm">{permission.warning}</p>
+                            }
+                          />
                         </div>
                       ) : (
                         !!permission.dependsOnId &&
                         permissionToGroupTitleMapping.has(permission.dependsOnId) && (
                           <div className="flex grow justify-end">
-                            <TooltipProvider delayDuration={0}>
-                              <Tooltip>
-                                <TooltipTrigger>
+                            <Popover
+                              trigger={
+                                <button type="button" aria-label="Depends on another permission">
                                   <InfoIcon />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    This permission depends on another permission.{' '}
-                                    <Button
-                                      variant="orangeLink"
-                                      onClick={() => {
-                                        const dependencyPermission = permission.dependsOnId;
-                                        if (!dependencyPermission) {
-                                          return;
-                                        }
-                                        const element =
-                                          permissionRefs.current.get(dependencyPermission);
+                                </button>
+                              }
+                              openOnHover
+                              content={
+                                <p className="text-neutral-11 text-sm">
+                                  This permission depends on another permission.{' '}
+                                  <Button
+                                    variant="orangeLink"
+                                    onClick={() => {
+                                      const dependencyPermission = permission.dependsOnId;
+                                      if (!dependencyPermission) {
+                                        return;
+                                      }
+                                      const element =
+                                        permissionRefs.current.get(dependencyPermission);
 
-                                        if (!element) {
-                                          return;
-                                        }
-                                        setOpenAccordions(values => {
-                                          const groupName =
-                                            permissionToGroupTitleMapping.get(dependencyPermission);
+                                      if (!element) {
+                                        return;
+                                      }
+                                      setOpenAccordions(values => {
+                                        const groupName =
+                                          permissionToGroupTitleMapping.get(dependencyPermission);
 
-                                          if (groupName && values.includes(groupName) === false) {
-                                            return [...values, groupName];
-                                          }
-                                          return values;
-                                        });
-                                        setFocusedPermission(dependencyPermission);
-                                        element.scrollIntoView({
-                                          behavior: 'smooth',
-                                          block: 'center',
-                                        });
-                                      }}
-                                    >
-                                      View permission.
-                                    </Button>
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                                        if (groupName && values.includes(groupName) === false) {
+                                          return [...values, groupName];
+                                        }
+                                        return values;
+                                      });
+                                      setFocusedPermission(dependencyPermission);
+                                      element.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'center',
+                                      });
+                                    }}
+                                  >
+                                    View permission.
+                                  </Button>
+                                </p>
+                              }
+                            />
                           </div>
                         )
                       )}
