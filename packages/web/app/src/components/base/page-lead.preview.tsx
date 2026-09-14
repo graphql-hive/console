@@ -35,6 +35,19 @@ export const WithAction = createPreview(() => (
   </div>
 ));
 
+export const WithDocsLink = createPreview(() => (
+  <div className="w-[36rem]">
+    <PageLead
+      title="App Deployments"
+      description="Group your GraphQL operations by app version for app version statistics and persisted operations."
+      docsLink={{
+        href: '/schema-registry/app-deployments',
+        text: 'Learn more about App Deployments',
+      }}
+    />
+  </div>
+));
+
 export const LongDescription = createPreview(() => (
   <div className="w-[36rem]">
     <PageLead
