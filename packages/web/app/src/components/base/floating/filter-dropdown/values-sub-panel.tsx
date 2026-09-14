@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { FloatingSearch } from '../floating-search';
 import { MenuItem } from '../menu/menu';
-import { floatingEmptyState, floatingScrollArea } from '../shared-styles';
+import { floatingEmptyState, floatingScrollArea, menuPanelInset } from '../shared-styles';
 import { SEARCH_VISIBILITY_THRESHOLD } from './filter-content';
 
 type ValuesSubPanelProps = {
@@ -59,7 +59,7 @@ export function ValuesSubPanel({
   const showSearch = values.length >= SEARCH_VISIBILITY_THRESHOLD;
 
   return (
-    <div>
+    <div className={menuPanelInset}>
       {showSearch && (
         <FloatingSearch
           label={`Search ${valuesLabel} for ${itemName}`}
