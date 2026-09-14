@@ -5,6 +5,9 @@ import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Menu } from '@/components/base/floating/menu/menu';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +40,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -231,13 +233,13 @@ function OrganizationMemberRoleEditor(props: {
             <div className="grow">
               <div className="flex h-[400px] flex-col space-y-2">
                 <FormLabel>Permissions</FormLabel>
-                <div className="overflow-y-auto">
+                <ScrollArea fill>
                   <PermissionSelector
                     onSelectedPermissionsChange={onChangeSelectedPermissions}
                     permissionGroups={organization.availableMemberPermissionGroups}
                     selectedPermissionIds={selectedPermissions}
                   />
-                </div>
+                </ScrollArea>
               </div>
             </div>
           </div>
@@ -289,13 +291,13 @@ function OrganizationMemberRoleView(props: {
       </DialogHeader>
       <div className="grow">
         <div className="flex h-[400px] flex-col space-y-2">
-          <div className="overflow-scroll">
+          <ScrollArea fill>
             <SelectedPermissionOverview
               showOnlyAllowedPermissions={showOnlyGrantedPermissions}
               activePermissionIds={role.permissions}
               permissionsGroups={organization.availableMemberPermissionGroups}
             />
-          </div>
+          </ScrollArea>
         </div>
       </div>
       <DialogFooter>
@@ -495,23 +497,25 @@ function OrganizationMemberRoleCreator(props: {
               <div className="grow">
                 <div className="flex h-[400px] flex-col space-y-2">
                   <FormLabel>Permissions</FormLabel>
-                  <div className="overflow-y-auto">
+                  <ScrollArea fill>
                     <PermissionSelector
                       onSelectedPermissionsChange={onChangeSelectedPermissions}
                       permissionGroups={organization.availableMemberPermissionGroups}
                       selectedPermissionIds={selectedPermissions}
                     />
-                  </div>
+                  </ScrollArea>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="h-[400px] overflow-scroll">
-              <SelectedPermissionOverview
-                activePermissionIds={Array.from(selectedPermissions)}
-                permissionsGroups={organization.availableMemberPermissionGroups}
-                showOnlyAllowedPermissions={showOnlyGrantedPermissions}
-              />
+            <div className="flex h-[400px] flex-col">
+              <ScrollArea fill>
+                <SelectedPermissionOverview
+                  activePermissionIds={Array.from(selectedPermissions)}
+                  permissionsGroups={organization.availableMemberPermissionGroups}
+                  showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+                />
+              </ScrollArea>
             </div>
           )}
           <DialogFooter>
@@ -620,58 +624,61 @@ function OrganizationMemberRoleRow(props: {
           <div>{role.name}</div>
           {role.isLocked ? (
             <div className="ml-2">
-              <TooltipProvider>
-                <Tooltip delayDuration={100}>
-                  <TooltipTrigger asChild>
+              <Tooltip
+                trigger={
+                  <span className="inline-flex">
                     <LockIcon className="size-4" />
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <div className="flex flex-col items-start gap-y-2 p-2">
-                      <div className="font-medium">This role is locked</div>
-                      <div className="text-neutral-10 text-sm">
-                        Locked roles are created by the system and cannot be modified or deleted.
-                      </div>
+                  </span>
+                }
+                side="right"
+                content={
+                  <div className="flex flex-col items-start gap-y-1 p-2">
+                    <div className="text-xs font-medium">This role is locked</div>
+                    <div className="text-neutral-10 text-xs">
+                      Locked roles are created by the system and cannot be modified or deleted.
                     </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                  </div>
+                }
+              />
             </div>
           ) : null}
           {props.isOIDCDefaultRole ? (
             <div className="ml-2">
-              <TooltipProvider>
-                <Tooltip delayDuration={100}>
-                  <TooltipTrigger>
+              <Popover
+                trigger={
+                  <button type="button" aria-label="About the default role">
                     <Badge variant="outline">default</Badge>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <div className="flex flex-col items-start gap-y-2 p-2">
-                      <div className="font-medium">Default role for new members</div>
-                      <div className="text-neutral-10 text-sm">
-                        <p>New members will be assigned to this role by default.</p>
-                        {props.canChangeOIDCDefaultRole ? (
-                          <p>
-                            You can change it in the{' '}
-                            <Link
-                              to="/$organizationSlug/view/settings"
-                              hash="manage-oidc-integration"
-                              params={{
-                                organizationSlug: props.organizationSlug,
-                              }}
-                              className="underline"
-                            >
-                              OIDC settings
-                            </Link>
-                            .
-                          </p>
-                        ) : (
-                          <p>Only admins can change it in the OIDC settings.</p>
-                        )}
-                      </div>
+                  </button>
+                }
+                openOnHover
+                side="right"
+                content={
+                  <div className="flex flex-col items-start gap-y-2">
+                    <div className="font-medium">Default role for new members</div>
+                    <div className="text-neutral-10 text-sm">
+                      <p>New members will be assigned to this role by default.</p>
+                      {props.canChangeOIDCDefaultRole ? (
+                        <p>
+                          You can change it in the{' '}
+                          <Link
+                            to="/$organizationSlug/view/settings"
+                            hash="manage-oidc-integration"
+                            params={{
+                              organizationSlug: props.organizationSlug,
+                            }}
+                            className="underline"
+                          >
+                            OIDC settings
+                          </Link>
+                          .
+                        </p>
+                      ) : (
+                        <p>Only admins can change it in the OIDC settings.</p>
+                      )}
                     </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                  </div>
+                }
+              />
             </div>
           ) : null}
         </div>

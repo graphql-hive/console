@@ -7,7 +7,7 @@ import {
   PercentIcon,
   SmileIcon,
 } from 'lucide-react';
-import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { StatCard } from './stat-card';
 
 export const nav: NavPath = 'Base/Primitives/StatCard';
@@ -192,24 +192,31 @@ export const InsightsRow = createPreview(() => (
 ));
 
 export const Playground = createPreview({
-  controls: defineControls({
-    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'raised' },
-    tone: { type: 'radio', options: ['default', 'success', 'danger', 'muted'], default: 'default' },
+  controls: controlsFor(StatCard, {
+    variants: {
+      onSurface: { type: 'radio', options: ['base', 'raised'], default: 'raised' },
+      tone: {
+        type: 'radio',
+        options: ['default', 'success', 'danger', 'muted'],
+        default: 'default',
+      },
+    },
     title: { type: 'text', default: 'Requests' },
     value: { type: 'text', default: '482,100' },
     caption: { type: 'text', default: 'Total requests served' },
     // `hint` takes a node, which no control can author. Text still exercises the length and
     // wrapping of the tooltip; `WithHint` above covers the node case.
     hint: { type: 'text', default: '' },
-    withIcon: { type: 'boolean', default: true },
   }),
+  // `icon` takes a component, so it is fixed here rather than driven by a control.
+  // `NoIconNoCaption` above covers the iconless case.
   render: v => (
     <StatCard
-      variants={{ onSurface: v.onSurface, tone: v.tone }}
+      variants={v.variants}
       title={v.title}
       value={v.value}
       caption={v.caption}
-      icon={v.withIcon ? GlobeIcon : undefined}
+      icon={GlobeIcon}
       hint={v.hint || undefined}
     />
   ),

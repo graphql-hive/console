@@ -1,13 +1,14 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useRef, useState } from 'react';
 import { useFormik } from 'formik';
 import { Check, MoreHorizontal, X } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Menu } from '@/components/base/floating/menu/menu';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { itemVariants } from '@/components/base/floating/shared-styles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import {
   Dialog,
   DialogClose,
@@ -21,7 +22,6 @@ import {
 import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Table,
   TableBody,
@@ -31,7 +31,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
@@ -203,18 +202,21 @@ export function SchemaContracts(props: {
                     {node.isDisabled ? (
                       <>
                         <span className="text-yellow-500">Inactive</span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                className="ml-2 text-yellow-500"
-                              >
-                                <InfoCircledIcon className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-md p-4 font-normal">
+                        <Popover
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="ml-2 text-yellow-500"
+                              aria-label="Why inactive"
+                            >
+                              <InfoCircledIcon className="size-4" />
+                            </Button>
+                          }
+                          openOnHover
+                          width="lg"
+                          content={
+                            <div className="text-neutral-11 text-sm font-normal">
                               <p>
                                 This Contract is no longer active and no more contract versions or
                                 contract checks will be published for it.
@@ -223,28 +225,33 @@ export function SchemaContracts(props: {
                                 It is not possible to enable a contract again. Please create a new
                                 contract instead.
                               </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                            </div>
+                          }
+                        />
                       </>
                     ) : (
                       <>
                         <span>Active</span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Button variant="ghost" size="icon-sm" className="ml-2">
-                                <InfoCircledIcon className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-md p-4 font-normal">
-                              <p>
-                                This Contract is active. Schema publishes and checks will attempt to
-                                also build the contract schema.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Popover
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="ml-2"
+                              aria-label="About active contracts"
+                            >
+                              <InfoCircledIcon className="size-4" />
+                            </Button>
+                          }
+                          openOnHover
+                          width="lg"
+                          content={
+                            <p className="text-neutral-11 text-sm font-normal">
+                              This Contract is active. Schema publishes and checks will attempt to
+                              also build the contract schema.
+                            </p>
+                          }
+                        />
                       </>
                     )}
                   </div>
@@ -354,12 +361,57 @@ const CreateContractDialogContentTargetFragment = graphql(`
   }
 `);
 
+/**
+ * The tag list under an include/exclude field: every tag on the latest schema version, with a
+ * check on the ones already picked. Rows toggle without closing, and the popover keeps focus in
+ * the field, so the list is a picker beside typing rather than a replacement for it.
+ */
+function TagSuggestions(props: {
+  tags: readonly string[];
+  selected: readonly string[];
+  onToggle: (tag: string) => void;
+}) {
+  return (
+    <div className="w-[200px] p-1">
+      <div className="text-neutral-10 px-2 py-1.5 text-xs font-medium">
+        Tags from latest schema version
+      </div>
+      {props.tags.map(value => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => props.onToggle(value)}
+          className={itemVariants({
+            selected: props.selected.includes(value),
+            className: 'hover:bg-neutral-5 hover:text-neutral-12 w-full',
+          })}
+        >
+          <Check
+            className={cn(
+              'mr-2 size-4',
+              props.selected.includes(value) ? 'opacity-100' : 'opacity-0',
+            )}
+          />
+          {value}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function CreateContractDialogContent(props: {
   target: FragmentType<typeof CreateContractDialogContentTargetFragment> | null;
   onCreateContract: () => void;
 }): ReactElement {
   const target = useFragment(CreateContractDialogContentTargetFragment, props.target);
   const [mutation, mutate] = useMutation(CreateContractMutation);
+  // The tag lists open from focus in their field and close on outside press or Escape; the field
+  // is the anchor rather than a trigger so the Add button beside it does not toggle them.
+  const includeTagsInputRef = useRef<HTMLInputElement>(null);
+  const [includeTagsOpen, setIncludeTagsOpen] = useState(false);
+  const excludeTagsInputRef = useRef<HTMLInputElement>(null);
+  const [excludeTagsOpen, setExcludeTagsOpen] = useState(false);
+
   const form = useFormik({
     enableReinitialize: true,
     initialValues: {
@@ -431,7 +483,7 @@ function CreateContractDialogContent(props: {
               />
               <span className="text-sm text-red-500 after:invisible after:content-['.']">
                 {mutation.data?.createContract.error?.details?.contractName ??
-                  form.errors.contractName}
+                  (form.touched.contractName ? form.errors.contractName : null)}
               </span>
             </div>
 
@@ -441,85 +493,71 @@ function CreateContractDialogContent(props: {
               </label>
               <div className="flex">
                 <div className="flex-1">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <div className="flex w-full max-w-sm items-center space-x-2">
-                        <Input
-                          id="includeTagsInput"
-                          name="includeTagsInput"
-                          autoComplete="off"
-                          value={form.values.includeTagsInput}
-                          onChange={form.handleChange}
-                          onBlur={form.handleBlur}
-                          onKeyDown={event => {
-                            if (event.key === 'Enter') {
-                              event.preventDefault();
-                              void form.setValues(values => ({
-                                ...values,
-                                includeTagsInput: '',
-                                includeTags: values.includeTags.includes(values.includeTagsInput)
-                                  ? values.includeTags
-                                  : [...values.includeTags, values.includeTagsInput],
-                              }));
-                            }
-                          }}
-                          placeholder="Add included tag"
-                          disabled={form.isSubmitting}
-                        />
-                        <Button
-                          type="submit"
-                          onClick={() => {
-                            void form.setValues(values => ({
-                              ...values,
-                              includeTagsInput: '',
-                              includeTags: values.includeTags.includes(values.includeTagsInput)
-                                ? values.includeTags
-                                : [...values.includeTags, values.includeTagsInput],
-                            }));
-                          }}
-                          disabled={form.isSubmitting || form.values.includeTagsInput === ''}
-                        >
-                          Add
-                        </Button>
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-[200px] p-0"
-                      onOpenAutoFocus={ev => ev.preventDefault()}
+                  <div className="flex w-full max-w-sm items-center space-x-2">
+                    <Input
+                      ref={includeTagsInputRef}
+                      id="includeTagsInput"
+                      name="includeTagsInput"
+                      autoComplete="off"
+                      value={form.values.includeTagsInput}
+                      onChange={form.handleChange}
+                      onBlur={form.handleBlur}
+                      onFocus={() => setIncludeTagsOpen(true)}
+                      onClick={() => setIncludeTagsOpen(true)}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          void form.setValues(values => ({
+                            ...values,
+                            includeTagsInput: '',
+                            includeTags: values.includeTags.includes(values.includeTagsInput)
+                              ? values.includeTags
+                              : [...values.includeTags, values.includeTagsInput],
+                          }));
+                        }
+                      }}
+                      placeholder="Add included tag"
+                      disabled={form.isSubmitting}
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        void form.setValues(values => ({
+                          ...values,
+                          includeTagsInput: '',
+                          includeTags: values.includeTags.includes(values.includeTagsInput)
+                            ? values.includeTags
+                            : [...values.includeTags, values.includeTagsInput],
+                        }));
+                      }}
+                      disabled={form.isSubmitting || form.values.includeTagsInput === ''}
                     >
-                      <Command>
-                        <CommandList>
-                          <CommandGroup heading="Tags from latest schema version">
-                            {target?.latestSchemaVersion?.tags?.map(value => (
-                              <CommandItem
-                                key={value}
-                                value={value}
-                                onSelect={currentValue => {
-                                  void form.setValues(values => ({
-                                    ...values,
-                                    includeTags: values.includeTags.includes(currentValue)
-                                      ? values.includeTags.filter(value => currentValue !== value)
-                                      : [...values.includeTags, currentValue],
-                                  }));
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <Check
-                                  className={cn(
-                                    'mr-2 size-4',
-                                    form.values.includeTags.includes(value)
-                                      ? 'opacity-100'
-                                      : 'opacity-0',
-                                  )}
-                                />
-                                {value}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                      Add
+                    </Button>
+                  </div>
+                  <Popover
+                    open={includeTagsOpen}
+                    onOpenChange={setIncludeTagsOpen}
+                    anchor={includeTagsInputRef}
+                    align="start"
+                    initialFocus={false}
+                    padding="none"
+                    width="auto"
+                    content={
+                      <TagSuggestions
+                        tags={target?.latestSchemaVersion?.tags ?? []}
+                        selected={form.values.includeTags}
+                        onToggle={currentValue => {
+                          void form.setValues(values => ({
+                            ...values,
+                            includeTags: values.includeTags.includes(currentValue)
+                              ? values.includeTags.filter(value => currentValue !== value)
+                              : [...values.includeTags, currentValue],
+                          }));
+                        }}
+                      />
+                    }
+                  />
                   <div className="mt-2 text-sm text-red-500 after:invisible after:content-['.']">
                     {mutation.data?.createContract.error?.details?.includeTags ??
                       form.errors.includeTags}
@@ -554,85 +592,71 @@ function CreateContractDialogContent(props: {
               </label>
               <div className="flex">
                 <div className="flex-1">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <div className="flex w-full max-w-sm items-center space-x-2">
-                        <Input
-                          id="excludeTagsInput"
-                          name="excludeTagsInput"
-                          autoComplete="off"
-                          value={form.values.excludeTagsInput}
-                          onChange={form.handleChange}
-                          onBlur={form.handleBlur}
-                          onKeyDown={event => {
-                            if (event.key === 'Enter') {
-                              event.preventDefault();
-                              void form.setValues(values => ({
-                                ...values,
-                                excludeTagsInput: '',
-                                excludeTags: values.excludeTags.includes(values.excludeTagsInput)
-                                  ? values.excludeTags
-                                  : [...values.excludeTags, values.excludeTagsInput],
-                              }));
-                            }
-                          }}
-                          placeholder="Add excluded tag"
-                          disabled={form.isSubmitting}
-                        />
-                        <Button
-                          type="submit"
-                          onClick={() => {
-                            void form.setValues(values => ({
-                              ...values,
-                              excludeTagsInput: '',
-                              excludeTags: values.excludeTags.includes(values.excludeTagsInput)
-                                ? values.excludeTags
-                                : [...values.excludeTags, values.excludeTagsInput],
-                            }));
-                          }}
-                          disabled={form.isSubmitting || form.values.excludeTagsInput === ''}
-                        >
-                          Add
-                        </Button>
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-[200px] p-0"
-                      onOpenAutoFocus={ev => ev.preventDefault()}
+                  <div className="flex w-full max-w-sm items-center space-x-2">
+                    <Input
+                      ref={excludeTagsInputRef}
+                      id="excludeTagsInput"
+                      name="excludeTagsInput"
+                      autoComplete="off"
+                      value={form.values.excludeTagsInput}
+                      onChange={form.handleChange}
+                      onBlur={form.handleBlur}
+                      onFocus={() => setExcludeTagsOpen(true)}
+                      onClick={() => setExcludeTagsOpen(true)}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          void form.setValues(values => ({
+                            ...values,
+                            excludeTagsInput: '',
+                            excludeTags: values.excludeTags.includes(values.excludeTagsInput)
+                              ? values.excludeTags
+                              : [...values.excludeTags, values.excludeTagsInput],
+                          }));
+                        }
+                      }}
+                      placeholder="Add excluded tag"
+                      disabled={form.isSubmitting}
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        void form.setValues(values => ({
+                          ...values,
+                          excludeTagsInput: '',
+                          excludeTags: values.excludeTags.includes(values.excludeTagsInput)
+                            ? values.excludeTags
+                            : [...values.excludeTags, values.excludeTagsInput],
+                        }));
+                      }}
+                      disabled={form.isSubmitting || form.values.excludeTagsInput === ''}
                     >
-                      <Command>
-                        <CommandList>
-                          <CommandGroup heading="Tags from latest schema version">
-                            {target?.latestSchemaVersion?.tags?.map(value => (
-                              <CommandItem
-                                key={value}
-                                value={value}
-                                onSelect={currentValue => {
-                                  void form.setValues(values => ({
-                                    ...values,
-                                    excludeTags: values.excludeTags.includes(currentValue)
-                                      ? values.excludeTags.filter(value => currentValue !== value)
-                                      : [...values.excludeTags, currentValue],
-                                  }));
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <Check
-                                  className={cn(
-                                    'mr-2 size-4',
-                                    form.values.excludeTags.includes(value)
-                                      ? 'opacity-100'
-                                      : 'opacity-0',
-                                  )}
-                                />
-                                {value}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                      Add
+                    </Button>
+                  </div>
+                  <Popover
+                    open={excludeTagsOpen}
+                    onOpenChange={setExcludeTagsOpen}
+                    anchor={excludeTagsInputRef}
+                    align="start"
+                    initialFocus={false}
+                    padding="none"
+                    width="auto"
+                    content={
+                      <TagSuggestions
+                        tags={target?.latestSchemaVersion?.tags ?? []}
+                        selected={form.values.excludeTags}
+                        onToggle={currentValue => {
+                          void form.setValues(values => ({
+                            ...values,
+                            excludeTags: values.excludeTags.includes(currentValue)
+                              ? values.excludeTags.filter(value => currentValue !== value)
+                              : [...values.excludeTags, currentValue],
+                          }));
+                        }}
+                      />
+                    }
+                  />
                   <div className="mt-2 text-sm text-red-500 after:invisible after:content-['.']">
                     {mutation.data?.createContract.error?.details?.excludeTags ??
                       form.errors.excludeTags}

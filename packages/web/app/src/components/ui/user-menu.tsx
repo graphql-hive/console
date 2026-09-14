@@ -1,6 +1,7 @@
 import cookies from 'js-cookie';
 import { LifeBuoyIcon, UserRoundMinus } from 'lucide-react';
 import { useMutation } from 'urql';
+import { Avatar } from '@/components/base/avatar/avatar';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { useThemeMenuEntry } from '@/components/theme/theme-switcher';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,6 @@ import {
   SettingsIcon,
   TrendingUpIcon,
 } from '@/components/ui/icon';
-import { Avatar } from '@/components/v2';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -117,7 +117,7 @@ export function UserMenu(props: {
               className={cn('cursor-pointer', currentOrganization ? '' : 'animate-pulse')}
               data-cy="user-menu-trigger"
             >
-              <Avatar shape="circle" className="border-accent_80 border-2" />
+              <Avatar variant="outlined" alt={me?.displayName} />
             </div>
           }
           sections={

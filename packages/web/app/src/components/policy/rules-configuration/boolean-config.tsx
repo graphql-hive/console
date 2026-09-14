@@ -1,6 +1,6 @@
 import { ReactElement, useEffect } from 'react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Tooltip } from '@/components/v2';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 
@@ -40,7 +40,7 @@ export const PolicyBooleanToggle = (props: {
         />
       </div>
       <div className="grow">
-        {props.tooltip ? <Tooltip content={props.tooltip}>{label}</Tooltip> : label}
+        {props.tooltip ? <Tooltip trigger={label} content={props.tooltip} /> : label}
       </div>
     </PolicyConfigBox>
   );

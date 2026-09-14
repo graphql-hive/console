@@ -1,7 +1,7 @@
-import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { NotFound } from './not-found';
 
-export const nav: NavPath = 'Base/NotFound';
+export const nav: NavPath = 'Components/NotFound';
 
 /**
  * The centred layout, which is what seven of the eight existing call sites use. Sits inside a
@@ -188,28 +188,37 @@ export const AllCallSites = createPreview({
 });
 
 export const Playground = createPreview({
-  controls: defineControls({
-    layout: { type: 'radio', options: ['centered', 'horizontal'], default: 'centered' },
-    illustration: { type: 'radio', options: ['ghost', 'connection'], default: 'ghost' },
-    fullScreen: { type: 'boolean', default: false },
+  controls: controlsFor(NotFound, {
+    variants: {
+      layout: { type: 'radio', options: ['centered', 'horizontal'], default: 'centered' },
+      illustration: { type: 'radio', options: ['ghost', 'connection'], default: 'ghost' },
+      fullScreen: { type: 'boolean', default: false },
+    },
     bigHeading: { type: 'text', default: '' },
     title: { type: 'text', default: 'Schema Version not found.' },
     description: { type: 'text', default: 'This schema version does not seem to exist anymore.' },
     showBackButton: { type: 'boolean', default: true },
   }),
-  render: v => (
-    <div className="border-neutral-5 h-[30rem] w-[52rem] overflow-hidden rounded-md border border-dashed">
+  render: v => {
+    const notFound = (
       <NotFound
-        variants={{
-          layout: v.layout,
-          illustration: v.illustration,
-          fullScreen: v.fullScreen,
-        }}
+        variants={v.variants}
         bigHeading={v.bigHeading || undefined}
         title={v.title}
         description={v.description || undefined}
         showBackButton={v.showBackButton}
       />
-    </div>
-  ),
+    );
+
+    // `fullScreen` is `h-screen`, so boxing it in a fixed height is a contradiction: the component
+    // would be taller than its container and centre its content below the visible area. Hand it
+    // the canvas instead, which is the only honest way to show it.
+    return v.variants?.fullScreen ? (
+      notFound
+    ) : (
+      <div className="border-neutral-5 h-[30rem] w-[52rem] overflow-hidden rounded-md border border-dashed">
+        {notFound}
+      </div>
+    );
+  },
 });

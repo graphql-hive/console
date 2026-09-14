@@ -20,7 +20,7 @@ export const floatingBaseClass =
   // No z-index here. The positioner is transformed for placement, which makes it a stacking
   // context, so a z-index on the popup would only compete inside it and lose to any page
   // element that outranks the positioner. It goes on the positioner instead.
-  'text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 max-h-[var(--available-height)] overflow-y-auto overflow-x-hidden thin-scrollbar';
+  'text-control rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 max-h-[var(--available-height)] overflow-y-auto overflow-x-hidden thin-scrollbar';
 
 export const floatingVariants = cva(floatingBaseClass, {
   variants: {

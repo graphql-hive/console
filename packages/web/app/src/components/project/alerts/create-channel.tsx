@@ -2,9 +2,10 @@ import { ReactElement } from 'react';
 import { useFormik } from 'formik';
 import { useMutation } from 'urql';
 import * as Yup from 'yup';
+import { Select } from '@/components/base/floating/select/select';
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
-import { Input, Modal, Select, Tag } from '@/components/v2';
+import { Input, Modal, Tag } from '@/components/v2';
 import { graphql } from '@/gql';
 import { AlertChannelType } from '@/gql/graphql';
 
@@ -55,50 +56,59 @@ export const CreateChannelModal = ({
   projectSlug: string;
 }): ReactElement => {
   const [mutation, mutate] = useMutation(CreateChannel_AddAlertChannelMutation);
-  const { errors, values, touched, handleChange, handleBlur, handleSubmit, isSubmitting } =
-    useFormik({
-      initialValues: {
-        name: '',
-        type: '' as AlertChannelType,
-        slackChannel: '',
-        endpoint: '',
-      },
-      validationSchema: Yup.object().shape({
-        name: Yup.string().required('Must enter name'),
-        type: Yup.mixed().oneOf(Object.values(AlertChannelType)).required('Must select type'),
-        slackChannel: Yup.string()
-          .matches(/^[@#]{1}/, 'Must start with a @ or # character')
-          .when('type', ([type], schema) =>
-            type === AlertChannelType.Slack ? schema.required('Must enter slack channel') : schema,
-          ),
-        endpoint: Yup.string()
-          .url()
-          .when('type', ([_type], schema) =>
-            isWebhookLike ? schema.required('Must enter endpoint') : schema,
-          ),
-      }),
-      async onSubmit(values) {
-        const { data, error } = await mutate({
-          input: {
-            organizationSlug,
-            projectSlug,
-            name: values.name,
-            type: values.type,
-            slack: values.type === AlertChannelType.Slack ? { channel: values.slackChannel } : null,
-            webhook: isWebhookLike ? { endpoint: values.endpoint } : null,
-          },
-        });
-        if (error) {
-          console.error(error);
-        }
-        if (data?.addAlertChannel.error) {
-          console.error(data.addAlertChannel.error);
-        }
-        if (data?.addAlertChannel.ok) {
-          toggleModalOpen();
-        }
-      },
-    });
+  const {
+    errors,
+    values,
+    touched,
+    handleChange,
+    handleBlur,
+    setFieldValue,
+    setFieldTouched,
+    handleSubmit,
+    isSubmitting,
+  } = useFormik({
+    initialValues: {
+      name: '',
+      type: '' as AlertChannelType,
+      slackChannel: '',
+      endpoint: '',
+    },
+    validationSchema: Yup.object().shape({
+      name: Yup.string().required('Must enter name'),
+      type: Yup.mixed().oneOf(Object.values(AlertChannelType)).required('Must select type'),
+      slackChannel: Yup.string()
+        .matches(/^[@#]{1}/, 'Must start with a @ or # character')
+        .when('type', ([type], schema) =>
+          type === AlertChannelType.Slack ? schema.required('Must enter slack channel') : schema,
+        ),
+      endpoint: Yup.string()
+        .url()
+        .when('type', ([_type], schema) =>
+          isWebhookLike ? schema.required('Must enter endpoint') : schema,
+        ),
+    }),
+    async onSubmit(values) {
+      const { data, error } = await mutate({
+        input: {
+          organizationSlug,
+          projectSlug,
+          name: values.name,
+          type: values.type,
+          slack: values.type === AlertChannelType.Slack ? { channel: values.slackChannel } : null,
+          webhook: isWebhookLike ? { endpoint: values.endpoint } : null,
+        },
+      });
+      if (error) {
+        console.error(error);
+      }
+      if (data?.addAlertChannel.error) {
+        console.error(data.addAlertChannel.error);
+      }
+      if (data?.addAlertChannel.ok) {
+        toggleModalOpen();
+      }
+    },
+  });
   const isWebhookLike = [
     AlertChannelType.Webhook,
     AlertChannelType.MsteamsWebhook,
@@ -138,22 +148,23 @@ export const CreateChannelModal = ({
         </div>
 
         <div className="flex flex-col gap-4">
-          <label className="text-sm font-semibold" htmlFor="name">
+          <label className="text-sm font-semibold" htmlFor="type">
             Type
           </label>
           <Select
+            id="type"
             name="type"
             value={values.type}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            isInvalid={!!(touched.type && errors.type)}
+            onValueChange={value => void setFieldValue('type', value)}
+            onBlur={() => void setFieldTouched('type')}
             placeholder="Select channel type"
             options={[
-              { value: AlertChannelType.Slack, name: 'Slack' },
-              { value: AlertChannelType.Webhook, name: 'Webhook' },
-              { value: AlertChannelType.MsteamsWebhook, name: 'MS Teams Webhook' },
-              { value: AlertChannelType.Discord, name: 'Discord Webhook' },
+              { value: AlertChannelType.Slack, label: 'Slack' },
+              { value: AlertChannelType.Webhook, label: 'Webhook' },
+              { value: AlertChannelType.MsteamsWebhook, label: 'MS Teams Webhook' },
+              { value: AlertChannelType.Discord, label: 'Discord Webhook' },
             ]}
+            width="full"
           />
           {touched.type && errors.type && <div className="text-sm text-red-500">{errors.type}</div>}
         </div>

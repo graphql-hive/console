@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
 import { AdminStats, Filters } from '@/components/admin/AdminStats';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Page } from '@/components/common';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
-import { Tooltip } from '@/components/v2/tooltip';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 
 type FilterKey = keyof Filters;
@@ -45,7 +46,7 @@ export function ManagePage() {
 
   return (
     <Page title="Hive Stats">
-      <div className="grow overflow-x-auto">
+      <ScrollArea axis="horizontal">
         <div className="flex gap-4 pb-2">
           <DateRangePicker
             validUnits={['y', 'M', 'w', 'd', 'h', 'm']}
@@ -54,7 +55,7 @@ export function ManagePage() {
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
-          <Tooltip.Provider delayDuration={200}>
+          <>
             {CHECKBOXES.map(({ value, label, tooltip }) => (
               <span className="flex items-center gap-2" key={value}>
                 <Checkbox
@@ -74,11 +75,14 @@ export function ManagePage() {
                   id={value}
                 />
                 {tooltip ? (
-                  <Tooltip content={tooltip}>
-                    <label htmlFor={value} className="cursor-pointer">
-                      {label}
-                    </label>
-                  </Tooltip>
+                  <Tooltip
+                    trigger={
+                      <label htmlFor={value} className="cursor-pointer">
+                        {label}
+                      </label>
+                    }
+                    content={tooltip}
+                  />
                 ) : (
                   <label htmlFor={value} className="cursor-pointer">
                     {label}
@@ -86,14 +90,14 @@ export function ManagePage() {
                 )}
               </span>
             ))}
-          </Tooltip.Provider>
+          </>
         </div>
         <AdminStats
           resolution={dateRangeController.resolution}
           dateRange={dateRangeController.resolvedRange}
           filters={filters}
         />
-      </div>
+      </ScrollArea>
     </Page>
   );
 }

@@ -17,6 +17,8 @@ import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
 import { Menu } from '@/components/base/floating/menu/menu';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +36,6 @@ import { KeyIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
@@ -60,57 +61,52 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
 
   if (groups.length === 0) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger>
-            <div className="flex w-fit items-center gap-1.5">
-              <UsersIcon className="h-3.5 w-3.5" />
-              <span className="text-xs">Groups: none</span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent className="text-xs">
-            Groups can be assigned via the SCIM provider.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip
+        trigger={
+          <div className="flex w-fit items-center gap-1.5">
+            <UsersIcon className="h-3.5 w-3.5" />
+            <span className="text-xs">Groups: none</span>
+          </div>
+        }
+        content="Groups can be assigned via the SCIM provider."
+      />
     );
   }
 
   return (
-    <TooltipProvider>
-      <div className="flex w-fit items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <UsersIcon className="h-3.5 w-3.5" />
-          <span className="text-xs">Groups:</span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5">
-          {visibleGroups.map(group => (
-            <Badge className="cursor-default text-xs" key={group.id}>
-              {group.name}
-            </Badge>
-          ))}
-          {remainingCount > 0 && (
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge variant="outline" className="cursor-default text-xs font-normal">
-                  +{remainingCount} more
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <ul className="space-y-1 text-left">
-                  {groups.slice(2).map(group => (
-                    <li key={group.id}>
-                      <Badge>{group.name}</Badge>
-                    </li>
-                  ))}
-                </ul>
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
+    <div className="flex w-fit items-center gap-2">
+      <div className="flex items-center gap-1.5">
+        <UsersIcon className="h-3.5 w-3.5" />
+        <span className="text-xs">Groups:</span>
       </div>
-    </TooltipProvider>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        {visibleGroups.map(group => (
+          <Badge key={group.id} content={group.name} />
+        ))}
+        {remainingCount > 0 && (
+          <Popover
+            trigger={
+              <button type="button" aria-label="All groups">
+                <Badge variants={{ variant: 'outline' }} content={`+${remainingCount} more`} />
+              </button>
+            }
+            openOnHover
+            side="top"
+            width="auto"
+            content={
+              <ul className="space-y-1 text-left">
+                {groups.slice(2).map(group => (
+                  <li key={group.id}>
+                    <Badge content={group.name} />
+                  </li>
+                ))}
+              </ul>
+            }
+          />
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -299,12 +295,16 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
             </h3>
             <div className="flex items-center gap-1">
               {member.user.provisionInfo ? (
-                <TooltipProvider>
-                  <Tooltip delayDuration={100}>
-                    <TooltipTrigger>
+                <Popover
+                  trigger={
+                    <button type="button" aria-label="Provisioning details">
                       <ShieldCheck className="size-4" />
-                    </TooltipTrigger>
-                    <TooltipContent className="text-xs">
+                    </button>
+                  }
+                  openOnHover
+                  width="auto"
+                  content={
+                    <div className="text-neutral-11 text-xs">
                       <div>Provisioned via SCIM</div>
                       <div>
                         External ID:{' '}
@@ -312,29 +312,28 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                           <CopyChip value={member.user.provisionInfo.externalId} />
                         </span>
                       </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                    </div>
+                  }
+                />
               ) : null}
               {member.authProviders.map(provider => {
                 const providerDisplay = authProviderToIconAndTextMap[provider.type];
                 return (
-                  <TooltipProvider key={provider.type}>
-                    <Tooltip delayDuration={100}>
-                      <TooltipTrigger asChild>
-                        <div className="flex gap-1">
-                          <providerDisplay.Icon
-                            className={cn('size-4', provider.disabledReason && 'text-neutral-7')}
-                          />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent className="text-center text-xs">
-                        {provider.disabledReason
-                          ? `${providerDisplay.text} (Disabled - ${provider.disabledReason})`
-                          : providerDisplay.text}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Tooltip
+                    key={provider.type}
+                    trigger={
+                      <div className="flex gap-1">
+                        <providerDisplay.Icon
+                          className={cn('size-4', provider.disabledReason && 'text-neutral-7')}
+                        />
+                      </div>
+                    }
+                    content={
+                      provider.disabledReason
+                        ? `${providerDisplay.text} (Disabled - ${provider.disabledReason})`
+                        : providerDisplay.text
+                    }
+                  />
                 );
               })}
             </div>
@@ -343,28 +342,21 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
         </td>
         <td className="w-full py-3 text-right text-sm" align="right">
           {member.isOwner ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <span className="font-bold">Owner</span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[200px] text-left">
-                  The organization owner has full access to everything within the organization. The
-                  role of the owner can not be changed.
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Tooltip
+              trigger={<span className="font-bold">Owner</span>}
+              content="The organization owner has full access to everything within the organization. The role of the owner can not be changed."
+            />
           ) : member.user.provisionInfo?.provisioningStatus ===
             GraphQLSchema.ProvisioningStatus.Active ? (
             member.user.provisionInfo.isDisabled ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Badge variant="destructive">Disabled</Badge>
-                  </TooltipTrigger>
-                  <TooltipContent className="text-xs">This user is disabled.</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip
+                trigger={
+                  <span className="inline-flex">
+                    <Badge content="Disabled" variants={{ variant: 'destructive' }} />
+                  </span>
+                }
+                content="This user is disabled."
+              />
             ) : (
               <div className="ml-auto mr-0 w-fit">
                 <MemberGroups groups={member.groups ?? []} />
@@ -474,16 +466,14 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
           {member.viewerCanRemove &&
             (member.user.provisionInfo?.provisioningStatus ===
             GraphQLSchema.ProvisioningStatus.Active ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
+              <Tooltip
+                trigger={
+                  <span className="inline-flex">
                     <ShieldCheck size={16} className="text-neutral-8 ml-2 mt-1.5" />
-                  </TooltipTrigger>
-                  <TooltipContent className="text-xs">
-                    Provisioned users can only be updated via the SCIM endpoints.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                  </span>
+                }
+                content="Provisioned users can only be updated via the SCIM endpoints."
+              />
             ) : (
               member.viewerCanRemove && (
                 <Menu

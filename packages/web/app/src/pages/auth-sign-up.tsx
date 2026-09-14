@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
@@ -217,7 +216,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
         content={
           <>
             <AuthCardStack>
-              <TooltipProvider delayDuration={200}>
+              <>
                 <Form {...form}>
                   <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
                     <div className="grid grid-cols-2 gap-4">
@@ -338,7 +337,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                     </Button>
                   </SignInButton>
                 ) : null}
-              </TooltipProvider>
+              </>
             </AuthCardStack>
             <div className="mt-4 text-center text-sm">
               Already have an account?{' '}

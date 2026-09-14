@@ -25,7 +25,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         nav_button_next: 'absolute right-1',
         table: 'w-full border-collapse space-y-1',
         head_row: 'flex',
-        head_cell: 'text-neutral-10 rounded-md w-8 font-normal text-[0.8rem]',
+        head_cell: 'text-neutral-10 rounded-md w-8 font-normal text-control',
         row: 'flex w-full mt-2',
         cell: cn(
           'relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-neutral-2 [&:has([aria-selected].day-outside)]:bg-neutral-2/50 [&:has([aria-selected].day-range-end)]:rounded-r-md',

@@ -1,6 +1,7 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { CopyIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Heading } from '@/components/ui/heading';
 import { CheckIcon, XIcon } from '@/components/ui/icon';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { TableBody, TableCell, TableRow } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiffEditor, Table } from '@/components/v2';
 import { graphql } from '@/gql';
 import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
@@ -109,7 +109,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
     <div className="p-8">
       <Heading className="mb-4">Native Composition Report</Heading>
 
-      <div className="border-neutral-5 dark:bg-neutral-3 flex items-center gap-4 rounded-sm border px-8 py-4 text-[12px]">
+      <div className="border-neutral-5 dark:bg-neutral-3 flex items-center gap-4 rounded-sm border px-8 py-4 text-xs">
         <MetaCell label="Project" className="flex-1 truncate text-left">
           {project.slug}
         </MetaCell>
@@ -122,7 +122,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
       </div>
       <PageLayout>
         <NavLayout>
-          <div className="p-4 text-[12px] font-bold">View Target</div>
+          <div className="p-4 text-xs font-bold">View Target</div>
           {results.map((result, index) => (
             <SubPageNavigationLink
               key={index}
@@ -206,13 +206,13 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
               )}
             </div>
             <div className="flex min-w-fit flex-col gap-4">
-              <TooltipProvider>
-                <Tooltip
-                  // show only for disabled buttons
-                  open={!report?.schemaVersion?.schemas.edges.length && isTooltipOpen}
-                  onOpenChange={setIsTooltipOpen}
-                >
-                  <TooltipTrigger className="text-right">
+              <Tooltip
+                // show only for disabled buttons
+                open={!report?.schemaVersion?.schemas.edges.length && isTooltipOpen}
+                onOpenChange={setIsTooltipOpen}
+                maxWidth="screen"
+                trigger={
+                  <span className="inline-flex text-right">
                     <Button
                       className="w-full max-w-64 truncate p-4"
                       variant="outline"
@@ -236,16 +236,18 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                       )}{' '}
                       Copy services JSON
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="flex max-w-[90vw] items-center text-pretty">
+                  </span>
+                }
+                content={
+                  <span className="flex items-center text-pretty">
                     <XIcon className="mr-1 size-4 text-red-500" />{' '}
                     <span>
                       Cannot copy services JSON because there are no services published for this
                       target.
                     </span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                  </span>
+                }
+              />
               <Table className="text-sm">
                 <TableBody>
                   <TableRow>

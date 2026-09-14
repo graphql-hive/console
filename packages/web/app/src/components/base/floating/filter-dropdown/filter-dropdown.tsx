@@ -39,7 +39,7 @@ export type FilterDropdownProps = {
 };
 
 /** Outer shell shared by every filter chip. */
-export const chipClass = buttonVariants({ variant: 'default' });
+export const chipClass = buttonVariants({ variant: 'default', size: 'compact', layout: 'label' });
 
 /** The chip's trailing remove button. */
 export const chipRemoveButtonClass =
@@ -74,7 +74,7 @@ export function FilterDropdown({
       style={disabled ? disabledStyle : undefined}
     >
       {/* Label — static */}
-      <span className="px-2.5 py-1.5 text-[13px]">{label}</span>
+      <span className="text-control px-2.5 py-1.5">{label}</span>
 
       {/* Operator — dropdown for "is" / "is not" */}
       {onExcludeModeChange && (

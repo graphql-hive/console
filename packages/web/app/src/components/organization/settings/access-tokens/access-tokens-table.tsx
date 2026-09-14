@@ -5,7 +5,7 @@ import { Menu } from '@/components/base/floating/menu/menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import * as Table from '@/components/ui/table';
-import { TimeAgo } from '@/components/v2';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';
 import { AccessTokenDetailViewSheet } from './access-token-detail-view-sheet';
 import { DeleteAccessTokenConfirmationDialogue } from './delete-access-token-confirmation-dialogue';

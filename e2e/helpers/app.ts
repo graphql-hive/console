@@ -30,15 +30,15 @@ export function createAppHelper(page: Page, auth: AuthHelper): AppHelper {
       await this.waitForProjectPage(projectSlug);
     },
     async waitForOrganizationPage(organizationSlug) {
-      await expect(page.locator('[data-cy="organization-picker-current"]')).toContainText(
+      await expect(page.locator('[data-cy="organization-picker-trigger"]')).toContainText(
         organizationSlug,
       );
     },
     async waitForProjectPage(projectSlug) {
-      await expect(page.locator('[data-cy="project-picker-current"]')).toContainText(projectSlug);
+      await expect(page.locator('[data-cy="project-picker-trigger"]')).toContainText(projectSlug);
     },
     async waitForTargetPage(targetSlug) {
-      await expect(page.locator('[data-cy="target-picker-current"]')).toContainText(targetSlug);
+      await expect(page.locator('[data-cy="target-picker-trigger"]')).toContainText(targetSlug);
     },
   };
 }

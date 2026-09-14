@@ -4,7 +4,7 @@ import { useClient } from 'urql';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Button } from '@/components/ui/button';
 import * as Table from '@/components/ui/table';
-import { TimeAgo } from '@/components/v2';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import { DeleteAccessTokenConfirmationDialogue } from '../access-tokens/delete-access-token-confirmation-dialogue';
 import { TokenExpiration } from '../access-tokens/token-expiration';

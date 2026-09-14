@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { FoundryProvider } from 'react-foundry';
 import { RouterProvider } from '@tanstack/react-router';
 import { previewRouter, PreviewSlotProvider } from './foundry.router';
+import { TooltipProvider } from './src/components/base/floating/tooltip/tooltip';
 import { ThemeProvider, useTheme } from './src/components/theme/theme-provider';
 import './src/index.css';
 
@@ -28,8 +29,10 @@ function ThemeSynchronizer({ theme }: { theme: 'light' | 'dark' }) {
 export const Provider: FoundryProvider = ({ children, theme }) => (
   <ThemeProvider>
     <ThemeSynchronizer theme={theme} />
-    <PreviewSlotProvider value={children}>
-      <RouterProvider router={previewRouter} />
-    </PreviewSlotProvider>
+    <TooltipProvider>
+      <PreviewSlotProvider value={children}>
+        <RouterProvider router={previewRouter} />
+      </PreviewSlotProvider>
+    </TooltipProvider>
   </ThemeProvider>
 );

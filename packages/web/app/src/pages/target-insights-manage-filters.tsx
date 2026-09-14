@@ -237,7 +237,6 @@ function NameCell({
       />
       <Button
         variant="primary"
-        size="sm"
         onClick={() => void handleRename()}
         disabled={
           updateResult.fetching || !renameValue.trim() || renameValue.trim() === filter.name
@@ -265,7 +264,7 @@ function VisibilityCell({ filter }: { filter: SavedFilterNode }) {
       )}
       {filter.usedByAlertRulesCount > 0 && (
         <span
-          className="text-neutral-10 ml-1.5 inline-flex items-center gap-1 text-[13px]"
+          className="text-neutral-10 text-control ml-1.5 inline-flex items-center gap-1"
           title={`Used by ${filter.usedByAlertRulesCount} alert rule${
             filter.usedByAlertRulesCount === 1 ? '' : 's'
           }. Detach it from those alerts to delete.`}
@@ -673,7 +672,6 @@ function SavedFilterRowFilters({
         <div className="mt-3 flex gap-2">
           <Button
             variant={hasChanges ? 'primary' : 'default'}
-            size="sm"
             onClick={handleSave}
             disabled={updateResult.fetching || !hasChanges}
           >
@@ -681,7 +679,6 @@ function SavedFilterRowFilters({
           </Button>
           <Button
             variant="default"
-            size="sm"
             onClick={handleCancel}
             disabled={updateResult.fetching || !hasChanges}
           >

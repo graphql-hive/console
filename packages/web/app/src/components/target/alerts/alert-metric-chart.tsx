@@ -423,7 +423,7 @@ export function AlertMetricChart({
 
   return (
     <div className="space-y-1.5">
-      <div className="text-neutral-10 flex flex-wrap items-center gap-x-2 text-[13px]">
+      <div className="text-neutral-10 text-control flex flex-wrap items-center gap-x-2">
         {hasPreviousWindow ? (
           <>
             <span>

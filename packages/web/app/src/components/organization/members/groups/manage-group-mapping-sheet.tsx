@@ -126,7 +126,7 @@ export function ManageGroupMappingSheet(props: ManageGroupMappingSheetProps): Re
             <>Adjust Group Role Mapping</>
           ) : (
             <>
-              Add new group role mapping to <Badge className="ml-1">{group.name}</Badge>
+              Add new group role mapping to <Badge content={group.name} />
             </>
           )
         }

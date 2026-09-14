@@ -34,7 +34,7 @@ export function OIDCDefaultRoleSelector(props: {
   disabled: boolean;
   defaultRole: FragmentType<typeof OIDCDefaultRoleSelector_MemberRoleFragment>;
   memberRoles: Array<FragmentType<typeof OIDCDefaultRoleSelector_MemberRoleFragment>>;
-  className?: string;
+  width?: 'auto' | 'full';
 }) {
   const defaultRole = useFragment(OIDCDefaultRoleSelector_MemberRoleFragment, props.defaultRole);
   const memberRoles = useFragment(OIDCDefaultRoleSelector_MemberRoleFragment, props.memberRoles);
@@ -43,7 +43,7 @@ export function OIDCDefaultRoleSelector(props: {
 
   return (
     <RoleSelector
-      className={props.className}
+      width={props.width}
       roles={memberRoles}
       defaultRole={defaultRole}
       disabled={props.disabled}

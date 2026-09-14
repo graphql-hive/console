@@ -1,4 +1,4 @@
-import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Input } from './input';
 
 export const nav: NavPath = 'Base/Primitives/Input';
@@ -25,7 +25,7 @@ export const States = createPreview(() => (
 ));
 
 export const Playground = createPreview({
-  controls: defineControls({
+  controls: controlsFor(Input, {
     placeholder: { type: 'text', default: 'Enter alert name' },
     value: { type: 'text', default: '' },
     type: { type: 'select', options: ['text', 'number', 'email', 'password'], default: 'text' },
