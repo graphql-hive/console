@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { EllipsisIcon, LoaderCircleIcon } from 'lucide-react';
 import { useClient } from 'urql';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/base/badge/badge';
+import { Menu } from '@/components/base/floating/menu/menu';
 import { Button } from '@/components/ui/button';
-import * as DropDownMenu from '@/components/ui/dropdown-menu';
 import * as Table from '@/components/ui/table';
-import { TimeAgo } from '@/components/v2';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';
 import { AccessTokenDetailViewSheet } from './access-token-detail-view-sheet';
 import { DeleteAccessTokenConfirmationDialogue } from './delete-access-token-confirmation-dialogue';
@@ -118,7 +118,10 @@ export function AccessTokensTable(props: AccessTokensTable) {
               {edge.node.firstCharacters + privateKeyFiller}
             </Table.TableCell>
             <Table.TableCell className="pl-10 font-mono">
-              <Badge variant="success">{typenameToScope(edge.node.__typename)}</Badge>
+              <Badge
+                content={typenameToScope(edge.node.__typename)}
+                variants={{ variant: 'success' }}
+              />
             </Table.TableCell>
             <Table.TableCell className="text-center">
               created <TimeAgo date={edge.node.createdAt} />
@@ -127,22 +130,22 @@ export function AccessTokensTable(props: AccessTokensTable) {
               <TokenExpiration expiresAt={edge.node.expiresAt ?? null} />
             </Table.TableCell>
             <Table.TableCell className="text-right align-middle">
-              <DropDownMenu.DropdownMenu>
-                <DropDownMenu.DropdownMenuTrigger className="ml-auto block">
-                  <EllipsisIcon className="size-4" />
-                </DropDownMenu.DropdownMenuTrigger>
-                <DropDownMenu.DropdownMenuContent>
-                  <DropDownMenu.DropdownMenuLabel>Options</DropDownMenu.DropdownMenuLabel>
-                  <DropDownMenu.DropdownMenuItem onClick={() => setDetailViewId(edge.node.id)}>
-                    View Details
-                  </DropDownMenu.DropdownMenuItem>
-                  <DropDownMenu.DropdownMenuItem
-                    onClick={() => setDeleteAccessTokenId(edge.node.id)}
-                  >
-                    Delete
-                  </DropDownMenu.DropdownMenuItem>
-                </DropDownMenu.DropdownMenuContent>
-              </DropDownMenu.DropdownMenu>
+              <Menu
+                trigger={
+                  <button type="button" className="ml-auto block">
+                    <EllipsisIcon className="size-4" />
+                  </button>
+                }
+                sections={[
+                  {
+                    label: 'Options',
+                    items: [
+                      { label: 'View Details', onClick: () => setDetailViewId(edge.node.id) },
+                      { label: 'Delete', onClick: () => setDeleteAccessTokenId(edge.node.id) },
+                    ],
+                  },
+                ]}
+              />
             </Table.TableCell>
           </Table.TableRow>
         ))}

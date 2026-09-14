@@ -23,7 +23,8 @@ import {
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/base/badge/badge';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Button } from '@/components/ui/button';
 import {
   ChartConfig,
@@ -42,13 +43,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroupLabel,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -59,7 +53,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
@@ -377,16 +370,16 @@ const TracesList = memo(function TracesList(
           const timestamp = row.getValue('timestamp') as number;
 
           return (
-            <TooltipProvider>
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <div className="px-4 font-mono text-xs uppercase">
-                    {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="text-neutral-11 cursor-auto overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
+            <Tooltip
+              side="bottom"
+              trigger={
+                <div className="px-4 font-mono text-xs uppercase">
+                  {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
+                </div>
+              }
+              content={
+                <div
+                  className="min-w-[150px] cursor-auto"
                   onClick={e => {
                     // Prevent the click event from bubbling up to the row,
                     // which would trigger the sheet with trace details to open
@@ -413,9 +406,9 @@ const TracesList = memo(function TracesList(
                       },
                     ]}
                   />
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </div>
+              }
+            />
           );
         },
       },
@@ -425,24 +418,23 @@ const TracesList = memo(function TracesList(
           return <div className="text-neutral-10 px-4">Operation Name</div>;
         },
         cell: ({ row }) => (
-          <TooltipProvider>
-            <Tooltip disableHoverableContent delayDuration={100}>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 px-4 text-xs">
-                  <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
-                    {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
-                  </span>
-                  <span>
-                    {row.getValue('operationName') ?? (
-                      <span className="text-neutral-10">{'<unknown>'}</span>
-                    )}
-                  </span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
-              >
+          <Tooltip
+            side="bottom"
+            disableHoverablePopup
+            trigger={
+              <div className="flex items-center gap-2 px-4 text-xs">
+                <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
+                  {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
+                </span>
+                <span>
+                  {row.getValue('operationName') ?? (
+                    <span className="text-neutral-10">{'<unknown>'}</span>
+                  )}
+                </span>
+              </div>
+            }
+            content={
+              <div className="min-w-[150px]">
                 <GridTable
                   rows={[
                     {
@@ -459,9 +451,9 @@ const TracesList = memo(function TracesList(
                     },
                   ]}
                 />
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              </div>
+            }
+          />
         ),
       },
       {
@@ -502,14 +494,9 @@ const TracesList = memo(function TracesList(
           return (
             <div className="text-center">
               <Badge
-                variant="outline"
-                className={cn(
-                  'rounded-sm border-0 px-1 text-xs font-medium uppercase',
-                  status ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
-                )}
-              >
-                {status ? 'Ok' : 'Error'}
-              </Badge>
+                content={status ? 'Ok' : 'Error'}
+                variants={{ variant: status ? 'success' : 'critical' }}
+              />
             </div>
           );
         },
@@ -519,17 +506,16 @@ const TracesList = memo(function TracesList(
         header: () => <div className="text-center">Subgraphs</div>,
         cell: ({ row }) => {
           return (
-            <TooltipProvider>
-              <Tooltip disableHoverableContent delayDuration={100}>
-                <TooltipTrigger asChild>
-                  <div className="text-center font-mono text-xs font-medium">
-                    {(row.getValue('subgraphs') as Array<string>).length}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
-                >
+            <Tooltip
+              side="bottom"
+              disableHoverablePopup
+              trigger={
+                <div className="text-center font-mono text-xs font-medium">
+                  {(row.getValue('subgraphs') as Array<string>).length}
+                </div>
+              }
+              content={
+                <div className="min-w-[150px]">
                   <GridTable
                     rows={[
                       {
@@ -540,9 +526,9 @@ const TracesList = memo(function TracesList(
                       },
                     ]}
                   />
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </div>
+              }
+            />
           );
         },
       },
@@ -773,14 +759,14 @@ function Filters(
 
   return (
     <>
-      <SidebarGroupLabel className="text-neutral-12 flex items-center justify-between">
+      <div className="text-neutral-12 flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium">
         <div>Filters</div>
         {hasChanges ? (
           <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
             <XIcon className="size-4" />
           </Button>
         ) : null}
-      </SidebarGroupLabel>
+      </div>
       <DurationFilter value={filterSelector('duration')} onChange={updateFilter('duration')} />
       <MultiInputFilter
         key="trace.id"
@@ -958,14 +944,9 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
                 <span className="text-neutral-11">{formatNanoseconds(BigInt(trace.duration))}</span>
               </div>
               <Badge
-                variant="outline"
-                className={cn(
-                  'rounded-sm border-0 px-1 font-medium uppercase',
-                  trace.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
-                )}
-              >
-                {trace.success ? 'Ok' : 'Error'}
-              </Badge>
+                content={trace.success ? 'Ok' : 'Error'}
+                variants={{ variant: trace.success ? 'success' : 'critical' }}
+              />
               <span className="text-neutral-11 font-mono uppercase">
                 {trace ? formatDate(trace.timestamp, 'MMM dd HH:mm:ss') : null}
               </span>
@@ -1310,13 +1291,13 @@ export function TargetTracesPageContent(
           </div>
         }
       />
-      <SidebarProvider className="mt-4">
-        <Sidebar collapsible="none" className="sticky top-4 bg-transparent">
-          <SidebarContent>
+      <div className="mt-4 flex min-h-svh w-full">
+        <aside className="text-neutral-11 sticky top-4 flex h-full w-64 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
             <Filters filter={props.filter} options={filterOptions} />
-          </SidebarContent>
-        </Sidebar>
-        <SidebarInset className="bg-transparent">
+          </div>
+        </aside>
+        <main className="relative flex min-h-svh flex-1 flex-col">
           <div className="flex flex-1 flex-col gap-4 pl-4 pt-0">
             <div>
               <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
@@ -1369,8 +1350,8 @@ export function TargetTracesPageContent(
               }
             />
           </div>
-        </SidebarInset>
-      </SidebarProvider>
+        </main>
+      </div>
       <Sheet
         open={selectedTraceId !== null}
         onOpenChange={isOpen => {

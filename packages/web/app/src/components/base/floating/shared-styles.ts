@@ -7,9 +7,20 @@
  */
 import { cva } from 'class-variance-authority';
 
+/**
+ * The inset of a panel made of menu rows: sides and bottom only, because the first row brings the
+ * top inset itself (`first:mt-2`). A custom panel dropped into a Menu (`content` rather than
+ * `sections`) gets no padding from the popup and applies this itself, so a search field can bleed
+ * to the edges with `-mx-2` in either case.
+ */
+export const menuPanelInset = 'px-2 pb-2';
+
 /** Base classes shared by all floating panels (menu, select, popover). */
 export const floatingBaseClass =
-  'z-50 text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5';
+  // No z-index here. The positioner is transformed for placement, which makes it a stacking
+  // context, so a z-index on the popup would only compete inside it and lose to any page
+  // element that outranks the positioner. It goes on the positioner instead.
+  'text-control rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 max-h-[var(--available-height)] overflow-y-auto overflow-x-hidden thin-scrollbar';
 
 export const floatingVariants = cva(floatingBaseClass, {
   variants: {
@@ -17,8 +28,7 @@ export const floatingVariants = cva(floatingBaseClass, {
       none: '',
       sm: 'px-1 py-1',
       md: 'px-2 py-2',
-      /** Menu-style: top padding handled by first:mt-2 on items */
-      menu: 'px-2 pb-2',
+      menu: menuPanelInset,
     },
     maxWidth: {
       default: 'max-w-75',
@@ -29,12 +39,24 @@ export const floatingVariants = cva(floatingBaseClass, {
     minWidth: {
       default: 'min-w-[12rem]',
       none: 'min-w-0',
+      sm: 'min-w-40',
+      md: 'min-w-60',
+    },
+    /**
+     * A fixed width, for panels that should not resize with their content. `minWidth`/`maxWidth`
+     * are the usual choice; reach for this only when every state of the panel wants one width,
+     * as the row-action menus in the settings tables do.
+     */
+    width: {
+      none: '',
+      sm: 'w-40',
     },
   },
   defaultVariants: {
     padding: 'sm',
     maxWidth: 'none',
     minWidth: 'none',
+    width: 'none',
   },
 });
 
@@ -43,7 +65,7 @@ export const itemVariants = cva(
   {
     variants: {
       variant: {
-        default: 'px-2 text-neutral-10',
+        default: 'px-2 text-neutral-11',
         navigationLink: 'hover:text-accent text-accent_80 justify-end pr-2 hover:bg-transparent',
         action: 'pl-2 hover:bg-accent_10 hover:text-accent text-accent_80',
         destructiveAction: 'pl-2 text-red-400 hover:bg-red-300/10',
@@ -73,8 +95,26 @@ export const itemVariants = cva(
 
 /** Common props shared by all floating components (popover, menu, select). */
 export type FloatingProps = {
-  /** Element that triggers the floating panel */
-  trigger: React.ReactElement;
+  /**
+   * Element that triggers the floating panel.
+   *
+   * A function when the trigger has to be composed with another wrapper that owns the same
+   * element. `GraphiQLTooltip` in `pages/target-laboratory.tsx` is the case this exists for: it
+   * destructures only `{ children, align, side, sideOffset, label }` and forwards nothing, so
+   * passing it as an element would swallow the trigger props and the panel would never open.
+   * Given a function you apply the props yourself, and any wrapper can sit outside:
+   *
+   * ```tsx
+   * trigger={props => (
+   *   <GraphiQLTooltip label={label}>
+   *     <GraphiQLButton {...props} />
+   *   </GraphiQLTooltip>
+   * )}
+   * ```
+   */
+  // `any` on the params because this has to satisfy every Base UI trigger, and each one has its
+  // own props and state types that the package does not export a subpath for.
+  trigger: React.ReactElement | ((props: any, state: any) => React.ReactElement);
   /** Which side of the trigger to position on */
   side?: 'top' | 'bottom' | 'left' | 'right';
   /** Alignment along the side */

@@ -1,39 +1,44 @@
-import { type ComponentProps } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
-import { Slot } from '@radix-ui/react-slot';
 
 const badgeVariants = cva(
-  'inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-accent focus-visible:ring-accent_30 focus-visible:ring-[3px] aria-invalid:ring-critical_30 aria-invalid:border-critical transition-[color,box-shadow] overflow-hidden',
+  'inline-flex w-fit shrink-0 cursor-default items-center justify-center overflow-hidden whitespace-nowrap rounded-md border font-medium',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-neutral-6 text-white [a&]:hover:bg-neutral-7',
-        secondary:
-          'border-transparent bg-neutral-2 text-neutral-11 [a&]:hover:bg-neutral-3 [a&]:hover:text-neutral-12',
-        destructive:
-          'border-transparent bg-red-800 text-white [a&]:hover:bg-red-800_80 focus-visible:ring-red-800_30',
-        outline:
-          'border-neutral-5 text-neutral-11 [a&]:hover:bg-neutral-3 [a&]:hover:text-neutral-12',
+        default: 'border-transparent bg-neutral-6 text-neutral-11',
+        secondary: 'border-transparent bg-neutral-4 text-neutral-11',
+        outline: 'border-neutral-5 font-normal text-neutral-11',
+        // The semantic states, tinted: a 10% fill of the token under its full-strength text, so
+        // a pill never needs its own red or green.
+        success: 'border-transparent bg-success_10 text-success',
+        warning: 'border-transparent bg-warning_10 text-warning',
+        critical: 'border-transparent bg-critical_10 text-critical',
+        info: 'border-transparent bg-info_10 text-info',
+      },
+      size: {
+        default: 'px-2 py-0.5 text-xs',
+        /** For a count beside a tab label or a filter row. */
+        sm: 'text-2xs px-1.5 py-px',
+      },
+      /** For an identifier such as a permission key, rather than a word. */
+      mono: {
+        true: 'font-mono',
+        false: '',
       },
     },
     defaultVariants: {
       variant: 'default',
+      size: 'default',
+      mono: false,
     },
   },
 );
 
-function Badge({
-  className,
-  variant,
-  asChild = false,
-  ...props
-}: ComponentProps<'span'> & VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : 'span';
+type BadgeProps = {
+  content: string;
+  variants?: VariantProps<typeof badgeVariants>;
+};
 
-  return (
-    <Comp data-slot="badge" className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+export function Badge({ content, variants }: BadgeProps) {
+  return <span className={badgeVariants({ ...variants })}>{content}</span>;
 }
-
-export { Badge, badgeVariants };

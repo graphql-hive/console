@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
-import { InfoCircledIcon } from '@radix-ui/react-icons';
+import { Info } from 'lucide-react';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { InputCopy } from './input-copy';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
 /** Renders readonly properties for resources. Used on settings pages. */
 export function ResourceDetails(props: { id: string; label: string }): ReactElement {
@@ -11,17 +11,21 @@ export function ResourceDetails(props: { id: string; label: string }): ReactElem
         {props.label}
       </div>
       <InputCopy value={props.id} className="rounded-l-none" />
-      <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger>
-            <InfoCircledIcon className="ml-2 size-4 cursor-default" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-sm text-pretty">
+      <Popover
+        trigger={
+          <button type="button" aria-label="What this ID is for" className="text-neutral-10 ml-2">
+            <Info className="size-4" />
+          </button>
+        }
+        openOnHover
+        width="md"
+        content={
+          <p className="text-neutral-11 text-pretty text-sm">
             This UUID can be used in API calls or CLI commands to Hive instead of passing the full
             resource path. I.e. "org/project/target".
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+          </p>
+        }
+      />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import ReactECharts from 'echarts-for-react';
 import { Globe, History } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { Card } from '@/components/base/card/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { subDays } from '@/lib/date-time';
 import { useFormattedNumber } from '@/lib/hooks';
 import { pluralize } from '@/lib/utils';
@@ -49,7 +49,7 @@ export function ResourceCard(props: {
     <div className="h-full self-start">
       <Card variants={{ onSurface: 'raised', interactive: true, bodyPadding: 'none' }}>
         {props.renderLink(
-          <TooltipProvider>
+          <>
             <div className="flex items-start gap-x-2">
               <div className="grow">
                 <div>
@@ -144,8 +144,8 @@ export function ResourceCard(props: {
                   <div className="flex flex-col gap-y-2 py-1">
                     {props.name != null ? (
                       <>
-                        <Tooltip>
-                          <TooltipTrigger>
+                        <Tooltip
+                          trigger={
                             <div className="flex flex-row items-center gap-x-2">
                               <Globe className="text-neutral-10 size-4" />
                               <div className="text-xs">
@@ -153,13 +153,11 @@ export function ResourceCard(props: {
                                 {pluralize(totalNumberOfRequests, 'request', 'requests')}
                               </div>
                             </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            Number of GraphQL requests in the last {props.days} days.
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger>
+                          }
+                          content={`Number of GraphQL requests in the last ${props.days} days.`}
+                        />
+                        <Tooltip
+                          trigger={
                             <div className="flex flex-row items-center gap-x-2">
                               <History className="text-neutral-10 size-4" />
                               <div className="text-xs">
@@ -167,12 +165,9 @@ export function ResourceCard(props: {
                                 {pluralize(totalNumberOfVersions, 'commit', 'commits')}
                               </div>
                             </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            Number of schemas pushed to this {props.kind} in the last {props.days}{' '}
-                            days.
-                          </TooltipContent>
-                        </Tooltip>
+                          }
+                          content={`Number of schemas pushed to this ${props.kind} in the last ${props.days} days.`}
+                        />
                       </>
                     ) : (
                       <>
@@ -184,7 +179,7 @@ export function ResourceCard(props: {
                 </div>
               </div>
             </div>
-          </TooltipProvider>,
+          </>,
         )}
       </Card>
     </div>

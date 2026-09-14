@@ -2,11 +2,11 @@ import { ReactElement } from 'react';
 import type { JSONSchema } from 'json-schema-typed';
 import { InfoIcon } from 'lucide-react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
 import { DocsLink } from '../ui/docs-note';
-import { Tooltip } from '../v2';
 import { useConfigurationHelper } from './form-helper';
 import { PolicyRuleConfig } from './rules-configuration';
 import { SeverityLevelToggle } from './rules-configuration/severity-toggle';
@@ -48,7 +48,7 @@ export function PolicyListItem(props: {
     (props.overridingParentRule && severity !== RuleInstanceSeverityLevel.Off);
 
   return (
-    <Tooltip.Provider delayDuration={100}>
+    <>
       <div className="px-1 py-4">
         <div className="flex gap-x-4">
           <div className="pt-[2px]">
@@ -64,24 +64,30 @@ export function PolicyListItem(props: {
             <div className="mb-2">
               <label htmlFor={ruleInfo.id} className="font-mono text-sm font-medium">
                 {ruleInfo.id}
-                <Tooltip
-                  contentProps={{
-                    className: 'block max-w-[500px]',
-                    side: 'top',
-                    align: 'start',
-                  }}
+                <Popover
+                  trigger={
+                    <button
+                      type="button"
+                      aria-label="About this rule"
+                      className="text-accent ml-2 inline-block align-middle"
+                    >
+                      <InfoIcon className="size-4" />
+                    </button>
+                  }
+                  openOnHover
+                  side="top"
+                  align="start"
+                  width="xl"
                   content={
-                    <>
+                    <div className="text-neutral-11">
                       <Markdown content={ruleInfo.description} className="text-sm" />
                       <br />
                       {ruleInfo.documentationUrl ? (
                         <DocsLink href={ruleInfo.documentationUrl} text="read more" />
                       ) : null}
-                    </>
+                    </div>
                   }
-                >
-                  <InfoIcon className="text-accent ml-2 inline-block size-4" />
-                </Tooltip>
+                />
               </label>
             </div>
             {enabled ? (
@@ -110,6 +116,6 @@ export function PolicyListItem(props: {
           </div>
         </div>
       </div>
-    </Tooltip.Provider>
+    </>
   );
 }

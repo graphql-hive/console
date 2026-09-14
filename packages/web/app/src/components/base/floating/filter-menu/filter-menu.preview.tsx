@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { FilterChips, FilterMenu } from './filter-menu';
 import type { FilterDimension, FilterItem, FilterSelection } from './types';
@@ -177,6 +177,112 @@ export const AllDimensionKinds = createPreview(() => {
     <div className="flex flex-wrap items-center gap-2">
       <FilterMenu dimensions={dimensions} />
       <FilterChips dimensions={dimensions} />
+    </div>
+  );
+});
+
+const INSIGHTS_OPERATIONS: FilterItem[] = [
+  'GetOrganizationMembersWithPermissions',
+  'ListSchemaVersionsForTargetOverview',
+  'CreateAccessTokenForOrganization',
+  'UpdateProjectRegistryModelSettings',
+  'GetSchemaCheckWithBreakingChanges',
+  'FetchUsageStatisticsForClientVersion',
+  'DeleteTargetConditionalBreakingChangeConfig',
+  'ListOrganizationInvitationsPaginated',
+  'CompareSchemaVersionsWithContracts',
+  'PublishSubgraphSchemaWithMetadata',
+  'GetLaboratoryPreflightScriptHistory',
+  'IntrospectSupergraphFromCdn',
+  'ListAlertChannelsForProject',
+  'GetBillingUsageAndLimitsForOrg',
+  'me',
+  'ping',
+].map((name, i) => ({ id: `hash-${i}`, name, values: [] }));
+
+const INSIGHTS_CLIENTS: FilterItem[] = [
+  { name: 'unknown', values: [] },
+  { name: 'Hive CLI', values: ['0.50.1', '0.50.0', '0.49.0', '0.48.3'] },
+  { name: 'Hive Client', values: ['0.5.0', '0.23.1', '0.14.2', '0.10.0', '0.8.2'] },
+  { name: 'hive-gateway', values: ['1.13.0', '1.12.0', '1.11.4'] },
+  { name: 'hive-console-frontend', values: ['0.0.1'] },
+  { name: 'hive-schema-registry-worker', values: ['2.4.0', '2.3.0'] },
+  { name: 'graphql-yoga', values: ['5.10.0', '5.9.0'] },
+  { name: 'hive-apollo-router-plugin', values: ['1.2.0', '1.1.0', '1.0.0'] },
+  { name: 'octokit-graphql', values: ['8.1.1', '8.0.0'] },
+  { name: 'graphql-mesh-serve-runtime', values: ['1.5.0'] },
+  { name: 'apollo-client', values: ['3.11.0', '3.10.0'] },
+  { name: 'urql', values: ['4.1.0', '4.0.0'] },
+  { name: 'relay-runtime', values: ['17.0.0'] },
+  { name: 'hive-cdn-edge-worker', values: ['0.9.0', '0.8.0'] },
+  { name: 'graphql-codegen-hive-plugin', values: ['2.0.0'] },
+  { name: 'k6-load-test', values: ['0.52.0'] },
+];
+
+/**
+ * The Insights page: operations and clients, both long enough to scroll and
+ * search, with names longer than a short list would size the popup to.
+ */
+export const InsightsDimensions = createPreview(() => {
+  const [operations, setOperations] = useState<FilterSelection[]>([]);
+  const [clients, setClients] = useState<FilterSelection[]>([]);
+
+  const dimensions: FilterDimension[] = [
+    {
+      key: 'operation',
+      label: 'Operation',
+      items: INSIGHTS_OPERATIONS,
+      selectedItems: operations,
+      onChange: setOperations,
+    },
+    {
+      key: 'client',
+      label: 'Client',
+      items: INSIGHTS_CLIENTS,
+      selectedItems: clients,
+      onChange: setClients,
+      valuesLabel: 'versions',
+    },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <FilterMenu dimensions={dimensions} />
+      <FilterChips dimensions={dimensions} />
+    </div>
+  );
+});
+
+/**
+ * Insights on a slow connection: the picker query resolves after the page is
+ * interactive, so the submenu can be open on an empty list when the items land.
+ * Open Filter → Client within the first few seconds to see it.
+ */
+export const InsightsDimensionsLoading = createPreview(() => {
+  const [loaded, setLoaded] = useState(false);
+  const [clients, setClients] = useState<FilterSelection[]>([]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoaded(true), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const dimensions: FilterDimension[] = [
+    {
+      key: 'client',
+      label: 'Client',
+      items: loaded ? INSIGHTS_CLIENTS : [],
+      selectedItems: clients,
+      onChange: setClients,
+      valuesLabel: 'versions',
+    },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <FilterMenu dimensions={dimensions} />
+      <FilterChips dimensions={dimensions} />
+      <span className="text-neutral-8 text-xs">{loaded ? 'items loaded' : 'loading items…'}</span>
     </div>
   );
 });

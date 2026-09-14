@@ -28,7 +28,7 @@ export function TextFilterChip({
 }: TextFilterChipProps) {
   return (
     <div role="group" aria-label={`${label} filter`} className={chipClass}>
-      <span className="px-2.5 py-1.5 text-[13px]">{label}</span>
+      <span className="text-control px-2.5 py-1.5">{label}</span>
 
       <span className={segmentSeparator}>
         <Menu
@@ -41,17 +41,15 @@ export function TextFilterChip({
           side="bottom"
           align="start"
           maxWidth="lg"
-          stableWidth
-          sections={[
+          content={
             <FloatingSearch
-              key="input"
               label={label}
               value={value}
               onSearch={onChange}
               placeholder={placeholder}
               standalone
-            />,
-          ]}
+            />
+          }
         />
       </span>
 

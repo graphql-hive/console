@@ -1,29 +1,21 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cx } from 'class-variance-authority';
-import clsx from 'clsx';
 import { GraphiQL } from 'graphiql';
 import { buildSchema } from 'graphql';
-import { ChevronDownIcon, EraserIcon } from 'lucide-react';
+import { EraserIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useMutation, useQuery } from 'urql';
+import { Button as BaseButton } from '@/components/base/button/button';
+import { Collapsible } from '@/components/base/collapsible/collapsible';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DocsLink } from '@/components/ui/docs-note';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { SaveIcon, ShareIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 import { graphql } from '@/gql';
 import { useClipboard, useNotifications, useToggle } from '@/lib/hooks';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
@@ -57,6 +49,8 @@ import { Repeater } from '@repeaterjs/repeater';
 import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
+import { Menu } from '@/components/base/floating/menu/menu';
+import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRedirect } from '@/lib/access/common';
@@ -167,85 +161,84 @@ function Save(props: {
   const label = 'Save operation';
 
   return (
-    <DropdownMenu>
-      <GraphiQLTooltip label={label}>
-        <DropdownMenuTrigger asChild>
-          <GraphiQLButton
-            data-cy="save-operation"
-            className={cn(
-              'graphiql-toolbar-button',
-              currentOperation && !isSame && 'hive-badge-is-changed relative after:top-1',
-            )}
-            aria-label={label}
-          >
-            <SaveIcon className="graphiql-toolbar-icon h-5" />
-          </GraphiQLButton>
-        </DropdownMenuTrigger>
-      </GraphiQLTooltip>
-      <DropdownMenuContent align="end">
-        {!isSame && currentOperation && (
-          <>
-            <DropdownMenuItem
-              disabled={isSame || !currentOperation}
-              className="mb-0 text-red-600"
-              onClick={() => {
-                queryEditor?.setValue(currentOperation.query);
-                clearOperation();
-              }}
+    <>
+      <Menu
+        align="end"
+        trigger={props => (
+          // A function, not an element: `GraphiQLTooltip` forwards nothing, so it cannot carry
+          // the trigger props down. Applying them to the button lets the tooltip wrap it.
+          <GraphiQLTooltip label={label}>
+            <GraphiQLButton
+              {...props}
+              data-cy="save-operation"
+              className={cn(
+                'graphiql-toolbar-button',
+                currentOperation && !isSame && 'hive-badge-is-changed relative after:top-1',
+              )}
+              aria-label={label}
             >
-              Discard changes
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
+              <SaveIcon className="graphiql-toolbar-icon h-5" />
+            </GraphiQLButton>
+          </GraphiQLTooltip>
         )}
-        <DropdownMenuItem
-          disabled={isSame || !currentOperation}
-          className={cx(
-            (isSame || !currentOperation) && 'text-neutral-10 cursor-default hover:bg-transparent',
-          )}
-          onClick={async () => {
-            if (!currentOperation || isSame) {
-              return;
-            }
-            const { error, data } = await mutateUpdate({
-              selector: {
-                targetSlug: props.targetSlug,
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
+        sections={[
+          [
+            !isSame &&
+              currentOperation && {
+                label: 'Discard changes',
+                variant: 'destructiveAction' as const,
+                onClick: () => {
+                  queryEditor?.setValue(currentOperation.query);
+                  clearOperation();
+                },
               },
-              input: {
-                name: currentOperation.name,
-                collectionId: currentOperation.collection.id,
-                query: queryEditor?.getValue(),
-                variables: variableEditor?.getValue(),
-                headers: headerEditor?.getValue(),
-                operationId: currentOperation.id,
+          ],
+          [
+            {
+              label: 'Save',
+              disabled: isSame || !currentOperation,
+              onClick: async () => {
+                if (!currentOperation || isSame) {
+                  return;
+                }
+                const { error, data } = await mutateUpdate({
+                  selector: {
+                    targetSlug: props.targetSlug,
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                  },
+                  input: {
+                    name: currentOperation.name,
+                    collectionId: currentOperation.collection.id,
+                    query: queryEditor?.getValue(),
+                    variables: variableEditor?.getValue(),
+                    headers: headerEditor?.getValue(),
+                    operationId: currentOperation.id,
+                  },
+                });
+                if (data) {
+                  clearOperation();
+                  notify('Updated!', 'success');
+                }
+                if (error) {
+                  notify(error.message, 'error');
+                }
               },
-            });
-            if (data) {
-              clearOperation();
-              notify('Updated!', 'success');
-            }
-            if (error) {
-              notify(error.message, 'error');
-            }
-          }}
-        >
-          Save
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          data-cy="save-operation-as"
-          onClick={async () => {
-            if (!collections.length) {
-              notify('Please create a collection first.', 'error');
-              return;
-            }
-            toggleOperationModal();
-          }}
-        >
-          Save as
-        </DropdownMenuItem>
-      </DropdownMenuContent>
+            },
+            {
+              label: 'Save as',
+              onClick: () => {
+                if (!collections.length) {
+                  notify('Please create a collection first.', 'error');
+                  return;
+                }
+                toggleOperationModal();
+              },
+              attrs: { 'data-cy': 'save-operation-as' },
+            },
+          ],
+        ]}
+      />
       <CreateOperationModal
         organizationSlug={props.organizationSlug}
         projectSlug={props.projectSlug}
@@ -254,7 +247,7 @@ function Save(props: {
         close={toggleOperationModal}
         onSaveSuccess={onSaveSuccess}
       />
-    </DropdownMenu>
+    </>
   );
 }
 
@@ -509,43 +502,26 @@ function LaboratoryPageContent(props: {
           <div className="self-end pt-2">
             <span className="mr-2 text-xs font-bold">Query</span>
             <ToggleGroup
-              defaultValue="list"
+              options={[
+                {
+                  value: 'mockApi',
+                  label: 'Mock',
+                  tooltip: 'Use Mock Schema',
+                  disabled: query.fetching,
+                },
+                {
+                  value: 'linkedApi',
+                  label: 'API',
+                  tooltip: 'Use API endpoint',
+                  disabled: !query.data?.target?.graphqlEndpointUrl || query.fetching,
+                },
+              ]}
+              value={actualSelectedApiEndpoint}
               onValueChange={newValue => {
                 setEndpointType(newValue as 'mockApi' | 'linkedApi');
               }}
-              value="mock"
-              type="single"
-              className="text-neutral-10 bg-neutral-2/50"
-            >
-              <ToggleGroupItem
-                key="mockApi"
-                value="mockApi"
-                title="Use Mock Schema"
-                className={clsx(
-                  'hover:text-neutral-12 text-xs',
-                  !query.fetching &&
-                    actualSelectedApiEndpoint === 'mockApi' &&
-                    'bg-neutral-5 text-neutral-12',
-                )}
-                disabled={query.fetching}
-              >
-                Mock
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                key="linkedApi"
-                value="linkedApi"
-                title="Use API endpoint"
-                className={cn(
-                  'hover:text-neutral-12 text-xs',
-                  !query.fetching &&
-                    actualSelectedApiEndpoint === 'linkedApi' &&
-                    'bg-neutral-5 text-neutral-12',
-                )}
-                disabled={!query.data?.target?.graphqlEndpointUrl || query.fetching}
-              >
-                API
-              </ToggleGroupItem>
-            </ToggleGroup>
+              aria-label="Query endpoint"
+            />
           </div>
         </div>
       </div>
@@ -599,17 +575,6 @@ function LaboratoryPageContent(props: {
             color: hsla(var(--color-neutral), var(--alpha-tertiary));
           }
 
-          #preflight-logs h2 {
-            color: hsla(var(--color-neutral), var(--alpha-neutral-2));
-          }
-
-          #preflight-logs button[data-state="open"] > h2 {
-            color: hsl(var(--color-neutral));
-          }
-
-          #preflight-logs > div {
-            border-color: hsl(var(--neutral-5));
-          }
         `}</style>
       </Helmet>
       {!query.fetching && !query.stale && (
@@ -735,70 +700,45 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
   }, [props.logs, isOpen]);
 
   return (
-    <Collapsible
-      open={isOpen}
-      onOpenChange={setIsOpen}
-      className={cn('flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]')}
+    <div
       id="preflight-logs"
+      className="flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]"
     >
-      <div
-        className={cn(
-          'flex shrink-0 items-center justify-between px-4 py-3',
-          isOpen ? 'border-b' : 'border-b-0',
-        )}
-      >
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex h-auto items-center gap-2 p-0 hover:bg-transparent"
-            data-cy="trigger"
-          >
-            <ChevronDownIcon
-              className={`text-neutral-10 size-4 transition-transform ${
-                isOpen ? 'rotate-0' : '-rotate-90'
-              }`}
+      <Collapsible
+        variant="panel"
+        trigger="Preflight Script Logs"
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        actions={
+          isOpen ? (
+            <BaseButton
+              layout="iconOnly"
+              icon={EraserIcon}
+              aria-label="Clear logs"
+              variant="ghost"
+              data-cy="erase-logs"
+              onClick={props.onClear}
             />
-            <h2 className="text-[15px] font-normal">Preflight Script Logs</h2>
-          </Button>
-        </CollapsibleTrigger>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            data-cy="erase-logs"
-            className={cn(
-              'text-neutral-10 hover:text-neutral-12 size-8',
-              isOpen ? 'visible' : 'invisible',
-            )}
-            onClick={props.onClear}
-          >
-            <EraserIcon className="size-4" />
-            <span className="sr-only">Clear logs</span>
-          </Button>
-        </div>
-      </div>
-      <CollapsibleContent
-        className="grow overflow-auto p-4 font-mono text-xs/[18px]"
-        ref={consoleRef}
-        data-cy="logs"
+          ) : null
+        }
+        panelDataCy="logs"
       >
-        {props.logs.length === 0 ? (
-          <div
-            data-cy="empty-state"
-            className="text-neutral-10 flex flex-col items-center justify-center"
-          >
-            <p>No logs available</p>
-            <p>Execute a query to see logs</p>
+        <ScrollArea fill ref={consoleRef}>
+          <div className="p-4 font-mono text-xs/[18px]">
+            {props.logs.length === 0 ? (
+              <div
+                data-cy="empty-state"
+                className="text-neutral-10 flex flex-col items-center justify-center"
+              >
+                <p>No logs available</p>
+                <p>Execute a query to see logs</p>
+              </div>
+            ) : (
+              props.logs.map((log, index) => <LogLine key={index} log={log} />)
+            )}
           </div>
-        ) : (
-          <>
-            {props.logs.map((log, index) => (
-              <LogLine key={index} log={log} />
-            ))}
-          </>
-        )}
-      </CollapsibleContent>
-    </Collapsible>
+        </ScrollArea>
+      </Collapsible>
+    </div>
   );
 }

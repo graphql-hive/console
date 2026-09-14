@@ -3,16 +3,12 @@ import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/AppFilter';
+import { Menu } from '@/components/base/floating/menu/menu';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -27,7 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { graphql } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
@@ -391,16 +386,10 @@ function TargetAppVersionContent(props: {
                       </TableCell>
                       <TableCell>
                         {!edge.node.operationName ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help italic">anonymous</span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>The operation within the document has no name.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Tooltip
+                            trigger={<span className="cursor-help italic">anonymous</span>}
+                            content="The operation within the document has no name."
+                          />
                         ) : (
                           <span className="bg-neutral-5 rounded-sm p-1 font-mono text-xs">
                             {edge.node.operationName}
@@ -415,44 +404,46 @@ function TargetAppVersionContent(props: {
                         </span>
                       </TableCell>
                       <TableCell className="text-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                        <Menu
+                          trigger={
                             <Button size="icon-sm" variant="ghost">
                               <DotsHorizontalIcon />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem asChild className="cursor-pointer">
-                              <Link
-                                to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
-                                params={{
-                                  organizationSlug: props.organizationSlug,
-                                  projectSlug: props.projectSlug,
-                                  targetSlug: props.targetSlug,
-                                }}
-                                search={{
-                                  operationString: edge.node.body,
-                                }}
-                              >
-                                Open in Laboratory
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="cursor-pointer">
-                              <Link
-                                to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                                params={{
-                                  organizationSlug: props.organizationSlug,
-                                  projectSlug: props.projectSlug,
-                                  targetSlug: props.targetSlug,
-                                  operationName: edge.node.operationName ?? edge.node.hash,
-                                  operationHash: edge.node.insightsHash,
-                                }}
-                              >
-                                Show Insights
-                              </Link>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          }
+                          sections={[
+                            [
+                              {
+                                label: 'Open in Laboratory',
+                                render: (
+                                  <Link
+                                    to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
+                                    params={{
+                                      organizationSlug: props.organizationSlug,
+                                      projectSlug: props.projectSlug,
+                                      targetSlug: props.targetSlug,
+                                    }}
+                                    search={{ operationString: edge.node.body }}
+                                  />
+                                ),
+                              },
+                              {
+                                label: 'Show Insights',
+                                render: (
+                                  <Link
+                                    to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
+                                    params={{
+                                      organizationSlug: props.organizationSlug,
+                                      projectSlug: props.projectSlug,
+                                      targetSlug: props.targetSlug,
+                                      operationName: edge.node.operationName ?? edge.node.hash,
+                                      operationHash: edge.node.insightsHash,
+                                    }}
+                                  />
+                                ),
+                              },
+                            ],
+                          ]}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}

@@ -3,11 +3,11 @@ import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
+import { Badge } from '@/components/base/badge/badge';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
-import { DeploymentStatusLabel } from '@/components/ui/deployment-status';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -21,12 +21,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sortable, TimeAgo } from '@/components/v2';
+import { formatTimeAgo } from '@/components/ui/time-ago';
+import { Sortable } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { Link, useNavigate } from '@tanstack/react-router';
 
 export const TargetAppsSortSchema = z.object({
@@ -158,12 +157,14 @@ function AppTableRow(props: {
         </Link>
       </TableCell>
       <TableCell className="hidden text-center sm:table-cell">
-        <Badge className="text-xs" variant="secondary">
-          <DeploymentStatusLabel
-            status={appDeployment.status}
-            retiredAt={appDeployment.retiredAt}
-          />
-        </Badge>
+        <Badge
+          content={
+            appDeployment.status === 'retired' && appDeployment.retiredAt
+              ? `${appDeployment.status} (${format(appDeployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})`
+              : appDeployment.status
+          }
+          variants={{ variant: 'secondary' }}
+        />
       </TableCell>
       <TableCell className="text-center">{appDeployment.totalDocumentCount}</TableCell>
       <TableCell className="hidden text-center sm:table-cell">
@@ -182,31 +183,26 @@ function AppTableRow(props: {
       </TableCell>
       <TableCell className="text-end">
         {appDeployment.lastUsed ? (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge className="cursor-help text-xs" variant="outline">
-                  <TimeAgo date={appDeployment.lastUsed} />
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{format(appDeployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip
+            trigger={
+              <span className="inline-flex cursor-help">
+                <Badge
+                  content={formatTimeAgo(new Date(appDeployment.lastUsed), Date.now())}
+                  variants={{ variant: 'outline' }}
+                />
+              </span>
+            }
+            content={format(appDeployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
+          />
         ) : (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge className="cursor-help text-xs" variant="outline">
-                  No data
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>There was no usage reported yet.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip
+            trigger={
+              <span className="inline-flex cursor-help">
+                <Badge content="No data" variants={{ variant: 'outline' }} />
+              </span>
+            }
+            content="There was no usage reported yet."
+          />
         )}
       </TableCell>
     </TableRow>
@@ -346,15 +342,10 @@ function TargetAppsView(props: {
                       sortOrder={getSortOrder('LAST_USED')}
                       onClick={() => handleSortClick('LAST_USED')}
                     >
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger className="cursor-help">Last used</TooltipTrigger>
-                          <TooltipContent className="max-w-64 text-start">
-                            Last time a request was sent for this app. Requires usage reporting
-                            being set up.
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <Tooltip
+                        trigger="Last used"
+                        content="Last time a request was sent for this app. Requires usage reporting being set up."
+                      />
                     </Sortable>
                   </TableHead>
                 </TableRow>

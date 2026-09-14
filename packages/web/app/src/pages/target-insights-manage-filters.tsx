@@ -6,7 +6,7 @@ import { Button as BaseButton } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
-import { Menu, MenuItem } from '@/components/base/floating/menu/menu';
+import { Menu } from '@/components/base/floating/menu/menu';
 import { PageLead } from '@/components/base/page-lead';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -237,7 +237,6 @@ function NameCell({
       />
       <Button
         variant="primary"
-        size="sm"
         onClick={() => void handleRename()}
         disabled={
           updateResult.fetching || !renameValue.trim() || renameValue.trim() === filter.name
@@ -265,7 +264,7 @@ function VisibilityCell({ filter }: { filter: SavedFilterNode }) {
       )}
       {filter.usedByAlertRulesCount > 0 && (
         <span
-          className="text-neutral-10 ml-1.5 inline-flex items-center gap-1 text-[13px]"
+          className="text-neutral-10 text-control ml-1.5 inline-flex items-center gap-1"
           title={`Used by ${filter.usedByAlertRulesCount} alert rule${
             filter.usedByAlertRulesCount === 1 ? '' : 's'
           }. Detach it from those alerts to delete.`}
@@ -305,9 +304,9 @@ function ActionsCell({
         align="end"
         sections={[
           [
-            <MenuItem
-              key="view"
-              render={
+            {
+              label: 'View in Insights',
+              render: (
                 <Link
                   to="/$organizationSlug/$projectSlug/$targetSlug/insights"
                   params={{ organizationSlug, projectSlug, targetSlug }}
@@ -320,43 +319,23 @@ function ActionsCell({
                     },
                   })}
                 />
-              }
-            >
-              View in Insights
-            </MenuItem>,
-            // Only shared filters can be attached to an alert, so don't offer
-            // "Create alert" from a private one (the alert form would reject it).
-            filter.visibility === SavedFilterVisibilityType.Shared && (
-              <MenuItem
-                key="create-alert"
-                render={
-                  <Link
-                    to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
-                    params={{ organizationSlug, projectSlug, targetSlug }}
-                    search={{ savedFilterId: filter.id }}
-                  />
-                }
-              >
-                Create alert
-              </MenuItem>
-            ),
-            filter.viewerCanUpdate && (
-              <MenuItem key="rename" onClick={onRename}>
-                Rename
-              </MenuItem>
-            ),
+              ),
+            },
+            filter.visibility === SavedFilterVisibilityType.Shared && {
+              label: 'Create alert',
+              render: (
+                <Link
+                  to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
+                  params={{ organizationSlug, projectSlug, targetSlug }}
+                  search={{ savedFilterId: filter.id }}
+                />
+              ),
+            },
+            filter.viewerCanUpdate && { label: 'Rename', onClick: onRename },
             filter.viewerCanDelete &&
-              (filter.usedByAlertRulesCount > 0 ? (
-                // In use by an alert -> deletion is blocked (the server also enforces
-                // this). Disable the item; the row's "In use" indicator explains why.
-                <MenuItem key="delete" variant="destructiveAction" disabled>
-                  Delete
-                </MenuItem>
-              ) : (
-                <MenuItem key="delete" variant="destructiveAction" onClick={onDelete}>
-                  Delete
-                </MenuItem>
-              )),
+              (filter.usedByAlertRulesCount > 0
+                ? { label: 'Delete', variant: 'destructiveAction', disabled: true }
+                : { label: 'Delete', variant: 'destructiveAction', onClick: onDelete }),
           ],
         ]}
       />
@@ -693,7 +672,6 @@ function SavedFilterRowFilters({
         <div className="mt-3 flex gap-2">
           <Button
             variant={hasChanges ? 'primary' : 'default'}
-            size="sm"
             onClick={handleSave}
             disabled={updateResult.fetching || !hasChanges}
           >
@@ -701,7 +679,6 @@ function SavedFilterRowFilters({
           </Button>
           <Button
             variant="default"
-            size="sm"
             onClick={handleCancel}
             disabled={updateResult.fetching || !hasChanges}
           >

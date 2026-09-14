@@ -1,4 +1,4 @@
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { Select } from '@/components/base/floating/select/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
 
@@ -21,16 +21,13 @@ export function OrganizationSelector(props: {
     props.organizations,
   )?.nodes;
 
-  const currentOrganization = organizations?.find(
-    node => node.slug === props.currentOrganizationSlug,
-  );
-
   if (!organizations) {
     return <div className="bg-neutral-5 h-5 w-48 animate-pulse rounded-full" />;
   }
 
   return (
     <Select
+      options={organizations.map(org => ({ value: org.slug, label: org.slug }))}
       value={props.currentOrganizationSlug}
       onValueChange={slug => {
         void router.navigate({
@@ -40,23 +37,7 @@ export function OrganizationSelector(props: {
           },
         });
       }}
-    >
-      <SelectTrigger variant="default" data-cy="organization-picker-trigger">
-        <div className="font-medium" data-cy="organization-picker-current">
-          {currentOrganization?.slug}
-        </div>
-      </SelectTrigger>
-      <SelectContent>
-        {organizations.map(org => (
-          <SelectItem
-            key={org.slug}
-            value={org.slug}
-            data-cy={`organization-picker-option-${org.slug}`}
-          >
-            {org.slug}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      data-cy="organization-picker-trigger"
+    />
   );
 }

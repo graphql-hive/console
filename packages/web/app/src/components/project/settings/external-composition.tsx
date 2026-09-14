@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { CombinedError, useQuery } from 'urql';
 import { z } from 'zod';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Button } from '@/components/ui/button';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import {
@@ -14,7 +15,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 import { useNotifications } from '@/lib/hooks';
@@ -127,61 +127,71 @@ const ExternalCompositionStatus = ({
   }, [testState]);
 
   return (
-    <TooltipProvider delayDuration={100}>
+    <>
       {testState === TestState.LOADING ? (
-        <Tooltip>
-          <TooltipTrigger>
-            <UpdateIcon
-              className="text-neutral-10 size-5 animate-spin cursor-default"
-              onClick={e => e.preventDefault()}
-            />
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Connecting...</TooltipContent>
-        </Tooltip>
+        <Tooltip
+          trigger={
+            <span className="inline-flex">
+              <UpdateIcon
+                className="text-neutral-10 size-5 animate-spin cursor-default"
+                onClick={e => e.preventDefault()}
+              />
+            </span>
+          }
+          content="Connecting..."
+          side="bottom"
+        />
       ) : (
-        <Tooltip>
-          <TooltipTrigger>
-            <ReloadIcon
-              className="size-5"
+        <Tooltip
+          trigger={
+            <button
+              type="button"
+              aria-label="Execute test"
               onClick={e => {
                 e.preventDefault();
                 setHidden(true);
                 executeTestQuery();
               }}
-            />
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="mr-1">
-            Execute test
-          </TooltipContent>
-        </Tooltip>
+            >
+              <ReloadIcon className="size-5" />
+            </button>
+          }
+          content="Execute test"
+          side="bottom"
+        />
       )}
       {testState === TestState.ERROR ? (
-        <Tooltip defaultOpen>
-          <TooltipTrigger>
-            <Cross2Icon
-              className="size-5 cursor-default text-red-500"
-              onClick={e => e.preventDefault()}
-            />
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-sm">
-            {error}
-          </TooltipContent>
-        </Tooltip>
+        <Tooltip
+          defaultOpen
+          trigger={
+            <span className="inline-flex">
+              <Cross2Icon
+                className="size-5 cursor-default text-red-500"
+                onClick={e => e.preventDefault()}
+              />
+            </span>
+          }
+          content={error}
+          side="bottom"
+          maxWidth="md"
+        />
       ) : null}
       {testState === TestState.SUCCESS && !hidden ? (
-        <Tooltip>
-          <TooltipTrigger>
-            <CheckIcon
-              className="size-5 cursor-default text-green-500"
-              onClick={e => e.preventDefault()}
-            />
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-sm">
-            Service is available
-          </TooltipContent>
-        </Tooltip>
+        <Tooltip
+          trigger={
+            <span className="inline-flex">
+              <CheckIcon
+                className="size-5 cursor-default text-green-500"
+                onClick={e => e.preventDefault()}
+              />
+            </span>
+          }
+          content="Service is available"
+          side="bottom"
+          maxWidth="md"
+        />
       ) : null}
-    </TooltipProvider>
+    </>
   );
 };
 

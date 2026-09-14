@@ -187,10 +187,10 @@ function PlanBody(props: {
           ) : null}
         </div>
         <div className="text-neutral-12 text-3xl font-bold">{props.price}</div>
-        <div className="text-neutral-10 text-[13px]">{props.description}</div>
+        <div className="text-neutral-10 text-control">{props.description}</div>
         <div className="mt-6 flex flex-col gap-2">
           {props.features.map(feature => (
-            <div key={feature} className="text-neutral-11 flex items-start gap-2 text-[13px]">
+            <div key={feature} className="text-neutral-11 text-control flex items-start gap-2">
               <Check className="text-neutral-10 mt-0.5 size-4 shrink-0" />
               {feature}
             </div>

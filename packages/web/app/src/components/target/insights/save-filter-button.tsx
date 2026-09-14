@@ -2,16 +2,10 @@ import { useCallback, useState } from 'react';
 import { useMutation } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { Select } from '@/components/base/floating/select/select';
 import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
@@ -191,7 +185,7 @@ function CreateFilterButton({
       onOpenChange={setOpen}
       align="start"
       title="Save to filter collections"
-      trigger={<BaseButton label="Save this filter view" variant="action" />}
+      trigger={<BaseButton label="Save this filter view" variant="action" size="compact" />}
       content={
         <div className="space-y-3">
           <div>
@@ -208,19 +202,18 @@ function CreateFilterButton({
           </div>
           <div>
             <Select
+              options={[
+                { value: SavedFilterVisibilityType.Private, label: 'My views' },
+                ...(viewerCanShare
+                  ? [{ value: SavedFilterVisibilityType.Shared, label: 'Shared views' }]
+                  : []),
+              ]}
               value={visibility}
               onValueChange={v => setVisibility(v as SavedFilterVisibilityType)}
-            >
-              <SelectTrigger variant="inset">
-                <SelectValue placeholder="Save location" />
-              </SelectTrigger>
-              <SelectContent variant="inset">
-                <SelectItem value={SavedFilterVisibilityType.Private}>My views</SelectItem>
-                {viewerCanShare && (
-                  <SelectItem value={SavedFilterVisibilityType.Shared}>Shared views</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+              placeholder="Save location"
+              onSurface="raised"
+              width="full"
+            />
           </div>
           <Button
             variant="primary"

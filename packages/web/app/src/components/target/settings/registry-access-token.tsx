@@ -4,6 +4,7 @@ import { AnyVariables, useMutation, UseMutationState } from 'urql';
 import { z } from 'zod';
 import { PermissionScopeItem } from '@/components/organization/Permissions';
 import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,6 @@ import { Input } from '@/components/ui/input';
 import { InputCopy } from '@/components/ui/input-copy';
 import { useToast } from '@/components/ui/use-toast';
 import { Accordion } from '@/components/v2/accordion';
-import { Tag } from '@/components/v2/tag';
 import { graphql } from '@/gql';
 import { TargetAccessScope } from '@/gql/graphql';
 import { RegistryAccessScope } from '@/lib/access/common';
@@ -170,10 +170,10 @@ export function CreatedTokenContent(props: {
         <DialogTitle>Token successfully created!</DialogTitle>
         <DialogDescription className="flex flex-col gap-5">
           <InputCopy value={props.mutation.data.createToken.ok.secret} />
-          <Tag color="green">
+          <Callout type="info">
             This is your unique API key and it is non-recoverable. If you lose this key, you will
             need to create a new one.
-          </Tag>
+          </Callout>
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>

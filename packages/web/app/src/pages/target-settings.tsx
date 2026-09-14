@@ -14,8 +14,10 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { z } from 'zod';
+import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
+import { Switch } from '@/components/base/switch/switch';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { SchemaEditor } from '@/components/schema-editor';
@@ -48,9 +50,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { useToast } from '@/components/ui/use-toast';
 import { Combobox } from '@/components/v2/combobox';
-import { Switch } from '@/components/v2/switch';
 import { Table, TBody, Td, Tr } from '@/components/v2/table';
-import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
 import {
@@ -744,7 +744,6 @@ const BreakingChanges = (props: {
               <Spinner />
             ) : (
               <Switch
-                className="shrink-0"
                 checked={considerDangerousAsBreaking}
                 onCheckedChange={async failDiffOnDangerousChange => {
                   await updateTargetDangerousChangeClassification({
@@ -797,7 +796,6 @@ const BreakingChanges = (props: {
                 <Spinner />
               ) : (
                 <Switch
-                  className="shrink-0"
                   checked={isEnabled}
                   onCheckedChange={async isEnabled => {
                     await updateValidation({
@@ -1047,17 +1045,12 @@ const BreakingChanges = (props: {
               </div>
 
               <div className="text-sm">
-                <Tag color="yellow" className="py-0">
-                  0%
-                </Tag>{' '}
-                - the field was used at least once in past 30 days
+                <Badge content="0%" variants={{ variant: 'warning' }} /> - the field was used at
+                least once in past 30 days
               </div>
               <div className="text-sm">
-                <Tag color="yellow" className="py-0">
-                  10%
-                </Tag>{' '}
-                - the field was requested by more than 10% of all GraphQL operations in recent 30
-                days
+                <Badge content="10%" variants={{ variant: 'warning' }} /> - the field was requested
+                by more than 10% of all GraphQL operations in recent 30 days
               </div>
             </div>
             <Button type="submit" disabled={isSubmitting}>
@@ -1210,7 +1203,6 @@ const AppDeploymentProtection = (props: {
               <Spinner />
             ) : (
               <Switch
-                className="shrink-0"
                 checked={isEnabled}
                 onCheckedChange={async isEnabled => {
                   await updateProtection({

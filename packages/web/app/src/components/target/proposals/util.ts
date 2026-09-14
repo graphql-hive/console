@@ -1,16 +1,17 @@
 import { parse, print } from 'graphql';
 import { SchemaProposalStage } from '@/gql/graphql';
 
+/** The StatusDot colour for a proposal stage. */
 export function stageToColor(stage: SchemaProposalStage | string) {
   switch (stage) {
     case SchemaProposalStage.Closed:
-      return 'red' as const;
+      return 'critical' as const;
     case SchemaProposalStage.Draft:
-      return 'gray' as const;
+      return 'neutral' as const;
     case SchemaProposalStage.Open:
-      return 'orange' as const;
+      return 'warning' as const;
     default:
-      return 'green' as const;
+      return 'success' as const;
   }
 }
 

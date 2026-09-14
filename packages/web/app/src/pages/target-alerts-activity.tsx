@@ -251,6 +251,7 @@ function ActivityView(props: {
                 <Button
                   label={dateRangeController.selectedPreset.label}
                   variant="default"
+                  size="compact"
                   rightIcon={{ icon: ChevronDown, withSeparator: true }}
                 />
               }

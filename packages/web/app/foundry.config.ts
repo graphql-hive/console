@@ -16,15 +16,24 @@ export default defineConfig({
       label: 'Base',
       children: [
         {
+          label: 'Foundations',
+          children: [{ label: 'TypeScale' }, { label: 'Focus' }, { label: 'SemanticColors' }],
+        },
+        {
           label: 'Primitives',
           children: [
             { label: 'Accordion' },
-            { label: 'Badge' },
+            { label: 'Avatar', children: [{ label: 'Component Examples' }] },
+            { label: 'Badge', children: [{ label: 'Component Examples' }] },
+            { label: 'StatusDot' },
             { label: 'Button' },
             { label: 'Card' },
             { label: 'StatCard' },
             { label: 'Input' },
             { label: 'CopyChip' },
+            { label: 'Collapsible', children: [{ label: 'Component Examples' }] },
+            { label: 'ScrollArea', children: [{ label: 'Component Examples' }] },
+            { label: 'Separator', children: [{ label: 'Component Examples' }] },
           ],
         },
         {
@@ -35,7 +44,9 @@ export default defineConfig({
             // transcriptions hang underneath it rather than in a separate top-level group,
             // so a change can be judged against both without leaving the subtree.
             { label: 'RadioGroup', children: [{ label: 'Component Examples' }] },
-            { label: 'Switch' },
+            { label: 'Switch', children: [{ label: 'Component Examples' }] },
+            { label: 'Slider', children: [{ label: 'Component Examples' }] },
+            { label: 'ToggleGroup', children: [{ label: 'Component Examples' }] },
             { label: 'Form' },
           ],
         },
@@ -43,18 +54,36 @@ export default defineConfig({
           label: 'Floating',
           children: [
             { label: 'Menu' },
-            { label: 'Popover' },
-            { label: 'Select' },
+            { label: 'Popover', children: [{ label: 'Component Examples' }] },
+            { label: 'Select', children: [{ label: 'Component Examples' }] },
             { label: 'FilterDropdown' },
             { label: 'FilterMenu' },
             { label: 'Search' },
+            { label: 'Tooltip', children: [{ label: 'Component Examples' }] },
+            { label: 'PortalContainer' },
           ],
         },
         // Data and layout
         { label: 'DataTable' },
         { label: 'DescriptionList' },
-        { label: 'PageLead' },
-        { label: 'NotFound' },
+      ],
+    },
+    // The `ui/` and `v2/` primitives queued for migration to `base/`, rendered as they ship
+    // today. Each entry transcribes every real call site, so a replacement can be judged
+    // against the current thing rather than against invented examples, and so there is a
+    // coverage checklist to migrate through. Entries are deleted as their component lands.
+    {
+      label: 'Inventory',
+      children: [
+        { label: 'Button' },
+        { label: 'DataLayout' },
+        { label: 'Form' },
+        { label: 'Input' },
+        { label: 'Overlays' },
+        { label: 'Presentational' },
+        { label: 'Textarea' },
+        { label: 'Toast' },
+        { label: 'V2Leftovers' },
       ],
     },
     // App components, as opposed to the design-system primitives above. Each preview
@@ -62,7 +91,7 @@ export default defineConfig({
     // compositions that actually ship.
     {
       label: 'Components',
-      children: [{ label: 'BillingPlanPicker' }],
+      children: [{ label: 'BillingPlanPicker' }, { label: 'PageLead' }, { label: 'NotFound' }],
     },
   ],
   theme: {

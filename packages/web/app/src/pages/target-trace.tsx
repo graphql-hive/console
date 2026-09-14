@@ -21,16 +21,17 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Badge } from '@/components/base/badge/badge';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
   SheetContent,
@@ -40,7 +41,6 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
@@ -104,7 +104,7 @@ function TraceView(props: {
           </div>
         </div>
       </div>
-      <ScrollArea className="grow">
+      <ScrollArea fill>
         <div>
           <TraceTree
             leftPanelWidth={width}
@@ -516,12 +516,9 @@ function SpanNode(props: SpanNodeProps) {
             >
               <span className="mr-1">{span.name}</span>
               {hasException && (
-                <Badge
-                  variant="outline"
-                  className="ml-auto mr-1 rounded-sm border-0 bg-red-900/30 px-1 font-mono text-xs font-medium uppercase text-red-400"
-                >
-                  Error
-                </Badge>
+                <span className="ml-auto mr-1 inline-flex">
+                  <Badge content="Error" variants={{ variant: 'critical', mono: true }} />
+                </span>
               )}
             </div>
             {span.spanAttributes['hive.gateway.upstream.subgraph.name'] ? (
@@ -533,8 +530,10 @@ function SpanNode(props: SpanNodeProps) {
             ) : null}
           </div>
           <div className="relative w-full">
-            <Tooltip disableHoverableContent delayDuration={100}>
-              <TooltipTrigger asChild>
+            <Tooltip
+              disableHoverablePopup
+              side="bottom"
+              trigger={
                 <Link
                   className={cn(
                     'relative flex h-full grow cursor-pointer items-center overflow-hidden',
@@ -557,13 +556,9 @@ function SpanNode(props: SpanNodeProps) {
                     durationStr={formatNanoseconds(props.span.durationNs)}
                   />
                 </Link>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[200px]"
-              >
-                {/* Content */}
-                <div className="space-y-3">
+              }
+              content={
+                <div className="min-w-[200px] space-y-3">
                   <div className="grid grid-cols-2 gap-y-2">
                     <div className="text-neutral-10">Duration</div>
                     <div className="text-right font-mono">
@@ -618,8 +613,8 @@ function SpanNode(props: SpanNodeProps) {
                     )}
                   </div>
                 </div>
-              </TooltipContent>
-            </Tooltip>
+              }
+            />
 
             {props.span.events.map(event => {
               if (highlightedEvent && event.id !== highlightedEvent.eventId) {
@@ -634,8 +629,11 @@ function SpanNode(props: SpanNodeProps) {
               const isError = event.name === 'exception';
 
               return (
-                <Tooltip delayDuration={100} key={event.id}>
-                  <TooltipTrigger asChild>
+                <Tooltip
+                  key={event.id}
+                  side="bottom"
+                  maxWidth="lg"
+                  trigger={
                     <Link
                       className={cn(
                         'absolute inset-y-0 z-50 translate-x-[-50%] cursor-pointer px-1',
@@ -666,12 +664,9 @@ function SpanNode(props: SpanNodeProps) {
                         </div>
                       </div>
                     </Link>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    className="text-neutral-11 overflow-hidden rounded-lg border-none p-1 text-xs shadow-lg sm:min-w-[200px]"
-                  >
-                    <div className="z-20">
+                  }
+                  content={
+                    <div className="min-w-[200px]">
                       <ExceptionTeaser
                         type={String(event.attributes['exception.type'] ?? '')}
                         message={String(event.attributes['exception.message'] ?? '')}
@@ -679,8 +674,8 @@ function SpanNode(props: SpanNodeProps) {
                         name={event.name}
                       />
                     </div>
-                  </TooltipContent>
-                </Tooltip>
+                  }
+                />
               );
             })}
           </div>
@@ -799,7 +794,7 @@ export function TraceSheet(props: TraceSheetProps) {
 
   return (
     <div className="h-full">
-      <TooltipProvider>
+      <>
         <ResizablePanelGroup direction="vertical">
           <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
             <WidthSyncProvider defaultWidth={251}>
@@ -831,11 +826,9 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>Attributes</div>
                       <div>
                         <Badge
-                          variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                        >
-                          {spanAttributes.length}
-                        </Badge>
+                          content={String(spanAttributes.length)}
+                          variants={{ variant: 'secondary', size: 'sm' }}
+                        />
                       </div>
                     </div>
                   </TabButton>
@@ -847,11 +840,9 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>Resource Attributes</div>
                       <div>
                         <Badge
-                          variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                        >
-                          {resourceAttributes.length}
-                        </Badge>
+                          content={String(resourceAttributes.length)}
+                          variants={{ variant: 'secondary', size: 'sm' }}
+                        />
                       </div>
                     </div>
                   </TabButton>
@@ -863,11 +854,9 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>Events</div>
                       <div>
                         <Badge
-                          variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                        >
-                          {events.length}
-                        </Badge>
+                          content={String(events.length)}
+                          variants={{ variant: 'secondary', size: 'sm' }}
+                        />
                       </div>
                     </div>
                   </TabButton>
@@ -881,7 +870,7 @@ export function TraceSheet(props: TraceSheetProps) {
                   </TabButton>
                 </div>
               </div>
-              <ScrollArea className="relative grow">
+              <ScrollArea fill>
                 <div className="h-full">
                   {activeView === 'span-attributes' ? (
                     <div>
@@ -982,7 +971,7 @@ export function TraceSheet(props: TraceSheetProps) {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
-      </TooltipProvider>
+      </>
       {props.activeSpanId && (
         <SpanSheet
           span={trace.spans.find(trace => trace.id === props.activeSpanId) ?? null}
@@ -1103,14 +1092,9 @@ function TargetInsightsNewPageContent(props: {
                   </span>
                 </div>
                 <Badge
-                  variant="outline"
-                  className={cn(
-                    'rounded-sm border-0 px-1 font-medium uppercase',
-                    trace.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
-                  )}
-                >
-                  {trace.success ? 'Ok' : 'Error'}
-                </Badge>
+                  content={trace.success ? 'Ok' : 'Error'}
+                  variants={{ variant: trace.success ? 'success' : 'critical' }}
+                />
                 <span className="text-neutral-11 font-mono uppercase">
                   {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
                 </span>
@@ -1531,11 +1515,9 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>Span Attributes</div>
                     <div>
                       <Badge
-                        variant="secondary"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                      >
-                        {Array.from(Object.keys(span.spanAttributes)).length}
-                      </Badge>
+                        content={String(Object.keys(span.spanAttributes).length)}
+                        variants={{ variant: 'secondary', size: 'sm' }}
+                      />
                     </div>
                   </div>
                 </TabButton>
@@ -1547,11 +1529,9 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>Resource Attributes</div>
                     <div>
                       <Badge
-                        variant="secondary"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                      >
-                        {resourceAttributes.length}
-                      </Badge>
+                        content={String(resourceAttributes.length)}
+                        variants={{ variant: 'secondary', size: 'sm' }}
+                      />
                     </div>
                   </div>
                 </TabButton>
@@ -1563,11 +1543,9 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>Events</div>
                     <div>
                       <Badge
-                        variant="secondary"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                      >
-                        {span.events.length}
-                      </Badge>
+                        content={String(span.events.length)}
+                        variants={{ variant: 'secondary', size: 'sm' }}
+                      />
                     </div>
                   </div>
                 </TabButton>
@@ -1583,7 +1561,7 @@ function SpanSheet(props: SpanSheetProps) {
                 )}
               </div>
             </div>
-            <div className="flex-1 overflow-y-scroll">
+            <ScrollArea fill>
               {activeView === 'span-attributes' && (
                 <div>
                   {spanAttributes.length > 0 ? (
@@ -1670,7 +1648,7 @@ function SpanSheet(props: SpanSheetProps) {
                   code={span.spanAttributes['graphql.document'] as string}
                 />
               )}
-            </div>
+            </ScrollArea>
           </div>
         </div>
         <SheetFooter className="mt-auto border-t p-2">
@@ -1710,16 +1688,15 @@ function AttributeRow(props: AttributeRowProps) {
   const actionsNode = (
     <span className="text-neutral-12 ml-auto mr-0 flex">
       <CopyIconButton value={props.value} label="Copy attribute value" />
-      <TooltipProvider>
-        <Tooltip delayDuration={0} disableHoverableContent>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon-xs" onClick={() => setIsExpanded(bool => !bool)}>
-              {isExpanded ? <ChevronUp size="14" /> : <ChevronDown size="14" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent className="text-xs">{isExpanded ? 'Collapse' : 'Expand'}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip
+        trigger={
+          <Button variant="ghost" size="icon-xs" onClick={() => setIsExpanded(bool => !bool)}>
+            {isExpanded ? <ChevronUp size="14" /> : <ChevronDown size="14" />}
+          </Button>
+        }
+        content={isExpanded ? 'Collapse' : 'Expand'}
+        disableHoverablePopup
+      />
     </span>
   );
 
@@ -1737,7 +1714,7 @@ function AttributeRow(props: AttributeRowProps) {
       </div>
       <div
         className={cn(
-          'text-neutral-12 w-full flex-1 pt-2 font-mono text-[10px]',
+          'text-neutral-12 text-2xs w-full flex-1 pt-2 font-mono',
           !isExpanded && 'overflow-hidden text-ellipsis text-nowrap pt-0',
         )}
       >
@@ -1758,16 +1735,18 @@ function ExceptionTeaser(props: {
     <div className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20">
       <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
         <span className="font-mono text-xs font-medium text-red-300">{props.type}</span>
-        <Badge variant="outline" className="border-red-700 bg-red-900 text-[10px] text-red-300">
-          {props.name}
-        </Badge>
+        <Badge content={props.name} variants={{ variant: 'critical', size: 'sm', mono: true }} />
       </div>
       <div className="p-3 text-xs">
         <p className="text-neutral-11">{props.message}</p>
         {props.stacktrace && (
-          <pre className="bg-neutral-1/50 text-neutral-10 mt-2 overflow-x-auto rounded-sm p-2 font-mono text-[10px] leading-tight">
-            {props.stacktrace}
-          </pre>
+          <div className="bg-neutral-1/50 mt-2 rounded-sm">
+            <ScrollArea axis="horizontal">
+              <pre className="text-neutral-10 text-2xs p-2 font-mono leading-tight">
+                {props.stacktrace}
+              </pre>
+            </ScrollArea>
+          </div>
         )}
       </div>
     </div>
