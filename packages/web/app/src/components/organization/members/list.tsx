@@ -352,7 +352,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
               <Tooltip
                 trigger={
                   <span className="inline-flex">
-                    <Badge content="Disabled" variants={{ variant: 'destructive' }} />
+                    <Badge content="Disabled" variants={{ variant: 'critical' }} />
                   </span>
                 }
                 content="This user is disabled."

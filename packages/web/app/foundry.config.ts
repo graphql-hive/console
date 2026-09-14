@@ -17,14 +17,15 @@ export default defineConfig({
       children: [
         {
           label: 'Foundations',
-          children: [{ label: 'TypeScale' }, { label: 'Focus' }],
+          children: [{ label: 'TypeScale' }, { label: 'Focus' }, { label: 'SemanticColors' }],
         },
         {
           label: 'Primitives',
           children: [
             { label: 'Accordion' },
             { label: 'Avatar', children: [{ label: 'Component Examples' }] },
-            { label: 'Badge' },
+            { label: 'Badge', children: [{ label: 'Component Examples' }] },
+            { label: 'StatusDot' },
             { label: 'Button' },
             { label: 'Card' },
             { label: 'StatCard' },
