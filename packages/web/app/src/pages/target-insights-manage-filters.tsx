@@ -237,7 +237,6 @@ function NameCell({
       />
       <Button
         variant="primary"
-        size="sm"
         onClick={() => void handleRename()}
         disabled={
           updateResult.fetching || !renameValue.trim() || renameValue.trim() === filter.name
@@ -673,7 +672,6 @@ function SavedFilterRowFilters({
         <div className="mt-3 flex gap-2">
           <Button
             variant={hasChanges ? 'primary' : 'default'}
-            size="sm"
             onClick={handleSave}
             disabled={updateResult.fetching || !hasChanges}
           >
@@ -681,7 +679,6 @@ function SavedFilterRowFilters({
           </Button>
           <Button
             variant="default"
-            size="sm"
             onClick={handleCancel}
             disabled={updateResult.fetching || !hasChanges}
           >

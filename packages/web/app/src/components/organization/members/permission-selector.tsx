@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { InfoIcon, TriangleAlert } from 'lucide-react';
+import { Select } from '@/components/base/floating/select/select';
 import {
   Accordion,
   AccordionContent,
@@ -7,13 +8,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
@@ -224,6 +218,10 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         )
                       )}
                       <Select
+                        options={[
+                          { value: 'not-selected', label: 'Not Selected' },
+                          { value: 'allow', label: 'Allow' },
+                        ]}
                         disabled={
                           props.isReadOnly ||
                           permission.isReadOnly ||
@@ -251,15 +249,8 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                           }
                           setFocusedPermission(null);
                         }}
-                      >
-                        <SelectTrigger className="w-[150px] shrink-0">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="not-selected">Not Selected</SelectItem>
-                          <SelectItem value="allow">Allow</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        width="sm"
+                      />
                     </div>
                     {focusedPermission === permission.id && (
                       <div className="pointer-events-none absolute bottom-[3px] left-[-7px] right-0 top-[-4px] rounded-sm border border-yellow-400" />

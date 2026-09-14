@@ -44,7 +44,7 @@ export default defineConfig({
           children: [
             { label: 'Menu' },
             { label: 'Popover' },
-            { label: 'Select' },
+            { label: 'Select', children: [{ label: 'Component Examples' }] },
             { label: 'FilterDropdown' },
             { label: 'FilterMenu' },
             { label: 'Search' },
@@ -71,7 +71,6 @@ export default defineConfig({
         { label: 'Overlays' },
         { label: 'Presentational' },
         { label: 'Popover' },
-        { label: 'Select' },
         { label: 'Textarea' },
         { label: 'Toast' },
         { label: 'Tooltip' },

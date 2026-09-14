@@ -285,7 +285,7 @@ export function AlertEventDetail({
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/alerts/$ruleId"
             params={{ organizationSlug, projectSlug, targetSlug, ruleId }}
-            className={buttonVariants({ variant: 'primary' })}
+            className={buttonVariants({ variant: 'primary', layout: 'label' })}
           >
             <span className="px-2.5 py-1.5 text-[13px]">View alert rule detail</span>
             <span className="border-l-current/20 border-l px-2 py-1.5">

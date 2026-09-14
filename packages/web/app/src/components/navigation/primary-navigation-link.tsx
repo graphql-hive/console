@@ -10,7 +10,7 @@ export function PrimaryNavigationLink({ linkProps, linkText }: PrimaryNavigation
     <Link
       to={linkProps.to}
       params={linkProps.params}
-      className="text-neutral-11 max-w-[200px] shrink-0 truncate font-medium"
+      className="text-neutral-11 max-w-[200px] shrink-0 truncate text-[13px] font-medium"
     >
       {linkText}
     </Link>

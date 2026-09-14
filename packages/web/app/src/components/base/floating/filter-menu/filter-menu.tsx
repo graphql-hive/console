@@ -87,6 +87,7 @@ export function FilterMenu({
       <Button
         label={activeLabel}
         variant="default"
+        size="compact"
         rightIcon={{
           icon: X,
           action: onClearActive,
@@ -98,6 +99,7 @@ export function FilterMenu({
       <Button
         label="Filter"
         variant="default"
+        size="compact"
         rightIcon={{ icon: ListFilter, withSeparator: true }}
       />
     );

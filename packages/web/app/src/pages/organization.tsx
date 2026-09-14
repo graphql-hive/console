@@ -3,6 +3,7 @@ import { endOfDay, formatISO, startOfDay } from 'date-fns';
 import { MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { z } from 'zod';
+import { Select } from '@/components/base/floating/select/select';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { ProjectCard } from '@/components/organization/project-card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { graphql } from '@/gql';
 import { subDays } from '@/lib/date-time';
@@ -217,38 +217,33 @@ function OrganizationPageContent(
                     placeholder="Search..."
                     defaultValue={props.search}
                     onChange={onSearchChange}
-                    className="dark:bg-neutral-3 bg-neutral-2 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
+                    className="dark:bg-neutral-3 bg-neutral-2 h-9 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
                   />
                 </div>
                 <Separator orientation="vertical" className="mx-4 h-8" />
-                <Select value={props.sortBy ?? 'requests'} onValueChange={onRequestsValueChange}>
-                  <SelectTrigger>
-                    {props.sortBy === 'versions'
-                      ? 'Schema Versions'
-                      : props.sortBy === 'name'
-                        ? 'Name'
-                        : 'Requests'}
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="requests">
-                      <div className="font-medium">Requests</div>
-                      <div className="text-neutral-10 text-xs">
-                        GraphQL requests made in the last {days} days.
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="versions">
-                      <div className="font-medium">Schema Versions</div>
-                      <div className="text-neutral-10 text-xs">
-                        Schemas published in last {days} days.
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="name">
-                      <div className="font-medium">Name</div>
-                      <div className="text-neutral-10 text-xs">Sort by project name.</div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button className="shrink-0" variant="outline" size="icon" onClick={onSortClick}>
+                <Select
+                  options={[
+                    {
+                      value: 'requests',
+                      label: 'Requests',
+                      description: `GraphQL requests made in the last ${days} days.`,
+                    },
+                    {
+                      value: 'versions',
+                      label: 'Schema Versions',
+                      description: `Schemas published in last ${days} days.`,
+                    },
+                    { value: 'name', label: 'Name', description: 'Sort by project name.' },
+                  ]}
+                  value={props.sortBy ?? 'requests'}
+                  onValueChange={onRequestsValueChange}
+                />
+                <Button
+                  className="size-9 shrink-0"
+                  variant="outline"
+                  size="icon"
+                  onClick={onSortClick}
+                >
                   {props.sortOrder === 'asc' ? (
                     <MoveUpIcon className="size-4" />
                   ) : (

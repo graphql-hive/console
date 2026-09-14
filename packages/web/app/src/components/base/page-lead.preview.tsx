@@ -30,11 +30,7 @@ export const WithAction = createPreview(() => (
     <PageLead
       title="Access tokens"
       description="Tokens let CI and the CLI publish schemas on your behalf."
-      titleAccessory={
-        <Button variant="primary" size="sm">
-          Create token
-        </Button>
-      }
+      titleAccessory={<Button variant="primary">Create token</Button>}
     />
   </div>
 ));
