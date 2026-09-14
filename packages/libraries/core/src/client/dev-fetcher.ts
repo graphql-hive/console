@@ -1,5 +1,5 @@
-import { readFile } from 'node:fs/promises';
-import { resolve as resolvePath } from 'node:path';
+import { readFile } from 'fs/promises';
+import { resolve as resolvePath } from 'path';
 import {
   buildClientSchema,
   getIntrospectionQuery,
