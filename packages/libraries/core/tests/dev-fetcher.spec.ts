@@ -230,6 +230,46 @@ test('resolves a relative schema file path against `cwd`', async () => {
   expect(supergraphSdl).toContain('hello');
 });
 
+test('does not reference `process` when no file-based service is configured outside Node.js', async () => {
+  const originalVersions = process.versions;
+  // @ts-expect-error - simulating a non-Node runtime (e.g. Cloudflare Workers), where `process`
+  // either doesn't exist at all or lacks `.versions.node`.
+  delete process.versions;
+
+  try {
+    const fetch = vi
+      .fn()
+      .mockImplementation(async () =>
+        jsonResponse({ data: { _service: { sdl: 'type Query { hello: String }' } } }),
+      );
+
+    const fetcher = createDevFetcher({ services: [{ name: 'a', url: 'http://a' }], fetch });
+    const supergraphSdl = await fetcher.fetch();
+
+    expect(supergraphSdl).toContain('hello');
+  } finally {
+    process.versions = originalVersions;
+  }
+});
+
+test('throws a clear error when a file-based service is used outside Node.js', async () => {
+  const originalVersions = process.versions;
+  // @ts-expect-error - simulating a non-Node runtime (e.g. Cloudflare Workers)
+  delete process.versions;
+
+  try {
+    const fetcher = createDevFetcher({
+      services: [{ name: 'a', url: 'http://a', source: 'file', schema: 'a.graphql' }],
+    });
+
+    await expect(fetcher.fetch()).rejects.toThrow(
+      /requires Node\.js and is not supported in this runtime/,
+    );
+  } finally {
+    process.versions = originalVersions;
+  }
+});
+
 test('uses federation introspection (`_service { sdl }`) by default', async () => {
   const fetch = vi
     .fn()

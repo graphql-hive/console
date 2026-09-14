@@ -1,5 +1,3 @@
-import { readFile } from 'fs/promises';
-import { resolve as resolvePath } from 'path';
 import {
   buildClientSchema,
   getIntrospectionQuery,
@@ -38,7 +36,10 @@ export type HiveDevService = {
   url: string;
 } & (
   | {
-      /** Read the schema from an SDL file rather than introspecting `url`. */
+      /**
+       * Read the schema from an SDL file rather than introspecting `url`.
+       * Only supported when running in Node.js.
+       */
       source: 'file';
       /** Path to the service's SDL file. */
       schema: string;
@@ -295,6 +296,29 @@ async function introspectGraphQLService(
   return printSchema(buildClientSchema(body.data));
 }
 
+function isNodeRuntime(): boolean {
+  return typeof process !== 'undefined' && typeof process.versions?.node === 'string';
+}
+
+async function readLocalSchemaFile(cwd: string, schema: string): Promise<string> {
+  if (!isNodeRuntime()) {
+    throw new Error(
+      `Cannot resolve the "${schema}" schema from a local file: "source: 'file'" requires ` +
+        `Node.js and is not supported in this runtime.`,
+    );
+  }
+
+  // The specifiers are held in variables (not passed as literals) so bundlers targeting
+  // non-Node runtimes (e.g. Cloudflare Workers via esbuild/Wrangler) don't try to statically
+  // resolve these Node built-ins for consumers who never use the `source: 'file'` service option.
+  const fsPromisesSpecifier = 'fs/promises';
+  const pathSpecifier = 'path';
+  const { readFile } = await import(fsPromisesSpecifier);
+  const { resolve: resolvePath } = await import(pathSpecifier);
+
+  return readFile(resolvePath(cwd, schema), 'utf8');
+}
+
 async function resolveService(
   service: HiveDevService,
   cwd: string,
@@ -302,8 +326,7 @@ async function resolveService(
   fetch?: FetchImplementation,
 ): Promise<Service> {
   if (service.source === 'file') {
-    const filePath = resolvePath(cwd, service.schema);
-    const contents = await readFile(filePath, 'utf8');
+    const contents = await readLocalSchemaFile(cwd, service.schema);
     // `parse` here only validates the file's contents; `contents` is kept as-is rather than
     // reprinting it, since it's re-parsed anyway by whichever composition path consumes it.
     parse(contents);
@@ -358,7 +381,7 @@ export type HiveDevFetcher = {
  */
 export function createDevFetcher(options: HiveDevFetcherOptions): HiveDevFetcher {
   const logger = chooseLogger(options.logger);
-  const cwd = options.cwd ?? process.cwd();
+  const cwd = options.cwd ?? (isNodeRuntime() ? process.cwd() : '');
   const circuitBreakerConfig = options.circuitBreaker ?? defaultCircuitBreakerConfiguration;
 
   const composeBreaker = new CircuitBreaker(
