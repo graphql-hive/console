@@ -90,7 +90,7 @@ async function compile(
 
   await tsup({
     entryPoints: (Array.isArray(entryPoint) ? entryPoint : [entryPoint]).map(entryPoint =>
-      normalize(join(cwd, entryPoint)),
+      normalize(join(cwd, entryPoint)).split(sep).join('/'),
     ),
     outDir: out,
     target: 'node22',

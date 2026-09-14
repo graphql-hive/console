@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { readFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { dirname, join, sep } from 'path';
 import { fileURLToPath } from 'url';
 import { build as tsup } from 'tsup';
 
@@ -8,7 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'));
 
 await tsup({
-  entry: [join(__dirname, 'example.mjs')],
+  entry: [join(__dirname, 'example.mjs').split(sep).join('/')],
   outDir: join(__dirname, 'dist'),
   target: 'node22',
   format: ['esm'],
