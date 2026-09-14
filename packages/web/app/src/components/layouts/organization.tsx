@@ -370,6 +370,7 @@ export function CreateProjectModalContent(props: {
                           placeholder="my-project"
                           data-cy="slug"
                           autoComplete="off"
+                          onSurface="raised"
                           {...field}
                         />
                       </FormControl>

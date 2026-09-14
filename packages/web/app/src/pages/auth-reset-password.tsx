@@ -160,7 +160,12 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="m@example.com" type="email" {...field} />
+                      <Input
+                        placeholder="m@example.com"
+                        type="email"
+                        onSurface="raised"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -307,7 +312,7 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
                   <FormItem>
                     <FormLabel>New password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" onSurface="raised" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

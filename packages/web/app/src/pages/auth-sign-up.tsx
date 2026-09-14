@@ -227,7 +227,11 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                           <FormItem>
                             <FormLabel>First name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Max" {...form.register('firstName')} />
+                              <Input
+                                placeholder="Max"
+                                onSurface="raised"
+                                {...form.register('firstName')}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -240,7 +244,11 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                           <FormItem>
                             <FormLabel>Last name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Robinson" {...form.register('lastName')} />
+                              <Input
+                                placeholder="Robinson"
+                                onSurface="raised"
+                                {...form.register('lastName')}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -257,6 +265,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                             <Input
                               placeholder="m@example.com"
                               type="email"
+                              onSurface="raised"
                               {...form.register('email')}
                             />
                           </FormControl>
@@ -271,7 +280,11 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...form.register('password')} />
+                            <Input
+                              type="password"
+                              onSurface="raised"
+                              {...form.register('password')}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

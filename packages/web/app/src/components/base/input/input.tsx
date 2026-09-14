@@ -2,19 +2,44 @@ import { forwardRef, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { controlSize, focusRing, type ControlSize } from '../shared-styles';
+import { controlSize, focusRing, type ControlSize, type OnSurface } from '../shared-styles';
 
-/** The field itself, shared with Textarea. */
+/** The field itself, shared with Textarea. Fill and border come from `fieldSurface`. */
 export const fieldClass = [
-  'text-neutral-12 placeholder:text-neutral-8 bg-neutral-2 border-neutral-5 dark:bg-neutral-3 dark:border-neutral-4',
-  'min-w-0 rounded-sm border transition-colors',
-  'hover:border-neutral-6 focus:border-neutral-7 focus:outline-none',
+  'text-neutral-12 placeholder:text-neutral-8',
+  'min-w-0 rounded-sm border transition-colors focus:outline-none',
   focusRing,
   'disabled:cursor-not-allowed disabled:opacity-50',
   // Error state comes from the attribute, so a react-hook-form FormControl and a Formik `invalid`
   // prop paint the same border.
   'aria-invalid:border-critical aria-invalid:hover:border-critical aria-invalid:focus:border-critical',
 ];
+
+/**
+ * Fill and border by surface, at rest and focused. A field sits one step off its surface and
+ * focus lifts it one more: on the page (neutral-1 light, neutral-2 dark) a base field rests at 2/3
+ * and focuses at 1/4; in a sheet, dialog or raised card (neutral-3) a raised field rests at 2/4
+ * and focuses at 1/5. This is one notch below the button ladder in `controlSurface`, so the focus
+ * step has room.
+ */
+export const fieldSurface = {
+  base: [
+    'bg-neutral-2 border-neutral-5 focus:bg-neutral-1',
+    'dark:bg-neutral-3 dark:border-neutral-4 dark:focus:bg-neutral-4',
+    'hover:border-neutral-6 focus:border-neutral-7',
+  ].join(' '),
+  raised: [
+    'bg-neutral-2 border-neutral-5 focus:bg-neutral-1',
+    'dark:bg-neutral-4 dark:border-neutral-5 dark:focus:bg-neutral-5',
+    'hover:border-neutral-6 focus:border-neutral-7',
+  ].join(' '),
+} as const satisfies Record<OnSurface, string>;
+
+// The block before a slug sits one step further from the page than the field it joins.
+const prefixSurface = {
+  base: 'border-neutral-5 bg-neutral-3 dark:bg-neutral-4 dark:border-neutral-4',
+  raised: 'border-neutral-5 bg-neutral-3 dark:bg-neutral-5 dark:border-neutral-5',
+} as const satisfies Record<OnSurface, string>;
 
 export const fieldWidth = {
   full: 'w-full',
@@ -29,6 +54,7 @@ const inputVariants = cva(fieldClass, {
       compact: `${controlSize.compact} px-2.5 text-sm`,
       default: `${controlSize.default} px-3 text-sm`,
     },
+    onSurface: fieldSurface,
     width: fieldWidth,
     mono: {
       true: 'font-mono',
@@ -37,6 +63,7 @@ const inputVariants = cva(fieldClass, {
   },
   defaultVariants: {
     size: 'default',
+    onSurface: 'base',
     width: 'full',
     mono: false,
   },
@@ -67,6 +94,7 @@ type InputProps = NativeInputProps &
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   {
     size,
+    onSurface,
     width,
     mono,
     invalid,
@@ -90,7 +118,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       ref={ref}
       aria-invalid={isInvalid || undefined}
       className={cn(
-        inputVariants({ size, width: decorated ? 'full' : width, mono }),
+        inputVariants({ size, onSurface, width: decorated ? 'full' : width, mono }),
         LeadingIcon && 'pl-9',
         trailing && 'pr-9',
         prefixText && 'rounded-l-none',
@@ -108,8 +136,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {prefixText ? (
         <span
           className={cn(
-            'border-neutral-5 bg-neutral-3 text-neutral-10 dark:bg-neutral-4 dark:border-neutral-4 inline-flex shrink-0 items-center whitespace-nowrap rounded-l-sm border border-r-0 px-3',
             controlSize[(size ?? 'default') as ControlSize],
+            prefixSurface[onSurface ?? 'base'],
+            'text-neutral-10 inline-flex shrink-0 items-center whitespace-nowrap rounded-l-sm border border-r-0 px-3 text-sm',
           )}
         >
           {prefixText}

@@ -170,7 +170,7 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
                           />
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="acme" {...form.register('slug')} />
+                          <Input placeholder="acme" onSurface="raised" {...form.register('slug')} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

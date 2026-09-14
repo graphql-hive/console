@@ -158,7 +158,7 @@ export const CreateOrganizationFormContent = ({
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <Input placeholder="my-organization" {...field} />
+                    <Input placeholder="my-organization" onSurface="raised" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

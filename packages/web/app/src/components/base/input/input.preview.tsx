@@ -29,6 +29,26 @@ export const States = createPreview(() => (
 ));
 
 /**
+ * `raised` is for a field inside a sheet, dialog or raised card. Those surfaces sit at neutral-3,
+ * the same shade as the base fill in dark mode, so a base field on them has no edge to see. Click
+ * into a field: focus lifts the fill one step on either surface.
+ */
+export const OnSurface = createPreview(() => (
+  <div className="flex flex-wrap gap-6">
+    <div className="bg-neutral-1 flex w-80 flex-col gap-3 rounded-md p-6">
+      <Input placeholder="base, on the page" />
+      <Input defaultValue="P99 Latency Spike" />
+      <Input placeholder="slug" prefixText="app.graphql-hive.com/" />
+    </div>
+    <div className="bg-neutral-3 border-neutral-5 flex w-80 flex-col gap-3 rounded-md border p-6">
+      <Input placeholder="raised, in a sheet" onSurface="raised" />
+      <Input defaultValue="P99 Latency Spike" onSurface="raised" />
+      <Input placeholder="slug" prefixText="app.graphql-hive.com/" onSurface="raised" />
+    </div>
+  </div>
+));
+
+/**
  * `default` is a form field. `compact` is toolbar and filter chrome, such as the traces filter's
  * date and time fields, and matches the compact Button and Select.
  */
@@ -99,6 +119,7 @@ export const Playground = createPreview({
     placeholder: { type: 'text', default: 'Enter alert name' },
     type: { type: 'select', options: ['text', 'number', 'email', 'password'], default: 'text' },
     size: { type: 'radio', options: ['compact', 'default'], default: 'default' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
     width: { type: 'select', options: ['full', 'md', 'sm', 'xs'], default: 'full' },
     mono: { type: 'boolean', default: false },
     invalid: { type: 'boolean', default: false },
@@ -109,6 +130,7 @@ export const Playground = createPreview({
       type={v.type}
       placeholder={v.placeholder}
       size={v.size}
+      onSurface={v.onSurface}
       width={v.width}
       mono={v.mono}
       invalid={v.invalid}

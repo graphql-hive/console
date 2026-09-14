@@ -1,9 +1,10 @@
 import { forwardRef, type CSSProperties } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { fieldClass, fieldWidth } from '../input/input';
+import { fieldClass, fieldSurface, fieldWidth } from '../input/input';
 
-const textareaVariants = cva([...fieldClass, 'text-control px-3 py-2'], {
+const textareaVariants = cva([...fieldClass, 'px-3 py-2 text-sm'], {
   variants: {
+    onSurface: fieldSurface,
     width: fieldWidth,
     mono: {
       true: 'font-mono',
@@ -15,6 +16,7 @@ const textareaVariants = cva([...fieldClass, 'text-control px-3 py-2'], {
     },
   },
   defaultVariants: {
+    onSurface: 'base',
     width: 'full',
     mono: false,
     autoSize: false,
@@ -40,7 +42,7 @@ type TextareaProps = NativeTextareaProps &
   };
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { width, mono, autoSize, invalid, 'aria-invalid': ariaInvalid, ...props },
+  { onSurface, width, mono, autoSize, invalid, 'aria-invalid': ariaInvalid, ...props },
   ref,
 ) {
   // See Input: a FormControl merges a className in; it must not reach the element.
@@ -51,7 +53,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
     <textarea
       ref={ref}
       aria-invalid={isInvalid || undefined}
-      className={textareaVariants({ width, mono, autoSize })}
+      className={textareaVariants({ onSurface, width, mono, autoSize })}
       style={autoSize ? autoSizeStyle : undefined}
       {...native}
     />

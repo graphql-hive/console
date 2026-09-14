@@ -19,6 +19,18 @@ export const States = createPreview(() => (
   </div>
 ));
 
+/** Same ladder as Input: `raised` for a description field inside a sheet or dialog, and focus lifts the fill. */
+export const OnSurface = createPreview(() => (
+  <div className="flex flex-wrap gap-6">
+    <div className="bg-neutral-1 w-80 rounded-md p-6">
+      <Textarea placeholder="base, on the page" />
+    </div>
+    <div className="bg-neutral-3 border-neutral-5 w-80 rounded-md border p-6">
+      <Textarea placeholder="raised, in a sheet" onSurface="raised" />
+    </div>
+  </div>
+));
+
 /**
  * `autoSize` grows the field with its text through the native `field-sizing: content`. Where a
  * browser lacks it, the field keeps its rows and scrolls. Type a few lines here.
@@ -56,6 +68,7 @@ export const ReadOnlyMono = createPreview(() => (
 export const Playground = createPreview({
   controls: controlsFor(Textarea, {
     placeholder: { type: 'text', default: 'Enter a description' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
     autoSize: { type: 'boolean', default: false },
     mono: { type: 'boolean', default: false },
     invalid: { type: 'boolean', default: false },
@@ -65,6 +78,7 @@ export const Playground = createPreview({
     <div className="w-[28rem]">
       <Textarea
         placeholder={v.placeholder}
+        onSurface={v.onSurface}
         autoSize={v.autoSize}
         mono={v.mono}
         invalid={v.invalid}

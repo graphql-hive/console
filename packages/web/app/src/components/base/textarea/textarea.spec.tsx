@@ -38,7 +38,7 @@ describe('Textarea', () => {
     expect(textarea.getAttribute('rows')).toBe('3');
     expect(textarea.getAttribute('maxlength')).toBe('5000');
     expect(textarea.className).toContain('text-neutral-12');
-    expect(textarea.className).toContain('text-control');
+    expect(textarea.className).toContain('text-sm');
   });
 
   it('keeps its own classes under a FormControl and reports an error', async () => {
@@ -66,6 +66,14 @@ describe('Textarea', () => {
   it('marks the field invalid through the invalid prop', () => {
     render(<Textarea placeholder="Description" invalid />);
     expect(screen.getByPlaceholderText('Description').getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('paints the raised surface for a field inside a sheet or dialog', () => {
+    render(<Textarea placeholder="Description" onSurface="raised" />);
+    const textarea = screen.getByPlaceholderText('Description');
+    expect(textarea.className).toContain('dark:bg-neutral-4');
+    expect(textarea.className).toContain('dark:focus:bg-neutral-5');
+    expect(textarea.className).not.toContain('dark:bg-neutral-3');
   });
 
   it('grows with its content when autoSize is set', () => {

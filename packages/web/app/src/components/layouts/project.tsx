@@ -311,7 +311,12 @@ export function CreateTargetModalContent(props: {
                   return (
                     <FormItem>
                       <FormControl>
-                        <Input placeholder="my-target" autoComplete="off" {...field} />
+                        <Input
+                          placeholder="my-target"
+                          autoComplete="off"
+                          onSurface="raised"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

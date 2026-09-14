@@ -209,6 +209,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                             <Input
                               placeholder="m@example.com"
                               type="email"
+                              onSurface="raised"
                               {...form.register('email')}
                             />
                           </FormControl>
@@ -236,7 +237,11 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                             </Link>
                           </div>
                           <FormControl>
-                            <Input type="password" {...form.register('password')} />
+                            <Input
+                              type="password"
+                              onSurface="raised"
+                              {...form.register('password')}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

@@ -210,7 +210,13 @@ function OrganizationMemberRoleEditor(props: {
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter a name" type="text" autoComplete="off" {...field} />
+                      <Input
+                        placeholder="Enter a name"
+                        type="text"
+                        autoComplete="off"
+                        onSurface="raised"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -223,7 +229,12 @@ function OrganizationMemberRoleEditor(props: {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Enter a description" autoComplete="off" {...field} />
+                      <Textarea
+                        placeholder="Enter a description"
+                        autoComplete="off"
+                        onSurface="raised"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -473,6 +484,7 @@ function OrganizationMemberRoleCreator(props: {
                           placeholder="Enter a name"
                           type="text"
                           autoComplete="off"
+                          onSurface="raised"
                           {...field}
                         />
                       </FormControl>
@@ -487,7 +499,12 @@ function OrganizationMemberRoleCreator(props: {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea autoComplete="off" placeholder="Enter a description" {...field} />
+                        <Textarea
+                          autoComplete="off"
+                          placeholder="Enter a description"
+                          onSurface="raised"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -63,9 +63,12 @@ describe('Input', () => {
     expect(input).toHaveProperty('type', 'email');
     expect(input.getAttribute('autocomplete')).toBe('off');
     expect(input.getAttribute('data-cy')).toBe('email');
-    // Regression: the merge used to drop the colour next to the `text-control` size.
+    // Regression: the merge used to drop the colour next to the theme's own font size.
     expect(input.className).toContain('text-neutral-12');
-    expect(input.className).toContain('text-control');
+    expect(input.className).toContain('text-sm');
+    // Focus lifts the fill one step on every surface.
+    expect(input.className).toContain('focus:bg-neutral-1');
+    expect(input.className).toContain('dark:focus:bg-neutral-4');
   });
 
   it('marks the field invalid through aria-invalid, and only then', () => {
@@ -115,6 +118,14 @@ describe('Input', () => {
       expect(onSubmit).toHaveBeenCalledWith({ name: 'production' }, expect.anything()),
     );
     expect(input.getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it('paints the raised surface for a field inside a sheet or dialog', () => {
+    render(<Input placeholder="Name" onSurface="raised" />);
+    const input = screen.getByPlaceholderText('Name');
+    expect(input.className).toContain('dark:bg-neutral-4');
+    expect(input.className).toContain('dark:focus:bg-neutral-5');
+    expect(input.className).not.toContain('dark:bg-neutral-3');
   });
 
   it('applies size, width and mono as classes', () => {

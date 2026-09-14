@@ -208,7 +208,12 @@ function MemberInvitationForm(props: {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input placeholder="Enter an email" type="email" {...field} />
+                      <Input
+                        placeholder="Enter an email"
+                        type="email"
+                        onSurface="raised"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
