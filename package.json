@@ -18,10 +18,6 @@
     "pnpm": ">=10.33.2"
   },
   "scripts": {
-    "benchmark:clickhouse-order-by": "docker compose -f ./docker/docker-compose.dev.yml up -d --wait clickhouse && tsx scripts/benchmark-clickhouse-operations-order-by.mts",
-    "benchmark:clickhouse-order-by:run": "tsx scripts/benchmark-clickhouse-operations-order-by.mts --mode run",
-    "benchmark:clickhouse-order-by:seed": "tsx scripts/benchmark-clickhouse-operations-order-by.mts --mode seed",
-    "benchmark:clickhouse-partitioning": "tsx scripts/benchmark-clickhouse-operations-partitioning.mts",
     "build": "pnpm turbo build --filter='@hive/app' --concurrency=1 --color && pnpm turbo build --concurrency=4 --color --filter '!@hive/app'",
     "build:libraries": "pnpm prebuild && pnpm graphql:generate && pnpm turbo build --filter=./packages/libraries/* --color",
     "build:services": "pnpm prebuild && pnpm turbo build --filter=./packages/services/**/* --filter=./packages/migrations --color",
