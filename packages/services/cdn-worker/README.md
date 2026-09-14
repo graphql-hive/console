@@ -46,69 +46,138 @@ This way, your local Hive instance will be able to send schema to the locally ru
 
 ### Deployment
 
-There is two variants being built that can be deployed independently.
+Choose a stable [Hive release](https://github.com/graphql-hive/console/releases) whose GitHub
+Release page contains both deployment assets:
 
-- `Cloudflare Worker`: `dist/index.worker.mjs`
-- `AWS Lambda`: `dist/index.lambda.mjs`
+- `hive-cdn-cloudflare-worker.zip`
+- `hive-cdn-aws-lambda.zip`
 
 #### Cloudflare Worker
 
-THe documentation is work in progress and will be improved in the future.
+Set the stable Hive version to deploy, then download and extract the release archive:
 
+```sh
+VERSION="REPLACE_WITH_HIVE_VERSION"
+mkdir hive-cdn-cloudflare-worker
+cd hive-cdn-cloudflare-worker
+curl --fail --location \
+  "https://github.com/graphql-hive/console/releases/download/hive%40${VERSION}/hive-cdn-cloudflare-worker.zip" \
+  --output hive-cdn-cloudflare-worker.zip
+unzip hive-cdn-cloudflare-worker.zip
 ```
-type Env = {
-  S3_ENDPOINT: string;
-  S3_ACCESS_KEY_ID: string;
-  S3_SECRET_ACCESS_KEY: string;
-  S3_BUCKET_NAME: string;
-  S3_SESSION_TOKEN?: string;
 
-  S3_MIRROR_ENDPOINT: string;
-  S3_MIRROR_ACCESS_KEY_ID: string;
-  S3_MIRROR_SECRET_ACCESS_KEY: string;
-  S3_MIRROR_BUCKET_NAME: string;
-  S3_MIRROR_SESSION_TOKEN?: string;
+The extracted `index.mjs` is an ES module Worker. Create a `wrangler.toml` next to it. The
+following is a minimal configuration; the six Analytics Engine bindings are required. Dataset
+names may be changed, but the binding names must remain unchanged.
 
-  SENTRY_DSN: string;
-  /**
-   * Name of the environment, e.g. staging, production
-   */
-  SENTRY_ENVIRONMENT: string;
-  /**
-   * Id of the release
-   */
-  SENTRY_RELEASE: string;
-  /**
-   * Worker's Analytics Engines
-   */
-  USAGE_ANALYTICS: AnalyticsEngine;
-  ERROR_ANALYTICS: AnalyticsEngine;
-  RESPONSE_ANALYTICS: AnalyticsEngine;
-  R2_ANALYTICS: AnalyticsEngine;
-  S3_ANALYTICS: AnalyticsEngine;
-  KEY_VALIDATION_ANALYTICS: AnalyticsEngine;
-  /**
-   * Base URL of the KV storage, used to fetch the schema from the KV storage.
-   * If not provided, the schema will be fetched from default KV storage value.
-   *
-   * @default https://key-cache.graphql-hive.com
-   */
-  KV_STORAGE_BASE_URL?: string;
-};
+The current Worker artifact does not read a Workers KV binding. Hive's Pulumi stack still creates a
+legacy `HIVE_DATA` namespace for historical reasons; you do not need it for a working deployment.
+
+```toml
+name = "hive-cdn"
+main = "index.mjs"
+compatibility_date = "2026-03-03"
+workers_dev = true
+
+[[analytics_engine_datasets]]
+binding = "USAGE_ANALYTICS"
+dataset = "hive_ha_cdn_usage_production"
+
+[[analytics_engine_datasets]]
+binding = "ERROR_ANALYTICS"
+dataset = "hive_ha_cdn_error_production"
+
+[[analytics_engine_datasets]]
+binding = "KEY_VALIDATION_ANALYTICS"
+dataset = "hive_ha_cdn_key_validation_production"
+
+[[analytics_engine_datasets]]
+binding = "R2_ANALYTICS"
+dataset = "hive_ha_cdn_r2_production"
+
+[[analytics_engine_datasets]]
+binding = "S3_ANALYTICS"
+dataset = "hive_ha_cdn_s3_production"
+
+[[analytics_engine_datasets]]
+binding = "RESPONSE_ANALYTICS"
+dataset = "hive_ha_cdn_response_production"
 ```
+
+Configure the required primary and mirror S3-compatible storage values and Sentry values as Worker
+secrets. Wrangler prompts for each value without putting it in `wrangler.toml`.
+
+```sh
+for name in \
+  S3_ENDPOINT \
+  S3_ACCESS_KEY_ID \
+  S3_SECRET_ACCESS_KEY \
+  S3_BUCKET_NAME \
+  S3_MIRROR_ENDPOINT \
+  S3_MIRROR_ACCESS_KEY_ID \
+  S3_MIRROR_SECRET_ACCESS_KEY \
+  S3_MIRROR_BUCKET_NAME \
+  SENTRY_DSN \
+  SENTRY_ENVIRONMENT \
+  SENTRY_RELEASE; do
+  npx wrangler secret put "$name"
+done
+```
+
+`S3_ENDPOINT` and `S3_MIRROR_ENDPOINT` are the providers' S3-compatible endpoint URLs.
+`SENTRY_ENVIRONMENT` is an environment name such as `production`, and `SENTRY_RELEASE` should
+identify the deployed Hive release.
+
+The following values are optional:
+
+- `S3_SESSION_TOKEN` and `S3_MIRROR_SESSION_TOKEN` are only needed when the corresponding storage
+  credentials are temporary. Configure either with `npx wrangler secret put <NAME>`.
+- `KV_STORAGE_BASE_URL` overrides the key-validation storage URL. If omitted, the Worker uses
+  `https://key-cache.graphql-hive.com`. Configure it with
+  `npx wrangler secret put KV_STORAGE_BASE_URL`.
+
+Deploy the Worker and test its health endpoint:
+
+```sh
+npx wrangler deploy
+WORKER_URL=https://hive-cdn.example.workers.dev
+curl --fail "$WORKER_URL/_health"
+```
+
+The health request should return `OK`.
 
 #### AWS Lambda
 
-**Runtime**: Node.js 22.x
+Download the Lambda archive for the stable Hive version. Upload this ZIP directly; do not extract or
+repackage it.
 
-| Name                        | Required | Description               | Example Value           |
-| --------------------------- | -------- | ------------------------- | ----------------------- |
-| `AWS_S3_ENDPOINT`           | **Yes**  | The S3 endpoint.          | `http://localhost:9000` |
-| `AWS_S3_BUCKET_NAME`        | **Yes**  | The S3 bucket name.       | `artifacts`             |
-| `AWS_S3_ACCESS_KEY_ID`      | **Yes**  | The S3 access key id.     | `minioadmin`            |
-| `AWS_S3_ACCESSS_KEY_SECRET` | **Yes**  | The S3 secret access key. | `minioadmin`            |
+```sh
+VERSION="REPLACE_WITH_HIVE_VERSION"
+curl --fail --location \
+  "https://github.com/graphql-hive/console/releases/download/hive%40${VERSION}/hive-cdn-aws-lambda.zip" \
+  --output hive-cdn-aws-lambda.zip
+```
 
-All other configuration options available for Cloudflare Workers are currently not supported.
+1. Create a Lambda execution role whose trust policy allows `lambda.amazonaws.com` to assume it, and
+   attach the AWS-managed `AWSLambdaBasicExecutionRole` policy for CloudWatch logging.
+2. Create the function with these settings:
+   - Runtime: Node.js 22.x
+   - Package type: ZIP
+   - Handler: `index.handler`
+   - Architecture: arm64
+   - Memory: 448 MB
+   - Timeout: 10 seconds
+3. Upload `hive-cdn-aws-lambda.zip` as the function code.
+4. Configure all four required environment variables:
+   - `AWS_S3_ENDPOINT`: the S3-compatible endpoint URL.
+   - `AWS_S3_BUCKET_NAME`: the artifact bucket name.
+   - `AWS_S3_ACCESS_KEY_ID`: the storage access key ID.
+   - `AWS_S3_ACCESSS_KEY_SECRET`: the storage secret access key. The three consecutive `S`
+     characters in `ACCESSS` are required by the current runtime contract.
+5. Create a Lambda Function URL. The current Hive deployment uses `NONE` authentication and buffered
+   invocation. Review the exposure of an unauthenticated URL before using that setting.
 
-We recommend deploying the function to AWS Lambda, create a AWS Lambda Function invocation URL and
-then add the function as origin to CloudFront.
+The Function URL can be used directly and may also be configured as a CloudFront origin, which is
+the recommended topology for the CDN handler. Configuration available only to the Cloudflare Worker,
+including mirror storage, Analytics Engine, KV, and Sentry bindings, is not supported by the Lambda
+variant.
