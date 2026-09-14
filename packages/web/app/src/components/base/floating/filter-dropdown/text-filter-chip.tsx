@@ -41,7 +41,6 @@ export function TextFilterChip({
           side="bottom"
           align="start"
           maxWidth="lg"
-          stableWidth
           content={
             <FloatingSearch
               label={label}

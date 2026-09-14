@@ -123,7 +123,6 @@ export function FilterDropdown({
           side="bottom"
           align="start"
           maxWidth="lg"
-          stableWidth
           content={
             <FilterContent
               label={label}

@@ -1,7 +1,6 @@
 import {
-  useCallback,
   useEffect,
-  useRef,
+  useState,
   type ComponentType,
   type MouseEventHandler,
   type ReactElement,
@@ -74,8 +73,6 @@ type MenuSubmenu = WidthProps & {
   openOnHover?: boolean;
   delay?: number;
   closeDelay?: number;
-  /** Lock the popup width after first layout. For virtualized or filtered lists. */
-  stableWidth?: boolean;
 } & (
     | { items: MenuSection[]; content?: never }
     /** A submenu whose body is a custom panel rather than rows, like a filter's value list. */
@@ -343,11 +340,9 @@ function SubmenuRow({
   maxWidth,
   minWidth,
   width,
-  stableWidth,
   ...body
 }: MenuSubmenu) {
   const portalContainer = useFloatingPortalContainer();
-  const popupRef = useStableWidth(stableWidth ?? false);
 
   return (
     <BaseMenu.SubmenuRoot>
@@ -370,11 +365,11 @@ function SubmenuRow({
           className="z-50 outline-none"
         >
           <BaseMenu.Popup
-            ref={popupRef}
             className={floatingVariants({
               // Rows bring their own top inset via `first:mt-2`, so `menu` padding has none. A
               // custom panel has no rows, so it would sit flush at the top and padded at the
-              // bottom; give it none and let the panel own its insets, as the filter panels do.
+              // bottom; give it none and let the panel own its insets (`menuPanelInset`, or
+              // nothing for a lone search field).
               padding: body.items ? 'menu' : 'none',
               maxWidth,
               // A submenu is usually a few short labels, and left to itself it comes out
@@ -452,37 +447,6 @@ function renderSections(sections: MenuSection[]): ReactNode {
   return result;
 }
 
-/**
- * Returns a callback ref that locks a popup's width after first layout.
- * Reads the natural width from the initial visible content and freezes it,
- * so the popup never changes size as virtualized items scroll in/out of view.
- * Resets when the element unmounts (i.e. popup closes).
- */
-function useStableWidth(enabled: boolean) {
-  const observerRef = useRef<ResizeObserver | null>(null);
-
-  return useCallback(
-    (node: HTMLElement | null) => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
-      }
-
-      if (!node || !enabled) return;
-
-      const observer = new ResizeObserver(() => {
-        observer.disconnect();
-        observerRef.current = null;
-        node.style.width = `${node.offsetWidth}px`;
-      });
-
-      observer.observe(node);
-      observerRef.current = observer;
-    },
-    [enabled],
-  );
-}
-
 type MenuBaseProps = FloatingProps &
   WidthProps & {
     modal?: boolean;
@@ -501,12 +465,6 @@ type MenuBaseProps = FloatingProps &
      * layout shift.
      */
     lockScroll?: boolean;
-    /**
-     * Lock the popup width after the first layout so it never changes while open.
-     * Useful for virtualized lists where items scroll in/out of view.
-     * Resets each time the popup reopens.
-     */
-    stableWidth?: boolean;
   };
 
 /**
@@ -532,16 +490,23 @@ function Menu(props: MenuProps) {
     minWidth,
     width,
     lockScroll,
-    stableWidth,
     submenu,
     openOnHover,
     delay,
     closeDelay,
   } = props;
+  // Mirrors Base UI's state for an uncontrolled menu, so `lockScroll` knows when it is open.
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isOpen = open ?? uncontrolledOpen;
+  const handleOpenChange = (next: boolean) => {
+    setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  };
+
   // Lock page scroll when the menu is open to prevent scroll-through
   // (wheel events on the popup propagating to the page behind it).
   useEffect(() => {
-    if (!lockScroll || !open) return;
+    if (!lockScroll || !isOpen) return;
 
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     document.documentElement.style.overflow = 'hidden';
@@ -551,9 +516,7 @@ function Menu(props: MenuProps) {
       document.documentElement.style.overflow = '';
       document.documentElement.style.paddingRight = '';
     };
-  }, [lockScroll, open]);
-
-  const popupRef = useStableWidth(stableWidth ?? false);
+  }, [lockScroll, isOpen]);
 
   // Resolved rather than defaulted in the destructure, so `submenu` can pick its own values and
   // an explicit prop still wins. A submenu opens beside its row; a root menu below its trigger.
@@ -571,7 +534,6 @@ function Menu(props: MenuProps) {
         className="z-50 outline-none"
       >
         <BaseMenu.Popup
-          ref={popupRef}
           className={floatingVariants({
             // See `SubmenuRow`: a custom panel owns its own insets.
             padding: props.sections ? 'menu' : 'none',
@@ -588,7 +550,7 @@ function Menu(props: MenuProps) {
 
   if (submenu) {
     return (
-      <BaseMenu.SubmenuRoot>
+      <BaseMenu.SubmenuRoot open={open} onOpenChange={onOpenChange}>
         <BaseMenu.SubmenuTrigger
           className={(state: BaseMenu.SubmenuTrigger.State) => menuItemClassName(state, {})}
           openOnHover={openOnHover}
@@ -602,7 +564,7 @@ function Menu(props: MenuProps) {
   }
 
   return (
-    <BaseMenu.Root open={open} onOpenChange={onOpenChange} modal={modal}>
+    <BaseMenu.Root open={open} onOpenChange={handleOpenChange} modal={modal}>
       <BaseMenu.Trigger render={trigger} />
       {popup}
     </BaseMenu.Root>

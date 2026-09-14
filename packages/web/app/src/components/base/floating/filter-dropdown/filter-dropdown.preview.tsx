@@ -14,6 +14,7 @@ const CLIENTS: FilterItem[] = [
   { name: 'graphql-mesh', values: ['1.0.0', '1.1.0', '1.2.0'] },
   { name: 'cosmo-router', values: ['0.1.0', '0.2.0', '0.3.0'] },
   { name: 'stellate-edge', values: ['0.9.0', '0.10.0'] },
+  { name: 'hive-schema-registry-worker', values: ['2.4.0', '2.3.0'] },
   { name: 'unknown', values: [] },
 ];
 

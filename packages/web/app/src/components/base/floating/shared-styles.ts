@@ -7,6 +7,14 @@
  */
 import { cva } from 'class-variance-authority';
 
+/**
+ * The inset of a panel made of menu rows: sides and bottom only, because the first row brings the
+ * top inset itself (`first:mt-2`). A custom panel dropped into a Menu (`content` rather than
+ * `sections`) gets no padding from the popup and applies this itself, so a search field can bleed
+ * to the edges with `-mx-2` in either case.
+ */
+export const menuPanelInset = 'px-2 pb-2';
+
 /** Base classes shared by all floating panels (menu, select, popover). */
 export const floatingBaseClass =
   // No z-index here. The positioner is transformed for placement, which makes it a stacking
@@ -20,8 +28,7 @@ export const floatingVariants = cva(floatingBaseClass, {
       none: '',
       sm: 'px-1 py-1',
       md: 'px-2 py-2',
-      /** Menu-style: top padding handled by first:mt-2 on items */
-      menu: 'px-2 pb-2',
+      menu: menuPanelInset,
     },
     maxWidth: {
       default: 'max-w-75',
