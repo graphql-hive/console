@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Switch } from './switch';
 
 export const nav: NavPath = 'Base/FormControls/Switch';
@@ -49,7 +49,7 @@ export const InSettingsRow = createPreview(() => {
 });
 
 export const Playground = createPreview({
-  controls: defineControls({
+  controls: controlsFor(Switch, {
     size: { type: 'radio', options: ['standard', 'small'], default: 'standard' },
     checked: { type: 'boolean', default: true },
     disabled: { type: 'boolean', default: false },

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Checkbox } from './checkbox';
 
 export const nav: NavPath = 'Base/FormControls/Checkbox';
@@ -78,7 +78,7 @@ export const SelectAll = createPreview(() => {
 });
 
 export const Playground = createPreview({
-  controls: defineControls({
+  controls: controlsFor(Checkbox, {
     size: { type: 'radio', options: ['sm', 'md'], default: 'md' },
     checked: { type: 'boolean', default: true },
     indeterminate: { type: 'boolean', default: false },

@@ -57,7 +57,10 @@ export const RichDescriptions = createPreview(() => (
         {
           items: [
             { term: 'Target', description: <code className="text-[13px]">production</code> },
-            { term: 'Status', description: <Badge variant="secondary">Active</Badge> },
+            {
+              term: 'Status',
+              description: <Badge content="Active" variants={{ variant: 'secondary' }} />,
+            },
           ],
         },
         {
@@ -66,9 +69,9 @@ export const RichDescriptions = createPreview(() => (
               term: 'Channels',
               description: (
                 <div className="flex flex-wrap gap-1.5">
-                  <Badge variant="outline">Slack</Badge>
-                  <Badge variant="outline">Webhook</Badge>
-                  <Badge variant="outline">Email</Badge>
+                  <Badge content="Slack" variants={{ variant: 'outline' }} />
+                  <Badge content="Webhook" variants={{ variant: 'outline' }} />
+                  <Badge content="Email" variants={{ variant: 'outline' }} />
                 </div>
               ),
             },

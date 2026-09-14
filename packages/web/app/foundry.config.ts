@@ -23,7 +23,12 @@ export default defineConfig({
             { label: 'Button' },
             { label: 'Card' },
             { label: 'StatCard' },
+            { label: 'Button' },
+            { label: 'DataLayout' },
+            { label: 'Form' },
             { label: 'Input' },
+            { label: 'Overlays' },
+            { label: 'Presentational' },
             { label: 'CopyChip' },
           ],
         },
@@ -36,6 +41,8 @@ export default defineConfig({
             // so a change can be judged against both without leaving the subtree.
             { label: 'RadioGroup', children: [{ label: 'Component Examples' }] },
             { label: 'Switch' },
+            { label: 'Button' },
+            { label: 'DataLayout' },
             { label: 'Form' },
           ],
         },
@@ -54,8 +61,28 @@ export default defineConfig({
         // Data and layout
         { label: 'DataTable' },
         { label: 'DescriptionList' },
-        { label: 'PageLead' },
-        { label: 'NotFound' },
+      ],
+    },
+    // The `ui/` and `v2/` primitives queued for migration to `base/`, rendered as they ship
+    // today. Each entry transcribes every real call site, so a replacement can be judged
+    // against the current thing rather than against invented examples, and so there is a
+    // coverage checklist to migrate through. Entries are deleted as their component lands.
+    {
+      label: 'Inventory',
+      children: [
+        { label: 'Button' },
+        { label: 'DataLayout' },
+        { label: 'Form' },
+        { label: 'Input' },
+        { label: 'Overlays' },
+        { label: 'Presentational' },
+        { label: 'Popover' },
+        { label: 'Select' },
+        { label: 'Switch' },
+        { label: 'Textarea' },
+        { label: 'Toast' },
+        { label: 'Tooltip' },
+        { label: 'V2Leftovers' },
       ],
     },
     // App components, as opposed to the design-system primitives above. Each preview
@@ -63,7 +90,7 @@ export default defineConfig({
     // compositions that actually ship.
     {
       label: 'Components',
-      children: [{ label: 'BillingPlanPicker' }],
+      children: [{ label: 'BillingPlanPicker' }, { label: 'PageLead' }, { label: 'NotFound' }],
     },
   ],
   theme: {

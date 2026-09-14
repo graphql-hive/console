@@ -282,15 +282,14 @@ function GroupRow(props: GroupRowProps): ReactNode {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className={cn('text-sm font-medium')}>{group.name}</span>
-              <Badge variant="outline" className="text-xs font-normal">
-                {group.roleMappingCount === 0 ? (
-                  <>No mappings configured</>
-                ) : (
-                  <>
-                    {group.roleMappingCount} {group.roleMappingCount === 1 ? 'mapping' : 'mappings'}
-                  </>
-                )}
-              </Badge>
+              <Badge
+                variants={{ variant: 'outline' }}
+                content={
+                  group.roleMappingCount === 0
+                    ? 'No mappings configured'
+                    : `${group.roleMappingCount} ${group.roleMappingCount === 1 ? 'mapping' : 'mappings'}`
+                }
+              />
             </div>
           </div>
         </div>
@@ -442,9 +441,7 @@ function GroupRoleMappingRow(props: {
     <div className="bg-neutral-3 group flex items-center justify-between rounded-md px-3 py-1.5">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <Badge variant="default" className={cn('text-xs font-medium')}>
-            {groupRoleMapping.role.name}
-          </Badge>
+          <Badge content={groupRoleMapping.role.name} />
           <span className="text-xs">on</span>
           <span className="text-sm">
             {groupRoleMapping.resourceAssignment.mode ===

@@ -1,5 +1,5 @@
 import { ChevronDown, Copy, ListFilter, Plus, RefreshCw, X } from 'lucide-react';
-import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from './button';
 
 export const nav: NavPath = 'Base/Primitives/Button';
@@ -74,7 +74,7 @@ export const Disabled = createPreview(() => (
 ));
 
 export const Playground = createPreview({
-  controls: defineControls({
+  controls: controlsFor(Button, {
     children: { type: 'text', default: 'Save alert' },
     variant: {
       type: 'select',
