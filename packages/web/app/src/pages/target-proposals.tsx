@@ -153,10 +153,6 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
   return (
     <>
       <div className="flex flex-col justify-start gap-2.5 pb-2.5 md:flex-row">
-        {/* <UserFilter
-          selectedUsers={props.filterUserIds ?? []}
-          organizationSlug={props.organizationSlug}
-        /> */}
         <StageFilter selectedStages={props.filterStages ?? []} />
         {hasFilterSelection ? (
           <Button variant="outline" onClick={reset}>

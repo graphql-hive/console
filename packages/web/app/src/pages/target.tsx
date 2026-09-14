@@ -1,21 +1,13 @@
-import { ReactElement, useState } from 'react';
-import { ChevronsUpDown, XIcon } from 'lucide-react';
+import { ReactElement } from 'react';
+import { XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Select } from '@/components/base/floating/select/select';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command';
 import { EmptyList, noSchema, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { QueryError } from '@/components/ui/query-error';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion } from '@/components/v2/accordion';
 import { GraphQLBlock, GraphQLHighlight } from '@/components/v2/graphql-block';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
@@ -159,7 +151,6 @@ function SchemaView(props: {
       ? router.latestLocation.search.service
       : null;
 
-  const [open, setOpen] = useState(false);
   const reset = () => {
     void router.navigate({
       search: {},
@@ -196,56 +187,30 @@ function SchemaView(props: {
       <div className="mb-5 flex flex-row items-center justify-between">
         <div className="flex flex-row items-center gap-x-4">
           {isDistributed && schemas && schemas.length > 1 && (
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className="w-[400px] justify-between"
-                  aria-expanded={open}
-                >
-                  {selectedServiceName ?? 'Select service'}
-                  <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
+            <>
+              <Select
+                options={compositeSchemas.map(schema => ({
+                  value: schema.service as string,
+                  label: schema.service as string,
+                  description: schema.url,
+                }))}
+                value={selectedServiceName ?? undefined}
+                onValueChange={serviceName => {
+                  void router.navigate({
+                    search: { service: serviceName },
+                  });
+                }}
+                placeholder="Select service"
+                searchable
+                searchPlaceholder="Search service..."
+                width="lg"
+              />
               {selectedServiceName ? (
                 <Button variant="outline" onClick={reset}>
                   <XIcon width={16} height={16} />
                 </Button>
               ) : null}
-              <PopoverContent className="w-[400px] truncate p-0">
-                <Command>
-                  <CommandInput
-                    closeFn={reset}
-                    className="w-[400px]"
-                    placeholder="Search service..."
-                  />
-                  <CommandEmpty>No results.</CommandEmpty>
-                  <CommandGroup>
-                    <ScrollArea className="relative h-80 w-full">
-                      {compositeSchemas?.map(schema => (
-                        <CommandItem
-                          key={schema.service}
-                          value={schema.service as string}
-                          onSelect={serviceName => {
-                            setOpen(false);
-                            void router.navigate({
-                              search: { service: serviceName },
-                            });
-                          }}
-                          className="cursor-pointer truncate"
-                        >
-                          <div>
-                            <div>{schema.service}</div>
-                            <div className="text-neutral-10 text-xs">{schema.url}</div>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </ScrollArea>
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            </>
           )}
         </div>
       </div>

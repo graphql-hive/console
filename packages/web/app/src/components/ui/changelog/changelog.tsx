@@ -1,8 +1,8 @@
 import { ReactElement, useCallback, useEffect } from 'react';
 import { format } from 'date-fns/format';
 import { z } from 'zod';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLocalStorageJson, useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
@@ -54,9 +54,11 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
   );
 
   return (
-    <Popover open={isOpen} onOpenChange={toggle}>
-      {props.changes.length > 0 ? (
-        <PopoverTrigger asChild>
+    <Popover
+      open={isOpen}
+      onOpenChange={toggle}
+      trigger={
+        props.changes.length > 0 ? (
           <Button variant="outline" className="relative text-sm">
             Latest changes
             {displayDot ? (
@@ -65,58 +67,65 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
               </div>
             ) : null}
           </Button>
-        </PopoverTrigger>
-      ) : null}
-      <PopoverContent className="w-[550px] p-0" collisionPadding={20}>
-        <PopoverArrow />
-        <div className="grid">
-          <div className="space-y-2 p-4">
-            <h4 className="text-neutral-12 font-medium leading-none">What's new in Hive Console</h4>
-            <p className="text-neutral-11 text-sm">
-              Find out about the newest features, and enhancements
-            </p>
+        ) : undefined
+      }
+      width="xl"
+      padding="none"
+      collisionPadding={20}
+      arrow
+      content={
+        <>
+          <div className="grid">
+            <div className="space-y-2 p-4">
+              <h4 className="text-neutral-12 text-sm font-medium leading-none">
+                What's new in Hive Console
+              </h4>
+              <p className="text-neutral-11 text-[13px]">
+                Find out about the newest features, and enhancements
+              </p>
+            </div>
+            <ol className="relative m-0">
+              {props.changes.map((change, index) => (
+                <li
+                  className={cn(
+                    'border-l-2 pl-4',
+                    readChanges.includes(change.href) ? 'border-transparent' : 'border-accent_80',
+                  )}
+                  key={index}
+                >
+                  <time className="text-neutral-10 mb-1 text-xs font-normal" dateTime={change.date}>
+                    {format(new Date(change.date), 'do MMMM yyyy')}
+                  </time>
+                  <h3 className="text-neutral-12 mb-0.5 text-pretty text-sm font-medium hover:underline">
+                    <a
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => handleChangelogClick(change)}
+                      href={change.href}
+                    >
+                      {change.title}
+                    </a>
+                  </h3>
+                  <p className="text-neutral-11 mb-5 text-pretty text-[13px] font-normal">
+                    {change.description}
+                  </p>
+                </li>
+              ))}
+            </ol>
           </div>
-          <ol className="relative m-0">
-            {props.changes.map((change, index) => (
-              <li
-                className={cn(
-                  'border-l-2 pl-4',
-                  readChanges.includes(change.href) ? 'border-transparent' : 'border-accent_80',
-                )}
-                key={index}
+          <div className="flex flex-row items-center justify-center">
+            <Button variant="link" asChild className="text-neutral-11 text-left text-sm">
+              <a
+                rel="noopener noreferrer"
+                href="https://the-guild.dev/graphql/hive/product-updates"
+                target="_blank"
               >
-                <time className="text-neutral-10 mb-1 text-xs font-normal" dateTime={change.date}>
-                  {format(new Date(change.date), 'do MMMM yyyy')}
-                </time>
-                <h3 className="text-neutral-12 text-pretty text-base font-medium hover:underline">
-                  <a
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => handleChangelogClick(change)}
-                    href={change.href}
-                  >
-                    {change.title}
-                  </a>
-                </h3>
-                <div className="text-neutral-11 mb-4 text-pretty text-sm font-normal">
-                  {change.description}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-        <div className="flex flex-row items-center justify-center">
-          <Button variant="link" asChild className="text-neutral-11 text-left text-sm">
-            <a
-              rel="noopener noreferrer"
-              href="https://the-guild.dev/graphql/hive/product-updates"
-              target="_blank"
-            >
-              View all updates
-            </a>
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+                View all updates
+              </a>
+            </Button>
+          </div>
+        </>
+      }
+    />
   );
 }

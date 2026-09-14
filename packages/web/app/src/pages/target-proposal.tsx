@@ -458,7 +458,6 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 </Title>
                 <div className="flex-col justify-end">
                   <StageTransitionSelect
-                    className="w-full sm:w-auto"
                     stage={proposal.stage}
                     onSelect={async stage => {
                       const _review = await reviewSchemaProposal({

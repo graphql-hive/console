@@ -175,9 +175,36 @@ export const DisabledOptions = createPreview(() => {
 });
 
 /**
- * Select owns its trigger widths; Button only knows `auto | full`. `sm`/`md`/`lg` are the three
- * fixed widths the legacy call sites used (150 / 200 / 250), `full` fills the container.
+ * `tooltip` explains an option on hover, and works on a disabled one, which is what it is for:
+ * the description says what the role grants, the tooltip says why you cannot grant it. The role
+ * picker on the invite form is the call site.
  */
+export const WithTooltips = createPreview(() => {
+  const [value, setValue] = useState('viewer');
+  return (
+    <Select
+      options={[
+        {
+          value: 'admin',
+          label: 'Admin',
+          description: 'Full access to the organization',
+          disabled: true,
+          tooltip: 'Not enough permissions',
+        },
+        {
+          value: 'developer',
+          label: 'Developer',
+          description: 'Can publish schemas and manage targets',
+        },
+        { value: 'viewer', label: 'Viewer', description: 'Read-only access' },
+      ]}
+      value={value}
+      onValueChange={setValue}
+      searchable
+    />
+  );
+});
+
 /**
  * `size` is the shared `controlSize` ladder, passed through to the trigger Button. `default`
  * (36px) is what a select in a form gets; `compact` (30px) is for a select that sits in a filter
