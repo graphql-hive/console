@@ -7,6 +7,7 @@ import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { emailPasswordSignUp } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import z from 'zod';
 import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -16,7 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';

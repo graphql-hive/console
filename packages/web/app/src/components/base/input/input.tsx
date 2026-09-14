@@ -16,10 +16,6 @@ export const fieldClass = [
   'aria-invalid:border-critical aria-invalid:hover:border-critical aria-invalid:focus:border-critical',
 ];
 
-/**
- * Only `full` exists as a fluid width; the others are the fixed widths the app's fields come in:
- * `xs` a pager or an inline number, `sm` a slug, `md` an endpoint or a secret.
- */
 export const fieldWidth = {
   full: 'w-full',
   xs: 'w-16',
@@ -30,8 +26,8 @@ export const fieldWidth = {
 const inputVariants = cva(fieldClass, {
   variants: {
     size: {
-      compact: `${controlSize.compact} px-2.5`,
-      default: `${controlSize.default} px-3`,
+      compact: `${controlSize.compact} px-2.5 text-sm`,
+      default: `${controlSize.default} px-3 text-sm`,
     },
     width: fieldWidth,
     mono: {

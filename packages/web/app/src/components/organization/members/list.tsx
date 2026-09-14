@@ -3,6 +3,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   MoreHorizontalIcon,
+  SearchIcon,
   ShieldCheck,
   TriangleAlert,
   UserLock,
@@ -19,6 +20,7 @@ import { CopyChip } from '@/components/base/copy-chip/copy-chip';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Input } from '@/components/base/input/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +35,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { KeyIcon } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
@@ -653,12 +654,14 @@ export function OrganizationMembers(props: {
         description="Manage the members of your organization and their permissions."
         sideContent={
           <>
-            <Input
-              className="w-[220px] grow cursor-text"
-              placeholder="Search by username or email"
-              onChange={handleSearchChange}
-              defaultValue={searchValue}
-            />
+            <div className="w-56">
+              <Input
+                placeholder="Search by username or email"
+                leadingIcon={SearchIcon}
+                onChange={handleSearchChange}
+                defaultValue={searchValue}
+              />
+            </div>
             {organization.viewerCanManageInvitations && (
               <MemberInvitationButton
                 refetchInvitations={props.refetchMembers}

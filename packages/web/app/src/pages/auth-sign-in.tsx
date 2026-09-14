@@ -7,6 +7,7 @@ import { emailPasswordSignIn as superEmailPasswordSignIn } from 'supertokens-aut
 import z from 'zod';
 import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -16,7 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/use-toast';
