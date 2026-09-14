@@ -53,10 +53,12 @@ export function CallSiteGroup(props: { label: string; children: ReactNode }) {
 }
 
 /**
- * Which of the two legacy folders the call site imports from. Several components exist in both
- * with different APIs, so the folder is part of identifying what a call site actually uses.
+ * Which folder the call site imports from. Several components exist in both legacy folders with
+ * different APIs, so the folder is part of identifying what a call site actually uses. `base` marks
+ * a site that has already migrated: it is listed so the inventory stays a complete count, and so
+ * the preview shows the thing that actually ships there.
  */
-export type Origin = 'ui' | 'v2';
+export type Origin = 'ui' | 'v2' | 'base';
 
 export type InventoryEntry = {
   /** Repo-relative path and line. */
@@ -77,9 +79,11 @@ export function OriginTag(props: { origin: Origin }) {
   return (
     <span
       className={
-        props.origin === 'v2'
-          ? 'bg-neutral-5 text-neutral-12 rounded-xs px-1 py-px font-mono text-[10px] leading-none'
-          : 'bg-neutral-4 text-neutral-11 rounded-xs px-1 py-px font-mono text-[10px] leading-none'
+        {
+          ui: 'bg-neutral-4 text-neutral-11 rounded-xs px-1 py-px font-mono text-[10px] leading-none',
+          v2: 'bg-neutral-5 text-neutral-12 rounded-xs px-1 py-px font-mono text-[10px] leading-none',
+          base: 'bg-success_80/20 text-success_80 rounded-xs px-1 py-px font-mono text-[10px] leading-none',
+        }[props.origin]
       }
     >
       {props.origin}

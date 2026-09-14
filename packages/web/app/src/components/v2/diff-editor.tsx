@@ -1,10 +1,10 @@
 import { ReactElement, useLayoutEffect, useRef, useState } from 'react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
+import { Switch } from '@/components/base/switch/switch';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
 import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Monaco, MonacoDiffEditor as OriginalMonacoDiffEditor } from '@monaco-editor/react';
 import { ArrowDownIcon, ArrowUpIcon, DownloadIcon } from '@radix-ui/react-icons';

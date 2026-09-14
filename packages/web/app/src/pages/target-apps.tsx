@@ -21,8 +21,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sortable, TimeAgo } from '@/components/v2';
+import { Sortable } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';

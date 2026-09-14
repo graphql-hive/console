@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Switch as V2Switch } from '@/components/v2/switch';
-import { CallSite, InventoryList } from './shared';
+import { Switch } from './switch';
 
-export const nav: NavPath = 'Inventory/Switch';
+export const nav: NavPath = 'Base/FormControls/Switch/Component Examples';
 
 /**
- * Every `ui/switch` and `v2/switch` call site in the app, rendered with the **old** components.
+ * Every Switch call site in the app, transcribed with its real copy so a change to the component
+ * can be judged against what actually ships.
  *
- * The two implementations look different, which is the first thing to check here: `ui/switch` is
- * a neutral track that fills `neutral-12` when on; `v2/switch` is larger and turns orange. Three
- * target-settings rows use the v2 one, so those rows do not match the rest of the app today.
+ * These were migrated from `ui/switch` and `v2/switch` on 2026-09-11. Before that, the same file
+ * lived under `Inventory/Switch` and rendered the old components for comparison; both are deleted
+ * now, so this is the regression fixture rather than the before picture.
  *
  * The pages themselves cannot be imported: they run GraphQL mutations and several sit behind
  * permission flags. Each preview holds its state locally.
@@ -22,70 +22,76 @@ export const nav: NavPath = 'Inventory/Switch';
 const ENTRIES = [
   {
     source: 'pages/target-checks.tsx:419',
-    origin: 'ui',
+    origin: 'base',
     what: 'Show only changed schemas, label to the left',
     coveredBy: 'Filter toggles',
   },
   {
     source: 'pages/target-checks.tsx:432',
-    origin: 'ui',
+    origin: 'base',
     what: 'Show only failed checks, same row shape',
     coveredBy: 'Filter toggles',
   },
   {
     source: 'pages/target-checks-single.tsx:141',
-    origin: 'ui',
+    origin: 'base',
     what: 'Toggle Diff, text-xs label',
     coveredBy: 'Toggle diff',
   },
   {
     source: 'components/v2/diff-editor.tsx:118',
-    origin: 'ui',
+    origin: 'base',
     what: 'Toggle Diff again, byte-identical to the one above',
     coveredBy: 'Toggle diff',
   },
   {
     source: 'components/project/settings/native-composition.tsx:61',
-    origin: 'ui',
+    origin: 'base',
     what: 'Wrapped in a TooltipTrigger whose copy flips with the state',
     coveredBy: 'Switch as trigger',
   },
   {
     source:
       'components/organization/settings/single-sign-on/oidc-integration-configuration.tsx:607',
-    origin: 'ui',
+    origin: 'base',
     what: 'Wrapped in an AlertDialogTrigger, so toggling opens a confirmation',
     coveredBy: 'Switch as trigger',
   },
   {
     source: 'oidc-integration-configuration.tsx:897, :916, :930',
-    origin: 'ui',
+    origin: 'base',
     what: 'Three OIDC restriction rows: title, description, switch on the right',
     coveredBy: 'Settings rows',
   },
   {
     source: 'components/target/alerts/alert-rule-enabled-toggle.tsx:34',
-    origin: 'ui',
-    what: 'Inside a clickable table row, so it stops propagation and carries an aria-label',
+    origin: 'base',
+    what: 'Inside a clickable table row, aria-label only; relies on the built-in stopPropagation',
     coveredBy: 'In a table row',
   },
   {
     source: 'pages/target-settings.tsx:746',
-    origin: 'v2',
+    origin: 'base',
     what: 'Dangerous changes as breaking, sideContent of a settings card',
-    coveredBy: 'v2 settings switches',
+    coveredBy: 'Settings card switches',
   },
   {
     source: 'pages/target-settings.tsx:799',
-    origin: 'v2',
+    origin: 'base',
     what: 'Conditional breaking changes, same shape',
-    coveredBy: 'v2 settings switches',
+    coveredBy: 'Settings card switches',
   },
   {
     source: 'pages/target-settings.tsx:1212',
-    origin: 'v2',
+    origin: 'base',
     what: 'App deployment retention, same shape',
-    coveredBy: 'v2 settings switches',
+    coveredBy: 'Settings card switches',
+  },
+  {
+    source: 'components/base/floating/menu/menu.tsx:239, :318',
+    origin: 'base',
+    what: 'Decorative, inside a Menu toggle row',
+    coveredBy: 'Decorative in a menu',
   },
 ] as const;
 
@@ -93,70 +99,21 @@ export const Inventory = createPreview({
   label: 'Inventory',
   render: () => (
     <InventoryList
-      component="ui/switch and v2/switch"
+      component="base/switch"
       summary={
         <>
-          <strong>13 instances across 7 files.</strong> Ten use <code>ui/switch</code> and three use{' '}
-          <code>v2/switch</code>, which is visibly larger and turns orange rather than neutral — so
-          three target-settings rows already look unlike every other toggle in the app. Two call
-          sites make the switch itself a trigger (a tooltip and an alert dialog), which is the shape
-          most likely to break on a component swap. Two carry <code>data-cy</code> hooks.
+          <strong>13 app call sites plus 2 inside base Menu, all on base/switch.</strong> Two make
+          the switch itself a trigger (a tooltip and an alert dialog), which is the shape most
+          likely to break on a component change. Two carry <code>data-cy</code> hooks. The three
+          former v2 sites lost an orange on-state and a <code>shrink-0</code> className that base
+          already carries. Every switch now stops click propagation itself, so the alert-rule toggle
+          no longer does it by hand.
         </>
       }
       entries={ENTRIES}
     />
   ),
 });
-
-// ---------------------------------------------------------------------------
-// The two implementations, side by side. This is the comparison worth making first.
-// ---------------------------------------------------------------------------
-
-export const BothImplementations = createPreview({
-  label: 'ui vs v2',
-  render: () => {
-    return (
-      <div className="flex flex-col gap-6">
-        <CallSite
-          source="components/ui/switch.tsx"
-          origin="ui"
-          note="h-[24px] w-[44px], neutral track, fills neutral-12 when on. Ten call sites."
-        >
-          <UiSwitchPair />
-        </CallSite>
-        <CallSite
-          source="components/v2/switch.tsx"
-          origin="v2"
-          note="h-[25px] w-[45px], and the thumb turns orange-500 when on with an orange-800 hover border. Three call sites, all on target settings."
-        >
-          <V2SwitchPair />
-        </CallSite>
-      </div>
-    );
-  },
-});
-
-function UiSwitchPair() {
-  const [on, setOn] = useState(true);
-  return (
-    <div className="flex items-center gap-6">
-      <Switch checked={on} onCheckedChange={setOn} />
-      <Switch checked={false} onCheckedChange={() => {}} />
-      <Switch checked disabled />
-    </div>
-  );
-}
-
-function V2SwitchPair() {
-  const [on, setOn] = useState(true);
-  return (
-    <div className="flex items-center gap-6">
-      <V2Switch checked={on} onCheckedChange={setOn} />
-      <V2Switch checked={false} onCheckedChange={() => {}} />
-      <V2Switch checked disabled />
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // pages/target-checks.tsx:419 and :432 — a filter panel, label left, switch right.
@@ -180,8 +137,8 @@ export const FilterToggles = createPreview({
   render: () => (
     <CallSite
       source="pages/target-checks.tsx:419, :432"
-      origin="ui"
-      note="The checks filter panel. Label and switch are pushed apart by justify-between inside a fixed h-9 row."
+      origin="base"
+      note="The checks filter panel. Label and switch are pushed apart by justify-between inside a fixed h-9 row. Click the label: id and htmlFor are wired."
     >
       <div className="w-[20rem]">
         <FilterToggleRow id="filter-toggle-has-changes" label="Show only changed schemas" />
@@ -200,7 +157,7 @@ export const ToggleDiff = createPreview({
   render: () => (
     <CallSite
       source="pages/target-checks-single.tsx:141 and components/v2/diff-editor.tsx:118"
-      origin="ui"
+      origin="base"
       note="Byte-identical in both files, down to the shared htmlFor of toggle-diff-mode. If both render at once the label points at two controls."
     >
       <ToggleDiffRow />
@@ -226,9 +183,7 @@ function ToggleDiffRow() {
 }
 
 // ---------------------------------------------------------------------------
-// The two call sites where the switch IS the trigger for something else. These are the ones to
-// watch on a component swap: both rely on the switch forwarding a ref and firing hover or click
-// through to the wrapper.
+// The two call sites where the switch IS the trigger for something else.
 // ---------------------------------------------------------------------------
 
 export const SwitchAsTrigger = createPreview({
@@ -237,15 +192,15 @@ export const SwitchAsTrigger = createPreview({
     <div className="flex flex-col gap-8">
       <CallSite
         source="components/project/settings/native-composition.tsx:61"
-        origin="ui"
-        note="Bare TooltipTrigger around the switch, and the tooltip copy flips between Enable and Disable with the state. Hover it in both positions."
+        origin="base"
+        note="Bare TooltipTrigger around the switch, and the tooltip copy flips between Enable and Disable with the state. Hover it in both positions. Base Switch renders a span, not a button, so this is no longer a button nested in a button."
       >
         <NativeCompositionSwitch />
       </CallSite>
       <CallSite
         source="components/organization/settings/single-sign-on/oidc-integration-configuration.tsx:607"
-        origin="ui"
-        note="Wrapped in an AlertDialogTrigger, so the switch does not toggle directly: clicking opens a confirmation and the mutation runs from the dialog. It has no onCheckedChange at all."
+        origin="base"
+        note="Wrapped in an AlertDialogTrigger, so the switch does not toggle directly: clicking opens a confirmation and the mutation runs from the dialog. It has no onCheckedChange at all. Worth checking: base Switch stops click propagation, so confirm the AlertDialogTrigger still opens in the app."
       >
         <div className="flex items-center gap-3">
           <span className="text-sm">Enforce OIDC login for verified domains</span>
@@ -297,8 +252,8 @@ export const SettingsRows = createPreview({
   render: () => (
     <CallSite
       source="oidc-integration-configuration.tsx:897, :916, :930"
-      origin="ui"
-      note="Title over a wrapping description, switch pinned right. The descriptions are long and two of them carry a bold warning clause, so the switch has to stay vertically centred against a variable-height block."
+      origin="base"
+      note="Title over a wrapping description, switch pinned right. The descriptions are long and two carry a bold warning clause, so the switch has to stay vertically centred against a variable-height block. shrink-0 is in base's cva, so it does not compress."
     >
       <div className="flex w-[34rem] flex-col gap-4">
         <RestrictionRow
@@ -342,8 +297,8 @@ export const InATableRow = createPreview({
   render: () => (
     <CallSite
       source="components/target/alerts/alert-rule-enabled-toggle.tsx:34"
-      origin="ui"
-      note="The only switch with an aria-label rather than a visible one, and the only one calling stopPropagation, because the alert-rules row navigates on click. Toggling must not open the rule."
+      origin="base"
+      note="The only switch with an aria-label rather than a visible one. The row navigates on click; base Switch stops propagation itself, so clicking the switch here should not trigger the row's onClick. Try both."
     >
       <AlertRuleRow />
     </CallSite>
@@ -352,31 +307,37 @@ export const InATableRow = createPreview({
 
 function AlertRuleRow() {
   const [enabled, setEnabled] = useState(true);
+  const [rowClicks, setRowClicks] = useState(0);
 
   return (
-    <div
-      className="border-neutral-5 hover:bg-neutral-3 flex w-[34rem] cursor-pointer items-center justify-between rounded-md border px-4 py-3"
-      onClick={() => {}}
-    >
-      <div className="flex flex-col">
-        <span className="text-sm font-medium">p99 latency over 500ms</span>
-        <span className="text-neutral-10 text-xs">Evaluated every 5 minutes</span>
+    <div className="flex flex-col gap-2">
+      <div
+        className="border-neutral-5 hover:bg-neutral-3 flex w-[34rem] cursor-pointer items-center justify-between rounded-md border px-4 py-3"
+        onClick={() => setRowClicks(n => n + 1)}
+      >
+        <div className="flex flex-col">
+          <span className="text-sm font-medium">p99 latency over 500ms</span>
+          <span className="text-neutral-10 text-xs">Evaluated every 5 minutes</span>
+        </div>
+        <Switch
+          checked={enabled}
+          aria-label={enabled ? 'Disable alert rule' : 'Enable alert rule'}
+          onCheckedChange={setEnabled}
+        />
       </div>
-      <Switch
-        checked={enabled}
-        aria-label={enabled ? 'Disable alert rule' : 'Enable alert rule'}
-        onClick={e => e.stopPropagation()}
-        onCheckedChange={setEnabled}
-      />
+      <span className="text-neutral-10 text-xs">
+        Row clicked {rowClicks} {rowClicks === 1 ? 'time' : 'times'}. Toggling the switch should not
+        increment this.
+      </span>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// target-settings.tsx:746, :799, :1212 — the v2 switch, as the sideContent of a settings card.
+// target-settings.tsx:746, :799, :1212 — formerly v2/switch, as the sideContent of a settings card.
 // ---------------------------------------------------------------------------
 
-function V2SettingsRow(props: { title: string; description: string }) {
+function SettingsCardRow(props: { title: string; description: string }) {
   const [checked, setChecked] = useState(false);
 
   return (
@@ -388,29 +349,29 @@ function V2SettingsRow(props: { title: string; description: string }) {
           Learn more
         </a>
       </div>
-      <V2Switch className="shrink-0" checked={checked} onCheckedChange={setChecked} />
+      <Switch checked={checked} onCheckedChange={setChecked} />
     </div>
   );
 }
 
-export const V2SettingsSwitches = createPreview({
-  label: 'v2 settings switches',
+export const SettingsCardSwitches = createPreview({
+  label: 'Settings card switches',
   render: () => (
     <CallSite
       source="pages/target-settings.tsx:746, :799, :1212"
-      origin="v2"
-      note="All three pass className='shrink-0' and sit in a card's sideContent. Compare the orange against the ui switches above: these three rows are the only place in the app that colour appears on a toggle."
+      origin="base"
+      note="These were the three v2/switch call sites: larger, and orange when on. They now match every other toggle in the app. The className='shrink-0' each passed is gone; base carries it."
     >
       <div className="flex flex-col gap-4">
-        <V2SettingsRow
+        <SettingsCardRow
           title="Consider dangerous changes as breaking"
           description="Marks dangerous changes as breaking, so they fail a schema check."
         />
-        <V2SettingsRow
+        <SettingsCardRow
           title="Conditional breaking changes"
           description="Use usage data to decide whether a breaking change actually breaks anyone."
         />
-        <V2SettingsRow
+        <SettingsCardRow
           title="App deployment retention"
           description="Retire app deployments that have not received traffic."
         />
@@ -418,3 +379,37 @@ export const V2SettingsSwitches = createPreview({
     </CallSite>
   ),
 });
+
+// ---------------------------------------------------------------------------
+// base/floating/menu/menu.tsx:239, :318 — the decorative case.
+// ---------------------------------------------------------------------------
+
+export const DecorativeInAMenu = createPreview({
+  label: 'Decorative in a menu',
+  render: () => <DecorativeRows />,
+});
+
+function DecorativeRows() {
+  const [flags, setFlags] = useState({ deprecated: true, unused: false });
+
+  return (
+    <CallSite
+      source="components/base/floating/menu/menu.tsx:239, :318"
+      origin="base"
+      note="Menu's toggle entries draw a small decorative switch inside a CheckboxItem. The row is the control; the switch just reads out state. Tab through: the switches are skipped. This stands in for the Menu row since it cannot be rendered outside a Menu."
+    >
+      <div className="flex w-56 flex-col">
+        {(['deprecated', 'unused'] as const).map(key => (
+          <div
+            key={key}
+            className="hover:bg-neutral-5 flex h-7 cursor-pointer items-center gap-2 rounded-sm px-2 text-[13px]"
+            onClick={() => setFlags(f => ({ ...f, [key]: !f[key] }))}
+          >
+            <span className="flex-1">Show {key} fields</span>
+            <Switch checked={flags[key]} size="small" decorative />
+          </div>
+        ))}
+      </div>
+    </CallSite>
+  );
+}

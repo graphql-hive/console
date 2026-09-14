@@ -13,6 +13,7 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { Switch } from '@/components/base/switch/switch';
 import {
   ChangesBlock,
   CompositionErrorsList,
@@ -34,7 +35,6 @@ import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/compone
 import { QueryError } from '@/components/ui/query-error';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';

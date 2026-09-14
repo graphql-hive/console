@@ -10,7 +10,7 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
-import { TimeAgo } from '@/components/v2';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';

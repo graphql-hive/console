@@ -11,8 +11,8 @@ export const nav: NavPath = 'Inventory/Button';
  * Far too many to transcribe individually, so this is one preview per distinct shape, with the
  * counts that matter for the API underneath each. The Inventory screen carries the distributions.
  *
- * There is no v2 counterpart in use: `v2/radix-button.tsx` exists but is dead code, reachable only
- * from the equally dead `v2/radix-select.tsx`.
+ * There is no v2 counterpart: `v2/radix-button.tsx` was dead code reachable only from the equally
+ * dead `v2/radix-select.tsx`, and both were deleted in the groundwork commit.
  */
 
 const ENTRIES = [

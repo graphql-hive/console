@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover as BasePopover } from '@base-ui/react/popover';
+import { useFloatingPortalContainer } from '../floating-portal-container';
 import { floatingVariants, type FloatingProps } from '../shared-styles';
 
 const widthMap = {
@@ -43,6 +44,7 @@ function isStructured(props: PopoverProps): props is PopoverStructuredProps {
 
 export function Popover(props: PopoverProps) {
   const { trigger, side = 'bottom', align, sideOffset = 8, arrow, open, onOpenChange } = props;
+  const portalContainer = useFloatingPortalContainer();
 
   let inner: React.ReactNode;
 
@@ -73,7 +75,7 @@ export function Popover(props: PopoverProps) {
   return (
     <BasePopover.Root open={open} onOpenChange={onOpenChange}>
       <BasePopover.Trigger render={trigger} />
-      <BasePopover.Portal>
+      <BasePopover.Portal container={portalContainer ?? undefined}>
         <BasePopover.Positioner
           side={side}
           align={align}
