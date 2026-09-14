@@ -1,8 +1,6 @@
 import {
   ChangeEventHandler,
-  forwardRef,
   Fragment,
-  InputHTMLAttributes,
   memo,
   ReactNode,
   useCallback,
@@ -15,30 +13,13 @@ import { CircleXIcon, PlusIcon } from 'lucide-react';
 import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Collapsible } from '@/components/base/collapsible/collapsible';
+import { Input } from '@/components/base/input/input';
 import { Separator } from '@/components/base/separator/separator';
 import { focusRing } from '@/components/base/shared-styles';
 import { Slider } from '@/components/base/slider/slider';
 import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-
-type FilterInputProps = InputHTMLAttributes<HTMLInputElement>;
-
-export const FilterInput = forwardRef<HTMLInputElement, FilterInputProps>(
-  ({ className, type, ...props }, ref) => {
-    return (
-      <input
-        type={type}
-        className={cn(
-          'border-neutral-5 placeholder:text-neutral-10 focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50',
-          className,
-        )}
-        ref={ref}
-        {...props}
-      />
-    );
-  },
-);
 
 export function FilterLocalSearch(props: { value: string; onChange(value: string): void }) {
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,12 +28,7 @@ export function FilterLocalSearch(props: { value: string; onChange(value: string
 
   return (
     <div className="mt-4 flex w-full max-w-sm items-center space-x-2">
-      <FilterInput
-        type="text"
-        placeholder="Search values"
-        value={props.value}
-        onChange={handleChange}
-      />
+      <Input type="text" placeholder="Search values" value={props.value} onChange={handleChange} />
     </div>
   );
 }
@@ -106,7 +82,7 @@ export const MultiInputFilter = memo(
             addTraceId();
           }}
         >
-          <FilterInput
+          <Input
             type="text"
             placeholder="Trace ID..."
             value={traceId}
@@ -198,7 +174,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
       changes={props.selectedValues.length}
       onReset={() => props.onChange([])}
     >
-      {!props.hideSearch && !!filteredOptions.length && (
+      {!props.hideSearch && props.options.length > 0 && (
         <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />
       )}
       {filteredOptions.length === 0 ? (
@@ -344,31 +320,25 @@ export const DurationFilter = memo(
           <div className="space-y-2">
             <div className="space-y-1">
               <label className="font-mono text-xs text-zinc-400">MIN</label>
-              <div className="relative">
-                <FilterInput
-                  type="number"
-                  value={values[0]}
-                  onChange={handleMinInputChange}
-                  className="text-neutral-12 h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono"
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400">
-                  ms
-                </span>
-              </div>
+              <Input
+                type="number"
+                value={values[0]}
+                onChange={handleMinInputChange}
+                size="compact"
+                mono
+                trailing={<span className="text-neutral-10 font-mono text-xs">ms</span>}
+              />
             </div>
             <div className="space-y-1">
               <label className="font-mono text-xs text-zinc-400">MAX</label>
-              <div className="relative">
-                <FilterInput
-                  type="number"
-                  value={values[1]}
-                  onChange={handleMaxInputChange}
-                  className="border-neutral-5 text-neutral-12 h-7 bg-transparent px-2 pr-8 font-mono"
-                />
-                <span className="text-neutral-10 absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs">
-                  ms
-                </span>
-              </div>
+              <Input
+                type="number"
+                value={values[1]}
+                onChange={handleMaxInputChange}
+                size="compact"
+                mono
+                trailing={<span className="text-neutral-10 font-mono text-xs">ms</span>}
+              />
             </div>
           </div>
           <Slider

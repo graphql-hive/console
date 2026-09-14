@@ -490,6 +490,12 @@ function CreateContractDialogContent(props: {
                 disabled={form.isSubmitting}
                 autoComplete="off"
                 onSurface="raised"
+                invalid={
+                  !!(
+                    mutation.data?.createContract.error?.details?.contractName ??
+                    (form.touched.contractName ? form.errors.contractName : null)
+                  )
+                }
               />
               <span className="text-sm text-red-500 after:invisible after:content-['.']">
                 {mutation.data?.createContract.error?.details?.contractName ??

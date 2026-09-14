@@ -7,7 +7,8 @@ import { controlSize, focusRing, type ControlSize, type OnSurface } from '../sha
 /** The field itself, shared with Textarea. Fill and border come from `fieldSurface`. */
 export const fieldClass = [
   'text-neutral-12 placeholder:text-neutral-8',
-  'min-w-0 rounded-sm border transition-colors focus:outline-none',
+  // appearance-none: WebKit draws type="search" as a native searchfield with its own corners.
+  'min-w-0 appearance-none rounded-sm border transition-colors focus:outline-none',
   focusRing,
   'disabled:cursor-not-allowed disabled:opacity-50',
   // Error state comes from the attribute, so a react-hook-form FormControl and a Formik `invalid`

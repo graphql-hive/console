@@ -1,20 +1,16 @@
 import { useMemo, useRef, useState } from 'react';
 import { endOfDay, endOfToday, formatDate, subMonths } from 'date-fns';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, SearchIcon } from 'lucide-react';
 import { DateRange, Matcher } from 'react-day-picker';
+import { Button as BaseButton } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { Input } from '@/components/base/input/input';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { DurationUnit, formatDateToString, parse, units } from '@/lib/date-math';
 import { useResetState } from '@/lib/hooks/use-reset-state';
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  Cross1Icon,
-  MagnifyingGlassIcon,
-} from '@radix-ui/react-icons';
+import { ChevronDownIcon, ChevronUpIcon, Cross1Icon } from '@radix-ui/react-icons';
 import { Button } from './button';
 import { Calendar } from './calendar';
-import { Input } from './input';
 import { Label } from './label';
 
 export interface DateRangePickerProps {
@@ -377,24 +373,25 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                   From
                 </Label>
                 <div className="flex w-full max-w-sm items-center space-x-2">
-                  <div className="relative flex w-full">
-                    <Input
-                      type="text"
-                      id="from"
-                      value={fromValue}
-                      onChange={ev => {
-                        setFromValue(ev.target.value);
-                      }}
-                      className="font-mono text-xs"
-                    />
-                    <Button
-                      variant="ghost"
-                      className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
-                      onClick={() => setShowCalendar(true)}
-                    >
-                      <CalendarDays className="size-3.5" />
-                    </Button>
-                  </div>
+                  <Input
+                    type="text"
+                    id="from"
+                    value={fromValue}
+                    onChange={ev => {
+                      setFromValue(ev.target.value);
+                    }}
+                    mono
+                    trailing={
+                      <BaseButton
+                        layout="iconOnly"
+                        icon={CalendarDays}
+                        aria-label="Pick a date"
+                        variant="ghost"
+                        size="compact"
+                        onClick={() => setShowCalendar(true)}
+                      />
+                    }
+                  />
                 </div>
                 <div className="text-red-500">
                   {hasInvalidUnitRegex?.test(fromValue) ? (
@@ -409,24 +406,25 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                   To
                 </Label>
                 <div className="flex w-full max-w-sm items-center space-x-2">
-                  <div className="relative flex w-full">
-                    <Input
-                      type="text"
-                      id="to"
-                      value={toValue}
-                      onChange={ev => {
-                        setToValue(ev.target.value);
-                      }}
-                      className="font-mono text-xs"
-                    />
-                    <Button
-                      variant="ghost"
-                      className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
-                      onClick={() => setShowCalendar(true)}
-                    >
-                      <CalendarDays className="size-3.5" />
-                    </Button>
-                  </div>
+                  <Input
+                    type="text"
+                    id="to"
+                    value={toValue}
+                    onChange={ev => {
+                      setToValue(ev.target.value);
+                    }}
+                    mono
+                    trailing={
+                      <BaseButton
+                        layout="iconOnly"
+                        icon={CalendarDays}
+                        aria-label="Pick a date"
+                        variant="ghost"
+                        size="compact"
+                        onClick={() => setShowCalendar(true)}
+                      />
+                    }
+                  />
                 </div>
                 <div className="text-red-500">
                   {hasInvalidUnitRegex?.test(toValue) ? (
@@ -516,15 +514,12 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
         }
       />
       <div className="ml-3 flex flex-col gap-1 border-l py-2 pl-3 pr-2">
-        <div className="relative flex items-center">
-          <MagnifyingGlassIcon className="absolute left-2" />
-          <Input
-            placeholder="Filter quick ranges"
-            className="w-full pl-7"
-            value={quickRangeFilter}
-            onChange={ev => setQuickRangeFilter(ev.target.value)}
-          />
-        </div>
+        <Input
+          placeholder="Filter quick ranges"
+          leadingIcon={SearchIcon}
+          value={quickRangeFilter}
+          onChange={ev => setQuickRangeFilter(ev.target.value)}
+        />
         <ScrollArea fill>
           <div className="flex w-full flex-col items-start gap-1 pb-2 pt-1">
             {dynamicPresets.length > 0

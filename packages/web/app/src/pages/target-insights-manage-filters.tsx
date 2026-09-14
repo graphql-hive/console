@@ -7,6 +7,7 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import { Menu } from '@/components/base/floating/menu/menu';
+import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -20,7 +21,6 @@ import {
   type Preset,
 } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
@@ -233,7 +233,7 @@ function NameCell({
           if (e.key === 'Enter') void handleRename();
           else if (e.key === 'Escape') onStopRename();
         }}
-        className="h-8"
+        size="compact"
       />
       <Button
         variant="primary"

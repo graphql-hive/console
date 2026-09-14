@@ -17,6 +17,7 @@ import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Switch } from '@/components/base/switch/switch';
+import { Textarea } from '@/components/base/textarea/textarea';
 import {
   ChangesBlock,
   CompositionErrorsList,
@@ -37,7 +38,6 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { DownloadButton } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -251,7 +251,6 @@ function ApproveFailedSchemaCheckModal(props: {
         <Textarea
           value={approvalComment}
           onChange={onApprovalCommentChange}
-          className="w-full"
           placeholder="(Optional)  Add a comment..."
         />
         <div className="text-right">

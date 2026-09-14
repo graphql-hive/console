@@ -69,6 +69,8 @@ describe('Input', () => {
     // Focus lifts the fill one step on every surface.
     expect(input.className).toContain('focus:bg-neutral-1');
     expect(input.className).toContain('dark:focus:bg-neutral-4');
+    // Without this a type="search" field takes WebKit's native searchfield corners.
+    expect(input.className).toContain('appearance-none');
   });
 
   it('marks the field invalid through aria-invalid, and only then', () => {
