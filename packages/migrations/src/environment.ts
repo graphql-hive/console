@@ -35,6 +35,9 @@ const EnvironmentModel = zod.object({
   RELEASE: emptyString(zod.string().optional()),
   MIGRATOR: emptyString(zod.string().optional()),
   CLICKHOUSE_MIGRATOR: emptyString(zod.string().optional()),
+  CLICKHOUSE_OPERATIONS_V01_ROLLUPS: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
   CLICKHOUSE_MIGRATOR_GRAPHQL_HIVE_CLOUD: zod
     .union([zod.literal('1'), zod.literal('0')])
     .optional(),
@@ -111,6 +114,7 @@ export const env = {
       : null,
   isMigrator: base.MIGRATOR === 'up',
   isClickHouseMigrator: base.CLICKHOUSE_MIGRATOR === 'up',
+  enableOperationsV01Rollups: base.CLICKHOUSE_OPERATIONS_V01_ROLLUPS === '1',
   isHiveCloud: base.CLICKHOUSE_MIGRATOR_GRAPHQL_HIVE_CLOUD === '1',
   hiveCloudEnvironment: base.GRAPHQL_HIVE_ENVIRONMENT ?? null,
 } as const;
