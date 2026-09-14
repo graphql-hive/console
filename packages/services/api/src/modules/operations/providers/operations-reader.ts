@@ -1,5 +1,5 @@
 import { addMinutes, format } from 'date-fns';
-import { Injectable } from 'graphql-modules';
+import { Inject, Injectable } from 'graphql-modules';
 import * as z from 'zod';
 import { UTCDate } from '@date-fns/utc';
 import { buildOperationsFilterSQLConditions, RawValue, SqlValue } from '@hive/clickhouse';
@@ -11,6 +11,7 @@ import { toEndOfInterval, toStartOfInterval } from '../lib/date-time-helpers';
 import { pickTableByPeriod } from '../lib/pick-table-by-provider';
 import { ClickHouse, RowOf, sql } from './clickhouse-client';
 import { calculateTimeWindow } from './helpers';
+import { CLICKHOUSE_CONFIG, type ClickHouseConfig } from './tokens';
 
 const CoordinateClientNamesGroupModel = z.array(
   z.object({
@@ -89,6 +90,15 @@ function ensureNumber(value: number | string): number {
   return parseFloat(value);
 }
 
+export function shouldUseOperationsV01Rollups(
+  period: DateRange | null,
+  operationsV01RollupsStart?: Date,
+): boolean {
+  return !!(period && operationsV01RollupsStart && period.from >= operationsV01RollupsStart);
+}
+
+type OperationsRollupDimensions = 'hash' | 'client' | 'timestamp';
+
 @Injectable({
   global: true,
 })
@@ -96,7 +106,44 @@ export class OperationsReader {
   constructor(
     private clickHouse: ClickHouse,
     private logger: Logger,
+    @Inject(CLICKHOUSE_CONFIG) private clickHouseConfig?: ClickHouseConfig,
   ) {}
+
+  private operationsRollupTable(
+    legacyTable: RawValue,
+    period: DateRange,
+    dimensions: OperationsRollupDimensions,
+  ): RawValue {
+    if (!shouldUseOperationsV01Rollups(period, this.clickHouseConfig?.operationsV01RollupsStart)) {
+      return legacyTable;
+    }
+
+    const suffix =
+      dimensions === 'timestamp' ? '_by_timestamp' : dimensions === 'client' ? '_by_client' : '';
+    return sql.raw(`operations_v01_${legacyTable.sql.replace('operations_', '')}${suffix}`);
+  }
+
+  private operationsRollupDimensions(args: {
+    operations?: readonly string[];
+    clients?: readonly string[];
+    clientVersionFilters?: readonly unknown[];
+    schemaCoordinate?: string;
+    requiresHash?: boolean;
+  }): OperationsRollupDimensions {
+    if (args.requiresHash || args.operations?.length || args.schemaCoordinate) {
+      return 'hash';
+    }
+
+    return args.clients?.length || args.clientVersionFilters?.length ? 'client' : 'timestamp';
+  }
+
+  private durationQuantilesMerge(period: DateRange): RawValue {
+    return sql.raw(
+      shouldUseOperationsV01Rollups(period, this.clickHouseConfig?.operationsV01RollupsStart)
+        ? 'quantilesTDigestMerge'
+        : 'quantilesMerge',
+    );
+  }
 
   private pickAggregationByPeriod(args: {
     period: DateRange | null;
@@ -295,7 +342,7 @@ export class OperationsReader {
             SELECT
               coordinate,
               sum(total) as total
-            FROM ${aggregationTableName('coordinate_counts')} 
+            FROM ${aggregationTableName('coordinate_counts')}
             ${this.createFilter({
               target: targetIds,
               period,
@@ -403,7 +450,7 @@ export class OperationsReader {
             SELECT
               coordinate,
               sum(total) as total
-            FROM ${aggregationTableName('coordinates')} 
+            FROM ${aggregationTableName('coordinates')}
             ${this.createFilter({
               target: targetIds,
               period,
@@ -642,7 +689,7 @@ export class OperationsReader {
         minutely: 10_000,
       },
       query: aggregationTableName =>
-        sql`SELECT sum(total) as total FROM ${aggregationTableName('operations')} ${this.createFilter(
+        sql`SELECT sum(total) as total FROM ${this.operationsRollupTable(aggregationTableName('operations'), period, 'timestamp')} ${this.createFilter(
           {
             target,
             period,
@@ -719,6 +766,13 @@ export class OperationsReader {
     ok: number;
     notOk: number;
   }> {
+    const rollupDimensions = this.operationsRollupDimensions({
+      operations,
+      clients,
+      clientVersionFilters,
+      schemaCoordinate,
+    });
+
     const query = this.pickAggregationByPeriod({
       timeout: {
         minutely: 10_000,
@@ -726,8 +780,14 @@ export class OperationsReader {
         daily: 30_000,
       },
       queryId: aggregation => `count_operations_${aggregation}`,
-      query: aggregationTableName =>
-        sql`SELECT sum(total) as total, sum(total_ok) as totalOk FROM ${aggregationTableName('operations')} ${this.createFilter(
+      query: aggregationTableName => {
+        const operationsTable = this.operationsRollupTable(
+          aggregationTableName('operations'),
+          period,
+          rollupDimensions,
+        );
+
+        return sql`SELECT sum(total) as total, sum(total_ok) as totalOk FROM ${operationsTable} ${this.createFilter(
           {
             target,
             period,
@@ -748,7 +808,8 @@ export class OperationsReader {
                 ]
               : [],
           },
-        )}`,
+        )}`;
+      },
       period,
     });
 
@@ -812,6 +873,12 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
   }): Promise<number> {
+    const rollupDimensions = this.operationsRollupDimensions({
+      operations,
+      clients,
+      clientVersionFilters,
+      requiresHash: true,
+    });
     const query = this.pickAggregationByPeriod({
       period,
       timeout: {
@@ -820,7 +887,7 @@ export class OperationsReader {
         minutely: 10_000,
       },
       query: aggregationTableName =>
-        sql`SELECT count(distinct hash) as total FROM ${aggregationTableName('operations')} ${this.createFilter(
+        sql`SELECT count(distinct hash) as total FROM ${this.operationsRollupTable(aggregationTableName('operations'), period, rollupDimensions)} ${this.createFilter(
           {
             target,
             period,
@@ -869,6 +936,7 @@ export class OperationsReader {
       percentage: number;
     }>
   > {
+    const rollupDimensions = this.operationsRollupDimensions({ requiresHash: true });
     const query = this.pickAggregationByPeriod({
       period,
       timeout: {
@@ -877,8 +945,10 @@ export class OperationsReader {
         minutely: 10_000,
       },
       query: aggregationTableName =>
-        sql`SELECT sum(total) as total, sum(total_ok) as totalOk, hash FROM ${aggregationTableName(
-          'operations',
+        sql`SELECT sum(total) as total, sum(total_ok) as totalOk, hash FROM ${this.operationsRollupTable(
+          aggregationTableName('operations'),
+          period,
+          rollupDimensions,
         )} ${this.createFilter({
           target,
           period,
@@ -925,7 +995,7 @@ export class OperationsReader {
                 sql`
                   hash IN (
                     SELECT hash
-                    FROM ${sql.raw('operations_' + query.queryType)}
+                    FROM ${this.operationsRollupTable(sql.raw('operations_' + query.queryType), period, rollupDimensions)}
                     ${this.createFilter({
                       target,
                       period,
@@ -1937,7 +2007,7 @@ export class OperationsReader {
                   ) as date,
                   sum(total) as total,
                   target
-                FROM ${aggregationTableName('operations')}
+                FROM ${this.operationsRollupTable(aggregationTableName('operations'), period, 'timestamp')}
                 ${this.createFilter({ target: targets, period: roundedPeriod })}
                 GROUP BY target, date
                 ORDER BY
@@ -2134,6 +2204,11 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
   }): Promise<DurationMetrics> {
+    const rollupDimensions = this.operationsRollupDimensions({
+      operations,
+      clients,
+      clientVersionFilters,
+    });
     const result = await this.clickHouse.query<{
       percentiles: [number, number, number, number];
       average: number;
@@ -2142,8 +2217,8 @@ export class OperationsReader {
         query: aggregationTableName => sql`
           SELECT
             avgMerge(duration_avg) as average,
-            quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
-          FROM ${aggregationTableName('operations')}
+            ${this.durationQuantilesMerge(period)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
+          FROM ${this.operationsRollupTable(aggregationTableName('operations'), period, rollupDimensions)}
             ${this.createFilter({ target, period, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters })}
         `,
         queryId: aggregation => `general_duration_percentiles_${aggregation}`,
@@ -2174,6 +2249,7 @@ export class OperationsReader {
     clients?: readonly string[];
     schemaCoordinate?: string;
   }) {
+    const rollupDimensions = this.operationsRollupDimensions({ requiresHash: true });
     const result = await this.clickHouse.query<{
       hash: string;
       average: number;
@@ -2184,8 +2260,8 @@ export class OperationsReader {
               SELECT
                 hash,
                 avgMerge(duration_avg) as average,
-                quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
-              FROM ${aggregationTableName('operations')}
+                ${this.durationQuantilesMerge(period)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
+              FROM ${this.operationsRollupTable(aggregationTableName('operations'), period, rollupDimensions)}
               ${this.createFilter({
                 target,
                 period,
@@ -2482,6 +2558,12 @@ export class OperationsReader {
     };
     const startDateTimeFormatted = formatDate(roundedPeriod.from);
     const endDateTimeFormatted = formatDate(roundedPeriod.to);
+    const rollupDimensions = this.operationsRollupDimensions({
+      operations,
+      clients,
+      clientVersionFilters,
+      schemaCoordinate,
+    });
 
     const query = this.pickAggregationByPeriod({
       timeout: 15_000,
@@ -2505,10 +2587,10 @@ export class OperationsReader {
               ) * toUInt32(${String(interval.seconds)})
             ) as date,
             avgMerge(duration_avg) as average,
-            quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles,
+            ${this.durationQuantilesMerge(period)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles,
             sum(total) as total,
             sum(total_ok) as totalOk
-          FROM ${aggregationTableName('operations')}
+          FROM ${this.operationsRollupTable(aggregationTableName('operations'), period, rollupDimensions)}
           ${this.createFilter({
             target,
             period: roundedPeriod,
@@ -2658,9 +2740,9 @@ export class OperationsReader {
 
     const query = this.pickAggregationByPeriod({
       query: aggregationTableName => sql`
-      SELECT 
-        coalesce(c.coordinate, r.coordinate) AS coordinate, 
-        c.total AS total, 
+      SELECT
+        coalesce(c.coordinate, r.coordinate) AS coordinate,
+        c.total AS total,
         r.totalResolutions AS totalResolutions
       FROM
       (
@@ -2877,7 +2959,7 @@ export class OperationsReader {
         SELECT
           sum(total) as total,
           target
-        FROM ${aggregationTableName('operations')}
+        FROM ${this.operationsRollupTable(aggregationTableName('operations'), period, 'timestamp')}
         PREWHERE
           timestamp >= toDateTime(${formatDate(period.from)}, 'UTC')
           AND
@@ -2928,7 +3010,7 @@ export class OperationsReader {
             ) * toUInt32(${String(interval.seconds)})
           ) as date,
           sum(total) as total
-        FROM ${aggregationTableName('operations')}
+        FROM ${this.operationsRollupTable(aggregationTableName('operations'), period, 'timestamp')}
         ${this.createFilter({ period: roundedPeriod })}
         GROUP BY date
         ORDER BY date

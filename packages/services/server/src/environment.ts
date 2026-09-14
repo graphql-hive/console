@@ -112,6 +112,7 @@ const ClickHouseModel = zod.object({
   CLICKHOUSE_USERNAME: zod.string(),
   CLICKHOUSE_PASSWORD: zod.string(),
   CLICKHOUSE_REQUEST_TIMEOUT: emptyString(NumberFromString.optional()),
+  CLICKHOUSE_OPERATIONS_V01_ROLLUPS_START: emptyString(zod.coerce.date().optional()),
 });
 
 const SuperTokensModel = zod.object({
@@ -602,6 +603,7 @@ export const env = {
     username: clickhouse.CLICKHOUSE_USERNAME,
     password: clickhouse.CLICKHOUSE_PASSWORD,
     requestTimeout: clickhouse.CLICKHOUSE_REQUEST_TIMEOUT,
+    operationsV01RollupsStart: clickhouse.CLICKHOUSE_OPERATIONS_V01_ROLLUPS_START,
   },
   redis:
     redisConfigResult?.type === 'ok'
