@@ -58,7 +58,7 @@ export function ConnectSingleSignOnProviderSheet(
 ): React.ReactNode {
   const [state, setState] = useState<'discovery' | 'manual'>('discovery');
   const form = useForm({
-    resolver: zodResolver(OIDCMetadataSchema),
+    resolver: zodResolver(ConnectProviderFormSchema),
     defaultValues: {
       authorization_endpoint: props.initialValues?.authorizationEndpoint ?? '',
       token_endpoint: props.initialValues?.tokenEndpoint ?? '',
@@ -489,4 +489,13 @@ const OIDCMetadataSchema = z.object({
       required_error: 'Authorization endpoint not found',
     })
     .url('Authorization endpoint must be a valid URL'),
+});
+
+// Only the endpoints are validated client-side; the remaining fields are
+// checked by the server on save and surfaced through form.setError.
+const ConnectProviderFormSchema = OIDCMetadataSchema.extend({
+  clientId: z.string(),
+  clientSecret: z.string(),
+  userIdClaim: z.string(),
+  additionalScopes: z.string(),
 });

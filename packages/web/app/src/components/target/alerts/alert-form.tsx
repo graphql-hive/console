@@ -440,7 +440,7 @@ export function AlertForm(props: AlertFormProps) {
   const [, addMetricAlertRule] = useMutation(AlertForm_AddMetricAlertRuleMutation);
   const [, updateMetricAlertRule] = useMutation(AlertForm_UpdateMetricAlertRuleMutation);
 
-  const form = useForm<AlertFormValues>({
+  const form = useForm({
     resolver: zodResolver(AlertFormSchema),
     defaultValues: defaultValues ?? DEFAULT_ALERT_FORM_VALUES,
     mode: 'onChange',
