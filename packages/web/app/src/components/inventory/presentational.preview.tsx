@@ -1,7 +1,6 @@
 import { AlertTriangleIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge, BadgeRounded } from '@/components/ui/badge';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,13 +8,13 @@ import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { InlineCode } from '@/components/v2/inline-code';
 import Stat from '@/components/v2/stat';
-import { Tag } from '@/components/v2/tag';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Presentational';
 
 /**
- * The ten presentational primitives: pills, banners, typography, loading states.
+ * The seven presentational primitives still to migrate: banners, typography, loading states, Stat
+ * and InlineCode. The pills (Badge, BadgeRounded, Tag) moved to base in round 5.
  *
  * These have no behaviour, so the migration is entirely about which variants survive. The export
  * audit found a lot of declared-but-unreachable ones, and several call sites reaching past the
@@ -27,24 +26,6 @@ export const nav: NavPath = 'Inventory/Presentational';
  */
 
 const ENTRIES = [
-  {
-    source: '64 render sites across 22 files',
-    origin: 'ui',
-    what: 'Badge — 71 classNames against 64 instances, 8 variants of which 3 are unreachable',
-    coveredBy: 'Pills',
-  },
-  {
-    source: 'target-checks.tsx:157, target-history.tsx:125, target-alerts-rules.tsx:176 and 6 more',
-    origin: 'ui',
-    what: 'BadgeRounded — a status dot; colour is always a computed expression, never a literal',
-    coveredBy: 'Pills',
-  },
-  {
-    source: '16 render sites',
-    origin: 'v2',
-    what: 'Tag — same pill role as Badge, different scale and API; 3 of 6 colours unreachable',
-    coveredBy: 'Pills',
-  },
   {
     source: 'target-explorer.tsx:212, target-insights-operation.tsx:120 and 5 more',
     origin: 'ui',
@@ -99,24 +80,22 @@ export const Inventory = createPreview({
   label: 'Inventory',
   render: () => (
     <InventoryList
-      component="10 presentational primitives"
+      component="7 presentational primitives"
       summary={
         <>
-          <strong>Three pairs do the same job twice.</strong> Badge and Tag are both pills. Alert
-          and Callout are both banners. Heading and Text are both typography, and Text has one call
-          site. Each pair disagrees on scale, palette and API.
+          <strong>Two pairs do the same job twice.</strong> Alert and Callout are both banners.
+          Heading and Text are both typography, and Text has one call site. Each pair disagrees on
+          scale, palette and API. Badge, BadgeRounded and Tag were here too until round 5 moved them
+          onto base Badge, StatusDot and Callout; see Base/Primitives/Badge.
           <br />
           <br />
-          <strong>Unreachable variants, delete rather than port:</strong> Badge{' '}
-          <code>informal</code>; Tag <code>blue</code>, <code>orange</code>, <code>red</code>;
-          Heading <code>2xl</code>; Callout <code>default</code> and its <code>emoji</code> prop.
-          Zero call sites each. Badge <code>default</code>, Tag <code>gray</code> and Callout{' '}
-          <code>default</code> are never passed explicitly but are reached by omission.
+          <strong>Unreachable variants, delete rather than port:</strong> Heading <code>2xl</code>;
+          Callout <code>default</code> and its <code>emoji</code> prop. Zero call sites each.
+          Callout <code>default</code> is never passed explicitly but is reached by omission.
           <br />
           <br />
-          <strong>Two components are pure className carriers.</strong> Skeleton has 44 classNames
-          against 43 instances and no API at all; Badge has 71 against 64. A variant set nobody can
-          reach and a className on every instance are the same signal.
+          <strong>Skeleton is a pure className carrier.</strong> 44 classNames against 43 instances
+          and no API at all.
           <br />
           <br />
           <strong>Two live bugs.</strong> <code>Text</code> declares an <code>arrangement</code>{' '}
@@ -128,140 +107,6 @@ export const Inventory = createPreview({
       }
       entries={ENTRIES}
     />
-  ),
-});
-
-// ---------------------------------------------------------------------------
-// Badge, BadgeRounded and Tag. Two pill systems and a status dot.
-// ---------------------------------------------------------------------------
-
-export const Pills = createPreview({
-  label: 'Pills',
-  render: () => (
-    <div className="flex flex-col gap-8">
-      <CallSite
-        source="components/ui/badge.tsx"
-        origin="ui"
-        note="All 8 declared variants. Only the first five are reachable from a call site: default by omission, then outline (21 uses), secondary (8), success (3), warning (2), failure (2). destructive and informal have zero call sites."
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <Badge>default</Badge>
-          <Badge variant="outline">outline</Badge>
-          <Badge variant="secondary">secondary</Badge>
-          <Badge variant="success">success</Badge>
-          <Badge variant="warning">warning</Badge>
-          <Badge variant="failure">failure</Badge>
-          <Badge variant="destructive">destructive (unused)</Badge>
-          <Badge variant="informal">informal (unused)</Badge>
-        </div>
-      </CallSite>
-
-      <CallSite
-        source="permission-detail-view.tsx:71, :79, :84 and selected-permission-overview.tsx:182"
-        origin="ui"
-        note="The permission tables are where success/warning/failure earn their keep: Allowed, Allowed (inherited) and Denied. Two of them pin a width with w-[69px] justify-center so the three read as a column."
-      >
-        <div className="flex flex-col items-start gap-2">
-          <Badge variant="warning">Allowed</Badge>
-          <Badge className="w-[69px] justify-center" variant="success">
-            Allowed
-          </Badge>
-          <Badge className="w-[69px] justify-center" variant="failure">
-            Denied
-          </Badge>
-        </div>
-      </CallSite>
-
-      <CallSite
-        source="pages/target-trace.tsx ×6"
-        origin="ui"
-        note="The most-repeated className in the app: rounded-md px-2 py-0.5 text-2xs font-thin, six times. It overrides the pill radius, the padding and the type scale - at which point almost nothing of the component survives except the border."
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          {['http.method', 'http.status_code', 'graphql.operation.type'].map(attr => (
-            <Badge
-              key={attr}
-              variant="secondary"
-              className="text-2xs rounded-md px-2 py-0.5 font-thin"
-            >
-              {attr}
-            </Badge>
-          ))}
-        </div>
-      </CallSite>
-
-      <CallSite
-        source="permission-detail-view.tsx:107 and the three token sheets"
-        origin="ui"
-        note="A second recurring override: px-3 py-1 font-mono text-xs, sometimes with text-red-500. A monospace permission key, which is a different thing from a status pill."
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge className="text-neutral-11 px-3 py-1 font-mono text-xs" variant="outline">
-            project:describe
-          </Badge>
-          <Badge className="px-3 py-1 font-mono text-xs text-red-500" variant="outline">
-            target:delete
-          </Badge>
-        </div>
-      </CallSite>
-
-      <CallSite
-        source="target-history.tsx:125, target-alerts-rules.tsx:176, alert-conditions-panel.tsx:238 and 6 more"
-        origin="ui"
-        note="BadgeRounded is a status dot, not a badge. Colour is always a computed expression at the call site, never a literal - schemaVersion.isValid ? 'green' : 'red', SEVERITY_DOT_COLOR[sev]. The four semantic colours zero out the base border and padding so size-N controls the dot literally, which is why they look unlike the first five."
-      >
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3 text-sm">
-            <BadgeRounded color="green" />
-            <BadgeRounded color="red" />
-            <BadgeRounded color="yellow" />
-            <BadgeRounded color="orange" />
-            <BadgeRounded color="gray" />
-            <span className="text-neutral-10 text-xs">original five</span>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <BadgeRounded color="critical" className="size-2" />
-            <BadgeRounded color="warning" className="size-2" />
-            <BadgeRounded color="info" className="size-2" />
-            <BadgeRounded color="successSemantic" className="size-2" />
-            <span className="text-neutral-10 text-xs">semantic four, size-2</span>
-          </div>
-        </div>
-      </CallSite>
-
-      <CallSite
-        source="components/v2/tag.tsx"
-        origin="v2"
-        note="The other pill system. p-2 rather than px-2.5 py-0.5, rounded-sm rather than rounded-full, and a tinted 10%-alpha fill rather than a solid one. Only yellow (8) and green (4) are used; blue, orange and red have zero call sites and gray is the default."
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <Tag>gray (default)</Tag>
-          <Tag color="yellow">yellow</Tag>
-          <Tag color="green">green</Tag>
-          <Tag color="blue">blue (unused)</Tag>
-          <Tag color="orange">orange (unused)</Tag>
-          <Tag color="red">red (unused)</Tag>
-        </div>
-      </CallSite>
-
-      <CallSite
-        source="cdn-access-tokens.tsx:154, :211, :255, :275 and oidc-integration-configuration.tsx:1030"
-        origin="v2"
-        note="Half of Tag's call sites are not pills at all: px-4 py-2.5 with an icon and a paragraph, used as a warning banner. That is Callout's job, done with a different component and a different palette."
-      >
-        <div className="flex flex-col gap-3">
-          <Tag color="yellow" className="px-4 py-2.5">
-            <AlertTriangleIcon className="size-5" />
-            Deleting an CDN access token can not be undone. After deleting the access token it might
-            take up to 5 minutes before the changes are propagated across the CDN.
-          </Tag>
-          <Tag color="green" className="text-sm">
-            This is your unique API key and it is non-recoverable. If you lose this key, you will
-            need to create a new one.
-          </Tag>
-        </div>
-      </CallSite>
-    </div>
   ),
 });
 
