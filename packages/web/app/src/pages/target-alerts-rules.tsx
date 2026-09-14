@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import { ArrowDown, Info } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Avatar } from '@/components/base/avatar/avatar';
+import { Badge } from '@/components/base/badge/badge';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { PageLead } from '@/components/base/page-lead';
-import { Badge, BadgeRounded } from '@/components/ui/badge';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
@@ -155,7 +156,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
     cell: info => (
       <span className="inline-flex items-center gap-2">
         <span className="text-neutral-12 text-xs font-medium">{info.getValue()}</span>
-        {!info.row.original.enabled && <Badge variant="outline">Paused</Badge>}
+        {!info.row.original.enabled && <Badge content="Paused" variants={{ variant: 'info' }} />}
       </span>
     ),
   }),
@@ -175,7 +176,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
       const sev = info.getValue() as MetricAlertRuleSeverity;
       return (
         <span className="text-neutral-12 inline-flex items-center gap-1.5 text-xs">
-          <BadgeRounded color={SEVERITY_DOT_COLOR[sev]} className="size-2" />
+          <StatusDot color={SEVERITY_DOT_COLOR[sev]} />
           {SEVERITY_LABEL[sev]}
         </span>
       );

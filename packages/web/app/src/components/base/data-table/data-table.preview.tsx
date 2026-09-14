@@ -25,8 +25,8 @@ const CHECKS: Check[] = Array.from({ length: 47 }, (_, i) => ({
 }));
 
 const STATUS_VARIANT = {
-  passed: 'secondary',
-  failed: 'destructive',
+  passed: 'success',
+  failed: 'critical',
   pending: 'outline',
 } as const;
 

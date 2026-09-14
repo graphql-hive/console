@@ -29,12 +29,12 @@ import { useQuery } from 'urql';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
-import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { File, MultiFileDiff } from '@/components/ui/diffs';
 import { Link } from '@/components/ui/link';
@@ -1118,7 +1118,7 @@ function SchemaVersionHeader(props: {
       >
         <MetaCell label="Status">
           <span className="inline-flex items-center gap-1.5">
-            <BadgeRounded color={schemaVersion.isValid ? 'green' : 'red'} className="mx-0" />
+            <StatusDot color={schemaVersion.isValid ? 'success' : 'critical'} />
             <span className="text-xs">{schemaVersion.isValid ? 'Composable' : 'Failed'}</span>
           </span>
         </MetaCell>

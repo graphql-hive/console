@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { EllipsisIcon, LoaderCircleIcon } from 'lucide-react';
 import { useClient } from 'urql';
+import { Badge } from '@/components/base/badge/badge';
 import { Menu } from '@/components/base/floating/menu/menu';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import * as Table from '@/components/ui/table';
 import { TimeAgo } from '@/components/ui/time-ago';
@@ -118,7 +118,10 @@ export function AccessTokensTable(props: AccessTokensTable) {
               {edge.node.firstCharacters + privateKeyFiller}
             </Table.TableCell>
             <Table.TableCell className="pl-10 font-mono">
-              <Badge variant="success">{typenameToScope(edge.node.__typename)}</Badge>
+              <Badge
+                content={typenameToScope(edge.node.__typename)}
+                variants={{ variant: 'success' }}
+              />
             </Table.TableCell>
             <Table.TableCell className="text-center">
               created <TimeAgo date={edge.node.createdAt} />

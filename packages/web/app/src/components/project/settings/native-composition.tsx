@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import { FlaskConicalIcon, HeartCrackIcon, PartyPopperIcon, RefreshCcwIcon } from 'lucide-react';
 import { CombinedError, useMutation, useQuery } from 'urql';
+import { Badge } from '@/components/base/badge/badge';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Switch } from '@/components/base/switch/switch';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
@@ -227,7 +227,7 @@ export function NativeCompositionSettings(props: {
           <div>
             <div className="flex flex-row items-center gap-x-2">
               <div className="font-semibold">Incremental migration</div>
-              <Badge variant="outline">experimental</Badge>
+              <Badge content="experimental" variants={{ variant: 'outline' }} />
             </div>
             <div className="text-neutral-10 text-sm">
               Your project is using the experimental incremental migration feature. <br />

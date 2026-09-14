@@ -1,6 +1,6 @@
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '../badge/badge';
 import { ScrollArea } from './scroll-area';
 
 export const nav: NavPath = 'Base/Primitives/ScrollArea/Component Examples';
@@ -194,9 +194,7 @@ export const FillPanel = createPreview({
             <div className="flex items-center gap-x-2">
               <div>Events</div>
               <div>
-                <Badge variant="secondary" className="text-2xs rounded-md px-2 py-0.5 font-thin">
-                  3
-                </Badge>
+                <Badge content="3" variants={{ variant: 'secondary', size: 'sm' }} />
               </div>
             </div>
           </button>

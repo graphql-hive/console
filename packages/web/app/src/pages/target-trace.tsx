@@ -21,12 +21,12 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Badge } from '@/components/base/badge/badge';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
@@ -516,12 +516,9 @@ function SpanNode(props: SpanNodeProps) {
             >
               <span className="mr-1">{span.name}</span>
               {hasException && (
-                <Badge
-                  variant="outline"
-                  className="ml-auto mr-1 rounded-sm border-0 bg-red-900/30 px-1 font-mono text-xs font-medium uppercase text-red-400"
-                >
-                  Error
-                </Badge>
+                <span className="ml-auto mr-1 inline-flex">
+                  <Badge content="Error" variants={{ variant: 'critical', mono: true }} />
+                </span>
               )}
             </div>
             {span.spanAttributes['hive.gateway.upstream.subgraph.name'] ? (
@@ -829,11 +826,9 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>Attributes</div>
                       <div>
                         <Badge
-                          variant="secondary"
-                          className="text-2xs rounded-md px-2 py-0.5 font-thin"
-                        >
-                          {spanAttributes.length}
-                        </Badge>
+                          content={String(spanAttributes.length)}
+                          variants={{ variant: 'secondary', size: 'sm' }}
+                        />
                       </div>
                     </div>
                   </TabButton>
@@ -845,11 +840,9 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>Resource Attributes</div>
                       <div>
                         <Badge
-                          variant="secondary"
-                          className="text-2xs rounded-md px-2 py-0.5 font-thin"
-                        >
-                          {resourceAttributes.length}
-                        </Badge>
+                          content={String(resourceAttributes.length)}
+                          variants={{ variant: 'secondary', size: 'sm' }}
+                        />
                       </div>
                     </div>
                   </TabButton>
@@ -861,11 +854,9 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>Events</div>
                       <div>
                         <Badge
-                          variant="secondary"
-                          className="text-2xs rounded-md px-2 py-0.5 font-thin"
-                        >
-                          {events.length}
-                        </Badge>
+                          content={String(events.length)}
+                          variants={{ variant: 'secondary', size: 'sm' }}
+                        />
                       </div>
                     </div>
                   </TabButton>
@@ -1101,14 +1092,9 @@ function TargetInsightsNewPageContent(props: {
                   </span>
                 </div>
                 <Badge
-                  variant="outline"
-                  className={cn(
-                    'rounded-sm border-0 px-1 font-medium uppercase',
-                    trace.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
-                  )}
-                >
-                  {trace.success ? 'Ok' : 'Error'}
-                </Badge>
+                  content={trace.success ? 'Ok' : 'Error'}
+                  variants={{ variant: trace.success ? 'success' : 'critical' }}
+                />
                 <span className="text-neutral-11 font-mono uppercase">
                   {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
                 </span>
@@ -1529,11 +1515,9 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>Span Attributes</div>
                     <div>
                       <Badge
-                        variant="secondary"
-                        className="text-2xs rounded-md px-2 py-0.5 font-thin"
-                      >
-                        {Array.from(Object.keys(span.spanAttributes)).length}
-                      </Badge>
+                        content={String(Object.keys(span.spanAttributes).length)}
+                        variants={{ variant: 'secondary', size: 'sm' }}
+                      />
                     </div>
                   </div>
                 </TabButton>
@@ -1545,11 +1529,9 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>Resource Attributes</div>
                     <div>
                       <Badge
-                        variant="secondary"
-                        className="text-2xs rounded-md px-2 py-0.5 font-thin"
-                      >
-                        {resourceAttributes.length}
-                      </Badge>
+                        content={String(resourceAttributes.length)}
+                        variants={{ variant: 'secondary', size: 'sm' }}
+                      />
                     </div>
                   </div>
                 </TabButton>
@@ -1561,11 +1543,9 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>Events</div>
                     <div>
                       <Badge
-                        variant="secondary"
-                        className="text-2xs rounded-md px-2 py-0.5 font-thin"
-                      >
-                        {span.events.length}
-                      </Badge>
+                        content={String(span.events.length)}
+                        variants={{ variant: 'secondary', size: 'sm' }}
+                      />
                     </div>
                   </div>
                 </TabButton>
@@ -1755,9 +1735,7 @@ function ExceptionTeaser(props: {
     <div className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20">
       <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
         <span className="font-mono text-xs font-medium text-red-300">{props.type}</span>
-        <Badge variant="outline" className="text-2xs border-red-700 bg-red-900 text-red-300">
-          {props.name}
-        </Badge>
+        <Badge content={props.name} variants={{ variant: 'critical', size: 'sm', mono: true }} />
       </div>
       <div className="p-3 text-xs">
         <p className="text-neutral-11">{props.message}</p>

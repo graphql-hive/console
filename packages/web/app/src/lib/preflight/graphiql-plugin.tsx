@@ -13,8 +13,8 @@ import { PowerIcon } from 'lucide-react';
 import type { editor } from 'monaco-editor';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Badge } from '@/components/base/badge/badge';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -579,10 +579,7 @@ function PreflightContent() {
       </div>
 
       <EditorTitle className="mt-6 flex cursor-not-allowed items-center gap-2">
-        Script{' '}
-        <Badge className="text-xs" variant="outline">
-          JavaScript
-        </Badge>
+        Script <Badge content="JavaScript" variants={{ variant: 'outline' }} />
       </EditorTitle>
       <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
       <div className="relative">
@@ -614,10 +611,7 @@ function PreflightContent() {
       </div>
 
       <EditorTitle className="mt-6 flex items-center gap-2">
-        Environment variables{' '}
-        <Badge className="text-xs" variant="outline">
-          JSON
-        </Badge>
+        Environment variables <Badge content="JSON" variants={{ variant: 'outline' }} />
       </EditorTitle>
       <Subtitle className="mb-3">
         Declare variables that can be used by both the script and headers.
@@ -739,9 +733,7 @@ function PreflightModal({
             <div className="flex justify-between p-2">
               <EditorTitle className="flex gap-2">
                 Script Editor
-                <Badge className="text-xs" variant="outline">
-                  JavaScript
-                </Badge>
+                <Badge content="JavaScript" variants={{ variant: 'outline' }} />
               </EditorTitle>
               <Button
                 variant="orangeLink"
@@ -811,9 +803,7 @@ function PreflightModal({
             </div>
             <EditorTitle className="flex gap-2 p-2">
               Environment Variables
-              <Badge className="text-xs" variant="outline">
-                JSON
-              </Badge>
+              <Badge content="JSON" variants={{ variant: 'outline' }} />
             </EditorTitle>
             <MonacoEditor
               value={envValue}

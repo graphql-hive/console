@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { DataTable } from '@/components/base/data-table/data-table';
-import { BadgeRounded } from '@/components/ui/badge';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { TimeAgo } from '@/components/ui/time-ago';
 import {
   MetricAlertRuleType,
@@ -107,7 +107,7 @@ const COLUMNS = [
       const sev = String(ctx.row.original.rule.severity);
       return (
         <span className="text-neutral-12 inline-flex items-center gap-1.5 text-xs">
-          <BadgeRounded color={SEVERITY_DOT_COLOR[sev] ?? 'info'} className="size-2" />
+          <StatusDot color={SEVERITY_DOT_COLOR[sev] ?? 'info'} />
           {SEVERITY_LABEL[sev] ?? sev}
         </span>
       );

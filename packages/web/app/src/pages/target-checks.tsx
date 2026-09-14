@@ -1,9 +1,9 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from 'urql';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Switch } from '@/components/base/switch/switch';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
@@ -155,8 +155,9 @@ const Navigation = (
                   'flex flex-row items-center gap-1',
                 )}
               >
-                <BadgeRounded
-                  color={edge.node.__typename === 'FailedSchemaCheck' ? 'red' : 'green'}
+                <StatusDot
+                  color={edge.node.__typename === 'FailedSchemaCheck' ? 'critical' : 'success'}
+                  label={edge.node.__typename === 'FailedSchemaCheck' ? 'Failed' : 'Passed'}
                 />
                 <TimeAgo date={edge.node.createdAt} />
               </div>
