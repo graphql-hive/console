@@ -86,7 +86,10 @@ export const LeadingIcon = createPreview(() => (
   </div>
 ));
 
-/** A fixed block attached to the leading edge. The field's own width is the whole control. */
+/**
+ * A fixed block attached to the leading edge. `width` sizes the field; the prefix adds its own
+ * width, so a long slug path never squeezes the field.
+ */
 export const PrefixText = createPreview(() => (
   <div className="flex flex-col gap-3">
     <Input placeholder="slug" prefixText="app.graphql-hive.com/the-guild/" width="sm" />

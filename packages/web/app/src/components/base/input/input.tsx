@@ -118,7 +118,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       ref={ref}
       aria-invalid={isInvalid || undefined}
       className={cn(
-        inputVariants({ size, onSurface, width: decorated ? 'full' : width, mono }),
+        inputVariants({ size, onSurface, width, mono }),
         LeadingIcon && 'pl-9',
         trailing && 'pr-9',
         prefixText && 'rounded-l-none',
@@ -131,8 +131,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     return input;
   }
 
+  // The width stays on the field: a fixed field keeps its size and a prefix adds its own, so a
+  // long slug prefix cannot squeeze the field. A fluid field needs the wrapper to be fluid too.
   return (
-    <span className={cn('relative inline-flex items-center', fieldWidth[width ?? 'full'])}>
+    <span
+      className={cn('relative inline-flex items-center', (width ?? 'full') === 'full' && 'w-full')}
+    >
       {prefixText ? (
         <span
           className={cn(

@@ -152,8 +152,15 @@ describe('Input', () => {
     expect(input.className).toContain('rounded-l-none');
     expect(input.className).toContain('pl-9');
     expect(input.className).toContain('pr-9');
-    // The width sits on the wrapper so the decorations stay inside it.
-    expect(input.parentElement?.className).toContain('w-48');
+    // A fixed width is the field's own; the prefix adds to it rather than eating into it.
+    expect(input.className).toContain('w-48');
+    expect(input.parentElement?.className).not.toContain('w-full');
+  });
+
+  it('lets a fluid decorated field fill its container', () => {
+    render(<Input placeholder="Search" leadingIcon={Search} />);
+    const input = screen.getByPlaceholderText('Search');
     expect(input.className).toContain('w-full');
+    expect(input.parentElement?.className).toContain('w-full');
   });
 });

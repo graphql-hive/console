@@ -1,7 +1,7 @@
 import { ReactElement, useEffect } from 'react';
 import { InfoIcon } from 'lucide-react';
 import { Popover } from '@/components/base/floating/popover/popover';
-import { Input } from '@/components/v2';
+import { Input } from '@/components/base/input/input';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 
@@ -41,7 +41,7 @@ export const PolicyStringInputConfig = (props: {
       }
     >
       <Input
-        className="h-5"
+        size="compact"
         id={`${props.rule}_${props.propertyName}`}
         value={currentValue || ''}
         onChange={e => setConfig(props.propertyName, e.target.value)}

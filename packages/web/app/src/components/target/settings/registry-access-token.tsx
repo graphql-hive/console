@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { AnyVariables, useMutation, UseMutationState } from 'urql';
 import { z } from 'zod';
+import { Input } from '@/components/base/input/input';
 import { PermissionScopeItem } from '@/components/organization/Permissions';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
@@ -14,7 +15,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { InputCopy } from '@/components/ui/input-copy';
 import { useToast } from '@/components/ui/use-toast';
 import { Accordion } from '@/components/v2/accordion';
@@ -217,6 +217,7 @@ export function GenerateTokenContent(props: {
                     placeholder="Token description"
                     data-cy="description"
                     autoComplete="off"
+                    onSurface="raised"
                     {...field}
                   />
                 </FormControl>
