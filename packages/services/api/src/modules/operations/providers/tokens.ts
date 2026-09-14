@@ -6,6 +6,10 @@ export type ClickHouseConfig = BaseClickHouseConfig & {
    * In milliseconds
    */
   requestTimeout?: number;
+  /**
+   * Earliest timestamp for which the v01 operation rollups contain complete data.
+   */
+  operationsV01RollupsStart?: Date;
   onReadEnd?: (
     label: string,
     timings: {
