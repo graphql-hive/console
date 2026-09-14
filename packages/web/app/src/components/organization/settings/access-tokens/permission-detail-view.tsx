@@ -1,6 +1,6 @@
+import { Badge } from '@/components/base/badge/badge';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import * as Accordion from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { permissionLevelToResourceName } from './shared-helpers';
 
@@ -67,21 +67,21 @@ export function PermissionDetailView(props: {
                         permission.permission.warning ? (
                           <Tooltip
                             trigger={
-                              <span className="inline-flex">
-                                <Badge variant="warning">Allowed</Badge>
+                              <span className="inline-flex w-[69px] justify-center">
+                                <Badge content="Allowed" variants={{ variant: 'warning' }} />
                               </span>
                             }
                             content={permission.permission.warning}
                           />
                         ) : (
-                          <Badge className="w-[69px] justify-center" variant="success">
-                            Allowed
-                          </Badge>
+                          <span className="inline-flex w-[69px] justify-center">
+                            <Badge content="Allowed" variants={{ variant: 'success' }} />
+                          </span>
                         )
                       ) : (
-                        <Badge className="w-[69px] justify-center" variant="failure">
-                          Denied
-                        </Badge>
+                        <span className="inline-flex w-[69px] justify-center">
+                          <Badge content="Denied" variants={{ variant: 'critical' }} />
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -102,12 +102,7 @@ export function PermissionDetailView(props: {
                 <ul className="flex list-none flex-wrap gap-1">
                   {group.resolvedResourceIds.map(id => (
                     <li key={id}>
-                      <Badge
-                        className="text-neutral-11 px-3 py-1 font-mono text-xs"
-                        variant="outline"
-                      >
-                        {id}
-                      </Badge>
+                      <Badge content={id} variants={{ variant: 'outline', mono: true }} />
                     </li>
                   ))}
                 </ul>

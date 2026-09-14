@@ -3,12 +3,11 @@ import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
+import { Badge } from '@/components/base/badge/badge';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
-import { DeploymentStatusLabel } from '@/components/ui/deployment-status';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -22,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TimeAgo } from '@/components/ui/time-ago';
+import { formatTimeAgo } from '@/components/ui/time-ago';
 import { Sortable } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
@@ -158,12 +157,14 @@ function AppTableRow(props: {
         </Link>
       </TableCell>
       <TableCell className="hidden text-center sm:table-cell">
-        <Badge className="text-xs" variant="secondary">
-          <DeploymentStatusLabel
-            status={appDeployment.status}
-            retiredAt={appDeployment.retiredAt}
-          />
-        </Badge>
+        <Badge
+          content={
+            appDeployment.status === 'retired' && appDeployment.retiredAt
+              ? `${appDeployment.status} (${format(appDeployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})`
+              : appDeployment.status
+          }
+          variants={{ variant: 'secondary' }}
+        />
       </TableCell>
       <TableCell className="text-center">{appDeployment.totalDocumentCount}</TableCell>
       <TableCell className="hidden text-center sm:table-cell">
@@ -184,18 +185,21 @@ function AppTableRow(props: {
         {appDeployment.lastUsed ? (
           <Tooltip
             trigger={
-              <Badge className="cursor-help text-xs" variant="outline">
-                <TimeAgo date={appDeployment.lastUsed} />
-              </Badge>
+              <span className="inline-flex cursor-help">
+                <Badge
+                  content={formatTimeAgo(new Date(appDeployment.lastUsed), Date.now())}
+                  variants={{ variant: 'outline' }}
+                />
+              </span>
             }
             content={format(appDeployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
           />
         ) : (
           <Tooltip
             trigger={
-              <Badge className="cursor-help text-xs" variant="outline">
-                No data
-              </Badge>
+              <span className="inline-flex cursor-help">
+                <Badge content="No data" variants={{ variant: 'outline' }} />
+              </span>
             }
             content="There was no usage reported yet."
           />

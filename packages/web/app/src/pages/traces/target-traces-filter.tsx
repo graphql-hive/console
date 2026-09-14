@@ -12,12 +12,12 @@ import {
 } from 'react';
 import debounce from 'lodash.debounce';
 import { CircleXIcon, PlusIcon } from 'lucide-react';
+import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Collapsible } from '@/components/base/collapsible/collapsible';
 import { Separator } from '@/components/base/separator/separator';
 import { focusRing } from '@/components/base/shared-styles';
 import { Slider } from '@/components/base/slider/slider';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
@@ -242,9 +242,10 @@ function FilterOption(props: {
         {props.children}
       </div>
       {props.count ? (
-        <Badge variant="secondary" className="rounded-sm px-1 font-mono font-normal">
-          {formatNumber(props.count)}
-        </Badge>
+        <Badge
+          content={String(formatNumber(props.count))}
+          variants={{ variant: 'secondary', size: 'sm', mono: true }}
+        />
       ) : null}
     </button>
   );

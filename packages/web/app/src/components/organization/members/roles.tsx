@@ -3,6 +3,7 @@ import { LockIcon, MoreHorizontalIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Popover } from '@/components/base/floating/popover/popover';
@@ -18,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -647,7 +647,7 @@ function OrganizationMemberRoleRow(props: {
               <Popover
                 trigger={
                   <button type="button" aria-label="About the default role">
-                    <Badge variant="outline">default</Badge>
+                    <Badge content="default" variants={{ variant: 'outline' }} />
                   </button>
                 }
                 openOnHover
