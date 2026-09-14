@@ -3,6 +3,7 @@ import { endOfDay, endOfToday, formatDate, subMonths } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
 import { DateRange, Matcher } from 'react-day-picker';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { DurationUnit, formatDateToString, parse, units } from '@/lib/date-math';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import {
@@ -524,19 +525,21 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
             onChange={ev => setQuickRangeFilter(ev.target.value)}
           />
         </div>
-        <div className="thin-scrollbar flex w-full flex-1 flex-col items-start gap-1 overflow-y-scroll pb-2 pt-1">
-          {dynamicPresets.length > 0
-            ? dynamicPresets
-                .filter(preset =>
-                  preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
-                )
-                .map(preset => <PresetButton key={preset.name} preset={preset} />)
-            : staticPresets
-                .filter(preset =>
-                  preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
-                )
-                .map(preset => <PresetButton key={preset.name} preset={preset} />)}
-        </div>
+        <ScrollArea fill>
+          <div className="flex w-full flex-col items-start gap-1 pb-2 pt-1">
+            {dynamicPresets.length > 0
+              ? dynamicPresets
+                  .filter(preset =>
+                    preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
+                  )
+                  .map(preset => <PresetButton key={preset.name} preset={preset} />)
+              : staticPresets
+                  .filter(preset =>
+                    preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
+                  )
+                  .map(preset => <PresetButton key={preset.name} preset={preset} />)}
+          </div>
+        </ScrollArea>
       </div>
     </div>
   );

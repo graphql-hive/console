@@ -1,6 +1,7 @@
 import { ReactElement, useState } from 'react';
 import { FileSymlinkIcon, GitCommitVerticalIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -274,27 +275,32 @@ function HistoryPageContent(props: {
   if (hasVersions) {
     return (
       <>
-        <div>
+        {/* Pinned and capped to the viewport, so the list scrolls inside the column. */}
+        <div className="sticky top-6 flex max-h-[calc(100vh-3rem)] flex-col self-start">
           <div className="py-6">
             <Title>Versions</Title>
             <Subtitle>Recently published versions.</Subtitle>
           </div>
-          <div className="flex flex-col gap-5">
-            <div className="border-neutral-5/50 bg-neutral-2/50 flex min-w-[420px] grow flex-col gap-2.5 overflow-y-auto rounded-md border p-2.5">
-              {pageVariables.map((variables, i) => (
-                <ListPage
-                  key={variables.after || 'initial'}
-                  variables={variables}
-                  isLastPage={i === pageVariables.length - 1}
-                  onLoadMore={after => {
-                    setPageVariables([...pageVariables, { after, first: 10 }]);
-                  }}
-                  versionId={versionId}
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                />
-              ))}
+          <div className="flex min-h-0 flex-1 flex-col gap-5">
+            <div className="border-neutral-5/50 bg-neutral-2/50 flex min-h-0 min-w-[420px] grow flex-col rounded-md border">
+              <ScrollArea fill>
+                <div className="flex flex-col gap-2.5 p-2.5">
+                  {pageVariables.map((variables, i) => (
+                    <ListPage
+                      key={variables.after || 'initial'}
+                      variables={variables}
+                      isLastPage={i === pageVariables.length - 1}
+                      onLoadMore={after => {
+                        setPageVariables([...pageVariables, { after, first: 10 }]);
+                      }}
+                      versionId={versionId}
+                      organizationSlug={props.organizationSlug}
+                      projectSlug={props.projectSlug}
+                      targetSlug={props.targetSlug}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
           </div>
         </div>

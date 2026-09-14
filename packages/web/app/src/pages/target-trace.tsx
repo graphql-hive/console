@@ -1581,7 +1581,7 @@ function SpanSheet(props: SpanSheetProps) {
                 )}
               </div>
             </div>
-            <div className="flex-1 overflow-y-scroll">
+            <ScrollArea fill>
               {activeView === 'span-attributes' && (
                 <div>
                   {spanAttributes.length > 0 ? (
@@ -1668,7 +1668,7 @@ function SpanSheet(props: SpanSheetProps) {
                   code={span.spanAttributes['graphql.document'] as string}
                 />
               )}
-            </div>
+            </ScrollArea>
           </div>
         </div>
         <SheetFooter className="mt-auto border-t p-2">
@@ -1762,9 +1762,13 @@ function ExceptionTeaser(props: {
       <div className="p-3 text-xs">
         <p className="text-neutral-11">{props.message}</p>
         {props.stacktrace && (
-          <pre className="bg-neutral-1/50 text-neutral-10 text-2xs mt-2 overflow-x-auto rounded-sm p-2 font-mono leading-tight">
-            {props.stacktrace}
-          </pre>
+          <div className="bg-neutral-1/50 mt-2 rounded-sm">
+            <ScrollArea axis="horizontal">
+              <pre className="text-neutral-10 text-2xs p-2 font-mono leading-tight">
+                {props.stacktrace}
+              </pre>
+            </ScrollArea>
+          </div>
         )}
       </div>
     </div>

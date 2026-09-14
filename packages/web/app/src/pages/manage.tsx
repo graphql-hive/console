@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { AdminStats, Filters } from '@/components/admin/AdminStats';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Page } from '@/components/common';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
@@ -45,7 +46,7 @@ export function ManagePage() {
 
   return (
     <Page title="Hive Stats">
-      <div className="grow overflow-x-auto">
+      <ScrollArea axis="horizontal">
         <div className="flex gap-4 pb-2">
           <DateRangePicker
             validUnits={['y', 'M', 'w', 'd', 'h', 'm']}
@@ -96,7 +97,7 @@ export function ManagePage() {
           dateRange={dateRangeController.resolvedRange}
           filters={filters}
         />
-      </div>
+      </ScrollArea>
     </Page>
   );
 }
