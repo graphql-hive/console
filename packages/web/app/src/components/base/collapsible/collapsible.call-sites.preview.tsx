@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { CircleXIcon, EraserIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Badge } from '@/components/ui/badge';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import { Badge } from '../badge/badge';
 import { Button } from '../button/button';
 import { Checkbox } from '../checkbox/checkbox';
 import { ScrollArea } from '../scroll-area/scroll-area';
@@ -164,9 +164,10 @@ function TracesFilterGroup() {
                   <Checkbox visual checked={selected.includes(option.value)} size="sm" />
                   {option.label}
                 </div>
-                <Badge variant="secondary" className="rounded-sm px-1 font-mono font-normal">
-                  {formatNumber(option.count)}
-                </Badge>
+                <Badge
+                  content={String(formatNumber(option.count))}
+                  variants={{ variant: 'secondary', size: 'sm', mono: true }}
+                />
               </button>
             ))}
           </div>

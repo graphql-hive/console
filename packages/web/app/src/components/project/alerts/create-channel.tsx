@@ -2,10 +2,11 @@ import { ReactElement } from 'react';
 import { useFormik } from 'formik';
 import { useMutation } from 'urql';
 import * as Yup from 'yup';
+import { Badge } from '@/components/base/badge/badge';
 import { Select } from '@/components/base/floating/select/select';
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
-import { Input, Modal, Tag } from '@/components/v2';
+import { Input, Modal } from '@/components/v2';
 import { graphql } from '@/gql';
 import { AlertChannelType } from '@/gql/graphql';
 
@@ -231,7 +232,8 @@ export const CreateChannelModal = ({
               </div>
             )}
             <p className="text-neutral-10 text-sm">
-              Use <Tag>#channel</Tag> or <Tag>@username</Tag> form.
+              Use <Badge content="#channel" variants={{ variant: 'secondary', mono: true }} /> or{' '}
+              <Badge content="@username" variants={{ variant: 'secondary', mono: true }} /> form.
             </p>
           </div>
         )}

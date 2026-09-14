@@ -2,8 +2,8 @@ import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { CopyIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
-import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { CheckIcon, XIcon } from '@/components/ui/icon';
@@ -98,9 +98,9 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
 
   const statusColor = (
     {
-      [NativeFederationCompatibilityStatusType.Compatible]: 'green',
-      [NativeFederationCompatibilityStatusType.Incompatible]: 'red',
-      [NativeFederationCompatibilityStatusType.Unknown]: 'gray',
+      [NativeFederationCompatibilityStatusType.Compatible]: 'success',
+      [NativeFederationCompatibilityStatusType.Incompatible]: 'critical',
+      [NativeFederationCompatibilityStatusType.Unknown]: 'neutral',
       [NativeFederationCompatibilityStatusType.NotApplicable]: 'info',
     } as const
   )[nativeFederationCompatibility.status];
@@ -114,7 +114,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
           {project.slug}
         </MetaCell>
         <MetaCell label="Status" className="flex-1 items-center truncate text-left">
-          <BadgeRounded color={statusColor} className="mx-0" />
+          <StatusDot color={statusColor} />
 
           <span className="ml-1 truncate">{nativeFederationCompatibility.status}</span>
         </MetaCell>
@@ -130,7 +130,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
               onClick={() => setPage(index)}
               title={
                 <div className="flex items-center">
-                  <BadgeRounded color={result?.compatible ? 'green' : 'red'} className="mx-0" />
+                  <StatusDot color={result?.compatible ? 'success' : 'critical'} />
                   <span className="ml-1">{result?.target?.slug ?? `Target ${index}`}</span>
                 </div>
               }

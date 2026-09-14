@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Select } from '@/components/base/floating/select/select';
 import * as AlertDialog from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import * as Form from '@/components/ui/form';
 import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,6 @@ import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { Tag } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -365,21 +365,17 @@ export function CreatePersonalAccessTokenSheetContent(
                                       {!resolvedResources[group.level]?.length && (
                                         <li>
                                           <Badge
-                                            className="px-3 py-1 font-mono text-xs text-red-500"
-                                            variant="outline"
-                                          >
-                                            No {group.level} selected.
-                                          </Badge>
+                                            content={`No ${group.level} selected.`}
+                                            variants={{ variant: 'critical', mono: true }}
+                                          />
                                         </li>
                                       )}
                                       {resolvedResources[group.level].map(id => (
                                         <li key={id}>
                                           <Badge
-                                            className="text-neutral-11 px-3 py-1 font-mono text-xs"
-                                            variant="outline"
-                                          >
-                                            {id}
-                                          </Badge>
+                                            content={id}
+                                            variants={{ variant: 'outline', mono: true }}
+                                          />
                                         </li>
                                       ))}
                                     </ul>
@@ -488,10 +484,10 @@ function AcessTokenCreatedConfirmationDialogue(props: {
         <div>
           <InputCopy value={props.privateAccessKey} />
         </div>
-        <Tag color="green" className="text-sm">
+        <Callout type="info">
           This is your unique API key and it is non-recoverable. If you lose this key, you will need
           to create a new one.
-        </Tag>
+        </Callout>
         <AlertDialog.AlertDialogFooter>
           <div className="ml-0 mr-auto flex items-center space-x-2 pr-2">
             <Checkbox

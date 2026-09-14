@@ -2,8 +2,8 @@ import { ReactElement, useState } from 'react';
 import { FileSymlinkIcon, GitCommitVerticalIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { PackageIcon } from '@/components/ui/icon';
@@ -122,8 +122,11 @@ function ListPage(props: {
             versionId: version.id,
           }}
         >
-          <div>
-            <BadgeRounded color={version.isValid ? 'green' : 'red'} className="mt-0.5 block" />
+          <div className="mt-0.5 flex">
+            <StatusDot
+              color={version.isValid ? 'success' : 'critical'}
+              label={version.isValid ? 'Composable' : 'Failed'}
+            />
           </div>
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-3">

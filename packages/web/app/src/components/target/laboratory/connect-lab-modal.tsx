@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link } from '@/components/ui/link';
-import { Tag } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { getDocsUrl } from '@/lib/docs-url';
 
@@ -76,7 +75,8 @@ export const ConnectLabModalContent = (props: {
           To authenticate, use the following HTTP headers, with a token that has `target:read`
           scope:
         </span>
-        <Tag>
+        {/* A header line with a link inside, not a pill: a code block rather than a Badge. */}
+        <code className="bg-neutral-4 text-neutral-11 inline-flex items-center gap-x-1 rounded-sm p-2 text-sm">
           X-Hive-Key:
           <Link
             as="a"
@@ -88,7 +88,7 @@ export const ConnectLabModalContent = (props: {
           >
             YOUR_TOKEN_HERE
           </Link>
-        </Tag>
+        </code>
         <p className="text-neutral-10 text-sm">
           Read the{' '}
           <Link as="a" variant="primary" target="_blank" rel="noreferrer" href={props.docsUrl}>

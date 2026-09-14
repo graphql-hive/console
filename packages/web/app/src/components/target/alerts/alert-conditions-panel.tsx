@@ -5,8 +5,8 @@ import { Button } from '@/components/base/button/button';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { FloatingPortalContainerProvider } from '@/components/base/floating/floating-portal-container';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
-import { BadgeRounded } from '@/components/ui/badge';
 import {
   Sheet,
   SheetContent,
@@ -235,7 +235,7 @@ export function AlertConditionsPanel({
                 term: 'Severity',
                 description: (
                   <span className="inline-flex items-center gap-0.5">
-                    <BadgeRounded color={SEVERITY_DOT_COLOR[rule.severity]} className="size-2" />
+                    <StatusDot color={SEVERITY_DOT_COLOR[rule.severity]} />
                     <span className="capitalize">{rule.severity.toLowerCase()}</span>
                   </span>
                 ),

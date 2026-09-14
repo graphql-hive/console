@@ -1,11 +1,11 @@
 import { createPreview, type NavPath } from 'react-foundry';
+import { Badge } from '@/components/base/badge/badge';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -139,9 +139,7 @@ export const Tables = createPreview({
                     </span>
                   </TableCell>
                   <TableCell className="hidden text-center sm:table-cell">
-                    <Badge className="text-xs" variant="secondary">
-                      active
-                    </Badge>
+                    <Badge content="active" variants={{ variant: 'secondary' }} />
                   </TableCell>
                   <TableCell className="text-center">{app.docs}</TableCell>
                   <TableCell className="hidden text-center sm:table-cell">
