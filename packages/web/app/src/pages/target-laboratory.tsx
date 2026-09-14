@@ -1,14 +1,16 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GraphiQL } from 'graphiql';
 import { buildSchema } from 'graphql';
-import { ChevronDownIcon, EraserIcon } from 'lucide-react';
+import { EraserIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useMutation, useQuery } from 'urql';
+import { Button as BaseButton } from '@/components/base/button/button';
+import { Collapsible } from '@/components/base/collapsible/collapsible';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DocsLink } from '@/components/ui/docs-note';
 import { SaveIcon, ShareIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
@@ -573,17 +575,6 @@ function LaboratoryPageContent(props: {
             color: hsla(var(--color-neutral), var(--alpha-tertiary));
           }
 
-          #preflight-logs h2 {
-            color: hsla(var(--color-neutral), var(--alpha-neutral-2));
-          }
-
-          #preflight-logs button[data-state="open"] > h2 {
-            color: hsl(var(--color-neutral));
-          }
-
-          #preflight-logs > div {
-            border-color: hsl(var(--neutral-5));
-          }
         `}</style>
       </Helmet>
       {!query.fetching && !query.stale && (
@@ -709,70 +700,45 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
   }, [props.logs, isOpen]);
 
   return (
-    <Collapsible
-      open={isOpen}
-      onOpenChange={setIsOpen}
-      className={cn('flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]')}
+    <div
       id="preflight-logs"
+      className="flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]"
     >
-      <div
-        className={cn(
-          'flex shrink-0 items-center justify-between px-4 py-3',
-          isOpen ? 'border-b' : 'border-b-0',
-        )}
-      >
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex h-auto items-center gap-2 p-0 hover:bg-transparent"
-            data-cy="trigger"
-          >
-            <ChevronDownIcon
-              className={`text-neutral-10 size-4 transition-transform ${
-                isOpen ? 'rotate-0' : '-rotate-90'
-              }`}
+      <Collapsible
+        variant="panel"
+        trigger="Preflight Script Logs"
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        actions={
+          isOpen ? (
+            <BaseButton
+              layout="iconOnly"
+              icon={EraserIcon}
+              aria-label="Clear logs"
+              variant="ghost"
+              data-cy="erase-logs"
+              onClick={props.onClear}
             />
-            <h2 className="text-[15px] font-normal">Preflight Script Logs</h2>
-          </Button>
-        </CollapsibleTrigger>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            data-cy="erase-logs"
-            className={cn(
-              'text-neutral-10 hover:text-neutral-12 size-8',
-              isOpen ? 'visible' : 'invisible',
-            )}
-            onClick={props.onClear}
-          >
-            <EraserIcon className="size-4" />
-            <span className="sr-only">Clear logs</span>
-          </Button>
-        </div>
-      </div>
-      <CollapsibleContent
-        className="grow overflow-auto p-4 font-mono text-xs/[18px]"
-        ref={consoleRef}
-        data-cy="logs"
+          ) : null
+        }
+        panelDataCy="logs"
       >
-        {props.logs.length === 0 ? (
-          <div
-            data-cy="empty-state"
-            className="text-neutral-10 flex flex-col items-center justify-center"
-          >
-            <p>No logs available</p>
-            <p>Execute a query to see logs</p>
+        <ScrollArea fill ref={consoleRef}>
+          <div className="p-4 font-mono text-xs/[18px]">
+            {props.logs.length === 0 ? (
+              <div
+                data-cy="empty-state"
+                className="text-neutral-10 flex flex-col items-center justify-center"
+              >
+                <p>No logs available</p>
+                <p>Execute a query to see logs</p>
+              </div>
+            ) : (
+              props.logs.map((log, index) => <LogLine key={index} log={log} />)
+            )}
           </div>
-        ) : (
-          <>
-            {props.logs.map((log, index) => (
-              <LogLine key={index} log={log} />
-            ))}
-          </>
-        )}
-      </CollapsibleContent>
-    </Collapsible>
+        </ScrollArea>
+      </Collapsible>
+    </div>
   );
 }

@@ -90,7 +90,7 @@ export const buttonVariants = cva(
 // `layout` is a cva variant so padding can key on it, but as a prop it is the discriminant of
 // the union below, so the union defines it rather than cva.
 type CommonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'style'> &
-  Omit<VariantProps<typeof buttonVariants>, 'layout'>;
+  Omit<VariantProps<typeof buttonVariants>, 'layout'> & { 'data-cy'?: string };
 
 /** Simple button with children content */
 type ChildrenLayout = CommonProps & {
