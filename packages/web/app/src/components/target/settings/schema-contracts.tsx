@@ -3,11 +3,12 @@ import { useFormik } from 'formik';
 import { Check, MoreHorizontal, X } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
+import { Badge } from '@/components/base/badge/badge';
+import { Button as BaseButton } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { itemVariants } from '@/components/base/floating/shared-styles';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -257,18 +258,26 @@ export function SchemaContracts(props: {
                   </div>
                 </TableCell>
                 <TableCell className={cn(node.isDisabled && 'opacity-30')}>
-                  {node.includeTags?.map(tag => (
-                    <Badge className="mr-1" key={tag}>
-                      {tag}
-                    </Badge>
-                  )) ?? 'None'}
+                  {node.includeTags ? (
+                    <span className="inline-flex flex-wrap gap-1">
+                      {node.includeTags.map(tag => (
+                        <Badge key={tag} content={tag} />
+                      ))}
+                    </span>
+                  ) : (
+                    'None'
+                  )}
                 </TableCell>
                 <TableCell className={cn(node.isDisabled && 'opacity-30')}>
-                  {node.excludeTags?.map(tag => (
-                    <Badge className="mr-1" key={tag}>
-                      {tag}
-                    </Badge>
-                  )) ?? 'None'}
+                  {node.excludeTags ? (
+                    <span className="inline-flex flex-wrap gap-1">
+                      {node.excludeTags.map(tag => (
+                        <Badge key={tag} content={tag} />
+                      ))}
+                    </span>
+                  ) : (
+                    'None'
+                  )}
                 </TableCell>
                 <TableCell className={cn('text-center', node.isDisabled && 'opacity-30')}>
                   {node.removeUnreachableTypesFromPublicApiSchema ? (
@@ -563,24 +572,24 @@ function CreateContractDialogContent(props: {
                       form.errors.includeTags}
                   </div>
                 </div>
-                <div className="flex-1 pl-3">
+                <div className="flex flex-1 flex-wrap gap-1 pl-3">
                   {form.values.includeTags.map(value => (
-                    <Badge
+                    <BaseButton
                       key={value}
-                      className="mr-1 cursor-pointer"
+                      type="button"
+                      size="compact"
+                      aria-label={`Remove ${value}`}
                       onClick={ev => {
                         void form.setValues(values => ({
                           ...values,
-                          includeTags: values.includeTags.includes(value)
-                            ? values.includeTags.filter(tagValue => tagValue !== value)
-                            : [...values.includeTags, value],
+                          includeTags: values.includeTags.filter(tagValue => tagValue !== value),
                         }));
                         ev.stopPropagation();
                       }}
                     >
                       {value}
-                      <X size={16} className="pl-1" />
-                    </Badge>
+                      <X className="size-3" />
+                    </BaseButton>
                   ))}
                 </div>
               </div>
@@ -662,24 +671,24 @@ function CreateContractDialogContent(props: {
                       form.errors.excludeTags}
                   </div>
                 </div>
-                <div className="flex-1 pl-3">
+                <div className="flex flex-1 flex-wrap gap-1 pl-3">
                   {form.values.excludeTags.map(value => (
-                    <Badge
+                    <BaseButton
                       key={value}
-                      className="mr-1 cursor-pointer"
+                      type="button"
+                      size="compact"
+                      aria-label={`Remove ${value}`}
                       onClick={ev => {
                         void form.setValues(values => ({
                           ...values,
-                          excludeTags: values.excludeTags.includes(value)
-                            ? values.excludeTags.filter(tagValue => tagValue !== value)
-                            : [...values.excludeTags, value],
+                          excludeTags: values.excludeTags.filter(tagValue => tagValue !== value),
                         }));
                         ev.stopPropagation();
                       }}
                     >
                       {value}
-                      <X size={16} className="pl-1" />
-                    </Badge>
+                      <X className="size-3" />
+                    </BaseButton>
                   ))}
                 </div>
               </div>

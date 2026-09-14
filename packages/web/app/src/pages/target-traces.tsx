@@ -23,8 +23,8 @@ import {
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
+import { Badge } from '@/components/base/badge/badge';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   ChartConfig,
@@ -494,14 +494,9 @@ const TracesList = memo(function TracesList(
           return (
             <div className="text-center">
               <Badge
-                variant="outline"
-                className={cn(
-                  'rounded-sm border-0 px-1 text-xs font-medium uppercase',
-                  status ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
-                )}
-              >
-                {status ? 'Ok' : 'Error'}
-              </Badge>
+                content={status ? 'Ok' : 'Error'}
+                variants={{ variant: status ? 'success' : 'critical' }}
+              />
             </div>
           );
         },
@@ -949,14 +944,9 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
                 <span className="text-neutral-11">{formatNanoseconds(BigInt(trace.duration))}</span>
               </div>
               <Badge
-                variant="outline"
-                className={cn(
-                  'rounded-sm border-0 px-1 font-medium uppercase',
-                  trace.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
-                )}
-              >
-                {trace.success ? 'Ok' : 'Error'}
-              </Badge>
+                content={trace.success ? 'Ok' : 'Error'}
+                variants={{ variant: trace.success ? 'success' : 'critical' }}
+              />
               <span className="text-neutral-11 font-mono uppercase">
                 {trace ? formatDate(trace.timestamp, 'MMM dd HH:mm:ss') : null}
               </span>
