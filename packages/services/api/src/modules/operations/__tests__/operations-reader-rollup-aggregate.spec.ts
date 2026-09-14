@@ -66,32 +66,33 @@ const timelinePeriods = {
 };
 
 describe('OperationsReader.countRequests v01 rollups', () => {
-  test.each([
-    ['minutely', periods.minutely, 'without filters', {}, '_by_timestamp'],
-    ['minutely', periods.minutely, 'with client filters', { clients: ['web'] }, '_by_client'],
-    ['minutely', periods.minutely, 'with operation filters', { operations: ['hash'] }, ''],
-    ['hourly', periods.hourly, 'without filters', {}, '_by_timestamp'],
-    ['hourly', periods.hourly, 'with client filters', { clients: ['web'] }, '_by_client'],
-    ['hourly', periods.hourly, 'with operation filters', { operations: ['hash'] }, ''],
-    ['daily', periods.daily, 'without filters', {}, '_by_timestamp'],
-    ['daily', periods.daily, 'with client filters', { clients: ['web'] }, '_by_client'],
-    ['daily', periods.daily, 'with operation filters', { operations: ['hash'] }, ''],
-  ] as const)(
-    'uses the %s %s rollup %s',
-    async (granularity, range, _filterDescription, filters, suffix) => {
-      const { query, reader } = createReader();
+  test.each(
+    // prettier-ignore
+    [
+      ['minutely', periods.minutely, 'without filters', {}, '_by_timestamp'],
+      ['minutely', periods.minutely, 'with client filters', { clients: ['web'] }, '_by_client'],
+      ['minutely', periods.minutely, 'with operation filters', { operations: ['hash'] }, ''],
+      ['hourly', periods.hourly, 'without filters', {}, '_by_timestamp'],
+      ['hourly', periods.hourly, 'with client filters', { clients: ['web'] }, '_by_client'],
+      ['hourly', periods.hourly, 'with operation filters', { operations: ['hash'] }, ''],
+      ['daily', periods.daily, 'without filters', {}, '_by_timestamp'],
+      ['daily', periods.daily, 'with client filters', { clients: ['web'] }, '_by_client'],
+      ['daily', periods.daily, 'with operation filters', { operations: ['hash'] }, ''],
+      ['daily', periods.daily, 'with operation and client filters', { operations: ['hash'], clients: ['web'] }, ''],
+    ] as const,
+  )('uses the %s %s rollup %s', async (granularity, range, _filterDescription, filters, suffix) => {
+    const { query, reader } = createReader();
 
-      await reader.countRequests({
-        target: 't1',
-        period: range,
-        ...filters,
-      });
+    await reader.countRequests({
+      target: 't1',
+      period: range,
+      ...filters,
+    });
 
-      expect(printWithValues(query.mock.calls[0][0].query)).toContain(
-        `FROM operations_v01_${granularity}${suffix} `,
-      );
-    },
-  );
+    expect(printWithValues(query.mock.calls[0][0].query)).toContain(
+      `FROM operations_v01_${granularity}${suffix} `,
+    );
+  });
 
   test('uses the client rollup for client-version-filtered requests', async () => {
     const { query, reader } = createReader();
@@ -264,6 +265,7 @@ describe('OperationsReader v01 rollups', () => {
       ['durationOverTime', 'minutely', timelinePeriods.minutely, 'without filters', {}, '_by_timestamp'],
       ['durationOverTime', 'minutely', timelinePeriods.minutely, 'with client filters', { clients: ['web'] }, '_by_client'],
       ['durationOverTime', 'minutely', timelinePeriods.minutely, 'with operation filters', { operations: ['hash'] }, ''],
+      ['durationOverTime', 'minutely', timelinePeriods.minutely, 'with operation and client filters', { operations: ['hash'], clients: ['web'] }, ''],
     ] as const,
   )(
     '%s uses the %s %s rollup %s',
