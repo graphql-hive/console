@@ -23,6 +23,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,6 @@ import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
   SheetContent,
@@ -104,7 +104,7 @@ function TraceView(props: {
           </div>
         </div>
       </div>
-      <ScrollArea className="grow">
+      <ScrollArea fill>
         <div>
           <TraceTree
             leftPanelWidth={width}
@@ -879,7 +879,7 @@ export function TraceSheet(props: TraceSheetProps) {
                   </TabButton>
                 </div>
               </div>
-              <ScrollArea className="relative grow">
+              <ScrollArea fill>
                 <div className="h-full">
                   {activeView === 'span-attributes' ? (
                     <div>

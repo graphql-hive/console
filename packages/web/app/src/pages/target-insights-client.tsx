@@ -5,6 +5,7 @@ import { ActivityIcon, BookIcon, GlobeIcon, HistoryIcon, RefreshCw } from 'lucid
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { Card } from '@/components/base/card/card';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
@@ -257,13 +258,13 @@ function ClientView(props: {
                 </>
               }
             >
-              <div className="max-h-[360px] overflow-y-auto">
+              <ScrollArea maxHeight="lg">
                 {isLoading
                   ? null
                   : query.data?.target?.clientStats.operations.edges.map(({ node: operation }) => (
                       <Link
                         key={operation.id}
-                        className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                        className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                         params={{
                           organizationSlug: props.organizationSlug,
@@ -283,7 +284,7 @@ function ClientView(props: {
                         </div>
                       </Link>
                     ))}
-              </div>
+              </ScrollArea>
             </Card>
           </div>
 
@@ -302,7 +303,7 @@ function ClientView(props: {
                 </>
               }
             >
-              <div className="max-h-[360px] overflow-y-auto">
+              <ScrollArea maxHeight="lg">
                 {isLoading
                   ? null
                   : query.data?.target?.clientStats.versions.map(version => (
@@ -316,7 +317,7 @@ function ClientView(props: {
                         </div>
                       </div>
                     ))}
-              </div>
+              </ScrollArea>
             </Card>
           </div>
         </div>

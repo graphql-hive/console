@@ -1,6 +1,7 @@
 import { Fragment, useMemo } from 'react';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useTheme } from '@/components/theme/theme-provider';
 import { PackageIcon } from '@/components/ui/icon';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -223,8 +224,10 @@ export function SupergraphMetadataList(props: {
           content={
             <div className="text-neutral-11 text-xs">
               <div className="mb-2 font-bold">All Subgraphs</div>
-              <div className="flex max-h-[250px] w-[250px] flex-wrap gap-1 overflow-y-auto py-1">
-                {allItems}
+              <div className="w-[250px]">
+                <ScrollArea maxHeight="md">
+                  <div className="flex flex-wrap gap-1 py-1">{allItems}</div>
+                </ScrollArea>
               </div>
             </div>
           }

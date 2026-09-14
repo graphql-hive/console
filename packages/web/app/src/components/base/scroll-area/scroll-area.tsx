@@ -57,9 +57,11 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(function S
     <BaseScrollArea.Root
       data-cy={dataCy}
       // A flex column so a max-height on the root constrains the viewport, which a percentage
-      // height on the viewport would not.
+      // height on the viewport would not. `contain-inline-size` stops the content's width from
+      // counting as the area's own: a grid or flex parent sizing its track to min-content would
+      // otherwise grow to the longest unbreakable row and push past its neighbours.
       className={cn(
-        'group/scroll-area relative flex flex-col overflow-hidden',
+        'group/scroll-area relative flex flex-col overflow-hidden contain-inline-size',
         height && heightClass[height],
         maxHeight && maxHeightClass[maxHeight],
         fill && 'min-h-0 grow',
@@ -75,7 +77,16 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(function S
           viewportOverflowClass[axis],
         )}
       >
-        <BaseScrollArea.Content>{children}</BaseScrollArea.Content>
+        {/*
+          Content sets an inline `min-width: fit-content`, which a wide table needs to get room to
+          scroll into. On a vertical-only area it also stops a row of unbreakable text from ever
+          truncating, and the list pushes its whole grid column wider instead.
+        */}
+        {axis === 'vertical' ? (
+          children
+        ) : (
+          <BaseScrollArea.Content>{children}</BaseScrollArea.Content>
+        )}
       </BaseScrollArea.Viewport>
       {axis !== 'horizontal' ? (
         <BaseScrollArea.Scrollbar

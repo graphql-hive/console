@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -232,13 +233,13 @@ function OrganizationMemberRoleEditor(props: {
             <div className="grow">
               <div className="flex h-[400px] flex-col space-y-2">
                 <FormLabel>Permissions</FormLabel>
-                <div className="overflow-y-auto">
+                <ScrollArea fill>
                   <PermissionSelector
                     onSelectedPermissionsChange={onChangeSelectedPermissions}
                     permissionGroups={organization.availableMemberPermissionGroups}
                     selectedPermissionIds={selectedPermissions}
                   />
-                </div>
+                </ScrollArea>
               </div>
             </div>
           </div>
@@ -290,13 +291,13 @@ function OrganizationMemberRoleView(props: {
       </DialogHeader>
       <div className="grow">
         <div className="flex h-[400px] flex-col space-y-2">
-          <div className="overflow-scroll">
+          <ScrollArea fill>
             <SelectedPermissionOverview
               showOnlyAllowedPermissions={showOnlyGrantedPermissions}
               activePermissionIds={role.permissions}
               permissionsGroups={organization.availableMemberPermissionGroups}
             />
-          </div>
+          </ScrollArea>
         </div>
       </div>
       <DialogFooter>
@@ -496,23 +497,25 @@ function OrganizationMemberRoleCreator(props: {
               <div className="grow">
                 <div className="flex h-[400px] flex-col space-y-2">
                   <FormLabel>Permissions</FormLabel>
-                  <div className="overflow-y-auto">
+                  <ScrollArea fill>
                     <PermissionSelector
                       onSelectedPermissionsChange={onChangeSelectedPermissions}
                       permissionGroups={organization.availableMemberPermissionGroups}
                       selectedPermissionIds={selectedPermissions}
                     />
-                  </div>
+                  </ScrollArea>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="h-[400px] overflow-scroll">
-              <SelectedPermissionOverview
-                activePermissionIds={Array.from(selectedPermissions)}
-                permissionsGroups={organization.availableMemberPermissionGroups}
-                showOnlyAllowedPermissions={showOnlyGrantedPermissions}
-              />
+            <div className="flex h-[400px] flex-col">
+              <ScrollArea fill>
+                <SelectedPermissionOverview
+                  activePermissionIds={Array.from(selectedPermissions)}
+                  permissionsGroups={organization.availableMemberPermissionGroups}
+                  showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+                />
+              </ScrollArea>
             </div>
           )}
           <DialogFooter>
