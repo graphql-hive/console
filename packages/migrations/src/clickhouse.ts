@@ -26,6 +26,7 @@ export type Action = (
 
 export async function migrateClickHouse(
   isClickHouseMigrator: boolean,
+  enableOperationsV01Rollups: boolean,
   isHiveCloud: boolean,
   hiveCloudEnvironment: 'prod' | 'staging' | 'dev' | null,
   clickhouse: {
@@ -194,6 +195,12 @@ export async function migrateClickHouse(
 
     if (completedActions.has(index)) {
       console.log('   Skipping because it was already run');
+      return;
+    }
+
+    // Keep the v01 rollup tables opt-in without recording the migration as completed.
+    if (index === 21 && !enableOperationsV01Rollups) {
+      console.log('   Skipping because CLICKHOUSE_OPERATIONS_V01_ROLLUPS_START is not set');
       return;
     }
 
