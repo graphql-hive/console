@@ -1,8 +1,7 @@
 import { ReactElement, useEffect } from 'react';
-import clsx from 'clsx';
 import { InfoIcon } from 'lucide-react';
 import { Popover } from '@/components/base/floating/popover/popover';
-import { ToggleGroup, ToggleGroupItem } from '../../v2';
+import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 
@@ -46,30 +45,13 @@ export const PolicyEnumSelect = (props: {
       }
     >
       <ToggleGroup
-        defaultValue="list"
-        onValueChange={newValue => {
-          if (newValue) {
-            setConfig(props.propertyName, newValue);
-          }
-        }}
+        options={props.options}
         value={currentValue}
-        type="single"
-        className="text-neutral-10 bg-neutral-2/50"
-      >
-        {props.options.map(option => (
-          <ToggleGroupItem
-            key={option.value}
-            value={option.value}
-            title={option.label}
-            className={clsx(
-              'hover:text-neutral-12 text-xs',
-              currentValue === option.value && 'bg-neutral-5 text-neutral-12',
-            )}
-          >
-            {option.label}
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
+        onValueChange={newValue => {
+          setConfig(props.propertyName, newValue);
+        }}
+        aria-label={props.title}
+      />
     </PolicyConfigBox>
   );
 };

@@ -1,5 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Switch as BaseSwitch } from '@base-ui/react/switch';
+import { focusRing } from '../shared-styles';
 
 const switchRootVariants = cva(
   [
@@ -7,8 +8,7 @@ const switchRootVariants = cva(
     'data-[unchecked]:bg-neutral-6 data-[checked]:bg-success',
     'not-data-[disabled]:data-[unchecked]:hover:bg-neutral-8',
     'not-data-[disabled]:data-[checked]:hover:bg-success_80',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-    'focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-2',
+    focusRing,
     // Base UI renders a span, so `:disabled` never matches; the state is a data attribute.
     'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
   ],

@@ -56,7 +56,7 @@ export const RichDescriptions = createPreview(() => (
       rows={[
         {
           items: [
-            { term: 'Target', description: <code className="text-[13px]">production</code> },
+            { term: 'Target', description: <code className="text-control">production</code> },
             {
               term: 'Status',
               description: <Badge content="Active" variants={{ variant: 'secondary' }} />,

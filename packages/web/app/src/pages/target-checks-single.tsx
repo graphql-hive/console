@@ -15,6 +15,7 @@ import {
 import { useMutation, useQuery } from 'urql';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Switch } from '@/components/base/switch/switch';
 import {
   ChangesBlock,
@@ -34,7 +35,6 @@ import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -495,7 +495,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
               content={
                 <div className="p-2">
                   <h4 className="text-neutral-12 mb-2 text-sm font-semibold">All Targets</h4>
-                  <ScrollArea className="h-44 w-full">
+                  <ScrollArea height="sm">
                     <div className="divide-neutral-5 grid grid-cols-1 divide-y">
                       {allTargets.map((target, index) => (
                         <div key={index} className="py-2">

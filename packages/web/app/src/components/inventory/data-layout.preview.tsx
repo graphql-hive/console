@@ -6,9 +6,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -25,7 +22,9 @@ import { CallSite, InventoryList } from './shared';
 export const nav: NavPath = 'Inventory/DataLayout';
 
 /**
- * Tables, tabs, accordions and the three small layout primitives.
+ * Tables, tabs and accordions. ScrollArea, Separator and Collapsible were here too until round 4
+ * moved them onto base; their transcriptions now live beside each base component as
+ * `Component Examples`.
  *
  * Two table implementations and two accordion implementations ship at once, and they are not
  * variants of each other: `v2/THead` wraps its children in a `<tr>` for you while `ui/TableHeader`
@@ -67,31 +66,13 @@ const ENTRIES = [
     what: 'Accordion — an Object.assign compound, Accordion.Item / .Header / .Content',
     coveredBy: 'Accordions',
   },
-  {
-    source: 'target.tsx, target-checks-single.tsx, target-trace.tsx ×2 and the 4 proposal filters',
-    origin: 'ui',
-    what: 'ScrollArea — 8 sites, every one setting its own height by className',
-    coveredBy: 'ScrollArea',
-  },
-  {
-    source: 'ui/sidebar.tsx, pages/project.tsx, pages/organization.tsx',
-    origin: 'ui',
-    what: 'Separator — 3 sites, 2 of them vertical',
-    coveredBy: 'Separator',
-  },
-  {
-    source: 'pages/target-laboratory.tsx, pages/traces/target-traces-filter.tsx',
-    origin: 'ui',
-    what: 'Collapsible — a 9-line re-export of Radix with no styling of its own',
-    coveredBy: 'Collapsible',
-  },
 ] as const;
 
 export const Inventory = createPreview({
   label: 'Inventory',
   render: () => (
     <InventoryList
-      component="ui + v2 table, tabs, accordion, scroll-area, separator, collapsible"
+      component="ui + v2 table, tabs, accordion"
       summary={
         <>
           <strong>Two tables and two accordions, shipping together.</strong> ui/table has 11 tables,
@@ -101,8 +82,8 @@ export const Inventory = createPreview({
           <code>odd:bg-neutral-8/10</code>) that ui has no equivalent for.
           <br />
           <br />
-          <strong>Dead exports:</strong> <code>TableFooter</code>, <code>TableCaption</code>,{' '}
-          <code>ScrollBar</code> — zero call sites each.
+          <strong>Dead exports:</strong> <code>TableFooter</code> and <code>TableCaption</code> —
+          zero call sites each.
           <br />
           <br />
           <strong>className is the actual API here.</strong> 39 of 51 <code>TableCell</code>s carry
@@ -399,75 +380,5 @@ export const Accordions = createPreview({
         </div>
       </CallSite>
     </div>
-  ),
-});
-
-// ---------------------------------------------------------------------------
-// The three small primitives, one preview each. None is big enough to need
-// sub-cases, but grouping them under a vague heading told a reader nothing.
-// ---------------------------------------------------------------------------
-
-export const ScrollAreaPreview = createPreview({
-  label: 'ScrollArea',
-  render: () => (
-    <CallSite
-      source="pages/target-checks-single.tsx:470 and 7 more"
-      origin="ui"
-      note="ScrollArea sets no height of its own, so all 8 call sites pass one: h-44 w-full, h-80 w-full, max-h-screen, max-h-[calc(100vh-300px)]. Four of the eight are inside the Popover comboboxes already transcribed under Inventory > Popover. ScrollBar is exported and never used."
-    >
-      <div className="border-neutral-5 w-[20rem] rounded-md border p-2">
-        <ScrollArea className="h-44 w-full">
-          <div className="divide-neutral-5 grid grid-cols-1 divide-y">
-            {['production', 'staging', 'development', 'canary', 'preview', 'sandbox'].map(t => (
-              <div key={t} className="py-2">
-                <div className="text-neutral-10 line-clamp-3 text-sm">{t}</div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
-    </CallSite>
-  ),
-});
-
-export const SeparatorPreview = createPreview({
-  label: 'Separator',
-  render: () => (
-    <CallSite
-      source="pages/organization.tsx, pages/project.tsx, components/ui/sidebar.tsx"
-      origin="ui"
-      note="Three call sites only, two of them vertical dividers in a toolbar. A naive grep reports six because SelectSeparator and DropdownMenuSeparator match the same pattern."
-    >
-      <div className="flex h-8 items-center gap-3 text-sm">
-        <span>Sort</span>
-        <Separator orientation="vertical" />
-        <span>Filter</span>
-        <Separator orientation="vertical" />
-        <span>Search</span>
-      </div>
-    </CallSite>
-  ),
-});
-
-export const CollapsiblePreview = createPreview({
-  label: 'Collapsible',
-  render: () => (
-    <CallSite
-      source="pages/target-laboratory.tsx, pages/traces/target-traces-filter.tsx"
-      origin="ui"
-      note="ui/collapsible is 9 lines: three re-exports of Radix with no styling at all. Both call sites therefore build the entire disclosure themselves. It is the clearest delete-and-use-base-directly candidate in this bucket."
-    >
-      <div className="w-[24rem]">
-        <Collapsible defaultOpen>
-          <CollapsibleTrigger className="text-neutral-12 flex w-full items-center justify-between py-2 text-sm">
-            Filters
-            <span className="text-neutral-10 text-xs">toggle</span>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="text-neutral-11 pt-2 text-sm">
-            Entirely unstyled by the component: this padding and type came from the call site.
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
-    </CallSite>
   ),
 });

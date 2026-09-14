@@ -405,7 +405,7 @@ function DecorativeRows() {
         {(['deprecated', 'unused'] as const).map(key => (
           <div
             key={key}
-            className="hover:bg-neutral-5 flex h-7 cursor-pointer items-center gap-2 rounded-sm px-2 text-[13px]"
+            className="hover:bg-neutral-5 text-control flex h-7 cursor-pointer items-center gap-2 rounded-sm px-2"
             onClick={() => setFlags(f => ({ ...f, [key]: !f[key] }))}
           >
             <span className="flex-1">Show {key} fields</span>

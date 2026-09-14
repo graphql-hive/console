@@ -80,7 +80,7 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
               <h4 className="text-neutral-12 text-sm font-medium leading-none">
                 What's new in Hive Console
               </h4>
-              <p className="text-neutral-11 text-[13px]">
+              <p className="text-neutral-11 text-control">
                 Find out about the newest features, and enhancements
               </p>
             </div>
@@ -106,7 +106,7 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
                       {change.title}
                     </a>
                   </h3>
-                  <p className="text-neutral-11 mb-5 text-pretty text-[13px] font-normal">
+                  <p className="text-neutral-11 text-control mb-5 text-pretty font-normal">
                     {change.description}
                   </p>
                 </li>

@@ -1,12 +1,19 @@
 import { forwardRef, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type LucideIcon } from 'lucide-react';
-import { controlOnSurface, controlSize, disabledStyle, segmentSeparator } from '../shared-styles';
+import {
+  controlOnSurface,
+  controlSize,
+  disabledStyle,
+  focusRing,
+  segmentSeparator,
+} from '../shared-styles';
 
 export const buttonVariants = cva(
   [
     'group inline-flex items-center rounded-sm border font-medium transition-colors',
-    'focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
+    'disabled:pointer-events-none disabled:opacity-50',
+    focusRing,
   ],
   {
     variants: {
@@ -83,7 +90,7 @@ export const buttonVariants = cva(
 // `layout` is a cva variant so padding can key on it, but as a prop it is the discriminant of
 // the union below, so the union defines it rather than cva.
 type CommonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'style'> &
-  Omit<VariantProps<typeof buttonVariants>, 'layout'>;
+  Omit<VariantProps<typeof buttonVariants>, 'layout'> & { 'data-cy'?: string };
 
 /** Simple button with children content */
 type ChildrenLayout = CommonProps & {

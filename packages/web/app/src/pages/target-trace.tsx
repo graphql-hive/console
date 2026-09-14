@@ -23,6 +23,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,6 @@ import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
   SheetContent,
@@ -104,7 +104,7 @@ function TraceView(props: {
           </div>
         </div>
       </div>
-      <ScrollArea className="grow">
+      <ScrollArea fill>
         <div>
           <TraceTree
             leftPanelWidth={width}
@@ -830,7 +830,7 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>
                         <Badge
                           variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                          className="text-2xs rounded-md px-2 py-0.5 font-thin"
                         >
                           {spanAttributes.length}
                         </Badge>
@@ -846,7 +846,7 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>
                         <Badge
                           variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                          className="text-2xs rounded-md px-2 py-0.5 font-thin"
                         >
                           {resourceAttributes.length}
                         </Badge>
@@ -862,7 +862,7 @@ export function TraceSheet(props: TraceSheetProps) {
                       <div>
                         <Badge
                           variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                          className="text-2xs rounded-md px-2 py-0.5 font-thin"
                         >
                           {events.length}
                         </Badge>
@@ -879,7 +879,7 @@ export function TraceSheet(props: TraceSheetProps) {
                   </TabButton>
                 </div>
               </div>
-              <ScrollArea className="relative grow">
+              <ScrollArea fill>
                 <div className="h-full">
                   {activeView === 'span-attributes' ? (
                     <div>
@@ -1530,7 +1530,7 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>
                       <Badge
                         variant="secondary"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                        className="text-2xs rounded-md px-2 py-0.5 font-thin"
                       >
                         {Array.from(Object.keys(span.spanAttributes)).length}
                       </Badge>
@@ -1546,7 +1546,7 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>
                       <Badge
                         variant="secondary"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                        className="text-2xs rounded-md px-2 py-0.5 font-thin"
                       >
                         {resourceAttributes.length}
                       </Badge>
@@ -1562,7 +1562,7 @@ function SpanSheet(props: SpanSheetProps) {
                     <div>
                       <Badge
                         variant="secondary"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                        className="text-2xs rounded-md px-2 py-0.5 font-thin"
                       >
                         {span.events.length}
                       </Badge>
@@ -1581,7 +1581,7 @@ function SpanSheet(props: SpanSheetProps) {
                 )}
               </div>
             </div>
-            <div className="flex-1 overflow-y-scroll">
+            <ScrollArea fill>
               {activeView === 'span-attributes' && (
                 <div>
                   {spanAttributes.length > 0 ? (
@@ -1668,7 +1668,7 @@ function SpanSheet(props: SpanSheetProps) {
                   code={span.spanAttributes['graphql.document'] as string}
                 />
               )}
-            </div>
+            </ScrollArea>
           </div>
         </div>
         <SheetFooter className="mt-auto border-t p-2">
@@ -1734,7 +1734,7 @@ function AttributeRow(props: AttributeRowProps) {
       </div>
       <div
         className={cn(
-          'text-neutral-12 w-full flex-1 pt-2 font-mono text-[10px]',
+          'text-neutral-12 text-2xs w-full flex-1 pt-2 font-mono',
           !isExpanded && 'overflow-hidden text-ellipsis text-nowrap pt-0',
         )}
       >
@@ -1755,16 +1755,20 @@ function ExceptionTeaser(props: {
     <div className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20">
       <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
         <span className="font-mono text-xs font-medium text-red-300">{props.type}</span>
-        <Badge variant="outline" className="border-red-700 bg-red-900 text-[10px] text-red-300">
+        <Badge variant="outline" className="text-2xs border-red-700 bg-red-900 text-red-300">
           {props.name}
         </Badge>
       </div>
       <div className="p-3 text-xs">
         <p className="text-neutral-11">{props.message}</p>
         {props.stacktrace && (
-          <pre className="bg-neutral-1/50 text-neutral-10 mt-2 overflow-x-auto rounded-sm p-2 font-mono text-[10px] leading-tight">
-            {props.stacktrace}
-          </pre>
+          <div className="bg-neutral-1/50 mt-2 rounded-sm">
+            <ScrollArea axis="horizontal">
+              <pre className="text-neutral-10 text-2xs p-2 font-mono leading-tight">
+                {props.stacktrace}
+              </pre>
+            </ScrollArea>
+          </div>
         )}
       </div>
     </div>

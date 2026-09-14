@@ -22,7 +22,7 @@ export const Default = createPreview(() => {
           <div className="text-neutral-8 px-2 py-4 text-center text-sm italic">No matches</div>
         ) : (
           matches.map(item => (
-            <div key={item} className="text-neutral-10 flex h-7 items-center px-2 text-[13px]">
+            <div key={item} className="text-neutral-10 text-control flex h-7 items-center px-2">
               {item}
             </div>
           ))

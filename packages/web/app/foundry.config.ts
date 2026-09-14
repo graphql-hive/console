@@ -16,15 +16,23 @@ export default defineConfig({
       label: 'Base',
       children: [
         {
+          label: 'Foundations',
+          children: [{ label: 'TypeScale' }, { label: 'Focus' }],
+        },
+        {
           label: 'Primitives',
           children: [
             { label: 'Accordion' },
+            { label: 'Avatar', children: [{ label: 'Component Examples' }] },
             { label: 'Badge' },
             { label: 'Button' },
             { label: 'Card' },
             { label: 'StatCard' },
             { label: 'Input' },
             { label: 'CopyChip' },
+            { label: 'Collapsible', children: [{ label: 'Component Examples' }] },
+            { label: 'ScrollArea', children: [{ label: 'Component Examples' }] },
+            { label: 'Separator', children: [{ label: 'Component Examples' }] },
           ],
         },
         {
@@ -36,6 +44,8 @@ export default defineConfig({
             // so a change can be judged against both without leaving the subtree.
             { label: 'RadioGroup', children: [{ label: 'Component Examples' }] },
             { label: 'Switch', children: [{ label: 'Component Examples' }] },
+            { label: 'Slider', children: [{ label: 'Component Examples' }] },
+            { label: 'ToggleGroup', children: [{ label: 'Component Examples' }] },
             { label: 'Form' },
           ],
         },

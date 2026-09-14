@@ -834,7 +834,7 @@ export function AlertForm(props: AlertFormProps) {
                     )}
                   />
                 </div>
-                <p className="text-neutral-10 text-[13px]">
+                <p className="text-neutral-10 text-control">
                   {isPercentageChange
                     ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. With "${
                         watchedValues.direction === 'BELOW' ? 'a Decrease' : 'an Increase'

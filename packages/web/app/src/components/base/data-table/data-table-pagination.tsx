@@ -74,8 +74,8 @@ export function DataTablePagination({
             onClick={() => onPageChange(page)}
             className={
               page === pageIndex
-                ? 'bg-neutral-5 text-neutral-12 inline-flex size-6 items-center justify-center rounded-full font-mono text-[12px]'
-                : 'text-neutral-10 hover:text-neutral-12 hover:bg-neutral-4 inline-flex size-6 items-center justify-center rounded-full font-mono text-[12px] transition-colors'
+                ? 'bg-neutral-5 text-neutral-12 inline-flex size-6 items-center justify-center rounded-full font-mono text-xs'
+                : 'text-neutral-10 hover:text-neutral-12 hover:bg-neutral-4 inline-flex size-6 items-center justify-center rounded-full font-mono text-xs transition-colors'
             }
           >
             {page + 1}

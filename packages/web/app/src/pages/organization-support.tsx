@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { scrollArea } from '@/components/base/shared-styles';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { Priority, priorityDescription, Status } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
@@ -162,56 +162,58 @@ function NewTicketForm(props: {
               </SheetDescription>
             </SheetHeader>
 
-            <div className="flex min-h-0 flex-1">
-              <div className={cn('w-full space-y-6 text-ellipsis px-2 text-sm', scrollArea)}>
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Priority level</FormLabel>
-                      <RadioGroup
-                        variant="as-card"
-                        orientation="vertical"
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        items={PRIORITY_ITEMS}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="subject"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Subject</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter a subject of your issue" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter a short description of your issue"
-                          {...field}
+            <div className="flex min-h-0 flex-1 flex-col">
+              <ScrollArea fill>
+                <div className="w-full space-y-6 text-ellipsis px-2 text-sm">
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Priority level</FormLabel>
+                        <RadioGroup
+                          variant="as-card"
+                          orientation="vertical"
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          items={PRIORITY_ITEMS}
                         />
-                      </FormControl>
-                      <FormDescription>Help us understand it better.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter a subject of your issue" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter a short description of your issue"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>Help us understand it better.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </ScrollArea>
             </div>
 
             <SheetFooter className="flex flex-col gap-y-2 sm:flex-col">

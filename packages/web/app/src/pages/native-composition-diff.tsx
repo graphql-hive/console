@@ -109,7 +109,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
     <div className="p-8">
       <Heading className="mb-4">Native Composition Report</Heading>
 
-      <div className="border-neutral-5 dark:bg-neutral-3 flex items-center gap-4 rounded-sm border px-8 py-4 text-[12px]">
+      <div className="border-neutral-5 dark:bg-neutral-3 flex items-center gap-4 rounded-sm border px-8 py-4 text-xs">
         <MetaCell label="Project" className="flex-1 truncate text-left">
           {project.slug}
         </MetaCell>
@@ -122,7 +122,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
       </div>
       <PageLayout>
         <NavLayout>
-          <div className="p-4 text-[12px] font-bold">View Target</div>
+          <div className="p-4 text-xs font-bold">View Target</div>
           {results.map((result, index) => (
             <SubPageNavigationLink
               key={index}

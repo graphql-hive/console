@@ -9,11 +9,11 @@ import {
 } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Button as BaseButton } from '@/components/base/button/button';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days, type Preset } from '@/components/ui/date-range-picker';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Menu } from '../menu/menu';
 import { Select } from '../select/select';
@@ -282,7 +282,7 @@ export const SimpleContent = createPreview({
       <CallSite
         source="pages/target-checks-single.tsx:461"
         origin="base"
-        note="Default width and padding; the content supplies its own p-2 and a fixed-height ScrollArea."
+        note="Default width and padding; the content supplies its own p-2 and a ScrollArea at height=sm."
       >
         <Popover
           trigger={
@@ -293,7 +293,7 @@ export const SimpleContent = createPreview({
           content={
             <div className="p-2">
               <h4 className="text-neutral-12 mb-2 text-sm font-semibold">All Targets</h4>
-              <ScrollArea className="h-44 w-full">
+              <ScrollArea height="sm">
                 <div className="divide-neutral-5 grid grid-cols-1 divide-y">
                   {['production', 'staging', 'development', 'canary', 'preview'].map(slug => (
                     <div key={slug} className="py-2">
@@ -351,7 +351,7 @@ export const Changelog = createPreview({
                 <h4 className="text-neutral-12 text-sm font-medium leading-none">
                   What&apos;s new in Hive Console
                 </h4>
-                <p className="text-neutral-11 text-[13px]">
+                <p className="text-neutral-11 text-control">
                   Find out about the newest features, and enhancements
                 </p>
               </div>

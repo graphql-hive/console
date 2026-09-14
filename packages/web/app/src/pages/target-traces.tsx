@@ -43,13 +43,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroupLabel,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -771,14 +764,14 @@ function Filters(
 
   return (
     <>
-      <SidebarGroupLabel className="text-neutral-12 flex items-center justify-between">
+      <div className="text-neutral-12 flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium">
         <div>Filters</div>
         {hasChanges ? (
           <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
             <XIcon className="size-4" />
           </Button>
         ) : null}
-      </SidebarGroupLabel>
+      </div>
       <DurationFilter value={filterSelector('duration')} onChange={updateFilter('duration')} />
       <MultiInputFilter
         key="trace.id"
@@ -1308,13 +1301,13 @@ export function TargetTracesPageContent(
           </div>
         }
       />
-      <SidebarProvider className="mt-4">
-        <Sidebar collapsible="none" className="sticky top-4 bg-transparent">
-          <SidebarContent>
+      <div className="mt-4 flex min-h-svh w-full">
+        <aside className="text-neutral-11 sticky top-4 flex h-full w-64 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
             <Filters filter={props.filter} options={filterOptions} />
-          </SidebarContent>
-        </Sidebar>
-        <SidebarInset className="bg-transparent">
+          </div>
+        </aside>
+        <main className="relative flex min-h-svh flex-1 flex-col">
           <div className="flex flex-1 flex-col gap-4 pl-4 pt-0">
             <div>
               <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
@@ -1367,8 +1360,8 @@ export function TargetTracesPageContent(
               }
             />
           </div>
-        </SidebarInset>
-      </SidebarProvider>
+        </main>
+      </div>
       <Sheet
         open={selectedTraceId !== null}
         onOpenChange={isOpen => {

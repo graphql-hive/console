@@ -385,7 +385,7 @@ export const UiVsBase = createPreview({
         <li>
           <strong className="text-neutral-12">FormDescription.</strong> ui takes children at{' '}
           <code>text-sm</code>; base takes a <code>description</code> prop at{' '}
-          <code>text-[13px]</code>.
+          <code>text-control</code>.
         </li>
         <li>
           <strong className="text-neutral-12">Why it matters.</strong> The three access-token sheets

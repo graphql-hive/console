@@ -5,6 +5,7 @@ import { BoxIcon, CheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Label, Label as LegacyLabel } from '@/components/common';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import {
@@ -508,13 +509,15 @@ function ChangeItem(
                                   <h5 className="text-neutral-12 font-medium">
                                     Affected Operations
                                   </h5>
-                                  <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
-                                    {deployment.affectedOperations.edges.map(({ node: op }) => (
-                                      <li key={op.hash} className="text-neutral-11">
-                                        {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
-                                      </li>
-                                    ))}
-                                  </ul>
+                                  <ScrollArea maxHeight="sm">
+                                    <ul className="space-y-1 text-sm">
+                                      {deployment.affectedOperations.edges.map(({ node: op }) => (
+                                        <li key={op.hash} className="text-neutral-11">
+                                          {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </ScrollArea>
                                   <Link
                                     to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
                                     params={{
@@ -632,13 +635,15 @@ function ChangeItem(
                           content={
                             <div className="space-y-2">
                               <h5 className="text-neutral-12 font-medium">Affected Operations</h5>
-                              <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
-                                {deployment.affectedOperations.edges.map(({ node: op }) => (
-                                  <li key={op.hash} className="text-neutral-11">
-                                    {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
-                                  </li>
-                                ))}
-                              </ul>
+                              <ScrollArea maxHeight="sm">
+                                <ul className="space-y-1 text-sm">
+                                  {deployment.affectedOperations.edges.map(({ node: op }) => (
+                                    <li key={op.hash} className="text-neutral-11">
+                                      {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </ScrollArea>
                               <Link
                                 to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
                                 params={{

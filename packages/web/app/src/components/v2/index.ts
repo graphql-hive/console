@@ -1,5 +1,4 @@
 export { Accordion } from '@/components/v2/accordion';
-export { Avatar } from '@/components/v2/avatar';
 export { DataWrapper } from '@/components/v2/data-wrapper';
 export { DiffEditor } from '@/components/v2/diff-editor';
 export { Input } from '@/components/v2/input';
@@ -8,4 +7,3 @@ export { Sortable } from '@/components/v2/sortable';
 export { default as Stat } from '@/components/v2/stat';
 export { Table, TBody, THead, TFoot, Th, Td, Tr } from '@/components/v2/table';
 export { Tag } from '@/components/v2/tag';
-export { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';

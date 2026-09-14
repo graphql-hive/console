@@ -87,12 +87,6 @@ const ENTRIES = [
     coveredBy: 'Sheet',
   },
   {
-    source: 'components/ui/sidebar.tsx',
-    origin: 'ui',
-    what: 'Sheet used as the mobile sidebar, side=left',
-    coveredBy: 'Sheet',
-  },
-  {
     source:
       'create-alert.tsx:94, create-channel.tsx:112, user/settings.tsx:88, cdn-access-tokens.tsx:167 and :289, transfer-organization-ownership.tsx:171',
     origin: 'v2',
@@ -276,7 +270,6 @@ export const SheetPreview = createPreview({
 
 function SheetExamples() {
   const [openRight, setOpenRight] = useState(false);
-  const [openLeft, setOpenLeft] = useState(false);
 
   return (
     <div className="flex flex-col gap-8">
@@ -308,24 +301,6 @@ function SheetExamples() {
               </Button>
               <Button onClick={() => setOpenRight(false)}>Save</Button>
             </Sheet.SheetFooter>
-          </Sheet.SheetContent>
-        </Sheet.Sheet>
-      </CallSite>
-
-      <CallSite
-        source="components/ui/sidebar.tsx"
-        origin="ui"
-        note="side='left', the only non-default side in the app. The sidebar uses it as its mobile drawer."
-      >
-        <Button variant="outline" onClick={() => setOpenLeft(true)}>
-          Open left sheet
-        </Button>
-        <Sheet.Sheet open={openLeft} onOpenChange={setOpenLeft}>
-          <Sheet.SheetContent side="left">
-            <Sheet.SheetHeader>
-              <Sheet.SheetTitle>Navigation</Sheet.SheetTitle>
-              <Sheet.SheetDescription>Mobile sidebar drawer.</Sheet.SheetDescription>
-            </Sheet.SheetHeader>
           </Sheet.SheetContent>
         </Sheet.Sheet>
       </CallSite>

@@ -267,14 +267,14 @@ export const OnStatus = createPreview({
         <Tabs defaultValue="default">
           <TabsList>
             <TabsTrigger value="default">
-              <span className="font-mono text-[12px]">Default Graph</span>
+              <span className="font-mono text-xs">Default Graph</span>
               <StatusTooltip
                 icon={<GitCompareIcon className="size-4 pl-1" />}
                 label="Main graph schema changed"
               />
             </TabsTrigger>
             <TabsTrigger value="contract">
-              <span className="font-mono text-[12px]">public@1a2b3c4d</span>
+              <span className="font-mono text-xs">public@1a2b3c4d</span>
               <StatusTooltip
                 icon={<CheckIcon className="size-4 pl-1" />}
                 label="Contract composition succeeded."

@@ -12,6 +12,7 @@ import {
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { Card } from '@/components/base/card/card';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
@@ -406,7 +407,7 @@ function SchemaCoordinateView(props: {
                 )}
               </AutoSizer>
               <div className={cn('pt-5', showFieldLevelMetrics ? 'show' : 'hidden')}>
-                <p className="text-neutral-10 pb-4 text-[13px]">
+                <p className="text-neutral-10 text-control pb-4">
                   Number of times the coordinate {props.coordinate} has resolved over time
                 </p>
                 <AutoSizer disableHeight>
@@ -502,14 +503,14 @@ function SchemaCoordinateView(props: {
                 </>
               }
             >
-              <div className="max-h-[360px] overflow-y-auto">
+              <ScrollArea maxHeight="lg">
                 {isLoading
                   ? null
                   : query.data?.target?.schemaCoordinateStats.operations.edges.map(
                       ({ node: operation }) => (
                         <Link
                           key={operation.id}
-                          className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                          className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                           params={{
                             organizationSlug: props.organizationSlug,
@@ -529,7 +530,7 @@ function SchemaCoordinateView(props: {
                         </Link>
                       ),
                     )}
-              </div>
+              </ScrollArea>
             </Card>
           </div>
 
@@ -545,14 +546,14 @@ function SchemaCoordinateView(props: {
                 </>
               }
             >
-              <div className="max-h-[360px] overflow-y-auto">
+              <ScrollArea maxHeight="lg">
                 {isLoading
                   ? null
                   : query.data?.target?.schemaCoordinateStats.clients.edges.map(
                       ({ node: client }) => (
                         <Link
                           key={client.name}
-                          className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 -mx-2 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                          className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                           params={{
                             organizationSlug: props.organizationSlug,
@@ -571,7 +572,7 @@ function SchemaCoordinateView(props: {
                         </Link>
                       ),
                     )}
-              </div>
+              </ScrollArea>
             </Card>
           </div>
 
@@ -589,23 +590,25 @@ function SchemaCoordinateView(props: {
                     </>
                   }
                 >
-                  <div className="max-h-[360px] space-y-2 overflow-y-auto">
-                    {isLoading
-                      ? null
-                      : query.data?.target?.schemaCoordinateStats.errorCodes?.edges.map(
-                          ({ node: error }) => (
-                            <div key={error.code} className="flex items-center">
-                              <p className="truncate text-sm font-medium">{error.code}</p>
-                              <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                                <div>{formatNumber(error.count)}</div>
-                                <div className="min-w-[70px] text-right">
-                                  {toDecimal((error.count * 100) / totalRequests)}%
+                  <ScrollArea maxHeight="lg">
+                    <div className="space-y-2">
+                      {isLoading
+                        ? null
+                        : query.data?.target?.schemaCoordinateStats.errorCodes?.edges.map(
+                            ({ node: error }) => (
+                              <div key={error.code} className="flex items-center">
+                                <p className="truncate text-sm font-medium">{error.code}</p>
+                                <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                                  <div>{formatNumber(error.count)}</div>
+                                  <div className="min-w-[70px] text-right">
+                                    {toDecimal((error.count * 100) / totalRequests)}%
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ),
-                        )}
-                  </div>
+                            ),
+                          )}
+                    </div>
+                  </ScrollArea>
                 </Card>
               </div>
               <div className="col-span-4 grid">

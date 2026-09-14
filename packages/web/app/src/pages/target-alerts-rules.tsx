@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import { ArrowDown, Info } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Avatar } from '@/components/base/avatar/avatar';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { PageLead } from '@/components/base/page-lead';
 import { Badge, BadgeRounded } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Avatar } from '@/components/v2/avatar';
 import { graphql } from '@/gql';
 import {
   AlertChannelType,
@@ -254,7 +254,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
       if (!u) return <span className="text-neutral-10">—</span>;
       return (
         <span className="text-neutral-12 inline-flex items-center gap-2 text-xs">
-          <Avatar size="xs" shape="circle" alt={u.displayName} />
+          <Avatar size="xs" alt={u.displayName} />
           {u.displayName}
         </span>
       );

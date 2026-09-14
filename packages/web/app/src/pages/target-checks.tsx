@@ -1,5 +1,6 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from 'urql';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Switch } from '@/components/base/switch/switch';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BadgeRounded } from '@/components/ui/badge';
@@ -314,21 +315,25 @@ function ChecksPageContent(props: {
             targetSlug={props.targetSlug}
           >
             {hasFilteredSchemaChecks ? (
-              <div className="border-neutral-5/50 flex w-[300px] grow flex-col gap-2.5 overflow-y-auto rounded-md border p-2.5">
-                {paginationVariables.map((cursor, index) => (
-                  <Navigation
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                    schemaCheckId={schemaCheckId}
-                    after={cursor}
-                    isLastPage={index + 1 === paginationVariables.length}
-                    onLoadMore={onLoadMore}
-                    key={cursor ?? 'first'}
-                    showOnlyChanged={showOnlyChanged}
-                    showOnlyFailed={showOnlyFailed}
-                  />
-                ))}
+              <div className="border-neutral-5/50 flex min-h-0 w-[300px] grow flex-col rounded-md border">
+                <ScrollArea fill>
+                  <div className="flex flex-col gap-2.5 p-2.5">
+                    {paginationVariables.map((cursor, index) => (
+                      <Navigation
+                        organizationSlug={props.organizationSlug}
+                        projectSlug={props.projectSlug}
+                        targetSlug={props.targetSlug}
+                        schemaCheckId={schemaCheckId}
+                        after={cursor}
+                        isLastPage={index + 1 === paginationVariables.length}
+                        onLoadMore={onLoadMore}
+                        key={cursor ?? 'first'}
+                        showOnlyChanged={showOnlyChanged}
+                        showOnlyFailed={showOnlyFailed}
+                      />
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
             ) : (
               !isLoading && (
@@ -407,7 +412,9 @@ function SchemaChecksSideNav(props: {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    // Pinned and capped to the viewport, so the list scrolls inside the column rather than
+    // stretching the page when there are more checks than fit.
+    <div className="sticky top-6 flex max-h-[calc(100vh-3rem)] flex-col gap-5 self-start">
       <div>
         <div className="flex h-9 flex-row items-center justify-between">
           <Label

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ExternalLink, Info } from 'lucide-react';
+import { Avatar } from '@/components/base/avatar/avatar';
 import { Button } from '@/components/base/button/button';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { FloatingPortalContainerProvider } from '@/components/base/floating/floating-portal-container';
@@ -14,7 +15,6 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Avatar } from '@/components/v2/avatar';
 import {
   AlertChannelType,
   MetricAlertRuleSeverity,
@@ -135,7 +135,7 @@ export type AlertConditionsPanelProps = {
 
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
-    <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[10px]">
+    <span className="text-neutral-12 text-2xs inline-flex items-center gap-1 font-mono">
       <TimeAgo date={iso} />
       <Popover
         trigger={
@@ -155,7 +155,7 @@ function UserCell({ user }: { user: User }) {
   if (!user) return <>—</>;
   return (
     <span className="inline-flex items-center gap-2">
-      <Avatar size="xs" shape="circle" alt={user.displayName} />
+      <Avatar size="xs" alt={user.displayName} />
       <span>{user.displayName}</span>
     </span>
   );
