@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Textarea as BaseTextarea } from '@/components/base/textarea/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -115,6 +116,22 @@ export const Default = createPreview({
     >
       <div className="w-[28rem]">
         <Textarea placeholder="Placeholder" />
+      </div>
+    </CallSite>
+  ),
+});
+
+export const DefaultBase = createPreview({
+  label: 'Default (base)',
+  render: () => (
+    <CallSite
+      source="base/textarea (proposed for the 7 Form fields and the comment box)"
+      origin="base"
+      note="Input's surface and states at 13px, 80px minimum, resizable vertically. The error state is aria-invalid, the same as Input."
+    >
+      <div className="flex w-[28rem] flex-col gap-3">
+        <BaseTextarea placeholder="Enter a short description of your issue" />
+        <BaseTextarea defaultValue="Too short." invalid />
       </div>
     </CallSite>
   ),
@@ -256,6 +273,42 @@ function ProposalDescription() {
           className="mt-2 h-auto min-h-40 resize-none"
           value={description}
           onChange={e => setDescription(e.currentTarget.value)}
+        />
+      </div>
+    </CallSite>
+  );
+}
+
+export const GrowingBase = createPreview({
+  label: 'Growing (base)',
+  render: () => <GrowingBaseFields />,
+});
+
+function GrowingBaseFields() {
+  const [description, setDescription] = useState('');
+  return (
+    <CallSite
+      source="base/textarea autoSize (proposed for input-copy.tsx:31 and target-proposals-new.tsx:703)"
+      origin="base"
+      note="One mechanism for both: the native field-sizing, so react-textarea-autosize goes. Where a browser lacks it the field keeps its rows and scrolls, which is what the proposal description already accepts today."
+    >
+      <div className="flex w-[28rem] flex-col gap-4">
+        <BaseTextarea
+          readOnly
+          autoSize
+          mono
+          value={
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\n.eyJzdWIiOiJ0YXJnZXQ6cHJvZHVjdGlvbiJ9\n.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1g'
+          }
+          onFocus={ev => ev.target.select()}
+        />
+        <BaseTextarea
+          autoSize
+          rows={6}
+          placeholder="Describe the proposed change"
+          value={description}
+          onChange={e => setDescription(e.currentTarget.value)}
+          maxLength={5000}
         />
       </div>
     </CallSite>

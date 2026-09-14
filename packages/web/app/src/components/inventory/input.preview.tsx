@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { CalendarDays, SearchIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Button as BaseButton } from '@/components/base/button/button';
+import { Input as BaseInput } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -181,6 +183,34 @@ export const FormField = createPreview({
   ),
 });
 
+export const FormFieldBase = createPreview({
+  label: 'Form field (base)',
+  render: () => (
+    <CallSite
+      source="base/input (proposed for the ~25 Form fields)"
+      origin="base"
+      note="36px rather than 40, rounded-sm, a filled surface. The error state below is what react-hook-form's FormControl produces through aria-invalid; no className is involved any more."
+    >
+      <div className="flex w-[24rem] flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email-base" className="text-sm font-medium">
+            Email
+          </Label>
+          <BaseInput id="email-base" type="email" placeholder="m@example.com" />
+          <p className="text-neutral-11 text-xs">We will never share your email.</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email-invalid" className="text-sm font-medium">
+            Email
+          </Label>
+          <BaseInput id="email-invalid" type="email" defaultValue="not an email" invalid />
+          <p className="text-xs font-medium text-red-500">Enter a valid email address.</p>
+        </div>
+      </div>
+    </CallSite>
+  ),
+});
+
 // ---------------------------------------------------------------------------
 // pages/organization.tsx:215 and pages/project.tsx:228 — identical in both files.
 // ---------------------------------------------------------------------------
@@ -205,6 +235,21 @@ export const Search = createPreview({
   ),
 });
 
+export const SearchBase = createPreview({
+  label: 'Search (base)',
+  render: () => (
+    <CallSite
+      source="base/input leadingIcon (proposed for the 5 search fields)"
+      origin="base"
+      note="The icon is the component's; the responsive width moves to the wrapper. Resize the canvas to see it step."
+    >
+      <div className="w-full md:w-[200px] lg:w-[336px]">
+        <BaseInput type="search" placeholder="Search..." leadingIcon={SearchIcon} />
+      </div>
+    </CallSite>
+  ),
+});
+
 // ---------------------------------------------------------------------------
 // pages/target-settings.tsx:1243 onwards — number fields set inside a running sentence.
 // ---------------------------------------------------------------------------
@@ -223,6 +268,26 @@ export const InlineNumber = createPreview({
         <Input type="number" min="0" defaultValue="30" className="inline-flex! w-20 text-center" />
         <span>days ago and has not been used for at least</span>
         <Input type="number" min="0" defaultValue="14" className="inline-flex! w-20 text-center" />
+        <span>days.</span>
+      </div>
+    </CallSite>
+  ),
+});
+
+export const InlineNumberBase = createPreview({
+  label: 'Inline number (base)',
+  render: () => (
+    <CallSite
+      source="base/input width=xs (proposed for the 5 inline fields)"
+      origin="base"
+      note="The input is inline by default, so the important override goes. xs is 4rem where the old fields were w-20 and w-16; the text is no longer centred."
+    >
+      <div className="flex w-[34rem] flex-wrap items-center gap-2 text-sm">
+        <span>Retire an app deployment when it</span>
+        <span>was created at least</span>
+        <BaseInput type="number" min="0" defaultValue="30" width="xs" />
+        <span>days ago and has not been used for at least</span>
+        <BaseInput type="number" min="0" defaultValue="14" width="xs" />
         <span>days.</span>
       </div>
     </CallSite>
@@ -261,6 +326,26 @@ export const JoinedPrefix = createPreview({
           <Input placeholder="slug" className="w-48 rounded-l-none" defaultValue="production" />
         </div>
       </CallSite>
+      <CallSite
+        source="base/input prefixText (proposed for the 3 slug fields)"
+        origin="base"
+        note="One control: the prefix is the component's, sized with the field, and the width names the whole thing. The organization form's FormControl can then wrap the input itself rather than a div around it, so the label and error state reach the field."
+      >
+        <div className="flex flex-col gap-3">
+          <BaseInput
+            placeholder="slug"
+            prefixText="app.graphql-hive.com/the-guild/"
+            defaultValue="graphql-api"
+            width="md"
+          />
+          <BaseInput
+            placeholder="slug"
+            prefixText="app.graphql-hive.com/the-guild/graphql-api/"
+            defaultValue="production"
+            width="md"
+          />
+        </div>
+      </CallSite>
     </div>
   ),
 });
@@ -295,6 +380,26 @@ export const CompactFields = createPreview({
           <Label htmlFor="page">Page</Label>
           <Input id="page" type="number" defaultValue="3" className="w-16" />
           <span className="text-neutral-11">of 12</span>
+        </div>
+      </CallSite>
+      <CallSite
+        source="base/input size=compact (proposed for the traces fields) and width=xs (the pager)"
+        origin="base"
+        note="compact is 30px, the shared control size, where the traces fields were 32. The pager keeps the default height."
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label className="text-neutral-10 text-sm font-normal">Start</Label>
+            <div className="flex items-center gap-2">
+              <BaseInput type="date" defaultValue="2026-09-01" size="compact" width="sm" />
+              <BaseInput type="time" defaultValue="00:00" size="compact" width="xs" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Label htmlFor="page-base">Page</Label>
+            <BaseInput id="page-base" type="number" defaultValue="3" width="xs" />
+            <span className="text-neutral-11">of 12</span>
+          </div>
         </div>
       </CallSite>
     </div>
@@ -339,6 +444,36 @@ export const FieldWithInlineButton = createPreview({
           <Button variant="outline">Copy</Button>
         </div>
       </CallSite>
+      <CallSite
+        source="base/input trailing and mono (proposed for the date-range picker and InputCopy)"
+        origin="base"
+        note="The calendar button is the trailing slot, a base icon-only Button; the copy field is mono and read-only with the copy button still beside it."
+      >
+        <div className="flex flex-col gap-4">
+          <div className="grid w-full max-w-sm items-center gap-1.5">
+            <Label htmlFor="from-base" className="text-neutral-10 text-xs">
+              From
+            </Label>
+            <BaseInput
+              id="from-base"
+              defaultValue="now-30d"
+              mono
+              trailing={
+                <BaseButton
+                  layout="iconOnly"
+                  icon={CalendarDays}
+                  aria-label="Pick a date"
+                  variant="ghost"
+                />
+              }
+            />
+          </div>
+          <div className="flex w-[24rem] items-center gap-2">
+            <BaseInput readOnly mono defaultValue="hv1/8f3a11c2e4d6..." />
+            <Button variant="outline">Copy</Button>
+          </div>
+        </div>
+      </CallSite>
     </div>
   ),
 });
@@ -369,6 +504,16 @@ export const Password = createPreview({
         <div className="flex w-[24rem] flex-col gap-1.5">
           <Label className="text-sm font-medium">Client Secret</Label>
           <Input type="password" autoComplete="off" placeholder="Value ending with a91f" />
+        </div>
+      </CallSite>
+      <CallSite
+        source="base/input width=md (proposed for the endpoint and secret pair)"
+        origin="base"
+        note="md is 24rem where max-w-md was 28. The masked-placeholder secret is a plain default-width field."
+      >
+        <div className="flex flex-col gap-3">
+          <BaseInput placeholder="Endpoint" width="md" />
+          <BaseInput type="password" placeholder="Secret" width="md" />
         </div>
       </CallSite>
     </div>
@@ -407,3 +552,20 @@ function V2InputShapes() {
     </CallSite>
   );
 }
+
+export const V2InputsBase = createPreview({
+  label: 'v2 input (base)',
+  render: () => (
+    <CallSite
+      source="base/input (proposed for the 11 Formik fields)"
+      origin="base"
+      note="What the Formik sites actually use is isInvalid and the default height: prefix, suffix and onClear have no call sites. They become invalid on the default 36px field, down from 50; the one h-5 policy field becomes compact."
+    >
+      <div className="flex w-[24rem] flex-col gap-3">
+        <BaseInput placeholder="Rule name" />
+        <BaseInput placeholder="Invalid" invalid />
+        <BaseInput placeholder="Compact" size="compact" />
+      </div>
+    </CallSite>
+  ),
+});

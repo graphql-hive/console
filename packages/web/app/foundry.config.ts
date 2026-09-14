@@ -30,6 +30,7 @@ export default defineConfig({
             { label: 'Card' },
             { label: 'StatCard' },
             { label: 'Input' },
+            { label: 'Textarea' },
             { label: 'CopyChip' },
             { label: 'Collapsible', children: [{ label: 'Component Examples' }] },
             { label: 'ScrollArea', children: [{ label: 'Component Examples' }] },

@@ -1,0 +1,75 @@
+import { useState } from 'react';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { Textarea } from './textarea';
+
+export const nav: NavPath = 'Base/Primitives/Textarea';
+
+/** Same field as Input: fill, border, hover, focus and error states, at a minimum of 80px. */
+export const Default = createPreview(() => (
+  <div className="w-[28rem]">
+    <Textarea placeholder="Enter a short description of your issue" />
+  </div>
+));
+
+export const States = createPreview(() => (
+  <div className="flex w-[28rem] flex-col gap-3">
+    <Textarea defaultValue="Alerts for the checkout service." />
+    <Textarea placeholder="Disabled" disabled />
+    <Textarea defaultValue="Too short." invalid />
+  </div>
+));
+
+/**
+ * `autoSize` grows the field with its text through the native `field-sizing: content`. Where a
+ * browser lacks it, the field keeps its rows and scrolls. Type a few lines here.
+ */
+export const AutoSize = createPreview(() => {
+  const [value, setValue] = useState('');
+  return (
+    <div className="w-[28rem]">
+      <Textarea
+        autoSize
+        rows={3}
+        placeholder="Describe the proposed change"
+        value={value}
+        onChange={event => setValue(event.currentTarget.value)}
+      />
+    </div>
+  );
+});
+
+/** Read-only, mono and auto-sized: the multi-line copy field for a generated token. */
+export const ReadOnlyMono = createPreview(() => (
+  <div className="w-[36rem]">
+    <Textarea
+      readOnly
+      autoSize
+      mono
+      value={
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\n.eyJzdWIiOiJ0YXJnZXQ6cHJvZHVjdGlvbiJ9\n.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1g'
+      }
+      onFocus={event => event.target.select()}
+    />
+  </div>
+));
+
+export const Playground = createPreview({
+  controls: controlsFor(Textarea, {
+    placeholder: { type: 'text', default: 'Enter a description' },
+    autoSize: { type: 'boolean', default: false },
+    mono: { type: 'boolean', default: false },
+    invalid: { type: 'boolean', default: false },
+    disabled: { type: 'boolean', default: false },
+  }),
+  render: v => (
+    <div className="w-[28rem]">
+      <Textarea
+        placeholder={v.placeholder}
+        autoSize={v.autoSize}
+        mono={v.mono}
+        invalid={v.invalid}
+        disabled={v.disabled}
+      />
+    </div>
+  ),
+});
