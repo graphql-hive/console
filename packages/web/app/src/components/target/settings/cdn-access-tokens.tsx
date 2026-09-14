@@ -4,11 +4,12 @@ import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
 import { AlertTriangleIcon, TrashIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Input, Modal, Table, Tag, TBody, Td, Tr } from '@/components/v2';
+import { Input, Modal, Table, TBody, Td, Tr } from '@/components/v2';
 import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -152,10 +153,9 @@ function CreateCDNAccessTokenModal(props: {
 
         <p>Something went wrong.</p>
 
-        <Tag color="yellow" className="px-4 py-2.5">
-          <AlertTriangleIcon className="size-5" />
+        <Callout type="warning">
           {createCdnAccessToken.data?.createCdnAccessToken.error.message}
-        </Tag>
+        </Callout>
 
         <Button className="ml-auto" onClick={props.onClose}>
           Close
@@ -209,11 +209,10 @@ function DeleteCDNAccessTokenModal(props: {
       <div className="flex flex-col gap-5">
         <Heading className="text-center">Delete CDN Access Tokens</Heading>
       </div>
-      <Tag color="yellow" className="px-4 py-2.5">
-        <AlertTriangleIcon className="size-5" />
+      <Callout type="warning">
         Deleting an CDN access token can not be undone. After deleting the access token it might
         take up to 5 minutes before the changes are propagated across the CDN.
-      </Tag>
+      </Callout>
       <p>Are you sure you want to delete the CDN Access Token?</p>
 
       <div className="mt-auto flex w-full gap-2 self-end">
@@ -253,10 +252,9 @@ function DeleteCDNAccessTokenModal(props: {
 
         <p>The CDN Access Token was successfully deleted.</p>
 
-        <Tag color="yellow" className="px-4 py-2.5">
-          <AlertTriangleIcon className="size-5" />
+        <Callout type="warning">
           It can take up to 5 minutes before the changes are propagated across the CDN.
-        </Tag>
+        </Callout>
         <div className="mt-auto flex w-full gap-2 self-end">
           <Button className="ml-auto" onClick={onClose}>
             Close
@@ -273,10 +271,9 @@ function DeleteCDNAccessTokenModal(props: {
 
         <p>Something went wrong.</p>
 
-        <Tag color="yellow" className="px-4 py-2.5">
-          <AlertTriangleIcon className="size-5" />
+        <Callout type="warning">
           {deleteCdnAccessToken.data?.deleteCdnAccessToken.error.message}
-        </Tag>
+        </Callout>
         <div className="mt-auto flex w-full gap-2 self-end">
           <Button className="ml-auto" onClick={onClose}>
             Close

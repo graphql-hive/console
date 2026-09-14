@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Select } from '@/components/base/floating/select/select';
 import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import * as Form from '@/components/ui/form';
 import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,6 @@ import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { Tag } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -502,10 +502,10 @@ function AcessTokenCreatedConfirmationDialogue(props: {
         <div>
           <InputCopy value={props.privateAccessKey} />
         </div>
-        <Tag color="green" className="text-sm">
+        <Callout type="info">
           This is your unique API key and it is non-recoverable. If you lose this key, you will need
           to create a new one.
-        </Tag>
+        </Callout>
         <AlertDialog.AlertDialogFooter>
           <div className="ml-0 mr-auto flex items-center space-x-2 pr-2">
             <Checkbox

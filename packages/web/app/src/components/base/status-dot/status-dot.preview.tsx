@@ -22,12 +22,8 @@ export const Colors = createPreview(() => (
 export const Sizes = createPreview(() => (
   <div className="text-neutral-11 flex items-center gap-6 text-sm">
     <span className="inline-flex items-center gap-2">
-      <StatusDot color="success" size="sm" />
-      sm, 8px
-    </span>
-    <span className="inline-flex items-center gap-2">
       <StatusDot color="success" />
-      default, 12px
+      default, 8px
     </span>
   </div>
 ));
@@ -36,15 +32,15 @@ export const Sizes = createPreview(() => (
 export const BesideText = createPreview(() => (
   <div className="flex flex-col gap-2 text-xs">
     <span className="text-neutral-12 inline-flex items-center gap-1.5">
-      <StatusDot color="critical" size="sm" />
+      <StatusDot color="critical" />
       Critical
     </span>
     <span className="text-neutral-12 inline-flex items-center gap-1.5">
-      <StatusDot color="warning" size="sm" />
+      <StatusDot color="warning" />
       Warning
     </span>
     <span className="text-neutral-12 inline-flex items-center gap-1.5">
-      <StatusDot color="info" size="sm" />
+      <StatusDot color="info" />
       Info
     </span>
   </div>
@@ -65,7 +61,7 @@ export const Playground = createPreview({
       options: ['success', 'warning', 'critical', 'info', 'neutral'],
       default: 'success',
     },
-    size: { type: 'radio', options: ['sm', 'default'], default: 'default' },
+    size: { type: 'radio', options: ['default'], default: 'default' },
   }),
   render: v => <StatusDot color={v.color} size={v.size} />,
 });

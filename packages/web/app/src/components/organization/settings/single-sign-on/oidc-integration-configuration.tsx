@@ -24,7 +24,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Heading } from '@/components/ui/heading';
 import * as Table from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { Tag } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
@@ -1013,12 +1012,10 @@ function RemoveOIDCIntegrationModal(props: {
           </>
         ) : (
           <>
-            <Tag color="yellow" className="px-4 py-2.5">
-              <p>
-                This action is not reversible and revoke access to all users that have signed in
-                with this OIDC integration.
-              </p>
-            </Tag>
+            <Callout type="warning">
+              This action is not reversible and revoke access to all users that have signed in with
+              this OIDC integration.
+            </Callout>
             <p>Do you really want to proceed?</p>
 
             <div className="space-x-2 text-right">

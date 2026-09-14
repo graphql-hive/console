@@ -176,7 +176,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
       const sev = info.getValue() as MetricAlertRuleSeverity;
       return (
         <span className="text-neutral-12 inline-flex items-center gap-1.5 text-xs">
-          <StatusDot color={SEVERITY_DOT_COLOR[sev]} size="sm" />
+          <StatusDot color={SEVERITY_DOT_COLOR[sev]} />
           {SEVERITY_LABEL[sev]}
         </span>
       );

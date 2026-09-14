@@ -74,7 +74,6 @@ export const InComponents = createPreview(() => (
       <div key={state.name} className="flex items-center gap-4 text-sm">
         <span className="text-neutral-9 text-2xs w-16 font-mono">{state.name}</span>
         <StatusDot color={state.name} />
-        <StatusDot color={state.name} size="sm" />
         <Badge content={state.name} variants={{ variant: state.name }} />
         <Badge content={state.name} variants={{ variant: state.name, size: 'sm', mono: true }} />
       </div>

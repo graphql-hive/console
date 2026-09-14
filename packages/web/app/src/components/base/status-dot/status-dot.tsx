@@ -10,9 +10,7 @@ const statusDotVariants = cva('inline-block shrink-0 rounded-full', {
       neutral: 'bg-neutral-9',
     },
     size: {
-      /** Beside text in a table cell. */
-      sm: 'size-2',
-      default: 'size-3',
+      default: 'size-2',
     },
   },
   defaultVariants: {

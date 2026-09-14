@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
 import { stageToColor } from '@/components/target/proposals/util';
-import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
@@ -258,12 +258,12 @@ const ProposalsListPage = (props: {
             >
               <div className="flex flex-row items-start">
                 <div className="flex min-w-0 grow flex-col">
-                  <div className="mr-6 flex min-w-0 flex-row text-sm md:text-base">
+                  <div className="mr-6 flex min-w-0 flex-row gap-1 text-sm md:text-base">
                     <span className="text-neutral-11 mr-6 truncate font-semibold">
                       {proposal.title}
                     </span>
-                    <span className="text-neutral-2">
-                      <BadgeRounded color={stageToColor(proposal.stage)} />
+                    <span className="text-neutral-2 flex items-center">
+                      <StatusDot color={stageToColor(proposal.stage)} />
                     </span>
                     <span className="text-neutral-10">{proposal.stage}</span>
                   </div>
