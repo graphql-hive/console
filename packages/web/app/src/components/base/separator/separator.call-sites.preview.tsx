@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { MoveDownIcon, SearchIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Input } from '@/components/base/input/input';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select } from '../floating/select/select';
 import { Separator } from './separator';
 
@@ -67,13 +67,8 @@ function ListToolbar() {
   const [sortBy, setSortBy] = useState('requests');
   return (
     <div className="flex flex-row items-center gap-x-4">
-      <div className="relative">
-        <SearchIcon className="text-neutral-10 absolute left-2.5 top-2.5 size-4" />
-        <Input
-          type="search"
-          placeholder="Search..."
-          className="dark:bg-neutral-3 bg-neutral-2 h-9 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
-        />
+      <div className="w-full md:w-[200px] lg:w-[336px]">
+        <Input type="search" placeholder="Search..." leadingIcon={SearchIcon} />
       </div>
       <Separator orientation="vertical" />
       <Select options={SORT_OPTIONS} value={sortBy} onValueChange={setSortBy} />

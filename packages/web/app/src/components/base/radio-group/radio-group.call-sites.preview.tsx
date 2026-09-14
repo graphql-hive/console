@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { BlocksIcon, BoxIcon, FoldVerticalIcon } from 'lucide-react';
 import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { Input } from '@/components/base/input/input';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 export const nav: NavPath = 'Base/FormControls/RadioGroup/Component Examples';
@@ -203,13 +203,13 @@ function BreakingChangeFormula(props: { disabled?: boolean }) {
             ariaLabel: 'Percent of Traffic',
             withIndicator: true,
             content: (
-              <span>
+              <span className="inline-flex items-center gap-2">
                 <Input
                   type="number"
                   step="0.01"
                   defaultValue={5}
                   disabled={props.disabled}
-                  className="inline-flex! mr-2 w-16 text-center"
+                  width="xs"
                 />
                 Percent of Traffic
               </span>
@@ -220,13 +220,8 @@ function BreakingChangeFormula(props: { disabled?: boolean }) {
             ariaLabel: 'Total Operations',
             withIndicator: true,
             content: (
-              <span>
-                <Input
-                  type="number"
-                  defaultValue={100}
-                  disabled={props.disabled}
-                  className="inline-flex! mr-2 w-16 text-center"
-                />
+              <span className="inline-flex items-center gap-2">
+                <Input type="number" defaultValue={100} disabled={props.disabled} width="xs" />
                 Total Operations
               </span>
             ),

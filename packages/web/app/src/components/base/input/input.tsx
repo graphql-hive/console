@@ -107,9 +107,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   },
   ref,
 ) {
-  // A react-hook-form FormControl is a Radix Slot: it merges a className into whatever it wraps,
-  // an empty one when the field is valid. Spread onto the input it would replace every class
-  // above, so it is dropped here rather than typed out.
+  // className is not a prop, but a spread from a form library can still carry one in; on the
+  // element it would replace every class above, so it is dropped here rather than typed out.
   const { className: _injected, ...native } = props as typeof props & { className?: string };
   const isInvalid = invalid || ariaInvalid === true || ariaInvalid === 'true';
   const decorated = !!(LeadingIcon || trailing || prefixText);

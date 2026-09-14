@@ -9,11 +9,11 @@ import {
 } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Button as BaseButton } from '@/components/base/button/button';
+import { Input } from '@/components/base/input/input';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days, type Preset } from '@/components/ui/date-range-picker';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Menu } from '../menu/menu';
 import { Select } from '../select/select';
@@ -619,6 +619,7 @@ function TagPicker(props: { label: string }) {
             <Input
               ref={setInput}
               autoComplete="off"
+              onSurface="raised"
               placeholder={`Add ${props.label.toLowerCase()}d tag`}
               value={value}
               onChange={e => setValue(e.target.value)}

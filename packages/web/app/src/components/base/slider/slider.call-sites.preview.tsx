@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
-import { Input as BaseInput } from '@/components/base/input/input';
+import { Input } from '@/components/base/input/input';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { formatMillionOrBillion } from '@/components/organization/billing/helpers';
-import { Input } from '@/components/v2/input';
 import { Slider } from './slider';
 
 export const nav: NavPath = 'Base/FormControls/Slider/Component Examples';
@@ -78,11 +77,7 @@ function SubscriptionRateLimit() {
       </div>
 
       <div className="ml-auto w-48">
-        <Input
-          value={inputValue}
-          className="ml-auto text-end"
-          onChange={event => setInputValue(event.target.value)}
-        />
+        <Input value={inputValue} onChange={event => setInputValue(event.target.value)} />
       </div>
     </div>
   );
@@ -113,7 +108,7 @@ function DurationFilter() {
       <div className="space-y-2">
         <div className="space-y-1">
           <label className="font-mono text-xs text-zinc-400">MIN</label>
-          <BaseInput
+          <Input
             type="number"
             value={values[0]}
             onChange={e => setValues([Number.parseInt(e.target.value) || minValue, values[1]])}
@@ -124,7 +119,7 @@ function DurationFilter() {
         </div>
         <div className="space-y-1">
           <label className="font-mono text-xs text-zinc-400">MAX</label>
-          <BaseInput
+          <Input
             type="number"
             value={values[1]}
             onChange={e => setValues([values[0], Number.parseInt(e.target.value) || minValue])}
