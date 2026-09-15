@@ -3,6 +3,7 @@ import { gql } from 'graphql-modules';
 export default gql`
   extend type Mutation {
     schemaPublish(input: SchemaPublishInput!): SchemaPublishPayload!
+    schemaPush(input: SchemaPushInput!): SchemaPushResult!
     schemaCheck(input: SchemaCheckInput!): SchemaCheckPayload!
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
@@ -372,7 +373,8 @@ export default gql`
     target: TargetReferenceInput
     service: ID
     url: String
-    sdl: String!
+    sdl: String
+    schema: SchemaPublishSchemaInput
     author: String!
     commit: String!
     force: Boolean @deprecated(reason: "Enabled by default for newly created projects")
@@ -394,6 +396,40 @@ export default gql`
     Whether the CLI supports retrying the schema publish, in case acquiring the schema publish lock fails due to a busy queue.
     """
     supportsRetry: Boolean = false
+  }
+
+  input SchemaPublishSchemaInput @oneOf {
+    bySdl: String
+    byVersion: String
+  }
+
+  input SchemaPushInput {
+    project: ProjectReferenceInput!
+    service: String
+    sdl: String!
+    version: String!
+  }
+
+  type SchemaRevision {
+    id: ID!
+    service: String
+    digest: String!
+    version: String!
+    createdAt: DateTime!
+    expiresAt: DateTime
+  }
+
+  type SchemaPushOk {
+    schemaRevision: SchemaRevision!
+  }
+
+  type SchemaPushError {
+    message: String!
+  }
+
+  type SchemaPushResult @oneOf {
+    ok: SchemaPushOk
+    error: SchemaPushError
   }
 
   input SchemaComposeInput {
