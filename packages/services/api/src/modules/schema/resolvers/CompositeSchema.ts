@@ -1,5 +1,5 @@
-import type { CompositeSchemaResolvers } from './../../../__generated__/types';
 import { SchemaRevisionStore } from '../providers/schema-revision-store';
+import type { CompositeSchemaResolvers } from './../../../__generated__/types';
 
 export const CompositeSchema: CompositeSchemaResolvers = {
   __isTypeOf: obj => {

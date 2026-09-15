@@ -114,11 +114,9 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
 
       let sdl: string;
       try {
-        const rawSdl = await loadSchema(
-          'first-federation-then-graphql-introspection',
-          args.file,
-          { logger: this.logger },
-        );
+        const rawSdl = await loadSchema('first-federation-then-graphql-introspection', args.file, {
+          logger: this.logger,
+        });
         invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
         sdl = minifySchema(rawSdl);
       } catch (error) {
