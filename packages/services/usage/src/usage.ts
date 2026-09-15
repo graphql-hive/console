@@ -163,7 +163,10 @@ function splitReportByEntries(report: RawReport, numOfChunks: number): RawReport
   const chunkIndexByOperationIdentity = new Map<string, number>();
   operationChunks.forEach((operations, chunkIndex) => {
     for (const operation of operations) {
-      chunkIndexByOperationIdentity.set(`${operation.operationMapKey}|${operation.timestamp}`, chunkIndex);
+      chunkIndexByOperationIdentity.set(
+        `${operation.operationMapKey}|${operation.timestamp}`,
+        chunkIndex,
+      );
     }
   });
 
@@ -171,8 +174,9 @@ function splitReportByEntries(report: RawReport, numOfChunks: number): RawReport
   distributeByCount(report.errors ?? [], numOfChunks).forEach((slice, fallbackChunkIndex) => {
     for (const errorRecord of slice) {
       const chunkIndex =
-        chunkIndexByOperationIdentity.get(`${errorRecord.operationMapKey}|${errorRecord.timestamp}`) ??
-        fallbackChunkIndex;
+        chunkIndexByOperationIdentity.get(
+          `${errorRecord.operationMapKey}|${errorRecord.timestamp}`,
+        ) ?? fallbackChunkIndex;
       errorChunks[chunkIndex].push(errorRecord);
     }
   });
@@ -446,11 +450,9 @@ export function createUsage(config: {
           ],
         });
         rawOperationWrites.inc(numOfOperations);
-        // These operations were already counted as failing when they first entered
-        // the fallback queue (see sender()'s catch above) - this is the one point
-        // where they're durably collected, so this is their one matching decrement.
-        // A failed retry attempt isn't a new failure, so it must NOT re-increment
-        // here - it's the same still-pending batch.
+        // These operations were counted as failing when they first entered
+        // the fallback queue. But a failed retry attempt isn't a new failure,
+        // so it must undo the increment here to indicate it's still pending.
         rawOperationFailures.dec(numOfOperations);
       } finally {
         stopTimer();
