@@ -106,7 +106,8 @@ export function DataTableRow({
       onClick={onClick}
       className={cn(
         'border-neutral-5 border-b transition-colors',
-        surface[onSurface].hover,
+        // Hover means "this row does something": only a clickable or expandable row gets it.
+        onClick && surface[onSurface].hover,
         striped && surface[onSurface].stripe,
         'data-[state=expanded]:bg-neutral-3 data-[state=expanded]:border-b-0',
         'data-[state=selected]:bg-neutral-12/10 dark:data-[state=selected]:bg-neutral-12/10',

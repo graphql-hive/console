@@ -16,6 +16,8 @@ import * as Yup from 'yup';
 import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Switch } from '@/components/base/switch/switch';
@@ -47,10 +49,8 @@ import {
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { Spinner } from '@/components/ui/spinner';
-import { TimeAgo } from '@/components/ui/time-ago';
 import { useToast } from '@/components/ui/use-toast';
 import { Combobox } from '@/components/v2/combobox';
-import { Table, TBody, Td, Tr } from '@/components/v2/table';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
 import {
@@ -66,6 +66,7 @@ import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckIcon } from '@radix-ui/react-icons';
 import { Link, useRouter } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 
 /**
  * We previously used a different character for token masking.
@@ -140,6 +141,58 @@ function RegistryAccessTokens(props: {
     setChecked([]);
   }, [checked, mutate, props.organizationSlug, props.projectSlug, props.targetSlug]);
 
+  type Token = NonNullable<typeof tokens>[number];
+  const columns: ColumnDef<Token, unknown>[] = [
+    {
+      id: 'select',
+      meta: { width: 'xs' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="checkbox"
+          checked={checked.includes(row.original.id)}
+          onCheckedChange={isChecked =>
+            setChecked(
+              isChecked
+                ? [...checked, row.original.id]
+                : checked.filter(k => k !== row.original.id),
+            )
+          }
+          label={`Select ${row.original.name}`}
+        />
+      ),
+    },
+    {
+      id: 'alias',
+      header: 'Key',
+      cell: ({ row }) => (
+        <DataTableCell kind="text" value={normalizeTokenAlias(row.original.alias)} mono />
+      ),
+    },
+    {
+      id: 'name',
+      header: 'Name',
+      meta: { width: 'fill' },
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.name} weight="medium" />,
+    },
+    {
+      id: 'lastUsedAt',
+      header: 'Last Used',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        row.original.lastUsedAt ? (
+          <DataTableCell kind="time" date={row.original.lastUsedAt} />
+        ) : (
+          <DataTableCell kind="text" value="not used yet" tone="muted" />
+        ),
+    },
+    {
+      id: 'date',
+      header: 'Created At',
+      meta: { align: 'right' },
+      cell: ({ row }) => <DataTableCell kind="time" date={row.original.date} />,
+    },
+  ];
+
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
@@ -165,38 +218,14 @@ function RegistryAccessTokens(props: {
           </Button>
         )}
       </div>
-      <Table>
-        <TBody>
-          {tokens?.map(token => (
-            <Tr key={token.id}>
-              <Td width="1">
-                <Checkbox
-                  onCheckedChange={isChecked =>
-                    setChecked(
-                      isChecked ? [...checked, token.id] : checked.filter(k => k !== token.id),
-                    )
-                  }
-                  checked={checked.includes(token.id)}
-                />
-              </Td>
-              <Td className="font-mono">{normalizeTokenAlias(token.alias)}</Td>
-              <Td>{token.name}</Td>
-              <Td align="right">
-                {token.lastUsedAt ? (
-                  <>
-                    last used <TimeAgo date={token.lastUsedAt} />
-                  </>
-                ) : (
-                  'not used yet'
-                )}
-              </Td>
-              <Td align="right">
-                created <TimeAgo date={token.date} />
-              </Td>
-            </Tr>
-          ))}
-        </TBody>
-      </Table>
+      <DataTable
+        data={tokens ?? []}
+        columns={columns}
+        getRowId={token => token.id}
+        pagination={{ kind: 'none' }}
+        loading={tokensQuery.fetching && !tokensQuery.data}
+        emptyMessage="No registry tokens yet."
+      />
       {isModalOpen && (
         <CreateAccessTokenModal
           organizationSlug={props.organizationSlug}

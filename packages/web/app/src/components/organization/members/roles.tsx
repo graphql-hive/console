@@ -745,6 +745,7 @@ function RoleActionsCell(props: {
           },
           {
             label: 'Delete',
+            variant: 'destructiveAction',
             onClick: props.onDelete,
             disabled: !role.canDelete,
             tooltip: role.canDelete

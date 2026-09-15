@@ -68,7 +68,10 @@ export type DataTableCellProps<TTo extends string = '.'> =
       date: string | number | Date;
       /** `relative-info` is the relative time with the absolute one behind an info icon. */
       mode?: 'relative' | 'absolute' | 'relative-info';
-      /** Written before the time: "created", "last used". */
+      /**
+       * Written before the time, for a headerless list where nothing else says what the time is:
+       * "created 3w ago", "last used 1d ago". Under a header it only repeats the header.
+       */
       prefix?: string;
       tone?: 'default' | 'muted';
       mono?: boolean;

@@ -282,7 +282,8 @@ export function DataTable<TData>({
           onPageChange={page => table.setPageIndex(page)}
         />
       ) : null}
-      {pagination.kind === 'cursor' ? (
+      {pagination.kind === 'cursor' &&
+      (pagination.hasPreviousPage || pagination.hasNextPage || pagination.loading) ? (
         <DataTableCursorPagination
           hasPreviousPage={pagination.hasPreviousPage}
           hasNextPage={pagination.hasNextPage}

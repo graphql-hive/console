@@ -49,7 +49,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
-        subPageTitle="Access Tokens"
+        subPageTitle="Organization Access Tokens"
         description={
           <>
             <p>

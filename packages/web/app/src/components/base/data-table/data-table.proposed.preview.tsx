@@ -203,7 +203,7 @@ const TOKEN_COLUMNS: ColumnDef<Token, any>[] = [
   {
     accessorKey: 'createdAt',
     header: 'Created At',
-    cell: ({ row }) => <DataTableCell kind="time" date={row.original.createdAt} prefix="created" />,
+    cell: ({ row }) => <DataTableCell kind="time" date={row.original.createdAt} />,
   },
   {
     accessorKey: 'expiresAt',
@@ -222,13 +222,10 @@ const TOKEN_COLUMNS: ColumnDef<Token, any>[] = [
       <DataTableCell
         kind="actions"
         sections={[
-          {
-            label: 'Options',
-            items: [
-              { label: 'View Details', onClick: () => {} },
-              { label: 'Delete', variant: 'destructiveAction', onClick: () => {} },
-            ],
-          },
+          [
+            { label: 'View Details', onClick: () => {} },
+            { label: 'Delete', variant: 'destructiveAction', onClick: () => {} },
+          ],
         ]}
       />
     ),

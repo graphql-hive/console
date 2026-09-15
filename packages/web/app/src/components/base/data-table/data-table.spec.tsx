@@ -98,6 +98,39 @@ describe('DataTable', () => {
     expect(onPrevious).not.toHaveBeenCalled();
   });
 
+  it('tints rows on hover only when they do something', () => {
+    const { container, rerender } = render(
+      <DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} />,
+    );
+    const row = () => container.querySelector('tbody tr')!;
+    expect(row().className).not.toContain('hover:bg-');
+
+    rerender(
+      <DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} onRowClick={() => {}} />,
+    );
+    expect(row().className).toContain('hover:bg-');
+    expect(row().className).toContain('cursor-pointer');
+  });
+
+  it('shows no paging bar when a cursor connection has a single page', () => {
+    render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        pagination={{
+          kind: 'cursor',
+          hasPreviousPage: false,
+          hasNextPage: false,
+          onPrevious: () => {},
+          onNext: () => {},
+          summary: 'Page 1',
+        }}
+      />,
+    );
+    expect(screen.queryByRole('navigation')).toBeNull();
+  });
+
   it('renders the footer, the loading row and the empty message', () => {
     const { container, rerender } = render(
       <DataTable

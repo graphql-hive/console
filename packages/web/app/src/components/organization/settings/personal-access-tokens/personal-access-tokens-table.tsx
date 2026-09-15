@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { EllipsisIcon, LoaderCircleIcon } from 'lucide-react';
 import { useClient } from 'urql';
-import { Menu } from '@/components/base/floating/menu/menu';
-import { Button } from '@/components/ui/button';
-import * as Table from '@/components/ui/table';
-import { TimeAgo } from '@/components/ui/time-ago';
-import { graphql, useFragment, type FragmentType } from '@/gql';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';
+import { usePagedConnection } from '@/lib/hooks';
+import type { ColumnDef } from '@tanstack/react-table';
 import { DeleteAccessTokenConfirmationDialogue } from '../access-tokens/delete-access-token-confirmation-dialogue';
 import { TokenExpiration } from '../access-tokens/token-expiration';
 import { PersonalAccessTokenDetailViewSheet } from './personal-access-token-detail-view-sheet';
@@ -51,6 +50,10 @@ const PersonalAccessTokensTable_MoreAccessTokensQuery = graphql(`
   }
 `);
 
+type AccessTokenEdge = DocumentType<
+  typeof PersonalAccessTokensTable_PersonalAccessTokenConnectionFragment
+>['edges'][number];
+
 type AccessTokensTable = {
   organizationSlug: string;
   accessTokens: FragmentType<
@@ -66,89 +69,92 @@ export function PersonalAccessTokensTable(props: AccessTokensTable) {
   );
 
   const client = useClient();
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [deleteAccessTokenId, setDeleteAccessTokenId] = useState<string | null>(null);
   const [detailViewId, setDetailViewId] = useState<string | null>(null);
+  const { rows, pagination } = usePagedConnection({
+    edges: accessTokens.edges,
+    pageInfo: accessTokens.pageInfo,
+    pageSize: 10,
+    loadMore: after =>
+      client
+        .query(PersonalAccessTokensTable_MoreAccessTokensQuery, {
+          organizationSlug: props.organizationSlug,
+          after,
+        })
+        .toPromise(),
+  });
 
   if (accessTokens.edges.length === 0) {
     return null;
   }
 
+  const columns: ColumnDef<AccessTokenEdge, unknown>[] = [
+    {
+      id: 'title',
+      header: 'Title',
+      meta: { width: 'fill' },
+      cell: ({ row }) => (
+        <DataTableCell kind="text" value={row.original.node.title} weight="medium" />
+      ),
+    },
+    {
+      id: 'key',
+      header: 'Private Key',
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="text"
+          value={row.original.node.firstCharacters + privateKeyFiller}
+          mono
+        />
+      ),
+    },
+    {
+      id: 'createdAt',
+      header: 'Created At',
+      meta: { align: 'center' },
+      cell: ({ row }) => <DataTableCell kind="time" date={row.original.node.createdAt} />,
+    },
+    {
+      id: 'expiresAt',
+      header: 'Expiration',
+      meta: { align: 'center' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="text"
+          value={<TokenExpiration expiresAt={row.original.node.expiresAt ?? null} />}
+        />
+      ),
+    },
+    {
+      id: 'actions',
+      meta: { width: 'xs' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="actions"
+          label={`Actions for ${row.original.node.title}`}
+          sections={[
+            [
+              { label: 'View Details', onClick: () => setDetailViewId(row.original.node.id) },
+              {
+                label: 'Delete',
+                variant: 'destructiveAction',
+                onClick: () => setDeleteAccessTokenId(row.original.node.id),
+              },
+            ],
+          ]}
+        />
+      ),
+    },
+  ];
+
   return (
-    <Table.Table>
-      <Table.TableCaption>
-        <Button
-          size="sm"
-          variant="outline"
-          className="ml-auto mr-0 flex"
-          disabled={!accessTokens?.pageInfo?.hasNextPage || isLoadingMore}
-          onClick={() => {
-            if (accessTokens?.pageInfo?.endCursor && accessTokens?.pageInfo?.hasNextPage) {
-              setIsLoadingMore(true);
-              void client
-                .query(PersonalAccessTokensTable_MoreAccessTokensQuery, {
-                  organizationSlug: props.organizationSlug,
-                  after: accessTokens.pageInfo?.endCursor,
-                })
-                .toPromise()
-                .finally(() => {
-                  setIsLoadingMore(false);
-                });
-            }
-          }}
-        >
-          {isLoadingMore ? (
-            <>
-              <LoaderCircleIcon className="mr-2 inline size-4 animate-spin" /> Loading
-            </>
-          ) : (
-            'Load more'
-          )}
-        </Button>
-      </Table.TableCaption>
-      <Table.TableHeader>
-        <Table.TableRow>
-          <Table.TableHead>Title</Table.TableHead>
-          <Table.TableHead className="w-[100px]">Private Key</Table.TableHead>
-          <Table.TableHead className="text-center">Created At</Table.TableHead>
-          <Table.TableHead className="text-center">Expiration</Table.TableHead>
-          <Table.TableHead className="text-right" />
-        </Table.TableRow>
-      </Table.TableHeader>
-      <Table.TableBody>
-        {accessTokens.edges.map(edge => (
-          <Table.TableRow key={edge.cursor}>
-            <Table.TableCell className="font-medium">{edge.node.title}</Table.TableCell>
-            <Table.TableCell className="font-mono">
-              {edge.node.firstCharacters + privateKeyFiller}
-            </Table.TableCell>
-            <Table.TableCell className="text-center">
-              created <TimeAgo date={edge.node.createdAt} />
-            </Table.TableCell>
-            <Table.TableCell className="text-center">
-              <TokenExpiration expiresAt={edge.node.expiresAt ?? null} />
-            </Table.TableCell>
-            <Table.TableCell className="text-right align-middle">
-              <Menu
-                trigger={
-                  <button type="button" className="ml-auto block">
-                    <EllipsisIcon className="size-4" />
-                  </button>
-                }
-                sections={[
-                  {
-                    label: 'Options',
-                    items: [
-                      { label: 'View Details', onClick: () => setDetailViewId(edge.node.id) },
-                      { label: 'Delete', onClick: () => setDeleteAccessTokenId(edge.node.id) },
-                    ],
-                  },
-                ]}
-              />
-            </Table.TableCell>
-          </Table.TableRow>
-        ))}
-      </Table.TableBody>
+    <>
+      <DataTable
+        data={rows}
+        columns={columns}
+        getRowId={edge => edge.node.id}
+        pagination={pagination}
+      />
       {deleteAccessTokenId && (
         <DeleteAccessTokenConfirmationDialogue
           accessTokenId={deleteAccessTokenId}
@@ -166,6 +172,6 @@ export function PersonalAccessTokensTable(props: AccessTokensTable) {
           onClose={() => setDetailViewId(null)}
         />
       )}
-    </Table.Table>
+    </>
   );
 }
