@@ -303,6 +303,7 @@ export class SchemaVersionStore {
       projectId: string;
       organizationId: string;
       schemaRevisionId: string | null;
+      schemaRevisionVersion: string | null;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -345,11 +346,13 @@ export class SchemaVersionStore {
         targetId: args.targetId,
         origin: {
           type: 'publish',
+          schemaRevisionVersion: args.service ? null : args.schemaRevisionVersion,
           services: args.service
             ? [
                 {
                   name: args.service.name,
                   versionId: newLog.id,
+                  schemaRevisionVersion: args.schemaRevisionVersion,
                 },
               ]
             : null,
@@ -809,6 +812,33 @@ export class SchemaVersionStore {
         `,
       )
       .then(z.array(SchemaPushLogModel).parse);
+  }
+
+  async getSchemaRevisionVersionsBySchemaLogIds(schemaLogIds: Array<string>) {
+    if (schemaLogIds.length === 0) {
+      return new Map<string, string>();
+    }
+
+    const rows = await this.pg.any(psql`/* getSchemaRevisionVersionsBySchemaLogIds */
+      SELECT
+        "schema_log"."id" AS "schemaLogId"
+        , "schema_revisions"."version"
+      FROM
+        "schema_log"
+      INNER JOIN
+        "schema_revisions"
+      ON
+        "schema_revisions"."id" = "schema_log"."schema_revision_id"
+      WHERE
+        "schema_log"."id" = ANY(${psql.array(schemaLogIds, 'uuid')})
+    `);
+
+    return new Map(
+      z
+        .array(z.object({ schemaLogId: z.string(), version: z.string() }))
+        .parse(rows)
+        .map(row => [row.schemaLogId, row.version]),
+    );
   }
 
   async getServiceSchemaOfVersion(schemaVersion: SchemaVersion, serviceName: string) {
@@ -1584,12 +1614,14 @@ const SchemaVersionOriginPromotionModel = z.object({
 
 const SchemaVersionOriginPublishModel = z.object({
   type: z.literal('publish'),
+  schemaRevisionVersion: z.string().nullable().optional(),
   /** This is nullable in case it is a monolith. */
   services: z
     .array(
       z.object({
         name: z.string(),
         versionId: z.string(),
+        schemaRevisionVersion: z.string().nullable().optional(),
       }),
     )
     .nullable(),

@@ -44,6 +44,22 @@ const LatestSchemaRevision = graphql(/* GraphQL */ `
   query TestLatestSchemaRevision($target: TargetReferenceInput!) {
     target(reference: $target) {
       latestSchemaVersion {
+        origin {
+          ... on SchemaVersionPublishOrigin {
+            schemaRevisionVersion
+            publishedSubgraphs {
+              name
+              schemaRevisionVersion
+            }
+          }
+        }
+        subgraphDiffs {
+          ... on SubgraphDiffAdded {
+            subgraphVersion {
+              schemaRevisionVersion
+            }
+          }
+        }
         schemas {
           nodes {
             ... on SingleSchema {
@@ -312,6 +328,9 @@ test.concurrent(
         digest: push.schemaPush.ok?.schemaRevision.digest,
       },
     });
+    expect(result.target?.latestSchemaVersion?.origin).toMatchObject({
+      schemaRevisionVersion: 'MonolithRevision',
+    });
   },
 );
 
@@ -365,5 +384,21 @@ test.concurrent(
         digest: push.schemaPush.ok?.schemaRevision.digest,
       },
     });
+    expect(result.target?.latestSchemaVersion?.origin).toMatchObject({
+      schemaRevisionVersion: null,
+      publishedSubgraphs: [
+        {
+          name: 'products',
+          schemaRevisionVersion: 'FederationRevision',
+        },
+      ],
+    });
+    expect(result.target?.latestSchemaVersion?.subgraphDiffs).toMatchObject([
+      {
+        subgraphVersion: {
+          schemaRevisionVersion: 'FederationRevision',
+        },
+      },
+    ]);
   },
 );
