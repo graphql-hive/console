@@ -5,12 +5,12 @@ import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
-import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -283,8 +283,8 @@ function TargetAppsView(props: {
 
   return (
     <div className="flex flex-1 flex-col py-6">
-      <SubPageLayoutHeader
-        subPageTitle="App Deployments"
+      <PageLead
+        title="App Deployments"
         description="Group your GraphQL operations by app version for app version statistics and persisted operations."
         docsLink={{
           href: '/schema-registry/app-deployments',
