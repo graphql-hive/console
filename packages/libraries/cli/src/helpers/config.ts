@@ -12,6 +12,7 @@ const ConfigModel = z.object({
     .object({
       endpoint: z.string().url().optional(),
       accessToken: z.string().optional(),
+      headers: z.record(z.string()).optional(),
     })
     .optional(),
   cdn: z
@@ -127,6 +128,7 @@ export class Config {
             registry: {
               endpoint: legacyConfig.data.registry,
               accessToken: legacyConfig.data.token,
+              headers: undefined,
             },
             cdn: {
               endpoint: undefined,
@@ -147,6 +149,7 @@ export class Config {
         registry: {
           endpoint: undefined,
           accessToken: undefined,
+          headers: undefined,
         },
         cdn: {
           endpoint: undefined,
