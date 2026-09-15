@@ -51,15 +51,21 @@ export const Playground = createPreview({
       type: 'text',
       default: "Get notified when your API's traffic or latency crosses a threshold.",
     },
-    titleAccessory: { type: 'text', default: '' },
+    titleAccessory: {
+      type: 'radio',
+      options: ['none', 'badge', 'button'],
+      default: 'none',
+      derive: kind =>
+        kind === 'badge' ? (
+          <Badge content="42 this month" variants={{ variant: 'secondary' }} />
+        ) : kind === 'button' ? (
+          <Button variant="primary">Create token</Button>
+        ) : undefined,
+    },
   }),
   render: v => (
     <div className="w-[36rem]">
-      <PageLead
-        title={v.title}
-        description={v.description}
-        titleAccessory={v.titleAccessory || undefined}
-      />
+      <PageLead title={v.title} description={v.description} titleAccessory={v.titleAccessory} />
     </div>
   ),
 });

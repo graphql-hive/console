@@ -295,7 +295,9 @@ export const AlertSeverity = createPreview({
 /**
  * Controls map to the props `RadioGroup` actually takes. Item shape is a control too, because
  * `label`/`description` and `content` are mutually exclusive in `RadioItemProps` and they lay
- * out differently.
+ * out differently. That union is also why this is `defineControls` rather than a `list` on
+ * `items`: a list's row schema is checked against each arm separately, so it can only offer
+ * the keys the two shapes share.
  */
 export const Playground = createPreview({
   controls: defineControls({
@@ -308,60 +310,49 @@ export const Playground = createPreview({
     withDescription: { type: 'boolean', default: true },
     optionCount: { type: 'range', min: 1, max: 4, step: 1, default: 3 },
   }),
-  render: v => <PlaygroundGroup {...v} />,
+  render: v => {
+    const [value, setValue] = useState('option-1');
+    const labels = ['Monolith', 'Federation', 'Stitching', 'Proxy'];
+
+    const items = Array.from({ length: v.optionCount }, (_, i) =>
+      v.itemShape === 'content'
+        ? {
+            value: `option-${i + 1}`,
+            ariaLabel: labels[i],
+            withIndicator: v.withIndicator,
+            content: (
+              <>
+                <BoxIcon className="text-neutral-9 size-8 shrink-0" />
+                <div>
+                  <span className="text-neutral-12 text-sm font-medium">{labels[i]}</span>
+                  {v.withDescription ? (
+                    <p className="text-neutral-11 text-sm">Custom content replaces the label.</p>
+                  ) : null}
+                </div>
+              </>
+            ),
+          }
+        : {
+            value: `option-${i + 1}`,
+            label: labels[i],
+            description: v.withDescription
+              ? 'Supporting copy, rendered by as-card only.'
+              : undefined,
+          },
+    );
+
+    return (
+      <div className={v.orientation === 'horizontal' ? 'w-[52rem]' : 'w-[36rem]'}>
+        <RadioGroup
+          variant={v.variant}
+          orientation={v.orientation}
+          onSurface={v.onSurface}
+          disabled={v.disabled}
+          value={value}
+          onValueChange={setValue}
+          items={items}
+        />
+      </div>
+    );
+  },
 });
-
-function PlaygroundGroup(props: {
-  variant: 'as-card' | 'as-button';
-  orientation: 'vertical' | 'horizontal';
-  onSurface: 'base' | 'floating';
-  disabled: boolean;
-  itemShape: 'label' | 'content';
-  withIndicator: boolean;
-  withDescription: boolean;
-  optionCount: number;
-}) {
-  const [value, setValue] = useState('option-1');
-  const labels = ['Monolith', 'Federation', 'Stitching', 'Proxy'];
-
-  const items = Array.from({ length: props.optionCount }, (_, i) =>
-    props.itemShape === 'content'
-      ? {
-          value: `option-${i + 1}`,
-          ariaLabel: labels[i],
-          withIndicator: props.withIndicator,
-          content: (
-            <>
-              <BoxIcon className="text-neutral-9 size-8 shrink-0" />
-              <div>
-                <span className="text-neutral-12 text-sm font-medium">{labels[i]}</span>
-                {props.withDescription ? (
-                  <p className="text-neutral-11 text-sm">Custom content replaces the label.</p>
-                ) : null}
-              </div>
-            </>
-          ),
-        }
-      : {
-          value: `option-${i + 1}`,
-          label: labels[i],
-          description: props.withDescription
-            ? 'Supporting copy, rendered by as-card only.'
-            : undefined,
-        },
-  );
-
-  return (
-    <div className={props.orientation === 'horizontal' ? 'w-[52rem]' : 'w-[36rem]'}>
-      <RadioGroup
-        variant={props.variant}
-        orientation={props.orientation}
-        onSurface={props.onSurface}
-        disabled={props.disabled}
-        value={value}
-        onValueChange={setValue}
-        items={items}
-      />
-    </div>
-  );
-}
