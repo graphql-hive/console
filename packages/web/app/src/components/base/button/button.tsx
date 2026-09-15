@@ -49,10 +49,11 @@ export const buttonVariants = cva(
       },
       // What is inside. `label` and `iconOnly` pad their own segments, so the separators between
       // segments can run the full height; only `children` pads the button itself, by size.
+      // `iconOnly` is a square: its width is the rung's height, set in the compound variants.
       layout: {
         children: '',
         label: '',
-        iconOnly: '',
+        iconOnly: 'justify-center',
       },
       // Only `full` exists because only full-width is a thing buttons ask for: 116 of the
       // legacy call sites set w-full and nothing else. Fixed widths belong to the component
@@ -73,6 +74,8 @@ export const buttonVariants = cva(
       { variant: 'default', onSurface: 'raised', class: controlOnSurface.raised },
       { layout: 'children', size: 'compact', class: 'gap-1 px-3' },
       { layout: 'children', size: 'default', class: 'gap-1.5 px-4' },
+      { layout: 'iconOnly', size: 'compact', class: 'w-7.5' },
+      { layout: 'iconOnly', size: 'default', class: 'w-9' },
       // A plain button centres its content when stretched; a segmented one keeps the label at the
       // leading edge and its icon at the trailing edge (the label segment grows to push it there).
       { layout: 'children', width: 'full', class: 'justify-center' },
@@ -166,7 +169,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     >
       {props.layout === 'iconOnly' ? (
         <span className="flex items-center p-1.5">
-          <props.icon className="size-3" />
+          <props.icon className="size-4" />
         </span>
       ) : props.label != null ? (
         <>
