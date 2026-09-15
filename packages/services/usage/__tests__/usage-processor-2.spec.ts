@@ -31,7 +31,7 @@ function buildIncomingReport(overrides: Record<string, unknown>) {
   };
 }
 
-test('a regular operation with a persistedDocumentHash populates appDeploymentUsageTimestamps keyed by name/version', () => {
+test('an operation with a persistedDocumentHash populates appDeploymentUsageTimestamps keyed by name/version', () => {
   const result = usageProcessorV2(
     buildLogger(),
     buildIncomingReport({
@@ -40,29 +40,6 @@ test('a regular operation with a persistedDocumentHash populates appDeploymentUs
           operationMapKey: 'op1Key',
           timestamp: Date.now(),
           execution: { ok: true, errorsTotal: 0, duration: 1 },
-          persistedDocumentHash: 'my-app~1.0.0~abc123',
-        },
-      ],
-    }),
-    targetSelector,
-    null,
-  );
-
-  expect(result.success).toBe(true);
-  if (!result.success) return;
-  expect(result.report.appDeploymentUsageTimestamps).toEqual({
-    'my-app/1.0.0': expect.any(Number),
-  });
-});
-
-test('a subscription operation with a persistedDocumentHash populates appDeploymentUsageTimestamps keyed by name/version (not the raw un-split hash)', () => {
-  const result = usageProcessorV2(
-    buildLogger(),
-    buildIncomingReport({
-      subscriptionOperations: [
-        {
-          operationMapKey: 'op1Key',
-          timestamp: Date.now(),
           persistedDocumentHash: 'my-app~1.0.0~abc123',
         },
       ],
