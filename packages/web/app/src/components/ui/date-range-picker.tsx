@@ -1,15 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
 import { endOfDay, endOfToday, formatDate, subMonths } from 'date-fns';
-import { CalendarDays, SearchIcon } from 'lucide-react';
+import { CalendarDays, ChevronDown, SearchIcon, X } from 'lucide-react';
 import { DateRange, Matcher } from 'react-day-picker';
-import { Button as BaseButton } from '@/components/base/button/button';
+import { Button } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Input } from '@/components/base/input/input';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { type ControlSize } from '@/components/base/shared-styles';
 import { DurationUnit, formatDateToString, parse, units } from '@/lib/date-math';
 import { useResetState } from '@/lib/hooks/use-reset-state';
-import { ChevronDownIcon, ChevronUpIcon, Cross1Icon } from '@radix-ui/react-icons';
-import { Button } from './button';
 import { Calendar } from './calendar';
 import { Label } from './label';
 
@@ -29,7 +28,9 @@ export interface DateRangePickerProps {
   startDate?: Date;
   /** valid units allowed */
   validUnits?: DurationUnit[];
-  /** Custom trigger element. Must forward ref. Replaces the default Button trigger. */
+  /** Height of the default trigger: `compact` in a filter row, `default` beside form controls. */
+  size?: ControlSize;
+  /** Custom trigger element. Must forward ref. Replaces the default segmented Button trigger. */
   trigger?: React.ReactElement;
 }
 
@@ -319,6 +320,9 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
         return (
           <Button
             variant="ghost"
+            size="compact"
+            width="full"
+            label={preset.label}
             onClick={() => {
               setActivePreset(preset);
               setFromValue(preset.range.from);
@@ -330,10 +334,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
               props.onClose?.();
             }}
             disabled={isDisabled}
-            className="w-full justify-start text-left"
-          >
-            {preset.label}
-          </Button>
+          />
         );
       },
     [props.startDate, props.onClose],
@@ -382,7 +383,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                     }}
                     mono
                     trailing={
-                      <BaseButton
+                      <Button
                         layout="iconOnly"
                         icon={CalendarDays}
                         aria-label="Pick a date"
@@ -415,7 +416,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                     }}
                     mono
                     trailing={
-                      <BaseButton
+                      <Button
                         layout="iconOnly"
                         icon={CalendarDays}
                         aria-label="Pick a date"
@@ -439,7 +440,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
 
               <Button
                 variant="primary"
-                className="w-full text-center"
+                width="full"
                 onClick={() => {
                   const fromWithoutWhitespace = fromValue.trim();
                   const toWithoutWhitespace = toValue.trim();
@@ -487,14 +488,16 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
         width="auto"
         content={
           <>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="absolute right-2 top-1 rounded-sm bg-transparent opacity-70 transition-opacity hover:bg-transparent hover:opacity-100 focus:outline-none"
-              onClick={() => setShowCalendar(false)}
-            >
-              <Cross1Icon className="size-2" />
-            </Button>
+            <div className="absolute right-2 top-1">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Close calendar"
+                onClick={() => setShowCalendar(false)}
+              >
+                <X className="size-3" />
+              </Button>
+            </div>
             <Calendar
               id="selectedRange"
               mode="range"
@@ -569,12 +572,11 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
       }}
       trigger={
         props.trigger ?? (
-          <Button variant="outline">
-            {label}
-            <div className="-mr-2 scale-125 pl-1 opacity-60">
-              {isOpen ? <ChevronUpIcon width={24} /> : <ChevronDownIcon width={24} />}
-            </div>
-          </Button>
+          <Button
+            label={label}
+            size={props.size}
+            rightIcon={{ icon: ChevronDown, withSeparator: true }}
+          />
         )
       }
       align={props.align}

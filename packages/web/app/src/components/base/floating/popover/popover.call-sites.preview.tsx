@@ -1,12 +1,5 @@
 import { useState } from 'react';
-import {
-  Check,
-  ChevronDown,
-  ChevronDownIcon,
-  ChevronsUpDown,
-  ChevronUpIcon,
-  X,
-} from 'lucide-react';
+import { Check, ChevronDownIcon, ChevronsUpDown, ChevronUpIcon, X } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { Input } from '@/components/base/input/input';
@@ -100,9 +93,9 @@ const ENTRIES = [
     coveredBy: 'Tag pickers',
   },
   {
-    source: 'components/ui/date-range-picker.tsx:566',
+    source: 'components/ui/date-range-picker.tsx:567',
     origin: 'base',
-    what: 'The picker panel, modal, trigger falls back to a default',
+    what: 'The picker panel, modal, trigger falls back to a segmented base Button',
     coveredBy: 'Date range picker',
   },
   {
@@ -702,12 +695,12 @@ export const TagPickers = createPreview({
 });
 
 // ---------------------------------------------------------------------------
-// components/ui/date-range-picker.tsx:566 and :480
+// components/ui/date-range-picker.tsx:567 and :480
 // The real component. The outer popover is modal; inside it, the calendar popover has no trigger
 // and is anchored to the left column, opened by the calendar button in From or To.
 // ---------------------------------------------------------------------------
 
-function PickerHarness(props: { trigger?: 'default' | 'insights'; align?: 'start' | 'end' }) {
+function PickerHarness(props: { size?: 'default' | 'compact'; align?: 'start' | 'end' }) {
   const [preset, setPreset] = useState<Preset>(presetLast7Days);
   return (
     <DateRangePicker
@@ -716,16 +709,7 @@ function PickerHarness(props: { trigger?: 'default' | 'insights'; align?: 'start
       startDate={new Date(Date.now() - 1000 * 60 * 60 * 24 * 90)}
       validUnits={['y', 'M', 'w', 'd', 'h']}
       align={props.align ?? 'start'}
-      trigger={
-        props.trigger === 'insights' ? (
-          <BaseButton
-            label={preset.label}
-            variant="default"
-            size="compact"
-            rightIcon={{ icon: ChevronDown, withSeparator: true }}
-          />
-        ) : undefined
-      }
+      size={props.size}
     />
   );
 }
@@ -735,18 +719,18 @@ export const DateRange = createPreview({
   render: () => (
     <div className="flex flex-col gap-8">
       <CallSite
-        source="components/ui/date-range-picker.tsx:566"
+        source="components/ui/date-range-picker.tsx:567"
         origin="base"
-        note="No trigger passed, so the picker's own outline button renders. Open it, then click the calendar icon in From: the calendar opens to the left of the panel."
+        note="The picker's own segmented trigger at the default height, as the insights detail pages and traces mount it beside a refresh button. Open it, then click the calendar icon in From: the calendar opens to the left of the panel."
       >
         <PickerHarness />
       </CallSite>
       <CallSite
         source="pages/target-insights.tsx:308"
         origin="base"
-        note="The insights filter row passes its own compact segmented trigger. Six of the eleven mounts pass a trigger like this; the other five take the default button, and five pass align='end'."
+        note="The same trigger with size='compact', for the insights and alert activity filter rows. No mount passes its own trigger any more; five pass align='end'."
       >
-        <PickerHarness trigger="insights" align="end" />
+        <PickerHarness size="compact" align="end" />
       </CallSite>
     </div>
   ),

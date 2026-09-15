@@ -1,12 +1,6 @@
 import { useCallback } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { Button as BaseButton } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import {
-  availablePresets,
-  DateRangePicker,
-  getDateRangeDisplayLabel,
-} from '@/components/ui/date-range-picker';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Link,
@@ -29,13 +23,7 @@ export function DateRangeFilter() {
 
   return (
     <DateRangePicker
-      trigger={
-        <BaseButton
-          label={getDateRangeDisplayLabel(periodSelector.period, availablePresets, [...validUnits])}
-          variant="default"
-          rightIcon={{ icon: ChevronDown, withSeparator: true }}
-        />
-      }
+      size="compact"
       validUnits={[...validUnits]}
       onUpdate={onUpdate}
       selectedRange={periodSelector.period}

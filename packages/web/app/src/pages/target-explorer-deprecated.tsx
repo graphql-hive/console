@@ -1,7 +1,6 @@
 import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
-import { AlertCircleIcon, ChevronDown, PartyPopperIcon } from 'lucide-react';
+import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button as BaseButton } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
@@ -261,18 +260,12 @@ function DeprecatedSchemaExplorer(props: {
   const latestValidSchemaVersion = query.data?.target?.latestValidSchemaVersion;
   const dateRangeFilter = (
     <DateRangePicker
-      trigger={
-        <BaseButton
-          label={dateRangeController.selectedPreset.label}
-          variant="default"
-          rightIcon={{ icon: ChevronDown, withSeparator: true }}
-        />
-      }
       validUnits={['y', 'M', 'w', 'd', 'h']}
       selectedRange={dateRangeController.selectedPreset.range}
       startDate={dateRangeController.startDate}
       align="start"
       onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+      size="compact"
     />
   );
 
