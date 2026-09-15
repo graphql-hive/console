@@ -13,7 +13,7 @@ import {
   traceInlineSync,
   type ServiceLogger,
 } from '@hive/service-common';
-import type { RawOperationMap, RawReport } from '@hive/usage-common';
+import type { RawOperationErrors, RawOperationMap, RawReport } from '@hive/usage-common';
 import { compressZstd } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
 import { calculateChunkSize, createKVBuffer } from './buffer';
@@ -22,7 +22,9 @@ import { createFallbackQueue } from './fallback-queue';
 import {
   bufferFlushes,
   compressDuration,
+  droppedOversizedOperations,
   estimationError,
+  fallbackDroppedOperations,
   kafkaDuration,
   rawOperationFailures,
   rawOperationWrites,
@@ -51,7 +53,14 @@ const retryOptions = {
   retries: 5,
 } satisfies RetryOptions; // why satisfies? To be able to use `retryOptions.retries` and get `number` instead of `number | undefined`
 
-export function splitReport(report: RawReport, numOfChunks: number) {
+export function splitReport(report: RawReport, numOfChunks: number): RawReport[] {
+  if (Object.keys(report.map).length > 1) {
+    return splitReportByMapKey(report, numOfChunks);
+  }
+  return splitReportByEntries(report, numOfChunks);
+}
+
+function splitReportByMapKey(report: RawReport, numOfChunks: number): RawReport[] {
   const reports: RawReport[] = [];
   const operationMapLength = Object.keys(report.map).length;
 
@@ -65,11 +74,19 @@ export function splitReport(report: RawReport, numOfChunks: number) {
     const start = endedAt;
     const end = start + chunkSize;
     endedAt = end;
-    const chunk = operationMapEntries.slice(start, end);
 
+    if (chunkSize === 0) {
+      // numOfChunks exceeded the number of distinct operationMapKeys - nothing to
+      // assign here. Skip it rather than emitting an empty report that would become
+      // its own near-empty Kafka message.
+      continue;
+    }
+
+    const chunk = operationMapEntries.slice(start, end);
     const operationMap: RawOperationMap = {};
+    const reportIndex = reports.length;
     for (const [key, record] of chunk) {
-      keyReportIndexMap[key] = chunkIndex;
+      keyReportIndexMap[key] = reportIndex;
       operationMap[key] = record;
     }
 
@@ -89,7 +106,136 @@ export function splitReport(report: RawReport, numOfChunks: number) {
     reports[chunkIndex].size += 1;
   }
 
+  if (report.subscriptionOperations) {
+    for (const subscriptionOp of report.subscriptionOperations) {
+      const chunkIndex = keyReportIndexMap[subscriptionOp.operationMapKey];
+      const chunkReport = reports[chunkIndex];
+      (chunkReport.subscriptionOperations ??= []).push(subscriptionOp);
+      // report.size counts operations + subscriptionOperations (see usage-processor-2.ts) - keep that invariant per chunk.
+      chunkReport.size += 1;
+    }
+  }
+
+  if (report.errors) {
+    for (const errorRecord of report.errors) {
+      const chunkIndex = keyReportIndexMap[errorRecord.operationMapKey];
+      (reports[chunkIndex].errors ??= []).push(errorRecord);
+    }
+  }
+
+  if (report.appDeploymentUsageTimestamps && reports.length > 0) {
+    // Not keyed by operationMapKey, so it can't be partitioned like the fields above.
+    // Attach it to exactly one (guaranteed non-empty) chunk rather than duplicating it
+    // into every chunk - duplication wastes Kafka bytes on every split and could
+    // inflate every chunk's size by the same amount, risking that all chunks stay
+    // oversized (and get dropped) because of a payload the split wasn't even about.
+    reports[reports.length - 1].appDeploymentUsageTimestamps = report.appDeploymentUsageTimestamps;
+  }
+
   return reports;
+}
+
+function distributeByCount<X>(items: readonly X[], numOfChunks: number): X[][] {
+  const chunks: X[][] = [];
+  let endedAt = 0;
+  for (let chunkIndex = 0; chunkIndex < numOfChunks; chunkIndex++) {
+    const chunkSize = calculateChunkSize(items.length, numOfChunks, chunkIndex);
+    const start = endedAt;
+    const end = start + chunkSize;
+    endedAt = end;
+    chunks.push(items.slice(start, end));
+  }
+  return chunks;
+}
+
+// When at a single map key, then map-based division can't reduce anything
+// further. This divides the operations/subscriptionOperations/errors arrays directly
+// instead.
+function splitReportByEntries(report: RawReport, numOfChunks: number): RawReport[] {
+  const operationChunks = distributeByCount(report.operations, numOfChunks);
+  const subscriptionOperationChunks = distributeByCount(
+    report.subscriptionOperations ?? [],
+    numOfChunks,
+  );
+
+  // usage-processor-2.ts creates each error entry from one specific operation, tagging
+  // it with that operation's own operationMapKey + timestamp - the only link back to it
+  // (there's no shared index/id between the two arrays). Route each error into whichever
+  // chunk its operation landed in, so a chunk that's later dropped or sent independently
+  // doesn't separate an operation from the errors it produced. Fall back to the plain
+  // proportional slice only if no matching operation is found (shouldn't happen given
+  // that pairing, but keeps every error from being lost if it ever doesn't hold).
+  const chunkIndexByOperationIdentity = new Map<string, number>();
+  operationChunks.forEach((operations, chunkIndex) => {
+    for (const operation of operations) {
+      chunkIndexByOperationIdentity.set(`${operation.operationMapKey}|${operation.timestamp}`, chunkIndex);
+    }
+  });
+
+  const errorChunks: RawOperationErrors[][] = Array.from({ length: numOfChunks }, () => []);
+  distributeByCount(report.errors ?? [], numOfChunks).forEach((slice, fallbackChunkIndex) => {
+    for (const errorRecord of slice) {
+      const chunkIndex =
+        chunkIndexByOperationIdentity.get(`${errorRecord.operationMapKey}|${errorRecord.timestamp}`) ??
+        fallbackChunkIndex;
+      errorChunks[chunkIndex].push(errorRecord);
+    }
+  });
+
+  const reports: RawReport[] = [];
+  for (let chunkIndex = 0; chunkIndex < numOfChunks; chunkIndex++) {
+    const operations = operationChunks[chunkIndex];
+    const subscriptionOperations = subscriptionOperationChunks[chunkIndex];
+    const errors = errorChunks[chunkIndex];
+
+    if (operations.length === 0 && subscriptionOperations.length === 0 && errors.length === 0) {
+      // numOfChunks exceeded the number of entries to distribute - nothing to
+      // assign here. Skip it rather than emitting an empty report.
+      continue;
+    }
+
+    reports.push({
+      id: `${report.id}--chunk-${chunkIndex}`,
+      size: operations.length + subscriptionOperations.length,
+      target: report.target,
+      organization: report.organization,
+      map: { ...report.map },
+      operations,
+      subscriptionOperations: subscriptionOperations.length ? subscriptionOperations : undefined,
+      errors: errors.length ? errors : undefined,
+    });
+  }
+
+  if (report.appDeploymentUsageTimestamps && reports.length > 0) {
+    reports[reports.length - 1].appDeploymentUsageTimestamps = report.appDeploymentUsageTimestamps;
+  }
+
+  return reports;
+}
+
+export function calculateReportSize(report: RawReport): number {
+  const errorCount = report.errors?.reduce((sum, entry) => sum + entry.errors.length, 0) ?? 0;
+  return (
+    Object.keys(report.map).length +
+    report.operations.length +
+    (report.subscriptionOperations?.length ?? 0) +
+    errorCount
+  );
+}
+
+export function isSplittable(report: RawReport): boolean {
+  // Errors need no check of their own: each error entry is created from at most
+  // one operation (see usage-processor-2.ts), so errors.length can never exceed
+  // operations.length.
+  return (
+    Object.keys(report.map).length > 1 ||
+    report.operations.length > 1 ||
+    (report.subscriptionOperations?.length ?? 0) > 1
+  );
+}
+
+export function shouldBecomeReady(isUnhealthy: boolean, fallbackQueueSize: number): boolean {
+  return isUnhealthy && fallbackQueueSize === 0;
 }
 
 export function createUsage(config: {
@@ -201,17 +347,39 @@ export function createUsage(config: {
     isTooLargePayloadError(error) {
       return error instanceof Error && 'type' in error && error.type === 'MESSAGE_TOO_LARGE';
     },
-    calculateReportSize(report) {
-      return Object.keys(report.map).length;
-    },
+    calculateReportSize,
+    isSplittable,
     split(report, numOfChunks) {
-      logger.debug('Splitting report into %s (id=%s)', numOfChunks, report.id);
+      logger.debug('Splitting report into %s chunks (id=%s)', numOfChunks, report.id);
       return splitReport(report, numOfChunks);
     },
-    onRetry(reports) {
-      // Because we do a retry, we need to decrease the number of failures
+    onRetry() {
+      // No-op: an oversized-payload retry never incremented rawOperationFailures in
+      // the first place (the size check throws before sender()'s try/catch, the only
+      // place that increments it), so there's nothing to offset here. Retries-in-
+      // progress are deliberately excluded from the failure count; buffer.ts already
+      // logs every retry attempt itself.
+    },
+    onDrop(reports) {
       const numOfOperations = reports.reduce((sum, report) => report.size + sum, 0);
-      rawOperationFailures.dec(numOfOperations);
+      const numOfErrors = reports.reduce(
+        (sum, report) => sum + (report.errors?.reduce((s, e) => s + e.errors.length, 0) ?? 0),
+        0,
+      );
+      droppedOversizedOperations.inc(numOfOperations);
+      // These operations never went through sender()'s catch (the size check throws
+      // before reaching it), so they were never counted as failing. They're being
+      // permanently dropped, never collected, so count them now - and correctly never
+      // decrement, since they're gone for good.
+      rawOperationFailures.inc(numOfOperations);
+      logger.error(
+        'Dropped %s operations (%s error entries) - report cannot be split any smaller and still exceeds the Kafka size limit',
+        numOfOperations,
+        numOfErrors,
+      );
+      Sentry.captureException(
+        new Error('Dropped usage reports that cannot be split below the Kafka size limit'),
+      );
     },
     async sender(reports, estimatedSizeInBytes, batchId, validateSize) {
       const numOfOperations = reports.reduce((sum, report) => report.size + sum, 0);
@@ -240,18 +408,19 @@ export function createUsage(config: {
             stopTimer();
           });
         if (meta[0].errorCode) {
-          rawOperationFailures.inc(numOfOperations);
-          logger.error(`Failed to flush (id=%s, errorCode=%s)`, batchId, meta[0].errorCode);
-          Sentry.setTags({
-            batchId,
-            errorCode: meta[0].errorCode,
-            numOfOperations,
-          });
-          Sentry.captureException(new Error(`Failed to flush usage reports to Kafka`));
-        } else {
-          rawOperationWrites.inc(numOfOperations);
-          logger.info(`Flushed (id=%s, operations=%s)`, batchId, numOfOperations);
+          // kafkajs's own produce-response parsing throws on any non-zero errorCode
+          // before producer.send() can resolve (verified across every response
+          // version it supports), so this should be unreachable in practice. Route
+          // it through the same catch below instead of handling it separately here,
+          // so that IF it's ever somehow reached (e.g. a future kafkajs behavior
+          // change), the operations still get retried via the fallback queue instead
+          // of being silently counted as failed with no way to recover them.
+          throw new Error(
+            `Failed to flush usage reports to Kafka (errorCode=${meta[0].errorCode})`,
+          );
         }
+        rawOperationWrites.inc(numOfOperations);
+        logger.info(`Flushed (id=%s, operations=%s)`, batchId, numOfOperations);
       } catch (error: any) {
         rawOperationFailures.inc(numOfOperations);
 
@@ -283,17 +452,33 @@ export function createUsage(config: {
           ],
         });
         rawOperationWrites.inc(numOfOperations);
-      } catch (error) {
-        rawOperationFailures.inc(numOfOperations);
-        throw error;
+        // These operations were already counted as failing when they first entered
+        // the fallback queue (see sender()'s catch above) - this is the one point
+        // where they're durably collected, so this is their one matching decrement.
+        // A failed retry attempt isn't a new failure, so it must NOT re-increment
+        // here - it's the same still-pending batch.
+        rawOperationFailures.dec(numOfOperations);
       } finally {
         stopTimer();
       }
 
-      if (fallback.size() === 0) {
+      if (shouldBecomeReady(status === Status.Unhealthy, fallback.size())) {
         logger.info('Fallback queue flushed');
         changeStatus(Status.Ready);
       }
+    },
+    onTooLarge(numOfOperations) {
+      // Same underlying reason as buffer.ts's onDrop ("payload too big for Kafka"),
+      // just discovered later in the pipeline - already counted in
+      // rawOperationFailures when it entered the queue, so no further metric change
+      // there; it stays counted, permanently, by simply never being decremented.
+      droppedOversizedOperations.inc(numOfOperations);
+    },
+    onQueueFull(numOfOperations) {
+      // Distinct reason from onTooLarge: we're backlogged, not that this one payload
+      // is too big. Also already counted in rawOperationFailures at entry; stays
+      // counted by never being decremented.
+      fallbackDroppedOperations.inc(numOfOperations);
     },
     logger: logger.child({ component: 'fallback' }),
   });
@@ -311,7 +496,7 @@ export function createUsage(config: {
   producer.on(producer.events.CONNECT, () => {
     logger.info(`Kafka producer: connected`);
 
-    if (status === Status.Unhealthy) {
+    if (shouldBecomeReady(status === Status.Unhealthy, fallback.size())) {
       changeStatus(Status.Ready);
     }
   });

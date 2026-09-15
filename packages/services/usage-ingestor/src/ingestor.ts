@@ -12,6 +12,7 @@ import {
   ingestedOperationRegistryWrites,
   ingestedOperationsFailures,
   ingestedOperationsWrites,
+  poisonPillMessages,
   processDuration,
   reportMessageBytes,
 } from './metrics';
@@ -166,9 +167,11 @@ export function createIngestor(config: {
       autoCommit: true,
       autoCommitThreshold: 2,
       partitionsConsumedConcurrently: config.kafka.concurrency,
-      eachMessage({ message }) {
+      eachMessage({ topic, partition, message }) {
         const stopTimer = processDuration.startTimer();
         return processMessage({
+          topic,
+          partition,
           message,
           logger,
           processor,
@@ -213,20 +216,48 @@ export function createIngestor(config: {
   };
 }
 
-async function processMessage({
+export async function processMessage({
   processor,
   writer,
   message,
   logger,
+  topic,
+  partition,
 }: {
   processor: ReturnType<typeof createProcessor>;
   writer: ReturnType<typeof createWriter>;
   message: KafkaMessage;
   logger: ServiceLogger;
+  topic: string;
+  partition: number;
 }) {
   reportMessageBytes.observe(message.value!.byteLength);
-  // Decompress and parse the message to get a list of reports
-  const rawReports: RawReport[] = JSON.parse((await decompress(message.value!)).toString());
+
+  let rawReports: RawReport[];
+  try {
+    // Decompress and parse the message to get a list of reports
+    rawReports = JSON.parse((await decompress(message.value!)).toString());
+  } catch (error) {
+    // A genuinely corrupt/unparseable message is considered a poison
+    // pill. It will never successfully decompress or parse no matter how many times
+    // it's retried, unlike a write failure below which could be transient.
+    poisonPillMessages.inc();
+    const summary = {
+      topic,
+      partition,
+      offset: message.offset,
+      messageBytes: message.value?.byteLength,
+    };
+    logger.error(
+      { ...summary, error: error instanceof Error ? error.message : String(error) },
+      'Report decompression/parsing failed - offset not committed, message will be reprocessed',
+    );
+    logger.debug(
+      { ...summary, value: message.value?.toString('base64') },
+      'Poison pill message full payload',
+    );
+    throw error;
+  }
 
   const { registryRecords, operations, subscriptionOperations, appDeploymentUsageRecords, errors } =
     await processor.processReports(rawReports);
@@ -291,6 +322,22 @@ async function processMessage({
     logger.error(error);
 
     if (shouldRetryOnFailure(error)) {
+      poisonPillMessages.inc();
+      const summary = {
+        topic,
+        partition,
+        offset: message.offset,
+        reportCount: rawReports.length,
+        totalOperations: rawReports.reduce((sum, r) => sum + r.size, 0),
+        targets: [...new Set(rawReports.map(r => r.target))],
+        organizations: [...new Set(rawReports.map(r => r.organization))],
+        messageBytes: message.value?.byteLength,
+      };
+      logger.error(
+        summary,
+        'Report write failed - offset not committed, message will be reprocessed',
+      );
+      logger.debug({ ...summary, rawReports }, 'Poison pill message full payload');
       throw error;
     }
   }
