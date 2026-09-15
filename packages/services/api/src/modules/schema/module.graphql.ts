@@ -2016,9 +2016,9 @@ export default gql`
     """
     id: ID!
     """
-    The user-provided version of the schema revision used for this subgraph version, if any.
+    The user-provided immutable release tag for this subgraph version, if any.
     """
-    schemaRevisionVersion: String
+    releaseTag: String
     """
     The service name.
     """
@@ -2117,9 +2117,9 @@ export default gql`
     name: String! @tag(name: "public")
     versionId: ID! @tag(name: "public")
     """
-    The user-provided version of the schema revision used for this publish, if any.
+    The user-provided immutable release tag used for this publish, if any.
     """
-    schemaRevisionVersion: String
+    releaseTag: String
   }
 
   type SchemaVersionSubgraphRemoveOrigin {
@@ -2131,9 +2131,9 @@ export default gql`
 
   type SchemaVersionPublishOrigin {
     """
-    The user-provided version of the schema revision used for a monolith publish, if any.
+    The user-provided immutable release tag used for a monolith publish, if any.
     """
-    schemaRevisionVersion: String
+    releaseTag: String
 
     """
     The subgraphs published as part of this version.

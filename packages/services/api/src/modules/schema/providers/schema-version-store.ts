@@ -303,7 +303,7 @@ export class SchemaVersionStore {
       projectId: string;
       organizationId: string;
       schemaRevisionId: string | null;
-      schemaRevisionVersion: string | null;
+      releaseTag: string | null;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -346,13 +346,13 @@ export class SchemaVersionStore {
         targetId: args.targetId,
         origin: {
           type: 'publish',
-          schemaRevisionVersion: args.service ? null : args.schemaRevisionVersion,
+          releaseTag: args.service ? null : args.releaseTag,
           services: args.service
             ? [
                 {
                   name: args.service.name,
                   versionId: newLog.id,
-                  schemaRevisionVersion: args.schemaRevisionVersion,
+                  releaseTag: args.releaseTag,
                 },
               ]
             : null,
@@ -1614,14 +1614,14 @@ const SchemaVersionOriginPromotionModel = z.object({
 
 const SchemaVersionOriginPublishModel = z.object({
   type: z.literal('publish'),
-  schemaRevisionVersion: z.string().nullable().optional(),
+  releaseTag: z.string().nullable().optional(),
   /** This is nullable in case it is a monolith. */
   services: z
     .array(
       z.object({
         name: z.string(),
         versionId: z.string(),
-        schemaRevisionVersion: z.string().nullable().optional(),
+        releaseTag: z.string().nullable().optional(),
       }),
     )
     .nullable(),

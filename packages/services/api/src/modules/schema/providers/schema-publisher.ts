@@ -116,7 +116,7 @@ export type PublishInput = Types.SchemaPublishInput & {
 type ResolvedPublishInput = Omit<PublishInput, 'sdl' | 'schema'> & {
   sdl: string;
   schemaRevisionId: string | null;
-  schemaRevisionVersion: string | null;
+  releaseTag: string | null;
 };
 
 type BreakPromise<T> = T extends Promise<infer U> ? U : never;
@@ -1387,7 +1387,7 @@ export class SchemaPublisher {
       ...inputWithoutSchema,
       sdl: resolvedSdl,
       schemaRevisionId: revisionId,
-      schemaRevisionVersion: revisionVersion,
+      releaseTag: revisionVersion,
     };
 
     const [contracts, latestVersion] = await Promise.all([
@@ -2286,7 +2286,7 @@ export class SchemaPublisher {
       base_schema: baseSchema,
       metadata: input.metadata ?? null,
       schemaRevisionId: input.schemaRevisionId,
-      schemaRevisionVersion: input.schemaRevisionVersion,
+      releaseTag: input.releaseTag,
       github,
       actionFn: async (versionId: string) => {
         if (composable && fullSchemaSdl) {

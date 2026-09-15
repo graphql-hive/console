@@ -394,7 +394,7 @@ export class SchemaVersionHelper {
 
     await Promise.all(previousSchemaLogPromises);
 
-    const schemaRevisionVersionsBySchemaLogId =
+    const releaseTagsBySchemaLogId =
       await this.schemaVersions.getSchemaRevisionVersionsBySchemaLogIds([
         ...edges.map(edge => edge.node.id),
         ...previousSchemaLogsById.keys(),
@@ -408,7 +408,7 @@ export class SchemaVersionHelper {
           __typename: 'SubgraphDiffUnchanged',
           subgraphVersion: {
             id: edge.node.id,
-            schemaRevisionVersion: schemaRevisionVersionsBySchemaLogId.get(edge.node.id) ?? null,
+            releaseTag: releaseTagsBySchemaLogId.get(edge.node.id) ?? null,
             sdl: edge.node.sdl,
             serviceName: edge.node.service_name,
             url: edge.node.service_url,
@@ -423,7 +423,7 @@ export class SchemaVersionHelper {
           __typename: 'SubgraphDiffAdded',
           subgraphVersion: {
             id: edge.node.id,
-            schemaRevisionVersion: schemaRevisionVersionsBySchemaLogId.get(edge.node.id) ?? null,
+            releaseTag: releaseTagsBySchemaLogId.get(edge.node.id) ?? null,
             sdl: edge.node.sdl,
             serviceName: edge.node.service_name,
             url: edge.node.service_url,
@@ -443,14 +443,14 @@ export class SchemaVersionHelper {
           __typename: 'SubgraphDiffChanged',
           previousSubgraphVersion: {
             id: previousLog.id,
-            schemaRevisionVersion: schemaRevisionVersionsBySchemaLogId.get(previousLog.id) ?? null,
+            releaseTag: releaseTagsBySchemaLogId.get(previousLog.id) ?? null,
             sdl: previousLog.sdl,
             serviceName: previousLog.service_name,
             url: previousLog.service_url,
           },
           subgraphVersion: {
             id: edge.node.id,
-            schemaRevisionVersion: schemaRevisionVersionsBySchemaLogId.get(edge.node.id) ?? null,
+            releaseTag: releaseTagsBySchemaLogId.get(edge.node.id) ?? null,
             sdl: edge.node.sdl,
             serviceName: edge.node.service_name,
             url: edge.node.service_url,
@@ -469,7 +469,7 @@ export class SchemaVersionHelper {
           __typename: 'SubgraphDiffRemoved',
           removedSubgraphVersion: {
             id: previousLog.id,
-            schemaRevisionVersion: schemaRevisionVersionsBySchemaLogId.get(previousLog.id) ?? null,
+            releaseTag: releaseTagsBySchemaLogId.get(previousLog.id) ?? null,
             sdl: previousLog.sdl,
             serviceName: previousLog.service_name,
             url: previousLog.service_url,
@@ -567,7 +567,7 @@ export class SchemaVersionHelper {
       if (schemaVersion.origin.type === 'publish') {
         return {
           __typename: 'SchemaVersionPublishOrigin',
-          schemaRevisionVersion: schemaVersion.origin.schemaRevisionVersion ?? null,
+          releaseTag: schemaVersion.origin.releaseTag ?? null,
           publishedSubgraphs: schemaVersion.origin.services ?? null,
         } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
       }
@@ -594,7 +594,7 @@ export class SchemaVersionHelper {
     if (project.type === ProjectType.SINGLE) {
       return {
         __typename: 'SchemaVersionPublishOrigin',
-        schemaRevisionVersion: null,
+        releaseTag: null,
         publishedSubgraphs: null,
       } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
     }
@@ -605,7 +605,7 @@ export class SchemaVersionHelper {
     if (log.action === 'PUSH') {
       return {
         __typename: 'SchemaVersionPublishOrigin',
-        schemaRevisionVersion: null,
+        releaseTag: null,
         publishedSubgraphs: [
           {
             name: log.service_name,

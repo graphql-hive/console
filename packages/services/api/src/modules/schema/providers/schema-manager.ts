@@ -491,7 +491,7 @@ export class SchemaManager {
       base_schema: string | null;
       metadata: string | null;
       schemaRevisionId: string | null;
-      schemaRevisionVersion: string | null;
+      releaseTag: string | null;
       actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: string | null;

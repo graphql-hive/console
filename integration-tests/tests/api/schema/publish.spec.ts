@@ -4550,7 +4550,7 @@ test.concurrent(
       github: null,
       metadata: null,
       schemaRevisionId: null,
-      schemaRevisionVersion: null,
+      releaseTag: null,
       existingSchemaLogs: [],
       projectId: project.id,
       organizationId: organization.id,
