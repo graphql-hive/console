@@ -6,14 +6,14 @@ import { AppFilter } from '@/components/apps/AppFilter';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { BackLink } from '@/components/navigation/back-link';
 import { Button } from '@/components/ui/button';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
-import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
@@ -182,9 +182,7 @@ function TargetAppVersionContent(props: {
     },
   });
 
-  const title = data.data?.target?.appDeployment
-    ? `${data.data.target.appDeployment.name}@${data.data.target.appDeployment.version}`
-    : 'App Deployment';
+  const title = `${props.appName}@${props.appVersion}`;
 
   if (data.error) {
     return (
@@ -217,34 +215,32 @@ function TargetAppVersionContent(props: {
     <>
       <Meta title={title} />
       <div className="flex h-full flex-1 flex-col py-6">
-        <SubPageLayoutHeader
-          subPageTitle={
-            <span className="flex items-center">
-              <Link
-                to="/$organizationSlug/$projectSlug/$targetSlug/apps"
-                params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
-                }}
-              >
-                App Deployments
-              </Link>{' '}
-              <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
-              {appDeployment ? (
-                `${appDeployment.name}@${appDeployment.version}`
-              ) : (
-                <Skeleton className="inline-block h-5 w-[150px]" />
-              )}
-            </span>
-          }
-          description="Group your GraphQL operations by app version for app version statistics and persisted operations."
-          docsLink={{
-            href: '/schema-registry/management/targets#cdn-access-tokens',
-            text: 'Learn more about App Deployments',
-          }}
-          sideContent={<AppFilter />}
-        />
+        <div>
+          <BackLink
+            copy="Back to App Deployments"
+            link={{
+              params: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+              to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
+            }}
+          />
+          <div className="flex items-start justify-between gap-4">
+            <PageLead
+              title={title}
+              description="Group your GraphQL operations by app version for app version statistics and persisted operations."
+              docsLink={{
+                href: '/schema-registry/app-deployments',
+                text: 'Learn more about App Deployments',
+              }}
+            />
+            <div className="flex">
+              <AppFilter />
+            </div>
+          </div>
+        </div>
         {coordinates ? (
           <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
             <span>
