@@ -406,7 +406,7 @@ export default gql`
   }
 
   input SchemaPushInput {
-    project: ProjectReferenceInput!
+    target: TargetReferenceInput!
     service: String
     sdl: String!
     version: String!

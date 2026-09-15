@@ -7,6 +7,7 @@ import { ProjectType } from '../../../shared/entities';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Storage } from '../../shared/providers/storage';
+import { isValidServiceName } from './schema-publisher';
 import { SchemaRevisionStore } from './schema-revision-store';
 
 // 1 month
@@ -29,7 +30,7 @@ export class SchemaPusher {
   ) {}
 
   async push(input: SchemaPushInput) {
-    const selector = await this.idTranslator.resolveProjectReference({ reference: input.project });
+    const selector = await this.idTranslator.resolveTargetReference({ reference: input.target });
     if (!selector) {
       return this.session.raise('schema:push');
     }
@@ -41,6 +42,8 @@ export class SchemaPusher {
       params: {
         organizationId: selector.organizationId,
         projectId: selector.projectId,
+        targetId: selector.targetId,
+        serviceName: service,
       },
     });
 
@@ -52,9 +55,22 @@ export class SchemaPusher {
     if (project.type === ProjectType.SINGLE && service) {
       return { error: { message: 'Service must not be provided for a single-schema project.' } };
     }
+
     if (project.type !== ProjectType.SINGLE && !service) {
-      return { error: { message: 'Missing service name' } };
+      if (!service) {
+        return { error: { message: 'Missing service name' } };
+      }
+
+      if (!isValidServiceName(service)) {
+        return {
+          error: {
+            message:
+              'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+          },
+        };
+      }
     }
+
     const version = SchemaRevisionVersionModel.safeParse(input.version);
     if (!version.success) {
       return { error: { message: version.error.issues[0]?.message ?? 'Invalid version.' } };

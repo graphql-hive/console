@@ -3905,6 +3905,6 @@ const SchemaCheckContextIdModel = z
     message: 'Context ID cannot exceed length of 200 characters.',
   });
 
-function isValidServiceName(service: string): boolean {
+export function isValidServiceName(service: string): boolean {
   return service.length <= 64 && /^[a-zA-Z][\w_-]*$/g.test(service);
 }

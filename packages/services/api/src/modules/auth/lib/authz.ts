@@ -408,7 +408,6 @@ const permissionsByLevel = {
     z.literal('target:create'),
     z.literal('projectAccessToken:modify'),
     z.literal('sharedSavedFilter:modify'),
-    z.literal('schema:push'),
   ],
   target: [
     z.literal('targetAccessToken:modify'),
@@ -430,6 +429,7 @@ const permissionsByLevel = {
     z.literal('schemaCheck:approve'),
     z.literal('schemaVersion:publish'),
     z.literal('schemaVersion:deleteService'),
+    z.literal('schema:push'),
   ],
   appDeployment: [
     z.literal('appDeployment:create'),
