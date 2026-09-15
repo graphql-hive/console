@@ -408,6 +408,7 @@ const permissionsByLevel = {
     z.literal('target:create'),
     z.literal('projectAccessToken:modify'),
     z.literal('sharedSavedFilter:modify'),
+    z.literal('schema:push'),
   ],
   target: [
     z.literal('targetAccessToken:modify'),
