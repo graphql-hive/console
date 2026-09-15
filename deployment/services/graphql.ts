@@ -143,6 +143,7 @@ export function deployGraphQL({
               : 'https://api.buzzcheck.dev/otel/v1/traces',
           HIVE_PERSISTED_DOCUMENTS: '1',
           ZENDESK_SUPPORT: zendesk.enabled ? '1' : '0',
+          ...(zendesk.enabled ? { ZENDESK_BASE_URL: 'https://theguild.zendesk.com' } : {}),
           INTEGRATION_GITHUB: '1',
           // Auth
           AUTH_GITHUB: '1',
@@ -226,7 +227,6 @@ export function deployGraphQL({
       .withSecret('SUPERTOKENS_ACCESS_TOKEN_KEY', supertokensSecrets, 'accessTokenKey')
       .withSecret('SUPERTOKENS_RATE_LIMIT_BYPASS_KEY', supertokensSecrets, 'bypassRateLimitKey')
       // Zendesk
-      .withConditionalSecret(zendesk.enabled, 'ZENDESK_BASE_URL', zendesk.secret, 'baseUrl')
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_USERNAME', zendesk.secret, 'username')
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_PASSWORD', zendesk.secret, 'password')
       // Sentry
