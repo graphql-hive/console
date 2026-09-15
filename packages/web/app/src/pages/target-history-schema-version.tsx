@@ -400,7 +400,8 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
         <div className={cn('mt-4 space-y-8', schemaVersion.subgraphDiffs && 'px-4')}>
           {selectedView === 'details' && (
             <>
-              {contractOrVersion.isFirstComposableVersion ? (
+              {schemaVersion.subgraphDiffs === null &&
+              contractOrVersion.isFirstComposableVersion ? (
                 <FirstComposableGraphVersion />
               ) : (
                 <>
@@ -1016,9 +1017,11 @@ const SchemaVersionHeader_SchemaVersionFragment = graphql(`
     isValid
     origin {
       ... on SchemaVersionPublishOrigin {
+        releaseTag
         publishedSubgraphs {
           name
           versionId
+          releaseTag
         }
       }
       ... on SchemaVersionPromoteOrigin {
@@ -1106,7 +1109,15 @@ function SchemaVersionHeader(props: {
     <header>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
         <h1 className="text-neutral-12 text-xl font-semibold leading-tight">Graph Version</h1>
-        <CopyChip value={schemaVersion.id} label={schemaVersion.id.slice(0, 8)} />
+        <CopyChip
+          value={schemaVersion.id}
+          label={
+            schemaVersion.origin.__typename === 'SchemaVersionPublishOrigin' &&
+            schemaVersion.origin.releaseTag
+              ? schemaVersion.origin.releaseTag
+              : schemaVersion.id.slice(0, 8)
+          }
+        />
       </div>
       <p className="text-neutral-10 mt-1.5 text-sm">Detailed view of the graph version changes.</p>
       <div
@@ -1141,7 +1152,7 @@ function SchemaVersionHeader(props: {
                   <GitCommit className="h-3.5 w-3.5" />
                   <CopyChip
                     value={subgraph.versionId}
-                    label={`${subgraph.name}@${subgraph.versionId.substring(0, 8)}`}
+                    label={`${subgraph.name}@${subgraph.releaseTag ?? subgraph.versionId.substring(0, 8)}`}
                   />
                 </span>
               ))}
@@ -1637,6 +1648,7 @@ const SubgraphRow_SubgraphDiffFragment = graphql(`
       subgraphVersion {
         serviceName
         id
+        releaseTag
         url
       }
     }
@@ -1644,6 +1656,7 @@ const SubgraphRow_SubgraphDiffFragment = graphql(`
       removedSubgraphVersion {
         serviceName
         id
+        releaseTag
         url
       }
     }
@@ -1651,10 +1664,12 @@ const SubgraphRow_SubgraphDiffFragment = graphql(`
       subgraphVersion {
         serviceName
         id
+        releaseTag
         url
       }
       previousSubgraphVersion {
         id
+        releaseTag
       }
       changes {
         edges {
@@ -1665,6 +1680,7 @@ const SubgraphRow_SubgraphDiffFragment = graphql(`
     ... on SubgraphDiffUnchanged {
       subgraphVersion {
         id
+        releaseTag
         serviceName
         url
       }
@@ -1699,32 +1715,37 @@ function SubgraphRow(props: {
           {subgraphDiff.__typename === 'SubgraphDiffUnchanged' && (
             <code className="py-0.5 text-sm">
               {subgraphDiff.subgraphVersion.serviceName}@
-              {subgraphDiff.subgraphVersion.id.substring(0, 8)}
+              {subgraphDiff.subgraphVersion.releaseTag ??
+                subgraphDiff.subgraphVersion.id.substring(0, 8)}
             </code>
           )}
           {subgraphDiff.__typename === 'SubgraphDiffAdded' && (
             <code className="py-0.5 text-sm">
               {subgraphDiff.subgraphVersion.serviceName}@
-              {subgraphDiff.subgraphVersion.id.substring(0, 8)}
+              {subgraphDiff.subgraphVersion.releaseTag ??
+                subgraphDiff.subgraphVersion.id.substring(0, 8)}
             </code>
           )}
           {subgraphDiff.__typename === 'SubgraphDiffChanged' && (
             <>
               <code className="py-0.5 text-sm">
                 {subgraphDiff.subgraphVersion.serviceName}@
-                {subgraphDiff.previousSubgraphVersion.id.substring(0, 8)}
+                {subgraphDiff.previousSubgraphVersion.releaseTag ??
+                  subgraphDiff.previousSubgraphVersion.id.substring(0, 8)}
               </code>
               <ArrowRight className="h-3 w-3" />
               <code className="py-0.5 text-sm">
                 {subgraphDiff.subgraphVersion.serviceName}@
-                {subgraphDiff.subgraphVersion.id.substring(0, 8)}
+                {subgraphDiff.subgraphVersion.releaseTag ??
+                  subgraphDiff.subgraphVersion.id.substring(0, 8)}
               </code>
             </>
           )}
           {subgraphDiff.__typename === 'SubgraphDiffRemoved' && (
             <code className="py-0.5 text-sm">
               {subgraphDiff.removedSubgraphVersion.serviceName}@
-              {subgraphDiff.removedSubgraphVersion.id.substring(0, 8)}
+              {subgraphDiff.removedSubgraphVersion.releaseTag ??
+                subgraphDiff.removedSubgraphVersion.id.substring(0, 8)}
             </code>
           )}
         </div>
