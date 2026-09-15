@@ -40,9 +40,7 @@ export function Filters({
   // A menu with nothing in it opens as an empty panel, so the row starts at the pinned controls
   // instead. An active view keeps the trigger because its clear button lives there.
   const hasMenu =
-    dimensions.length > 0 ||
-    Boolean(extraSections?.length) ||
-    Boolean(activeLabel && onClearActive);
+    dimensions.length > 0 || !!extraSections?.length || !!(activeLabel && onClearActive);
 
   return (
     <div className="flex items-center gap-2">
