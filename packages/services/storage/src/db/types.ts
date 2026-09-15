@@ -461,6 +461,7 @@ export interface schema_log {
   id: string;
   metadata: string | null;
   project_id: string;
+  schema_revision_id: string | null;
   sdl: string | null;
   service_name: string | null;
   service_url: string | null;
@@ -511,6 +512,17 @@ export interface schema_proposals {
   updated_at: Date;
 }
 
+export interface schema_revisions {
+  created_at: Date;
+  digest: string;
+  expires_at: Date | null;
+  first_published_at: Date | null;
+  id: string;
+  project_id: string;
+  service_name: string | null;
+  version: string;
+}
+
 export interface schema_version_changes {
   change_type: string;
   id: string;
@@ -553,6 +565,13 @@ export interface schema_versions {
   supergraph_sdl: string | null;
   tags: Array<string> | null;
   target_id: string;
+}
+
+export interface sdl_artifacts {
+  created_at: Date;
+  digest: string;
+  hash_version: number;
+  sdl: string;
 }
 
 export interface sdl_store {
@@ -686,9 +705,11 @@ export interface DBTables {
   schema_proposal_comments: schema_proposal_comments;
   schema_proposal_reviews: schema_proposal_reviews;
   schema_proposals: schema_proposals;
+  schema_revisions: schema_revisions;
   schema_version_changes: schema_version_changes;
   schema_version_to_log: schema_version_to_log;
   schema_versions: schema_versions;
+  sdl_artifacts: sdl_artifacts;
   sdl_store: sdl_store;
   target_validation: target_validation;
   targets: targets;
