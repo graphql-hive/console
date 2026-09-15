@@ -15,19 +15,6 @@ const SchemaRevisionModel = z.object({
 
 export type SchemaRevision = z.TypeOf<typeof SchemaRevisionModel>;
 
-class SchemaVersionConflictError extends Error {
-  constructor(
-    readonly service: string | null,
-    readonly version: string,
-    readonly existingDigest: string,
-    readonly submittedDigest: string,
-  ) {
-    super(
-      `Version ${service ? `${service}@` : ''}${version} already exists with a different schema.\nExisting digest: ${existingDigest}\nSubmitted digest: ${submittedDigest}`,
-    );
-  }
-}
-
 @Injectable({ scope: Scope.Operation })
 export class SchemaRevisionStore {
   constructor(private pg: PostgresDatabasePool) {}
@@ -65,12 +52,9 @@ export class SchemaRevisionStore {
         const schemaRevision = SchemaRevisionModel.parse(existing);
         if (schemaRevision.digest !== args.digest) {
           return {
-            error: new SchemaVersionConflictError(
-              args.service,
-              args.version,
-              schemaRevision.digest,
-              args.digest,
-            ),
+            error: {
+              message: `Version '${args.service ? `${args.service}@` : ''}${args.version}' already exists with a different schema.\nExisting digest: ${schemaRevision.digest}\nSubmitted digest: ${args.digest}`,
+            },
           };
         }
 
@@ -113,13 +97,13 @@ export class SchemaRevisionStore {
   }): Promise<SchemaRevision | null> {
     const row = await this.pg.maybeOne(psql`
       SELECT
-        "schema_revisions"."id"
+        "schema_revisions"."id" AS "id"
         , "schema_revisions"."service_name" AS "service"
-        , "schema_revisions"."digest"
-        , "schema_revisions"."version"
+        , "schema_revisions"."digest" AS "digest"
+        , "schema_revisions"."version" AS "version"
         , "schema_revisions"."created_at" AS "createdAt"
         , "schema_revisions"."expires_at" AS "expiresAt"
-        , "sdl_artifacts"."sdl"
+        , "sdl_artifacts"."sdl" AS "sdl"
       FROM
         "schema_revisions"
       JOIN
@@ -127,7 +111,7 @@ export class SchemaRevisionStore {
           ON "sdl_artifacts"."digest" = "schema_revisions"."digest"
       WHERE
         "schema_revisions"."project_id" = ${args.projectId}
-        AND "schema_revisions"."service_name" = ${args.service}
+        AND "schema_revisions"."service_name" IS NOT DISTINCT FROM ${args.service}
         AND "schema_revisions"."version" = ${args.version}
         AND (
           "schema_revisions"."expires_at" IS NULL
@@ -151,18 +135,18 @@ export class SchemaRevisionStore {
   getById = batch(async (ids: Array<string>) => {
     const rows = await this.pg.any(psql`
       SELECT
-        "schema_revisions"."id"
+        "schema_revisions"."id" AS "id"
         , "schema_revisions"."service_name" AS "service"
-        , "schema_revisions"."digest"
-        , "schema_revisions"."version"
+        , "schema_revisions"."digest" AS "digest"
+        , "schema_revisions"."version" AS "version"
         , "schema_revisions"."created_at" AS "createdAt"
         , "schema_revisions"."expires_at" AS "expiresAt"
-        , "sdl_artifacts"."sdl"
+        , "sdl_artifacts"."sdl" AS "sdl"
       FROM
         "schema_revisions"
       JOIN
         "sdl_artifacts"
-          ON sdl_artifacts"."digest" = "schema_revisions"."digest"
+          ON "sdl_artifacts"."digest" = "schema_revisions"."digest"
       WHERE
         "schema_revisions"."id" = ANY(${psql.array(ids, 'uuid')})
     `);

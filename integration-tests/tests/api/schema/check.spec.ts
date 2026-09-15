@@ -2609,6 +2609,7 @@ test.concurrent(
       diffSchemaVersionId: null,
       github: null,
       metadata: null,
+      schemaRevisionId: null,
       existingSchemaLogs: [],
       projectId: project.id,
       organizationId: organization.id,
