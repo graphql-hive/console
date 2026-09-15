@@ -7,7 +7,7 @@ export function PageLead({
   title,
   titleAccessory,
 }: {
-  description: string | string[];
+  description: string;
   docsLink?: DocsLinkProps;
   title: string;
   /**
