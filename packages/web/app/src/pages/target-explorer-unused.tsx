@@ -260,6 +260,10 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
         id
         explorer {
           subgraphNames
+          metadataAttributes {
+            name
+            values
+          }
         }
         unusedSchema(period: { absoluteRange: $period }) {
           ...UnusedSchemaView_UnusedSchemaExplorerFragment
@@ -345,6 +349,7 @@ function UnusedSchemaExplorer({
         period={dateRangeController.resolvedRange}
         variant="unused"
         subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
+        metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
         dateRangeControl={dateRangeFilter}
       />
 
