@@ -21,7 +21,7 @@ export function CopyChip(props: { value: string; label?: string }) {
         cleanPendingTimer();
         timeoutRef.current = setTimeout(() => setCopied(false), 1200);
       }}
-      className="group inline-flex items-center gap-1.5 rounded-md text-xs"
+      className="group inline-flex items-center gap-1.5 rounded-md"
     >
       <span className="truncate">{props.label ?? props.value}</span>
       {copied ? (

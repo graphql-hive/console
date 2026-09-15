@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Link, useNavigate, type LinkOptions, type RegisteredRouter } from '@tanstack/react-router';
 import { Avatar } from '../avatar/avatar';
 import { Badge } from '../badge/badge';
 import { Button } from '../button/button';
@@ -31,10 +32,18 @@ type StatusColor = 'success' | 'warning' | 'critical' | 'info' | 'neutral';
 type BadgeItem = { content: string; variant?: BadgeVariant };
 type MenuSections = NonNullable<React.ComponentProps<typeof Menu>['sections']>;
 
-/** One destination a cell can send the reader to. */
-export type DataTableLinkTarget = { label: string; href: string };
+/** A route through the router: `to`, `params`, `search` and `hash` as TanStack's Link takes them. */
+export type DataTableRoute<TTo extends string> = LinkOptions<RegisteredRouter, '/', TTo>;
 
-export type DataTableCellProps =
+/** Where a cell sends the reader: a route, or a plain href for anything outside the router. */
+export type DataTableDestination<TTo extends string> =
+  | { link: DataTableRoute<TTo>; href?: never; external?: never }
+  | { href: string; external?: boolean; link?: never };
+
+/** One destination a cell can send the reader to. */
+export type DataTableLinkTarget<TTo extends string> = { label: string } & DataTableDestination<TTo>;
+
+export type DataTableCellProps<TTo extends string = '.'> =
   | {
       kind: 'text';
       value: ReactNode;
@@ -64,14 +73,12 @@ export type DataTableCellProps =
       tone?: 'default' | 'muted';
       mono?: boolean;
     }
-  | {
+  | ({
       kind: 'link';
       label: ReactNode;
-      href: string;
       tone?: 'default' | 'accent';
       mono?: boolean;
-      external?: boolean;
-    }
+    } & DataTableDestination<TTo>)
   | {
       /**
        * A value that leads elsewhere without being the link itself: the label stays text and an
@@ -79,7 +86,7 @@ export type DataTableCellProps =
        */
       kind: 'link-out';
       label: ReactNode;
-      targets: DataTableLinkTarget[];
+      targets: DataTableLinkTarget<TTo>[];
       /** Shown on the icon: "Open in Insights". */
       tooltip: string;
       mono?: boolean;
@@ -166,11 +173,93 @@ const statusIconTone: Record<StatusColor, string> = {
   neutral: 'text-neutral-10',
 };
 
+function Destination<TTo extends string>({
+  destination,
+  className,
+  children,
+  'aria-label': ariaLabel,
+}: {
+  destination: DataTableDestination<TTo>;
+  className: string;
+  children: ReactNode;
+  'aria-label'?: string;
+}) {
+  if (destination.link) {
+    return (
+      // TanStack resolves the route generics at the call site, where `DataTableRoute<TTo>` is
+      // checked in full; inside the component TTo is opaque and no Link overload matches, the
+      // same situation ui/link sits in.
+      // @ts-expect-error see above
+      <Link {...destination.link} className={className} aria-label={ariaLabel}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <a
+      href={destination.href}
+      target={destination.external ? '_blank' : undefined}
+      rel={destination.external ? 'noreferrer' : undefined}
+      className={className}
+      aria-label={ariaLabel}
+    >
+      {children}
+    </a>
+  );
+}
+
+/** Its own component so the router hook only runs where several targets need a menu. */
+function LinkOutMenu<TTo extends string>({
+  targets,
+  tooltip,
+}: {
+  targets: DataTableLinkTarget<TTo>[];
+  tooltip: string;
+}) {
+  const navigate = useNavigate();
+  return (
+    <Menu
+      align="start"
+      width="sm"
+      trigger={
+        <button
+          type="button"
+          aria-label={tooltip}
+          className="text-neutral-9 hover:text-neutral-12 inline-flex items-center"
+        >
+          <ExternalLink className="size-3.5" />
+          <ChevronDown className="size-3" />
+        </button>
+      }
+      sections={[
+        {
+          label: tooltip,
+          items: targets.map(target =>
+            target.link
+              ? {
+                  label: target.label,
+                  // Same opaque-generic situation as in Destination above.
+                  // @ts-expect-error see Destination
+                  onClick: () => void navigate(target.link),
+                }
+              : {
+                  kind: 'link' as const,
+                  label: target.label,
+                  href: target.href,
+                  external: target.external,
+                },
+          ),
+        },
+      ]}
+    />
+  );
+}
+
 /**
  * What a table cell holds, by kind. Column layout (alignment, width, responsive hiding) is the
  * column's, set in its `meta`; this is only the content.
  */
-export function DataTableCell(props: DataTableCellProps) {
+export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProps<TTo>) {
   switch (props.kind) {
     case 'text': {
       const value = (
@@ -236,14 +325,12 @@ export function DataTableCell(props: DataTableCellProps) {
     }
     case 'link':
       return (
-        <a
-          href={props.href}
-          target={props.external ? '_blank' : undefined}
-          rel={props.external ? 'noreferrer' : undefined}
+        <Destination
+          destination={props}
           className={cn(linkTone[props.tone ?? 'default'], props.mono && 'font-mono text-xs')}
         >
           {props.label}
-        </a>
+        </Destination>
       );
     case 'link-out': {
       const label = (
@@ -257,13 +344,13 @@ export function DataTableCell(props: DataTableCellProps) {
             {label}
             <Tooltip
               trigger={
-                <a
-                  href={props.targets[0].href}
+                <Destination
+                  destination={props.targets[0]}
                   aria-label={props.tooltip}
                   className="text-neutral-9 hover:text-neutral-12 inline-flex"
                 >
                   <ExternalLink className="size-3.5" />
-                </a>
+                </Destination>
               }
               content={props.tooltip}
             />
@@ -273,30 +360,7 @@ export function DataTableCell(props: DataTableCellProps) {
       return (
         <span className="inline-flex items-center gap-1.5">
           {label}
-          <Menu
-            align="start"
-            width="sm"
-            trigger={
-              <button
-                type="button"
-                aria-label={props.tooltip}
-                className="text-neutral-9 hover:text-neutral-12 inline-flex items-center"
-              >
-                <ExternalLink className="size-3.5" />
-                <ChevronDown className="size-3" />
-              </button>
-            }
-            sections={[
-              {
-                label: props.tooltip,
-                items: props.targets.map(target => ({
-                  kind: 'link' as const,
-                  label: target.label,
-                  href: target.href,
-                })),
-              },
-            ]}
-          />
+          <LinkOutMenu targets={props.targets} tooltip={props.tooltip} />
         </span>
       );
     }

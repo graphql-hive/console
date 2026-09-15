@@ -137,7 +137,7 @@ export function DataTableHead({
   return (
     <th
       className={cn(
-        'text-neutral-10 h-10 whitespace-nowrap px-4 text-left align-middle text-xs font-medium',
+        'text-neutral-10 h-10 whitespace-nowrap px-4 text-left align-middle text-xs font-normal',
         surface[onSurface].head,
         layoutClass(layout),
       )}
