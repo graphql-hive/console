@@ -454,10 +454,9 @@ export function createUsage(config: {
       }
     },
     onTooLarge(numOfOperations) {
-      // Same underlying reason as buffer.ts's onDrop ("payload too big for Kafka"),
-      // just discovered later in the pipeline - already counted in
-      // rawOperationFailures when it entered the queue, so no further metric change
-      // there; it stays counted, permanently, by simply never being decremented.
+      // Already counted in rawOperationFailures when it entered the queue, so no
+      // further metric change there; it stays counted, permanently, by simply never
+      // being decremented.
       droppedOversizedOperations.inc(numOfOperations);
     },
     onQueueFull(numOfOperations) {
