@@ -111,7 +111,6 @@ function splitReportByMapKey(report: RawReport, numOfChunks: number): RawReport[
       const chunkIndex = keyReportIndexMap[subscriptionOp.operationMapKey];
       const chunkReport = reports[chunkIndex];
       (chunkReport.subscriptionOperations ??= []).push(subscriptionOp);
-      // report.size counts operations + subscriptionOperations (see usage-processor-2.ts) - keep that invariant per chunk.
       chunkReport.size += 1;
     }
   }
@@ -158,13 +157,9 @@ function splitReportByEntries(report: RawReport, numOfChunks: number): RawReport
     numOfChunks,
   );
 
-  // usage-processor-2.ts creates each error entry from one specific operation, tagging
-  // it with that operation's own operationMapKey + timestamp - the only link back to it
-  // (there's no shared index/id between the two arrays). Route each error into whichever
-  // chunk its operation landed in, so a chunk that's later dropped or sent independently
-  // doesn't separate an operation from the errors it produced. Fall back to the plain
-  // proportional slice only if no matching operation is found (shouldn't happen given
-  // that pairing, but keeps every error from being lost if it ever doesn't hold).
+  // Mapping the the operation key and timestamp to the chunk index allows linking
+  // errors back to the correct chunk. Route each error into whichever chunk its operation landed in,
+  // so a chunk that's later dropped or sent independently  doesn't separate an operation from the errors it produced.
   const chunkIndexByOperationIdentity = new Map<string, number>();
   operationChunks.forEach((operations, chunkIndex) => {
     for (const operation of operations) {
@@ -225,8 +220,7 @@ export function calculateReportSize(report: RawReport): number {
 
 export function isSplittable(report: RawReport): boolean {
   // Errors need no check of their own: each error entry is created from at most
-  // one operation (see usage-processor-2.ts), so errors.length can never exceed
-  // operations.length.
+  // one operation, so errors.length can never exceed operations.length.
   return (
     Object.keys(report.map).length > 1 ||
     report.operations.length > 1 ||
