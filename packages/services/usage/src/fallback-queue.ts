@@ -8,6 +8,8 @@ const MAX_QUEUE_SIZE = 1000;
 
 export function createFallbackQueue(config: {
   send: (msgValue: Buffer<ArrayBufferLike>, numOfOperations: number) => Promise<void>;
+  onTooLarge(numOfOperations: number): void;
+  onQueueFull(numOfOperations: number): void;
   logger: ServiceLogger;
 }) {
   const queue: [Buffer<ArrayBufferLike>, number][] = [];
@@ -24,6 +26,7 @@ export function createFallbackQueue(config: {
     } catch (error) {
       if (error instanceof Error && 'type' in error && error.type === 'MESSAGE_TOO_LARGE') {
         config.logger.error('Message too large, dropping message');
+        config.onTooLarge(msg[1]);
         return;
       }
 
@@ -84,7 +87,10 @@ export function createFallbackQueue(config: {
     add(msgValue: Buffer<ArrayBufferLike>, numOfOperations: number) {
       if (queue.length >= MAX_QUEUE_SIZE) {
         config.logger.error('Queue is full, dropping oldest message');
-        queue.shift();
+        const dropped = queue.shift();
+        if (dropped) {
+          config.onQueueFull(dropped[1]);
+        }
       }
 
       queue.push([msgValue, numOfOperations]);
