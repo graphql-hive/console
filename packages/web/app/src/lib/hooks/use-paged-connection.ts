@@ -3,13 +3,14 @@ import { useState } from 'react';
 /**
  * Previous and next pages over a relay connection that graphcache merges (`relayPagination`).
  * Loaded edges stay in the cache, so paging back is a slice; paging forward past what is loaded
- * fetches the next page with `after` and the merged connection grows. There is no total, so the
- * summary is the page number.
+ * fetches the next page with `after` and the merged connection grows. The summary is the page
+ * number, out of the page count when the connection reports a total.
  */
 export function usePagedConnection<TEdge>(args: {
   edges: readonly TEdge[];
   pageInfo: { hasNextPage: boolean; endCursor?: string | null };
   pageSize: number;
+  total?: number;
   loadMore: (after: string) => Promise<unknown>;
 }) {
   const [pageIndex, setPageIndex] = useState(0);
@@ -49,7 +50,10 @@ export function usePagedConnection<TEdge>(args: {
       onPrevious: () => setPageIndex(Math.max(0, page - 1)),
       onNext: () => void next(),
       loading,
-      summary: `Page ${page + 1}`,
+      summary:
+        args.total === undefined
+          ? `Page ${page + 1}`
+          : `Page ${page + 1} of ${Math.max(1, Math.ceil(args.total / args.pageSize))}`,
     },
   };
 }

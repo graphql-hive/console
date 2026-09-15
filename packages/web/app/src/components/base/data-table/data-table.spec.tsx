@@ -50,6 +50,58 @@ describe('DataTable', () => {
     expect(names()).toEqual(['beta', 'gamma', 'alpha']);
   });
 
+  it('toggles a server-sorted column between descending and ascending', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        sorting={{ state: [{ id: 'count', desc: false }], onChange, manual: true }}
+      />,
+    );
+    fireEvent.click(screen.getByText('Count'));
+    const next = onChange.mock.calls[0][0]([{ id: 'count', desc: false }]);
+    // Ascending would cycle to unsorted on a client table; the server always sorts.
+    expect(next).toEqual([{ id: 'count', desc: true }]);
+
+    rerender(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        sorting={{ state: [{ id: 'count', desc: true }], onChange, manual: true }}
+      />,
+    );
+    fireEvent.click(screen.getByText('Count'));
+    expect(onChange.mock.calls[1][0]([{ id: 'count', desc: true }])).toEqual([
+      { id: 'count', desc: false },
+    ]);
+  });
+
+  it('toggles a server-sorted column that has no accessor', () => {
+    const onChange = vi.fn();
+    const idOnly: ColumnDef<Row, unknown>[] = [
+      {
+        id: 'CREATED_AT',
+        header: 'Created',
+        meta: { sortable: true },
+        cell: ({ row }) => row.original.name,
+      },
+    ];
+    render(
+      <DataTable
+        data={ROWS}
+        columns={idOnly}
+        getRowId={row => row.id}
+        sorting={{ state: [], onChange, manual: true }}
+      />,
+    );
+    fireEvent.click(screen.getByText('Created'));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0]([])).toEqual([{ id: 'CREATED_AT', desc: true }]);
+  });
+
   it('marks muted, disabled and selected rows from the data', () => {
     const { container } = render(
       <DataTable

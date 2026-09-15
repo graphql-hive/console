@@ -68,7 +68,11 @@ export type DataTableProps<TData> = {
    * connection the API pages with `first` and `after`. Client with 20 rows a page by default.
    */
   pagination?: DataTablePaginationProp;
-  /** Owned sorting, for a page that sorts on the server. Columns opt in with `meta.sortable`. */
+  /**
+   * Owned sorting, for a page that sorts on the server. Columns opt in with `meta.sortable`.
+   * With `manual` the API always sorts, so a header toggles between descending and ascending
+   * instead of cycling through unsorted.
+   */
   sorting?: { state: SortingState; onChange: OnChangeFn<SortingState>; manual?: boolean };
   /** A closing row: a label across the columns and a value in the last, such as a total. */
   footer?: { label: ReactNode; value: ReactNode };
@@ -98,7 +102,9 @@ function SortHeader<TData>({
   return (
     <button
       type="button"
-      onClick={header.column.getToggleSortingHandler()}
+      // Not TanStack's toggle handler: it ignores columns without an accessor, and a
+      // server-sorted column has no reason to carry one.
+      onClick={() => header.column.toggleSorting()}
       className="text-neutral-10 hover:text-neutral-12 inline-flex items-center gap-1 text-xs font-medium"
     >
       {label}
@@ -143,6 +149,7 @@ export function DataTable<TData>({
     state: { sorting: sorting?.state ?? ownSorting },
     onSortingChange: sorting?.onChange ?? setOwnSorting,
     manualSorting: sorting?.manual ?? false,
+    enableSortingRemoval: !sorting?.manual,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: pagination.kind === 'client' ? getPaginationRowModel() : undefined,

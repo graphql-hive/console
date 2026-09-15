@@ -55,6 +55,19 @@ describe('usePagedConnection', () => {
     expect(result.current.rows.map(e => e.id)).toEqual(['e10', 'e11', 'e12', 'e13', 'e14']);
   });
 
+  it('counts the pages in the summary when the connection reports a total', () => {
+    const { result } = renderHook(() =>
+      usePagedConnection({
+        edges: edges(10),
+        pageInfo: { hasNextPage: true, endCursor: 'c10' },
+        pageSize: 10,
+        total: 34,
+        loadMore: () => Promise.resolve(),
+      }),
+    );
+    expect(result.current.pagination.summary).toBe('Page 1 of 4');
+  });
+
   it('stays on the last page that exists when the connection shrinks', () => {
     let loaded = edges(12);
     const { result, rerender } = renderHook(() =>

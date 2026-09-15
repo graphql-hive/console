@@ -1,23 +1,16 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useQuery } from 'urql';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/ui/button';
-import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { graphql } from '@/gql';
 import { Link } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const AffectedDeploymentsQuery = graphql(`
   query AffectedDeploymentsQuery(
@@ -116,6 +109,13 @@ type AffectedDeployment = {
 
 const PAGE_SIZE = 20;
 
+const EMPTY_PAGE = {
+  deployments: [] as AffectedDeployment[],
+  hasNextPage: false,
+  endCursor: null as string | null | undefined,
+  totalCount: 0,
+};
+
 function TargetChecksAffectedDeploymentsContent(props: {
   organizationSlug: string;
   projectSlug: string;
@@ -123,10 +123,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
   schemaCheckId: string;
   coordinate?: string;
 }) {
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [accumulatedDeployments, setAccumulatedDeployments] = useState<AffectedDeployment[]>([]);
-  const [storedTotalCount, setStoredTotalCount] = useState<number | null>(null);
-  const hasLoadedOnce = useRef(false);
+  const [endCursors, setEndCursors] = useState<string[]>([]);
 
   const [data] = useQuery({
     query: AffectedDeploymentsQuery,
@@ -136,88 +133,59 @@ function TargetChecksAffectedDeploymentsContent(props: {
       targetSlug: props.targetSlug,
       schemaCheckId: props.schemaCheckId,
       first: PAGE_SIZE,
-      after: cursor,
+      after: endCursors[endCursors.length - 1] ?? null,
     },
   });
 
-  if (data.data && !data.fetching && !data.stale) {
-    hasLoadedOnce.current = true;
-  }
-
-  const { currentPageDeployments, hasNextPage, endCursor, responseTotalCount } = useMemo(() => {
+  const page = useMemo(() => {
     const schemaCheck = data.data?.target?.schemaCheck;
-    if (!schemaCheck)
-      return {
-        currentPageDeployments: [],
-        hasNextPage: false,
-        endCursor: null,
-        responseTotalCount: 0,
-      };
+    if (!schemaCheck) {
+      return EMPTY_PAGE;
+    }
 
     const breakingChanges =
       'breakingSchemaChanges' in schemaCheck ? schemaCheck.breakingSchemaChanges : null;
 
-    if (!breakingChanges?.edges)
-      return {
-        currentPageDeployments: [],
-        hasNextPage: false,
-        endCursor: null,
-        responseTotalCount: 0,
-      };
+    if (!breakingChanges?.edges) {
+      return EMPTY_PAGE;
+    }
 
     for (const edge of breakingChanges.edges) {
       const change = edge.node;
       const coordinate = change.path?.join('.') ?? 'unknown';
 
       if (coordinate === props.coordinate && change.affectedAppDeployments) {
-        const deployments =
-          change.affectedAppDeployments.edges?.map(
-            (edge): AffectedDeployment => ({
-              id: edge.node.id,
-              name: edge.node.name,
-              version: edge.node.version,
-              totalOperations: edge.node.totalAffectedOperations,
-              activatedAt: edge.node.activatedAt ?? null,
-              retiredAt: edge.node.retiredAt ?? null,
-              lastUsed: edge.node.lastUsed ?? null,
-            }),
-          ) ?? [];
-
         return {
-          currentPageDeployments: deployments,
+          deployments:
+            change.affectedAppDeployments.edges?.map(
+              (edge): AffectedDeployment => ({
+                id: edge.node.id,
+                name: edge.node.name,
+                version: edge.node.version,
+                totalOperations: edge.node.totalAffectedOperations,
+                activatedAt: edge.node.activatedAt ?? null,
+                retiredAt: edge.node.retiredAt ?? null,
+                lastUsed: edge.node.lastUsed ?? null,
+              }),
+            ) ?? [],
           hasNextPage: change.affectedAppDeployments.pageInfo.hasNextPage,
           endCursor: change.affectedAppDeployments.pageInfo.endCursor,
-          responseTotalCount: change.affectedAppDeployments.totalCount,
+          totalCount: change.affectedAppDeployments.totalCount,
         };
       }
     }
 
-    return {
-      currentPageDeployments: [],
-      hasNextPage: false,
-      endCursor: null,
-      responseTotalCount: 0,
-    };
+    return EMPTY_PAGE;
   }, [data.data?.target?.schemaCheck, props.coordinate]);
 
-  if (storedTotalCount === null && responseTotalCount > 0) {
-    setStoredTotalCount(responseTotalCount);
+  // A page in flight first arrives partial from the cache, with the connection null, so keep
+  // showing the last settled page until the network result lands.
+  const loading = data.fetching || data.stale;
+  const settledPage = useRef(EMPTY_PAGE);
+  if (!loading) {
+    settledPage.current = page;
   }
-
-  const totalCount = storedTotalCount ?? responseTotalCount;
-
-  const allDeployments = useMemo(() => {
-    const seenIds = new Set(accumulatedDeployments.map(d => d.id));
-    const newDeployments = currentPageDeployments.filter(d => !seenIds.has(d.id));
-    return [...accumulatedDeployments, ...newDeployments];
-  }, [accumulatedDeployments, currentPageDeployments]);
-
-  const handleLoadMore = useCallback(() => {
-    if (endCursor && hasNextPage) {
-      setAccumulatedDeployments(allDeployments);
-      setCursor(endCursor);
-    }
-  }, [endCursor, hasNextPage, allDeployments]);
+  const { deployments, hasNextPage, endCursor, totalCount } = loading ? settledPage.current : page;
 
   if (data.error) {
     return (
@@ -228,6 +196,70 @@ function TargetChecksAffectedDeploymentsContent(props: {
       />
     );
   }
+
+  const appVersionLink = (deployment: AffectedDeployment) => ({
+    to: '/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion' as const,
+    params: {
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      targetSlug: props.targetSlug,
+      appName: deployment.name,
+      appVersion: deployment.version,
+    },
+    search: { coordinates: props.coordinate },
+  });
+
+  const columns: ColumnDef<AffectedDeployment, unknown>[] = [
+    {
+      id: 'name',
+      header: 'App Name',
+      meta: { width: 'md' },
+      cell: ({ row }) => (
+        <DataTableCell kind="link" label={row.original.name} link={appVersionLink(row.original)} />
+      ),
+    },
+    {
+      id: 'version',
+      header: 'Version',
+      meta: { width: 'fill' },
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.version} />,
+    },
+    {
+      id: 'activatedAt',
+      header: 'Activated',
+      cell: ({ row }) =>
+        row.original.activatedAt ? (
+          <DataTableCell kind="time" date={row.original.activatedAt} mode="relative-info" />
+        ) : (
+          <DataTableCell kind="placeholder" />
+        ),
+    },
+    {
+      id: 'lastUsed',
+      header: 'Last Used',
+      cell: ({ row }) =>
+        row.original.lastUsed ? (
+          <DataTableCell kind="time" date={row.original.lastUsed} mode="relative-info" />
+        ) : (
+          <DataTableCell kind="placeholder" />
+        ),
+    },
+    {
+      id: 'totalOperations',
+      header: 'Total Operations',
+      meta: { align: 'right' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="link"
+          tone="accent"
+          label={`${row.original.totalOperations} ${
+            row.original.totalOperations === 1 ? 'operation' : 'operations'
+          }`}
+          link={appVersionLink(row.original)}
+        />
+      ),
+    },
+  ];
 
   return (
     <>
@@ -266,14 +298,14 @@ function TargetChecksAffectedDeploymentsContent(props: {
           }
         />
         <div className="mt-4" />
-        {!hasLoadedOnce.current && allDeployments.length === 0 ? (
+        {loading && deployments.length === 0 ? (
           <div className="flex h-fit flex-1 items-center justify-center">
             <div className="flex flex-col items-center">
               <Spinner />
               <div className="mt-2 text-xs">Loading affected deployments</div>
             </div>
           </div>
-        ) : allDeployments.length === 0 ? (
+        ) : deployments.length === 0 ? (
           <EmptyList
             title="No affected app deployments"
             description={
@@ -283,101 +315,28 @@ function TargetChecksAffectedDeploymentsContent(props: {
             }
           />
         ) : (
-          <div className="space-y-4">
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[200px]">App Name</TableHead>
-                    <TableHead>Version</TableHead>
-                    <TableHead>Activated</TableHead>
-                    <TableHead>Last Used</TableHead>
-                    <TableHead className="text-right">Total Operations</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allDeployments.map(deployment => (
-                    <TableRow key={deployment.id}>
-                      <TableCell className="font-medium">
-                        <Link
-                          to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
-                            appName: deployment.name,
-                            appVersion: deployment.version,
-                          }}
-                          search={{
-                            coordinates: props.coordinate,
-                          }}
-                          className="text-neutral-11 hover:text-neutral-12"
-                        >
-                          {deployment.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{deployment.version}</TableCell>
-                      <TableCell>
-                        {deployment.activatedAt ? (
-                          <span className="text-xs">
-                            <DateWithTimeAgo date={deployment.activatedAt} />
-                          </span>
-                        ) : (
-                          <span className="text-neutral-10 text-xs">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {deployment.lastUsed ? (
-                          <span className="text-xs">
-                            <DateWithTimeAgo date={deployment.lastUsed} />
-                          </span>
-                        ) : (
-                          <span className="text-neutral-10 text-xs">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="link" className="h-auto p-0" asChild>
-                          <Link
-                            to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                              targetSlug: props.targetSlug,
-                              appName: deployment.name,
-                              appVersion: deployment.version,
-                            }}
-                            search={{
-                              coordinates: props.coordinate,
-                            }}
-                          >
-                            {deployment.totalOperations}{' '}
-                            {deployment.totalOperations === 1 ? 'operation' : 'operations'}
-                          </Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="text-neutral-10 flex items-center justify-between text-sm">
-              <span>
-                Showing {allDeployments.length} of {totalCount} affected deployments
-              </span>
-              {hasNextPage && (
-                <Button variant="outline" onClick={handleLoadMore} disabled={data.fetching}>
-                  {data.fetching ? (
-                    <>
-                      <Spinner className="mr-2 size-4" />
-                      Loading...
-                    </>
-                  ) : (
-                    'Load more'
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
+          <DataTable
+            data={deployments}
+            columns={columns}
+            getRowId={deployment => deployment.id}
+            pagination={{
+              kind: 'cursor',
+              hasPreviousPage: endCursors.length > 0,
+              hasNextPage,
+              onPrevious: () => setEndCursors(cursors => cursors.slice(0, -1)),
+              onNext: () => {
+                const next = endCursor;
+                if (next) {
+                  setEndCursors(cursors => [...cursors, next]);
+                }
+              },
+              summary: `Page ${endCursors.length + 1} of ${Math.max(
+                1,
+                Math.ceil(totalCount / PAGE_SIZE),
+              )} · ${totalCount} affected deployments`,
+              loading,
+            }}
+          />
         )}
       </div>
     </>
