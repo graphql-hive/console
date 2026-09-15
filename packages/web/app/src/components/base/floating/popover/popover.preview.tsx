@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Info } from 'lucide-react';
-import { createPreview, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { Popover } from './popover';
@@ -265,3 +265,70 @@ export const Modal = createPreview(() => (
     <Button variant="outline">Another button</Button>
   </div>
 ));
+
+export const Playground = createPreview({
+  controls: controlsFor(Popover, {
+    trigger: {
+      type: 'radio',
+      options: ['button', 'icon'],
+      default: 'button',
+      derive: kind =>
+        kind === 'icon' ? (
+          <button
+            type="button"
+            aria-label="What resolution count means"
+            className="text-neutral-10"
+          >
+            <Info className="size-4" />
+          </button>
+        ) : (
+          <Button label="Alert details" />
+        ),
+    },
+    // Empty leaves the popover in raw mode: no header, so no close button either.
+    title: { type: 'text', default: 'Alert details', derive: text => text || undefined },
+    description: { type: 'text', default: 'Configure the threshold and notification settings.' },
+    content: {
+      type: 'text',
+      default: 'Status: Normal. Last evaluated 2 minutes ago.',
+      derive: text => <p className="text-neutral-11 text-sm">{text}</p>,
+    },
+    hideCloseButton: { type: 'boolean', default: false },
+    padding: { type: 'radio', options: ['default', 'none'], default: 'default' },
+    // Unset falls back per mode: `sm` raw, `md` structured.
+    width: {
+      type: 'radio',
+      options: ['unset', 'auto', 'sm', 'md', 'lg', 'xl'],
+      default: 'unset',
+      derive: step => (step === 'unset' ? undefined : step),
+    },
+    side: { type: 'radio', options: ['bottom', 'top', 'left', 'right'], default: 'bottom' },
+    align: { type: 'radio', options: ['center', 'start', 'end'], default: 'center' },
+    arrow: { type: 'boolean', default: false },
+    modal: { type: 'boolean', default: false },
+    openOnHover: { type: 'boolean', default: false },
+  }),
+  render: v => {
+    const shared = {
+      trigger: v.trigger,
+      width: v.width,
+      side: v.side,
+      align: v.align,
+      arrow: v.arrow,
+      modal: v.modal,
+      openOnHover: v.openOnHover,
+    };
+    // `title` is the discriminant: with one the header renders and `padding` is not a prop.
+    return v.title === undefined ? (
+      <Popover {...shared} content={v.content} padding={v.padding} />
+    ) : (
+      <Popover
+        {...shared}
+        title={v.title}
+        description={v.description}
+        content={v.content}
+        hideCloseButton={v.hideCloseButton}
+      />
+    );
+  },
+});

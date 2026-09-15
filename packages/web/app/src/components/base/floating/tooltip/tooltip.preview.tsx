@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CircleHelp, Copy } from 'lucide-react';
-import { createPreview, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../../button/button';
 import { Tooltip } from './tooltip';
 
@@ -198,3 +198,44 @@ export const DisabledControl = createPreview(() => (
     />
   </div>
 ));
+
+export const Playground = createPreview({
+  controls: controlsFor(Tooltip, {
+    trigger: {
+      type: 'radio',
+      options: ['button', 'icon', 'text'],
+      default: 'button',
+      derive: kind =>
+        kind === 'icon' ? (
+          <Button layout="iconOnly" icon={Copy} aria-label="Copy access token" />
+        ) : kind === 'text' ? (
+          'Sep 10 14:22:07'
+        ) : (
+          <Button label="Hover me" />
+        ),
+    },
+    content: { type: 'text', default: 'Runs a check against the registry.' },
+    side: { type: 'radio', options: ['top', 'right', 'bottom', 'left'], default: 'top' },
+    align: { type: 'radio', options: ['start', 'center', 'end'], default: 'center' },
+    maxWidth: { type: 'radio', options: ['default', 'md', 'lg', 'screen'], default: 'default' },
+    padding: { type: 'radio', options: ['default', 'lg'], default: 'default' },
+    arrow: { type: 'boolean', default: false },
+    disableHoverablePopup: { type: 'boolean', default: false },
+    disabled: { type: 'boolean', default: false },
+  }),
+  render: v => (
+    <div className="p-16">
+      <Tooltip
+        trigger={v.trigger}
+        content={v.content}
+        side={v.side}
+        align={v.align}
+        maxWidth={v.maxWidth}
+        padding={v.padding}
+        arrow={v.arrow}
+        disableHoverablePopup={v.disableHoverablePopup}
+        disabled={v.disabled}
+      />
+    </div>
+  ),
+});

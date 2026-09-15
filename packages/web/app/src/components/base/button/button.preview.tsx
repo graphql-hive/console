@@ -143,3 +143,44 @@ export const Playground = createPreview({
     </div>
   ),
 });
+
+const RIGHT_ICONS = { chevron: ChevronDown, filter: ListFilter, copy: Copy, clear: X };
+
+/** The segmented `label` layout: a select, menu or filter trigger. */
+export const TriggerPlayground = createPreview({
+  controls: controlsFor(Button, {
+    label: { type: 'text', default: 'Last 7 days' },
+    accessoryInformation: {
+      type: 'text',
+      default: '',
+      // The component tests `!= null`, so an empty string would draw an empty segment.
+      derive: text => text || undefined,
+    },
+    rightIcon: {
+      type: 'select',
+      options: ['none', 'chevron', 'filter', 'copy', 'clear'],
+      default: 'chevron',
+      derive: name =>
+        name === 'none' ? undefined : { icon: RIGHT_ICONS[name], withSeparator: true },
+    },
+    variant: {
+      type: 'select',
+      options: ['default', 'active', 'action', 'muted-action'],
+      default: 'default',
+    },
+    size: { type: 'radio', options: ['default', 'compact'], default: 'default' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
+    disabled: { type: 'boolean', default: false },
+  }),
+  render: v => (
+    <Button
+      label={v.label}
+      accessoryInformation={v.accessoryInformation}
+      rightIcon={v.rightIcon}
+      variant={v.variant}
+      size={v.size}
+      onSurface={v.onSurface}
+      disabled={v.disabled}
+    />
+  ),
+});

@@ -143,11 +143,20 @@ export const Playground = createPreview({
     },
     title: { type: 'text', default: 'Alert rule' },
     description: { type: 'text', default: 'Notify the team when p99 latency crosses.' },
+    children: {
+      type: 'boolean',
+      label: 'Body',
+      default: true,
+      // Tinted so `bodyPadding` is visible; off, the card is just its heading block.
+      derive: on =>
+        on ? (
+          <div className="bg-accent/20 text-neutral-11 p-4 text-center text-xs">Body</div>
+        ) : undefined,
+    },
   }),
   render: v => (
     <Card variants={v.variants} title={v.title} description={v.description}>
-      {/* Tinted so `bodyPadding` is visible; a card with no children has no body to inset. */}
-      <div className="bg-accent/20 text-neutral-11 p-4 text-center text-xs">Body</div>
+      {v.children}
     </Card>
   ),
 });

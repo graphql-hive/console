@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    react-foundry:
+      specifier: 0.0.16
+      version: 0.0.16
+
 overrides:
   esbuild: 0.28.1
   csstype: 3.1.2
@@ -941,8 +947,8 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
       react-foundry:
-        specifier: 0.0.13
-        version: 0.0.13(@types/node@24.13.3)(babel-plugin-react-compiler@19.1.0-rc.3)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3)
+        specifier: 'catalog:'
+        version: 0.0.16(@types/node@24.13.3)(babel-plugin-react-compiler@19.1.0-rc.3)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3)
       react-resizable-panels:
         specifier: ^3.0.6
         version: 3.0.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2365,8 +2371,8 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
       react-foundry:
-        specifier: 0.0.15
-        version: 0.0.15(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3)
+        specifier: 'catalog:'
+        version: 0.0.16(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3)
       react-helmet-async:
         specifier: 2.0.5
         version: 2.0.5(react@18.3.1)
@@ -16724,21 +16730,17 @@ packages:
   react-fast-compare@3.2.2:
     resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
 
-  react-foundry@0.0.13:
-    resolution: {integrity: sha512-s1dFMivVF/z/dPPtBN3QnZuvNbJDRL2Y/pUGDTnJnOhvpgc3zX4esdY3GvcGACQlRxbyCwQ9GUIr5K8kvTo6Ng==}
+  react-foundry@0.0.16:
+    resolution: {integrity: sha512-wAIdKrmwXJSyIH+MSUuZpeMuceSbqwEW2/ZasCrsTUdRjSFvgzQTjfpGdGOC5MuzJA5c/lTmMbkRqb81h1BQEA==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
-
-  react-foundry@0.0.15:
-    resolution: {integrity: sha512-VZr5d2F4XPWRr8J4hUHMLNpexZVWly+simTmCeo+qayJFOUCvvtXFsiXB7gsGvYY/nxd2kg974+z/MeHWe1dfw==}
-    engines: {node: '>=22'}
-    hasBin: true
-    peerDependencies:
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
+      typescript: 5.7.3
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   react-helmet-async@2.0.5:
     resolution: {integrity: sha512-rYUYHeus+i27MvFE+Jaa4WsyBKGkL6qVgbJvSBoX8mbsWoABJXdEO0bZyi0F6i+4f0NuIb8AvqPMj3iXFHkMwg==}
@@ -38539,7 +38541,7 @@ snapshots:
 
   react-fast-compare@3.2.2: {}
 
-  react-foundry@0.0.13(@types/node@24.13.3)(babel-plugin-react-compiler@19.1.0-rc.3)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3):
+  react-foundry@0.0.16(@types/node@24.13.3)(babel-plugin-react-compiler@19.1.0-rc.3)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3):
     dependencies:
       '@vitejs/plugin-react': 6.0.3(babel-plugin-react-compiler@19.1.0-rc.3)(vite@8.1.5(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.6.1)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       axe-core: 4.11.0
@@ -38551,6 +38553,8 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       use-sync-external-store: 1.6.0(react@18.3.1)
       vite: 8.1.5(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.6.1)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3)
+    optionalDependencies:
+      typescript: 5.7.3
     transitivePeerDependencies:
       - '@rolldown/plugin-babel'
       - '@types/node'
@@ -38566,7 +38570,7 @@ snapshots:
       - tsx
       - yaml
 
-  react-foundry@0.0.15(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3):
+  react-foundry@0.0.16(@types/node@25.5.0)(jiti@2.6.1)(less@4.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(terser@5.37.0)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.8.3):
     dependencies:
       '@vitejs/plugin-react': 6.0.3(vite@8.1.5(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       axe-core: 4.11.0
@@ -38578,6 +38582,8 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       use-sync-external-store: 1.6.0(react@18.3.1)
       vite: 8.1.5(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3)
+    optionalDependencies:
+      typescript: 5.7.3
     transitivePeerDependencies:
       - '@rolldown/plugin-babel'
       - '@types/node'
