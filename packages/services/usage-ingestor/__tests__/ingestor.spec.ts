@@ -104,7 +104,7 @@ test('permanent operations-write failure increments the poison-pill counter and 
   incSpy.mockRestore();
 });
 
-test('a registry-only failure does not touch the poison-pill counter (not retried)', async () => {
+test('a registry-only failure does not touch the poison-pill counter', async () => {
   const processor = buildProcessor();
   const writer: ReturnType<typeof createWriter> = {
     writeRegistry: vi.fn().mockRejectedValue(new Error('registry write failed')),
@@ -127,7 +127,7 @@ test('a registry-only failure does not touch the poison-pill counter (not retrie
   incSpy.mockRestore();
 });
 
-test('a corrupt/unparseable message increments the poison-pill counter and logs what is available, without a report summary', async () => {
+test('a corrupt/unparseable message increments the poison-pill counter and logs', async () => {
   const processor = buildProcessor();
   const writer: ReturnType<typeof createWriter> = {
     writeRegistry: vi.fn().mockResolvedValue(undefined),
