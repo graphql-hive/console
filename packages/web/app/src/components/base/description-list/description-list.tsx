@@ -1,6 +1,13 @@
+import { cn } from '@/lib/utils';
+import { CopyChip } from '../copy-chip/copy-chip';
+
 type DescriptionListItemProps = {
   term: string;
   description: React.ReactNode;
+  /** An identifier, endpoint or record value rather than prose. */
+  mono?: boolean;
+  /** A string description the reader will paste somewhere: rendered as a copy chip. */
+  copyable?: boolean;
 };
 
 type DescriptionListItemRowProps = {
@@ -21,13 +28,17 @@ const COLS_CLASS: Record<number, string> = {
   6: 'grid-cols-6',
 };
 
-function DescriptionListItem({ term, description }: DescriptionListItemProps) {
+function DescriptionListItem({ term, description, mono, copyable }: DescriptionListItemProps) {
+  const value =
+    copyable && typeof description === 'string' ? <CopyChip value={description} /> : description;
   return (
     <>
       <div className="text-neutral-10 mb-1 inline-block text-[9px] font-medium uppercase tracking-[0.75px]">
         {term}
       </div>
-      <div className="text-neutral-12 text-control">{description}</div>
+      <div className={cn('text-neutral-12 text-control', mono && !copyable && 'font-mono')}>
+        {value}
+      </div>
     </>
   );
 }
@@ -42,7 +53,12 @@ export function DescriptionList({ rows }: DescriptionListProps) {
         >
           {row.items.map((item, itemIndex) => (
             <div key={itemIndex}>
-              <DescriptionListItem term={item.term} description={item.description} />
+              <DescriptionListItem
+                term={item.term}
+                description={item.description}
+                mono={item.mono}
+                copyable={item.copyable}
+              />
             </div>
           ))}
         </div>

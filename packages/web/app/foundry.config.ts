@@ -65,7 +65,7 @@ export default defineConfig({
           ],
         },
         // Data and layout
-        { label: 'DataTable' },
+        { label: 'DataTable', children: [{ label: 'Proposed' }] },
         { label: 'DescriptionList' },
       ],
     },

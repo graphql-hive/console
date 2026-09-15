@@ -546,7 +546,7 @@ export const StatsPanels = createPreview({
     <CallSite
       source="target/history/errors-and-changes.tsx:351 and :410, side by side"
       origin="ui"
-      note="Two three-column tables in a flex row inside a change's usage panel: a pinned 150px name column and two right-aligned numbers. The operation name is a popover trigger in the site's orange link colour."
+      note="Two three-column tables in a flex row inside a change's usage panel: a pinned 150px name column and two right-aligned numbers. The operation name is a popover trigger in the site's orange link colour, and the popover lists a link per target the check spans; a single-target check shows one. This one shows three."
     >
       <div className="flex w-[52rem] space-x-4">
         <Table>
@@ -578,12 +578,14 @@ export const StatsPanels = createPreview({
                     content={
                       <div className="flex flex-col gap-y-2 text-sm">
                         View live usage on
-                        <p>
-                          <a href="#" className="text-accent_80 hover:text-accent">
-                            production
-                          </a>{' '}
-                          <span className="text-neutral-12">target</span>
-                        </p>
+                        {['production', 'staging', 'development'].map(target => (
+                          <p key={target}>
+                            <a href="#" className="text-accent_80 hover:text-accent">
+                              {target}
+                            </a>{' '}
+                            <span className="text-neutral-12">target</span>
+                          </p>
+                        ))}
                       </div>
                     }
                   />

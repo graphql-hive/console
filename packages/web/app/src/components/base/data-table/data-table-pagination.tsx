@@ -1,10 +1,17 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
 
 export type DataTablePaginationProps = {
   pageIndex: number;
   pageCount: number;
   onPageChange: (page: number) => void;
 };
+
+const barClass =
+  'border-neutral-4 bg-neutral-2 dark:bg-neutral-3 flex h-9 w-full items-center border-t text-sm';
+
+const arrowClass =
+  'text-neutral-10 hover:text-neutral-12 disabled:hover:text-neutral-10 inline-flex size-8 items-center justify-center rounded-md transition-colors disabled:opacity-40';
 
 /**
  * Returns the page numbers to render as buttons, with `null` entries representing
@@ -30,6 +37,7 @@ function getVisiblePages(pageIndex: number, pageCount: number): Array<number | n
   return pages;
 }
 
+/** Numbered pages, for data the client holds in full. */
 export function DataTablePagination({
   pageIndex,
   pageCount,
@@ -42,17 +50,13 @@ export function DataTablePagination({
   const canNext = pageIndex < pageCount - 1;
 
   return (
-    <nav
-      role="navigation"
-      aria-label="Pagination"
-      className="border-neutral-4 bg-neutral-2 dark:bg-neutral-3 flex h-[36px] w-full items-center justify-center gap-1 border-t text-sm"
-    >
+    <nav role="navigation" aria-label="Pagination" className={`${barClass} justify-center gap-1`}>
       <button
         type="button"
         aria-label="Previous page"
         disabled={!canPrev}
         onClick={() => onPageChange(pageIndex - 1)}
-        className="text-neutral-10 hover:text-neutral-12 disabled:hover:text-neutral-10 inline-flex size-8 items-center justify-center rounded-md transition-colors disabled:opacity-40"
+        className={arrowClass}
       >
         <ChevronLeft className="size-4" />
       </button>
@@ -87,10 +91,60 @@ export function DataTablePagination({
         aria-label="Next page"
         disabled={!canNext}
         onClick={() => onPageChange(pageIndex + 1)}
-        className="text-neutral-10 hover:text-neutral-12 disabled:hover:text-neutral-10 inline-flex size-8 items-center justify-center rounded-md transition-colors disabled:opacity-40"
+        className={arrowClass}
       >
         <ChevronRight className="size-4" />
       </button>
+    </nav>
+  );
+}
+
+export type DataTableCursorPaginationProps = {
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+  /** What the page holds, such as "Showing 20 of 143 deployments". */
+  summary?: ReactNode;
+  loading?: boolean;
+};
+
+/**
+ * Previous and next, for a cursor connection the API pages with `first` and `after`. There are
+ * no page numbers because the API has no offsets to give.
+ */
+export function DataTableCursorPagination({
+  hasPreviousPage,
+  hasNextPage,
+  onPrevious,
+  onNext,
+  summary,
+  loading = false,
+}: DataTableCursorPaginationProps) {
+  return (
+    <nav role="navigation" aria-label="Pagination" className={`${barClass} justify-between px-2`}>
+      <span className="text-neutral-10 px-2 text-xs">{summary}</span>
+      <span className="inline-flex items-center gap-1">
+        {loading ? <LoaderCircle className="text-neutral-10 size-4 animate-spin" /> : null}
+        <button
+          type="button"
+          aria-label="Previous page"
+          disabled={!hasPreviousPage || loading}
+          onClick={onPrevious}
+          className={arrowClass}
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+        <button
+          type="button"
+          aria-label="Next page"
+          disabled={!hasNextPage || loading}
+          onClick={onNext}
+          className={arrowClass}
+        >
+          <ChevronRight className="size-4" />
+        </button>
+      </span>
     </nav>
   );
 }

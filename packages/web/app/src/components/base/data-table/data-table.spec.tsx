@@ -1,0 +1,184 @@
+// @vitest-environment jsdom
+import type { ColumnDef } from '@tanstack/react-table';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { DataTable } from './data-table';
+import { DataTableCell, formatAbsolute, formatRelative } from './data-table-cell';
+
+type Row = { id: string; name: string; count: number; status: 'open' | 'solved' };
+
+const ROWS: Row[] = [
+  { id: 'a', name: 'alpha', count: 3, status: 'open' },
+  { id: 'b', name: 'beta', count: 1, status: 'solved' },
+  { id: 'c', name: 'gamma', count: 2, status: 'open' },
+];
+
+const COLUMNS: ColumnDef<Row, any>[] = [
+  { accessorKey: 'name', header: 'Name', cell: ({ row }) => row.original.name },
+  {
+    accessorKey: 'count',
+    header: 'Count',
+    meta: { sortable: true, align: 'right' },
+    cell: ({ row }) => row.original.count,
+  },
+];
+
+describe('DataTable', () => {
+  it('renders a header row only when a column declares a header', () => {
+    const { container, rerender } = render(
+      <DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} />,
+    );
+    expect(container.querySelector('thead')).not.toBeNull();
+
+    const headerless: ColumnDef<Row, any>[] = [
+      { accessorKey: 'name', cell: ({ row }) => row.original.name },
+    ];
+    rerender(<DataTable data={ROWS} columns={headerless} getRowId={row => row.id} />);
+    expect(container.querySelector('thead')).toBeNull();
+  });
+
+  it('sorts by a sortable column when its header is clicked', () => {
+    const { container } = render(
+      <DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} />,
+    );
+    const names = () =>
+      [...container.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
+    expect(names()).toEqual(['alpha', 'beta', 'gamma']);
+    // A numeric column sorts descending first, so the biggest count leads.
+    fireEvent.click(screen.getByText('Count'));
+    expect(names()).toEqual(['alpha', 'gamma', 'beta']);
+    fireEvent.click(screen.getByText('Count'));
+    expect(names()).toEqual(['beta', 'gamma', 'alpha']);
+  });
+
+  it('marks muted, disabled and selected rows from the data', () => {
+    const { container } = render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        selectedRowId="c"
+        rowState={row =>
+          row.status === 'solved'
+            ? { muted: true }
+            : row.id === 'a'
+              ? { disabled: true }
+              : undefined
+        }
+      />,
+    );
+    const rows = [...container.querySelectorAll('tbody tr')];
+    expect(rows[0].className).toContain('opacity-40');
+    expect(rows[1].className).toContain('text-neutral-10');
+    expect(rows[2].getAttribute('data-state')).toBe('selected');
+  });
+
+  it('hands cursor paging to the caller and disables the edge buttons', () => {
+    const onNext = vi.fn();
+    const onPrevious = vi.fn();
+    render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        pagination={{
+          kind: 'cursor',
+          hasPreviousPage: false,
+          hasNextPage: true,
+          onPrevious,
+          onNext,
+          summary: 'Showing 1 to 3 of 12',
+        }}
+      />,
+    );
+    expect(screen.getByText('Showing 1 to 3 of 12')).toBeTruthy();
+    const previous = screen.getByLabelText('Previous page') as HTMLButtonElement;
+    expect(previous.disabled).toBe(true);
+    fireEvent.click(screen.getByLabelText('Next page'));
+    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(onPrevious).not.toHaveBeenCalled();
+  });
+
+  it('renders the footer, the loading row and the empty message', () => {
+    const { container, rerender } = render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        footer={{ label: 'Total', value: 6 }}
+      />,
+    );
+    expect(container.querySelector('tfoot')?.textContent).toContain('Total');
+    expect(container.querySelector('tfoot')?.textContent).toContain('6');
+
+    rerender(<DataTable data={[]} columns={COLUMNS} getRowId={row => row.id} loading />);
+    expect(screen.getByLabelText('Loading')).toBeTruthy();
+
+    rerender(
+      <DataTable
+        data={[]}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        emptyMessage="Nothing here"
+      />,
+    );
+    expect(screen.getByText('Nothing here')).toBeTruthy();
+  });
+});
+
+describe('DataTableCell', () => {
+  it('formats numbers by kind', () => {
+    const { container } = render(
+      <>
+        <DataTableCell kind="number" value={12_408} />
+        <DataTableCell kind="number" value={38.2} format="percent" />
+        <DataTableCell kind="number" value={130} format="currency" />
+      </>,
+    );
+    const texts = [...container.querySelectorAll('span')].map(span => span.textContent);
+    expect(texts).toEqual(['12,408', '38.20%', '$130.00']);
+  });
+
+  it('formats time relatively with the absolute time to hand', () => {
+    const date = new Date('2026-09-14T12:00:00.000Z');
+    expect(formatRelative(date, date.getTime() + 3 * 60 * 60 * 1000)).toBe('3h ago');
+    expect(formatRelative(date, date.getTime() + 40 * 24 * 60 * 60 * 1000)).toBe('1mo ago');
+    expect(formatAbsolute(date)).toMatch(/^Sep 14, 2026 \d{2}:\d{2}$/);
+
+    const { container } = render(
+      <DataTableCell kind="time" date={date} mode="absolute" prefix="created" />,
+    );
+    expect(container.textContent).toMatch(/^createdSep 14, 2026/);
+    expect(container.querySelector('time')?.getAttribute('dateTime')).toBe(date.toISOString());
+  });
+
+  it('links out to one target directly and to several through a menu', () => {
+    const { container, rerender } = render(
+      <DataTableCell
+        kind="link-out"
+        label="GetCart"
+        targets={[{ label: 'production', href: '/production' }]}
+        tooltip="Open in Insights"
+      />,
+    );
+    expect(container.querySelector('a')?.getAttribute('href')).toBe('/production');
+
+    rerender(
+      <DataTableCell
+        kind="link-out"
+        label="GetCart"
+        targets={[
+          { label: 'production', href: '/production' },
+          { label: 'staging', href: '/staging' },
+        ]}
+        tooltip="Open in Insights"
+      />,
+    );
+    expect(container.querySelector('a')).toBeNull();
+    expect(screen.getByLabelText('Open in Insights').tagName).toBe('BUTTON');
+  });
+
+  it('renders the placeholder as an em dash', () => {
+    const { container } = render(<DataTableCell kind="placeholder" />);
+    expect(container.textContent).toBe('—');
+  });
+});
