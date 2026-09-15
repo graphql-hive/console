@@ -1,5 +1,7 @@
 import { createPreview, type NavPath } from 'react-foundry';
 import { useForm } from 'react-hook-form';
+import { Input } from '@/components/base/input/input';
+import { Textarea } from '@/components/base/textarea/textarea';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -10,8 +12,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Form';
@@ -140,7 +140,12 @@ function StandardFieldForm() {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="m@example.com" type="email" {...form.register('email')} />
+                  <Input
+                    placeholder="m@example.com"
+                    type="email"
+                    onSurface="raised"
+                    {...form.register('email')}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -153,7 +158,7 @@ function StandardFieldForm() {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" {...form.register('password')} />
+                  <Input type="password" onSurface="raised" {...form.register('password')} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -193,7 +198,11 @@ function WithDescriptionForm() {
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Enter a short description of your issue" {...field} />
+                  <Textarea
+                    placeholder="Enter a short description of your issue"
+                    onSurface="raised"
+                    {...field}
+                  />
                 </FormControl>
                 <FormDescription>Help us understand it better.</FormDescription>
                 <FormMessage />
@@ -227,7 +236,7 @@ function ErrorStateForm() {
     <CallSite
       source="Any field with a validation error"
       origin="ui"
-      note="FormControl is a Radix Slot: it clones its child and injects id, aria-describedby, aria-invalid and border-red-500. The red border on the input is not the input's doing. That cloning is exactly what a non-DOM child cannot receive."
+      note="FormControl clones its child and injects id, aria-describedby and aria-invalid; the red border is the input's own aria-invalid style. That cloning is exactly what a non-DOM child cannot receive."
     >
       <Form {...form}>
         <form className="w-[24rem]">
@@ -238,7 +247,7 @@ function ErrorStateForm() {
               <FormItem>
                 <FormLabel>Slug</FormLabel>
                 <FormControl>
-                  <Input placeholder="slug" {...field} />
+                  <Input placeholder="slug" onSurface="raised" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -277,12 +286,12 @@ function NoLabelForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="grid max-w-xl grid-cols-1 md:grid-cols-2">
-                      <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 overflow-hidden text-nowrap rounded-md border px-3 py-2 text-sm md:rounded-r-none md:border-r-0">
-                        app.graphql-hive.com/the-guild/
-                      </div>
-                      <Input placeholder="slug" className="rounded-l-none" {...field} />
-                    </div>
+                    <Input
+                      placeholder="slug"
+                      prefixText="app.graphql-hive.com/the-guild/"
+                      width="sm"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -344,7 +353,7 @@ function NamespaceForm() {
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Short title" {...field} />
+                  <Input placeholder="Short title" onSurface="raised" {...field} />
                 </FormControl>
                 <FormDescription>Name of the access token.</FormDescription>
                 <FormMessage />

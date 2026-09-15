@@ -825,7 +825,6 @@ export function AlertForm(props: AlertFormProps) {
                             min={0}
                             max={valueMax}
                             placeholder={valuePlaceholder}
-                            style={{ minWidth: '7rem' }}
                             {...field}
                           />
                         </FormControl>

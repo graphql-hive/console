@@ -1,26 +1,20 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDate, formatISO, subDays } from 'date-fns';
-import { BellRing, ChevronDown, Lock, MoreVertical, Users } from 'lucide-react';
+import { BellRing, Lock, MoreVertical, Users } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Button as BaseButton } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import { Menu } from '@/components/base/floating/menu/menu';
+import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BackLink } from '@/components/navigation/back-link';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { Button } from '@/components/ui/button';
-import {
-  availablePresets,
-  buildDateRangeString,
-  DateRangePicker,
-  type Preset,
-} from '@/components/ui/date-range-picker';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
@@ -233,7 +227,7 @@ function NameCell({
           if (e.key === 'Enter') void handleRename();
           else if (e.key === 'Escape') onStopRename();
         }}
-        className="h-8"
+        size="compact"
       />
       <Button
         variant="primary"
@@ -362,25 +356,6 @@ function SavedFilterRowFilters({
   const [dateRange, setDateRange] = useState(savedDateRange);
 
   const startDate = useMemo(() => subDays(new Date(), dataRetentionInDays), [dataRetentionInDays]);
-
-  const selectedPreset = useMemo<Preset>(() => {
-    const match = availablePresets.find(
-      p => p.range.from === dateRange.from && p.range.to === dateRange.to,
-    );
-    if (match) return match;
-
-    const from = parse(dateRange.from);
-    const to = parse(dateRange.to);
-    if (from && to) {
-      return {
-        name: `${dateRange.from}_${dateRange.to}`,
-        label: buildDateRangeString({ from, to }),
-        range: dateRange,
-      };
-    }
-
-    return { name: 'last7d', label: 'Last 7 days', range: DEFAULT_DATE_RANGE };
-  }, [dateRange]);
 
   const resolvedPeriod = useMemo(() => {
     const from = parse(dateRange.from);
@@ -620,13 +595,7 @@ function SavedFilterRowFilters({
     <div className="px-10 py-4">
       <div className="flex flex-wrap items-center gap-2">
         <DateRangePicker
-          trigger={
-            <BaseButton
-              label={selectedPreset.label}
-              variant="default"
-              rightIcon={{ icon: ChevronDown, withSeparator: true }}
-            />
-          }
+          size="compact"
           selectedRange={dateRange}
           onUpdate={({ preset }) => setDateRange(preset.range)}
           startDate={startDate}

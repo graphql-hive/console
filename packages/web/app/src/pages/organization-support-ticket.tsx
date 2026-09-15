@@ -5,6 +5,7 @@ import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { Textarea } from '@/components/base/textarea/textarea';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { priorityDescription, statusDescription } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,6 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useNotifications } from '@/lib/hooks';

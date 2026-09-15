@@ -4,9 +4,9 @@ import { useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Card } from '@/components/base/card/card';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { Input } from '@/components/base/input/input';
 import { Scale } from '@/components/common';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Link } from '@/components/ui/link';
 import { Sortable, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { env } from '@/env/frontend';
@@ -337,7 +337,7 @@ function OperationsTable({
           <div className="ml-6">Go to:</div>
           <Input
             id="page"
-            className="w-16"
+            width="xs"
             type="number"
             defaultValue={tableInstance.getState().pagination.pageIndex + 1}
             onChange={e => {

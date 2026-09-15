@@ -7,10 +7,7 @@ import { InputCopy } from './input-copy';
 export function ResourceDetails(props: { id: string; label: string }): ReactElement {
   return (
     <div className="flex items-center">
-      <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 whitespace-nowrap rounded-md rounded-r-none border-y border-l px-3 py-2 text-sm">
-        {props.label}
-      </div>
-      <InputCopy value={props.id} className="rounded-l-none" />
+      <InputCopy value={props.id} prefixText={props.label} />
       <Popover
         trigger={
           <button type="button" aria-label="What this ID is for" className="text-neutral-10 ml-2">

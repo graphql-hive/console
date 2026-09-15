@@ -7,6 +7,7 @@ import {
 } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import z from 'zod';
 import { AuthCard, AuthCardStack } from '@/components/auth';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -16,7 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { useToast } from '@/components/ui/use-toast';
 import { exhaustiveGuard } from '@/lib/utils';
@@ -160,7 +160,12 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="m@example.com" type="email" {...field} />
+                      <Input
+                        placeholder="m@example.com"
+                        type="email"
+                        onSurface="raised"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -307,7 +312,7 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
                   <FormItem>
                     <FormLabel>New password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" onSurface="raised" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

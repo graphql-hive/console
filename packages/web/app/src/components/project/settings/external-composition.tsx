@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { CombinedError, useQuery } from 'urql';
 import { z } from 'zod';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import {
@@ -14,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 import { useNotifications } from '@/lib/hooks';
@@ -339,7 +339,7 @@ export const ExternalCompositionSettings = (props: {
                     <div className="flex w-full items-center space-x-2">
                       <FormControl>
                         <Input
-                          className="max-w-md shrink-0"
+                          width="md"
                           placeholder="Endpoint"
                           type="text"
                           autoComplete="off"
@@ -368,7 +368,7 @@ export const ExternalCompositionSettings = (props: {
                     </FormDescription>
                     <FormControl>
                       <Input
-                        className="w-full max-w-md"
+                        width="md"
                         placeholder="Secret"
                         type="password"
                         autoComplete="off"

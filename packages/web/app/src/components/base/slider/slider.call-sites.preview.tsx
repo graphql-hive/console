@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Input } from '@/components/base/input/input';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { formatMillionOrBillion } from '@/components/organization/billing/helpers';
-import { Input } from '@/components/v2/input';
-import { FilterInput } from '@/pages/traces/target-traces-filter';
 import { Slider } from './slider';
 
 export const nav: NavPath = 'Base/FormControls/Slider/Component Examples';
@@ -78,11 +77,7 @@ function SubscriptionRateLimit() {
       </div>
 
       <div className="ml-auto w-48">
-        <Input
-          value={inputValue}
-          className="ml-auto text-end"
-          onChange={event => setInputValue(event.target.value)}
-        />
+        <Input value={inputValue} onChange={event => setInputValue(event.target.value)} />
       </div>
     </div>
   );
@@ -113,31 +108,25 @@ function DurationFilter() {
       <div className="space-y-2">
         <div className="space-y-1">
           <label className="font-mono text-xs text-zinc-400">MIN</label>
-          <div className="relative">
-            <FilterInput
-              type="number"
-              value={values[0]}
-              onChange={e => setValues([Number.parseInt(e.target.value) || minValue, values[1]])}
-              className="text-neutral-12 h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono"
-            />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400">
-              ms
-            </span>
-          </div>
+          <Input
+            type="number"
+            value={values[0]}
+            onChange={e => setValues([Number.parseInt(e.target.value) || minValue, values[1]])}
+            size="compact"
+            mono
+            trailing={<span className="text-neutral-10 font-mono text-xs">ms</span>}
+          />
         </div>
         <div className="space-y-1">
           <label className="font-mono text-xs text-zinc-400">MAX</label>
-          <div className="relative">
-            <FilterInput
-              type="number"
-              value={values[1]}
-              onChange={e => setValues([values[0], Number.parseInt(e.target.value) || minValue])}
-              className="border-neutral-5 text-neutral-12 h-7 bg-transparent px-2 pr-8 font-mono"
-            />
-            <span className="text-neutral-10 absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs">
-              ms
-            </span>
-          </div>
+          <Input
+            type="number"
+            value={values[1]}
+            onChange={e => setValues([values[0], Number.parseInt(e.target.value) || minValue])}
+            size="compact"
+            mono
+            trailing={<span className="text-neutral-10 font-mono text-xs">ms</span>}
+          />
         </div>
       </div>
       <Slider
@@ -158,7 +147,7 @@ export const DurationFilterPreview = createPreview({
     <CallSite
       source="pages/traces/target-traces-filter.tsx:423"
       origin="base"
-      note="The Duration group of the traces filter column. The inputs and thumbs edit the same pair; note the MIN input still carries a zinc border where MAX has neutral-5, as shipped."
+      note="The Duration group of the traces filter column. The inputs and thumbs edit the same pair. The fields are compact mono base Inputs with the unit in the trailing slot; before round 5 they were a hand-rolled input with a zinc border on MIN and neutral-5 on MAX."
     >
       <div className="w-56">
         <DurationFilter />

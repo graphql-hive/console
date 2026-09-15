@@ -3,13 +3,14 @@ import { useFormik } from 'formik';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { z } from 'zod';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
 import { AlertTriangleIcon, TrashIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Input, Modal, Table, TBody, Td, Tr } from '@/components/v2';
+import { Modal, Table, TBody, Td, Tr } from '@/components/v2';
 import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -87,7 +88,7 @@ function CreateCDNAccessTokenModal(props: {
           onChange={form.handleChange}
           onBlur={form.handleBlur}
           disabled={form.isSubmitting}
-          isInvalid={form.touched.alias && !!form.errors.alias}
+          invalid={form.touched.alias && !!form.errors.alias}
           onKeyPress={ev => {
             if (ev.key === 'Enter') {
               ev.preventDefault();

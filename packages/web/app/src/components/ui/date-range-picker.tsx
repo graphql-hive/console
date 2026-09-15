@@ -1,20 +1,15 @@
 import { useMemo, useRef, useState } from 'react';
 import { endOfDay, endOfToday, formatDate, subMonths } from 'date-fns';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, ChevronDown, SearchIcon, X } from 'lucide-react';
 import { DateRange, Matcher } from 'react-day-picker';
+import { Button } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { Input } from '@/components/base/input/input';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { type ControlSize } from '@/components/base/shared-styles';
 import { DurationUnit, formatDateToString, parse, units } from '@/lib/date-math';
 import { useResetState } from '@/lib/hooks/use-reset-state';
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  Cross1Icon,
-  MagnifyingGlassIcon,
-} from '@radix-ui/react-icons';
-import { Button } from './button';
 import { Calendar } from './calendar';
-import { Input } from './input';
 import { Label } from './label';
 
 export interface DateRangePickerProps {
@@ -33,7 +28,9 @@ export interface DateRangePickerProps {
   startDate?: Date;
   /** valid units allowed */
   validUnits?: DurationUnit[];
-  /** Custom trigger element. Must forward ref. Replaces the default Button trigger. */
+  /** Height of the default trigger: `compact` in a filter row, `default` beside form controls. */
+  size?: ControlSize;
+  /** Custom trigger element. Must forward ref. Replaces the default segmented Button trigger. */
   trigger?: React.ReactElement;
 }
 
@@ -323,6 +320,9 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
         return (
           <Button
             variant="ghost"
+            size="compact"
+            width="full"
+            label={preset.label}
             onClick={() => {
               setActivePreset(preset);
               setFromValue(preset.range.from);
@@ -334,10 +334,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
               props.onClose?.();
             }}
             disabled={isDisabled}
-            className="w-full justify-start text-left"
-          >
-            {preset.label}
-          </Button>
+          />
         );
       },
     [props.startDate, props.onClose],
@@ -377,24 +374,25 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                   From
                 </Label>
                 <div className="flex w-full max-w-sm items-center space-x-2">
-                  <div className="relative flex w-full">
-                    <Input
-                      type="text"
-                      id="from"
-                      value={fromValue}
-                      onChange={ev => {
-                        setFromValue(ev.target.value);
-                      }}
-                      className="font-mono text-xs"
-                    />
-                    <Button
-                      variant="ghost"
-                      className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
-                      onClick={() => setShowCalendar(true)}
-                    >
-                      <CalendarDays className="size-3.5" />
-                    </Button>
-                  </div>
+                  <Input
+                    type="text"
+                    id="from"
+                    value={fromValue}
+                    onChange={ev => {
+                      setFromValue(ev.target.value);
+                    }}
+                    mono
+                    trailing={
+                      <Button
+                        layout="iconOnly"
+                        icon={CalendarDays}
+                        aria-label="Pick a date"
+                        variant="ghost"
+                        size="compact"
+                        onClick={() => setShowCalendar(true)}
+                      />
+                    }
+                  />
                 </div>
                 <div className="text-red-500">
                   {hasInvalidUnitRegex?.test(fromValue) ? (
@@ -409,24 +407,25 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                   To
                 </Label>
                 <div className="flex w-full max-w-sm items-center space-x-2">
-                  <div className="relative flex w-full">
-                    <Input
-                      type="text"
-                      id="to"
-                      value={toValue}
-                      onChange={ev => {
-                        setToValue(ev.target.value);
-                      }}
-                      className="font-mono text-xs"
-                    />
-                    <Button
-                      variant="ghost"
-                      className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
-                      onClick={() => setShowCalendar(true)}
-                    >
-                      <CalendarDays className="size-3.5" />
-                    </Button>
-                  </div>
+                  <Input
+                    type="text"
+                    id="to"
+                    value={toValue}
+                    onChange={ev => {
+                      setToValue(ev.target.value);
+                    }}
+                    mono
+                    trailing={
+                      <Button
+                        layout="iconOnly"
+                        icon={CalendarDays}
+                        aria-label="Pick a date"
+                        variant="ghost"
+                        size="compact"
+                        onClick={() => setShowCalendar(true)}
+                      />
+                    }
+                  />
                 </div>
                 <div className="text-red-500">
                   {hasInvalidUnitRegex?.test(toValue) ? (
@@ -441,7 +440,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
 
               <Button
                 variant="primary"
-                className="w-full text-center"
+                width="full"
                 onClick={() => {
                   const fromWithoutWhitespace = fromValue.trim();
                   const toWithoutWhitespace = toValue.trim();
@@ -489,14 +488,16 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
         width="auto"
         content={
           <>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="absolute right-2 top-1 rounded-sm bg-transparent opacity-70 transition-opacity hover:bg-transparent hover:opacity-100 focus:outline-none"
-              onClick={() => setShowCalendar(false)}
-            >
-              <Cross1Icon className="size-2" />
-            </Button>
+            <div className="absolute right-2 top-1">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Close calendar"
+                onClick={() => setShowCalendar(false)}
+              >
+                <X className="size-3" />
+              </Button>
+            </div>
             <Calendar
               id="selectedRange"
               mode="range"
@@ -516,15 +517,12 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
         }
       />
       <div className="ml-3 flex flex-col gap-1 border-l py-2 pl-3 pr-2">
-        <div className="relative flex items-center">
-          <MagnifyingGlassIcon className="absolute left-2" />
-          <Input
-            placeholder="Filter quick ranges"
-            className="w-full pl-7"
-            value={quickRangeFilter}
-            onChange={ev => setQuickRangeFilter(ev.target.value)}
-          />
-        </div>
+        <Input
+          placeholder="Filter quick ranges"
+          leadingIcon={SearchIcon}
+          value={quickRangeFilter}
+          onChange={ev => setQuickRangeFilter(ev.target.value)}
+        />
         <ScrollArea fill>
           <div className="flex w-full flex-col items-start gap-1 pb-2 pt-1">
             {dynamicPresets.length > 0
@@ -574,12 +572,11 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
       }}
       trigger={
         props.trigger ?? (
-          <Button variant="outline">
-            {label}
-            <div className="-mr-2 scale-125 pl-1 opacity-60">
-              {isOpen ? <ChevronUpIcon width={24} /> : <ChevronDownIcon width={24} />}
-            </div>
-          </Button>
+          <Button
+            label={label}
+            size={props.size}
+            rightIcon={{ icon: ChevronDown, withSeparator: true }}
+          />
         )
       }
       align={props.align}

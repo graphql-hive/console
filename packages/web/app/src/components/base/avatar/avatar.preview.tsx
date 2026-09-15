@@ -67,6 +67,12 @@ export const Playground = createPreview({
     size: { type: 'radio', options: ['xs', 'md'], default: 'md' },
     variant: { type: 'radio', options: ['default', 'outlined'], default: 'default' },
     alt: { type: 'text', default: 'Ada Lovelace' },
+    src: {
+      type: 'boolean',
+      label: 'Photo',
+      default: false,
+      derive: on => (on ? PHOTO : undefined),
+    },
   }),
-  render: v => <Avatar size={v.size} variant={v.variant} alt={v.alt} />,
+  render: v => <Avatar size={v.size} variant={v.variant} alt={v.alt} src={v.src} />,
 });
