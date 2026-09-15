@@ -68,40 +68,44 @@ export function PersonalAccessTokensSubPage(
           href: '/schema-registry/management/access-tokens',
           text: 'Learn more about Access Tokens',
         }}
-      />
-      <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
-        <Sheet
-          open={createAccessTokenState !== CreateAccessTokenState.closed}
-          onOpenChange={isOpen => {
-            if (isOpen === false) {
-              setCreateAccessTokenState(CreateAccessTokenState.closing);
-              return;
-            }
-            setCreateAccessTokenState(CreateAccessTokenState.open);
-          }}
-        >
-          <SheetTrigger asChild>
-            <Button data-cy="organization-settings-access-tokens-create-new">
-              Create new access token
-            </Button>
-          </SheetTrigger>
-          {createAccessTokenState !== CreateAccessTokenState.closed &&
-            query.data?.organization?.me && (
-              <CreatePersonalAccessTokenSheetContent
-                organization={query.data.organization}
-                onSuccess={() => {
-                  setCreateAccessTokenState(CreateAccessTokenState.closed);
-                  refetchQuery();
-                }}
+        sideContent={
+          <>
+            <Sheet
+              open={createAccessTokenState !== CreateAccessTokenState.closed}
+              onOpenChange={isOpen => {
+                if (isOpen === false) {
+                  setCreateAccessTokenState(CreateAccessTokenState.closing);
+                  return;
+                }
+                setCreateAccessTokenState(CreateAccessTokenState.open);
+              }}
+            >
+              <SheetTrigger asChild>
+                <Button data-cy="organization-settings-access-tokens-create-new">
+                  Create new access token
+                </Button>
+              </SheetTrigger>
+              {createAccessTokenState !== CreateAccessTokenState.closed &&
+                query.data?.organization?.me && (
+                  <CreatePersonalAccessTokenSheetContent
+                    organization={query.data.organization}
+                    onSuccess={() => {
+                      setCreateAccessTokenState(CreateAccessTokenState.closed);
+                      refetchQuery();
+                    }}
+                  />
+                )}
+            </Sheet>
+            {createAccessTokenState === CreateAccessTokenState.closing && (
+              <DiscardAccessTokenDraft
+                onContinue={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
+                onDiscard={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
               />
             )}
-        </Sheet>
-        {createAccessTokenState === CreateAccessTokenState.closing && (
-          <DiscardAccessTokenDraft
-            onContinue={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
-            onDiscard={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
-          />
-        )}
+          </>
+        }
+      />
+      <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
         {query.data?.organization?.me?.accessTokens && (
           <PersonalAccessTokensTable
             accessTokens={query.data.organization.me.accessTokens}

@@ -454,13 +454,18 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
     case 'icon-button':
       return (
         <span className="flex justify-end">
-          <Button
-            layout="iconOnly"
-            icon={props.icon}
-            aria-label={props.label}
-            variant={props.destructive ? 'destructive' : 'ghost'}
-            size="compact"
-            onClick={props.onClick}
+          <Tooltip
+            trigger={
+              <Button
+                layout="iconOnly"
+                icon={props.icon}
+                aria-label={props.label}
+                variant={props.destructive ? 'destructive' : 'ghost'}
+                size="compact"
+                onClick={props.onClick}
+              />
+            }
+            content={props.label}
           />
         </span>
       );

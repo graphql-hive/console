@@ -66,41 +66,46 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
           href: '/schema-registry/management/access-tokens',
           text: 'Learn more about Access Tokens',
         }}
+        sideContent={
+          <>
+            <Sheet
+              open={createAccessTokenState !== CreateAccessTokenState.closed}
+              onOpenChange={isOpen => {
+                if (isOpen === false) {
+                  setCreateAccessTokenState(CreateAccessTokenState.closing);
+                  return;
+                }
+                setCreateAccessTokenState(CreateAccessTokenState.open);
+              }}
+            >
+              <SheetTrigger asChild>
+                <Button data-cy="organization-settings-access-tokens-create-new">
+                  Create new access token
+                </Button>
+              </SheetTrigger>
+              {createAccessTokenState !== CreateAccessTokenState.closed &&
+                query.data?.organization && (
+                  <>
+                    <CreateAccessTokenSheetContent
+                      organization={query.data.organization}
+                      onSuccess={() => {
+                        setCreateAccessTokenState(CreateAccessTokenState.closed);
+                        refetchQuery();
+                      }}
+                    />
+                  </>
+                )}
+            </Sheet>
+            {createAccessTokenState === CreateAccessTokenState.closing && (
+              <DiscardAccessTokenDraft
+                onContinue={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
+                onDiscard={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
+              />
+            )}
+          </>
+        }
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-access-tokens">
-        <Sheet
-          open={createAccessTokenState !== CreateAccessTokenState.closed}
-          onOpenChange={isOpen => {
-            if (isOpen === false) {
-              setCreateAccessTokenState(CreateAccessTokenState.closing);
-              return;
-            }
-            setCreateAccessTokenState(CreateAccessTokenState.open);
-          }}
-        >
-          <SheetTrigger asChild>
-            <Button data-cy="organization-settings-access-tokens-create-new">
-              Create new access token
-            </Button>
-          </SheetTrigger>
-          {createAccessTokenState !== CreateAccessTokenState.closed && query.data?.organization && (
-            <>
-              <CreateAccessTokenSheetContent
-                organization={query.data.organization}
-                onSuccess={() => {
-                  setCreateAccessTokenState(CreateAccessTokenState.closed);
-                  refetchQuery();
-                }}
-              />
-            </>
-          )}
-        </Sheet>
-        {createAccessTokenState === CreateAccessTokenState.closing && (
-          <DiscardAccessTokenDraft
-            onContinue={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
-            onDiscard={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
-          />
-        )}
         {query.fetching && !query.data?.organization && (
           <div className="space-y-3">
             <div className="flex w-full items-center space-x-4">

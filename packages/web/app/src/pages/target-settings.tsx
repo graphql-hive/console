@@ -202,11 +202,13 @@ function RegistryAccessTokens(props: {
           href: '/schema-registry/management/targets#registry-access-tokens',
           text: 'Learn more about Registry Access Tokens',
         }}
+        sideContent={
+          <Button data-cy="new-button" onClick={toggleModalOpen}>
+            Create new registry token
+          </Button>
+        }
       />
-      <div className="my-3.5 flex justify-between" data-cy="target-settings-registry-token">
-        <Button data-cy="new-button" onClick={toggleModalOpen}>
-          Create new registry token
-        </Button>
+      <div className="my-3.5 flex justify-end" data-cy="target-settings-registry-token">
         {checked.length === 0 ? null : (
           <Button
             data-cy="delete-button"

@@ -1,13 +1,4 @@
-import {
-  Fragment,
-  memo,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { memo, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import {
@@ -25,6 +16,7 @@ import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
 import { Button as BaseButton } from '@/components/base/button/button';
+import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Button } from '@/components/ui/button';
 import {
@@ -387,23 +379,35 @@ const TracesList = memo(function TracesList(
                     e.stopPropagation();
                   }}
                 >
-                  <GridTable
+                  <DescriptionList
                     rows={[
                       {
-                        key: 'Local',
-                        value: formatDate(timestamp, 'MMM dd HH:mm:ss'),
+                        items: [
+                          {
+                            term: 'Local',
+                            description: formatDate(timestamp, 'MMM dd HH:mm:ss'),
+                            mono: true,
+                          },
+                        ],
                       },
                       {
-                        key: 'UTC',
-                        value: formatInTimeZone(timestamp, 'UTC', 'MMM dd HH:mm:ss'),
+                        items: [
+                          {
+                            term: 'UTC',
+                            description: formatInTimeZone(timestamp, 'UTC', 'MMM dd HH:mm:ss'),
+                            mono: true,
+                          },
+                        ],
                       },
+                      { items: [{ term: 'Unix', description: timestamp, mono: true }] },
                       {
-                        key: 'Unix',
-                        value: timestamp,
-                      },
-                      {
-                        key: 'ISO',
-                        value: formatISO(toZonedTime(timestamp, 'UTC')),
+                        items: [
+                          {
+                            term: 'ISO',
+                            description: formatISO(toZonedTime(timestamp, 'UTC')),
+                            mono: true,
+                          },
+                        ],
                       },
                     ]}
                   />
@@ -422,6 +426,7 @@ const TracesList = memo(function TracesList(
           <Tooltip
             side="bottom"
             disableHoverablePopup
+            maxWidth="md"
             trigger={
               <div className="flex items-center gap-2 px-4 text-xs">
                 <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
@@ -436,19 +441,22 @@ const TracesList = memo(function TracesList(
             }
             content={
               <div className="min-w-[150px]">
-                <GridTable
+                <DescriptionList
                   rows={[
                     {
-                      key: 'Name',
-                      value: row.getValue('operationName'),
+                      items: [
+                        { term: 'Name', description: row.getValue('operationName'), mono: true },
+                      ],
                     },
                     {
-                      key: 'Kind',
-                      value: row.original.operationType,
+                      items: [
+                        { term: 'Kind', description: row.original.operationType, mono: true },
+                      ],
                     },
                     {
-                      key: 'Hash',
-                      value: row.original.operationHash,
+                      items: [
+                        { term: 'Hash', description: row.original.operationHash, mono: true },
+                      ],
                     },
                   ]}
                 />
@@ -517,13 +525,18 @@ const TracesList = memo(function TracesList(
               }
               content={
                 <div className="min-w-[150px]">
-                  <GridTable
+                  <DescriptionList
                     rows={[
                       {
-                        key: 'Subgraphs',
-                        value: (row.getValue('subgraphs') as Array<string>).length
-                          ? (row.getValue('subgraphs') as Array<string>).join(', ')
-                          : '<none>',
+                        items: [
+                          {
+                            term: 'Subgraphs',
+                            description: (row.getValue('subgraphs') as Array<string>).length
+                              ? (row.getValue('subgraphs') as Array<string>).join(', ')
+                              : '<none>',
+                            mono: true,
+                          },
+                        ],
                       },
                     ]}
                   />
@@ -1366,24 +1379,6 @@ export function TargetTracesPageContent(
           />
         )}
       </Sheet>
-    </div>
-  );
-}
-
-function GridTable(props: {
-  rows: Array<{
-    key: string;
-    value: ReactNode;
-  }>;
-}) {
-  return (
-    <div className="grid grid-cols-[auto,1fr] gap-x-6 gap-y-2">
-      {props.rows.map(row => (
-        <Fragment key={row.key}>
-          <div className="text-neutral-10 font-sans">{row.key}</div>
-          <div className="text-right font-mono">{row.value}</div>
-        </Fragment>
-      ))}
     </div>
   );
 }
