@@ -14,12 +14,18 @@ export async function purgeExpiredSchemaRevisions(args: {
       RETURNING "digest"
     `);
     const digests = [
-      ...new Set(z.array(z.object({ digest: z.string() })).parse(deletedSchemaRevisions).map(row => row.digest)),
+      ...new Set(
+        z
+          .array(z.object({ digest: z.string() }))
+          .parse(deletedSchemaRevisions)
+          .map(row => row.digest),
+      ),
     ];
 
     const deletedSdlArtifactCount = digests.length
       ? await pool
-          .oneFirst(psql`
+          .oneFirst(
+            psql`
             WITH "deleted" AS (
               DELETE FROM "sdl_artifacts"
               WHERE "digest" = ANY(${psql.array(digests, 'text')})
@@ -30,8 +36,9 @@ export async function purgeExpiredSchemaRevisions(args: {
                 )
               RETURNING 1
             )
-            SELECT COUNT(*)::int FROM "deleted"
-          `)
+            SELECT COUNT(*) FROM "deleted"
+          `,
+          )
           .then(z.number().parse)
       : 0;
 
