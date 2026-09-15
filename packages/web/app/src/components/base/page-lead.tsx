@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react';
+import { DocsLink, type DocsLinkProps } from '@/components/ui/docs-note';
 
 export function PageLead({
   description,
+  docsLink,
   title,
   titleAccessory,
 }: {
   description: string;
+  docsLink?: DocsLinkProps;
   title: string;
   /**
    * Optional element rendered to the right of the title (usage chip,
@@ -21,6 +24,11 @@ export function PageLead({
         {titleAccessory}
       </div>
       <p className="text-neutral-10 text-control m-0">{description}</p>
+      {docsLink && (
+        <div className="text-control">
+          <DocsLink {...docsLink} />
+        </div>
+      )}
     </div>
   );
 }
