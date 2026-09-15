@@ -429,7 +429,7 @@ export default gql`
     message: String!
   }
 
-  type SchemaPushResult @oneOf {
+  type SchemaPushResult {
     ok: SchemaPushOk
     error: SchemaPushError
   }
