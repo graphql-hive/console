@@ -58,7 +58,7 @@ const inputVariants = cva(fieldClass, {
     onSurface: fieldSurface,
     width: fieldWidth,
     mono: {
-      true: 'font-mono',
+      true: 'font-mono text-xs',
       false: '',
     },
   },
