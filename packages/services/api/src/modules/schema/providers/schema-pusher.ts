@@ -2,10 +2,17 @@ import { createHash } from 'node:crypto';
 import { parse } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import { trace, traceFn } from '@hive/service-common';
 import type { SchemaPushInput } from '../../../__generated__/types';
 import { ProjectType } from '../../../shared/entities';
+import { HiveError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
+import {
+  registryOperationOutcomeCount,
+  registryOperationUnexpectedErrorCount,
+  unexpectedErrorMetricLabels,
+} from '../../shared/providers/registry-operation-metrics';
 import { Storage } from '../../shared/providers/storage';
 import { isValidServiceName } from './schema-publisher';
 import { SchemaRevisionStore } from './schema-revision-store';
@@ -29,11 +36,46 @@ export class SchemaPusher {
     private revisions: SchemaRevisionStore,
   ) {}
 
+  @traceFn('SchemaPusher.push', {
+    initAttributes: input => ({
+      'hive.organization.slug': input.target.bySelector?.organizationSlug,
+      'hive.project.slug': input.target.bySelector?.projectSlug,
+      'hive.target.slug': input.target.bySelector?.targetSlug,
+      'hive.target.id': input.target.byId ?? undefined,
+    }),
+    resultAttributes: result => ({
+      'hive.push.result': result.ok ? 'success' : 'error',
+    }),
+  })
   async push(input: SchemaPushInput) {
+    return this.internalPush(input).then(
+      result => {
+        registryOperationOutcomeCount.inc({ operation: 'push', conclusion: 'success' });
+        return result;
+      },
+      error => {
+        if (error instanceof HiveError) {
+          registryOperationOutcomeCount.inc({ operation: 'push', conclusion: 'success' });
+        } else {
+          registryOperationOutcomeCount.inc({ operation: 'push', conclusion: 'failure' });
+          registryOperationUnexpectedErrorCount.inc(unexpectedErrorMetricLabels('push', error));
+        }
+        throw error;
+      },
+    );
+  }
+
+  private async internalPush(input: SchemaPushInput) {
     const selector = await this.idTranslator.resolveTargetReference({ reference: input.target });
     if (!selector) {
       return this.session.raise('schema:push');
     }
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.project.id': selector.projectId,
+      'hive.target.id': selector.targetId,
+    });
 
     const service = input.service?.toLowerCase() ?? null;
     await this.session.assertPerformAction({
@@ -67,6 +109,7 @@ export class SchemaPusher {
             message:
               'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
           },
+          ok: null,
         };
       }
     }
