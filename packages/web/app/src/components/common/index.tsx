@@ -18,7 +18,6 @@ export function Label({ className, children, ...props }: ComponentProps<'span'>)
 export const Page = ({
   title,
   subtitle = '',
-  scrollable = false,
   actions,
   children,
   noPadding,
@@ -28,7 +27,6 @@ export const Page = ({
   title: string;
   subtitle?: string;
   actions?: ReactElement;
-  scrollable?: boolean;
   noPadding?: boolean;
   className?: string;
 }): ReactElement => {
@@ -41,13 +39,7 @@ export const Page = ({
         </div>
         <div className="flex flex-row items-center space-x-2">{actions}</div>
       </div>
-      {noPadding ? (
-        children
-      ) : (
-        <div className={cn('px-4 pb-4', scrollable ? 'grow overflow-y-auto' : 'h-full')}>
-          {children}
-        </div>
-      )}
+      {noPadding ? children : <div className="h-full px-4 pb-4">{children}</div>}
     </div>
   );
 };

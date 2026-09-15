@@ -1,13 +1,12 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { Select } from '@/components/base/floating/select/select';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -310,8 +309,8 @@ export function ProposalEditor(props: {
                       {service.unpublished ? (
                         <>
                           <DotFilledIcon className="-ml-2 size-4 text-green-600" />
-                          <Input
-                            className="h-auto min-w-[150px] rounded-none border-none bg-transparent p-0 leading-none"
+                          <input
+                            className="min-w-[150px] border-none bg-transparent p-0 text-sm leading-none outline-none"
                             value={schemaTitle(service)}
                             onChange={e => {
                               service.service = e.target.value;
@@ -322,16 +321,20 @@ export function ProposalEditor(props: {
                             s =>
                               s.__typename === 'CompositeSchema' && s.service === service.service,
                           ) && (
-                            <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-                              <Tooltip>
-                                <TooltipTrigger>
+                            <Popover
+                              trigger={
+                                <button type="button" aria-label="Name conflict">
                                   <AlertTriangleIcon className="size-4 text-red-600" />
-                                </TooltipTrigger>
-                                <TooltipContent>
+                                </button>
+                              }
+                              openOnHover
+                              width="auto"
+                              content={
+                                <p className="text-neutral-11 text-sm">
                                   New service name cannot match an existing service name
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                                </p>
+                              }
+                            />
                           )}
                         </>
                       ) : (
@@ -407,18 +410,13 @@ export function ProposalEditor(props: {
                     {!!service.service && (
                       <SubPageLayoutHeader
                         subPageTitle="Settings"
-                        description={
-                          <CardDescription className="pb-4">
-                            Additional service configuration
-                          </CardDescription>
-                        }
+                        description={<p className="pb-4">Additional service configuration</p>}
                       />
                     )}
                     <div className="my-2 font-semibold">Service URL</div>
                     <Input
                       value={service.url ?? ''}
                       onChange={ev => setActiveTabUrl(ev.target.value)}
-                      className="text-xs"
                     />
                   </div>
                 )}
@@ -443,15 +441,7 @@ function ServiceSelect(props: {
     return (
       schemaEdges
         ?.filter(s => !props.selected.includes(s.node.id))
-        .map((edge, i) => (
-          <SelectItem
-            key={`${edge.cursor}-${i}`}
-            value={`${edge.node.id}`}
-            data-cy={`project-picker-option-${edge.node.id}`}
-          >
-            {schemaTitle(edge.node)}
-          </SelectItem>
-        )) ?? []
+        .map(edge => ({ value: `${edge.node.id}`, label: schemaTitle(edge.node) })) ?? []
     );
   }, [props.selected, schemaEdges]);
 
@@ -461,17 +451,14 @@ function ServiceSelect(props: {
 
   return schemaEdges && schemaEdges.length > 1 ? (
     <div className="flex grow flex-row">
-      <Select onValueChange={props.onSelect} value="">
-        <SelectTrigger
-          variant="default"
-          data-cy="project-picker-trigger"
-          className="min-w-[200px] max-w-[15vw] font-medium"
-          disabled={selectableServices.length === 0}
-        >
-          Select a service...
-        </SelectTrigger>
-        <SelectContent>{selectableServices}</SelectContent>
-      </Select>
+      <Select
+        options={selectableServices}
+        value=""
+        onValueChange={props.onSelect}
+        label="Select a service..."
+        disabled={selectableServices.length === 0}
+        width="md"
+      />
       <Button variant="orangeLink" className="ml-0 whitespace-nowrap" onClick={props.onSelectNew}>
         + New<span className="hidden sm:inline-block">&nbsp;Service</span>
       </Button>

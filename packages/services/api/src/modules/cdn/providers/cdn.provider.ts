@@ -11,7 +11,7 @@ import { Session } from '../../auth/lib/authz';
 import type { Contract } from '../../schema/providers/contracts';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
-import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
+import { S3Writer } from '../../shared/providers/s3-writer';
 import { Storage } from '../../shared/providers/storage';
 import { CDN_CONFIG, type CDNConfig } from './tokens';
 
@@ -30,7 +30,7 @@ export class CdnProvider {
     private auditLog: AuditLogRecorder,
     private idTranslator: IdTranslator,
     @Inject(CDN_CONFIG) private config: CDNConfig,
-    @Inject(S3_CONFIG) private s3Config: S3Config,
+    private s3: S3Writer,
     @Inject(Storage) private storage: Storage,
   ) {
     this.logger = logger.child({ source: 'CdnProvider' });
@@ -119,16 +119,11 @@ export class CdnProvider {
       s3Key,
     );
 
-    for (const s3 of this.s3Config) {
-      // Check if key already exists
-      const headResponse = await s3.client.fetch([s3.endpoint, s3.bucket, s3Key].join('/'), {
-        method: 'HEAD',
-        aws: {
-          // This boolean makes Google Cloud Storage & AWS happy.
-          signQuery: true,
-        },
-      });
+    const headResponses = await this.s3.request(s3Key, {
+      method: 'HEAD',
+    });
 
+    for (const headResponse of headResponses) {
       if (headResponse.statusCode !== 404) {
         this.logger.debug(
           'Failed creating CDN access token. Head request on S3 returned unexpected status while checking token availability. (organizationId=%s, projectId=%s, targetId=%s, status=%s)',
@@ -154,17 +149,11 @@ export class CdnProvider {
       s3Key,
     );
 
-    for (const s3 of this.s3Config) {
-      // put key onto s3 bucket
-      const putResponse = await s3.client.fetch([s3.endpoint, s3.bucket, s3Key].join('/'), {
-        method: 'PUT',
-        body: privateKeyHash,
-        aws: {
-          // This boolean makes Google Cloud Storage & AWS happy.
-          signQuery: true,
-        },
-      });
+    const putResponses = await this.s3.write(s3Key, 'cdn_access_token', {
+      body: privateKeyHash,
+    });
 
+    for (const putResponse of putResponses) {
       if (putResponse.statusCode !== 200) {
         this.logger.debug(
           'Failed creating CDN Access Token. Head request on S3 returned unexpected status while creating token. (organizationId=%s, projectId=%s, targetId=%s, status=%s)',
@@ -313,18 +302,11 @@ export class CdnProvider {
       } as const;
     }
 
-    for (const s3 of this.s3Config) {
-      const deleteResponse = await s3.client.fetch(
-        [s3.endpoint, s3.bucket, record.s3Key].join('/'),
-        {
-          method: 'DELETE',
-          aws: {
-            // This boolean makes Google Cloud Storage & AWS happy.
-            signQuery: true,
-          },
-        },
-      );
+    const deleteResponses = await this.s3.request(record.s3Key, {
+      method: 'DELETE',
+    });
 
+    for (const deleteResponse of deleteResponses) {
       if (deleteResponse.statusCode !== 204) {
         this.logger.debug(
           'Delete CDN access token error. Head request on S3 failed. (organizationId=%s, projectId=%s, targetId=%s, cdnAccessTokenId=%s)',

@@ -1,7 +1,8 @@
+import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Table, Tag, TBody, Td, Tr } from '@/components/v2';
+import { Table, TBody, Td, Tr } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { AlertChannelType, ChannelsTable_AlertChannelFragmentFragment } from '@/gql/graphql';
+import { ChannelsTable_AlertChannelFragmentFragment } from '@/gql/graphql';
 
 export const ChannelsTable_AlertChannelFragment = graphql(`
   fragment ChannelsTable_AlertChannelFragment on AlertChannel {
@@ -22,13 +23,6 @@ export const ChannelsTable_AlertChannelFragment = graphql(`
     }
   }
 `);
-
-const colorMap = {
-  [AlertChannelType.Slack]: 'green' as const,
-  [AlertChannelType.Webhook]: 'yellow' as const,
-  [AlertChannelType.MsteamsWebhook]: 'orange' as const,
-  [AlertChannelType.Discord]: 'blue' as const,
-};
 
 export function ChannelsTable(props: {
   channels: FragmentType<typeof ChannelsTable_AlertChannelFragment>[];
@@ -70,9 +64,7 @@ export function ChannelsTable(props: {
               {renderChannelEndpoint(channel)}
             </Td>
             <Td className="flex max-w-24 content-end">
-              <Tag color={colorMap[channel.type]} className="whitespace-nowrap">
-                {channel.type}
-              </Tag>
+              <Badge content={channel.type} variants={{ variant: 'secondary' }} />
             </Td>
           </Tr>
         ))}

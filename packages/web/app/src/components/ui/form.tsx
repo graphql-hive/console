@@ -10,7 +10,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import * as LabelPrimitive from '@radix-ui/react-label';
-import { Slot } from '@radix-ui/react-slot';
 
 const Form = FormProvider;
 
@@ -87,7 +86,7 @@ const FormLabel = React.forwardRef<
   return (
     <Label
       ref={ref}
-      className={cn('text-neutral-11 mb-2 inline-block', className)}
+      className={cn('text-control text-neutral-11 mb-2 inline-block', className)}
       htmlFor={formItemId}
       {...props}
     />
@@ -95,23 +94,26 @@ const FormLabel = React.forwardRef<
 });
 FormLabel.displayName = 'FormLabel';
 
-const FormControl = React.forwardRef<
-  React.ElementRef<typeof Slot>,
-  React.ComponentPropsWithoutRef<typeof Slot>
->((props, ref) => {
+/**
+ * Wires the one field it wraps to its label, description and message by cloning it with the ids
+ * and the error state. Error styling is the field's own, from `aria-invalid`. Anything the field
+ * already sets wins over what is injected here.
+ */
+function FormControl({ children }: { children: React.ReactElement }) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
-
-  return (
-    <Slot
-      ref={ref}
-      id={formItemId}
-      aria-describedby={error ? `${formDescriptionId} ${formMessageId}` : formDescriptionId}
-      aria-invalid={!!error}
-      className={cn(error && 'border-red-500')}
-      {...props}
-    />
-  );
-});
+  const child = React.Children.only(children);
+  const injected: Record<string, unknown> = {
+    id: formItemId,
+    'aria-describedby': error ? `${formDescriptionId} ${formMessageId}` : formDescriptionId,
+    'aria-invalid': !!error,
+  };
+  for (const key of Object.keys(injected)) {
+    if (child.props[key] !== undefined) {
+      delete injected[key];
+    }
+  }
+  return React.cloneElement(child, injected);
+}
 FormControl.displayName = 'FormControl';
 
 const FormDescription = React.forwardRef<
@@ -142,7 +144,7 @@ const FormMessage = React.forwardRef<
     <p
       ref={ref}
       id={formMessageId}
-      className={cn('min-h-[1.25rem] text-sm font-medium text-red-500', className)}
+      className={cn('text-control min-h-[1.25rem] text-red-400', className)}
       {...props}
     >
       {body}

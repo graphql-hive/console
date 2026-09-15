@@ -1,5 +1,5 @@
 import { thirdPartySignInAndUp } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
-import { AuthCard, AuthCardHeader } from '@/components/auth';
+import { AuthCard } from '@/components/auth';
 import { Meta } from '@/components/ui/meta';
 import { env } from '@/env/frontend';
 import { useQuery } from '@tanstack/react-query';
@@ -55,11 +55,7 @@ function AuthCallback(props: { provider: Provider; redirectToPath: string }) {
   const providerDetails = providerDetailsMap[props.provider];
 
   if (auth.isError) {
-    return (
-      <AuthCard>
-        <AuthCardHeader title={providerDetails.failure} description={auth.error.message} />
-      </AuthCard>
-    );
+    return <AuthCard title={providerDetails.failure} description={auth.error.message} />;
   }
 
   if (auth.isSuccess) {
@@ -69,27 +65,23 @@ function AuthCallback(props: { provider: Provider; redirectToPath: string }) {
       });
     } else {
       return (
-        <AuthCard>
-          <AuthCardHeader
-            title={providerDetails.failure}
-            description={
-              auth.data.status === 'NO_EMAIL_GIVEN_BY_PROVIDER'
-                ? 'No email address was provided by the auth provider. Please try again.'
-                : auth.data.reason
-            }
-          />
-        </AuthCard>
+        <AuthCard
+          title={providerDetails.failure}
+          description={
+            auth.data.status === 'NO_EMAIL_GIVEN_BY_PROVIDER'
+              ? 'No email address was provided by the auth provider. Please try again.'
+              : auth.data.reason
+          }
+        />
       );
     }
   }
 
   return (
-    <AuthCard>
-      <AuthCardHeader
-        title={providerDetails.success}
-        description="Your are being redirected to Hive Console."
-      />
-    </AuthCard>
+    <AuthCard
+      title={providerDetails.success}
+      description="Your are being redirected to Hive Console."
+    />
   );
 }
 

@@ -9,7 +9,9 @@ export default defineConfig({
   title: 'Hive Laboratory',
   // 5173 belongs to `pnpm dev`, so both servers can run side by side.
   port: 5174,
-  nav: [{ label: 'Laboratory', children: [{ label: 'Subscriptions' }] }],
+  nav: [
+    { label: 'Laboratory', children: [{ label: 'Subscriptions' }, { label: 'Abstract types' }] },
+  ],
   viteConfig: {
     // Foundry runs its own vite server and never loads vite.config.ts, so everything the
     // Laboratory needs is restated here: its stylesheet is Tailwind, its editors are

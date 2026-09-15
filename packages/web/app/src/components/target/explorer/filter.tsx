@@ -1,13 +1,7 @@
 import { useCallback } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { Button as BaseButton } from '@/components/base/button/button';
-import {
-  availablePresets,
-  DateRangePicker,
-  getDateRangeDisplayLabel,
-} from '@/components/ui/date-range-picker';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Link,
   RegisteredRouter,
@@ -29,13 +23,7 @@ export function DateRangeFilter() {
 
   return (
     <DateRangePicker
-      trigger={
-        <BaseButton
-          label={getDateRangeDisplayLabel(periodSelector.period, availablePresets, [...validUnits])}
-          variant="default"
-          rightIcon={{ icon: ChevronDown, withSeparator: true }}
-        />
-      }
+      size="compact"
       validUnits={[...validUnits]}
       onUpdate={onUpdate}
       selectedRange={periodSelector.period}
@@ -79,46 +67,46 @@ export function SchemaVariantFilter(props: {
 }) {
   const { search } = useLocation();
   return (
-    <TooltipProvider>
-      <Tabs defaultValue={props.variant}>
-        <TabsList className="dark:bg-neutral-3 bg-neutral-5">
-          {variants.map(variant => (
-            <Tooltip key={variant.value}>
-              <TooltipTrigger asChild>
-                {props.variant === variant.value ? (
-                  <div>
-                    <TabsTrigger
-                      className="dark:data-[state=active]:bg-neutral-5 data-[state=active]:bg-neutral-6 data-[state=active]:text-neutral-12"
-                      value={variant.value}
-                    >
-                      {variant.label}
-                    </TabsTrigger>
-                  </div>
-                ) : (
+    <Tabs defaultValue={props.variant}>
+      <TabsList className="dark:bg-neutral-3 bg-neutral-5">
+        {variants.map(variant => (
+          <Tooltip
+            key={variant.value}
+            trigger={
+              props.variant === variant.value ? (
+                <div>
                   <TabsTrigger
-                    className="text-neutral-9 hover:text-neutral-11"
+                    className="dark:data-[state=active]:bg-neutral-5 data-[state=active]:bg-neutral-6 data-[state=active]:text-neutral-12"
                     value={variant.value}
-                    asChild
                   >
-                    <Link
-                      to={variant.pathname}
-                      params={{
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      }}
-                      search={search}
-                    >
-                      {variant.label}
-                    </Link>
+                    {variant.label}
                   </TabsTrigger>
-                )}
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{variant.tooltip}</TooltipContent>
-            </Tooltip>
-          ))}
-        </TabsList>
-      </Tabs>
-    </TooltipProvider>
+                </div>
+              ) : (
+                <TabsTrigger
+                  className="text-neutral-9 hover:text-neutral-11"
+                  value={variant.value}
+                  asChild
+                >
+                  <Link
+                    to={variant.pathname}
+                    params={{
+                      organizationSlug: props.organizationSlug,
+                      projectSlug: props.projectSlug,
+                      targetSlug: props.targetSlug,
+                    }}
+                    search={search}
+                  >
+                    {variant.label}
+                  </Link>
+                </TabsTrigger>
+              )
+            }
+            content={variant.tooltip}
+            side="bottom"
+          />
+        ))}
+      </TabsList>
+    </Tabs>
   );
 }

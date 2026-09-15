@@ -3,22 +3,17 @@ import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/AppFilter';
-import { NotFoundContent } from '@/components/common/not-found-content';
+import { Menu } from '@/components/base/floating/menu/menu';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { NotFound } from '@/components/base/not-found/not-found';
+import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { BackLink } from '@/components/navigation/back-link';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
-import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
@@ -28,7 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { graphql } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
@@ -188,9 +182,7 @@ function TargetAppVersionContent(props: {
     },
   });
 
-  const title = data.data?.target?.appDeployment
-    ? `${data.data.target.appDeployment.name}@${data.data.target.appDeployment.version}`
-    : 'App Deployment';
+  const title = `${props.appName}@${props.appVersion}`;
 
   if (data.error) {
     return (
@@ -211,9 +203,9 @@ function TargetAppVersionContent(props: {
     return (
       <>
         <Meta title="App Version Not found" />
-        <NotFoundContent
-          heading="App Version not found."
-          subheading="This app does not seem to exist anymore."
+        <NotFound
+          title="App Version not found."
+          description="This app does not seem to exist anymore."
         />
       </>
     );
@@ -223,46 +215,32 @@ function TargetAppVersionContent(props: {
     <>
       <Meta title={title} />
       <div className="flex h-full flex-1 flex-col py-6">
-        <SubPageLayoutHeader
-          subPageTitle={
-            <span className="flex items-center">
-              <Link
-                to="/$organizationSlug/$projectSlug/$targetSlug/apps"
-                params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
-                }}
-              >
-                App Deployments
-              </Link>{' '}
-              <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
-              {appDeployment ? (
-                `${appDeployment.name}@${appDeployment.version}`
-              ) : (
-                <Skeleton className="inline-block h-5 w-[150px]" />
-              )}
-            </span>
-          }
-          description={
-            <>
-              <CardDescription>
-                Group your GraphQL operations by app version for app version statistics and
-                persisted operations.
-              </CardDescription>
-              {/* <CardDescription>
-                  <DocsLink
-                    href="/schema-registry/management/targets#cdn-access-tokens"
-                    className="text-neutral-10 hover:text-neutral-11"
-                  >
-                    Learn more about App Deployments
-                  </DocsLink>
-                </CardDescription> */}
-            </>
-          }
-        >
-          <AppFilter />
-        </SubPageLayoutHeader>
+        <div>
+          <BackLink
+            copy="Back to App Deployments"
+            link={{
+              params: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+              to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
+            }}
+          />
+          <div className="flex items-start justify-between gap-4">
+            <PageLead
+              title={title}
+              description="Group your GraphQL operations by app version for app version statistics and persisted operations."
+              docsLink={{
+                href: '/schema-registry/app-deployments',
+                text: 'Learn more about App Deployments',
+              }}
+            />
+            <div className="flex">
+              <AppFilter />
+            </div>
+          </div>
+        </div>
         {coordinates ? (
           <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
             <span>
@@ -404,16 +382,10 @@ function TargetAppVersionContent(props: {
                       </TableCell>
                       <TableCell>
                         {!edge.node.operationName ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help italic">anonymous</span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>The operation within the document has no name.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Tooltip
+                            trigger={<span className="cursor-help italic">anonymous</span>}
+                            content="The operation within the document has no name."
+                          />
                         ) : (
                           <span className="bg-neutral-5 rounded-sm p-1 font-mono text-xs">
                             {edge.node.operationName}
@@ -428,44 +400,46 @@ function TargetAppVersionContent(props: {
                         </span>
                       </TableCell>
                       <TableCell className="text-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                        <Menu
+                          trigger={
                             <Button size="icon-sm" variant="ghost">
                               <DotsHorizontalIcon />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem asChild className="cursor-pointer">
-                              <Link
-                                to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
-                                params={{
-                                  organizationSlug: props.organizationSlug,
-                                  projectSlug: props.projectSlug,
-                                  targetSlug: props.targetSlug,
-                                }}
-                                search={{
-                                  operationString: edge.node.body,
-                                }}
-                              >
-                                Open in Laboratory
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="cursor-pointer">
-                              <Link
-                                to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                                params={{
-                                  organizationSlug: props.organizationSlug,
-                                  projectSlug: props.projectSlug,
-                                  targetSlug: props.targetSlug,
-                                  operationName: edge.node.operationName ?? edge.node.hash,
-                                  operationHash: edge.node.insightsHash,
-                                }}
-                              >
-                                Show Insights
-                              </Link>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          }
+                          sections={[
+                            [
+                              {
+                                label: 'Open in Laboratory',
+                                render: (
+                                  <Link
+                                    to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
+                                    params={{
+                                      organizationSlug: props.organizationSlug,
+                                      projectSlug: props.projectSlug,
+                                      targetSlug: props.targetSlug,
+                                    }}
+                                    search={{ operationString: edge.node.body }}
+                                  />
+                                ),
+                              },
+                              {
+                                label: 'Show Insights',
+                                render: (
+                                  <Link
+                                    to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
+                                    params={{
+                                      organizationSlug: props.organizationSlug,
+                                      projectSlug: props.projectSlug,
+                                      targetSlug: props.targetSlug,
+                                      operationName: edge.node.operationName ?? edge.node.hash,
+                                      operationHash: edge.node.insightsHash,
+                                    }}
+                                  />
+                                ),
+                              },
+                            ],
+                          ]}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}

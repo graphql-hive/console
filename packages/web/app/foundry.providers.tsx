@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
 import type { FoundryProvider } from 'react-foundry';
+import { RouterProvider } from '@tanstack/react-router';
+import { previewRouter, PreviewSlotProvider } from './foundry.router';
+import { TooltipProvider } from './src/components/base/floating/tooltip/tooltip';
 import { ThemeProvider, useTheme } from './src/components/theme/theme-provider';
 import './src/index.css';
 
@@ -18,9 +21,18 @@ function ThemeSynchronizer({ theme }: { theme: 'light' | 'dark' }) {
   return null;
 }
 
+/**
+ * Previews render inside a stand-in router so that app components using `Link` work here. See
+ * `foundry.router.tsx` for why the preview content arrives through a context slot rather than as
+ * children of the provider.
+ */
 export const Provider: FoundryProvider = ({ children, theme }) => (
   <ThemeProvider>
     <ThemeSynchronizer theme={theme} />
-    {children}
+    <TooltipProvider>
+      <PreviewSlotProvider value={children}>
+        <RouterProvider router={previewRouter} />
+      </PreviewSlotProvider>
+    </TooltipProvider>
   </ThemeProvider>
 );

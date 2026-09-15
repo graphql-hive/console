@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import clsx from 'clsx';
 import { buildSchema, introspectionFromSchema, Kind, parse, print } from 'graphql';
 import { throttle } from 'lodash';
 import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
+import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { useTheme } from '@/components/theme/theme-provider';
@@ -21,7 +21,6 @@ import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useRedirect } from '@/lib/access/common';
@@ -31,7 +30,6 @@ import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { loadHistory, saveHistory } from '@/lib/laboratory-history-storage';
-import { cn } from '@/lib/utils';
 import {
   Laboratory,
   LaboratoryCollection,
@@ -828,9 +826,7 @@ function LaboratoryPageContent(props: {
               Explore your GraphQL schema and run queries against your GraphQL API.
             </Subtitle>
             <p>
-              <DocsLink className="text-neutral-10 text-sm" href="/schema-registry/laboratory">
-                Learn more about the Laboratory
-              </DocsLink>
+              <DocsLink href="/schema-registry/laboratory" text="Learn more about the Laboratory" />
             </p>
           </div>
           <div className="ml-auto mr-0 flex flex-col justify-center">
@@ -857,43 +853,26 @@ function LaboratoryPageContent(props: {
             <div className="self-end pt-2">
               <span className="mr-2 text-xs font-bold">Query</span>
               <ToggleGroup
-                defaultValue="list"
+                options={[
+                  {
+                    value: 'mockApi',
+                    label: 'Mock',
+                    tooltip: 'Use Mock Schema',
+                    disabled: query.fetching,
+                  },
+                  {
+                    value: 'linkedApi',
+                    label: 'API',
+                    tooltip: 'Use API endpoint',
+                    disabled: !query.data?.target?.graphqlEndpointUrl || query.fetching,
+                  },
+                ]}
+                value={actualSelectedApiEndpoint}
                 onValueChange={newValue => {
                   setEndpointType(newValue as 'mockApi' | 'linkedApi');
                 }}
-                value="mock"
-                type="single"
-                className="text-neutral-10 bg-neutral-2/50"
-              >
-                <ToggleGroupItem
-                  key="mockApi"
-                  value="mockApi"
-                  title="Use Mock Schema"
-                  className={clsx(
-                    'hover:text-neutral-12 text-xs',
-                    !query.fetching &&
-                      actualSelectedApiEndpoint === 'mockApi' &&
-                      'bg-neutral-5 text-neutral-12',
-                  )}
-                  disabled={query.fetching}
-                >
-                  Mock
-                </ToggleGroupItem>
-                <ToggleGroupItem
-                  key="linkedApi"
-                  value="linkedApi"
-                  title="Use API endpoint"
-                  className={cn(
-                    'hover:text-neutral-12 text-xs',
-                    !query.fetching &&
-                      actualSelectedApiEndpoint === 'linkedApi' &&
-                      'bg-neutral-5 text-neutral-12',
-                  )}
-                  disabled={!query.data?.target?.graphqlEndpointUrl || query.fetching}
-                >
-                  API
-                </ToggleGroupItem>
-              </ToggleGroup>
+                aria-label="Query endpoint"
+              />
             </div>
           </div>
         </div>

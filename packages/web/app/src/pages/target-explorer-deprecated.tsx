@@ -1,7 +1,7 @@
 import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
-import { AlertCircleIcon, ChevronDown, PartyPopperIcon } from 'lucide-react';
+import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button as BaseButton } from '@/components/base/button/button';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
   ExplorerFilteredEmptyState,
@@ -21,7 +21,6 @@ import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
@@ -130,10 +129,11 @@ function InternalDeprecatedSchemaView(props: {
   return (
     <div className="space-y-6">
       <div>
-        <TooltipProvider>
+        <>
           {letters.map(letter => (
-            <Tooltip key={letter} delayDuration={0}>
-              <TooltipTrigger asChild>
+            <Tooltip
+              key={letter}
+              trigger={
                 <Button
                   onClick={() => setSelectedLetter(letter)}
                   variant={letter === activeLetter ? 'secondary' : 'ghost'}
@@ -142,17 +142,14 @@ function InternalDeprecatedSchemaView(props: {
                     'rounded-none px-2 py-1',
                     letter === activeLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
                   )}
-                  key={letter}
                 >
                   {letter}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {typesGroupedByFirstLetter.get(letter)?.length ?? 0} types
-              </TooltipContent>
-            </Tooltip>
+              }
+              content={`${typesGroupedByFirstLetter.get(letter)?.length ?? 0} types`}
+            />
           ))}
-        </TooltipProvider>
+        </>
       </div>
       <div className="flex flex-col gap-4">
         {(typesGroupedByFirstLetter.get(activeLetter) ?? []).map((type, i) => {
@@ -263,18 +260,12 @@ function DeprecatedSchemaExplorer(props: {
   const latestValidSchemaVersion = query.data?.target?.latestValidSchemaVersion;
   const dateRangeFilter = (
     <DateRangePicker
-      trigger={
-        <BaseButton
-          label={dateRangeController.selectedPreset.label}
-          variant="default"
-          rightIcon={{ icon: ChevronDown, withSeparator: true }}
-        />
-      }
       validUnits={['y', 'M', 'w', 'd', 'h']}
       selectedRange={dateRangeController.selectedPreset.range}
       startDate={dateRangeController.startDate}
       align="start"
       onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+      size="compact"
     />
   );
 

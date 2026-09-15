@@ -79,6 +79,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
 
       const [url, signed] = await client.sign('https://s3.us-east-1.amazonaws.com/bucket/key', {
         method: 'GET',
+        aws: { signQuery: false },
       });
 
       expect(mockProvider.getCredentials).toHaveBeenCalledOnce();
@@ -108,9 +109,11 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
 
       const [, signed1] = await client.sign('https://s3.us-east-1.amazonaws.com/bucket/key', {
         method: 'GET',
+        aws: { signQuery: false },
       });
       const [, signed2] = await client.sign('https://s3.us-east-1.amazonaws.com/bucket/key', {
         method: 'GET',
+        aws: { signQuery: false },
       });
 
       const auth1 = (signed1.headers as Headers).get('authorization');
@@ -137,6 +140,7 @@ describe('S3 IAM AwsClient (cdn-worker)', () => {
 
       const [, signed] = await client.sign('https://s3.us-east-1.amazonaws.com/bucket/key', {
         method: 'GET',
+        aws: { signQuery: false },
       });
 
       const tokenHeader = (signed.headers as Headers).get('x-amz-security-token');

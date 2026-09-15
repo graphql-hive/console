@@ -1,5 +1,22 @@
 # @graphql-hive/apollo
 
+## 0.48.7
+
+### Patch Changes
+
+- [#8397](https://github.com/graphql-hive/console/pull/8397)
+  [`cac2fc2`](https://github.com/graphql-hive/console/commit/cac2fc27162811ef0bc739f05793d273497d04ef)
+  Thanks [@jdolle](https://github.com/jdolle)! - Deprecate run-time reporting schemas from `useHive`
+  plugin.
+
+  Use Hive CLI (`@graphql-hive/cli`) to publish the schema file instead. This aligns with best
+  practices for schema management and prevents an issue where multiple service instances result in
+  numerous publishes to Hive.
+
+- Updated dependencies
+  [[`cac2fc2`](https://github.com/graphql-hive/console/commit/cac2fc27162811ef0bc739f05793d273497d04ef)]:
+  - @graphql-hive/core@0.22.5
+
 ## 0.48.6
 
 ### Patch Changes

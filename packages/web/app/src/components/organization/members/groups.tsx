@@ -4,12 +4,15 @@ import {
   ChevronRightIcon,
   PencilIcon,
   PlusIcon,
+  SearchIcon,
   Trash2Icon,
   UsersIcon,
 } from 'lucide-react';
 import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Input } from '@/components/base/input/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,10 +24,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
@@ -91,16 +92,17 @@ export function Groups(props: {
       <SubPageLayoutHeader
         subPageTitle="Groups"
         description="Manage group to role and resource mappings."
-      >
-        <div className="flex flex-row gap-4">
-          <Input
-            className="w-[220px] grow cursor-text"
-            placeholder="Search by group name"
-            onChange={handleSearchChange}
-            defaultValue={searchValue}
-          />
-        </div>
-      </SubPageLayoutHeader>
+        sideContent={
+          <div className="w-56">
+            <Input
+              placeholder="Search by group name"
+              leadingIcon={SearchIcon}
+              onChange={handleSearchChange}
+              defaultValue={searchValue}
+            />
+          </div>
+        }
+      />
       <div className="mt-4 overflow-hidden rounded-lg border">
         <div className="bg-neutral-3 grid grid-cols-[1fr_auto_auto] gap-4 border-b px-4 py-3 text-sm font-medium">
           <div>Group</div>
@@ -283,15 +285,14 @@ function GroupRow(props: GroupRowProps): ReactNode {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className={cn('text-sm font-medium')}>{group.name}</span>
-              <Badge variant="outline" className="text-xs font-normal">
-                {group.roleMappingCount === 0 ? (
-                  <>No mappings configured</>
-                ) : (
-                  <>
-                    {group.roleMappingCount} {group.roleMappingCount === 1 ? 'mapping' : 'mappings'}
-                  </>
-                )}
-              </Badge>
+              <Badge
+                variants={{ variant: 'outline' }}
+                content={
+                  group.roleMappingCount === 0
+                    ? 'No mappings configured'
+                    : `${group.roleMappingCount} ${group.roleMappingCount === 1 ? 'mapping' : 'mappings'}`
+                }
+              />
             </div>
           </div>
         </div>
@@ -443,9 +444,7 @@ function GroupRoleMappingRow(props: {
     <div className="bg-neutral-3 group flex items-center justify-between rounded-md px-3 py-1.5">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <Badge variant="default" className={cn('text-xs font-medium')}>
-            {groupRoleMapping.role.name}
-          </Badge>
+          <Badge content={groupRoleMapping.role.name} />
           <span className="text-xs">on</span>
           <span className="text-sm">
             {groupRoleMapping.resourceAssignment.mode ===
@@ -461,24 +460,22 @@ function GroupRoleMappingRow(props: {
         </div>
       </div>
       <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickEdit}>
-                <PencilIcon className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="text-xs">Edit mapping</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickDelete}>
-                <Trash2Icon className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="text-xs">Remove mapping</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip
+          trigger={
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickEdit}>
+              <PencilIcon className="h-3 w-3" />
+            </Button>
+          }
+          content="Edit mapping"
+        />
+        <Tooltip
+          trigger={
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickDelete}>
+              <Trash2Icon className="h-3 w-3" />
+            </Button>
+          }
+          content="Remove mapping"
+        />
       </div>
     </div>
   );

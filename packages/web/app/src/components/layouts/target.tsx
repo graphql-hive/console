@@ -1,6 +1,8 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Select } from '@/components/base/floating/select/select';
+import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
@@ -14,13 +16,6 @@ import {
 import { HiveLink } from '@/components/ui/hive-link';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link as UiLink } from '@/components/ui/link';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -29,7 +24,6 @@ import { useToggle } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { cn } from '@/lib/utils';
-import { ResourceNotFoundComponent } from '../resource-not-found';
 import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { TargetSelector } from './target-selector';
@@ -146,7 +140,11 @@ export const TargetLayout = ({
       {query.fetching === false &&
       query.stale === false &&
       (currentProject === null || currentOrganization === null || currentTarget === null) ? (
-        <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
+        <NotFound
+          variants={{ layout: 'horizontal', illustration: 'connection' }}
+          title="404 - This project does not seem to exist."
+          description={resourceAccessDescription}
+        />
       ) : (
         <>
           <SecondaryNavigation
@@ -369,6 +367,13 @@ export function ConnectSchemaModal(props: {
                 <div>
                   <Label>Graph Variant</Label>
                   <Select
+                    options={[
+                      { value: 'DEFAULT_GRAPH', label: 'Default Graph' },
+                      ...target.activeContracts.edges.map(({ node }) => ({
+                        value: node.contractName,
+                        label: node.contractName,
+                      })),
+                    ]}
                     value={selectedGraph}
                     onValueChange={value => {
                       if (
@@ -380,43 +385,24 @@ export function ConnectSchemaModal(props: {
                       }
                       setSelectedGraph(value);
                     }}
-                  >
-                    <SelectTrigger className="w-[250px] max-w-[300px]">
-                      <SelectValue placeholder="Select Graph" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="DEFAULT_GRAPH">Default Graph</SelectItem>
-                      {target.activeContracts.edges.map(({ node }) => (
-                        <SelectItem key={node.id} value={node.contractName}>
-                          {node.contractName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select Graph"
+                    width="lg"
+                  />
                 </div>
                 <div>
                   <Label>Artifact</Label>
                   <Select
+                    options={ArtifactToProjectTypeMapping[target.project.type].map(t => ({
+                      value: t,
+                      label: ArtifactTypeToDisplayName[t],
+                      disabled:
+                        t !== 'supergraph' && t !== 'sdl' && selectedGraph !== 'DEFAULT_GRAPH',
+                    }))}
                     value={selectedArtifact}
-                    onValueChange={(value: CdnArtifactType) => setSelectedArtifact(value)}
-                  >
-                    <SelectTrigger className="w-[250px] max-w-[300px]">
-                      <SelectValue placeholder="Select Artifact" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ArtifactToProjectTypeMapping[target.project.type].map(t => (
-                        <SelectItem
-                          key={t}
-                          value={t}
-                          disabled={
-                            t !== 'supergraph' && t !== 'sdl' && selectedGraph !== 'DEFAULT_GRAPH'
-                          }
-                        >
-                          {ArtifactTypeToDisplayName[t]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onValueChange={value => setSelectedArtifact(value as CdnArtifactType)}
+                    placeholder="Select Artifact"
+                    width="lg"
+                  />
                 </div>
               </div>
               {selectedArtifact === 'supergraph' ? (

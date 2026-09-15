@@ -1,12 +1,6 @@
 import { useCallback, useState } from 'react';
-import {
-  getNamedType,
-  isInterfaceType,
-  isObjectType,
-  type GraphQLField,
-  type GraphQLNamedType,
-  type GraphQLSchema,
-} from 'graphql';
+import type { GraphQLSchema } from 'graphql';
+import { resolveSchemaPath } from './schema-path';
 
 export type LaboratoryActivePanel =
   | 'collections'
@@ -34,41 +28,21 @@ export const docsTargetFromPath = (
   path: string[],
   schema: GraphQLSchema | null,
 ): LaboratoryDocsTarget | null => {
-  const [operation, ...segments] = path;
-
-  if (!schema || segments.length === 0) {
+  if (!schema) {
     return null;
   }
 
-  let type: GraphQLNamedType | null | undefined =
-    operation === 'query'
-      ? schema.getQueryType()
-      : operation === 'mutation'
-        ? schema.getMutationType()
-        : operation === 'subscription'
-          ? schema.getSubscriptionType()
-          : null;
+  const steps = resolveSchemaPath(path.join('.'), schema);
+  const last = steps?.at(-1);
 
-  for (let i = 0; i < segments.length; i++) {
-    if (!type || (!isObjectType(type) && !isInterfaceType(type))) {
-      return null;
-    }
-
-    const parentName = type.name;
-    const field: GraphQLField<unknown, unknown> | undefined = type.getFields()[segments[i]];
-
-    if (!field) {
-      return null;
-    }
-
-    if (i === segments.length - 1) {
-      return { kind: 'field', typeName: parentName, fieldName: field.name };
-    }
-
-    type = getNamedType(field.type);
+  if (!last) {
+    return null;
   }
 
-  return null;
+  // A type-condition row represents the type it narrows to, not a field.
+  return last.field
+    ? { kind: 'field', typeName: last.parentType.name, fieldName: last.field.name }
+    : { kind: 'type', name: last.type.name };
 };
 
 export interface LaboratoryDocsState {

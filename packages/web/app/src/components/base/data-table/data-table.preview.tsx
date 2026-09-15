@@ -25,8 +25,8 @@ const CHECKS: Check[] = Array.from({ length: 47 }, (_, i) => ({
 }));
 
 const STATUS_VARIANT = {
-  passed: 'secondary',
-  failed: 'destructive',
+  passed: 'success',
+  failed: 'critical',
   pending: 'outline',
 } as const;
 
@@ -38,7 +38,10 @@ const COLUMNS: ColumnDef<Check, any>[] = [
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => (
-      <Badge variant={STATUS_VARIANT[row.original.status]}>{row.original.status}</Badge>
+      <Badge
+        content={row.original.status}
+        variants={{ variant: STATUS_VARIANT[row.original.status] }}
+      />
     ),
   },
   { accessorKey: 'changes', header: 'Changes' },
@@ -65,7 +68,7 @@ export const Expandable = createPreview(() => (
       columns={COLUMNS}
       getRowId={row => row.id}
       renderSubComponent={row => (
-        <div className="text-neutral-11 space-y-1 text-[13px]">
+        <div className="text-neutral-11 text-control space-y-1">
           <div>
             Composition for <span className="text-neutral-12">{row.original.service}</span> produced{' '}
             {row.original.changes} schema changes.

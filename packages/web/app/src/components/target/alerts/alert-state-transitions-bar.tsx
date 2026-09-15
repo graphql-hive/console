@@ -1,4 +1,4 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { MetricAlertRuleState } from '@/gql/graphql';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
 
@@ -148,36 +148,35 @@ export function AlertStateTransitionsBar({
       className="space-y-2"
       style={{ paddingLeft: ALERT_CHART_INSET_LEFT, paddingRight: ALERT_CHART_INSET_RIGHT }}
     >
-      <TooltipProvider delayDuration={100}>
-        <div className="border-neutral-5 flex h-4 w-full overflow-hidden rounded-sm border">
-          {segments.map((seg, i) => {
-            const widthPct = ((seg.endMs - seg.startMs) / rangeMs) * 100;
-            if (widthPct <= 0) return null;
-            return (
-              <Tooltip key={i}>
-                <TooltipTrigger asChild>
-                  <div
-                    className={`${colorForSegment(seg.state)} h-full`}
-                    style={{ width: `${widthPct}%` }}
-                    aria-label={`${labelForSegment(seg.state)} ${formatTimestamp(
-                      new Date(seg.startMs).toISOString(),
-                    )} - ${formatTimestamp(new Date(seg.endMs).toISOString())}`}
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="text-xs">
-                    <div className="text-neutral-12 font-medium">{labelForSegment(seg.state)}</div>
-                    <div className="text-neutral-10">
-                      {formatTimestamp(new Date(seg.startMs).toISOString())} →{' '}
-                      {formatTimestamp(new Date(seg.endMs).toISOString())}
-                    </div>
+      <div className="border-neutral-5 flex h-4 w-full overflow-hidden rounded-sm border">
+        {segments.map((seg, i) => {
+          const widthPct = ((seg.endMs - seg.startMs) / rangeMs) * 100;
+          if (widthPct <= 0) return null;
+          return (
+            <Tooltip
+              key={i}
+              trigger={
+                <div
+                  className={`${colorForSegment(seg.state)} h-full`}
+                  style={{ width: `${widthPct}%` }}
+                  aria-label={`${labelForSegment(seg.state)} ${formatTimestamp(
+                    new Date(seg.startMs).toISOString(),
+                  )} - ${formatTimestamp(new Date(seg.endMs).toISOString())}`}
+                />
+              }
+              content={
+                <div className="text-xs">
+                  <div className="text-neutral-12 font-medium">{labelForSegment(seg.state)}</div>
+                  <div className="text-neutral-10">
+                    {formatTimestamp(new Date(seg.startMs).toISOString())} →{' '}
+                    {formatTimestamp(new Date(seg.endMs).toISOString())}
                   </div>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-      </TooltipProvider>
+                </div>
+              }
+            />
+          );
+        })}
+      </div>
       <div className="text-neutral-10 flex justify-between text-[11px]">
         {ticks.map((tick, i) => (
           <span key={i}>{formatTick(tick, rangeMs)}</span>

@@ -25,6 +25,12 @@ export function buildEditorOptions(overrides?: EditorOptions): EditorOptions {
       enabled: false,
     },
     automaticLayout: true,
+    // On by default in monaco. Its backdrop inherits `editor.background`, which the
+    // laboratory themes make transparent so the panel shows through, so the pinned
+    // scopes render over the scrolling document with nothing behind them.
+    stickyScroll: {
+      enabled: false,
+    },
     tabSize: 2,
     formatOnPaste: true,
     // Editors sit inside overflow-hidden panels, so hovers (including validation

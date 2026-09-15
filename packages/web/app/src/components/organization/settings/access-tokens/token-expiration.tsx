@@ -1,4 +1,4 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { timeRelative } from './shared-helpers';
 
 const EXPIRED_TEXT = 'EXPIRED';
@@ -10,12 +10,11 @@ export function TokenExpiration(props: { expiresAt: string | null }) {
 
     if (text === EXPIRED_TEXT) {
       return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger className="text-red-500">{text}</TooltipTrigger>
-            <TooltipContent align="start">{expiresDate.toLocaleString()}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip
+          trigger={<span className="text-red-500">{text}</span>}
+          content={expiresDate.toLocaleString()}
+          align="start"
+        />
       );
     }
     return text;

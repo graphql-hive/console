@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
-import { DocsLink } from '@/components/ui/docs-note';
 import { KeyIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -82,19 +80,11 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
     <SubPageLayout>
       <SubPageLayoutHeader
         subPageTitle="SSO and SCIM"
-        description={
-          <>
-            <CardDescription className="max-w-[600px]">
-              Link your Hive organization to a single-sign-on provider such as Okta or Microsoft
-              Entra ID via OpenID Connect. Provision users via the SCIM v2 protocol.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink className="text-neutral-10 text-sm" href="/management/sso-oidc-provider">
-                Documentation
-              </DocsLink>
-            </CardDescription>
-          </>
-        }
+        description="Link your Hive organization to a single-sign-on provider such as Okta or Microsoft Entra ID via OpenID Connect. Provision users via the SCIM v2 protocol."
+        docsLink={{
+          href: '/management/sso-oidc-provider',
+          text: 'Documentation',
+        }}
       />
       <div className="text-neutral-10 max-w-[800px] space-y-4">
         {query.fetching ? (

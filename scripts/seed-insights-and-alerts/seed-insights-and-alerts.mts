@@ -2,9 +2,10 @@
  * Seeds data for the Insights and Alerts features.
  *
  * Creates the supporting context (owner account, org, project, target, schema)
- * plus the data the two features render: ~30 days of operations, saved
- * filters with view counts, alert channels, metric alert rules (all types),
- * and 30 days of historical alert state transitions + incidents.
+ * plus the data the two features render: operations, saved filters with view
+ * counts, alert channels, metric alert rules (all types), and historical alert
+ * state transitions + incidents. The history spans SEED_DAYS_PAST days, capped
+ * by the chosen plan's retention.
  *
  * Architecture — metric-first signal generation
  * ---------------------------------------------
@@ -13,8 +14,7 @@
  * make the rule's metric *actually* breach its threshold during those windows
  * (`signalToOps`). Postgres state-log + incident rows are emitted from those
  * same windows, so the chart, status bar, and events table on the alert detail
- * page all derive from one shared timeline. See `ruleShapes` (lines ~1150) and
- * the alert-history phase (lines ~1810) for details.
+ * page all derive from one shared timeline. See `ruleShapes` and `signalToOps`.
  *
  * Prerequisites:
  *   - Docker Compose is running (pnpm local:setup)
@@ -42,6 +42,7 @@ import {
   TargetAccessScope,
 } from '../../integration-tests/testkit/gql/graphql';
 import type { CollectedOperation } from '../../integration-tests/testkit/usage';
+import { USAGE_DEFAULT_LIMITATIONS } from '../../packages/services/api/src/modules/commerce/constants';
 
 process.env.RUN_AGAINST_LOCAL_SERVICES = '1';
 await import('../../integration-tests/local-dev.ts');
@@ -399,14 +400,18 @@ type Mutation { createReview(episode: Episode, review: ReviewInput!): Review }
 // ---------------------------------------------------------------------------
 // Env-driven configuration knobs (see scripts/seed-insights-and-alerts/README.md)
 // ---------------------------------------------------------------------------
+// Capped at runtime by the chosen plan's retention. Needs 4 or below unless ClickHouse's
+// `max_partitions_per_insert_block` is raised, which local dev does; see the README.
 const SEED_DAYS_PAST = Number(process.env.SEED_DAYS_PAST ?? 30);
 const SEED_DAYS_AHEAD = Number(process.env.SEED_DAYS_AHEAD ?? 7);
 const SEED_BATCH_SIZE = Number(process.env.SEED_BATCH_SIZE ?? 500);
 const SEED_RULE_LIMIT = process.env.SEED_RULE_LIMIT ? Number(process.env.SEED_RULE_LIMIT) : null;
 
 const BATCH_SIZE = SEED_BATCH_SIZE;
-const THIRTY_DAYS_MS = SEED_DAYS_PAST * 24 * 60 * 60 * 1000;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const ONE_HOUR_MS = 60 * 60 * 1000;
+
+const COMMERCE_ENDPOINT = process.env.COMMERCE_ENDPOINT ?? 'http://localhost:4013';
 
 type BillingPlan = 'HOBBY' | 'PRO' | 'ENTERPRISE';
 
@@ -421,6 +426,78 @@ async function promptForPlan(): Promise<BillingPlan> {
     return 'HOBBY';
   } finally {
     rl.close();
+  }
+}
+
+/**
+ * Block until the rate limiter reflects the limits this seed just wrote to Postgres.
+ *
+ * Usage collection stamps each operation's `expires_at` from the limiter's in-memory cache,
+ * which only refreshes every LIMIT_CACHE_UPDATE_INTERVAL_MS (60s). Sending before it
+ * refreshes bakes in the stale retention, and the backdated rows are TTL'd away as fast as
+ * they land: the seed looks like it succeeded and the UI stays empty.
+ */
+async function waitForRateLimitCache(targetId: string, expectedRetentionDays: number) {
+  const MAX_WAIT_MS = 90_000;
+  const POLL_INTERVAL_MS = 2_000;
+  const started = Date.now();
+  const input = encodeURIComponent(JSON.stringify({ targetId }));
+  let reportedUnreachable = false;
+
+  console.log(`⏳ Waiting for the rate-limit cache to pick up the new limits...`);
+
+  while (Date.now() - started < MAX_WAIT_MS) {
+    try {
+      const response = await fetch(
+        `${COMMERCE_ENDPOINT}/trpc/rateLimit.getRetention?input=${input}`,
+        { headers: { 'x-requesting-service': 'usage' } },
+      );
+      const body = (await response.json()) as { result?: { data?: number } };
+      if (body.result?.data === expectedRetentionDays) {
+        console.log(`   Cache updated after ${Math.round((Date.now() - started) / 1000)}s.`);
+        return;
+      }
+    } catch (error) {
+      // Commerce may still be booting; keep polling until the deadline, but only
+      // say so once so a genuinely-down service does not bury the summary.
+      if (!reportedUnreachable) {
+        reportedUnreachable = true;
+        console.warn(`   Could not reach commerce at ${COMMERCE_ENDPOINT}: ${String(error)}`);
+      }
+    }
+    await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+  }
+
+  console.warn(
+    `⚠️  Rate-limit cache did not report a retention of ${expectedRetentionDays} days within 90s.` +
+      ` Usage data may be truncated or expire immediately. Is the commerce service running?`,
+  );
+}
+
+/** Send operations to the usage endpoint in batches of BATCH_SIZE. */
+async function sendOperationsInBatches(
+  operations: CollectedOperation[],
+  token: string,
+  label: string,
+) {
+  const totalBatches = Math.ceil(operations.length / BATCH_SIZE);
+
+  for (let i = 0; i < operations.length; i += BATCH_SIZE) {
+    const batch = operations.slice(i, i + BATCH_SIZE);
+    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+
+    process.stdout.write(`   ${label} ${batchNum}/${totalBatches}...`);
+    const result = await legacyCollect({
+      operations: batch,
+      token,
+      authorizationHeader: 'authorization',
+    });
+    if (result.status !== 200) {
+      console.error(` FAILED (status ${result.status}):`, result.body);
+    } else {
+      const body = result.body as { operations: { accepted: number; rejected: number } };
+      console.log(` ✓ ${body.operations.accepted} accepted, ${body.operations.rejected} rejected`);
+    }
   }
 }
 
@@ -440,21 +517,6 @@ async function main() {
   );
   const organization = orgResult.createOrganization.ok!.createdOrganizationPayload.organization;
 
-  // Upgrade plan if requested. The GraphQL API only exposes upgradeToPro / downgradeToHobby,
-  // so ENTERPRISE (and PRO without going through Stripe) is set by direct UPDATE.
-  if (plan !== 'HOBBY') {
-    const planPool = await createPostgresDatabasePool({
-      connectionParameters: getSeedPGConnectionString(),
-    });
-    try {
-      await planPool.query(psql`
-        UPDATE "organizations" SET "plan_name" = ${plan} WHERE "id" = ${organization.id}
-      `);
-    } finally {
-      await planPool.end();
-    }
-  }
-
   // Create project
   const projectResult = await createProject(
     {
@@ -471,6 +533,40 @@ async function main() {
   console.log(`   Org: ${organization.slug} (${plan})`);
   console.log(`   Project: ${project.slug}`);
   console.log(`   Target: ${target.slug}`);
+
+  // Creating an org always applies the column defaults, so without this a PRO or ENTERPRISE
+  // org would claim its plan while still capped like a free one. Direct UPDATE because the
+  // GraphQL API only exposes upgradeToPro / downgradeToHobby.
+  const retentionDays = USAGE_DEFAULT_LIMITATIONS[plan].retention;
+
+  const limitsPool = await createPostgresDatabasePool({
+    connectionParameters: getSeedPGConnectionString(),
+  });
+  try {
+    await limitsPool.query(psql`
+      UPDATE "organizations"
+      SET "plan_name" = ${plan}
+        , "limit_retention_days" = ${retentionDays}
+        , "limit_operations_monthly" = ${USAGE_DEFAULT_LIMITATIONS[plan].operations}
+      WHERE "id" = ${organization.id}
+    `);
+  } finally {
+    await limitsPool.end();
+  }
+  console.log(`   Limits: ${plan} (${retentionDays}d retention)`);
+
+  // Backfill only as far as the plan retains: anything older is stamped with an
+  // already-elapsed `expires_at` and TTL'd out the moment it lands.
+  const daysPast = Math.min(SEED_DAYS_PAST, retentionDays);
+  const daysPastMs = daysPast * ONE_DAY_MS;
+  if (daysPast < SEED_DAYS_PAST) {
+    console.log(
+      `   Seeding ${daysPast} days rather than ${SEED_DAYS_PAST}: ${plan} retains ${retentionDays} days.` +
+        ` Choose PRO or ENTERPRISE for a longer range.`,
+    );
+  }
+
+  await waitForRateLimitCache(target.id, retentionDays);
 
   // ──── Signal planning (runs before baseline generation) ────────────────────
   //
@@ -594,7 +690,7 @@ async function main() {
     },
   };
 
-  const ALERT_DAYS_PAST = SEED_DAYS_PAST;
+  const ALERT_DAYS_PAST = daysPast;
   const ALERT_DAYS_AHEAD = SEED_DAYS_AHEAD;
   const BASELINE_OPS_PER_HOUR = 60;
   const MINUTE_MS = 60_000;
@@ -1278,8 +1374,8 @@ async function main() {
   }
   console.log('   Schema published successfully.');
 
-  // Generate operations spread across 30 days
-  console.log('📊 Generating usage data (30 days)...');
+  // Generate operations spread across the retained range
+  console.log(`📊 Generating usage data (${daysPast} days)...`);
   const now = Date.now();
   const allOperations: CollectedOperation[] = [];
 
@@ -1287,7 +1383,7 @@ async function main() {
   // Higher than before so BELOW rules are visible and signal injections don't drown
   // out the baseline completely at coarser view resolutions.
   let suppressedCount = 0;
-  for (let t = now - THIRTY_DAYS_MS; t <= now; t += ONE_HOUR_MS) {
+  for (let t = now - daysPastMs; t <= now; t += ONE_HOUR_MS) {
     const opsThisHour = 55 + Math.floor(Math.random() * 15); // 55–70 per hour
     for (let i = 0; i < opsThisHour; i++) {
       const timestamp = t + Math.floor(Math.random() * ONE_HOUR_MS);
@@ -1325,27 +1421,11 @@ async function main() {
     );
   }
 
-  console.log(`   Generated ${allOperations.length} baseline operations across 30 days.`);
+  console.log(`   Generated ${allOperations.length} baseline operations across ${daysPast} days.`);
 
   // Send baseline ops in batches so downstream saved-filter creation + ingestion wait
   // work. Alert signal ops are flushed separately later.
-  const totalBatches = Math.ceil(allOperations.length / BATCH_SIZE);
-  for (let i = 0; i < allOperations.length; i += BATCH_SIZE) {
-    const batch = allOperations.slice(i, i + BATCH_SIZE);
-    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-    process.stdout.write(`   Sending batch ${batchNum}/${totalBatches}...`);
-    const result = await legacyCollect({
-      operations: batch,
-      token: secret,
-      authorizationHeader: 'authorization',
-    });
-    if (result.status !== 200) {
-      console.error(` FAILED (status ${result.status}):`, result.body);
-    } else {
-      const body = result.body as { operations: { accepted: number; rejected: number } };
-      console.log(` ✓ ${body.operations.accepted} accepted, ${body.operations.rejected} rejected`);
-    }
-  }
+  await sendOperationsInBatches(allOperations, secret, 'Sending batch');
 
   // Helper for saved filter operations
   const targetSelector = {
@@ -1391,7 +1471,7 @@ async function main() {
       variables: {
         target: { bySelector: targetSelector },
         period: {
-          from: new Date(now - THIRTY_DAYS_MS).toISOString(),
+          from: new Date(now - daysPastMs).toISOString(),
           to: new Date(now).toISOString(),
         },
       },
@@ -1807,25 +1887,7 @@ async function main() {
   // incidents are cosmetic (state log + incidents) with no required visible drop.
   if (signalOps.length > 0) {
     console.log(`\n🔥 Flushing ${signalOps.length} signal operations...`);
-    const totalSignalBatches = Math.ceil(signalOps.length / BATCH_SIZE);
-    for (let i = 0; i < signalOps.length; i += BATCH_SIZE) {
-      const batch = signalOps.slice(i, i + BATCH_SIZE);
-      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-      process.stdout.write(`   Signal batch ${batchNum}/${totalSignalBatches}...`);
-      const result = await legacyCollect({
-        operations: batch,
-        token: secret,
-        authorizationHeader: 'authorization',
-      });
-      if (result.status !== 200) {
-        console.error(` FAILED (status ${result.status}):`, result.body);
-      } else {
-        const body = result.body as { operations: { accepted: number; rejected: number } };
-        console.log(
-          ` ✓ ${body.operations.accepted} accepted, ${body.operations.rejected} rejected`,
-        );
-      }
-    }
+    await sendOperationsInBatches(signalOps, secret, 'Signal batch');
   }
 
   const alertExpiresAt = new Date(nowMs + (ALERT_DAYS_AHEAD + 1) * 24 * 60 * 60 * 1000);
@@ -1905,10 +1967,9 @@ async function main() {
       // detail-page "status transitions" chart doesn't render a "no data
       // (rule did not exist yet)" gray segment over historical state-log
       // entries. The mutation set created_at to NOW(), but the seed
-      // intentionally fabricates ~SEED_DAYS_PAST days of transitions, so
-      // pretending the rule has existed across that whole window is
-      // consistent with the rest of the seeded fiction.
-      const seededCreatedAt = new Date(Date.now() - THIRTY_DAYS_MS);
+      // intentionally fabricates the whole window of transitions, so pretending
+      // the rule existed across it is consistent with the rest of the fiction.
+      const seededCreatedAt = new Date(Date.now() - daysPastMs);
       await alertPool.query(psql`
         UPDATE "metric_alert_rules" AS r
         SET

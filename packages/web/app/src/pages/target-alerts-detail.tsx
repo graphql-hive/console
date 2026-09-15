@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react';
 import { subMinutes } from 'date-fns';
 import { useQuery } from 'urql';
 import { Select } from '@/components/base/floating/select/select';
+import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { PageLead } from '@/components/base/page-lead';
 import { BackLink } from '@/components/navigation/back-link';
-import { ResourceNotFoundComponent } from '@/components/resource-not-found';
 import { AlertConditionsPanel } from '@/components/target/alerts/alert-conditions-panel';
 import {
   AlertEventsTable,
@@ -234,7 +234,13 @@ export function TargetAlertsDetailPage(props: {
   }
 
   if (!rule) {
-    return <ResourceNotFoundComponent title="Alert rule not found" />;
+    return (
+      <NotFound
+        variants={{ layout: 'horizontal', illustration: 'connection' }}
+        title="Alert rule not found"
+        description={resourceAccessDescription}
+      />
+    );
   }
 
   return (

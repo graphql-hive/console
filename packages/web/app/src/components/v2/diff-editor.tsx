@@ -1,11 +1,11 @@
 import { ReactElement, useLayoutEffect, useRef, useState } from 'react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Switch } from '@/components/base/switch/switch';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
 import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Monaco, MonacoDiffEditor as OriginalMonacoDiffEditor } from '@monaco-editor/react';
 import { ArrowDownIcon, ArrowUpIcon, DownloadIcon } from '@radix-ui/react-icons';
 import { Spinner } from '../ui/spinner';
@@ -82,32 +82,30 @@ export const DiffEditor = (props: {
           {showDiff && (
             <>
               <div className="mr-2 text-xs font-normal">Navigate changes </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => editorRef.current?.goToDiff('previous')}
-                    >
-                      <ArrowUpIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Previous change</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => editorRef.current?.goToDiff('next')}
-                    >
-                      <ArrowDownIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Next change</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => editorRef.current?.goToDiff('previous')}
+                  >
+                    <ArrowUpIcon />
+                  </Button>
+                }
+                content="Previous change"
+              />
+              <Tooltip
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => editorRef.current?.goToDiff('next')}
+                  >
+                    <ArrowDownIcon />
+                  </Button>
+                }
+                content="Next change"
+              />
             </>
           )}
           {props.editable ? null : (
@@ -173,31 +171,29 @@ export const DiffEditor = (props: {
 
 export function DownloadButton(props: { contents: string; fileName: string }) {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const element = document.createElement('a');
-              element.setAttribute(
-                'href',
-                'data:text/plain;charset=utf-8, ' + encodeURIComponent(props.contents),
-              );
-              element.setAttribute('download', props.fileName);
-              document.body.appendChild(element);
-              element.click();
+    <Tooltip
+      trigger={
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            const element = document.createElement('a');
+            element.setAttribute(
+              'href',
+              'data:text/plain;charset=utf-8, ' + encodeURIComponent(props.contents),
+            );
+            element.setAttribute('download', props.fileName);
+            document.body.appendChild(element);
+            element.click();
 
-              document.body.removeChild(element);
-            }}
-            className="mr-2 text-xs font-normal"
-          >
-            <DownloadIcon className="mr-2" /> Download
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Download {props.fileName}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+            document.body.removeChild(element);
+          }}
+          className="mr-2 text-xs font-normal"
+        >
+          <DownloadIcon className="mr-2" /> Download
+        </Button>
+      }
+      content={`Download ${props.fileName}`}
+    />
   );
 }

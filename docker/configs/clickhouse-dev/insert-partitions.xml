@@ -1,0 +1,13 @@
+<clickhouse>
+  <profiles>
+    <default>
+      <!--
+        The seed scripts backfill weeks of history, the usage service coalesces many reports into
+        one Kafka message, and the minutely rollups partition by hour, so a single INSERT can carry
+        far more than the default 100 partitions. A rejected insert wedges the usage ingestor in a
+        replay loop. See scripts/seed-insights-and-alerts/README.md.
+      -->
+      <max_partitions_per_insert_block>10000</max_partitions_per_insert_block>
+    </default>
+  </profiles>
+</clickhouse>

@@ -3,6 +3,8 @@ import { MailIcon, MailQuestionIcon, MoreHorizontalIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Menu } from '@/components/base/floating/menu/menu';
+import { Input } from '@/components/base/input/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +16,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -24,14 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -214,7 +208,12 @@ function MemberInvitationForm(props: {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input placeholder="Enter an email" type="email" {...field} />
+                      <Input
+                        placeholder="Enter an email"
+                        type="email"
+                        onSurface="raised"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -427,18 +426,26 @@ function Invitation(props: {
           {DateFormatter.format(new Date(invitation.expiresAt))}
         </td>
         <td className="py-3 text-right text-sm">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
+          <Menu
+            align="end"
+            width="sm"
+            trigger={
+              <Button variant="ghost" className="data-[popup-open]:bg-neutral-3 flex size-8 p-0">
                 <MoreHorizontalIcon className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[160px]">
-              <DropdownMenuItem onClick={copyLink}>Copy invitation link</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setOpen(true)}>Delete invitation</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            }
+            sections={[
+              [
+                { label: 'Copy invitation link', onClick: copyLink },
+                {
+                  label: 'Delete invitation',
+                  variant: 'destructiveAction',
+                  onClick: () => setOpen(true),
+                },
+              ],
+            ]}
+          />
         </td>
       </tr>
     </>
@@ -479,20 +486,21 @@ export function OrganizationInvitations(props: {
       <SubPageLayoutHeader
         subPageTitle="Member Invitations"
         description={
-          <CardDescription className="pb-4">
-            Send an invite to add a new non-OIDC member to your Organization. Invitations expire
-            after 7 days.
-            <br />
-            <br />
-            To accept, the user must have an account and log in before using the sent link.
-          </CardDescription>
+          <>
+            <p>
+              Send an invite to add a new non-OIDC member to your Organization. Invitations expire
+              after 7 days.
+            </p>
+            <p>To accept, the user must have an account and log in before using the sent link.</p>
+          </>
         }
-      >
-        <MemberInvitationButton
-          refetchInvitations={props.refetchInvitations}
-          organization={organization}
-        />
-      </SubPageLayoutHeader>
+        sideContent={
+          <MemberInvitationButton
+            refetchInvitations={props.refetchInvitations}
+            organization={organization}
+          />
+        }
+      />
       {organization.invitations.edges.length > 0 ? (
         <table className="divide-neutral-10/20 w-full table-fixed divide-y">
           <thead>

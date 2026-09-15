@@ -7,7 +7,10 @@ const schema = buildSchema(`
   interface Node { id: ID! }
   type Address { city: String }
   type Profile implements Node { id: ID!, address: Address }
-  type User implements Node { id: ID!, profile: Profile }
+  type Photo { url: String }
+  type Clip { url: String, duration: Int }
+  union Media = Photo | Clip
+  type User implements Node { id: ID!, profile: Profile, media: [Media!]! }
   type Query { me: User }
   type Mutation { signIn: User }
 `);
@@ -56,6 +59,34 @@ describe('docsTargetFromPath', () => {
   it('returns null without a schema or a field segment', () => {
     expect(docsTargetFromPath(['query', 'me'], null)).toBeNull();
     expect(docsTargetFromPath(['query'], schema)).toBeNull();
+  });
+
+  it('resolves a union field, which previously returned nothing below it', () => {
+    expect(docsTargetFromPath(['query', 'me', 'media'], schema)).toEqual({
+      kind: 'field',
+      typeName: 'User',
+      fieldName: 'media',
+    });
+  });
+
+  it('resolves a type-condition row to the type it narrows to', () => {
+    expect(docsTargetFromPath(['query', 'me', 'media', 'on:Photo'], schema)).toEqual({
+      kind: 'type',
+      name: 'Photo',
+    });
+  });
+
+  // The parent is the member the field is selected on, not the union.
+  it('resolves a field inside a type condition to its member type', () => {
+    expect(docsTargetFromPath(['query', 'me', 'media', 'on:Clip', 'duration'], schema)).toEqual({
+      kind: 'field',
+      typeName: 'Clip',
+      fieldName: 'duration',
+    });
+  });
+
+  it('returns null for a type that is not a member of the union', () => {
+    expect(docsTargetFromPath(['query', 'me', 'media', 'on:Profile'], schema)).toBeNull();
   });
 });
 

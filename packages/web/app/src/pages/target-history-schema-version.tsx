@@ -17,7 +17,6 @@ import {
   GitCompare,
   GitCompareArrows,
   GitCompareIcon,
-  InfoIcon,
   Layers,
   ListTree,
   Minus,
@@ -28,20 +27,21 @@ import {
 import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
-import { NotFoundContent } from '@/components/common/not-found-content';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { NotFound } from '@/components/base/not-found/not-found';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
+import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
-import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { File, MultiFileDiff } from '@/components/ui/diffs';
 import { Link } from '@/components/ui/link';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { TimeAgo } from '@/components/v2';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
 import { useResetState } from '@/lib/hooks/use-reset-state';
@@ -52,6 +52,13 @@ import {
   ExclamationTriangleIcon,
   ListBulletIcon,
 } from '@radix-ui/react-icons';
+
+/** A status icon inside a tab, explained on hover. */
+function StatusTooltip(props: { icon: React.ReactNode; label: string }) {
+  return (
+    <Tooltip trigger={<span className="inline-flex">{props.icon}</span>} content={props.label} />
+  );
+}
 
 const TargetHistoryGraphVersion_ActiveGraphVersionQuery = graphql(`
   query TargetHistoryGraphVersion_ActiveGraphVersionQuery(
@@ -107,10 +114,10 @@ export function TargetHistorySchemaVersionPage(props: {
 
   if (!schemaVersion) {
     return (
-      <NotFoundContent
-        heading="Schema Version not found."
-        subheading="This schema version does not seem to exist anymore."
-        includeBackButton={false}
+      <NotFound
+        title="Schema Version not found."
+        description="This schema version does not seem to exist anymore."
+        showBackButton={false}
       />
     );
   }
@@ -316,33 +323,23 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
                 value="default"
                 className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
               >
-                <span className="font-mono text-[12px]">Default Graph</span>
-                <TooltipProvider>
-                  <Tooltip>
-                    {schemaVersion.hasSchemaChanges ? (
-                      <>
-                        <TooltipTrigger>
-                          <GitCompareIcon className="size-4 pl-1" />
-                        </TooltipTrigger>
-                        <TooltipContent>Main graph schema changed</TooltipContent>
-                      </>
-                    ) : schemaVersion.isComposable ? (
-                      <>
-                        <TooltipTrigger>
-                          <CheckIcon className="size-4 pl-1" />
-                        </TooltipTrigger>
-                        <TooltipContent>Composition succeeded.</TooltipContent>
-                      </>
-                    ) : (
-                      <>
-                        <TooltipTrigger>
-                          <ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />
-                        </TooltipTrigger>
-                        <TooltipContent>Composition failed.</TooltipContent>
-                      </>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
+                <span className="font-mono text-xs">Default Graph</span>
+                {schemaVersion.hasSchemaChanges ? (
+                  <StatusTooltip
+                    icon={<GitCompareIcon className="size-4 pl-1" />}
+                    label="Main graph schema changed"
+                  />
+                ) : schemaVersion.isComposable ? (
+                  <StatusTooltip
+                    icon={<CheckIcon className="size-4 pl-1" />}
+                    label="Composition succeeded."
+                  />
+                ) : (
+                  <StatusTooltip
+                    icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
+                    label="Composition failed."
+                  />
+                )}
               </TabsTrigger>
               {schemaVersion.contractVersions?.edges.map(edge => (
                 <TabsTrigger
@@ -350,36 +347,26 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
                   key={edge.node.id}
                   className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
                 >
-                  <span className="font-mono text-[12px]">
+                  <span className="font-mono text-xs">
                     {edge.node.contractName}@{edge.node.id.substring(0, 8)}
                   </span>
 
-                  <TooltipProvider>
-                    <Tooltip>
-                      {edge.node.hasSchemaChanges ? (
-                        <>
-                          <TooltipTrigger>
-                            <GitCompareIcon className="size-4 pl-1" />
-                          </TooltipTrigger>
-                          <TooltipContent>Contract schema changed</TooltipContent>
-                        </>
-                      ) : edge.node.isComposable ? (
-                        <>
-                          <TooltipTrigger>
-                            <CheckIcon className="size-4 pl-1" />
-                          </TooltipTrigger>
-                          <TooltipContent>Contract composition succeeded.</TooltipContent>
-                        </>
-                      ) : (
-                        <>
-                          <TooltipTrigger>
-                            <ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />
-                          </TooltipTrigger>
-                          <TooltipContent>Contract composition failed.</TooltipContent>
-                        </>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
+                  {edge.node.hasSchemaChanges ? (
+                    <StatusTooltip
+                      icon={<GitCompareIcon className="size-4 pl-1" />}
+                      label="Contract schema changed"
+                    />
+                  ) : edge.node.isComposable ? (
+                    <StatusTooltip
+                      icon={<CheckIcon className="size-4 pl-1" />}
+                      label="Contract composition succeeded."
+                    />
+                  ) : (
+                    <StatusTooltip
+                      icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
+                      label="Contract composition failed."
+                    />
+                  )}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -390,30 +377,25 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
          * Having all the information on a single page here is better.
          */}
         {schemaVersion.subgraphDiffs && (
-          <TooltipProvider>
-            <Tabs
-              value={selectedView}
-              onValueChange={value => setSelectedView(value)}
-              className="mt-6"
-            >
-              <TabsList variant="content">
-                {availableViews.map(item => (
-                  <Tooltip key={item.value}>
-                    <TooltipTrigger>
-                      <TabsTrigger
-                        value={item.value}
-                        variant="content"
-                        className={cn('items-center-safe mx-3 inline-flex pb-2')}
-                      >
-                        {item.icon}
-                        <span className="ml-2">{item.label}</span>
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                  </Tooltip>
-                ))}
-              </TabsList>
-            </Tabs>
-          </TooltipProvider>
+          <Tabs
+            value={selectedView}
+            onValueChange={value => setSelectedView(value)}
+            className="mt-6"
+          >
+            <TabsList variant="content">
+              {availableViews.map(item => (
+                <TabsTrigger
+                  key={item.value}
+                  value={item.value}
+                  variant="content"
+                  className={cn('items-center-safe mx-3 inline-flex pb-2')}
+                >
+                  {item.icon}
+                  <span className="ml-2">{item.label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         )}
         <div className={cn('mt-4 space-y-8', schemaVersion.subgraphDiffs && 'px-4')}>
           {selectedView === 'details' && (
@@ -571,32 +553,30 @@ function GraphQLSchemaView(props: {
 
 function DownloadButton(props: { contents: string; fileName: string }) {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="xs"
-            onClick={() => {
-              const element = document.createElement('a');
-              element.setAttribute(
-                'href',
-                'data:text/plain;charset=utf-8, ' + encodeURIComponent(props.contents),
-              );
-              element.setAttribute('download', props.fileName);
-              document.body.appendChild(element);
-              element.click();
+    <Tooltip
+      trigger={
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={() => {
+            const element = document.createElement('a');
+            element.setAttribute(
+              'href',
+              'data:text/plain;charset=utf-8, ' + encodeURIComponent(props.contents),
+            );
+            element.setAttribute('download', props.fileName);
+            document.body.appendChild(element);
+            element.click();
 
-              document.body.removeChild(element);
-            }}
-            className="text-xs font-normal"
-          >
-            <DownloadIcon className="mr-1 size-3" /> Download
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Download {props.fileName}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+            document.body.removeChild(element);
+          }}
+          className="text-xs font-normal"
+        >
+          <DownloadIcon className="mr-1 size-3" /> Download
+        </Button>
+      }
+      content={`Download ${props.fileName}`}
+    />
   );
 }
 
@@ -1110,7 +1090,7 @@ function SchemaVersionPromotionOriginContents(props: {
           <span className="text-xs">{displayName}</span>
         )}
       </span>
-      <div className="text-[12px]">via Graph Version Promotion</div>
+      <div className="text-xs">via Graph Version Promotion</div>
     </>
   );
 }
@@ -1138,8 +1118,8 @@ function SchemaVersionHeader(props: {
       >
         <MetaCell label="Status">
           <span className="inline-flex items-center gap-1.5">
-            <BadgeRounded color={schemaVersion.isValid ? 'green' : 'red'} className="mx-0" />
-            <span className="text-[12px]">{schemaVersion.isValid ? 'Composable' : 'Failed'}</span>
+            <StatusDot color={schemaVersion.isValid ? 'success' : 'critical'} />
+            <span className="text-xs">{schemaVersion.isValid ? 'Composable' : 'Failed'}</span>
           </span>
         </MetaCell>
         <MetaCell label="Origin">
@@ -1165,7 +1145,7 @@ function SchemaVersionHeader(props: {
                   />
                 </span>
               ))}
-              <div className="text-[12px]">
+              <div className="text-xs">
                 {schemaVersion.origin.publishedSubgraphs?.length ? (
                   <>via Subgraph Publish</>
                 ) : (
@@ -1188,7 +1168,7 @@ function SchemaVersionHeader(props: {
                   />
                 </span>
               ))}
-              <div className="text-[12px]">via Subgraph Delete</div>
+              <div className="text-xs">via Subgraph Delete</div>
             </>
           )}
         </MetaCell>
@@ -1200,7 +1180,7 @@ function SchemaVersionHeader(props: {
                 value={schemaVersion.githubMetadata.commit}
                 label={schemaVersion.githubMetadata.commit.slice(0, 7)}
               />
-              <span className="ml-1 inline-flex items-center gap-1 text-[12px]">
+              <span className="ml-1 inline-flex items-center gap-1 text-xs">
                 <GitBranch className="h-3 w-3" />
                 {schemaVersion.githubMetadata.repository}
               </span>
@@ -1327,7 +1307,7 @@ const CompositionErrors = (props: {
           </p>
         </div>
 
-        <span className="focus:ring-ring ml-auto inline-flex items-center rounded-full border border-red-700 bg-red-900 px-2.5 py-0.5 text-[10px] font-semibold text-red-300 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
+        <span className="focus:ring-ring text-2xs ml-auto inline-flex items-center rounded-full border border-red-700 bg-red-900 px-2.5 py-0.5 font-semibold text-red-300 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
           <span className="mr-1 h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(237,46,57,0.7)]" />
           {compositionErrors.edges.length} error
           {compositionErrors.edges.length === 1 ? '' : 's'}
@@ -1336,23 +1316,7 @@ const CompositionErrors = (props: {
 
       <div className="text-neutral-12 flex items-center gap-2 px-5 pt-4">
         <span className="text-sm font-medium">Composition errors</span>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <InfoIcon className="h-3 w-3" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-md p-4">
-              <p>
-                If composition errors occur it is impossible to generate a supergraph and public API
-                schema.
-              </p>
-              <p className="mt-1">
-                Composition errors can be caused by changes to the underlying subgraphs that causes
-                conflicts with other subgraphs.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <CompositionErrorsPopover />
       </div>
 
       <ul className="divide-neutral-4 divide-y px-1 pb-2">
@@ -1396,7 +1360,7 @@ export function CompositionError(props: { message: string }) {
 
 function Token(props: { children: React.ReactNode }) {
   return (
-    <code className="mx-0.5 inline-flex items-center rounded-md border px-1.5 py-0.5 align-baseline text-[12px] leading-none">
+    <code className="mx-0.5 inline-flex items-center rounded-md border px-1.5 py-0.5 align-baseline text-xs leading-none">
       {props.children}
     </code>
   );
@@ -1552,30 +1516,24 @@ export const SchemaVersionSummary = (props: {
           additionalValue={
             publicChangeStats.breakingChanges && schemaVersion.isComposable ? (
               publicChangeStats.notSafeChanges ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <span className="ml-2 flex items-center gap-0.5 text-xs text-red-500/80 lg:text-sm">
-                        <ShieldAlertIcon size="14" className="inline" />
-                        {publicChangeStats.notSafeChanges} not safe
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>Some changes are not safe based on usage data.</TooltipContent>{' '}
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip
+                  trigger={
+                    <span className="ml-2 flex items-center gap-0.5 text-xs text-red-500/80 lg:text-sm">
+                      <ShieldAlertIcon size="14" className="inline" />
+                      {publicChangeStats.notSafeChanges} not safe
+                    </span>
+                  }
+                  content="Some changes are not safe based on usage data."
+                />
               ) : (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <span className="pl-2 text-base text-green-500">
-                        <CheckIcon size="14" className="inline" /> All safe
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      All these changes are safe based on usage reporting data.
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip
+                  trigger={
+                    <span className="pl-2 text-base text-green-500">
+                      <CheckIcon size="14" className="inline" /> All safe
+                    </span>
+                  }
+                  content="All these changes are safe based on usage reporting data."
+                />
               )
             ) : null
           }

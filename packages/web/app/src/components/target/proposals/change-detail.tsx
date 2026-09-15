@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Popover } from '@/components/base/floating/popover/popover';
 import {
   AccordionContent,
   AccordionHeader,
@@ -6,7 +7,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion } from '@/components/v2';
 import { MergeStatus } from '@/pages/target-proposal-details';
 import type { Change } from '@graphql-inspector/core';
@@ -87,17 +87,20 @@ export function ChangeBlock(props: {
 
 function ChangesBlockTooltip(props: { info: string }) {
   return (
-    <TooltipProvider>
-      <Tooltip delayDuration={200}>
-        <TooltipTrigger>
-          <Button variant="ghost" size="icon-sm" className="text-neutral-10 ml-1">
-            <InfoCircledIcon className="size-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-md p-4 font-normal">
-          <p>{props.info}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Popover
+      trigger={
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="text-neutral-10 ml-1"
+          aria-label="More about this change"
+        >
+          <InfoCircledIcon className="size-4" />
+        </Button>
+      }
+      openOnHover
+      width="lg"
+      content={<p className="text-neutral-11 text-sm font-normal">{props.info}</p>}
+    />
   );
 }

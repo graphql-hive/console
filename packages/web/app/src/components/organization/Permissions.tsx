@@ -1,12 +1,6 @@
 import clsx from 'clsx';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select } from '@/components/base/floating/select/select';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@/gql/graphql';
 import { NoAccess, Scope } from '@/lib/access/common';
 import { truthy } from '@/lib/utils';
@@ -48,67 +42,53 @@ export const PermissionScopeItem = <
         <div className="text-neutral-10 text-xs">{props.scope.description}</div>
       </div>
       <Select
+        options={[
+          { value: NoAccess, label: 'No access' },
+          props.scope.mapping['read-only'] &&
+            props.checkAccess(props.scope.mapping['read-only']) && {
+              value: props.scope.mapping['read-only'],
+              label: 'Read-only',
+            },
+          props.scope.mapping['read-write'] &&
+            props.checkAccess(props.scope.mapping['read-write']) && {
+              value: props.scope.mapping['read-write'],
+              label: 'Read & write',
+            },
+        ]
+          .filter(truthy)
+          .map((item, _, all) => {
+            const isDisabled =
+              props.noDowngrade === true
+                ? isLowerThen(
+                    item.value,
+                    initialScope,
+                    all.map(item => item.value),
+                  )
+                : false;
+
+            return {
+              value: item.value,
+              label: item.label,
+              disabled: isDisabled,
+              description: isDisabled ? "Can't downgrade" : undefined,
+              'data-cy': `select-option-${item.value}`,
+            };
+          })}
         disabled={!props.canManageScope || props.disabled}
         value={props.selectedScope}
         onValueChange={value => {
           props.onChange(value as T | typeof NoAccess);
         }}
-      >
-        <SelectTrigger className="w-[150px] shrink-0" data-cy="select-trigger">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent data-cy={props.dataCy ? `${props.dataCy}-select-content` : ''}>
-          {[
-            { value: NoAccess, label: 'No access' },
-            props.scope.mapping['read-only'] &&
-              props.checkAccess(props.scope.mapping['read-only']) && {
-                value: props.scope.mapping['read-only'],
-                label: 'Read-only',
-              },
-            props.scope.mapping['read-write'] &&
-              props.checkAccess(props.scope.mapping['read-write']) && {
-                value: props.scope.mapping['read-write'],
-                label: 'Read & write',
-              },
-          ]
-            .filter(truthy)
-            .map((item, _, all) => {
-              const isDisabled =
-                props.noDowngrade === true
-                  ? isLowerThen(
-                      item.value,
-                      initialScope,
-                      all.map(item => item.value),
-                    )
-                  : false;
-
-              return (
-                <SelectItem
-                  key={item.value}
-                  value={item.value}
-                  disabled={isDisabled}
-                  data-cy={`select-option-${item.value}`}
-                >
-                  {item.label}
-                  {isDisabled ? (
-                    <span className="block text-xs italic">Can't downgrade</span>
-                  ) : null}
-                </SelectItem>
-              );
-            })}
-        </SelectContent>
-      </Select>
+        width="sm"
+        data-cy="select-trigger"
+        popupDataCy={props.dataCy ? `${props.dataCy}-select-content` : undefined}
+      />
     </div>
   );
 
   return props.canManageScope ? (
     inner
   ) : (
-    <TooltipProvider>
-      <Tooltip delayDuration={100}>
-        <TooltipTrigger asChild>{inner}</TooltipTrigger>
-        <TooltipContent>Your user account does not have these permissions.</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip trigger={inner} content="Your user account does not have these permissions." />
   );
 };

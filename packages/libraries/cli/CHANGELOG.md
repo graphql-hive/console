@@ -1,5 +1,24 @@
 # @graphql-hive/cli
 
+## 0.63.2
+
+### Patch Changes
+
+- [#8464](https://github.com/graphql-hive/console/pull/8464)
+  [`0d5b665`](https://github.com/graphql-hive/console/commit/0d5b6659c6bb2cd3ed92d6dbeb86f635ccc1dc7f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix federation contract composition attaching
+  `@inaccessible` to `ContextFieldValue`.
+
+- [#8460](https://github.com/graphql-hive/console/pull/8460)
+  [`bba8d96`](https://github.com/graphql-hive/console/commit/bba8d9675e7d7a82276df95b2b35ed95d2654ab3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Preserve types referenced by directive arguments in
+  schema contracts and prevent `federation__ContextFieldValue` from leaking into composed
+  supergraphs.
+
+- Updated dependencies
+  [[`cac2fc2`](https://github.com/graphql-hive/console/commit/cac2fc27162811ef0bc739f05793d273497d04ef)]:
+  - @graphql-hive/core@0.22.5
+
 ## 0.63.1
 
 ### Patch Changes

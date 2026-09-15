@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
 import { ArrowDown, Info } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Avatar } from '@/components/base/avatar/avatar';
+import { Badge } from '@/components/base/badge/badge';
 import { DataTable } from '@/components/base/data-table/data-table';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { PageLead } from '@/components/base/page-lead';
-import { Badge, BadgeRounded } from '@/components/ui/badge';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Avatar } from '@/components/v2/avatar';
 import { graphql } from '@/gql';
 import {
   AlertChannelType,
@@ -154,15 +155,17 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
     header: ({ column }) => <SortableHeader column={column} label="Name" />,
     cell: info => (
       <span className="inline-flex items-center gap-2">
-        <span className="text-neutral-12 font-medium">{info.getValue()}</span>
-        {!info.row.original.enabled && <Badge variant="outline">Paused</Badge>}
+        <span className="text-neutral-12 text-xs font-medium">{info.getValue()}</span>
+        {!info.row.original.enabled && <Badge content="Paused" variants={{ variant: 'info' }} />}
       </span>
     ),
   }),
   columnHelper.accessor('type', {
     header: 'Type',
     cell: info => (
-      <span className="text-neutral-11">{TYPE_LABEL[info.getValue() as MetricAlertRuleType]}</span>
+      <span className="text-neutral-11 text-xs">
+        {TYPE_LABEL[info.getValue() as MetricAlertRuleType]}
+      </span>
     ),
     enableSorting: false,
   }),
@@ -172,8 +175,8 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
     cell: info => {
       const sev = info.getValue() as MetricAlertRuleSeverity;
       return (
-        <span className="text-neutral-12 inline-flex items-center gap-1.5">
-          <BadgeRounded color={SEVERITY_DOT_COLOR[sev]} className="size-2" />
+        <span className="text-neutral-12 inline-flex items-center gap-1.5 text-xs">
+          <StatusDot color={SEVERITY_DOT_COLOR[sev]} />
           {SEVERITY_LABEL[sev]}
         </span>
       );
@@ -181,7 +184,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
   }),
   columnHelper.accessor('incidentCount', {
     header: ({ column }) => <SortableHeader column={column} label="Incidents" />,
-    cell: info => <span className="text-neutral-12 font-mono">{info.getValue()}</span>,
+    cell: info => <span className="text-neutral-12 font-mono text-xs">{info.getValue()}</span>,
   }),
   columnHelper.accessor('lastTriggeredAt', {
     header: ({ column }) => <SortableHeader column={column} label="Last triggered" />,
@@ -215,29 +218,31 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
         return <span className="text-neutral-10">—</span>;
       }
       return (
-        <span className="text-neutral-12 inline-flex items-center gap-1.5">
-          {destinationLabel(channels)}
-          <TooltipProvider delayDuration={100}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="text-neutral-9 hover:text-neutral-11 inline-flex cursor-help">
-                  <Info className="size-3.5" />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="space-y-1 text-xs">
-                  {channels.map(c => (
-                    <div key={c.id} className="flex items-center gap-2">
-                      <span className="text-neutral-10">
-                        {CHANNEL_TYPE_LABEL[c.type] ?? c.type}
-                      </span>
-                      <span className="text-neutral-12 font-mono">{c.detail ?? c.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <span className="text-neutral-12 text-xs">
+          {destinationLabel(channels)}{' '}
+          <Popover
+            trigger={
+              <button
+                type="button"
+                aria-label="Destinations"
+                className="text-neutral-9 hover:text-neutral-11 ml-1 inline-flex align-middle"
+              >
+                <Info className="size-3.5" />
+              </button>
+            }
+            openOnHover
+            width="auto"
+            content={
+              <div className="space-y-1 text-xs">
+                {channels.map(c => (
+                  <div key={c.id} className="flex items-center gap-2">
+                    <span className="text-neutral-10">{CHANNEL_TYPE_LABEL[c.type] ?? c.type}</span>
+                    <span className="text-neutral-12 font-mono">{c.detail ?? c.name}</span>
+                  </div>
+                ))}
+              </div>
+            }
+          />
         </span>
       );
     },
@@ -249,8 +254,8 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
       const u = ctx.row.original.createdBy;
       if (!u) return <span className="text-neutral-10">—</span>;
       return (
-        <span className="text-neutral-12 inline-flex items-center gap-2">
-          <Avatar size="xs" shape="circle" alt={u.displayName} />
+        <span className="text-neutral-12 inline-flex items-center gap-2 text-xs">
+          <Avatar size="xs" alt={u.displayName} />
           {u.displayName}
         </span>
       );

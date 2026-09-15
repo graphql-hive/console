@@ -27,7 +27,7 @@ function DescriptionListItem({ term, description }: DescriptionListItemProps) {
       <div className="text-neutral-10 mb-1 inline-block text-[9px] font-medium uppercase tracking-[0.75px]">
         {term}
       </div>
-      <div className="text-neutral-12 text-[13px]">{description}</div>
+      <div className="text-neutral-12 text-control">{description}</div>
     </>
   );
 }

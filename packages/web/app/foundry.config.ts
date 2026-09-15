@@ -3,7 +3,10 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  previews: 'src/components/base/**/*.preview.tsx',
+  // Widened past `base/` so real app components can be previewed too, not just design-system
+  // primitives. Previews of app components render inside the stand-in router in
+  // `foundry.router.tsx` and stand in for query data with `makeFragmentData`.
+  previews: 'src/components/**/*.preview.tsx',
   title: 'Hive Console Components',
   // Declaration order is display order, so this groups the shelf by kind rather than
   // alphabetically. It also narrows `NavPath` to these exact paths, which turns a typo in
@@ -13,22 +16,38 @@ export default defineConfig({
       label: 'Base',
       children: [
         {
+          label: 'Foundations',
+          children: [{ label: 'TypeScale' }, { label: 'Focus' }, { label: 'SemanticColors' }],
+        },
+        {
           label: 'Primitives',
           children: [
             { label: 'Accordion' },
-            { label: 'Badge' },
+            { label: 'Avatar', children: [{ label: 'Component Examples' }] },
+            { label: 'Badge', children: [{ label: 'Component Examples' }] },
+            { label: 'StatusDot' },
             { label: 'Button' },
             { label: 'Card' },
-            { label: 'Input' },
+            { label: 'StatCard' },
+            { label: 'Input', children: [{ label: 'Component Examples' }] },
+            { label: 'Textarea', children: [{ label: 'Component Examples' }] },
             { label: 'CopyChip' },
+            { label: 'Collapsible', children: [{ label: 'Component Examples' }] },
+            { label: 'ScrollArea', children: [{ label: 'Component Examples' }] },
+            { label: 'Separator', children: [{ label: 'Component Examples' }] },
           ],
         },
         {
           label: 'FormControls',
           children: [
             { label: 'Checkbox' },
-            { label: 'RadioGroup' },
-            { label: 'Switch' },
+            // The component's own previews sit on `RadioGroup`; the call-site
+            // transcriptions hang underneath it rather than in a separate top-level group,
+            // so a change can be judged against both without leaving the subtree.
+            { label: 'RadioGroup', children: [{ label: 'Component Examples' }] },
+            { label: 'Switch', children: [{ label: 'Component Examples' }] },
+            { label: 'Slider', children: [{ label: 'Component Examples' }] },
+            { label: 'ToggleGroup', children: [{ label: 'Component Examples' }] },
             { label: 'Form' },
           ],
         },
@@ -36,18 +55,42 @@ export default defineConfig({
           label: 'Floating',
           children: [
             { label: 'Menu' },
-            { label: 'Popover' },
-            { label: 'Select' },
+            { label: 'Popover', children: [{ label: 'Component Examples' }] },
+            { label: 'Select', children: [{ label: 'Component Examples' }] },
             { label: 'FilterDropdown' },
             { label: 'FilterMenu' },
             { label: 'Search' },
+            { label: 'Tooltip', children: [{ label: 'Component Examples' }] },
+            { label: 'PortalContainer' },
           ],
         },
         // Data and layout
         { label: 'DataTable' },
         { label: 'DescriptionList' },
-        { label: 'PageLead' },
       ],
+    },
+    // The `ui/` and `v2/` primitives queued for migration to `base/`, rendered as they ship
+    // today. Each entry transcribes every real call site, so a replacement can be judged
+    // against the current thing rather than against invented examples, and so there is a
+    // coverage checklist to migrate through. Entries are deleted as their component lands.
+    {
+      label: 'Inventory',
+      children: [
+        { label: 'Button' },
+        { label: 'DataLayout' },
+        { label: 'Form' },
+        { label: 'Overlays' },
+        { label: 'Presentational' },
+        { label: 'Toast' },
+        { label: 'V2Leftovers' },
+      ],
+    },
+    // App components, as opposed to the design-system primitives above. Each preview
+    // reproduces a real call site so a base-component change can be judged against the
+    // compositions that actually ship.
+    {
+      label: 'Components',
+      children: [{ label: 'BillingPlanPicker' }, { label: 'PageLead' }, { label: 'NotFound' }],
     },
   ],
   theme: {

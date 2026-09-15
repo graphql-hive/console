@@ -3,7 +3,9 @@ import { CircleHelpIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import z from 'zod';
-import { AuthCard, AuthCardContent, AuthCardHeader, AuthCardStack } from '@/components/auth';
+import { AuthCard, AuthCardStack } from '@/components/auth';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -13,9 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
 import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
@@ -134,66 +134,71 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
   return (
     <>
       <Meta title="Login with SSO" />
-      <AuthCard>
-        <AuthCardHeader
-          title="Login with SSO"
-          description="Sign in to your account with an organization slug"
-        />
-        <AuthCardContent>
-          <AuthCardStack>
-            <Form {...form}>
-              <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-                <FormField
-                  control={form.control}
-                  name="slug"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel className="flex flex-row items-center gap-x-2">
-                        Organization slug{' '}
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <CircleHelpIcon className="size-4" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>
-                                The organization slug is the unique identifier used in your
-                                organization's URLs.
-                              </p>
-                              <p>For instance, in app.graphql-hive.com/acme, "acme" is the slug.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="acme" {...form.register('slug')} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={sso.isPending}>
-                  {sso.isSuccess && sso.data.ok
-                    ? 'Redirecting...'
-                    : sso.isPending
-                      ? 'Signing in...'
-                      : 'Sign in'}
-                </Button>
-              </form>
-            </Form>
-          </AuthCardStack>
-          <div className="mt-4 text-center text-sm">
-            <Link
-              to="/auth/sign-in"
-              search={{ redirectToPath: props.redirectToPath }}
-              data-auth-link="sign-in"
-              className="underline"
-            >
-              Back to other sign-in options
-            </Link>
-          </div>
-        </AuthCardContent>
-      </AuthCard>
+      <AuthCard
+        title="Login with SSO"
+        description="Sign in to your account with an organization slug"
+        content={
+          <>
+            <AuthCardStack>
+              <Form {...form}>
+                <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+                  <FormField
+                    control={form.control}
+                    name="slug"
+                    render={() => (
+                      <FormItem>
+                        <FormLabel className="flex flex-row items-center gap-x-2">
+                          Organization slug{' '}
+                          <Popover
+                            trigger={
+                              <button type="button" aria-label="What the organization slug is">
+                                <CircleHelpIcon className="size-4" />
+                              </button>
+                            }
+                            openOnHover
+                            content={
+                              <div className="text-neutral-11 text-sm">
+                                <p>
+                                  The organization slug is the unique identifier used in your
+                                  organization's URLs.
+                                </p>
+                                <p>
+                                  For instance, in app.graphql-hive.com/acme, "acme" is the slug.
+                                </p>
+                              </div>
+                            }
+                          />
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="acme" onSurface="raised" {...form.register('slug')} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={sso.isPending}>
+                    {sso.isSuccess && sso.data.ok
+                      ? 'Redirecting...'
+                      : sso.isPending
+                        ? 'Signing in...'
+                        : 'Sign in'}
+                  </Button>
+                </form>
+              </Form>
+            </AuthCardStack>
+            <div className="mt-4 text-center text-sm">
+              <Link
+                to="/auth/sign-in"
+                search={{ redirectToPath: props.redirectToPath }}
+                data-auth-link="sign-in"
+                className="underline"
+              >
+                Back to other sign-in options
+              </Link>
+            </div>
+          </>
+        }
+      />
     </>
   );
 }

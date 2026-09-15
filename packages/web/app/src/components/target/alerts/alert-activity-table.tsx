@@ -1,8 +1,8 @@
 import { ArrowRight } from 'lucide-react';
+import { Avatar } from '@/components/base/avatar/avatar';
 import { DataTable } from '@/components/base/data-table/data-table';
-import { BadgeRounded } from '@/components/ui/badge';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Avatar } from '@/components/v2/avatar';
 import {
   MetricAlertRuleType,
   type MetricAlertRuleSeverity,
@@ -63,7 +63,7 @@ const COLUMNS = [
   columnHelper.accessor('createdAt', {
     header: 'Timestamp',
     cell: info => (
-      <span className="text-neutral-12 font-mono text-[11px] tracking-wide">
+      <span className="text-neutral-12 text-2xs font-mono tracking-wide">
         {formatTimestamp(info.getValue())}
       </span>
     ),
@@ -72,10 +72,7 @@ const COLUMNS = [
     id: 'age',
     header: 'Age',
     cell: ctx => (
-      <TimeAgo
-        date={ctx.row.original.createdAt}
-        className="text-neutral-12 font-mono text-[11px]"
-      />
+      <TimeAgo date={ctx.row.original.createdAt} className="text-neutral-12 text-2xs font-mono" />
     ),
   }),
   columnHelper.display({
@@ -92,12 +89,16 @@ const COLUMNS = [
   columnHelper.display({
     id: 'name',
     header: 'Alert name',
-    cell: ctx => <span className="text-neutral-12 font-medium">{ctx.row.original.rule.name}</span>,
+    cell: ctx => (
+      <span className="text-neutral-12 text-xs font-medium">{ctx.row.original.rule.name}</span>
+    ),
   }),
   columnHelper.display({
     id: 'type',
     header: 'Type',
-    cell: ctx => <span className="text-neutral-11">{TYPE_LABEL[ctx.row.original.rule.type]}</span>,
+    cell: ctx => (
+      <span className="text-neutral-11 text-xs">{TYPE_LABEL[ctx.row.original.rule.type]}</span>
+    ),
   }),
   columnHelper.display({
     id: 'severity',
@@ -105,8 +106,8 @@ const COLUMNS = [
     cell: ctx => {
       const sev = String(ctx.row.original.rule.severity);
       return (
-        <span className="text-neutral-12 inline-flex items-center gap-1.5">
-          <BadgeRounded color={SEVERITY_DOT_COLOR[sev] ?? 'info'} className="size-2" />
+        <span className="text-neutral-12 inline-flex items-center gap-1.5 text-xs">
+          <StatusDot color={SEVERITY_DOT_COLOR[sev] ?? 'info'} />
           {SEVERITY_LABEL[sev] ?? sev}
         </span>
       );
@@ -117,10 +118,10 @@ const COLUMNS = [
     header: 'Created by',
     cell: ctx => {
       const u = ctx.row.original.rule.createdBy;
-      if (!u) return <span className="text-neutral-10">—</span>;
+      if (!u) return <span className="text-neutral-10 text-xs">—</span>;
       return (
-        <span className="text-neutral-12 inline-flex items-center gap-2">
-          <Avatar size="xs" shape="circle" alt={u.displayName} />
+        <span className="text-neutral-12 inline-flex items-center gap-2 text-xs">
+          <Avatar size="xs" alt={u.displayName} />
           {u.displayName}
         </span>
       );

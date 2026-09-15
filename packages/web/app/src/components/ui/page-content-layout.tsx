@@ -1,29 +1,17 @@
 import { forwardRef, HTMLAttributes, ReactNode } from 'react';
+import { DocsLink, DocsLinkProps } from '@/components/ui/docs-note';
 import { cn } from '@/lib/utils';
-import { CardDescription, CardTitle } from './card';
 
-type NavLayoutProps = {
-  children: ReactNode;
-} & HTMLAttributes<HTMLDivElement>;
-
-const NavLayout = forwardRef<HTMLDivElement, NavLayoutProps>(({ children, ...props }, ref) => (
-  <nav ref={ref} className="flex w-48 flex-col space-x-0 space-y-1" {...props}>
-    {children}
-  </nav>
-));
+const NavLayout = ({ children }: { children: ReactNode }) => (
+  <nav className="flex w-48 shrink-0 flex-col space-x-0 space-y-1">{children}</nav>
+);
 NavLayout.displayName = 'NavLayout';
 
-type PageLayoutProps = {
-  children: ReactNode;
-} & HTMLAttributes<HTMLDivElement>;
-
-const PageLayout = forwardRef<HTMLDivElement, PageLayoutProps>(({ children, ...props }, ref) => (
-  <div ref={ref} className="flex flex-col gap-y-4" {...props}>
-    <div className="flex flex-row gap-x-6 py-6" {...props}>
-      {children}
-    </div>
+const PageLayout = ({ children }: { children: ReactNode }) => (
+  <div className="flex flex-col gap-y-4">
+    <div className="flex flex-row gap-x-6 py-6">{children}</div>
   </div>
-));
+);
 PageLayout.displayName = 'PageLayout';
 
 type PageLayoutContentProps = {
@@ -46,45 +34,45 @@ const PageLayoutContent = forwardRef<HTMLDivElement, PageLayoutContentProps>(
 );
 PageLayoutContent.displayName = 'PageLayoutContent';
 
-const SubPageLayout = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('space-y-2', className)} {...props} />
-  ),
+const SubPageLayout = ({ children }: { children: ReactNode }) => (
+  <div className="space-y-2">{children}</div>
 );
 SubPageLayout.displayName = 'SubPageLayout';
 
 type SubPageLayoutHeaderProps = {
-  children?: ReactNode;
   subPageTitle?: ReactNode;
   description?: string | ReactNode;
   sideContent?: ReactNode;
-} & HTMLAttributes<HTMLDivElement>;
+  docsLink?: DocsLinkProps;
+};
 
-const SubPageLayoutHeader = forwardRef<HTMLDivElement, SubPageLayoutHeaderProps>((props, ref) => {
+const SubPageLayoutHeader = ({
+  description,
+  docsLink,
+  sideContent,
+  subPageTitle,
+}: SubPageLayoutHeaderProps) => {
   const header = (
-    <div className="space-y-1.5">
-      <CardTitle>{props.subPageTitle}</CardTitle>
-      {typeof props.description === 'string' ? (
-        <CardDescription>{props.description}</CardDescription>
-      ) : (
-        props.description
-      )}
+    <div className="max-w-[600px] space-y-2">
+      <h3 className="text-neutral-12 text-lg font-medium">{subPageTitle}</h3>
+      {typeof description === 'string' ? <p>{description}</p> : description}
+      {docsLink && <DocsLink {...docsLink} />}
     </div>
   );
   return (
-    <div className="flex flex-row items-center justify-between" ref={ref}>
-      {props.sideContent ? (
-        <div className="flex w-full">
+    <div className="mb-6">
+      {sideContent ? (
+        <div className="flex w-full justify-between">
           {header}
-          {props.sideContent}
+          <div className="flex gap-4">{sideContent}</div>
         </div>
       ) : (
         header
       )}
-      <div>{props.children}</div>
     </div>
   );
-});
+};
+
 SubPageLayoutHeader.displayName = 'SubPageLayoutHeader';
 
 export { PageLayout, NavLayout, PageLayoutContent, SubPageLayout, SubPageLayoutHeader };

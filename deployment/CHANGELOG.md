@@ -1,5 +1,51 @@
 # hive
 
+## 11.13.0
+
+### Minor Changes
+
+- [#8426](https://github.com/graphql-hive/console/pull/8426)
+  [`48d3000`](https://github.com/graphql-hive/console/commit/48d3000c32cc74d950159c3551332ba9725f3cba)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alert rules are now
+  available to every organization. Create rules on a target's Alerts page to be notified when
+  latency, error rate, or traffic crosses a fixed threshold or changes by a set percentage.
+
+### Patch Changes
+
+- [#8454](https://github.com/graphql-hive/console/pull/8454)
+  [`e6773b5`](https://github.com/graphql-hive/console/commit/e6773b57ad576583da68d6c480144e0f807c7530)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-2v4p-qf9q-27wj](https://github.com/advisories/GHSA-2v4p-qf9q-27wj).
+
+- [#8403](https://github.com/graphql-hive/console/pull/8403)
+  [`31183ae`](https://github.com/graphql-hive/console/commit/31183ae05160829214ad9f6f82cae2b7e3be2fc7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add a subgraph filter to the schema explorer and
+  move the explorer's filters into a single filter menu.
+
+  The explorer can now be narrowed to one or more subgraphs, on the main view as well as the type,
+  unused and deprecated views. Selecting a type, searching for a field, filtering by metadata and
+  toggling descriptions now live in the same filter menu, with active filters shown as chips. The
+  All / Unused / Deprecated tabs moved next to the page title.
+
+- [#8464](https://github.com/graphql-hive/console/pull/8464)
+  [`0d5b665`](https://github.com/graphql-hive/console/commit/0d5b6659c6bb2cd3ed92d6dbeb86f635ccc1dc7f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix federation contract composition attaching
+  `@inaccessible` to `ContextFieldValue`.
+
+- [#8460](https://github.com/graphql-hive/console/pull/8460)
+  [`bba8d96`](https://github.com/graphql-hive/console/commit/bba8d9675e7d7a82276df95b2b35ed95d2654ab3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Preserve types referenced by directive arguments in
+  schema contracts and prevent `federation__ContextFieldValue` from leaking into composed
+  supergraphs.
+
+- [#8459](https://github.com/graphql-hive/console/pull/8459)
+  [`bbb0644`](https://github.com/graphql-hive/console/commit/bbb06443b7041ba992ee6483a4d029d0f9ddb5ff)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - address vulnerabilities
+  [GHSA-2x7j-588g-ccc2](https://github.com/advisories/GHSA-2x7j-588g-ccc2),
+  [GHSA-wmmp-3585-3rmp](https://github.com/advisories/GHSA-wmmp-3585-3rmp),
+  [GHSA-cc9r-2j5m-2m83](https://github.com/advisories/GHSA-cc9r-2j5m-2m83), and
+  [GHSA-8m3c-c648-2xjj](https://github.com/advisories/GHSA-8m3c-c648-2xjj).
+
 ## 11.12.2
 
 ### Patch Changes

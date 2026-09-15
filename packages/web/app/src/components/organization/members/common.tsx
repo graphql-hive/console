@@ -1,17 +1,5 @@
 import { useState } from 'react';
-import { ChevronDownIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+import { Select } from '@/components/base/floating/select/select';
 
 type Role<T> = {
   id: string;
@@ -20,7 +8,6 @@ type Role<T> = {
 } & T;
 
 export function RoleSelector<T>(props: {
-  className?: string;
   roles: readonly Role<T>[];
   defaultRole?: Role<T>;
   isRoleActive(role: Role<T>):
@@ -32,104 +19,52 @@ export function RoleSelector<T>(props: {
   disabled?: boolean;
   searchPlaceholder?: string;
   onSelect(role: Role<T>): void | Promise<void>;
-  /**
-   * It's only needed for the migration flow, where we need to be able to select no role.
-   * This is going to be removed once we migrate all the users.
-   */
-  onNoRole?(): void;
   onBlur?(): void;
+  width?: 'auto' | 'full';
 }) {
-  const [open, setOpen] = useState(false);
+  // The trigger stays disabled while an async `onSelect` settles, so a slow mutation cannot be
+  // double-fired.
   const [phase, setPhase] = useState<'idle' | 'busy'>('idle');
   const isBusy = phase === 'busy';
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn('flex items-center', props.className)}
-          data-cy="role-selector-trigger"
-          disabled={props.disabled === true || isBusy}
-          onClick={() => {
-            props.onBlur?.();
-          }}
-        >
-          <span
-            className="flex grow truncate"
-            {...(props.defaultRole?.name ? { title: props.defaultRole?.name } : {})}
-          >
-            {props.defaultRole?.name ?? 'Select role'}
-          </span>
-          <ChevronDownIcon className="text-neutral-10 ml-2 size-4" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0" align="end">
-        <Command>
-          <CommandInput placeholder={props.searchPlaceholder ?? 'Search roles...'} />
-          <CommandList>
-            <CommandEmpty>No roles found.</CommandEmpty>
-            <CommandGroup>
-              {props.onNoRole ? (
-                <CommandItem
-                  className={cn('flex cursor-pointer flex-col items-start space-y-1 px-4 py-2')}
-                  onSelect={() => {
-                    if (props.onNoRole) {
-                      props.onNoRole();
-                      setOpen(false);
-                    }
-                  }}
-                >
-                  <p>None</p>
-                  <p className="text-neutral-10 text-sm">Do not assign a role</p>
-                </CommandItem>
-              ) : null}
-              {props.roles.map(role => {
-                const isRoleActiveResult = props.isRoleActive(role);
-                const isActive =
-                  typeof isRoleActiveResult === 'boolean'
-                    ? isRoleActiveResult
-                    : isRoleActiveResult.active;
-                const reason =
-                  typeof isRoleActiveResult === 'boolean' ? undefined : isRoleActiveResult.reason;
+    <Select
+      options={props.roles.map(role => {
+        const isRoleActiveResult = props.isRoleActive(role);
+        const isActive =
+          typeof isRoleActiveResult === 'boolean' ? isRoleActiveResult : isRoleActiveResult.active;
+        const reason =
+          typeof isRoleActiveResult === 'boolean' ? undefined : isRoleActiveResult.reason;
 
-                return (
-                  <TooltipProvider key={role.id}>
-                    <Tooltip delayDuration={200} {...(isActive ? { open: false } : {})}>
-                      <TooltipTrigger className="w-full text-left">
-                        <CommandItem
-                          // We have to remove characters that may break [data-value="..."] query selector
-                          value={`${role.name} - ${role.description}`.replaceAll(
-                            /[^a-z0-9\-\:\ ]+/gi,
-                            '',
-                          )}
-                          data-cy="role-selector-item"
-                          onSelect={() => {
-                            setPhase('busy');
-                            setOpen(false);
-                            void Promise.resolve(props.onSelect(role)).finally(() => {
-                              setPhase('idle');
-                            });
-                          }}
-                          className={cn(
-                            'flex cursor-pointer flex-col items-start space-y-1 px-4 py-2',
-                            isActive ? '' : 'cursor-not-allowed opacity-50',
-                          )}
-                          disabled={!isActive}
-                        >
-                          <p>{role.name}</p>
-                          <p className="text-neutral-10 text-sm">{role.description}</p>
-                        </CommandItem>
-                      </TooltipTrigger>
-                      <TooltipContent>{reason}</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        return {
+          value: role.id,
+          label: role.name,
+          description: role.description,
+          disabled: !isActive,
+          tooltip: isActive ? undefined : reason,
+          'data-cy': 'role-selector-item',
+        };
+      })}
+      value={props.defaultRole?.id}
+      onValueChange={roleId => {
+        const role = props.roles.find(r => r.id === roleId);
+        if (!role) {
+          return;
+        }
+        setPhase('busy');
+        void Promise.resolve(props.onSelect(role)).finally(() => {
+          setPhase('idle');
+        });
+      }}
+      label={props.defaultRole?.name}
+      placeholder="Select role"
+      disabled={props.disabled === true || isBusy}
+      searchable
+      searchPlaceholder={props.searchPlaceholder ?? 'Search roles...'}
+      onBlur={props.onBlur}
+      align="end"
+      width={props.width}
+      data-cy="role-selector-trigger"
+    />
   );
 }

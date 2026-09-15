@@ -6,6 +6,7 @@
 
 import { Copy } from 'lucide-react';
 import { Button } from '@/components/base/button/button';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useClipboard } from '@/lib/hooks/use-clipboard';
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
 
@@ -136,7 +137,7 @@ function SlackPreview(props: PreviewProps) {
       <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 rounded-md border p-3">
         {/* Bot header */}
         <div className="mb-2 flex items-center gap-2">
-          <div className="bg-accent text-accent flex size-5 items-center justify-center rounded-sm text-[10px] font-bold">
+          <div className="bg-accent text-accent text-2xs flex size-5 items-center justify-center rounded-sm font-bold">
             H
           </div>
           <span className="text-neutral-12 text-sm font-bold">Hive Alerts</span>
@@ -206,9 +207,11 @@ function WebhookPreview(props: PreviewProps) {
     <div className="space-y-3">
       <div className="text-neutral-10 mb-2 text-xs font-medium">Webhook payload preview</div>
       <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 rounded-md border p-3">
-        <pre className="text-neutral-11 overflow-x-auto text-xs leading-relaxed">
-          {JSON.stringify(payload, null, 2)}
-        </pre>
+        <ScrollArea axis="horizontal">
+          <pre className="text-neutral-11 text-xs leading-relaxed">
+            {JSON.stringify(payload, null, 2)}
+          </pre>
+        </ScrollArea>
       </div>
       <Button
         type="button"

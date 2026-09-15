@@ -1,5 +1,5 @@
 import { ChevronDown, Copy, ListFilter, Plus, RefreshCw, X } from 'lucide-react';
-import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from './button';
 
 export const nav: NavPath = 'Base/Primitives/Button';
@@ -22,15 +22,38 @@ export const TriggerVariants = createPreview(() => (
   </div>
 ));
 
+/**
+ * The two rungs of `controlSize`, one row each, across the three layouts. `default` (36px) is a
+ * form control; `compact` (30px) is filter chrome. An icon-only button is a square at either rung.
+ * `icon-sm` (28px) is the square for a close or clear icon inside something else and sits outside
+ * the ladder.
+ */
 export const Sizes = createPreview(() => (
-  <div className="flex items-center gap-4">
-    <Button variant="primary">Default</Button>
-    <Button variant="primary" size="sm">
-      Small
-    </Button>
-    <Button variant="ghost" size="icon-sm">
-      <X className="size-4" />
-    </Button>
+  <div className="flex flex-col gap-4">
+    <div className="flex items-center gap-4">
+      <span className="text-neutral-9 w-16 text-xs">default</span>
+      <Button variant="primary">Save alert</Button>
+      <Button label="Last 7 days" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
+      <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" />
+    </div>
+    <div className="flex items-center gap-4">
+      <span className="text-neutral-9 w-16 text-xs">compact</span>
+      <Button variant="primary" size="compact">
+        Save alert
+      </Button>
+      <Button
+        label="Last 7 days"
+        size="compact"
+        rightIcon={{ icon: ChevronDown, withSeparator: true }}
+      />
+      <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" size="compact" />
+    </div>
+    <div className="flex items-center gap-4">
+      <span className="text-neutral-9 w-16 text-xs">icon-sm</span>
+      <Button variant="ghost" size="icon-sm">
+        <X className="size-4" />
+      </Button>
+    </div>
   </div>
 ));
 
@@ -71,8 +94,28 @@ export const Disabled = createPreview(() => (
   </div>
 ));
 
+/**
+ * `width="full"` is the modal-footer and auth-form shape: a pair of full-width buttons sharing a
+ * row. It replaces the `className="w-full justify-center"` that 116 legacy call sites set by hand.
+ */
+export const FullWidth = createPreview(() => (
+  <div className="flex w-96 flex-col gap-3">
+    <Button variant="primary" width="full">
+      Create organization
+    </Button>
+    <div className="flex gap-2">
+      <Button variant="outline" width="full">
+        Cancel
+      </Button>
+      <Button variant="primary" width="full">
+        Save changes
+      </Button>
+    </div>
+  </div>
+));
+
 export const Playground = createPreview({
-  controls: defineControls({
+  controls: controlsFor(Button, {
     children: { type: 'text', default: 'Save alert' },
     variant: {
       type: 'select',
@@ -88,12 +131,56 @@ export const Playground = createPreview({
       ],
       default: 'primary',
     },
-    size: { type: 'radio', options: ['default', 'sm'], default: 'default' },
+    size: { type: 'radio', options: ['default', 'compact'], default: 'default' },
+    width: { type: 'radio', options: ['auto', 'full'], default: 'auto' },
     disabled: { type: 'boolean', default: false },
   }),
   render: v => (
-    <Button variant={v.variant} size={v.size} disabled={v.disabled}>
-      {v.children}
-    </Button>
+    <div className="w-80">
+      <Button variant={v.variant} size={v.size} width={v.width} disabled={v.disabled}>
+        {v.children}
+      </Button>
+    </div>
+  ),
+});
+
+const RIGHT_ICONS = { chevron: ChevronDown, filter: ListFilter, copy: Copy, clear: X };
+
+/** The segmented `label` layout: a select, menu or filter trigger. */
+export const TriggerPlayground = createPreview({
+  controls: controlsFor(Button, {
+    label: { type: 'text', default: 'Last 7 days' },
+    accessoryInformation: {
+      type: 'text',
+      default: '',
+      // The component tests `!= null`, so an empty string would draw an empty segment.
+      derive: text => text || undefined,
+    },
+    rightIcon: {
+      type: 'select',
+      options: ['none', 'chevron', 'filter', 'copy', 'clear'],
+      default: 'chevron',
+      derive: name =>
+        name === 'none' ? undefined : { icon: RIGHT_ICONS[name], withSeparator: true },
+    },
+    variant: {
+      type: 'select',
+      options: ['default', 'active', 'action', 'muted-action'],
+      default: 'default',
+    },
+    size: { type: 'radio', options: ['default', 'compact'], default: 'default' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
+    disabled: { type: 'boolean', default: false },
+  }),
+  render: v => (
+    <Button
+      label={v.label}
+      accessoryInformation={v.accessoryInformation}
+      rightIcon={v.rightIcon}
+      variant={v.variant}
+      size={v.size}
+      onSurface={v.onSurface}
+      disabled={v.disabled}
+    />
   ),
 });

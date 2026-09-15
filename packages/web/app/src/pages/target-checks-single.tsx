@@ -13,6 +13,11 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Switch } from '@/components/base/switch/switch';
+import { Textarea } from '@/components/base/textarea/textarea';
 import {
   ChangesBlock,
   CompositionErrorsList,
@@ -30,15 +35,10 @@ import { AlertTriangleIcon, DiffIcon } from '@/components/ui/icon';
 import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { QueryError } from '@/components/ui/query-error';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DownloadButton } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -50,6 +50,13 @@ import {
   ListBulletIcon,
 } from '@radix-ui/react-icons';
 import { SDLDiffView, SDLView } from './target-history-schema-version';
+
+/** A status icon inside a tab, explained on hover. */
+function StatusTooltip(props: { icon: React.ReactNode; label: string }) {
+  return (
+    <Tooltip trigger={<span className="inline-flex">{props.icon}</span>} content={props.label} />
+  );
+}
 
 function AnnotatedSDLView(props: {
   sdl: string;
@@ -244,7 +251,6 @@ function ApproveFailedSchemaCheckModal(props: {
         <Textarea
           value={approvalComment}
           onChange={onApprovalCommentChange}
-          className="w-full"
           placeholder="(Optional)  Add a comment..."
         />
         <div className="text-right">
@@ -282,16 +288,24 @@ function ApproveFailedSchemaCheckModal(props: {
 
 const BreakingChangesTitle = () => {
   return (
-    <TooltipProvider>
+    <>
       Breaking Changes
-      <Tooltip>
-        <TooltipTrigger>
-          <Button variant="ghost" size="icon-sm" className="ml-1">
+      <Popover
+        trigger={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="ml-1"
+            aria-label="About breaking changes"
+          >
             <InfoCircledIcon className="size-3" />
           </Button>
-        </TooltipTrigger>
-        <TooltipContent align="start">
-          <div className="mb-2 max-w-[500px] font-normal">
+        }
+        openOnHover
+        align="start"
+        width="xl"
+        content={
+          <div className="text-neutral-11 font-normal">
             <h5 className="mb-1 text-lg font-bold">Breaking Changes</h5>
             <p className="mb-2 text-sm">Schema changes that can potentially break clients.</p>
             <h6 className="mb-1 font-bold">Breaking Change Approval</h6>
@@ -305,26 +319,31 @@ const BreakingChangesTitle = () => {
               based on live usage data collected from your GraphQL Gateway.
             </p>
           </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+        }
+      />
+    </>
   );
 };
 
 const PolicyInfo = () => {
   return (
-    <TooltipProvider delayDuration={0}>
-      <Tooltip>
-        <TooltipTrigger>
-          <InfoIcon className="ml-2 inline-block" size={14} />
-        </TooltipTrigger>
-        <TooltipContent align="start">
+    <Popover
+      trigger={
+        <button type="button" aria-label="About policy line numbers" className="ml-2 inline-block">
+          <InfoIcon size={14} />
+        </button>
+      }
+      openOnHover
+      align="start"
+      width="auto"
+      content={
+        <p className="text-neutral-11 text-sm">
           Schema policy checks run on the composed API schema. Line numbers
           <br />
           reflect that and will not match the lines from the source schema.
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+        </p>
+      }
+    />
   );
 };
 
@@ -357,16 +376,24 @@ const PolicyBlock = (props: {
                 on line {edge.node.start.line}
               </span>
             ) : null}
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger>
-                  <CircleQuestionMarkIcon size={16} className="text-neutral-6 ml-2 inline-block" />
-                </TooltipTrigger>
-                <TooltipContent>
+            <Popover
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Which rule"
+                  className="text-neutral-6 ml-2 inline-block"
+                >
+                  <CircleQuestionMarkIcon size={16} />
+                </button>
+              }
+              openOnHover
+              width="auto"
+              content={
+                <p className="text-neutral-11 text-sm">
                   rule: <span className="text-neutral-12">{edge.node.ruleId}</span>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </p>
+              }
+            />
           </li>
         ))}
       </ul>
@@ -416,10 +443,8 @@ function ConditionalBreakingChangesMetadataSection(props: {
         <br />
         <DocsLink
           href="/schema-registry/management/targets#conditional-breaking-changes"
-          className="text-neutral-10 hover:text-neutral-11"
-        >
-          Learn more about conditional breaking changes.
-        </DocsLink>
+          text="Learn more about conditional breaking changes."
+        />
       </div>
     );
   }
@@ -460,16 +485,16 @@ function ConditionalBreakingChangesMetadataSection(props: {
               </Fragment>
             ))}
             {' and '}
-            <Popover>
-              <PopoverTrigger asChild>
+            <Popover
+              trigger={
                 <Button variant="link" className="p-0">
                   {excludedTargets.length} more
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent>
+              }
+              content={
                 <div className="p-2">
                   <h4 className="text-neutral-12 mb-2 text-sm font-semibold">All Targets</h4>
-                  <ScrollArea className="h-44 w-full">
+                  <ScrollArea height="sm">
                     <div className="divide-neutral-5 grid grid-cols-1 divide-y">
                       {allTargets.map((target, index) => (
                         <div key={index} className="py-2">
@@ -479,8 +504,8 @@ function ConditionalBreakingChangesMetadataSection(props: {
                     </div>
                   </ScrollArea>
                 </div>
-              </PopoverContent>
-            </Popover>
+              }
+            />
           </>
         )}
         . <br />
@@ -499,10 +524,8 @@ function ConditionalBreakingChangesMetadataSection(props: {
         <br />
         <DocsLink
           href="/schema-registry/management/targets#conditional-breaking-changes"
-          className="text-neutral-10 hover:text-neutral-11"
-        >
-          Learn more about conditional breaking changes.
-        </DocsLink>
+          text="Learn more about conditional breaking changes."
+        />
       </p>
     </div>
   );
@@ -977,23 +1000,25 @@ function ContractCheckView(props: {
   }
 
   return (
-    <TooltipProvider>
+    <>
       <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
         <TabsList className="bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b">
           {items.map(item => (
-            <Tooltip key={item.value}>
-              <TooltipTrigger>
-                <TabsTrigger value={item.value} disabled={!!item.disabledReason}>
-                  {item.icon}
-                  <span className="ml-2">{item.label}</span>
-                </TabsTrigger>
-              </TooltipTrigger>
-              {item.disabledReason && (
-                <TooltipContent className="max-w-md p-4 font-normal">
-                  {item.disabledReason}
-                </TooltipContent>
-              )}
-            </Tooltip>
+            <Tooltip
+              key={item.value}
+              trigger={
+                <span className="inline-flex">
+                  <TabsTrigger value={item.value} disabled={!!item.disabledReason}>
+                    {item.icon}
+                    <span className="ml-2">{item.label}</span>
+                  </TabsTrigger>
+                </span>
+              }
+              content={item.disabledReason}
+              disabled={!item.disabledReason}
+              maxWidth="lg"
+              padding="lg"
+            />
           ))}
         </TabsList>
       </Tabs>
@@ -1114,7 +1139,7 @@ function ContractCheckView(props: {
             />
           ))}
       </div>
-    </TooltipProvider>
+    </>
   );
 }
 
@@ -1232,39 +1257,27 @@ function SchemaChecksView(props: {
             className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
           >
             <span>Default Graph</span>
-            <TooltipProvider>
-              <Tooltip>
-                {schemaCheck.hasSchemaCompositionErrors ? (
-                  <>
-                    <TooltipTrigger>
-                      <ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />
-                    </TooltipTrigger>
-                    <TooltipContent>Composition failed.</TooltipContent>
-                  </>
-                ) : schemaCheck.hasUnapprovedBreakingChanges ? (
-                  <>
-                    <TooltipTrigger>
-                      <ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />
-                    </TooltipTrigger>
-                    <TooltipContent>Unapproved breaking changes!</TooltipContent>
-                  </>
-                ) : schemaCheck.hasSchemaChanges ? (
-                  <>
-                    <TooltipTrigger>
-                      <GitCompareIcon className="size-4 pl-1" />
-                    </TooltipTrigger>
-                    <TooltipContent>Schema changed</TooltipContent>
-                  </>
-                ) : (
-                  <>
-                    <TooltipTrigger>
-                      <CheckIcon className="size-4 pl-1" />
-                    </TooltipTrigger>
-                    <TooltipContent>Composition succeeded.</TooltipContent>
-                  </>
-                )}
-              </Tooltip>
-            </TooltipProvider>
+            {schemaCheck.hasSchemaCompositionErrors ? (
+              <StatusTooltip
+                icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
+                label="Composition failed."
+              />
+            ) : schemaCheck.hasUnapprovedBreakingChanges ? (
+              <StatusTooltip
+                icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
+                label="Unapproved breaking changes!"
+              />
+            ) : schemaCheck.hasSchemaChanges ? (
+              <StatusTooltip
+                icon={<GitCompareIcon className="size-4 pl-1" />}
+                label="Schema changed"
+              />
+            ) : (
+              <StatusTooltip
+                icon={<CheckIcon className="size-4 pl-1" />}
+                label="Composition succeeded."
+              />
+            )}
           </TabsTrigger>
           {schemaCheck.contractChecks?.edges.map(edge => (
             <TabsTrigger
@@ -1273,39 +1286,27 @@ function SchemaChecksView(props: {
               className="mt-1 py-2 data-[state=active]:rounded-b-none"
             >
               {edge.node.contractName}
-              <TooltipProvider>
-                <Tooltip>
-                  {edge.node.hasSchemaCompositionErrors ? (
-                    <>
-                      <TooltipTrigger>
-                        <ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />
-                      </TooltipTrigger>
-                      <TooltipContent>Composition failed.</TooltipContent>
-                    </>
-                  ) : edge.node.hasUnapprovedBreakingChanges ? (
-                    <>
-                      <TooltipTrigger>
-                        <ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />
-                      </TooltipTrigger>
-                      <TooltipContent>Unapproved breaking changes!</TooltipContent>
-                    </>
-                  ) : edge.node.hasSchemaChanges ? (
-                    <>
-                      <TooltipTrigger>
-                        <GitCompareIcon className="size-4 pl-1" />
-                      </TooltipTrigger>
-                      <TooltipContent>Contract schema changed</TooltipContent>
-                    </>
-                  ) : (
-                    <>
-                      <TooltipTrigger>
-                        <CheckIcon className="size-4 pl-1" />
-                      </TooltipTrigger>
-                      <TooltipContent>Composition succeeded.</TooltipContent>
-                    </>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
+              {edge.node.hasSchemaCompositionErrors ? (
+                <StatusTooltip
+                  icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
+                  label="Composition failed."
+                />
+              ) : edge.node.hasUnapprovedBreakingChanges ? (
+                <StatusTooltip
+                  icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
+                  label="Unapproved breaking changes!"
+                />
+              ) : edge.node.hasSchemaChanges ? (
+                <StatusTooltip
+                  icon={<GitCompareIcon className="size-4 pl-1" />}
+                  label="Contract schema changed"
+                />
+              ) : (
+                <StatusTooltip
+                  icon={<CheckIcon className="size-4 pl-1" />}
+                  label="Composition succeeded."
+                />
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -1509,8 +1510,10 @@ const ActiveSchemaCheck = (props: {
           {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.canBeApproved ? (
             <div className="ml-auto mr-0 pl-4">
               {schemaCheck.canBeApprovedByViewer ? (
-                <Popover open={approvalOpen} onOpenChange={setApprovalOpen}>
-                  <PopoverTrigger asChild>
+                <Popover
+                  open={approvalOpen}
+                  onOpenChange={setApprovalOpen}
+                  trigger={
                     <Button variant="destructive" disabled={approvalOpen}>
                       Approve{' '}
                       {approvalOpen ? (
@@ -1519,9 +1522,11 @@ const ActiveSchemaCheck = (props: {
                         <ChevronDown className="ml-2 size-4" />
                       )}
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[450px]" align="end">
-                    <PopoverArrow />
+                  }
+                  width="lg"
+                  align="end"
+                  arrow
+                  content={
                     <ApproveFailedSchemaCheckModal
                       onClose={() => setApprovalOpen(false)}
                       organizationSlug={props.organizationSlug}
@@ -1530,8 +1535,8 @@ const ActiveSchemaCheck = (props: {
                       schemaCheckId={schemaCheck.id}
                       contextId={schemaCheck.contextId}
                     />
-                  </PopoverContent>
-                </Popover>
+                  }
+                />
               ) : null}
             </div>
           ) : null}
@@ -1540,20 +1545,22 @@ const ActiveSchemaCheck = (props: {
           <div className="py-6">
             <div className="border-neutral-2 text-neutral-10 flex flex-row items-center gap-x-6 rounded-md border p-4 font-medium">
               <div>
-                <TooltipProvider delayDuration={100}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+                <Tooltip
+                  trigger={
+                    <span className="inline-flex">
                       <BadgeCheck className="size-6 text-green-500" />
-                    </TooltipTrigger>
-                    <TooltipContent>
+                    </span>
+                  }
+                  content={
+                    <>
                       Schema Check was manually approved by{' '}
                       {schemaCheck.approvedBy?.displayName ??
                         schemaCheck.cliApprovalMetadata?.displayName ??
                         'unknown'}
                       .
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                    </>
+                  }
+                />
               </div>
               <div>
                 <p className="text-sm font-medium leading-none">

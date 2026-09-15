@@ -3,6 +3,10 @@ import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Input } from '@/components/base/input/input';
+import { RadioGroup } from '@/components/base/radio-group/radio-group';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Textarea } from '@/components/base/textarea/textarea';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { Priority, priorityDescription, Status } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
@@ -15,11 +19,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Sheet,
   SheetContent,
@@ -36,15 +38,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
 import { useNotifications, useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
+
+const PRIORITY_ITEMS = [
+  SupportTicketPriority.Normal,
+  SupportTicketPriority.High,
+  SupportTicketPriority.Urgent,
+].map(priority => ({
+  value: priority,
+  label: priority.charAt(0) + priority.slice(1).toLowerCase(),
+  description: priorityDescription[priority],
+}));
 
 const newTicketFormSchema = z.object({
   subject: z.string().min(2, {
@@ -152,84 +162,63 @@ function NewTicketForm(props: {
               </SheetDescription>
             </SheetHeader>
 
-            <div className="flex flex-1">
-              <div className="w-full space-y-6 overflow-y-auto text-ellipsis px-2 text-sm">
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Priority level</FormLabel>
-                      <FormControl>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <ScrollArea fill>
+                <div className="w-full space-y-6 text-ellipsis px-2 text-sm">
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Priority level</FormLabel>
                         <RadioGroup
+                          variant="as-card"
+                          orientation="vertical"
+                          value={field.value}
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-1"
-                        >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value={SupportTicketPriority.Normal} />
-                            </FormControl>
-                            <FormLabel className="text-neutral-10 font-normal">
-                              <span className="text-neutral-12 font-semibold">Normal</span> -{' '}
-                              {priorityDescription[SupportTicketPriority.Normal]}
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value={SupportTicketPriority.High} />
-                            </FormControl>
-                            <FormLabel className="text-neutral-10 font-normal">
-                              <span className="text-neutral-12 font-semibold">High</span> -{' '}
-                              {priorityDescription[SupportTicketPriority.High]}
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value={SupportTicketPriority.Urgent} />
-                            </FormControl>
-                            <FormLabel className="text-neutral-10 font-normal">
-                              <span className="text-neutral-12 font-semibold">Urgent</span> -{' '}
-                              {priorityDescription[SupportTicketPriority.Urgent]}
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="subject"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Subject</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter a subject of your issue" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter a short description of your issue"
-                          {...field}
+                          items={PRIORITY_ITEMS}
                         />
-                      </FormControl>
-                      <FormDescription>Help us understand it better.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter a subject of your issue"
+                            onSurface="raised"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter a short description of your issue"
+                            onSurface="raised"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>Help us understand it better.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </ScrollArea>
             </div>
 
             <SheetFooter className="flex flex-col gap-y-2 sm:flex-col">
@@ -328,7 +317,7 @@ function Support(props: {
   const tickets = supportTicketsConnection?.edges.map(e => e.node);
 
   return (
-    <TooltipProvider>
+    <>
       <div>
         <div className="flex flex-row items-center justify-between py-6">
           <div>
@@ -371,7 +360,7 @@ function Support(props: {
           </Table>
         </div>
       </div>
-    </TooltipProvider>
+    </>
   );
 }
 

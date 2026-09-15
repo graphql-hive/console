@@ -1,26 +1,20 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDate, formatISO, subDays } from 'date-fns';
-import { BellRing, ChevronDown, Lock, MoreVertical, Users } from 'lucide-react';
+import { BellRing, Lock, MoreVertical, Users } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Button as BaseButton } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
-import { Menu, MenuItem } from '@/components/base/floating/menu/menu';
+import { Menu } from '@/components/base/floating/menu/menu';
+import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
+import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BackLink } from '@/components/navigation/back-link';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  availablePresets,
-  buildDateRangeString,
-  DateRangePicker,
-  type Preset,
-} from '@/components/ui/date-range-picker';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
@@ -233,11 +227,10 @@ function NameCell({
           if (e.key === 'Enter') void handleRename();
           else if (e.key === 'Escape') onStopRename();
         }}
-        className="h-8"
+        size="compact"
       />
       <Button
         variant="primary"
-        size="sm"
         onClick={() => void handleRename()}
         disabled={
           updateResult.fetching || !renameValue.trim() || renameValue.trim() === filter.name
@@ -265,7 +258,7 @@ function VisibilityCell({ filter }: { filter: SavedFilterNode }) {
       )}
       {filter.usedByAlertRulesCount > 0 && (
         <span
-          className="text-neutral-10 ml-1.5 inline-flex items-center gap-1 text-[13px]"
+          className="text-neutral-10 text-control ml-1.5 inline-flex items-center gap-1"
           title={`Used by ${filter.usedByAlertRulesCount} alert rule${
             filter.usedByAlertRulesCount === 1 ? '' : 's'
           }. Detach it from those alerts to delete.`}
@@ -305,9 +298,9 @@ function ActionsCell({
         align="end"
         sections={[
           [
-            <MenuItem
-              key="view"
-              render={
+            {
+              label: 'View in Insights',
+              render: (
                 <Link
                   to="/$organizationSlug/$projectSlug/$targetSlug/insights"
                   params={{ organizationSlug, projectSlug, targetSlug }}
@@ -320,43 +313,23 @@ function ActionsCell({
                     },
                   })}
                 />
-              }
-            >
-              View in Insights
-            </MenuItem>,
-            // Only shared filters can be attached to an alert, so don't offer
-            // "Create alert" from a private one (the alert form would reject it).
-            filter.visibility === SavedFilterVisibilityType.Shared && (
-              <MenuItem
-                key="create-alert"
-                render={
-                  <Link
-                    to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
-                    params={{ organizationSlug, projectSlug, targetSlug }}
-                    search={{ savedFilterId: filter.id }}
-                  />
-                }
-              >
-                Create alert
-              </MenuItem>
-            ),
-            filter.viewerCanUpdate && (
-              <MenuItem key="rename" onClick={onRename}>
-                Rename
-              </MenuItem>
-            ),
+              ),
+            },
+            filter.visibility === SavedFilterVisibilityType.Shared && {
+              label: 'Create alert',
+              render: (
+                <Link
+                  to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
+                  params={{ organizationSlug, projectSlug, targetSlug }}
+                  search={{ savedFilterId: filter.id }}
+                />
+              ),
+            },
+            filter.viewerCanUpdate && { label: 'Rename', onClick: onRename },
             filter.viewerCanDelete &&
-              (filter.usedByAlertRulesCount > 0 ? (
-                // In use by an alert -> deletion is blocked (the server also enforces
-                // this). Disable the item; the row's "In use" indicator explains why.
-                <MenuItem key="delete" variant="destructiveAction" disabled>
-                  Delete
-                </MenuItem>
-              ) : (
-                <MenuItem key="delete" variant="destructiveAction" onClick={onDelete}>
-                  Delete
-                </MenuItem>
-              )),
+              (filter.usedByAlertRulesCount > 0
+                ? { label: 'Delete', variant: 'destructiveAction', disabled: true }
+                : { label: 'Delete', variant: 'destructiveAction', onClick: onDelete }),
           ],
         ]}
       />
@@ -383,25 +356,6 @@ function SavedFilterRowFilters({
   const [dateRange, setDateRange] = useState(savedDateRange);
 
   const startDate = useMemo(() => subDays(new Date(), dataRetentionInDays), [dataRetentionInDays]);
-
-  const selectedPreset = useMemo<Preset>(() => {
-    const match = availablePresets.find(
-      p => p.range.from === dateRange.from && p.range.to === dateRange.to,
-    );
-    if (match) return match;
-
-    const from = parse(dateRange.from);
-    const to = parse(dateRange.to);
-    if (from && to) {
-      return {
-        name: `${dateRange.from}_${dateRange.to}`,
-        label: buildDateRangeString({ from, to }),
-        range: dateRange,
-      };
-    }
-
-    return { name: 'last7d', label: 'Last 7 days', range: DEFAULT_DATE_RANGE };
-  }, [dateRange]);
 
   const resolvedPeriod = useMemo(() => {
     const from = parse(dateRange.from);
@@ -641,13 +595,7 @@ function SavedFilterRowFilters({
     <div className="px-10 py-4">
       <div className="flex flex-wrap items-center gap-2">
         <DateRangePicker
-          trigger={
-            <BaseButton
-              label={selectedPreset.label}
-              variant="default"
-              rightIcon={{ icon: ChevronDown, withSeparator: true }}
-            />
-          }
+          size="compact"
           selectedRange={dateRange}
           onUpdate={({ preset }) => setDateRange(preset.range)}
           startDate={startDate}
@@ -693,7 +641,6 @@ function SavedFilterRowFilters({
         <div className="mt-3 flex gap-2">
           <Button
             variant={hasChanges ? 'primary' : 'default'}
-            size="sm"
             onClick={handleSave}
             disabled={updateResult.fetching || !hasChanges}
           >
@@ -701,7 +648,6 @@ function SavedFilterRowFilters({
           </Button>
           <Button
             variant="default"
-            size="sm"
             onClick={handleCancel}
             disabled={updateResult.fetching || !hasChanges}
           >
@@ -850,9 +796,21 @@ function ManageFiltersContent(props: {
   return (
     <>
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Filters" value={stats.total} />
-        <StatCard label="Shared Filters" value={stats.shared} />
-        <StatCard label="Total Views" value={stats.totalViews} />
+        <StatCard
+          variants={{ onSurface: 'raised', tone: 'muted' }}
+          title="Total Filters"
+          value={stats.total.toLocaleString()}
+        />
+        <StatCard
+          variants={{ onSurface: 'raised', tone: 'muted' }}
+          title="Shared Filters"
+          value={stats.shared.toLocaleString()}
+        />
+        <StatCard
+          variants={{ onSurface: 'raised', tone: 'muted' }}
+          title="Total Views"
+          value={stats.totalViews.toLocaleString()}
+        />
       </div>
 
       <div className="mt-8">
@@ -873,19 +831,6 @@ function ManageFiltersContent(props: {
         />
       </div>
     </>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-neutral-10 text-sm font-medium">{label}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value.toLocaleString()}</div>
-      </CardContent>
-    </Card>
   );
 }
 

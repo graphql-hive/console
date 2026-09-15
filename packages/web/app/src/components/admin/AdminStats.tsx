@@ -10,18 +10,7 @@ import {
 import ReactECharts from 'echarts-for-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
-import {
-  DataWrapper,
-  Sortable,
-  Stat,
-  Table,
-  TBody,
-  Td,
-  Th,
-  THead,
-  Tooltip,
-  Tr,
-} from '@/components/v2';
+import { DataWrapper, Sortable, Stat, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { theme } from '@/lib/charts';
@@ -281,7 +270,7 @@ function OrganizationTable({ data }: { data: Organization[] }) {
     <>
       <Table>
         <THead>
-          <Tooltip.Provider>
+          <>
             {headers.map(header => {
               const align =
                 (header.column.columnDef.meta as { align: 'right' } | undefined)?.align ?? 'left';
@@ -302,7 +291,7 @@ function OrganizationTable({ data }: { data: Organization[] }) {
                 </Th>
               );
             })}
-          </Tooltip.Provider>
+          </>
         </THead>
         <TBody>
           {tableInstance.getRowModel().rows.map(row => (

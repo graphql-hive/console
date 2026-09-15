@@ -5,6 +5,10 @@ describe('buildEditorOptions', () => {
     expect(buildEditorOptions().fixedOverflowWidgets).toBe(true);
   });
 
+  it('keeps sticky scroll off', () => {
+    expect(buildEditorOptions().stickyScroll?.enabled).toBe(false);
+  });
+
   // Caller options are spread first on purpose; flipping to the more familiar
   // {...defaults, ...overrides} order would let an editor clip its own hovers.
   it('does not let a caller turn the shared options off', () => {

@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useQuery } from 'urql';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
-import { DocsLink } from '@/components/ui/docs-note';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { graphql } from '@/gql';
@@ -49,31 +47,27 @@ export function PersonalAccessTokensSubPage(
       <SubPageLayoutHeader
         subPageTitle="Personal Access Tokens"
         description={
-          <div className="max-w-[800px] space-y-2">
-            <CardDescription>
+          <>
+            <p>
               Here you can manage access tokens on behalf of your users authority. You can create
               and assign access tokens with a subset of your organization membership permissions and
               resource access.
-            </CardDescription>
-            <CardDescription>
+            </p>
+            <p>
               Your personal access tokens are disabled once your user account looses the authority
               to issue personal access tokens.
-            </CardDescription>
-            <CardDescription>
+            </p>
+            <p>
               It is recommended to use personal access tokens for local development. If you are
               setting up CI or CD pipelines please instead consider using project or organization
               scoped access tokens.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/access-tokens"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                Learn more about Access Tokens
-              </DocsLink>
-            </CardDescription>
-          </div>
+            </p>
+          </>
         }
+        docsLink={{
+          href: '/schema-registry/management/access-tokens',
+          text: 'Learn more about Access Tokens',
+        }}
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
         <Sheet

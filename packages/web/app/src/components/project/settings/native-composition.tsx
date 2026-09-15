@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import { FlaskConicalIcon, HeartCrackIcon, PartyPopperIcon, RefreshCcwIcon } from 'lucide-react';
 import { CombinedError, useMutation, useQuery } from 'urql';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/base/badge/badge';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Switch } from '@/components/base/switch/switch';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
-import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
@@ -55,9 +55,9 @@ const IncrementalNativeCompositionSwitch = (props: {
         </div>
       </div>
       <div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
+        <Tooltip
+          trigger={
+            <span className="inline-flex">
               <Switch
                 disabled={mutation.fetching}
                 onCheckedChange={nativeComposition => {
@@ -72,15 +72,18 @@ const IncrementalNativeCompositionSwitch = (props: {
                 }}
                 checked={!target.experimental_forcedLegacySchemaComposition}
               />
-            </TooltipTrigger>
-            <TooltipContent sideOffset={2}>
+            </span>
+          }
+          sideOffset={2}
+          content={
+            <>
               <span className="font-semibold">
                 {target.experimental_forcedLegacySchemaComposition ? 'Enable' : 'Disable'}
               </span>{' '}
               native composition for the target
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+            </>
+          }
+        />
       </div>
     </div>
   );
@@ -224,7 +227,7 @@ export function NativeCompositionSettings(props: {
           <div>
             <div className="flex flex-row items-center gap-x-2">
               <div className="font-semibold">Incremental migration</div>
-              <Badge variant="outline">experimental</Badge>
+              <Badge content="experimental" variants={{ variant: 'outline' }} />
             </div>
             <div className="text-neutral-10 text-sm">
               Your project is using the experimental incremental migration feature. <br />

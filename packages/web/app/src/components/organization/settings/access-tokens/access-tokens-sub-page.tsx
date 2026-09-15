@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useQuery } from 'urql';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
-import { DocsLink } from '@/components/ui/docs-note';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -53,25 +51,21 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
       <SubPageLayoutHeader
         subPageTitle="Access Tokens"
         description={
-          <div className="max-w-[800px] space-y-2">
-            <CardDescription>
+          <>
+            <p>
               Access Tokens are used for the Hive CLI, Hive Public GraphQL API and Hive Usage
               Reporting. Granular resource based access can be granted based on permissions.
-            </CardDescription>
-            <CardDescription>
+            </p>
+            <p>
               Here you can see, create and revoke access tokens issued within the whole organization
               (including project, personal and organization scoped) access tokens.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/access-tokens"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                Learn more about Access Tokens
-              </DocsLink>
-            </CardDescription>
-          </div>
+            </p>
+          </>
         }
+        docsLink={{
+          href: '/schema-registry/management/access-tokens',
+          text: 'Learn more about Access Tokens',
+        }}
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-access-tokens">
         <Sheet

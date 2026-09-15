@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import z from 'zod';
+import { Input } from '@/components/base/input/input';
 import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import {
   Form,
@@ -14,12 +16,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import * as Table from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { Tag } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -292,7 +292,12 @@ export function OIDCRegisteredDomainSheet(props: {
                               <FormItem>
                                 <FormLabel>Domain Name</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="example.com" autoComplete="off" {...field} />
+                                  <Input
+                                    placeholder="example.com"
+                                    autoComplete="off"
+                                    onSurface="raised"
+                                    {...field}
+                                  />
                                 </FormControl>
                                 <FormDescription>
                                   The domain you want to register with this OIDC provider.
@@ -356,9 +361,7 @@ export function OIDCRegisteredDomainSheet(props: {
                       </Table.Table>
                       {domain && !domain.challenge && (
                         <>
-                          <Tag color="yellow" className="text-neutral-11 px-4 py-2.5">
-                            <p>This challenge has expired.</p>
-                          </Tag>
+                          <Callout type="warning">This challenge has expired.</Callout>
                           <div className="text-red-500">
                             {requestDomainChallengeMutationState.error?.message ??
                               requestDomainChallengeMutationState.data?.requestOIDCDomainChallenge

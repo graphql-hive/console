@@ -2,6 +2,8 @@ import { ReactElement } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Select } from '@/components/base/floating/select/select';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,8 +21,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import {
@@ -208,7 +208,12 @@ export function CreateOperationModalContent(props: {
                     <FormItem>
                       <FormLabel>Operation Name</FormLabel>
                       <FormControl>
-                        <Input autoComplete="off" {...field} placeholder="Your Operation Name" />
+                        <Input
+                          autoComplete="off"
+                          {...field}
+                          placeholder="Your Operation Name"
+                          onSurface="raised"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -223,22 +228,20 @@ export function CreateOperationModalContent(props: {
                         Which collection would you like to save this operation to?
                       </FormLabel>
                       <FormControl>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger data-cy="collection-select-trigger">
-                            {props.collections.find(c => c.id === field.value)?.name ??
-                              'Select a Collection'}
-                          </SelectTrigger>
-                          <SelectContent className="w-(--radix-select-trigger-width)">
-                            {props.collections.map(c => (
-                              <SelectItem key={c.id} value={c.id} data-cy="collection-select-item">
-                                {c.name}
-                                <div className="mt-1 line-clamp-1 text-xs opacity-50">
-                                  {c.description}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Select
+                          options={props.collections.map(c => ({
+                            value: c.id,
+                            label: c.name,
+                            description: c.description,
+                            'data-cy': 'collection-select-item',
+                          }))}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Select a Collection"
+                          matchTriggerWidth
+                          width="full"
+                          data-cy="collection-select-trigger"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -1,7 +1,7 @@
 import { createPreview, NavPath } from 'react-foundry';
 import { CopyChip } from './copy-chip';
 
-export const nav: NavPath = 'Base/CopyChip';
+export const nav: NavPath = 'Base/Primitives/CopyChip';
 
 export const Default = createPreview(() => (
   <div className="w-[44rem]">

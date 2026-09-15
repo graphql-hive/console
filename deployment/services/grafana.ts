@@ -37,9 +37,10 @@ export function deployGrafana(envName: string, tableSuffix: string) {
     const configJson = JSON.parse(configString);
 
     // Pin a stable uid from the filename so dashboard URLs survive redeploys
-    configJson.uid = `hive-${identifier.toLowerCase().replace(/^hive-/, '')}`;
-    delete configJson.id;
-    delete configJson.version;
+    const dashboardConfig = configJson.spec ?? configJson;
+    dashboardConfig.uid = `hive-${identifier.toLowerCase().replace(/^hive-/, '')}`;
+    delete dashboardConfig.id;
+    delete dashboardConfig.version;
 
     return new oss.Dashboard(`dashboard-${identifier.toLowerCase()}`, {
       folder: folder.uid,
