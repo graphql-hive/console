@@ -81,6 +81,8 @@ export type DataTableCellProps<TTo extends string = '.'> =
       label: ReactNode;
       tone?: 'default' | 'accent';
       mono?: boolean;
+      /** Cut the label at the column width with an ellipsis; the full label sits in the title. */
+      truncate?: boolean;
     } & DataTableDestination<TTo>)
   | {
       /**
@@ -180,11 +182,13 @@ function Destination<TTo extends string>({
   destination,
   className,
   children,
+  title,
   'aria-label': ariaLabel,
 }: {
   destination: DataTableDestination<TTo>;
   className: string;
   children: ReactNode;
+  title?: string;
   'aria-label'?: string;
 }) {
   if (destination.link) {
@@ -193,7 +197,7 @@ function Destination<TTo extends string>({
       // checked in full; inside the component TTo is opaque and no Link overload matches, the
       // same situation ui/link sits in.
       // @ts-expect-error see above
-      <Link {...destination.link} className={className} aria-label={ariaLabel}>
+      <Link {...destination.link} className={className} title={title} aria-label={ariaLabel}>
         {children}
       </Link>
     );
@@ -204,6 +208,7 @@ function Destination<TTo extends string>({
       target={destination.external ? '_blank' : undefined}
       rel={destination.external ? 'noreferrer' : undefined}
       className={className}
+      title={title}
       aria-label={ariaLabel}
     >
       {children}
@@ -273,6 +278,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
             props.mono && 'font-mono text-xs',
             props.truncate && 'block truncate',
           )}
+          title={props.truncate && typeof props.value === 'string' ? props.value : undefined}
         >
           {props.value}
           {props.secondary != null ? (
@@ -330,7 +336,12 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       return (
         <Destination
           destination={props}
-          className={cn(linkTone[props.tone ?? 'default'], props.mono && 'font-mono text-xs')}
+          className={cn(
+            linkTone[props.tone ?? 'default'],
+            props.mono && 'font-mono text-xs',
+            props.truncate && 'block truncate',
+          )}
+          title={props.truncate && typeof props.label === 'string' ? props.label : undefined}
         >
           {props.label}
         </Destination>

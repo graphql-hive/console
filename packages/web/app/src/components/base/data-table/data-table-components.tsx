@@ -24,7 +24,9 @@ const widthClass: Record<DataTableWidth, string> = {
   sm: 'w-32',
   md: 'w-48',
   lg: 'w-64',
-  fill: 'w-full',
+  // max-w-0 lets the fill column absorb the leftover width instead of widening the table to
+  // fit its content, which is what allows a truncated cell to truncate at all.
+  fill: 'w-full max-w-0 overflow-hidden',
 };
 
 const hideBelowClass: Record<DataTableHideBelow, string> = {
@@ -58,11 +60,11 @@ const surface = {
   },
 } as const satisfies Record<OnSurface, Record<string, string>>;
 
+// A borderless table sits on whatever holds it, a popover or a panel, so it brings no fill.
 export function wrapperClass(onSurface: OnSurface, bordered: boolean) {
   return cn(
     'overflow-hidden rounded-md',
-    bordered && 'border-neutral-5 border',
-    surface[onSurface].wrapper,
+    bordered && cn('border-neutral-5 border', surface[onSurface].wrapper),
   );
 }
 

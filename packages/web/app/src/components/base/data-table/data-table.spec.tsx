@@ -102,6 +102,47 @@ describe('DataTable', () => {
     expect(onChange.mock.calls[0][0]([])).toEqual([{ id: 'CREATED_AT', desc: true }]);
   });
 
+  it('brings its own fill only when bordered', () => {
+    const { container, rerender } = render(
+      <DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} />,
+    );
+    const wrapper = () => container.firstElementChild as HTMLElement;
+    expect(wrapper().className).toContain('border');
+    expect(wrapper().className).toContain('bg-neutral-1');
+
+    rerender(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        variants={{ bordered: false }}
+      />,
+    );
+    expect(wrapper().className).not.toContain('border');
+    expect(wrapper().className).not.toContain('bg-');
+  });
+
+  it('lets the fill column absorb the width and truncate instead of widening the table', () => {
+    const columns: ColumnDef<Row, unknown>[] = [
+      {
+        id: 'name',
+        header: 'Name',
+        meta: { width: 'fill' },
+        cell: ({ row }) => (
+          <DataTableCell kind="link" label={row.original.name} href="#" truncate />
+        ),
+      },
+    ];
+    const { container } = render(
+      <DataTable data={ROWS} columns={columns} getRowId={row => row.id} />,
+    );
+    const cell = container.querySelector('tbody td') as HTMLElement;
+    expect(cell.className).toContain('max-w-0');
+    const link = cell.querySelector('a') as HTMLElement;
+    expect(link.className).toContain('truncate');
+    expect(link.title).toBe('alpha');
+  });
+
   it('marks muted, disabled and selected rows from the data', () => {
     const { container } = render(
       <DataTable
