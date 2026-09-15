@@ -5,6 +5,7 @@ import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import z from 'zod';
 import { AuthCard, AuthCardStack } from '@/components/auth';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -14,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
@@ -170,7 +170,7 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
                           />
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="acme" {...form.register('slug')} />
+                          <Input placeholder="acme" onSurface="raised" {...form.register('slug')} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

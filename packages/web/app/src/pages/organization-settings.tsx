@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Input } from '@/components/base/input/input';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
@@ -21,7 +22,6 @@ import {
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -290,12 +290,12 @@ const OrganizationSettingsContent = (props: {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <div className="flex items-center">
-                        <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 rounded-md rounded-r-none border-y border-l px-3 py-2 text-sm">
-                          {env.appBaseUrl.replace(/https?:\/\//i, '')}/
-                        </div>
-                        <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
-                      </div>
+                      <Input
+                        placeholder="slug"
+                        prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/`}
+                        width="md"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -885,7 +885,7 @@ function AuditLogsOrganizationModal(props: {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input type="date" onSurface="raised" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -900,7 +900,7 @@ function AuditLogsOrganizationModal(props: {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input type="date" onSurface="raised" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

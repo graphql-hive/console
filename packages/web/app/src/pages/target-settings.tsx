@@ -16,6 +16,7 @@ import * as Yup from 'yup';
 import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Input } from '@/components/base/input/input';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Switch } from '@/components/base/switch/switch';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -35,7 +36,6 @@ import {
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { XIcon } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -835,7 +835,10 @@ const BreakingChanges = (props: {
                     ariaLabel: 'Percent of Traffic',
                     withIndicator: true,
                     content: (
-                      <span data-cy="target-cbc-breakingChangeFormula-option-percentage">
+                      <span
+                        data-cy="target-cbc-breakingChangeFormula-option-percentage"
+                        className="inline-flex items-center gap-2"
+                      >
                         <Input
                           name="percentage"
                           onChange={async event => {
@@ -847,9 +850,10 @@ const BreakingChanges = (props: {
                           onBlur={handleBlur}
                           value={values.percentage}
                           disabled={isSubmitting}
+                          invalid={touched.percentage && !!errors.percentage}
                           type="number"
                           step="0.01"
-                          className="inline-flex! mr-2 w-16 text-center"
+                          width="xs"
                         />
                         Percent of Traffic
                       </span>
@@ -860,7 +864,10 @@ const BreakingChanges = (props: {
                     ariaLabel: 'Total Operations',
                     withIndicator: true,
                     content: (
-                      <span data-cy="target-cbc-breakingChangeFormula-option-requestCount">
+                      <span
+                        data-cy="target-cbc-breakingChangeFormula-option-requestCount"
+                        className="inline-flex items-center gap-2"
+                      >
                         <Input
                           name="requestCount"
                           onChange={async event => {
@@ -872,9 +879,10 @@ const BreakingChanges = (props: {
                           onBlur={handleBlur}
                           value={values.requestCount}
                           disabled={isSubmitting}
+                          invalid={touched.requestCount && !!errors.requestCount}
                           type="number"
                           step="1"
-                          className="inline-flex! mr-2 w-16 text-center"
+                          width="xs"
                         />
                         Total Operations
                       </span>
@@ -883,20 +891,21 @@ const BreakingChanges = (props: {
                 ]}
               />
             </div>
-            <div>
-              in the past
+            <div className="flex flex-wrap items-center gap-2">
+              <span>in the past</span>
               <Input
                 name="period"
                 onChange={handleChange}
                 onBlur={handleBlur}
                 value={values.period}
                 disabled={isSubmitting}
+                invalid={touched.period && !!errors.period}
                 type="number"
                 min="1"
                 max={targetSettings.data?.organization?.usageRetentionInDays ?? 30}
-                className="inline-flex! mx-2 w-16"
+                width="xs"
               />
-              days.
+              <span>days.</span>
             </div>
             <div className="mt-3">
               {touched.percentage && errors.percentage && (
@@ -1238,9 +1247,10 @@ const AppDeploymentProtection = (props: {
                     onBlur={handleBlur}
                     value={values.minDaysSinceCreation}
                     disabled={isSubmitting}
+                    invalid={touched.minDaysSinceCreation && !!errors.minDaysSinceCreation}
                     type="number"
                     min="0"
-                    className="inline-flex! w-20 text-center"
+                    width="xs"
                   />
                   <span>days ago and has not been used for at least</span>
                   <Input
@@ -1249,9 +1259,10 @@ const AppDeploymentProtection = (props: {
                     onBlur={handleBlur}
                     value={values.minDaysInactive}
                     disabled={isSubmitting}
+                    invalid={touched.minDaysInactive && !!errors.minDaysInactive}
                     type="number"
                     min="0"
-                    className="inline-flex! w-20 text-center"
+                    width="xs"
                   />
                   <span>days</span>
                 </div>
@@ -1274,11 +1285,12 @@ const AppDeploymentProtection = (props: {
                     onBlur={handleBlur}
                     value={values.maxTrafficPercentage}
                     disabled={isSubmitting}
+                    invalid={touched.maxTrafficPercentage && !!errors.maxTrafficPercentage}
                     type="number"
                     min="0"
                     max="100"
                     step="0.01"
-                    className="inline-flex! w-20 text-center"
+                    width="xs"
                   />
                   <span>percent of traffic over the last</span>
                   <Input
@@ -1287,9 +1299,10 @@ const AppDeploymentProtection = (props: {
                     onBlur={handleBlur}
                     value={values.trafficPeriodDays}
                     disabled={isSubmitting}
+                    invalid={touched.trafficPeriodDays && !!errors.trafficPeriodDays}
                     type="number"
                     min="1"
-                    className="inline-flex! w-20 text-center"
+                    width="xs"
                   />
                   <span>days</span>
                 </div>
@@ -1463,13 +1476,12 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="flex items-center">
-                      <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 rounded-md rounded-r-none border-y border-l px-3 py-2 text-sm">
-                        {env.appBaseUrl.replace(/https?:\/\//i, '')}/{props.organizationSlug}/
-                        {props.projectSlug}/
-                      </div>
-                      <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
-                    </div>
+                    <Input
+                      placeholder="slug"
+                      prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${props.organizationSlug}/${props.projectSlug}/`}
+                      width="sm"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -1584,7 +1596,10 @@ function GraphQLEndpointUrl(props: {
               onChange={handleChange}
               onBlur={handleBlur}
               disabled={isSubmitting}
-              className="w-96"
+              invalid={
+                touched.graphqlEndpointUrl && !!(errors.graphqlEndpointUrl || mutation.error)
+              }
+              width="md"
             />
             <Button type="submit" disabled={isSubmitting}>
               Save

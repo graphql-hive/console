@@ -11,13 +11,13 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Link as LegacyLink } from '@/components/ui/link';
@@ -228,9 +228,12 @@ function SchemaCoordinateView(props: {
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
-          <Button variant="outline" onClick={() => dateRangeController.refreshResolvedRange()}>
-            <RefreshCw className="size-4" />
-          </Button>
+          <Button
+            layout="iconOnly"
+            icon={RefreshCw}
+            aria-label="Refresh"
+            onClick={() => dateRangeController.refreshResolvedRange()}
+          />
         </div>
       </div>
       {query.data?.target?.hasCollectedSubscriptionOperations && (

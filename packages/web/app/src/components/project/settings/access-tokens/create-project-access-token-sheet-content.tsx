@@ -5,16 +5,16 @@ import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Select } from '@/components/base/floating/select/select';
+import { Input } from '@/components/base/input/input';
+import { Textarea } from '@/components/base/textarea/textarea';
 import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import * as Form from '@/components/ui/form';
 import { Heading } from '@/components/ui/heading';
-import { Input } from '@/components/ui/input';
 import { InputCopy } from '@/components/ui/input-copy';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
@@ -241,7 +241,12 @@ export function CreateProjectAccessTokenSheetContent(
                               <Form.FormItem>
                                 <Form.FormLabel>Name</Form.FormLabel>
                                 <Form.FormControl>
-                                  <Input type="text" placeholder="My access token" {...field} />
+                                  <Input
+                                    type="text"
+                                    placeholder="My access token"
+                                    onSurface="raised"
+                                    {...field}
+                                  />
                                 </Form.FormControl>
                                 <Form.FormDescription>
                                   Name of the access token.
@@ -260,7 +265,11 @@ export function CreateProjectAccessTokenSheetContent(
                               <Form.FormItem>
                                 <Form.FormLabel>Description</Form.FormLabel>
                                 <Form.FormControl>
-                                  <Textarea placeholder="Short description" {...field} />
+                                  <Textarea
+                                    placeholder="Short description"
+                                    onSurface="raised"
+                                    {...field}
+                                  />
                                 </Form.FormControl>
                                 <Form.FormDescription>
                                   Description of the access token.

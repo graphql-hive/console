@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Menu } from '@/components/base/floating/menu/menu';
+import { Input } from '@/components/base/input/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +26,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -208,7 +208,12 @@ function MemberInvitationForm(props: {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input placeholder="Enter an email" type="email" {...field} />
+                      <Input
+                        placeholder="Enter an email"
+                        type="email"
+                        onSurface="raised"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

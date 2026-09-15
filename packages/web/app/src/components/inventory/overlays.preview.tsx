@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '@/components/base/badge/badge';
 import { Select } from '@/components/base/floating/select/select';
+import { Input } from '@/components/base/input/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,10 +23,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import * as Sheet from '@/components/ui/sheet';
-import { Input as V2Input } from '@/components/v2/input';
 import { Modal } from '@/components/v2/modal';
 import { CallSite, InventoryList } from './shared';
 
@@ -172,11 +171,11 @@ function DialogExamples() {
               <div className="space-y-4">
                 <div className="flex flex-col gap-1.5">
                   <Label>Operation name</Label>
-                  <Input placeholder="My operation" />
+                  <Input placeholder="My operation" onSurface="raised" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label>Collection</Label>
-                  <Input placeholder="Select a Collection" readOnly />
+                  <Input placeholder="Select a Collection" readOnly onSurface="raised" />
                 </div>
               </div>
               <DialogFooter>
@@ -203,7 +202,7 @@ function DialogExamples() {
               <DialogTitle>Save operation</DialogTitle>
               <DialogDescription>Enter a name for this operation.</DialogDescription>
             </DialogHeader>
-            <Input placeholder="Operation name" />
+            <Input placeholder="Operation name" onSurface="raised" />
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenPlain(false)}>
                 Cancel
@@ -293,7 +292,7 @@ function SheetExamples() {
             </Sheet.SheetHeader>
             <div className="flex flex-col gap-1.5 py-4">
               <Label>Role</Label>
-              <Input placeholder="Select role" readOnly />
+              <Input placeholder="Select role" readOnly onSurface="raised" />
             </div>
             <Sheet.SheetFooter>
               <Button variant="outline" onClick={() => setOpenRight(false)}>
@@ -413,7 +412,7 @@ function V2ModalExamples() {
               <label className="text-sm font-semibold" htmlFor="alias">
                 CDN Access Token Alias
               </label>
-              <V2Input placeholder="Alias" name="alias" />
+              <Input placeholder="Alias" name="alias" />
             </div>
             <div className="mt-auto flex w-full gap-2 self-end">
               <Button variant="secondary" className="ml-auto" onClick={() => setOpenCdn(false)}>
@@ -443,7 +442,7 @@ function V2ModalExamples() {
           <p>Transferring is completed after the new owner approves the transfer.</p>
           <div className="flex flex-col gap-2">
             <div className="font-bold">New owner</div>
-            <V2Input placeholder="Search by name or email" />
+            <Input placeholder="Search by name or email" />
           </div>
           <div className="flex w-full gap-2">
             <Button

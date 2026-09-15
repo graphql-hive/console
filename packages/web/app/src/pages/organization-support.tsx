@@ -3,8 +3,10 @@ import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Input } from '@/components/base/input/input';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Textarea } from '@/components/base/textarea/textarea';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { Priority, priorityDescription, Status } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
@@ -17,7 +19,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -37,7 +38,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
@@ -189,7 +189,11 @@ function NewTicketForm(props: {
                       <FormItem>
                         <FormLabel>Subject</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter a subject of your issue" {...field} />
+                          <Input
+                            placeholder="Enter a subject of your issue"
+                            onSurface="raised"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -204,6 +208,7 @@ function NewTicketForm(props: {
                         <FormControl>
                           <Textarea
                             placeholder="Enter a short description of your issue"
+                            onSurface="raised"
                             {...field}
                           />
                         </FormControl>

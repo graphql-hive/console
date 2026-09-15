@@ -2,7 +2,8 @@ import { ReactElement } from 'react';
 import { useFormik } from 'formik';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
-import { Input, Modal } from '@/components/v2';
+import { Input } from '@/components/base/input/input';
+import { Modal } from '@/components/v2';
 import { graphql } from '@/gql';
 import { Button } from '../ui/button';
 import { Heading } from '../ui/heading';
@@ -99,7 +100,7 @@ export function UserSettingsModal({
             onChange={handleChange}
             onBlur={handleBlur}
             disabled={isSubmitting}
-            isInvalid={touched.fullName && !!errors.fullName}
+            invalid={touched.fullName && !!errors.fullName}
           />
           {touched.fullName && errors.fullName && (
             <span className="text-red-500">{errors.fullName}</span>
@@ -122,7 +123,7 @@ export function UserSettingsModal({
             onChange={handleChange}
             onBlur={handleBlur}
             disabled={isSubmitting}
-            isInvalid={touched.displayName && !!errors.displayName}
+            invalid={touched.displayName && !!errors.displayName}
           />
           {touched.displayName && errors.displayName && (
             <span className="text-red-500">{errors.displayName}</span>

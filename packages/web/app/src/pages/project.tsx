@@ -4,12 +4,12 @@ import { MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { z } from 'zod';
 import { Select } from '@/components/base/floating/select/select';
+import { Input } from '@/components/base/input/input';
 import { Separator } from '@/components/base/separator/separator';
 import { ResourceCard } from '@/components/common/resource-card';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { Button } from '@/components/ui/button';
 import { EmptyList } from '@/components/ui/empty-list';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -223,14 +223,13 @@ const ProjectsPageContent = (
         </div>
         <div>
           <div className="flex flex-row items-center gap-x-4">
-            <div className="relative">
-              <SearchIcon className="text-neutral-10 absolute left-2.5 top-2.5 size-4" />
+            <div className="w-full md:w-[200px] lg:w-[336px]">
               <Input
                 type="search"
                 placeholder="Search..."
                 defaultValue={props.search}
                 onChange={onSearchChange}
-                className="dark:bg-neutral-3 bg-neutral-2 h-9 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
+                leadingIcon={SearchIcon}
               />
             </div>
             <Separator orientation="vertical" />

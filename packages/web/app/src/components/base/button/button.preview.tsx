@@ -24,8 +24,9 @@ export const TriggerVariants = createPreview(() => (
 
 /**
  * The two rungs of `controlSize`, one row each, across the three layouts. `default` (36px) is a
- * form control; `compact` (30px) is filter chrome. `icon-sm` (28px) is the square for a close or
- * clear icon inside something else and sits outside the ladder.
+ * form control; `compact` (30px) is filter chrome. An icon-only button is a square at either rung.
+ * `icon-sm` (28px) is the square for a close or clear icon inside something else and sits outside
+ * the ladder.
  */
 export const Sizes = createPreview(() => (
   <div className="flex flex-col gap-4">
