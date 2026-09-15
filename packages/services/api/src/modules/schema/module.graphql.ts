@@ -336,6 +336,7 @@ export default gql`
     date: DateTime!
     commit: ID! @tag(name: "public")
     metadata: String
+    revision: SchemaRevision
   }
 
   type CompositeSchema {
@@ -347,6 +348,7 @@ export default gql`
     url: String @tag(name: "public")
     service: String @tag(name: "public")
     metadata: String
+    revision: SchemaRevision
   }
 
   union SchemaPublishPayload =

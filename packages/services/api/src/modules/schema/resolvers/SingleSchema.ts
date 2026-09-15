@@ -1,4 +1,5 @@
 import type { SingleSchemaResolvers } from './../../../__generated__/types';
+import { SchemaRevisionStore } from '../providers/schema-revision-store';
 
 export const SingleSchema: SingleSchemaResolvers = {
   __isTypeOf: obj => {
@@ -7,4 +8,8 @@ export const SingleSchema: SingleSchemaResolvers = {
   source: schema => {
     return schema.sdl;
   },
+  revision: (schema, _, { injector }) =>
+    schema.schemaRevisionId
+      ? injector.get(SchemaRevisionStore).getById(schema.schemaRevisionId)
+      : null,
 };

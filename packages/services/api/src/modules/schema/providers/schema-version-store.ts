@@ -168,6 +168,7 @@ export class SchemaVersionStore {
       schema: string;
       projectId: string;
       metadata: string | null;
+      schemaRevisionId: string | null;
     },
   ) {
     const query = psql`/* insertSchemaLog */
@@ -180,6 +181,7 @@ export class SchemaVersionStore {
           "sdl",
           "project_id",
           "metadata",
+          "schema_revision_id",
           "action"
         )
       VALUES
@@ -191,6 +193,7 @@ export class SchemaVersionStore {
         ${args.schema}::text,
         ${args.projectId},
         ${args.metadata},
+        ${args.schemaRevisionId},
         'PUSH'
       )
       RETURNING
@@ -299,6 +302,7 @@ export class SchemaVersionStore {
       targetId: string;
       projectId: string;
       organizationId: string;
+      schemaRevisionId: string | null;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -332,6 +336,7 @@ export class SchemaVersionStore {
         schema: args.schema,
         service: args.service?.name ?? null,
         url: args.service?.url ?? null,
+        schemaRevisionId: args.schemaRevisionId,
       });
 
       // creates a new version
@@ -1486,6 +1491,7 @@ const schemaLogFields = (prefix = psql``) => psql`
   , lower(${prefix}"service_name") AS "service_name"
   , ${prefix}"service_url"
   , ${prefix}"action"
+  , ${prefix}"schema_revision_id" AS "schemaRevisionId"
 `;
 
 export type CreateContractVersionInput = {
@@ -1507,6 +1513,7 @@ const SchemaLogBase = z.object({
 const SchemaPushLogBase = SchemaLogBase.extend({
   sdl: z.string(),
   metadata: z.string().nullish().default(null),
+  schemaRevisionId: z.string().nullable(),
 });
 
 const SinglePushSchemaLogModel = SchemaPushLogBase.extend({

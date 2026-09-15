@@ -1,4 +1,5 @@
 import type { CompositeSchemaResolvers } from './../../../__generated__/types';
+import { SchemaRevisionStore } from '../providers/schema-revision-store';
 
 export const CompositeSchema: CompositeSchemaResolvers = {
   __isTypeOf: obj => {
@@ -13,4 +14,8 @@ export const CompositeSchema: CompositeSchemaResolvers = {
   url: schema => {
     return schema.service_url;
   },
+  revision: (schema, _, { injector }) =>
+    schema.schemaRevisionId
+      ? injector.get(SchemaRevisionStore).getById(schema.schemaRevisionId)
+      : null,
 };

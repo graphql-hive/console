@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import stringify from 'fast-json-stable-stringify';
-import { parse, print } from 'graphql';
+import { GraphQLError, parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import promClient from 'prom-client';
@@ -75,6 +75,7 @@ import {
   type SchemaInput,
 } from './schema-helper';
 import { SchemaManager } from './schema-manager';
+import { SchemaRevisionStore } from './schema-revision-store';
 import { SchemaVersionHelper } from './schema-version-helper';
 import {
   SchemaVersionStore,
@@ -110,6 +111,11 @@ export type DeleteInput = Types.SchemaDeleteInput;
 
 export type PublishInput = Types.SchemaPublishInput & {
   isSchemaPublishMissingUrlErrorSelected: boolean;
+};
+
+type ResolvedPublishInput = Omit<PublishInput, 'sdl' | 'schema'> & {
+  sdl: string;
+  schemaRevisionId: string | null;
 };
 
 type BreakPromise<T> = T extends Promise<infer U> ? U : never;
@@ -176,6 +182,7 @@ export class SchemaPublisher {
     private schemaVersions: SchemaVersionStore,
     private registryChecks: RegistryChecks,
     private appDeployments: AppDeployments,
+    private schemaRevisions: SchemaRevisionStore,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -1342,6 +1349,43 @@ export class SchemaPublisher {
       }),
     ]);
 
+    if (input.sdl != null && input.schema != null) {
+      throw new GraphQLError(
+        "Provide exactly one schema source: 'PublishInput.sdl' or 'PublishInput.schema'.",
+      );
+    }
+
+    let revisionId: string | null = null;
+    let resolvedSdl = input.sdl ?? input.schema?.bySdl ?? null;
+
+    if (input.schema?.byVersion != null) {
+      const revision = await this.schemaRevisions.get({
+        projectId: selector.projectId,
+        service: project.type === Types.ProjectType.SINGLE ? null : (input.service ?? null),
+        version: input.schema.byVersion,
+      });
+
+      if (!revision) {
+        return {
+          __typename: 'SchemaPublishError',
+          valid: false,
+          changes: [],
+          errors: [{ message: `Schema version '${input.schema.byVersion}' was not found.` }],
+        };
+      }
+      revisionId = revision.id;
+      resolvedSdl = revision.sdl;
+    }
+
+    invariant(resolvedSdl !== null, 'No SDL resolved.');
+
+    const { schema: _, ...inputWithoutSchema } = input;
+    const publishInput: ResolvedPublishInput = {
+      ...inputWithoutSchema,
+      sdl: resolvedSdl,
+      schemaRevisionId: revisionId,
+    };
+
     const [contracts, latestVersion] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
       this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
@@ -1383,7 +1427,7 @@ export class SchemaPublisher {
     const checksum = createHash('md5')
       .update(
         stringify({
-          ...input,
+          ...publishInput,
           organization: selector.organizationId,
           project: selector.projectId,
           target: selector.targetId,
@@ -1430,8 +1474,8 @@ export class SchemaPublisher {
             ttlSeconds: 15,
             executor: () =>
               this.internalPublish({
-                ...input,
-                sdl: tryPrettifySDL(input.sdl),
+                ...publishInput,
+                sdl: tryPrettifySDL(publishInput.sdl),
                 checksum,
                 selector,
               }),
@@ -1812,7 +1856,7 @@ export class SchemaPublisher {
   }
 
   private async internalPublish(
-    input: PublishInput & {
+    input: ResolvedPublishInput & {
       checksum: string;
       selector: TargetSelector;
     },
@@ -2237,6 +2281,7 @@ export class SchemaPublisher {
       serviceChanges: publishResult.state.serviceChanges ?? null,
       base_schema: baseSchema,
       metadata: input.metadata ?? null,
+      schemaRevisionId: input.schemaRevisionId,
       github,
       actionFn: async (versionId: string) => {
         if (composable && fullSchemaSdl) {
