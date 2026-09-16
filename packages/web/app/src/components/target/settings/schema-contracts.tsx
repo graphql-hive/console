@@ -260,15 +260,15 @@ export function SchemaContracts(props: {
           </DialogContent>
         </Dialog>
       </div>
-      {!!contracts?.length && (
-        <DataTable
-          data={contracts.map(edge => edge.node)}
-          columns={columns}
-          getRowId={contract => contract.id}
-          pagination={{ kind: 'none' }}
-          rowState={contract => (contract.isDisabled ? { disabled: true } : undefined)}
-        />
-      )}
+      <DataTable
+        data={contracts?.map(edge => edge.node) ?? []}
+        columns={columns}
+        getRowId={contract => contract.id}
+        pagination={{ kind: 'none' }}
+        loading={schemaContractsQuery.fetching && !schemaContractsQuery.data}
+        emptyMessage="No contracts yet."
+        rowState={contract => (contract.isDisabled ? { disabled: true } : undefined)}
+      />
       {disabledContractId && (
         <DisableContractDialog
           contractId={disabledContractId}

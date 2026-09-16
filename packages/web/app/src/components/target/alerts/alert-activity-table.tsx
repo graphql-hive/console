@@ -105,11 +105,14 @@ const COLUMNS = [
 
 export function AlertActivityTable({
   events,
+  loading = false,
   organizationSlug,
   projectSlug,
   targetSlug,
 }: {
   events: ActivityEventRow[];
+  /** The first fetch, before there is anything to show or to call empty. */
+  loading?: boolean;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -119,6 +122,7 @@ export function AlertActivityTable({
       data={events}
       columns={COLUMNS}
       getRowId={row => row.id}
+      loading={loading}
       emptyMessage="No alert activity in the selected time range."
       renderSubComponent={row => (
         <AlertEventDetail

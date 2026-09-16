@@ -77,10 +77,6 @@ export function AccessTokensTable(props: AccessTokensTable) {
         .toPromise(),
   });
 
-  if (accessTokens.edges.length === 0) {
-    return null;
-  }
-
   const columns: ColumnDef<AccessTokenEdge, unknown>[] = [
     {
       id: 'title',
@@ -157,6 +153,7 @@ export function AccessTokensTable(props: AccessTokensTable) {
         columns={columns}
         getRowId={edge => edge.node.id}
         pagination={pagination}
+        emptyMessage="No access tokens yet."
       />
       {deleteAccessTokenId && (
         <DeleteAccessTokenConfirmationDialogue

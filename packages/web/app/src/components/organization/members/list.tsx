@@ -589,6 +589,8 @@ export function OrganizationMembers(props: {
    * The setter for the reactive "after" variable required by urql
    */
   setAfter: (after: string | null) => void;
+  /** The page query is in flight, so the paging bar spins and holds its buttons. */
+  loading: boolean;
 }) {
   // Pagination state
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null]);
@@ -751,6 +753,7 @@ export function OrganizationMembers(props: {
             summary: `Page ${currentPage + 1}${
               searchValue && members.length > 0 ? ` · showing results for "${searchValue}"` : ''
             }`,
+            loading: props.loading,
           }}
         />
       </div>
