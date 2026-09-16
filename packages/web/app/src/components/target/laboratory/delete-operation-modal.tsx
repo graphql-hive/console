@@ -1,7 +1,6 @@
 import { ReactElement } from 'react';
 import { useMutation } from 'urql';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { Button } from '@/components/ui/button';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 
@@ -91,7 +90,7 @@ export function DeleteOperationModalContent(props: {
   handleDelete: () => void;
 }): ReactElement {
   return (
-    <Dialog
+    <AlertDialog
       open={props.isOpen}
       onOpenChange={props.toggleModalOpen}
       attrs={{ 'data-cy': 'delete-operation-modal' }}
@@ -103,16 +102,12 @@ export function DeleteOperationModalContent(props: {
           <strong>This action is irreversible!</strong>
         </>
       }
-      footer={
-        <>
-          <Button variant="outline" onClick={() => props.toggleModalOpen()}>
-            Cancel
-          </Button>
-          <Button variant="destructive" data-cy="confirm" onClick={props.handleDelete}>
-            Delete
-          </Button>
-        </>
-      }
+      confirm={{
+        label: 'Delete',
+        variant: 'destructive',
+        onClick: props.handleDelete,
+        'data-cy': 'confirm',
+      }}
     />
   );
 }
