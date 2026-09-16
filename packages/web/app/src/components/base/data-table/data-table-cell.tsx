@@ -68,8 +68,11 @@ export type DataTableCellProps<TTo extends string = '.'> =
   | {
       kind: 'time';
       date: string | number | Date;
-      /** `relative-info` is the relative time with the absolute one behind an info icon. */
-      mode?: 'relative' | 'absolute' | 'relative-info';
+      /**
+       * `relative-info` is the relative time with the absolute one behind an info icon; `date`
+       * is the day alone, for an invoice or a period where the time of day says nothing.
+       */
+      mode?: 'relative' | 'absolute' | 'relative-info' | 'date';
       /**
        * Written before the time, for a headerless list where nothing else says what the time is:
        * "created 3w ago", "last used 1d ago". Under a header it only repeats the header.
@@ -169,6 +172,10 @@ export function formatRelative(date: Date, now = Date.now()): string {
 
 export function formatAbsolute(date: Date): string {
   return format(date, 'MMM d, yyyy HH:mm');
+}
+
+export function formatDay(date: Date): string {
+  return format(date, 'MMM d, yyyy');
 }
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -319,7 +326,12 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
     case 'time': {
       const date = new Date(props.date);
       const mode = props.mode ?? 'relative';
-      const text = mode === 'absolute' ? formatAbsolute(date) : formatRelative(date);
+      const text =
+        mode === 'absolute'
+          ? formatAbsolute(date)
+          : mode === 'date'
+            ? formatDay(date)
+            : formatRelative(date);
       return (
         <span
           className={cn(

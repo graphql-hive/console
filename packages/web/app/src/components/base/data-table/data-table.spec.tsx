@@ -366,6 +366,11 @@ describe('DataTableCell', () => {
     expect(lit(container)).toBe(6);
   });
 
+  it('renders a time as the day alone in date mode', () => {
+    render(<DataTableCell kind="time" date="2026-09-15T09:30:00.000Z" mode="date" />);
+    expect(screen.getByText(/Sep 15, 2026$/)).toBeTruthy();
+  });
+
   it('renders a boolean as a check or a cross', () => {
     const { rerender } = render(<DataTableCell kind="boolean" value />);
     expect(screen.getByLabelText('Yes')).toBeTruthy();
