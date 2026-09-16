@@ -755,7 +755,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
   const trace = queryResult.data?.target?.trace;
 
   return (
-    <SheetContent className="border-neutral-5 text-neutral-12 bg-neutral-1 border-l p-0 md:max-w-[50%]">
+    <SheetContent className="border-neutral-5 text-neutral-12 bg-neutral-1 flex flex-col gap-0 border-l p-0 md:max-w-[50%]">
       <SheetHeader className="border-neutral-5 relative border-b p-4">
         <div className="flex items-center justify-between">
           <SheetTitle className="text-neutral-12 text-lg font-medium">
