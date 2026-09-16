@@ -119,7 +119,12 @@ export type DataTableCellProps<TTo extends string = '.'> =
     }
   | { kind: 'status'; from: BadgeItem; to: BadgeItem }
   | { kind: 'avatar'; name: string; src?: string | null }
-  | { kind: 'copy'; value: string }
+  | {
+      kind: 'copy';
+      value: string;
+      /** What the chip shows when the value itself is too long for a cell, such as a short id. */
+      label?: string;
+    }
   | {
       kind: 'checkbox';
       checked: boolean;
@@ -461,7 +466,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
         </span>
       );
     case 'copy':
-      return <CopyChip value={props.value} />;
+      return <CopyChip value={props.value} label={props.label} />;
     // Controls inside a clickable or expandable row act on their own: the click stops here.
     case 'checkbox':
       return (
