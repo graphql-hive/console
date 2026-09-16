@@ -4,6 +4,7 @@ import {
   ChevronRightIcon,
   PencilIcon,
   PlusIcon,
+  SearchIcon,
   Trash2Icon,
   UsersIcon,
 } from 'lucide-react';
@@ -11,6 +12,7 @@ import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Input } from '@/components/base/input/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +24,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
@@ -92,12 +93,14 @@ export function Groups(props: {
         subPageTitle="Groups"
         description="Manage group to role and resource mappings."
         sideContent={
-          <Input
-            className="w-[220px] grow cursor-text"
-            placeholder="Search by group name"
-            onChange={handleSearchChange}
-            defaultValue={searchValue}
-          />
+          <div className="w-56">
+            <Input
+              placeholder="Search by group name"
+              leadingIcon={SearchIcon}
+              onChange={handleSearchChange}
+              defaultValue={searchValue}
+            />
+          </div>
         }
       />
       <div className="mt-4 overflow-hidden rounded-lg border">

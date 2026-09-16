@@ -12,6 +12,16 @@ import { StatCard } from './stat-card';
 
 export const nav: NavPath = 'Base/Primitives/StatCard';
 
+const ICONS = {
+  globe: GlobeIcon,
+  activity: ActivityIcon,
+  percent: PercentIcon,
+  gauge: GaugeIcon,
+  book: BookIcon,
+  smile: SmileIcon,
+  frown: FrownIcon,
+};
+
 /**
  * The shape all 17 insights stat cards share. Every one of them is `raised`: the pages that set
  * `bg-neutral-2/50` and the one that took ui/card's default fill both land on the same surface.
@@ -202,22 +212,26 @@ export const Playground = createPreview({
       },
     },
     title: { type: 'text', default: 'Requests' },
+    icon: {
+      type: 'select',
+      options: ['none', 'globe', 'activity', 'percent', 'gauge', 'book', 'smile', 'frown'],
+      default: 'globe',
+      derive: name => (name === 'none' ? undefined : ICONS[name]),
+    },
     value: { type: 'text', default: '482,100' },
     caption: { type: 'text', default: 'Total requests served' },
-    // `hint` takes a node, which no control can author. Text still exercises the length and
-    // wrapping of the tooltip; `WithHint` above covers the node case.
+    // Text still exercises the length and wrapping of the tooltip; `WithHint` above covers the
+    // node case.
     hint: { type: 'text', default: '' },
   }),
-  // `icon` takes a component, so it is fixed here rather than driven by a control.
-  // `NoIconNoCaption` above covers the iconless case.
   render: v => (
     <StatCard
       variants={v.variants}
       title={v.title}
+      icon={v.icon}
       value={v.value}
       caption={v.caption}
-      icon={GlobeIcon}
-      hint={v.hint || undefined}
+      hint={v.hint}
     />
   ),
 });

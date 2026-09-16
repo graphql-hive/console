@@ -4,9 +4,10 @@ import { useMutation } from 'urql';
 import * as Yup from 'yup';
 import { Badge } from '@/components/base/badge/badge';
 import { Select } from '@/components/base/floating/select/select';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
-import { Input, Modal } from '@/components/v2';
+import { Modal } from '@/components/v2';
 import { graphql } from '@/gql';
 import { AlertChannelType } from '@/gql/graphql';
 
@@ -134,8 +135,7 @@ export const CreateChannelModal = ({
             onBlur={handleBlur}
             placeholder="Example: Slack #hives"
             disabled={isSubmitting}
-            isInvalid={touched.name && !!errors.name}
-            className="grow"
+            invalid={touched.name && !!errors.name}
           />
           {touched.name && errors.name && <div className="text-sm text-red-500">{errors.name}</div>}
           {mutation.data?.addAlertChannel.error?.inputErrors.name && (
@@ -182,8 +182,7 @@ export const CreateChannelModal = ({
               onBlur={handleBlur}
               placeholder="Your endpoint"
               disabled={isSubmitting}
-              isInvalid={touched.endpoint && !!errors.endpoint}
-              className="grow"
+              invalid={touched.endpoint && !!errors.endpoint}
             />
             {touched.endpoint && errors.endpoint && (
               <div className="text-sm text-red-500">{errors.endpoint}</div>
@@ -220,8 +219,7 @@ export const CreateChannelModal = ({
               onBlur={handleBlur}
               placeholder="Where should Hive post messages?"
               disabled={isSubmitting}
-              isInvalid={touched.slackChannel && !!errors.slackChannel}
-              className="grow"
+              invalid={touched.slackChannel && !!errors.slackChannel}
             />
             {touched.slackChannel && errors.slackChannel && (
               <div className="text-sm text-red-500">{errors.slackChannel}</div>

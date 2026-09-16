@@ -24,6 +24,7 @@ import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
+import { Button as BaseButton } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Button } from '@/components/ui/button';
 import {
@@ -1277,17 +1278,13 @@ export function TargetTracesPageContent(
               align="end"
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
             />
-            <Button
-              variant="outline"
-              onClick={() => {
-                dateRangeController.refreshResolvedRange();
-              }}
+            <BaseButton
+              layout="iconOnly"
+              icon={RefreshCw}
+              aria-label="Refresh"
+              onClick={() => dateRangeController.refreshResolvedRange()}
               disabled={isLoading}
-            >
-              <RefreshCw
-                className={cn('size-4', isLoading && 'animate-spin [animation-duration:0.45s]')}
-              />
-            </Button>
+            />
           </div>
         }
       />

@@ -24,8 +24,9 @@ export const TriggerVariants = createPreview(() => (
 
 /**
  * The two rungs of `controlSize`, one row each, across the three layouts. `default` (36px) is a
- * form control; `compact` (30px) is filter chrome. `icon-sm` (28px) is the square for a close or
- * clear icon inside something else and sits outside the ladder.
+ * form control; `compact` (30px) is filter chrome. An icon-only button is a square at either rung.
+ * `icon-sm` (28px) is the square for a close or clear icon inside something else and sits outside
+ * the ladder.
  */
 export const Sizes = createPreview(() => (
   <div className="flex flex-col gap-4">
@@ -140,5 +141,46 @@ export const Playground = createPreview({
         {v.children}
       </Button>
     </div>
+  ),
+});
+
+const RIGHT_ICONS = { chevron: ChevronDown, filter: ListFilter, copy: Copy, clear: X };
+
+/** The segmented `label` layout: a select, menu or filter trigger. */
+export const TriggerPlayground = createPreview({
+  controls: controlsFor(Button, {
+    label: { type: 'text', default: 'Last 7 days' },
+    accessoryInformation: {
+      type: 'text',
+      default: '',
+      // The component tests `!= null`, so an empty string would draw an empty segment.
+      derive: text => text || undefined,
+    },
+    rightIcon: {
+      type: 'select',
+      options: ['none', 'chevron', 'filter', 'copy', 'clear'],
+      default: 'chevron',
+      derive: name =>
+        name === 'none' ? undefined : { icon: RIGHT_ICONS[name], withSeparator: true },
+    },
+    variant: {
+      type: 'select',
+      options: ['default', 'active', 'action', 'muted-action'],
+      default: 'default',
+    },
+    size: { type: 'radio', options: ['default', 'compact'], default: 'default' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
+    disabled: { type: 'boolean', default: false },
+  }),
+  render: v => (
+    <Button
+      label={v.label}
+      accessoryInformation={v.accessoryInformation}
+      rightIcon={v.rightIcon}
+      variant={v.variant}
+      size={v.size}
+      onSurface={v.onSurface}
+      disabled={v.disabled}
+    />
   ),
 });

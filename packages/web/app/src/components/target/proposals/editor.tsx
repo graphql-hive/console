@@ -2,9 +2,9 @@ import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiffEditor } from '@/components/v2';
@@ -309,8 +309,8 @@ export function ProposalEditor(props: {
                       {service.unpublished ? (
                         <>
                           <DotFilledIcon className="-ml-2 size-4 text-green-600" />
-                          <Input
-                            className="h-auto min-w-[150px] rounded-none border-none bg-transparent p-0 leading-none"
+                          <input
+                            className="min-w-[150px] border-none bg-transparent p-0 text-sm leading-none outline-none"
                             value={schemaTitle(service)}
                             onChange={e => {
                               service.service = e.target.value;
@@ -417,7 +417,6 @@ export function ProposalEditor(props: {
                     <Input
                       value={service.url ?? ''}
                       onChange={ev => setActiveTabUrl(ev.target.value)}
-                      className="text-xs"
                     />
                   </div>
                 )}

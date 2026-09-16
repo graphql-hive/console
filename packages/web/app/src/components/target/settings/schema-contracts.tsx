@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { itemVariants } from '@/components/base/floating/shared-styles';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,7 +22,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
-import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import {
   Table,
@@ -489,6 +489,13 @@ function CreateContractDialogContent(props: {
                 onBlur={form.handleBlur}
                 disabled={form.isSubmitting}
                 autoComplete="off"
+                onSurface="raised"
+                invalid={
+                  !!(
+                    mutation.data?.createContract.error?.details?.contractName ??
+                    (form.touched.contractName ? form.errors.contractName : null)
+                  )
+                }
               />
               <span className="text-sm text-red-500 after:invisible after:content-['.']">
                 {mutation.data?.createContract.error?.details?.contractName ??
@@ -508,6 +515,7 @@ function CreateContractDialogContent(props: {
                       id="includeTagsInput"
                       name="includeTagsInput"
                       autoComplete="off"
+                      onSurface="raised"
                       value={form.values.includeTagsInput}
                       onChange={form.handleChange}
                       onBlur={form.handleBlur}
@@ -607,6 +615,7 @@ function CreateContractDialogContent(props: {
                       id="excludeTagsInput"
                       name="excludeTagsInput"
                       autoComplete="off"
+                      onSurface="raised"
                       value={form.values.excludeTagsInput}
                       onChange={form.handleChange}
                       onBlur={form.handleBlur}

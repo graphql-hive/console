@@ -8,6 +8,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from 'react';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,7 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 
 interface PromptProps {
   id: number;
@@ -52,7 +52,9 @@ export function Prompt(props: PromptProps) {
         {props.description && <DialogDescription>{props.description}</DialogDescription>}
       </DialogHeader>
       <form onSubmit={handleSubmit}>
-        <Input value={value} onChange={e => setValue(e.target.value)} className="mt-4" />
+        <div className="mt-4">
+          <Input value={value} onChange={e => setValue(e.target.value)} onSurface="raised" />
+        </div>
         <DialogFooter className="mt-4">
           <Button
             type="button"

@@ -2,6 +2,7 @@ import { ReactElement, useEffect } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import {
@@ -20,7 +21,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -258,7 +258,7 @@ export function CreateCollectionModalContent(props: {
                       <FormItem>
                         <FormLabel>Collection Name</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="My Collection" />
+                          <Input {...field} placeholder="My Collection" onSurface="raised" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -273,7 +273,7 @@ export function CreateCollectionModalContent(props: {
                       <FormItem>
                         <FormLabel>Collection Description</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="My Collection" />
+                          <Input {...field} placeholder="My Collection" onSurface="raised" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

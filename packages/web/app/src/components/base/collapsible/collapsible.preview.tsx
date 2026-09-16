@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eraser } from 'lucide-react';
-import { createPreview, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../button/button';
 import { Checkbox } from '../checkbox/checkbox';
 import { ScrollArea } from '../scroll-area/scroll-area';
@@ -122,4 +122,45 @@ export const Controlled = createPreview(() => {
       </Collapsible>
     </div>
   );
+});
+
+export const Playground = createPreview({
+  controls: controlsFor(Collapsible, {
+    variant: { type: 'radio', options: ['section', 'panel'], default: 'section' },
+    trigger: { type: 'text', default: 'Status' },
+    actions: {
+      type: 'radio',
+      options: ['none', 'count', 'clear'],
+      default: 'count',
+      derive: kind =>
+        kind === 'count' ? (
+          <span className="text-neutral-10 text-2xs rounded-sm px-2 font-mono">1</span>
+        ) : kind === 'clear' ? (
+          <Button layout="iconOnly" icon={Eraser} aria-label="Clear" variant="ghost" />
+        ) : undefined,
+    },
+    defaultOpen: { type: 'boolean', default: true },
+  }),
+  render: v => (
+    <div
+      className={
+        v.variant === 'panel'
+          ? 'border-neutral-5 bg-neutral-1 w-[36rem] overflow-hidden rounded-md border'
+          : 'text-neutral-11 w-64 p-2'
+      }
+    >
+      {/* `defaultOpen` is read once at mount, so the key remounts on a change. */}
+      <Collapsible
+        key={String(v.defaultOpen)}
+        variant={v.variant}
+        trigger={v.trigger}
+        actions={v.actions}
+        defaultOpen={v.defaultOpen}
+      >
+        <div className={v.variant === 'panel' ? 'p-2' : undefined}>
+          <FilterRows rows={STATUS} />
+        </div>
+      </Collapsible>
+    </div>
+  ),
 });

@@ -3,6 +3,7 @@ import { BlocksIcon, BoxIcon, FoldVerticalIcon } from 'lucide-react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Input } from '@/components/base/input/input';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Header } from '@/components/navigation/header';
@@ -24,7 +25,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
@@ -370,6 +370,7 @@ export function CreateProjectModalContent(props: {
                           placeholder="my-project"
                           data-cy="slug"
                           autoComplete="off"
+                          onSurface="raised"
                           {...field}
                         />
                       </FormControl>

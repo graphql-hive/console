@@ -4,11 +4,11 @@ import ReactECharts from 'echarts-for-react';
 import { ActivityIcon, BookIcon, GlobeIcon, HistoryIcon, RefreshCw } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -128,9 +128,12 @@ function ClientView(props: {
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
-          <Button variant="outline" onClick={() => dateRangeController.refreshResolvedRange()}>
-            <RefreshCw className="size-4" />
-          </Button>
+          <Button
+            layout="iconOnly"
+            icon={RefreshCw}
+            aria-label="Refresh"
+            onClick={() => dateRangeController.refreshResolvedRange()}
+          />
         </div>
       </div>
       <div className="space-y-4 pb-8">

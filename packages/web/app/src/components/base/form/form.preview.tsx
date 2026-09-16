@@ -25,7 +25,7 @@ const AlertFormSchema = z.object({
 type AlertFormValues = z.infer<typeof AlertFormSchema>;
 
 function AlertForm({ defaultValues }: { defaultValues: AlertFormValues }) {
-  const form = useForm<AlertFormValues>({
+  const form = useForm({
     resolver: zodResolver(AlertFormSchema),
     defaultValues,
   });
@@ -74,7 +74,7 @@ export const Default = createPreview(() => (
 ));
 
 function InvalidAlertForm() {
-  const form = useForm<AlertFormValues>({
+  const form = useForm({
     resolver: zodResolver(AlertFormSchema),
     defaultValues: { name: 'ab', threshold: 'not-a-number' },
   });

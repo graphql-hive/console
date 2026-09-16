@@ -3,6 +3,7 @@ import { ArrowBigDownDashIcon, CheckIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Input } from '@/components/base/input/input';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { PolicySettings } from '@/components/policy/policy-settings';
@@ -19,7 +20,6 @@ import {
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { HiveLogo } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -275,12 +275,12 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="grid max-w-xl grid-cols-1 md:grid-cols-2">
-                      <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 overflow-hidden text-nowrap rounded-md border px-3 py-2 text-sm md:rounded-r-none md:border-r-0">
-                        {env.appBaseUrl.replace(/https?:\/\//i, '')}/{props.organizationSlug}/
-                      </div>
-                      <Input placeholder="slug" className="rounded-l-none" {...field} />
-                    </div>
+                    <Input
+                      placeholder="slug"
+                      prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${props.organizationSlug}/`}
+                      width="sm"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

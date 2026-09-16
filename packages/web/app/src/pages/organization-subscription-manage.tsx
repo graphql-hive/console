@@ -1,6 +1,7 @@
 import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'urql';
 import { Card } from '@/components/base/card/card';
+import { Input } from '@/components/base/input/input';
 import { Slider } from '@/components/base/slider/slider';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import {
@@ -16,7 +17,6 @@ import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { Input } from '@/components/v2/input';
 import Stat from '@/components/v2/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
@@ -286,8 +286,6 @@ function Inner(props: {
                 <div>
                   <Heading className="mb-3">Discount</Heading>
                   <Input
-                    className="w-full"
-                    size="medium"
                     value={couponCode ?? ''}
                     disabled={isFetching}
                     onChange={e => setCouponCode(e.target.value)}
@@ -485,13 +483,7 @@ function SubscriptionSlider({
       </div>
 
       <div className="ml-auto w-48">
-        <Input
-          ref={inputRef}
-          value={inputValue}
-          className="ml-auto text-end"
-          onChange={handleInputChange}
-          onBlur={handleBlur}
-        />
+        <Input ref={inputRef} value={inputValue} onChange={handleInputChange} onBlur={handleBlur} />
         {inputError && <div className="mt-1 text-end text-sm text-red-500">{inputError}</div>}
       </div>
     </div>

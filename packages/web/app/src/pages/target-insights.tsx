@@ -1,5 +1,5 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
-import { ChevronDown, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Filters } from '@/components/base/floating/filter-menu/filters';
@@ -306,14 +306,7 @@ function OperationsView({
             onClearActive={activeView ? handleClearActiveView : undefined}
             pinnedControls={
               <DateRangePicker
-                trigger={
-                  <Button
-                    label={dateRangeController.selectedPreset.label}
-                    variant="default"
-                    size="compact"
-                    rightIcon={{ icon: ChevronDown, withSeparator: true }}
-                  />
-                }
+                size="compact"
                 selectedRange={dateRangeController.selectedPreset.range}
                 onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
                 startDate={dateRangeController.startDate}
