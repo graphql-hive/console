@@ -3,16 +3,10 @@ import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Select } from '@/components/base/floating/select/select';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { HiveLink } from '@/components/ui/hive-link';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link as UiLink } from '@/components/ui/link';
@@ -343,114 +337,118 @@ export function ConnectSchemaModal(props: {
   );
 
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-[650px] min-w-[650px]">
-        <DialogHeader>
-          <DialogTitle>Hive CDN Access</DialogTitle>
-          <DialogDescription>
-            Learn more in our{' '}
-            <UiLink
-              variant="primary"
-              href={getDocsUrl('/high-availability-cdn')}
-              target="_blank"
-              rel="noreferrer"
-            >
-              High-Availability CDN
-            </UiLink>{' '}
-            documentation.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="max-w-[600px]">
-          {target && (
-            <>
-              <div className="mb-5 mt-1 flex flex-row justify-start gap-3">
-                <div>
-                  <Label>Graph Variant</Label>
-                  <Select
-                    options={[
-                      { value: 'DEFAULT_GRAPH', label: 'Default Graph' },
-                      ...target.activeContracts.edges.map(({ node }) => ({
-                        value: node.contractName,
-                        label: node.contractName,
-                      })),
-                    ]}
-                    value={selectedGraph}
-                    onValueChange={value => {
-                      if (
-                        value !== 'DEFAULT_GRAPH' &&
-                        selectedArtifact !== 'sdl' &&
-                        selectedArtifact !== 'supergraph'
-                      ) {
-                        setSelectedArtifact('sdl');
-                      }
-                      setSelectedGraph(value);
-                    }}
-                    placeholder="Select Graph"
-                    width="lg"
-                    onSurface="raised"
-                  />
-                </div>
-                <div>
-                  <Label>Artifact</Label>
-                  <Select
-                    options={ArtifactToProjectTypeMapping[target.project.type].map(t => ({
-                      value: t,
-                      label: ArtifactTypeToDisplayName[t],
-                      disabled:
-                        t !== 'supergraph' && t !== 'sdl' && selectedGraph !== 'DEFAULT_GRAPH',
-                    }))}
-                    value={selectedArtifact}
-                    onValueChange={value => setSelectedArtifact(value as CdnArtifactType)}
-                    placeholder="Select Artifact"
-                    width="lg"
-                  />
-                </div>
-              </div>
-              {selectedArtifact === 'supergraph' ? (
-                <FederationModalContent
-                  cdnUrl={selectedContract?.cdnUrl ?? target.cdnUrl}
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      width="lg"
+      title="Hive CDN Access"
+      description={
+        <>
+          Learn more in our{' '}
+          <UiLink
+            variant="primary"
+            href={getDocsUrl('/high-availability-cdn')}
+            target="_blank"
+            rel="noreferrer"
+          >
+            High-Availability CDN
+          </UiLink>{' '}
+          documentation.
+        </>
+      }
+    >
+      <div className="max-w-[600px]">
+        {target && (
+          <>
+            <div className="mb-5 mt-1 flex flex-row justify-start gap-3">
+              <div>
+                <Label>Graph Variant</Label>
+                <Select
+                  options={[
+                    { value: 'DEFAULT_GRAPH', label: 'Default Graph' },
+                    ...target.activeContracts.edges.map(({ node }) => ({
+                      value: node.contractName,
+                      label: node.contractName,
+                    })),
+                  ]}
+                  value={selectedGraph}
+                  onValueChange={value => {
+                    if (
+                      value !== 'DEFAULT_GRAPH' &&
+                      selectedArtifact !== 'sdl' &&
+                      selectedArtifact !== 'supergraph'
+                    ) {
+                      setSelectedArtifact('sdl');
+                    }
+                    setSelectedGraph(value);
+                  }}
+                  placeholder="Select Graph"
+                  width="lg"
+                  onSurface="raised"
                 />
-              ) : (
-                <div className="space-y-2 text-sm">
-                  <p>To access your schema from Hive's CDN, use the following endpoint:</p>
-                  <InputCopy
-                    value={composeEndpoint(
-                      selectedContract?.cdnUrl ?? target.cdnUrl,
-                      selectedArtifact,
-                    )}
-                  />
-                  <p>
-                    To authenticate,{' '}
-                    <UiLink
-                      as="a"
-                      search={{
-                        page: 'cdn',
-                      }}
-                      variant="primary"
-                      to="/$organizationSlug/$projectSlug/$targetSlug/settings"
-                      params={{
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      }}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      create a CDN Access Token from your target's Settings page
-                    </UiLink>{' '}
-                    use the CDN access token in your HTTP headers:
-                    <br />
-                  </p>
-                  <InputCopy value="X-Hive-CDN-Key: <Your Access Token>" />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </DialogContent>
+              </div>
+              <div>
+                <Label>Artifact</Label>
+                <Select
+                  options={ArtifactToProjectTypeMapping[target.project.type].map(t => ({
+                    value: t,
+                    label: ArtifactTypeToDisplayName[t],
+                    disabled:
+                      t !== 'supergraph' && t !== 'sdl' && selectedGraph !== 'DEFAULT_GRAPH',
+                  }))}
+                  value={selectedArtifact}
+                  onValueChange={value => setSelectedArtifact(value as CdnArtifactType)}
+                  placeholder="Select Artifact"
+                  width="lg"
+                  onSurface="raised"
+                />
+              </div>
+            </div>
+            {selectedArtifact === 'supergraph' ? (
+              <FederationModalContent
+                cdnUrl={selectedContract?.cdnUrl ?? target.cdnUrl}
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+              />
+            ) : (
+              <div className="space-y-2 text-sm">
+                <p>To access your schema from Hive's CDN, use the following endpoint:</p>
+                <InputCopy
+                  onSurface="raised"
+                  value={composeEndpoint(
+                    selectedContract?.cdnUrl ?? target.cdnUrl,
+                    selectedArtifact,
+                  )}
+                />
+                <p>
+                  To authenticate,{' '}
+                  <UiLink
+                    as="a"
+                    search={{
+                      page: 'cdn',
+                    }}
+                    variant="primary"
+                    to="/$organizationSlug/$projectSlug/$targetSlug/settings"
+                    params={{
+                      organizationSlug: props.organizationSlug,
+                      projectSlug: props.projectSlug,
+                      targetSlug: props.targetSlug,
+                    }}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    create a CDN Access Token from your target's Settings page
+                  </UiLink>{' '}
+                  use the CDN access token in your HTTP headers:
+                  <br />
+                </p>
+                <InputCopy onSurface="raised" value="X-Hive-CDN-Key: <Your Access Token>" />
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </Dialog>
   );
 }
@@ -512,6 +510,7 @@ function FederationModalContent(props: {
         {authenticateSection}
         <div className="mt-2">
           <InputCopy
+            onSurface="raised"
             multiline
             value={`docker run --name hive-gateway --rm -p 4000:4000 \\
   ghcr.io/graphql-hive/gateway supergraph \\
@@ -539,6 +538,7 @@ function FederationModalContent(props: {
         </p>
         {authenticateSection}
         <InputCopy
+          onSurface="raised"
           multiline
           value={`docker run --name hive-router --rm -p 4000:4000 \\
   --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
@@ -565,6 +565,7 @@ function FederationModalContent(props: {
         </p>
         {authenticateSection}
         <InputCopy
+          onSurface="raised"
           multiline
           value={`docker run --name apollo-router -p 4000:4000 --rm \\
   --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
@@ -591,6 +592,7 @@ function FederationModalContent(props: {
         </p>
         {authenticateSection}
         <InputCopy
+          onSurface="raised"
           multiline
           value={`docker run --name grafbase-gateway -p 5000:5000 --rm \\
   --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
@@ -614,12 +616,13 @@ function FederationModalContent(props: {
         <p>For other tooling you can access the raw supergraph by sending a HTTP request.</p>
         <p>To access your schema from Hive's CDN, use the following endpoint:</p>
         <div>
-          <InputCopy multiline value={`${props.cdnUrl}/supergraph`} />
+          <InputCopy onSurface="raised" multiline value={`${props.cdnUrl}/supergraph`} />
         </div>
         <p>Here is an example calling the endpoint using curl.</p>
         {authenticateSection}
         <div className="mt-2">
           <InputCopy
+            onSurface="raised"
             multiline
             value={`curl -H 'X-Hive-CDN-Key: <hive_cdn_access_key>' \\
   ${props.cdnUrl}/supergraph`}
