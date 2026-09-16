@@ -1,13 +1,6 @@
 import { useMutation } from 'urql';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 
@@ -89,30 +82,28 @@ export function DeleteCollectionModalContent(props: {
   handleDelete: () => void;
 }) {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5" data-cy="delete-collection-modal">
-        <DialogHeader>
-          <DialogTitle>Delete Collection</DialogTitle>
-          <DialogDescription>Are you sure you wish to delete this collection?</DialogDescription>
-          <DialogDescription>
-            <span className="font-bold">This action is irreversible!</span>
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={ev => {
-              ev.preventDefault();
-              props.toggleModalOpen();
-            }}
-          >
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      attrs={{ 'data-cy': 'delete-collection-modal' }}
+      title="Delete Collection"
+      description={
+        <>
+          Are you sure you wish to delete this collection?
+          <br />
+          <strong>This action is irreversible!</strong>
+        </>
+      }
+      footer={
+        <>
+          <Button variant="outline" onClick={() => props.toggleModalOpen()}>
             Cancel
           </Button>
           <Button variant="destructive" data-cy="confirm" onClick={props.handleDelete}>
             Delete
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+    />
   );
 }

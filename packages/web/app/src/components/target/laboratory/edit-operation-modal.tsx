@@ -3,15 +3,8 @@ import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Input } from '@/components/base/input/input';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -166,69 +159,73 @@ export const EditOperationModalContent = (props: {
         props.close();
         props.form.reset();
       }}
+      width="lg"
+      attrs={{ 'data-cy': 'edit-operation-modal' }}
+      title="Edit Operation"
+      description="Update the operation name"
+      footer={
+        <>
+          <Button
+            type="button"
+            size="lg"
+            className="w-full justify-center"
+            onClick={() => {
+              props.close();
+              props.form.reset();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="edit-operation-form"
+            size="lg"
+            className="w-full justify-center"
+            variant="primary"
+            disabled={
+              props.form.formState.isSubmitting ||
+              !props.form.formState.isValid ||
+              !props.form.formState.isDirty
+            }
+            data-cy="confirm"
+          >
+            Update Operation
+          </Button>
+        </>
+      }
     >
-      <DialogContent className="w-4/5 max-w-[600px] md:w-3/5" data-cy="edit-operation-modal">
-        {!props.fetching && (
-          <Form {...props.form}>
-            <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
-              <DialogHeader>
-                <DialogTitle>Edit Operation</DialogTitle>
-                <DialogDescription>Update the operation name</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-8">
-                <FormField
-                  control={props.form.control}
-                  name="name"
-                  render={({ field }) => {
-                    return (
-                      <FormItem>
-                        <FormLabel>Operation Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            autoComplete="off"
-                            {...field}
-                            placeholder="Your Operation Name"
-                            onSurface="raised"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
-                />
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  size="lg"
-                  className="w-full justify-center"
-                  onClick={ev => {
-                    ev.preventDefault();
-                    props.close();
-                    props.form.reset();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full justify-center"
-                  variant="primary"
-                  disabled={
-                    props.form.formState.isSubmitting ||
-                    !props.form.formState.isValid ||
-                    !props.form.formState.isDirty
-                  }
-                  data-cy="confirm"
-                >
-                  Update Operation
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        )}
-      </DialogContent>
+      {!props.fetching && (
+        <Form {...props.form}>
+          <form
+            id="edit-operation-form"
+            className="space-y-8"
+            onSubmit={props.form.handleSubmit(props.onSubmit)}
+          >
+            <div className="space-y-8">
+              <FormField
+                control={props.form.control}
+                name="name"
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <FormLabel>Operation Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          autoComplete="off"
+                          {...field}
+                          placeholder="Your Operation Name"
+                          onSurface="raised"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+            </div>
+          </form>
+        </Form>
+      )}
     </Dialog>
   );
 };

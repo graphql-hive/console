@@ -3,16 +3,9 @@ import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Input } from '@/components/base/input/input';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -234,83 +227,86 @@ export function CreateCollectionModalContent(props: {
   fetching: boolean;
 }) {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[600px] md:w-3/5" data-cy="create-collection-modal">
-        {!props.fetching && (
-          <Form {...props.form}>
-            <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
-              <DialogHeader>
-                <DialogTitle>
-                  {props.collectionId ? 'Update' : 'Create'} Shared Collection
-                </DialogTitle>
-                <DialogDescription>
-                  {props.collectionId
-                    ? 'Update the shared collection name and description'
-                    : 'Create a shared collection that everyone in the organization can access'}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-8">
-                <FormField
-                  control={props.form.control}
-                  name="name"
-                  render={({ field }) => {
-                    return (
-                      <FormItem>
-                        <FormLabel>Collection Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="My Collection" onSurface="raised" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
-                />
-                <FormField
-                  control={props.form.control}
-                  name="description"
-                  render={({ field }) => {
-                    return (
-                      <FormItem>
-                        <FormLabel>Collection Description</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="My Collection" onSurface="raised" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
-                />
-              </div>
-              <Callout type="info" className="mt-0">
-                This collection will be available to everyone in the organization
-              </Callout>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  size="lg"
-                  className="w-full justify-center"
-                  onClick={ev => {
-                    ev.preventDefault();
-                    props.toggleModalOpen();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full justify-center"
-                  variant="primary"
-                  disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
-                  data-cy="confirm"
-                >
-                  {props.collectionId ? 'Update' : 'Add'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        )}
-      </DialogContent>
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      width="lg"
+      attrs={{ 'data-cy': 'create-collection-modal' }}
+      title={`${props.collectionId ? 'Update' : 'Create'} Shared Collection`}
+      description={
+        props.collectionId
+          ? 'Update the shared collection name and description'
+          : 'Create a shared collection that everyone in the organization can access'
+      }
+      footer={
+        <>
+          <Button
+            type="button"
+            size="lg"
+            className="w-full justify-center"
+            onClick={() => props.toggleModalOpen()}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="create-collection-form"
+            size="lg"
+            className="w-full justify-center"
+            variant="primary"
+            disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
+            data-cy="confirm"
+          >
+            {props.collectionId ? 'Update' : 'Add'}
+          </Button>
+        </>
+      }
+    >
+      {!props.fetching && (
+        <Form {...props.form}>
+          <form
+            id="create-collection-form"
+            className="space-y-8"
+            onSubmit={props.form.handleSubmit(props.onSubmit)}
+          >
+            <div className="space-y-8">
+              <FormField
+                control={props.form.control}
+                name="name"
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <FormLabel>Collection Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="My Collection" onSurface="raised" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+              <FormField
+                control={props.form.control}
+                name="description"
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <FormLabel>Collection Description</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="My Collection" onSurface="raised" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+            </div>
+            <Callout type="info" className="mt-0">
+              This collection will be available to everyone in the organization
+            </Callout>
+          </form>
+        </Form>
+      )}
     </Dialog>
   );
 }
