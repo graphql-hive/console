@@ -37,7 +37,7 @@ export function OverlayHeader({
 }) {
   return (
     <div className={cn('flex shrink-0 flex-col gap-1.5 px-6 pt-6', clearCloseButton && 'pr-14')}>
-      <BaseDialog.Title className="text-neutral-12 text-lg font-medium leading-none">
+      <BaseDialog.Title className="text-neutral-12 mb-2 text-lg font-normal leading-none">
         {title}
       </BaseDialog.Title>
       {description != null ? (

@@ -67,7 +67,7 @@ export const ConnectLabModalContent = (props: {
           </div>
         ) : null}
         <span className="text-neutral-12 text-sm">You can use the following endpoint:</span>
-        <InputCopy value={props.endpoint} />
+        <InputCopy value={props.endpoint} onSurface="raised" />
         <span className="text-neutral-12 text-sm">
           To authenticate, use the following HTTP headers, with a token that has `target:read`
           scope:
