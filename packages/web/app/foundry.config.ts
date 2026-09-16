@@ -90,6 +90,10 @@ export default defineConfig({
             { label: 'PortalContainer' },
           ],
         },
+        {
+          label: 'Overlays',
+          children: [{ label: 'Dialog' }, { label: 'Sheet' }, { label: 'AlertDialog' }],
+        },
         // Data and layout
         { label: 'DataTable', children: [{ label: 'Component Examples' }] },
         { label: 'DescriptionList' },
