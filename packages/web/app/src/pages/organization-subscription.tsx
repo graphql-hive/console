@@ -4,6 +4,7 @@ import ReactECharts from 'echarts-for-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { Card } from '@/components/base/card/card';
+import { PageLead } from '@/components/base/page-lead';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { BillingView } from '@/components/organization/billing/Billing';
 import { CurrencyFormatter } from '@/components/organization/billing/helpers';
@@ -13,7 +14,6 @@ import { OrganizationUsageEstimationView } from '@/components/organization/Usage
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import Stat from '@/components/v2/stat';
 import { graphql, useFragment } from '@/gql';
@@ -118,10 +118,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
     >
       <div className="grow">
         <div className="flex flex-row items-center justify-between py-6">
-          <div>
-            <Title>Your subscription</Title>
-            <Subtitle>Explore your current plan and usage.</Subtitle>
-          </div>
+          <PageLead title="Your subscription" description="Explore your current plan and usage." />
           {organization.viewerCanModifyBilling && (
             <div>
               <Button asChild>
@@ -136,8 +133,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
           )}
         </div>
         <div>
-          <Card variants={{ onSurface: 'base' }}>
-            <Heading className="mb-2">Your current plan</Heading>
+          <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Your current plan">
             <div>
               <BillingView organization={organization} query={queryForBilling}>
                 {organization.billingConfiguration?.upcomingInvoice && (
@@ -159,8 +155,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
             </div>
           </Card>
           <div className="mt-8">
-            <Card variants={{ onSurface: 'base' }}>
-              <Heading>Current Usage</Heading>
+            <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Current Usage">
               <p className="text-neutral-10 text-sm">
                 {DateFormatter.format(start)} — {DateFormatter.format(end)}
               </p>
@@ -171,8 +166,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
           </div>
           {monthlyUsagePoints.length ? (
             <div className="mt-8">
-              <Card variants={{ onSurface: 'base' }}>
-                <Heading>Historical Usage</Heading>
+              <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Historical Usage">
                 <div className="mt-4">
                   <AutoSizer disableHeight>
                     {size => (
