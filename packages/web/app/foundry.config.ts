@@ -65,7 +65,7 @@ export default defineConfig({
           ],
         },
         // Data and layout
-        { label: 'DataTable', children: [{ label: 'Proposed' }] },
+        { label: 'DataTable', children: [{ label: 'Component Examples' }] },
         { label: 'DescriptionList' },
       ],
     },
@@ -77,7 +77,6 @@ export default defineConfig({
       label: 'Inventory',
       children: [
         { label: 'Button' },
-        { label: 'DataLayout' },
         { label: 'Form' },
         { label: 'Overlays' },
         { label: 'Presentational' },

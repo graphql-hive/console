@@ -8,12 +8,12 @@ import { Tooltip } from '../floating/tooltip/tooltip';
 import { DataTable } from './data-table';
 import { DataTableCell } from './data-table-cell';
 
-export const nav: NavPath = 'Base/DataTable/Proposed';
+export const nav: NavPath = 'Base/DataTable/Component Examples';
 
 /**
- * Every table shape in the app, rebuilt on the proposed DataTable and DataTableCell API before
- * any call site moves. Each preview names the site it stands for; the old rendering is in
- * `Inventory/DataLayout` under the same shape name. Links are plain hrefs: the router is not here.
+ * Every table shape in the app on DataTable and DataTableCell, one preview per shape with the
+ * call sites it stands for. The pages themselves mount queries and routes, so the data is mocked
+ * here and links are plain hrefs. Kept as the regression fixture for the cell vocabulary.
  */
 
 const hoursAgo = (hours: number) =>
