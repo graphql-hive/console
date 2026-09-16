@@ -13,16 +13,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Input } from '@/components/base/input/input';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -327,62 +318,51 @@ function GroupRow(props: GroupRowProps): ReactNode {
                       }}
                       onClickDelete={() => {
                         setSheetNode(
-                          <AlertDialog open onOpenChange={() => setSheetNode(null)}>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Are you sure you want to delete this mapping?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action can not be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel onClick={() => setSheetNode(null)}>
-                                  Cancel
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                  variant="destructive"
-                                  onClick={async e => {
-                                    e.stopPropagation();
-                                    try {
-                                      const result = await deleteRoleAssignment({
-                                        input: {
-                                          groupMappingId: groupRoleMapping.id,
-                                        },
-                                      });
-                                      if (result.error) {
-                                        toast({
-                                          variant: 'destructive',
-                                          title: 'Failed to remove role assignment',
-                                          description: result.error.message,
-                                        });
-                                      } else if (result.data?.removeGroupMapping.ok) {
-                                        toast({
-                                          title: 'Role assignment removed',
-                                          description:
-                                            'The role assignment was removed from the group',
-                                        });
-                                      } else if (result.data?.removeGroupMapping.error) {
-                                        toast({
-                                          title: 'Failed to remove role assignment',
-                                          description: result.data.removeGroupMapping.error.message,
-                                        });
-                                      }
-                                    } catch (error) {
-                                      toast({
-                                        variant: 'destructive',
-                                        title: 'Failed to delete a member',
-                                        description: String(error),
-                                      });
-                                    }
-                                  }}
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>,
+                          <AlertDialog
+                            open
+                            onOpenChange={() => setSheetNode(null)}
+                            title="Are you sure you want to delete this mapping?"
+                            description="This action can not be undone."
+                            confirm={{
+                              label: 'Delete',
+                              variant: 'destructive',
+                              // Closes first, as the Radix action did, and the toast reports the
+                              // outcome.
+                              onClick: async () => {
+                                setSheetNode(null);
+                                try {
+                                  const result = await deleteRoleAssignment({
+                                    input: {
+                                      groupMappingId: groupRoleMapping.id,
+                                    },
+                                  });
+                                  if (result.error) {
+                                    toast({
+                                      variant: 'destructive',
+                                      title: 'Failed to remove role assignment',
+                                      description: result.error.message,
+                                    });
+                                  } else if (result.data?.removeGroupMapping.ok) {
+                                    toast({
+                                      title: 'Role assignment removed',
+                                      description: 'The role assignment was removed from the group',
+                                    });
+                                  } else if (result.data?.removeGroupMapping.error) {
+                                    toast({
+                                      title: 'Failed to remove role assignment',
+                                      description: result.data.removeGroupMapping.error.message,
+                                    });
+                                  }
+                                } catch (error) {
+                                  toast({
+                                    variant: 'destructive',
+                                    title: 'Failed to delete a member',
+                                    description: String(error),
+                                  });
+                                }
+                              },
+                            }}
+                          />,
                         );
                       }}
                     />

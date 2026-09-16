@@ -11,17 +11,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Input } from '@/components/base/input/input';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { KeyIcon } from '@/components/ui/icon';
@@ -250,6 +240,7 @@ function MemberRoleCell(props: {
 }) {
   const { member, organization } = props;
   const { toast } = useToast();
+  const [scimOpen, setScimOpen] = useState(false);
   const [confirmManagementState, confirmManagement] = useMutation(
     OrganizationMemberRow_ConfirmSCIMManagementForMember,
   );
@@ -292,89 +283,84 @@ function MemberRoleCell(props: {
       {member.viewerCanRemove &&
         member.user.provisionInfo?.provisioningStatus ===
           GraphQLSchema.ProvisioningStatus.PendingConfirmation && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
+          <AlertDialog
+            open={scimOpen}
+            onOpenChange={setScimOpen}
+            trigger={
               <Button type="button" size="xs" variant="orangeLink">
                 <TriangleAlert className="mr-1 size-3" />
                 SCIM matched this existing account
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Allow SCIM to manage {member.user.displayName}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  SCIM matched <strong>{member.user.email}</strong> to an existing organization
-                  member.
-                </AlertDialogDescription>
-                <AlertDialogDescription>
-                  After confirmation, your identity provider will control this user's status and
-                  group-based access. Review the pending SCIM values below to avoid removing access
-                  unintentionally.
-                </AlertDialogDescription>
-                <div className="mt-4 space-y-2">
-                  <div className="text-sm">Pending SCIM values</div>
-                  <div className="flex w-fit items-center gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <KeyIcon className="h-3.5 w-3.5" />
-                      <span className="text-xs">
-                        User status: {member.user.provisionInfo.isDisabled ? 'Disabled' : 'Active'}
-                      </span>
-                    </div>
-                  </div>
-                  <MemberGroups groups={member.groups ?? []} />
+            }
+            title={`Allow SCIM to manage ${member.user.displayName}?`}
+            description={
+              <>
+                SCIM matched <strong>{member.user.email}</strong> to an existing organization
+                member.
+              </>
+            }
+            confirm={{
+              label: confirmManagementState.fetching ? 'Applying...' : 'Allow SCIM management',
+              variant: 'destructive',
+              disabled: confirmManagementState.fetching,
+              onClick: async () => {
+                try {
+                  const result = await confirmManagement({
+                    input: {
+                      organization: { byId: organization.id },
+                      member: { byId: member.user.id },
+                    },
+                  });
+
+                  if (result.error) {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Could not enable SCIM management',
+                      description: result.error.message,
+                    });
+                  } else if (result.data?.confirmSCIMManagementForMember.error) {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Could not enable SCIM management',
+                      description: result.data.confirmSCIMManagementForMember.error.message,
+                    });
+                  } else if (result.data?.confirmSCIMManagementForMember.ok) {
+                    toast({
+                      title: 'SCIM management enabled',
+                      description: `${member.user.email} is now managed through SCIM.`,
+                    });
+                    setScimOpen(false);
+                    props.refetchMembers({ requestPolicy: 'network-only' });
+                  }
+                } catch (error) {
+                  console.error(error);
+                  toast({
+                    variant: 'destructive',
+                    title: 'Could not enable SCIM management',
+                    description: error instanceof Error ? error.message : String(error),
+                  });
+                }
+              },
+            }}
+            cancel={{ disabled: confirmManagementState.fetching }}
+          >
+            <p className="text-neutral-11 text-sm">
+              After confirmation, your identity provider will control this user's status and
+              group-based access. Review the pending SCIM values below to avoid removing access
+              unintentionally.
+            </p>
+            <div className="mt-4 space-y-2">
+              <div className="text-sm">Pending SCIM values</div>
+              <div className="flex w-fit items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <KeyIcon className="h-3.5 w-3.5" />
+                  <span className="text-xs">
+                    User status: {member.user.provisionInfo.isDisabled ? 'Disabled' : 'Active'}
+                  </span>
                 </div>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={confirmManagementState.fetching}>
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  variant="destructive"
-                  disabled={confirmManagementState.fetching}
-                  onClick={async event => {
-                    event.preventDefault();
-
-                    try {
-                      const result = await confirmManagement({
-                        input: {
-                          organization: { byId: organization.id },
-                          member: { byId: member.user.id },
-                        },
-                      });
-
-                      if (result.error) {
-                        toast({
-                          variant: 'destructive',
-                          title: 'Could not enable SCIM management',
-                          description: result.error.message,
-                        });
-                      } else if (result.data?.confirmSCIMManagementForMember.error) {
-                        toast({
-                          variant: 'destructive',
-                          title: 'Could not enable SCIM management',
-                          description: result.data.confirmSCIMManagementForMember.error.message,
-                        });
-                      } else if (result.data?.confirmSCIMManagementForMember.ok) {
-                        toast({
-                          title: 'SCIM management enabled',
-                          description: `${member.user.email} is now managed through SCIM.`,
-                        });
-                        props.refetchMembers({ requestPolicy: 'network-only' });
-                      }
-                    } catch (error) {
-                      console.error(error);
-                      toast({
-                        variant: 'destructive',
-                        title: 'Could not enable SCIM management',
-                        description: error instanceof Error ? error.message : String(error),
-                      });
-                    }
-                  }}
-                >
-                  {confirmManagementState.fetching ? 'Applying...' : 'Allow SCIM management'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
+              </div>
+              <MemberGroups groups={member.groups ?? []} />
+            </div>
           </AlertDialog>
         )}
       <MemberRole member={member} organization={organization} />
@@ -420,63 +406,56 @@ function MemberActionsCell(props: {
           [{ label: 'Delete', variant: 'destructiveAction', onClick: () => setOpen(true) }],
         ]}
       />
-      <AlertDialog open={open} onOpenChange={setOpen}>
-        {open ? (
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete{' '}
-                <strong>{member.user.email}</strong> from the organization.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleteMemberState.fetching}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                disabled={deleteMemberState.fetching}
-                onClick={async event => {
-                  event.preventDefault();
+      <AlertDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Are you absolutely sure?"
+        description={
+          <>
+            This action cannot be undone. This will permanently delete{' '}
+            <strong>{member.user.email}</strong> from the organization.
+          </>
+        }
+        confirm={{
+          label: deleteMemberState.fetching ? 'Deleting...' : 'Continue',
+          variant: 'destructive',
+          disabled: deleteMemberState.fetching,
+          onClick: async () => {
+            try {
+              const result = await deleteMember({
+                input: {
+                  organizationSlug: organization.slug,
+                  userId: member.user.id,
+                },
+              });
 
-                  try {
-                    const result = await deleteMember({
-                      input: {
-                        organizationSlug: organization.slug,
-                        userId: member.user.id,
-                      },
-                    });
-
-                    if (result.error) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Failed to delete a member',
-                        description: result.error.message,
-                      });
-                    } else {
-                      toast({
-                        title: 'Member deleted',
-                        description: `User ${member.user.email} is no longer a member of the organization`,
-                      });
-                      setOpen(false);
-                      props.refetchMembers({ requestPolicy: 'network-only' });
-                    }
-                  } catch (error) {
-                    console.log('Failed to delete a member');
-                    console.error(error);
-                    toast({
-                      variant: 'destructive',
-                      title: 'Failed to delete a member',
-                      description: String(error),
-                    });
-                  }
-                }}
-              >
-                {deleteMemberState.fetching ? 'Deleting...' : 'Continue'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        ) : null}
-      </AlertDialog>
+              if (result.error) {
+                toast({
+                  variant: 'destructive',
+                  title: 'Failed to delete a member',
+                  description: result.error.message,
+                });
+              } else {
+                toast({
+                  title: 'Member deleted',
+                  description: `User ${member.user.email} is no longer a member of the organization`,
+                });
+                setOpen(false);
+                props.refetchMembers({ requestPolicy: 'network-only' });
+              }
+            } catch (error) {
+              console.log('Failed to delete a member');
+              console.error(error);
+              toast({
+                variant: 'destructive',
+                title: 'Failed to delete a member',
+                description: String(error),
+              });
+            }
+          },
+        }}
+        cancel={{ disabled: deleteMemberState.fetching }}
+      />
     </>
   );
 }
