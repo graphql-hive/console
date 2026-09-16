@@ -1,0 +1,129 @@
+[
+  {
+    "httpRequest": { "method": "POST", "path": "/.*/api/v2/organizations" },
+    "httpResponse": {
+      "statusCode": 201,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": { "organization": { "id": 1000 } }
+    }
+  },
+  {
+    "httpRequest": { "method": "GET", "path": "/.*/api/v2/users/search" },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": { "users": [] }
+    }
+  },
+  {
+    "httpRequest": { "method": "POST", "path": "/.*/api/v2/users" },
+    "httpResponse": {
+      "statusCode": 201,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": { "user": { "id": 2000 } }
+    }
+  },
+  {
+    "httpRequest": { "method": "POST", "path": "/.*/api/v2/organization_memberships" },
+    "httpResponse": {
+      "statusCode": 201,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": {}
+    }
+  },
+  {
+    "httpRequest": { "method": "POST", "path": "/.*/api/v2/tickets" },
+    "httpResponse": {
+      "statusCode": 201,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": { "ticket": { "id": 3000 } }
+    }
+  },
+  {
+    "httpRequest": { "method": "PUT", "path": "/.*/api/v2/tickets/.*" },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": { "ticket": { "id": 3000 } }
+    }
+  },
+  {
+    "httpRequest": { "method": "GET", "path": "/.*/api/v2/tickets/[^/]+$" },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": {
+        "ticket": {
+          "id": 3000,
+          "organization_id": 1000,
+          "priority": "normal",
+          "status": "open",
+          "created_at": "2024-01-01T00:00:00Z",
+          "updated_at": "2024-01-01T00:00:00Z",
+          "subject": "Mock ticket",
+          "description": "Mock ticket description"
+        }
+      }
+    }
+  },
+  {
+    "httpRequest": { "method": "GET", "path": "/.*/api/v2/tickets/.*/comments" },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": {
+        "comments": [
+          {
+            "id": 4000,
+            "created_at": "2024-01-01T00:00:00Z",
+            "public": true,
+            "author_id": 2000,
+            "type": "Comment",
+            "body": "Mock comment"
+          }
+        ],
+        "meta": { "has_more": false }
+      }
+    }
+  },
+  {
+    "httpRequest": { "method": "GET", "path": "/.*/api/v2/organizations/.*/tickets" },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": {
+        "tickets": [
+          {
+            "id": 3000,
+            "organization_id": 1000,
+            "priority": "normal",
+            "status": "open",
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z",
+            "subject": "Mock ticket",
+            "description": "Mock ticket description"
+          },
+          {
+            "id": 3001,
+            "organization_id": 1000,
+            "priority": "urgent",
+            "status": "solved",
+            "created_at": "2024-01-02T00:00:00Z",
+            "updated_at": "2024-01-03T00:00:00Z",
+            "subject": "Another mock ticket",
+            "description": "Another mock ticket description"
+          }
+        ],
+        "meta": { "has_more": false }
+      }
+    }
+  },
+  {
+    "httpRequest": { "method": "GET", "path": "/.*/api/v2/users/show_many" },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": { "Content-Type": ["application/json"] },
+      "body": { "users": [{ "id": 2000, "role": "end-user" }] }
+    }
+  }
+]

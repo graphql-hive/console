@@ -154,7 +154,7 @@ export class SupportManager {
 
     this.logger.info('Creating organization in zendesk (id: %s)', organizationId);
     const response = await this.httpClient
-      .post(`https://${this.config.subdomain}.zendesk.com/api/v2/organizations`, {
+      .post(`${this.config.baseUrl}/api/v2/organizations`, {
         username: this.config.username,
         password: this.config.password,
         responseType: 'json',
@@ -218,7 +218,7 @@ export class SupportManager {
 
       // Before attempting to create the user we need to check whether an user with that email might already exist.
       let userZendeskId = await this.httpClient
-        .get(`https://${this.config.subdomain}.zendesk.com/api/v2/users/search`, {
+        .get(`${this.config.baseUrl}/api/v2/users/search`, {
           searchParams: {
             query: email,
           },
@@ -269,7 +269,7 @@ export class SupportManager {
         );
 
         const response = await this.httpClient
-          .post(`https://${this.config.subdomain}.zendesk.com/api/v2/users`, {
+          .post(`${this.config.baseUrl}/api/v2/users`, {
             username: this.config.username,
             password: this.config.password,
             responseType: 'json',
@@ -324,27 +324,24 @@ export class SupportManager {
 
       // attempt connect user to organization
       try {
-        await this.httpClient.post(
-          `https://${this.config.subdomain}.zendesk.com/api/v2/organization_memberships`,
-          {
-            username: this.config.username,
-            password: this.config.password,
-            responseType: 'json',
-            context: {
-              logger: this.logger,
-            },
-            headers: {
-              // v2 post fix is for idemopotency key cache busting.
-              'idempotency-key': input.userId + '|v2',
-            },
-            json: {
-              organization_membership: {
-                user_id: zendeskUserId,
-                organization_id: zendeskOrganizationId,
-              },
+        await this.httpClient.post(`${this.config.baseUrl}/api/v2/organization_memberships`, {
+          username: this.config.username,
+          password: this.config.password,
+          responseType: 'json',
+          context: {
+            logger: this.logger,
+          },
+          headers: {
+            // v2 post fix is for idemopotency key cache busting.
+            'idempotency-key': input.userId + '|v2',
+          },
+          json: {
+            organization_membership: {
+              user_id: zendeskUserId,
+              organization_id: zendeskOrganizationId,
             },
           },
-        );
+        });
       } catch (err) {
         if (err instanceof HiveHttpClientError && err.code === '422') {
           // This user is already a member of this organization.
@@ -385,7 +382,7 @@ export class SupportManager {
     this.logger.info('Fetching ticket users (id: %s)', ids.join(','));
 
     const response = await this.httpClient
-      .get(`https://${this.config.subdomain}.zendesk.com/api/v2/users/show_many`, {
+      .get(`${this.config.baseUrl}/api/v2/users/show_many`, {
         searchParams: {
           ids: ids.join(','),
         },
@@ -421,21 +418,18 @@ export class SupportManager {
     const internalOrganizationId = await this.ensureZendeskOrganizationId(organizationId);
 
     const response = await this.httpClient
-      .get(
-        `https://${this.config.subdomain}.zendesk.com/api/v2/organizations/${internalOrganizationId}/tickets`,
-        {
-          searchParams: {
-            sort: '-updated_at',
-            'page[size]': 100,
-          },
-          username: this.config.username,
-          password: this.config.password,
-          responseType: 'json',
-          context: {
-            logger: this.logger,
-          },
+      .get(`${this.config.baseUrl}/api/v2/organizations/${internalOrganizationId}/tickets`, {
+        searchParams: {
+          sort: '-updated_at',
+          'page[size]': 100,
         },
-      )
+        username: this.config.username,
+        password: this.config.password,
+        responseType: 'json',
+        context: {
+          logger: this.logger,
+        },
+      })
       .then(res =>
         SupportTicketListModel.parseAsync(res).catch(err => {
           this.logger.error(err);
@@ -465,7 +459,7 @@ export class SupportManager {
     const zendeskOrganizationId = await this.ensureZendeskOrganizationId(organizationId);
 
     const response = await this.httpClient
-      .get(`https://${this.config.subdomain}.zendesk.com/api/v2/tickets/${ticketId}`, {
+      .get(`${this.config.baseUrl}/api/v2/tickets/${ticketId}`, {
         username: this.config.username,
         password: this.config.password,
         responseType: 'json',
@@ -496,7 +490,7 @@ export class SupportManager {
     this.logger.info('Fetching support ticket comments (ticketId: %s)', ticketId);
 
     const response = await this.httpClient
-      .get(`https://${this.config.subdomain}.zendesk.com/api/v2/tickets/${ticketId}/comments`, {
+      .get(`${this.config.baseUrl}/api/v2/tickets/${ticketId}/comments`, {
         searchParams: {
           sort: '-created_at',
           'page[size]': 100,
@@ -589,7 +583,7 @@ export class SupportManager {
     const customerType = this.resolveCustomerType(organization);
 
     const response = await this.httpClient
-      .post(`https://${this.config.subdomain}.zendesk.com/api/v2/tickets`, {
+      .post(`${this.config.baseUrl}/api/v2/tickets`, {
         username: this.config.username,
         password: this.config.password,
         json: {
@@ -695,7 +689,7 @@ export class SupportManager {
     }
 
     const response = await this.httpClient
-      .put(`https://${this.config.subdomain}.zendesk.com/api/v2/tickets/${input.ticketId}`, {
+      .put(`${this.config.baseUrl}/api/v2/tickets/${input.ticketId}`, {
         username: this.config.username,
         password: this.config.password,
         json: {
