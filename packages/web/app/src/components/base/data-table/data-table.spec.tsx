@@ -165,6 +165,33 @@ describe('DataTable', () => {
     expect(rows[2].getAttribute('data-state')).toBe('selected');
   });
 
+  it('pages client data with first, last, next, previous and a jump field', () => {
+    render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        pagination={{ kind: 'client', pageSize: 1 }}
+      />,
+    );
+    const names = () =>
+      [...document.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
+    expect(screen.getByText('1 / 3')).toBeTruthy();
+    expect(names()).toEqual(['alpha']);
+
+    fireEvent.click(screen.getByLabelText('Next page'));
+    expect(screen.getByText('2 / 3')).toBeTruthy();
+    fireEvent.click(screen.getByText('Last'));
+    expect(names()).toEqual(['gamma']);
+    fireEvent.click(screen.getByText('First'));
+    expect(names()).toEqual(['alpha']);
+
+    const jump = screen.getByLabelText('Go to page') as HTMLInputElement;
+    fireEvent.change(jump, { target: { value: '9' } });
+    fireEvent.keyDown(jump, { key: 'Enter' });
+    expect(screen.getByText('3 / 3')).toBeTruthy();
+  });
+
   it('hands cursor paging to the caller and disables the edge buttons', () => {
     const onNext = vi.fn();
     const onPrevious = vi.fn();
