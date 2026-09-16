@@ -2,10 +2,12 @@ import type { ReactNode } from 'react';
 import { format } from 'date-fns';
 import {
   ArrowRight,
+  Check,
   ChevronDown,
   ExternalLink,
   Info,
   MoreHorizontal,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -96,8 +98,15 @@ export type DataTableCellProps<TTo extends string = '.'> =
       tooltip: string;
       mono?: boolean;
     }
-  | { kind: 'badge'; items: BadgeItem | BadgeItem[] }
-  | { kind: 'status'; label: ReactNode; dot: StatusColor }
+  | {
+      kind: 'badge';
+      items: BadgeItem | BadgeItem[];
+      /** How many badges show on the row; the rest collapse into a "+N" badge that lists them. */
+      max?: number;
+    }
+  /** A yes or no as a check or a cross, for a flag column. */
+  | { kind: 'boolean'; value: boolean }
+  | { kind: 'status'; label: ReactNode; dot: StatusColor; tooltip?: string }
   | {
       kind: 'status';
       label: ReactNode;
@@ -380,22 +389,41 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
     }
     case 'badge': {
       const items = Array.isArray(props.items) ? props.items : [props.items];
+      const shown = items.slice(0, props.max ?? 3);
+      const rest = items.slice(shown.length);
       return (
-        <span className="inline-flex flex-wrap gap-1">
-          {items.map(item => (
+        <span className="inline-flex items-center gap-1">
+          {shown.map(item => (
             <Badge key={item.content} content={item.content} variants={{ variant: item.variant }} />
           ))}
+          {rest.length > 0 ? (
+            <Tooltip
+              trigger={
+                <span className="inline-flex">
+                  <Badge content={`+${rest.length}`} variants={{ variant: 'outline' }} />
+                </span>
+              }
+              content={rest.map(item => item.content).join(', ')}
+            />
+          ) : null}
         </span>
       );
     }
+    case 'boolean':
+      return props.value ? (
+        <Check className="text-success inline size-4" aria-label="Yes" />
+      ) : (
+        <X className="text-neutral-9 inline size-4" aria-label="No" />
+      );
     case 'status': {
       if ('dot' in props) {
-        return (
+        const body = (
           <span className="text-neutral-12 inline-flex items-center gap-1.5">
             <StatusDot color={props.dot} />
             {props.label}
           </span>
         );
+        return props.tooltip ? <Tooltip trigger={body} content={props.tooltip} /> : body;
       }
       if ('icon' in props) {
         const Icon = props.icon;

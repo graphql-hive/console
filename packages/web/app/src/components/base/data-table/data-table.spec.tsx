@@ -303,6 +303,19 @@ describe('DataTableCell', () => {
     expect(screen.getByLabelText('Open in Insights').tagName).toBe('BUTTON');
   });
 
+  it('collapses badges past the maximum into a +N badge', () => {
+    const items = ['a', 'b', 'c', 'd', 'e'].map(content => ({ content }));
+    const { container } = render(<DataTableCell kind="badge" items={items} max={2} />);
+    expect(container.textContent).toBe('ab+3');
+  });
+
+  it('renders a boolean as a check or a cross', () => {
+    const { rerender } = render(<DataTableCell kind="boolean" value />);
+    expect(screen.getByLabelText('Yes')).toBeTruthy();
+    rerender(<DataTableCell kind="boolean" value={false} />);
+    expect(screen.getByLabelText('No')).toBeTruthy();
+  });
+
   it('renders the placeholder as an em dash', () => {
     const { container } = render(<DataTableCell kind="placeholder" />);
     expect(container.textContent).toBe('—');
