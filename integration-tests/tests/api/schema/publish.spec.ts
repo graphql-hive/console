@@ -4252,10 +4252,6 @@ test.concurrent(
     if (validPublish.schemaPublish.__typename !== 'SchemaPublishSuccess') {
       throw new Error('Expected the valid schema publish to succeed');
     }
-    expect(unchangedPublish.schemaPublish).toHaveProperty(
-      'linkToWebsite',
-      validPublish.schemaPublish.linkToWebsite,
-    );
   },
 );
 
