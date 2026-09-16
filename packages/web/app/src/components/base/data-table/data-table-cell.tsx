@@ -85,6 +85,8 @@ export type DataTableCellProps<TTo extends string = '.'> =
       mono?: boolean;
       /** Cut the label at the column width with an ellipsis; the full label sits in the title. */
       truncate?: boolean;
+      /** Something after the link that qualifies it: a badge, an icon with a tooltip. */
+      trailing?: ReactNode;
     } & DataTableDestination<TTo>)
   | {
       /**
@@ -341,20 +343,28 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
         </span>
       );
     }
-    case 'link':
-      return (
+    case 'link': {
+      const link = (
         <Destination
           destination={props}
           className={cn(
             linkTone[props.tone ?? 'default'],
             props.mono && 'font-mono text-xs',
-            props.truncate && 'block truncate',
+            props.truncate && 'block min-w-0 truncate',
           )}
           title={props.truncate && typeof props.label === 'string' ? props.label : undefined}
         >
           {props.label}
         </Destination>
       );
+      if (!props.trailing) return link;
+      return (
+        <span className="flex items-center gap-2">
+          {link}
+          {props.trailing}
+        </span>
+      );
+    }
     case 'link-out': {
       const label = (
         <span className={cn('text-neutral-12', props.mono && 'font-mono text-xs')}>
@@ -502,7 +512,11 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       );
     case 'bar': {
       const segments = 10;
-      const filled = props.max > 0 ? Math.round((props.value / props.max) * segments) : 0;
+      // Any share at all lights one segment, so a long tail of tiny values still reads as present.
+      const filled =
+        props.max > 0 && props.value > 0
+          ? Math.max(1, Math.round((props.value / props.max) * segments))
+          : 0;
       return (
         <span
           className="flex justify-end gap-1"

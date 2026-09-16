@@ -1,28 +1,14 @@
-import { ReactElement, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
-import { InfoIcon } from 'lucide-react';
+import { ReactElement, useEffect, useMemo, useState } from 'react';
+import { TriangleAlert } from 'lucide-react';
 import { useQuery } from 'urql';
-import { useDebouncedCallback } from 'use-debounce';
 import { Card } from '@/components/base/card/card';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
-import { Input } from '@/components/base/input/input';
-import { Scale } from '@/components/common';
-import { Button } from '@/components/ui/button';
-import { Link } from '@/components/ui/link';
-import { Sortable, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
-import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { DateRangeInput, OperationStatsFilterInput } from '@/gql/graphql';
-import { useDecimal, useFormattedDuration, useFormattedNumber } from '@/lib/hooks';
-import { ChevronUpIcon, ExclamationTriangleIcon } from '@radix-ui/react-icons';
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  PaginationState,
-  useReactTable,
-} from '@tanstack/react-table';
+import { formatDuration } from '@/lib/hooks';
+import type { ColumnDef } from '@tanstack/react-table';
 import { OperationsFallback } from './fallback';
 
 interface Operation {
@@ -39,58 +25,53 @@ interface Operation {
   hash: string;
 }
 
-function OperationRow({
-  operation,
+function OperationsTable({
+  operations,
   organizationSlug,
   projectSlug,
   targetSlug,
   selectedPeriod,
 }: {
-  operation: Operation;
+  operations: Operation[];
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  selectedPeriod: null | { to: string; from: string };
+  clients: readonly { name: string }[] | null;
+  clientFilter: string | null;
+  setClientFilter: (filter: string) => void;
+  selectedPeriod: { from: string; to: string } | null;
 }): ReactElement {
-  const count = useFormattedNumber(operation.requests);
-  const percentage = useDecimal(operation.percentage);
-  const failureRate = useDecimal(operation.failureRate);
-  const p90 = useFormattedDuration(operation.p90);
-  const p95 = useFormattedDuration(operation.p95);
-  const p99 = useFormattedDuration(operation.p99);
-  const impact = useFormattedNumber(
-    operation.impact < 1000 ? Math.round(operation.impact * 100) / 100 : operation.impact,
-  );
-
-  return (
-    <>
-      <Tr>
-        <Td className="font-medium">
-          <div className="flex items-center gap-2">
-            <Button variant="orangeLink" className="h-auto p-0" asChild title={operation.name}>
-              <Link
-                className="block max-w-[300px] truncate"
-                to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                params={{
-                  organizationSlug,
-                  projectSlug,
-                  targetSlug,
-                  operationName: operation.name,
-                  operationHash: operation.hash,
-                }}
-                search={{
-                  from: selectedPeriod?.from ? encodeURIComponent(selectedPeriod.from) : undefined,
-                  to: selectedPeriod?.to ? encodeURIComponent(selectedPeriod.to) : undefined,
-                }}
-              >
-                {operation.name}
-              </Link>
-            </Button>
-            {operation.name === 'anonymous' && (
+  const columns: ColumnDef<Operation, unknown>[] = [
+    {
+      accessorKey: 'name',
+      header: 'Operations',
+      meta: { width: 'fill' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="link"
+          tone="accent"
+          truncate
+          label={row.original.name}
+          link={{
+            to: '/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
+            params: {
+              organizationSlug,
+              projectSlug,
+              targetSlug,
+              operationName: row.original.name,
+              operationHash: row.original.hash,
+            },
+            search: {
+              from: selectedPeriod?.from ? encodeURIComponent(selectedPeriod.from) : undefined,
+              to: selectedPeriod?.to ? encodeURIComponent(selectedPeriod.to) : undefined,
+            },
+          }}
+          trailing={
+            row.original.name === 'anonymous' ? (
               <Popover
                 trigger={
-                  <button type="button" aria-label="Anonymous operation">
-                    <ExclamationTriangleIcon className="text-yellow-500" />
+                  <button type="button" aria-label="Anonymous operation" className="inline-flex">
+                    <TriangleAlert className="text-warning size-3.5" />
                   </button>
                 }
                 openOnHover
@@ -100,135 +81,89 @@ function OperationRow({
                   </p>
                 }
               />
-            )}
-          </div>
-        </Td>
-        <Td align="center" className="text-xs">
-          {operation.kind}
-        </Td>
-        <Td align="center">{p90}</Td>
-        <Td align="center">{p95}</Td>
-        <Td align="center">{p99}</Td>
-        <Td align="center">{failureRate}%</Td>
-        <Td align="center">{count}</Td>
-        <Td align="center">{impact}</Td>
-        <Td align="right">{percentage}%</Td>
-        <Td>
-          <Scale value={operation.percentage} size={10} max={100} className="justify-end" />
-        </Td>
-      </Tr>
-    </>
-  );
-}
-
-const columnHelper = createColumnHelper<Operation>();
-
-const columns = [
-  columnHelper.accessor('name', {
-    header: 'Operations',
-    enableSorting: false,
-    meta: {
-      align: 'left',
+            ) : undefined
+          }
+        />
+      ),
     },
-  }),
-  columnHelper.accessor('kind', {
-    header: 'Kind',
-    enableSorting: false,
-    meta: {
-      align: 'center',
+    {
+      accessorKey: 'kind',
+      header: 'Kind',
+      meta: { align: 'center' },
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.kind} tone="muted" />,
     },
-  }),
-  columnHelper.accessor('p90', {
-    header: 'p90',
-    meta: {
-      align: 'center',
+    {
+      accessorKey: 'p90',
+      header: 'p90',
+      meta: { align: 'right', sortable: true },
+      cell: ({ row }) => (
+        <DataTableCell kind="text" value={formatDuration(row.original.p90)} mono />
+      ),
     },
-  }),
-  columnHelper.accessor('p95', {
-    header: 'p95',
-    meta: {
-      align: 'center',
+    {
+      accessorKey: 'p95',
+      header: 'p95',
+      meta: { align: 'right', sortable: true },
+      cell: ({ row }) => (
+        <DataTableCell kind="text" value={formatDuration(row.original.p95)} mono />
+      ),
     },
-  }),
-  columnHelper.accessor('p99', {
-    header: 'p99',
-    meta: {
-      align: 'center',
+    {
+      accessorKey: 'p99',
+      header: 'p99',
+      meta: { align: 'right', sortable: true },
+      cell: ({ row }) => (
+        <DataTableCell kind="text" value={formatDuration(row.original.p99)} mono />
+      ),
     },
-  }),
-  columnHelper.accessor('failureRate', {
-    header: 'Failure Rate',
-    meta: {
-      align: 'center',
+    {
+      accessorKey: 'failureRate',
+      header: 'Failure Rate',
+      meta: { align: 'right', sortable: true },
+      cell: ({ row }) => (
+        <DataTableCell kind="number" value={row.original.failureRate} format="percent" />
+      ),
     },
-  }),
-  columnHelper.accessor('requests', {
-    header: 'Requests',
-    meta: {
-      align: 'center',
+    {
+      accessorKey: 'requests',
+      header: 'Requests',
+      meta: { align: 'right', sortable: true },
+      cell: ({ row }) => <DataTableCell kind="number" value={row.original.requests} />,
     },
-  }),
-  columnHelper.accessor('impact', {
-    header: 'Impact',
-    meta: {
-      align: 'center',
+    {
+      accessorKey: 'impact',
+      header: 'Impact',
+      meta: {
+        align: 'right',
+        sortable: true,
+        tooltip:
+          'Total time spent on this operation in the selected period, in seconds: requests times the average duration.',
+      },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="number"
+          value={
+            row.original.impact < 1000
+              ? Math.round(row.original.impact * 100) / 100
+              : Math.round(row.original.impact)
+          }
+        />
+      ),
     },
-  }),
-  columnHelper.accessor('percentage', {
-    header: 'Traffic',
-    meta: {
-      align: 'right',
+    {
+      accessorKey: 'percentage',
+      header: 'Traffic',
+      meta: { align: 'right', sortable: true },
+      cell: ({ row }) => (
+        <DataTableCell kind="number" value={row.original.percentage} format="percent" />
+      ),
     },
-  }),
-];
-
-type SetPaginationFn = (updater: SetStateAction<PaginationState>) => void;
-
-function OperationsTable({
-  operations,
-  pagination,
-  setPagination,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-  selectedPeriod,
-}: {
-  operations: Operation[];
-  pagination: PaginationState;
-  setPagination: SetPaginationFn;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  clients: readonly { name: string }[] | null;
-  clientFilter: string | null;
-  setClientFilter: (filter: string) => void;
-  selectedPeriod: { from: string; to: string } | null;
-}): ReactElement {
-  const tableInstance = useReactTable({
-    columns,
-    data: operations,
-    state: {
-      pagination,
+    {
+      id: 'bar',
+      meta: { width: 'sm' },
+      cell: ({ row }) => <DataTableCell kind="bar" value={row.original.percentage} max={100} />,
     },
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    debugTable: env.nodeEnv !== 'production',
-  });
-
-  const firstPage = useCallback(() => {
-    tableInstance.setPageIndex(0);
-  }, [tableInstance]);
-  const lastPage = useCallback(() => {
-    tableInstance.setPageIndex(tableInstance.getPageCount() - 1);
-  }, [tableInstance]);
-
-  const debouncedSetPage = useDebouncedCallback((pageIndex: number) => {
-    setPagination({ pageSize: tableInstance.getState().pagination.pageSize, pageIndex });
-  }, 500);
-
-  const { headers } = tableInstance.getHeaderGroups()[0];
+  ];
 
   return (
     <div className="mt-12">
@@ -237,114 +172,13 @@ function OperationsTable({
         title="Operations"
         description="List of all operations with their statistics, filtered by selected clients."
       >
-        <div className="overflow-x-scroll">
-          <Table>
-            <THead>
-              <>
-                {headers.map(header => {
-                  const canSort = header.column.getCanSort();
-                  const align: 'center' | 'left' | 'right' =
-                    (header.column.columnDef.meta as any)?.align || 'left';
-                  const name = flexRender(header.column.columnDef.header, header.getContext());
-                  return (
-                    <Th key={header.id} className="text-sm font-semibold" align={align}>
-                      <div className="inline-flex items-center gap-x-2">
-                        {canSort ? (
-                          <Sortable
-                            sortOrder={header.column.getIsSorted()}
-                            onClick={header.column.getToggleSortingHandler()}
-                          >
-                            {name}
-                          </Sortable>
-                        ) : (
-                          name
-                        )}
-                        {header.column.columnDef.header === 'Impact' ? (
-                          <Popover
-                            trigger={
-                              <button type="button" aria-label="How impact is calculated">
-                                <InfoIcon className="text-neutral-10 size-4" />
-                              </button>
-                            }
-                            openOnHover
-                            width="md"
-                            content={
-                              <div className="text-neutral-11 text-left text-xs">
-                                <p className="mb-4">
-                                  Equals to the total time spent on this operation in the selected
-                                  period in seconds.
-                                </p>
-                                <code className="text-xs">Impact = Requests * avg/1000</code>
-                              </div>
-                            }
-                          />
-                        ) : null}
-                      </div>
-                    </Th>
-                  );
-                })}
-              </>
-            </THead>
-            <TBody>
-              {tableInstance
-                .getRowModel()
-                .rows.map(
-                  row =>
-                    row.original && (
-                      <OperationRow
-                        operation={row.original}
-                        key={row.original.id}
-                        organizationSlug={organizationSlug}
-                        projectSlug={projectSlug}
-                        targetSlug={targetSlug}
-                        selectedPeriod={selectedPeriod}
-                      />
-                    ),
-                )}
-            </TBody>
-          </Table>
-        </div>
-        <div className="mt-6 flex items-center gap-2">
-          <Button
-            onClick={firstPage}
-            variant="outline"
-            disabled={!tableInstance.getCanPreviousPage()}
-          >
-            First
-          </Button>
-          <Button
-            aria-label="Go to previous page"
-            variant="outline"
-            onClick={tableInstance.previousPage}
-            disabled={!tableInstance.getCanPreviousPage()}
-          >
-            <ChevronUpIcon className="h-5 w-auto -rotate-90" />
-          </Button>
-          <span className="whitespace-nowrap text-sm font-bold">
-            {tableInstance.getState().pagination.pageIndex + 1} / {tableInstance.getPageCount()}
-          </span>
-          <Button
-            aria-label="Go to next page"
-            variant="outline"
-            onClick={tableInstance.nextPage}
-            disabled={!tableInstance.getCanNextPage()}
-          >
-            <ChevronUpIcon className="h-5 w-auto rotate-90" />
-          </Button>
-          <Button variant="outline" onClick={lastPage} disabled={!tableInstance.getCanNextPage()}>
-            Last
-          </Button>
-          <div className="ml-6">Go to:</div>
-          <Input
-            id="page"
-            width="xs"
-            type="number"
-            defaultValue={tableInstance.getState().pagination.pageIndex + 1}
-            onChange={e => {
-              debouncedSetPage(e.target.valueAsNumber ? e.target.valueAsNumber - 1 : 0);
-            }}
-          />
-        </div>
+        <DataTable
+          data={operations}
+          columns={columns}
+          getRowId={operation => operation.id}
+          pagination={{ kind: 'client', pageSize: 20 }}
+          emptyMessage="No operations in the selected period."
+        />
       </Card>
     </div>
   );
@@ -426,32 +260,9 @@ function OperationsTableContainer({
     return records;
   }, [operationStats?.operations.edges]);
 
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
-
-  const safeSetPagination = useCallback<SetPaginationFn>(
-    state => {
-      const handleValue = (state: PaginationState) => {
-        const maxPageIndex = Math.ceil(data.length / state.pageSize) - 1;
-        if (state.pageIndex < 0) {
-          return { ...state, pageIndex: 0 };
-        }
-        if (state.pageIndex > maxPageIndex) {
-          return { ...state, pageIndex: maxPageIndex };
-        }
-        return state;
-      };
-      setPagination(
-        typeof state === 'function' ? value => handleValue(state(value)) : handleValue(state),
-      );
-    },
-    [pagination, setPagination, data],
-  );
-
   return (
     <OperationsTable
       operations={data}
-      pagination={pagination}
-      setPagination={safeSetPagination}
       organizationSlug={organizationSlug}
       projectSlug={projectSlug}
       targetSlug={targetSlug}

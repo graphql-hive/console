@@ -326,6 +326,19 @@ describe('DataTableCell', () => {
     expect(container.textContent).toBe('ab+3');
   });
 
+  it('lights at least one bar segment for any share above zero', () => {
+    const lit = (container: HTMLElement) =>
+      [...container.querySelectorAll('[role="meter"] span')].filter(segment =>
+        segment.className.includes('bg-success'),
+      ).length;
+    const { container, rerender } = render(<DataTableCell kind="bar" value={0.09} max={100} />);
+    expect(lit(container)).toBe(1);
+    rerender(<DataTableCell kind="bar" value={0} max={100} />);
+    expect(lit(container)).toBe(0);
+    rerender(<DataTableCell kind="bar" value={55} max={100} />);
+    expect(lit(container)).toBe(6);
+  });
+
   it('renders a boolean as a check or a cross', () => {
     const { rerender } = render(<DataTableCell kind="boolean" value />);
     expect(screen.getByLabelText('Yes')).toBeTruthy();
