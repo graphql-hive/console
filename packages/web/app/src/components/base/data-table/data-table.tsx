@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
-import { ArrowDown, ChevronDown, ChevronRight, Info, LoaderCircle } from 'lucide-react';
+import { ArrowDown, ChevronDown, ChevronRight, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   flexRender,
@@ -17,6 +17,7 @@ import {
 } from '@tanstack/react-table';
 import { Tooltip } from '../floating/tooltip/tooltip';
 import type { OnSurface } from '../shared-styles';
+import { Spinner } from '../spinner/spinner';
 import {
   DataTableBody,
   DataTableCellSlot,
@@ -216,7 +217,7 @@ export function DataTable<TData>({
             {loading ? (
               <DataTableRow onSurface={onSurface}>
                 <DataTableCellSlot colSpan={totalColumnCount} variant="empty">
-                  <LoaderCircle className="mx-auto size-5 animate-spin" aria-label="Loading" />
+                  <Spinner />
                 </DataTableCellSlot>
               </DataTableRow>
             ) : rows.length === 0 ? (

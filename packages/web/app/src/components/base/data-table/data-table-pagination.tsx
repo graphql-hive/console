@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '../input/input';
+import { Spinner } from '../spinner/spinner';
 
 export type DataTablePaginationProps = {
   pageIndex: number;
@@ -133,7 +134,7 @@ export function DataTableCursorPagination({
     <nav role="navigation" aria-label="Pagination" className={`${barClass} justify-between px-2`}>
       <span className="text-neutral-10 px-2 text-xs">{summary}</span>
       <span className="inline-flex items-center gap-1">
-        {loading ? <LoaderCircle className="text-neutral-10 size-4 animate-spin" /> : null}
+        {loading ? <Spinner variants={{ size: 'sm' }} /> : null}
         <button
           type="button"
           aria-label="Previous page"

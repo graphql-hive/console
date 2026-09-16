@@ -51,6 +51,7 @@ export default defineConfig({
             { label: 'Avatar', children: [{ label: 'Component Examples' }] },
             { label: 'Badge', children: [{ label: 'Component Examples' }] },
             { label: 'StatusDot' },
+            { label: 'Spinner' },
             { label: 'Button' },
             { label: 'Card' },
             { label: 'StatCard' },

@@ -218,6 +218,28 @@ describe('DataTable', () => {
     expect(onPrevious).not.toHaveBeenCalled();
   });
 
+  it('spins in the cursor bar and holds both buttons while a page loads', () => {
+    render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        pagination={{
+          kind: 'cursor',
+          hasPreviousPage: true,
+          hasNextPage: true,
+          onPrevious: () => {},
+          onNext: () => {},
+          summary: 'Page 2',
+          loading: true,
+        }}
+      />,
+    );
+    expect(screen.getByRole('navigation').querySelector('[role="status"]')).not.toBeNull();
+    expect((screen.getByLabelText('Previous page') as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByLabelText('Next page') as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('tints rows on hover only when they do something', () => {
     const { container, rerender } = render(
       <DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} />,
