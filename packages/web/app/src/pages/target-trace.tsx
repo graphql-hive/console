@@ -793,7 +793,7 @@ export function TraceSheet(props: TraceSheetProps) {
   });
 
   return (
-    <div className="h-full">
+    <div className="min-h-0 flex-1">
       <>
         <ResizablePanelGroup direction="vertical">
           <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
