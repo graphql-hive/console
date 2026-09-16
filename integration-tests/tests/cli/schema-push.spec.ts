@@ -41,7 +41,7 @@ describe.each([
     test.concurrent('pushes and publishes a schema revision', async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
-      const { target, createTargetAccessToken } = await createProject(projectType);
+      const { target, createTargetAccessToken, fetchVersions } = await createProject(projectType);
       const { secret } = await createTargetAccessToken({ mode: 'readWrite' });
 
       await expect(
@@ -72,6 +72,38 @@ describe.each([
           ...publishArgs,
         ]),
       ).resolves.toContain('Published initial schema.');
+
+      const secondRevision = `${revision}-2`;
+      await schemaPush([
+        '--registry.accessToken',
+        secret,
+        '--target',
+        target.id,
+        '--revision',
+        secondRevision,
+        ...serviceArgs,
+        'fixtures/init-schema.graphql',
+      ]);
+
+      await expect(
+        schemaPublish([
+          '--registry.accessToken',
+          secret,
+          '--target',
+          target.id,
+          '--author',
+          'HiveCLI',
+          '--commit',
+          secondRevision,
+          '--revision',
+          secondRevision,
+          ...publishArgs,
+        ]),
+      ).resolves.toContain('Schema published');
+
+      const versions = await fetchVersions(3);
+      expect(versions).toHaveLength(2);
+      expect(versions[0].id).not.toBe(versions[1].id);
     });
 
     test.concurrent('rejects unknown and conflicting revisions', async ({ expect }) => {

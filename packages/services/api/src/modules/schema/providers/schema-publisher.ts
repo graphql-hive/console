@@ -2032,6 +2032,7 @@ export class SchemaPublisher {
           input: {
             sdl: input.sdl,
             metadata: input.metadata ?? null,
+            skipNoChangesCheck: input.schemaRevisionId !== null,
           },
           latest: latestVersion
             ? {
@@ -2076,6 +2077,7 @@ export class SchemaPublisher {
             service: input.service,
             metadata: input.metadata ?? null,
             url: input.url ?? null,
+            skipNoChangesCheck: input.schemaRevisionId !== null,
           },
           latest: latestVersion
             ? {
