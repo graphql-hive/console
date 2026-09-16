@@ -1,11 +1,10 @@
-import { ArrowRight } from 'lucide-react';
 import { DataTable } from '@/components/base/data-table/data-table';
-import { TimeAgo } from '@/components/ui/time-ago';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { type MetricAlertRuleState, type MetricAlertRuleType } from '@/gql/graphql';
 import { createColumnHelper } from '@tanstack/react-table';
 import {
   AlertEventDetail,
-  StateBadge,
+  stateBadgeItem,
   type AlertEventDetailRule,
   type AlertEventRow,
 } from './alert-event-detail';
@@ -23,51 +22,28 @@ type AlertEventsTableProps = {
   ruleType?: MetricAlertRuleType;
 };
 
-const TIMESTAMP_FORMAT = new Intl.DateTimeFormat('en-US', {
-  month: 'long',
-  day: 'numeric',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: true,
-  timeZoneName: 'short',
-});
-
-function formatTimestamp(iso: string): string {
-  return TIMESTAMP_FORMAT.format(new Date(iso)).toUpperCase();
-}
-
 const columnHelper = createColumnHelper<AlertEventRow>();
 
 const COLUMNS = [
   columnHelper.accessor('createdAt', {
     header: 'Timestamp',
-    cell: info => (
-      <span className="text-neutral-12 font-mono text-[11px] tracking-wide">
-        {formatTimestamp(info.getValue())}
-      </span>
-    ),
+    cell: info => <DataTableCell kind="time" date={info.getValue()} mode="absolute" mono />,
   }),
   columnHelper.display({
     id: 'age',
     header: 'Age',
-    cell: ctx => (
-      <TimeAgo
-        date={ctx.row.original.createdAt}
-        className="text-neutral-12 font-mono text-[11px]"
-      />
-    ),
+    cell: ctx => <DataTableCell kind="time" date={ctx.row.original.createdAt} mono />,
   }),
   columnHelper.display({
     id: 'status',
     header: 'Status',
+    meta: { width: 'fill' },
     cell: ctx => (
-      <div className="text-neutral-11 inline-flex items-center gap-2">
-        <StateBadge state={ctx.row.original.fromState as MetricAlertRuleState} />
-        <ArrowRight className="text-neutral-8 size-3.5" />
-        <StateBadge state={ctx.row.original.toState as MetricAlertRuleState} />
-      </div>
+      <DataTableCell
+        kind="status"
+        from={stateBadgeItem(ctx.row.original.fromState as MetricAlertRuleState)}
+        to={stateBadgeItem(ctx.row.original.toState as MetricAlertRuleState)}
+      />
     ),
   }),
 ];

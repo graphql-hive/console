@@ -303,6 +303,23 @@ describe('DataTableCell', () => {
     expect(screen.getByLabelText('Open in Insights').tagName).toBe('BUTTON');
   });
 
+  it('keeps a click on an action control from reaching the row', () => {
+    const onRowClick = vi.fn();
+    const columns: ColumnDef<Row, unknown>[] = [
+      {
+        id: 'actions',
+        cell: () => (
+          <DataTableCell kind="actions" label="Row actions" sections={[[{ label: 'Edit' }]]} />
+        ),
+      },
+    ];
+    render(
+      <DataTable data={ROWS} columns={columns} getRowId={row => row.id} onRowClick={onRowClick} />,
+    );
+    fireEvent.click(screen.getAllByLabelText('Row actions')[0]);
+    expect(onRowClick).not.toHaveBeenCalled();
+  });
+
   it('collapses badges past the maximum into a +N badge', () => {
     const items = ['a', 'b', 'c', 'd', 'e'].map(content => ({ content }));
     const { container } = render(<DataTableCell kind="badge" items={items} max={2} />);

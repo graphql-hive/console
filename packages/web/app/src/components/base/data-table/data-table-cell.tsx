@@ -452,17 +452,20 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       );
     case 'copy':
       return <CopyChip value={props.value} />;
+    // Controls inside a clickable or expandable row act on their own: the click stops here.
     case 'checkbox':
       return (
-        <Checkbox
-          checked={props.checked}
-          onCheckedChange={checked => props.onCheckedChange(checked === true)}
-          aria-label={props.label}
-        />
+        <span className="inline-flex" onClick={event => event.stopPropagation()}>
+          <Checkbox
+            checked={props.checked}
+            onCheckedChange={checked => props.onCheckedChange(checked === true)}
+            aria-label={props.label}
+          />
+        </span>
       );
     case 'actions':
       return (
-        <span className="flex justify-end">
+        <span className="flex justify-end" onClick={event => event.stopPropagation()}>
           <Menu
             align="end"
             width="sm"
@@ -481,7 +484,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       );
     case 'icon-button':
       return (
-        <span className="flex justify-end">
+        <span className="flex justify-end" onClick={event => event.stopPropagation()}>
           <Tooltip
             trigger={
               <Button

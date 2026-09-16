@@ -1,14 +1,12 @@
 import { useMemo } from 'react';
-import { ArrowDown, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Avatar } from '@/components/base/avatar/avatar';
 import { Badge } from '@/components/base/badge/badge';
 import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { PageLead } from '@/components/base/page-lead';
-import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Spinner } from '@/components/ui/spinner';
-import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import {
   AlertChannelType,
@@ -18,7 +16,7 @@ import {
 } from '@/gql/graphql';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useNavigate } from '@tanstack/react-router';
-import { createColumnHelper, type Column, type ColumnDef } from '@tanstack/react-table';
+import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 
 const TargetAlertsRulesPage_Query = graphql(`
   query TargetAlertsRulesPage_Query(
@@ -132,82 +130,74 @@ function destinationLabel(channels: ReadonlyArray<{ type: string }>): string {
     .join(', ');
 }
 
-function SortableHeader({ column, label }: { column: Column<RuleRow, unknown>; label: string }) {
-  const sort = column.getIsSorted();
-  const arrowOpacity = sort ? 'opacity-100' : 'opacity-30';
-  const arrowRotation = sort === 'asc' ? 'rotate-180' : '';
-  return (
-    <button
-      type="button"
-      onClick={() => column.toggleSorting()}
-      className="text-neutral-10 hover:text-neutral-12 inline-flex items-center gap-1 text-xs font-medium"
-    >
-      {label}
-      <ArrowDown className={`size-3 transition-transform ${arrowOpacity} ${arrowRotation}`} />
-    </button>
-  );
-}
-
 const columnHelper = createColumnHelper<RuleRow>();
 
 const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
   columnHelper.accessor('name', {
-    header: ({ column }) => <SortableHeader column={column} label="Name" />,
+    header: 'Name',
+    meta: { sortable: true, width: 'fill' },
     cell: info => (
-      <span className="inline-flex items-center gap-2">
-        <span className="text-neutral-12 text-xs font-medium">{info.getValue()}</span>
-        {!info.row.original.enabled && <Badge content="Paused" variants={{ variant: 'info' }} />}
-      </span>
+      <DataTableCell
+        kind="text"
+        value={info.getValue()}
+        weight="medium"
+        trailing={
+          info.row.original.enabled ? undefined : (
+            <Badge content="Paused" variants={{ variant: 'info' }} />
+          )
+        }
+      />
     ),
   }),
   columnHelper.accessor('type', {
     header: 'Type',
     cell: info => (
-      <span className="text-neutral-11 text-xs">
-        {TYPE_LABEL[info.getValue() as MetricAlertRuleType]}
-      </span>
+      <DataTableCell
+        kind="text"
+        value={TYPE_LABEL[info.getValue() as MetricAlertRuleType]}
+        tone="muted"
+      />
     ),
-    enableSorting: false,
   }),
   columnHelper.accessor('severity', {
-    header: ({ column }) => <SortableHeader column={column} label="Severity" />,
+    header: 'Severity',
+    meta: { sortable: true },
     sortingFn: (a, b) => SEVERITY_RANK[a.original.severity] - SEVERITY_RANK[b.original.severity],
     cell: info => {
       const sev = info.getValue() as MetricAlertRuleSeverity;
       return (
-        <span className="text-neutral-12 inline-flex items-center gap-1.5 text-xs">
-          <StatusDot color={SEVERITY_DOT_COLOR[sev]} />
-          {SEVERITY_LABEL[sev]}
-        </span>
+        <DataTableCell kind="status" label={SEVERITY_LABEL[sev]} dot={SEVERITY_DOT_COLOR[sev]} />
       );
     },
   }),
   columnHelper.accessor('incidentCount', {
-    header: ({ column }) => <SortableHeader column={column} label="Incidents" />,
-    cell: info => <span className="text-neutral-12 font-mono text-xs">{info.getValue()}</span>,
+    header: 'Incidents',
+    meta: { sortable: true, align: 'right' },
+    cell: info => <DataTableCell kind="number" value={info.getValue()} />,
   }),
   columnHelper.accessor('lastTriggeredAt', {
-    header: ({ column }) => <SortableHeader column={column} label="Last triggered" />,
+    header: 'Last triggered',
+    meta: { sortable: true },
     sortingFn: (a, b) => {
       const av = a.original.lastTriggeredAt ? new Date(a.original.lastTriggeredAt).getTime() : 0;
       const bv = b.original.lastTriggeredAt ? new Date(b.original.lastTriggeredAt).getTime() : 0;
       return av - bv;
     },
-    cell: info => (
-      <span className="text-neutral-11 font-mono text-xs">
-        {info.getValue() ? <TimeAgo date={info.getValue()!} /> : '—'}
-      </span>
-    ),
+    cell: info => {
+      const date = info.getValue();
+      return date ? (
+        <DataTableCell kind="time" date={date} tone="muted" />
+      ) : (
+        <DataTableCell kind="placeholder" />
+      );
+    },
   }),
   columnHelper.accessor('updatedAt', {
-    header: ({ column }) => <SortableHeader column={column} label="Last updated" />,
+    header: 'Last updated',
+    meta: { sortable: true },
     sortingFn: (a, b) =>
       new Date(a.original.updatedAt).getTime() - new Date(b.original.updatedAt).getTime(),
-    cell: info => (
-      <span className="text-neutral-11 inline-block min-w-[180px] whitespace-nowrap font-mono text-xs">
-        {info.getValue() ? <TimeAgo date={info.getValue()} /> : '—'}
-      </span>
-    ),
+    cell: info => <DataTableCell kind="time" date={info.getValue()} tone="muted" />,
   }),
   columnHelper.display({
     id: 'destination',
@@ -215,35 +205,40 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
     cell: ctx => {
       const channels = ctx.row.original.channels;
       if (channels.length === 0) {
-        return <span className="text-neutral-10">—</span>;
+        return <DataTableCell kind="placeholder" />;
       }
       return (
-        <span className="text-neutral-12 text-xs">
-          {destinationLabel(channels)}{' '}
-          <Popover
-            trigger={
-              <button
-                type="button"
-                aria-label="Destinations"
-                className="text-neutral-9 hover:text-neutral-11 ml-1 inline-flex align-middle"
-              >
-                <Info className="size-3.5" />
-              </button>
-            }
-            openOnHover
-            width="auto"
-            content={
-              <div className="space-y-1 text-xs">
-                {channels.map(c => (
-                  <div key={c.id} className="flex items-center gap-2">
-                    <span className="text-neutral-10">{CHANNEL_TYPE_LABEL[c.type] ?? c.type}</span>
-                    <span className="text-neutral-12 font-mono">{c.detail ?? c.name}</span>
-                  </div>
-                ))}
-              </div>
-            }
-          />
-        </span>
+        <DataTableCell
+          kind="text"
+          value={destinationLabel(channels)}
+          trailing={
+            <Popover
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Destinations"
+                  className="text-neutral-9 hover:text-neutral-11 inline-flex"
+                >
+                  <Info className="size-3.5" />
+                </button>
+              }
+              openOnHover
+              width="auto"
+              content={
+                <div className="space-y-1 text-xs">
+                  {channels.map(c => (
+                    <div key={c.id} className="flex items-center gap-2">
+                      <span className="text-neutral-10">
+                        {CHANNEL_TYPE_LABEL[c.type] ?? c.type}
+                      </span>
+                      <span className="text-neutral-12 font-mono">{c.detail ?? c.name}</span>
+                    </div>
+                  ))}
+                </div>
+              }
+            />
+          }
+        />
       );
     },
   }),
@@ -252,12 +247,10 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
     header: 'Created by',
     cell: ctx => {
       const u = ctx.row.original.createdBy;
-      if (!u) return <span className="text-neutral-10">—</span>;
-      return (
-        <span className="text-neutral-12 inline-flex items-center gap-2 text-xs">
-          <Avatar size="xs" alt={u.displayName} />
-          {u.displayName}
-        </span>
+      return u ? (
+        <DataTableCell kind="avatar" name={u.displayName} />
+      ) : (
+        <DataTableCell kind="placeholder" />
       );
     },
   }),

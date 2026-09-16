@@ -388,7 +388,7 @@ export function CreateProjectModalContent(props: {
                       <FormLabel>Project Type</FormLabel>
                       <RadioGroup
                         variant="as-card"
-                        onSurface="floating"
+                        onSurface="raised"
                         orientation="vertical"
                         value={field.value}
                         onValueChange={field.onChange}
