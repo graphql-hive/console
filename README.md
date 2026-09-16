@@ -88,8 +88,13 @@ Prerequisites: Node.js 24.18.0 or later, pnpm 10.33.2 or later, and Docker 26.1.
 pnpm install
 pnpm local:setup
 pnpm generate
+pnpm build:libraries
 pnpm dev:hive
 ```
+
+`pnpm build:libraries` is needed after a fresh install: workspace libraries such as
+`@graphql-hive/laboratory` are consumed from their built `dist/` output, so the web app will fail to
+resolve them until they have been built once.
 
 Open <http://localhost:3000> when the services are ready. The
 [development guide](./docs/DEVELOPMENT.md) covers environment setup, required ports, optional
