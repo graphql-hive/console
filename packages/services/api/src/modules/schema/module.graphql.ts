@@ -375,7 +375,7 @@ export default gql`
     target: TargetReferenceInput
     service: ID
     url: String
-    sdl: String
+    sdl: String @deprecated(reason: "Use 'SchemaPublishInput.schema' instead.")
     schema: SchemaPublishSchemaInput
     author: String!
     commit: String!
@@ -401,8 +401,14 @@ export default gql`
   }
 
   input SchemaPublishSchemaInput @oneOf {
-    bySdl: String
-    byRevision: String
+    """
+    Publish a specific sdl as the schema.
+    """
+    sdl: String
+    """
+    Publish a schema revision that was previously pushed via 'Mutation.schemaPush'.
+    """
+    revision: String
   }
 
   input SchemaPushInput {

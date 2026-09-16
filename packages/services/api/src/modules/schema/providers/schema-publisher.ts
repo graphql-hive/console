@@ -1358,13 +1358,13 @@ export class SchemaPublisher {
 
     let revisionId: string | null = null;
     let revisionName: string | null = null;
-    let resolvedSdl = input.sdl ?? input.schema?.bySdl ?? null;
+    let resolvedSdl = input.sdl ?? input.schema?.sdl ?? null;
 
-    if (input.schema?.byRevision != null) {
+    if (input.schema?.revision != null) {
       const revision = await this.schemaRevisions.getByRevision({
         projectId: selector.projectId,
         service: project.type === Types.ProjectType.SINGLE ? null : (input.service ?? null),
-        revision: input.schema.byRevision,
+        revision: input.schema.revision,
       });
 
       if (!revision) {
@@ -1372,7 +1372,7 @@ export class SchemaPublisher {
           __typename: 'SchemaPublishError',
           valid: false,
           changes: [],
-          errors: [{ message: `Schema revision '${input.schema.byRevision}' was not found.` }],
+          errors: [{ message: `Schema revision '${input.schema.revision}' was not found.` }],
         };
       }
       revisionId = revision.id;

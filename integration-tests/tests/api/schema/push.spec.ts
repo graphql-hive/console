@@ -117,7 +117,7 @@ test.concurrent(
           target: targetReference,
           author: 'Test',
           commit: 'monolith-v1',
-          schema: { byRevision: 'MonolithV1' },
+          schema: { revision: 'MonolithV1' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
@@ -134,7 +134,7 @@ test.concurrent(
           target: targetReference,
           author: 'Test',
           commit: 'missing',
-          schema: { byRevision: 'MissingRevision' },
+          schema: { revision: 'MissingRevision' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
@@ -182,7 +182,7 @@ test.concurrent(
           url: 'https://products.example.com/graphql',
           author: 'Test',
           commit: 'federation-v1',
-          schema: { byRevision: 'FederationV1' },
+          schema: { revision: 'FederationV1' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
@@ -201,7 +201,7 @@ test.concurrent(
           url: 'https://products.example.com/graphql',
           author: 'Test',
           commit: 'missing',
-          schema: { byRevision: 'MissingRevision' },
+          schema: { revision: 'MissingRevision' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
@@ -310,7 +310,7 @@ test.concurrent(
           target: targetReference,
           author: 'Test',
           commit: 'monolith-revision',
-          schema: { byRevision: 'MonolithRevision' },
+          schema: { revision: 'MonolithRevision' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
@@ -365,7 +365,7 @@ test.concurrent(
           url: 'https://products.example.com/graphql',
           author: 'Test',
           commit: 'federation-revision',
-          schema: { byRevision: 'FederationRevision' },
+          schema: { revision: 'FederationRevision' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());

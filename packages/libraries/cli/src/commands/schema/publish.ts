@@ -280,7 +280,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
 
       let schema: GraphQLSchema.SchemaPublishSchemaInput | null = null;
       if (revision) {
-        schema = { byRevision: revision };
+        schema = { revision: revision };
       } else {
         if (!file) {
           throw new MissingArgumentsError(['file', 'Path to the schema file(s)']);
@@ -290,7 +290,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
             logger: this.logger,
           });
           invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
-          schema = { bySdl: minifySchema(rawSdl) };
+          schema = { sdl: minifySchema(rawSdl) };
         } catch (err) {
           if (err instanceof GraphQLError) {
             throw new InvalidSDLError(err);

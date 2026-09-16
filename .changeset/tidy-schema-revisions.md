@@ -16,7 +16,7 @@ hive schema:publish \
   --revision "$REVISION"
 ```
 
-For a federated schema, provide the service when pushing and the service URL when publishing:
+For a federated schema, provide the service when pushing:
 
 ```sh
 hive schema:push products.graphql \
