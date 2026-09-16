@@ -30,21 +30,24 @@ Routers periodically poll this endpoint.
 {
   "graphs": {
     "default": {
-      "artifactPath": "/my-target/versions/781cf01b-305d-4890-a78b-1be204b42ee5",
-      "version": {
+      "currentVersion": {
         "id": "781cf01b-305d-4890-a78b-1be204b42ee5",
+        "artifactPath": "/my-target/versions/781cf01b-305d-4890-a78b-1be204b42ee5",
         "revision": "2026-09-16-production"
       }
     },
     "default/contract-a": {
-      "artifactPath": "/my-target/versions/344d8d0c-d414-4727-a7d8-8cee2dc11182",
-      "version": {
+      "currentVersion": {
         "id": "344d8d0c-d414-4727-a7d8-8cee2dc11182",
+        "artifactPath": "/my-target/versions/344d8d0c-d414-4727-a7d8-8cee2dc11182",
         "revision": "2026-09-16-contract-a"
       }
     },
     "graph-b": {
-      "artifactPath": "/my-target/versions/89780103-7ea3-490f-99ba-c60e90eed41b"
+      "currentVersion": {
+        "id": "89780103-7ea3-490f-99ba-c60e90eed41b",
+        "artifactPath": "/my-target/versions/89780103-7ea3-490f-99ba-c60e90eed41b"
+      }
     }
   }
 }
@@ -71,10 +74,28 @@ opaque identifiers. In particular, consumers should not infer special behavior f
 
 The router could use these names in order to route traffic based on a header or cookie.
 
-### `artifactPath`
+### `currentVersion`
 
-`artifactPath` is required and is used to fetch the schema artifacts needed in order to serve the
+`currentVersion` is required and describes the immutable schema version currently assigned to a
 graph.
+
+#### `id`
+
+`currentVersion.id` is required and identifies the immutable Hive schema version backing the graph.
+A changed `currentVersion.id` does not automatically mean that `currentVersion.artifactPath`
+changed.
+
+Routers can expose it through logs, metrics or traces. For example:
+
+```
+graph.name=default
+graph.version_id=781cf01b-305d-4890-a78b-1be204b42ee5
+```
+
+#### `artifactPath`
+
+`currentVersion.artifactPath` is required and is used to fetch the schema artifacts needed in order
+to serve the graph.
 
 The full artifact path can be constructed like the following:
 
@@ -91,50 +112,26 @@ concat(
 )
 ```
 
-If `artifactPath` changed, the new schema SDL can be retrieved via this endpoint and afterwards
-served clients.
-
-### `version`
-
-`version` is optional metadata describing the immutable schema version currently assigned to a
-graph. Its absence does not affect how the router retrieves or serves the graph artifact.
-
-#### `id`
-
-```json
-{
-  "version": {
-    "id": "781cf01b-305d-4890-a78b-1be204b42ee5"
-  }
-}
-```
-
-`version.id` identifies the immutable Hive schema version backing the graph. A changed `version.id`
-does not automatically mean that `artifactPath` changed.
-
-Routers can expose it through logs, metrics or traces. For example:
-
-```
-graph.name=default
-graph.version_id=781cf01b-305d-4890-a78b-1be204b42ee5
-```
+If `currentVersion.artifactPath` changed, the new schema SDL can be retrieved via this endpoint and
+afterwards served clients.
 
 #### `revision`
 
 ```json
 {
-  "version": {
+  "currentVersion": {
     "revision": "2026-09-16-production"
   }
 }
 ```
 
-`version.revision` is an immutable identifier supplied by the user or deployment process.
+`currentVersion.revision` is an optional immutable identifier supplied by the user or deployment
+process.
 
 It exists primarily to associate the running graph with a user-facing release or deployment
 identifier.
 
-Similar to `version.id`, routers can expose it through logs, metrics or traces. For example:
+Similar to `currentVersion.id`, routers can expose it through logs, metrics or traces. For example:
 
 ```
 graph.name=default
@@ -157,9 +154,9 @@ Previous manifest:
 ```json
 "graphs": {
   "default": {
-    "artifactPath": "/my-target/versions/version-a",
-    "version": {
+    "currentVersion": {
       "id": "version-a",
+      "artifactPath": "/my-target/versions/version-a",
       "revision": "revision-a"
     }
   }
@@ -172,9 +169,9 @@ New Manifest:
 {
   "graphs": {
     "default": {
-      "artifactPath": "/my-target/versions/version-b",
-      "version": {
+      "currentVersion": {
         "id": "version-b",
+        "artifactPath": "/my-target/versions/version-b",
         "revision": "revision-b"
       }
     }
@@ -190,8 +187,9 @@ The router should:
 
 The existing graph should remain available until the new version has been successfully initialized.
 
-**Note:** A changed `version.id` and `version.revision` does not necessarily mean that the
-`artifactPath` has changed. Thus an HTTP roundtrip can be saved if `artifactPath` stayed the same.
+**Note:** A changed `currentVersion.id` and `currentVersion.revision` does not necessarily mean that
+`currentVersion.artifactPath` has changed. Thus an HTTP roundtrip can be saved if
+`currentVersion.artifactPath` stayed the same.
 
 ### Graph Added
 
@@ -209,9 +207,9 @@ New Manifest:
 {
   "graphs": {
     "graph-b": {
-      "artifactPath": "/my-target/versions/version-b",
-      "version": {
+      "currentVersion": {
         "id": "version-b",
+        "artifactPath": "/my-target/versions/version-b",
         "revision": "revision-b"
       }
     }
@@ -229,9 +227,9 @@ Previous manifest:
 {
   "graphs": {
     "graph-b": {
-      "artifactPath": "/my-target/versions/version-b",
-      "version": {
+      "currentVersion": {
         "id": "version-b",
+        "artifactPath": "/my-target/versions/version-b",
         "revision": "revision-b"
       }
     }
@@ -249,9 +247,9 @@ The graph is no longer part of the desired state and should be stopped and remov
 
 ### Graph unchanged
 
-If the `artifactPath` has not changed, its schema does not need to be fetched again. A change to the
-optional metadata in `version`, or adding or removing `version`, may still be applied to runtime
-metadata even when no schema reload is necessary.
+If `currentVersion.artifactPath` has not changed, its schema does not need to be fetched again. A
+change to metadata such as `currentVersion.id` or `currentVersion.revision` may still be applied to
+runtime metadata even when no schema reload is necessary.
 
 ## Failure Handling
 
@@ -285,8 +283,8 @@ Cache-Control
 A router should avoid downloading or processing the complete manifest when the CDN indicates that it
 has not changed.
 
-Schema artifacts are immutable because they are addressed by `artifactPath` and may therefore be
-cached independently.
+Schema artifacts are immutable because they are addressed by `currentVersion.artifactPath` and may
+therefore be cached independently.
 
 ## Forward Compatability
 
@@ -297,9 +295,9 @@ example, a future manifest could contain:
 {
   "graphs": {
     "default": {
-      "artifactPath": "/my-target/versions/781cf01b-305d-4890-a78b-1be204b42ee5",
-      "version": {
+      "currentVersion": {
         "id": "781cf01b-305d-4890-a78b-1be204b42ee5",
+        "artifactPath": "/my-target/versions/781cf01b-305d-4890-a78b-1be204b42ee5",
         "revision": "production-42"
       }
     }
