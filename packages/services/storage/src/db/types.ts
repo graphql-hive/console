@@ -520,7 +520,7 @@ export interface schema_revisions {
   id: string;
   project_id: string;
   service_name: string | null;
-  version: string;
+  revision: string;
 }
 
 export interface schema_version_changes {

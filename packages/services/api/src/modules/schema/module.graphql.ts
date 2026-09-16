@@ -402,21 +402,21 @@ export default gql`
 
   input SchemaPublishSchemaInput @oneOf {
     bySdl: String
-    byVersion: String
+    byRevision: String
   }
 
   input SchemaPushInput {
     target: TargetReferenceInput!
     service: String
     sdl: String!
-    version: String!
+    revision: String!
   }
 
   type SchemaRevision {
     id: ID!
     service: String
     digest: String!
-    version: String!
+    revision: String!
     createdAt: DateTime!
     expiresAt: DateTime
   }
@@ -2016,9 +2016,9 @@ export default gql`
     """
     id: ID!
     """
-    The user-provided immutable release tag for this subgraph version, if any.
+    The user-provided immutable revision for this subgraph version, if any.
     """
-    releaseTag: String
+    revision: String
     """
     The service name.
     """
@@ -2117,9 +2117,9 @@ export default gql`
     name: String! @tag(name: "public")
     versionId: ID! @tag(name: "public")
     """
-    The user-provided immutable release tag used for this publish, if any.
+    The user-provided immutable revision used for this publish, if any.
     """
-    releaseTag: String
+    revision: String
   }
 
   type SchemaVersionSubgraphRemoveOrigin {
@@ -2131,9 +2131,9 @@ export default gql`
 
   type SchemaVersionPublishOrigin {
     """
-    The user-provided immutable release tag used for a monolith publish, if any.
+    The user-provided immutable revision used for a monolith publish, if any.
     """
-    releaseTag: String
+    revision: String
 
     """
     The subgraphs published as part of this version.

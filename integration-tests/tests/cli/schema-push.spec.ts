@@ -2,7 +2,7 @@ import { ProjectType } from 'testkit/gql/graphql';
 import { schemaPublish, schemaPush } from '../../testkit/cli';
 import { initSeed } from '../../testkit/seed';
 
-test('schema:publish requires a file or version', async ({ expect }) => {
+test('schema:publish requires a file or revision', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
   const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
@@ -25,20 +25,20 @@ test('schema:publish requires a file or version', async ({ expect }) => {
 describe.each([
   {
     projectType: ProjectType.Single,
-    version: 'monolith-v1',
+    revision: 'monolith-v1',
     serviceArgs: [] as string[],
     publishArgs: [] as string[],
   },
   {
     projectType: ProjectType.Federation,
-    version: 'federation-v1',
+    revision: 'federation-v1',
     serviceArgs: ['--service', 'products'],
     publishArgs: ['--service', 'products', '--url', 'https://products.example.com/graphql'],
   },
 ])(
   'schema revisions for $projectType projects',
-  ({ projectType, version, serviceArgs, publishArgs }) => {
-    test.concurrent('pushes and publishes a schema version', async ({ expect }) => {
+  ({ projectType, revision, serviceArgs, publishArgs }) => {
+    test.concurrent('pushes and publishes a schema revision', async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
       const { target, createTargetAccessToken } = await createProject(projectType);
@@ -50,12 +50,12 @@ describe.each([
           secret,
           '--target',
           target.id,
-          '--version',
-          version,
+          '--revision',
+          revision,
           ...serviceArgs,
           'fixtures/init-schema.graphql',
         ]),
-      ).resolves.toContain(`Version: ${version}`);
+      ).resolves.toContain(`Revision: ${revision}`);
 
       await expect(
         schemaPublish([
@@ -66,20 +66,20 @@ describe.each([
           '--author',
           'HiveCLI',
           '--commit',
-          version,
-          '--version',
-          version,
+          revision,
+          '--revision',
+          revision,
           ...publishArgs,
         ]),
       ).resolves.toContain('Published initial schema.');
     });
 
-    test.concurrent('rejects unknown and conflicting schema versions', async ({ expect }) => {
+    test.concurrent('rejects unknown and conflicting revisions', async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
       const { target, createTargetAccessToken } = await createProject(projectType);
       const { secret } = await createTargetAccessToken({ mode: 'readWrite' });
-      const identifier = serviceArgs.length ? `products@${version}` : version;
+      const identifier = serviceArgs.length ? `products@${revision}` : revision;
 
       const missingPublish = schemaPublish([
         '--registry.accessToken',
@@ -90,12 +90,12 @@ describe.each([
         'HiveCLI',
         '--commit',
         'missing',
-        '--version',
+        '--revision',
         'missing',
         ...publishArgs,
       ]);
       await expect(missingPublish).rejects.toThrow('Schema publish failed.');
-      await expect(missingPublish).rejects.toThrow('Schema version');
+      await expect(missingPublish).rejects.toThrow('Schema revision');
       await expect(missingPublish).rejects.toThrow('missing');
       await expect(missingPublish).rejects.toThrow('was not found.');
 
@@ -104,8 +104,8 @@ describe.each([
         secret,
         '--target',
         target.id,
-        '--version',
-        version,
+        '--revision',
+        revision,
         ...serviceArgs,
         'fixtures/init-schema.graphql',
       ]);
@@ -115,12 +115,12 @@ describe.each([
         secret,
         '--target',
         target.id,
-        '--version',
-        version,
+        '--revision',
+        revision,
         ...serviceArgs,
         'fixtures/nonbreaking-schema.graphql',
       ]);
-      await expect(conflictingPush).rejects.toThrow(`Version '${identifier}' already exists`);
+      await expect(conflictingPush).rejects.toThrow(`Revision '${identifier}' already exists`);
       await expect(conflictingPush).rejects.toThrow('with a different');
       await expect(conflictingPush).rejects.toThrow('schema.');
     });

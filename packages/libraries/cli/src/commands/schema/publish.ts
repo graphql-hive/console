@@ -114,8 +114,8 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       description:
         'The associated commit SHA, or optionally any external identifier that references the schema',
     }),
-    version: Flags.string({
-      description: 'interpret the schema argument as a previously pushed version',
+    revision: Flags.string({
+      description: 'publish a previously pushed schema revision',
     }),
     github: Flags.boolean({
       description: 'Connect with GitHub Application',
@@ -153,7 +153,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     file: Args.string({
       name: 'file',
       required: false,
-      description: 'Path to the schema file(s), must be omitted when using --version',
+      description: 'Path to the schema file(s), must be omitted when using --revision',
       hidden: false,
     }),
   };
@@ -210,7 +210,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       const service = flags.service;
       const url = flags.url;
       const file = args.file;
-      const version = flags.version;
+      const revision = flags.revision;
       const force = flags.force;
       const experimental_acceptBreakingChanges = flags.experimental_acceptBreakingChanges;
       const metadata = this.resolveMetadata(flags.metadata);
@@ -279,8 +279,8 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       }
 
       let schema: GraphQLSchema.SchemaPublishSchemaInput | null = null;
-      if (version) {
-        schema = { byVersion: version };
+      if (revision) {
+        schema = { byRevision: revision };
       } else {
         if (!file) {
           throw new MissingArgumentsError(['file', 'Path to the schema file(s)']);

@@ -1180,7 +1180,7 @@ export function getSchemaVersionWithAllDetails(
               ... on SubgraphDiffAdded {
                 subgraphVersion {
                   id
-                  releaseTag
+                  revision
                   sdl
                   serviceName
                 }
@@ -1188,13 +1188,13 @@ export function getSchemaVersionWithAllDetails(
               ... on SubgraphDiffChanged {
                 subgraphVersion {
                   id
-                  releaseTag
+                  revision
                   sdl
                   serviceName
                 }
                 previousSubgraphVersion {
                   id
-                  releaseTag
+                  revision
                   sdl
                   serviceName
                 }
@@ -1209,7 +1209,7 @@ export function getSchemaVersionWithAllDetails(
               ... on SubgraphDiffRemoved {
                 removedSubgraphVersion {
                   id
-                  releaseTag
+                  revision
                   sdl
                   serviceName
                 }
@@ -1217,7 +1217,7 @@ export function getSchemaVersionWithAllDetails(
               ... on SubgraphDiffUnchanged {
                 subgraphVersion {
                   id
-                  releaseTag
+                  revision
                   sdl
                   serviceName
                 }

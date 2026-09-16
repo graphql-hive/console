@@ -7,7 +7,7 @@ const SchemaRevisionModel = z.object({
   id: z.string(),
   service: z.string().nullable(),
   digest: z.string(),
-  version: z.string(),
+  revision: z.string(),
   createdAt: z.coerce.date(),
   expiresAt: z.coerce.date().nullable(),
   sdl: z.string(),
@@ -22,7 +22,7 @@ export class SchemaRevisionStore {
   async push(args: {
     projectId: string;
     service: string | null;
-    version: string;
+    revision: string;
     digest: string;
     sdl: string;
     expiresAt: Date;
@@ -36,7 +36,7 @@ export class SchemaRevisionStore {
           r."id",
           r."service_name" AS "service",
           r."digest",
-          r."version",
+          r."revision",
           r."created_at" AS "createdAt",
           r."expires_at" AS "expiresAt",
           a."sdl"
@@ -44,7 +44,7 @@ export class SchemaRevisionStore {
         LEFT JOIN "sdl_artifacts" a ON a."digest" = r."digest"
         WHERE r."project_id" = ${args.projectId}
           AND r."service_name" IS NOT DISTINCT FROM ${args.service}
-          AND r."version" = ${args.version}
+          AND r."revision" = ${args.revision}
         FOR UPDATE OF r
       `);
 
@@ -53,7 +53,7 @@ export class SchemaRevisionStore {
         if (schemaRevision.digest !== args.digest) {
           return {
             error: {
-              message: `Version '${args.service ? `${args.service}@` : ''}${args.version}' already exists with a different schema.\nExisting digest: ${schemaRevision.digest}\nSubmitted digest: ${args.digest}`,
+              message: `Revision '${args.service ? `${args.service}@` : ''}${args.revision}' already exists with a different schema.\nExisting digest: ${schemaRevision.digest}\nSubmitted digest: ${args.digest}`,
             },
           };
         }
@@ -69,15 +69,15 @@ export class SchemaRevisionStore {
 
       const revision = await trx.one(psql`
         INSERT INTO "schema_revisions" (
-          "project_id", "service_name", "digest", "version", "expires_at"
+          "project_id", "service_name", "digest", "revision", "expires_at"
         ) VALUES (
-          ${args.projectId}, ${args.service}, ${args.digest}, ${args.version}, ${args.expiresAt.toISOString()}
+          ${args.projectId}, ${args.service}, ${args.digest}, ${args.revision}, ${args.expiresAt.toISOString()}
         )
         RETURNING
           "id"
           , "service_name" AS "service"
           , "digest"
-          , "version"
+          , "revision"
           , "created_at" AS "createdAt"
           , "expires_at" AS "expiresAt"
       `);
@@ -90,17 +90,17 @@ export class SchemaRevisionStore {
     });
   }
 
-  async get(args: {
+  async getByRevision(args: {
     projectId: string;
     service: string | null;
-    version: string;
+    revision: string;
   }): Promise<SchemaRevision | null> {
     const row = await this.pg.maybeOne(psql`
       SELECT
         "schema_revisions"."id" AS "id"
         , "schema_revisions"."service_name" AS "service"
         , "schema_revisions"."digest" AS "digest"
-        , "schema_revisions"."version" AS "version"
+        , "schema_revisions"."revision" AS "revision"
         , "schema_revisions"."created_at" AS "createdAt"
         , "schema_revisions"."expires_at" AS "expiresAt"
         , "sdl_artifacts"."sdl" AS "sdl"
@@ -112,7 +112,7 @@ export class SchemaRevisionStore {
       WHERE
         "schema_revisions"."project_id" = ${args.projectId}
         AND "schema_revisions"."service_name" IS NOT DISTINCT FROM ${args.service}
-        AND "schema_revisions"."version" = ${args.version}
+        AND "schema_revisions"."revision" = ${args.revision}
         AND (
           "schema_revisions"."expires_at" IS NULL
           OR "schema_revisions"."expires_at" > now()
@@ -138,7 +138,7 @@ export class SchemaRevisionStore {
         "schema_revisions"."id" AS "id"
         , "schema_revisions"."service_name" AS "service"
         , "schema_revisions"."digest" AS "digest"
-        , "schema_revisions"."version" AS "version"
+        , "schema_revisions"."revision" AS "revision"
         , "schema_revisions"."created_at" AS "createdAt"
         , "schema_revisions"."expires_at" AS "expiresAt"
         , "sdl_artifacts"."sdl" AS "sdl"

@@ -20,12 +20,12 @@ import { SchemaRevisionStore } from './schema-revision-store';
 // 1 month
 const REVISION_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
 
-export const SchemaRevisionVersionModel = z
+export const SchemaRevisionNameModel = z
   .string()
   .trim()
-  .min(1, 'Version must be at least 1 character long.')
-  .max(64, 'Version must be at most 64 characters long.')
-  .regex(/^[a-zA-Z0-9._-]+$/, "Version can only contain letters, numbers, '.', '_', and '-'.");
+  .min(1, 'Revision must be at least 1 character long.')
+  .max(64, 'Revision must be at most 64 characters long.')
+  .regex(/^[a-zA-Z0-9._-]+$/, "Revision can only contain letters, numbers, '.', '_', and '-'.");
 
 @Injectable({ scope: Scope.Operation })
 export class SchemaPusher {
@@ -114,9 +114,9 @@ export class SchemaPusher {
       }
     }
 
-    const version = SchemaRevisionVersionModel.safeParse(input.version);
-    if (!version.success) {
-      return { error: { message: version.error.issues[0]?.message ?? 'Invalid version.' } };
+    const revision = SchemaRevisionNameModel.safeParse(input.revision);
+    if (!revision.success) {
+      return { error: { message: revision.error.issues[0]?.message ?? 'Invalid revision.' } };
     }
 
     let digest: string;
@@ -130,7 +130,7 @@ export class SchemaPusher {
     return await this.revisions.push({
       projectId: selector.projectId,
       service,
-      version: version.data,
+      revision: revision.data,
       digest,
       sdl: input.sdl,
       expiresAt: new Date(Date.now() + REVISION_RETENTION_MS),

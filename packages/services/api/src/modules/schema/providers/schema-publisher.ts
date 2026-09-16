@@ -116,7 +116,7 @@ export type PublishInput = Types.SchemaPublishInput & {
 type ResolvedPublishInput = Omit<PublishInput, 'sdl' | 'schema'> & {
   sdl: string;
   schemaRevisionId: string | null;
-  releaseTag: string | null;
+  revision: string | null;
 };
 
 type BreakPromise<T> = T extends Promise<infer U> ? U : never;
@@ -1357,14 +1357,14 @@ export class SchemaPublisher {
     }
 
     let revisionId: string | null = null;
-    let revisionVersion: string | null = null;
+    let revisionName: string | null = null;
     let resolvedSdl = input.sdl ?? input.schema?.bySdl ?? null;
 
-    if (input.schema?.byVersion != null) {
-      const revision = await this.schemaRevisions.get({
+    if (input.schema?.byRevision != null) {
+      const revision = await this.schemaRevisions.getByRevision({
         projectId: selector.projectId,
         service: project.type === Types.ProjectType.SINGLE ? null : (input.service ?? null),
-        version: input.schema.byVersion,
+        revision: input.schema.byRevision,
       });
 
       if (!revision) {
@@ -1372,11 +1372,11 @@ export class SchemaPublisher {
           __typename: 'SchemaPublishError',
           valid: false,
           changes: [],
-          errors: [{ message: `Schema version '${input.schema.byVersion}' was not found.` }],
+          errors: [{ message: `Schema revision '${input.schema.byRevision}' was not found.` }],
         };
       }
       revisionId = revision.id;
-      revisionVersion = revision.version;
+      revisionName = revision.revision;
       resolvedSdl = revision.sdl;
     }
 
@@ -1387,7 +1387,7 @@ export class SchemaPublisher {
       ...inputWithoutSchema,
       sdl: resolvedSdl,
       schemaRevisionId: revisionId,
-      releaseTag: revisionVersion,
+      revision: revisionName,
     };
 
     const [contracts, latestVersion] = await Promise.all([
@@ -2286,7 +2286,7 @@ export class SchemaPublisher {
       base_schema: baseSchema,
       metadata: input.metadata ?? null,
       schemaRevisionId: input.schemaRevisionId,
-      releaseTag: input.releaseTag,
+      revision: input.revision,
       github,
       actionFn: async (versionId: string) => {
         if (composable && fullSchemaSdl) {

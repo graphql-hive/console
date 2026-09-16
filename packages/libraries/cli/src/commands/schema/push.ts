@@ -21,7 +21,7 @@ const schemaPushMutation = graphql(/* GraphQL */ `
       ok {
         schemaRevision {
           service
-          version
+          revision
           digest
         }
       }
@@ -44,9 +44,9 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
     service: Flags.string({
       description: 'service name (required for distributed schemas)',
     }),
-    version: Flags.string({
+    revision: Flags.string({
       required: true,
-      description: 'immutable schema version, such as a commit SHA',
+      description: 'immutable schema revision, such as a commit SHA',
     }),
     'registry.endpoint': Flags.string({ description: 'registry endpoint' }),
     registry: Flags.string({
@@ -132,7 +132,7 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
           input: {
             target: target.data,
             service: flags.service,
-            version: flags.version,
+            revision: flags.revision,
             sdl,
           },
         },
@@ -151,7 +151,7 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
       if (revision.service) {
         this.logInfo(`Service: ${revision.service}`);
       }
-      this.logInfo(`Version: ${revision.version}`);
+      this.logInfo(`Revision: ${revision.revision}`);
       this.logInfo(`Digest: ${revision.digest}`);
     } catch (error) {
       if (error instanceof Errors.CLIError) {

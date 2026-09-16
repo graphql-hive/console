@@ -303,7 +303,7 @@ export class SchemaVersionStore {
       projectId: string;
       organizationId: string;
       schemaRevisionId: string | null;
-      releaseTag: string | null;
+      revision: string | null;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -346,13 +346,13 @@ export class SchemaVersionStore {
         targetId: args.targetId,
         origin: {
           type: 'publish',
-          releaseTag: args.service ? null : args.releaseTag,
+          revision: args.service ? null : args.revision,
           services: args.service
             ? [
                 {
                   name: args.service.name,
                   versionId: newLog.id,
-                  releaseTag: args.releaseTag,
+                  revision: args.revision,
                 },
               ]
             : null,
@@ -814,15 +814,15 @@ export class SchemaVersionStore {
       .then(z.array(SchemaPushLogModel).parse);
   }
 
-  async getSchemaRevisionVersionsBySchemaLogIds(schemaLogIds: Array<string>) {
+  async getSchemaRevisionsBySchemaLogIds(schemaLogIds: Array<string>) {
     if (schemaLogIds.length === 0) {
       return new Map<string, string>();
     }
 
-    const rows = await this.pg.any(psql`/* getSchemaRevisionVersionsBySchemaLogIds */
+    const rows = await this.pg.any(psql`/* getSchemaRevisionsBySchemaLogIds */
       SELECT
         "schema_log"."id" AS "schemaLogId"
-        , "schema_revisions"."version"
+        , "schema_revisions"."revision"
       FROM
         "schema_log"
       INNER JOIN
@@ -835,9 +835,9 @@ export class SchemaVersionStore {
 
     return new Map(
       z
-        .array(z.object({ schemaLogId: z.string(), version: z.string() }))
+        .array(z.object({ schemaLogId: z.string(), revision: z.string() }))
         .parse(rows)
-        .map(row => [row.schemaLogId, row.version]),
+        .map(row => [row.schemaLogId, row.revision]),
     );
   }
 
@@ -1614,14 +1614,14 @@ const SchemaVersionOriginPromotionModel = z.object({
 
 const SchemaVersionOriginPublishModel = z.object({
   type: z.literal('publish'),
-  releaseTag: z.string().nullable().optional(),
+  revision: z.string().nullable().optional(),
   /** This is nullable in case it is a monolith. */
   services: z
     .array(
       z.object({
         name: z.string(),
         versionId: z.string(),
-        releaseTag: z.string().nullable().optional(),
+        revision: z.string().nullable().optional(),
       }),
     )
     .nullable(),

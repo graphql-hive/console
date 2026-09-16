@@ -15,14 +15,14 @@ export default {
       "project_id" uuid NOT NULL REFERENCES "projects"("id") ON DELETE CASCADE,
       "service_name" text,
       "digest" text NOT NULL REFERENCES "sdl_artifacts"("digest"),
-      "version" text NOT NULL,
+      "revision" text NOT NULL,
       "created_at" timestamptz NOT NULL DEFAULT now(),
       "expires_at" timestamptz,
       "first_published_at" timestamptz
     );
 
-    CREATE UNIQUE INDEX "schema_revision_versions_unique"
-      ON "schema_revisions" ("project_id", "service_name", "version") NULLS NOT DISTINCT;
+    CREATE UNIQUE INDEX "schema_revisions_revision_unique"
+      ON "schema_revisions" ("project_id", "service_name", "revision") NULLS NOT DISTINCT;
 
     CREATE INDEX "schema_revisions_digest_idx"
       ON "schema_revisions" ("digest");

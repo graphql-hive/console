@@ -1017,11 +1017,11 @@ const SchemaVersionHeader_SchemaVersionFragment = graphql(`
     isValid
     origin {
       ... on SchemaVersionPublishOrigin {
-        releaseTag
+        revision
         publishedSubgraphs {
           name
           versionId
-          releaseTag
+          revision
         }
       }
       ... on SchemaVersionPromoteOrigin {
@@ -1113,8 +1113,8 @@ function SchemaVersionHeader(props: {
           value={schemaVersion.id}
           label={
             schemaVersion.origin.__typename === 'SchemaVersionPublishOrigin' &&
-            schemaVersion.origin.releaseTag
-              ? schemaVersion.origin.releaseTag
+            schemaVersion.origin.revision
+              ? schemaVersion.origin.revision
               : schemaVersion.id.slice(0, 8)
           }
         />
@@ -1152,7 +1152,7 @@ function SchemaVersionHeader(props: {
                   <GitCommit className="h-3.5 w-3.5" />
                   <CopyChip
                     value={subgraph.versionId}
-                    label={`${subgraph.name}@${subgraph.releaseTag ?? subgraph.versionId.substring(0, 8)}`}
+                    label={`${subgraph.name}@${subgraph.revision ?? subgraph.versionId.substring(0, 8)}`}
                   />
                 </span>
               ))}
@@ -1648,7 +1648,7 @@ const SubgraphRow_SubgraphDiffFragment = graphql(`
       subgraphVersion {
         serviceName
         id
-        releaseTag
+        revision
         url
       }
     }
@@ -1656,7 +1656,7 @@ const SubgraphRow_SubgraphDiffFragment = graphql(`
       removedSubgraphVersion {
         serviceName
         id
-        releaseTag
+        revision
         url
       }
     }
@@ -1664,12 +1664,12 @@ const SubgraphRow_SubgraphDiffFragment = graphql(`
       subgraphVersion {
         serviceName
         id
-        releaseTag
+        revision
         url
       }
       previousSubgraphVersion {
         id
-        releaseTag
+        revision
       }
       changes {
         edges {
@@ -1680,7 +1680,7 @@ const SubgraphRow_SubgraphDiffFragment = graphql(`
     ... on SubgraphDiffUnchanged {
       subgraphVersion {
         id
-        releaseTag
+        revision
         serviceName
         url
       }
@@ -1715,14 +1715,14 @@ function SubgraphRow(props: {
           {subgraphDiff.__typename === 'SubgraphDiffUnchanged' && (
             <code className="py-0.5 text-sm">
               {subgraphDiff.subgraphVersion.serviceName}@
-              {subgraphDiff.subgraphVersion.releaseTag ??
+              {subgraphDiff.subgraphVersion.revision ??
                 subgraphDiff.subgraphVersion.id.substring(0, 8)}
             </code>
           )}
           {subgraphDiff.__typename === 'SubgraphDiffAdded' && (
             <code className="py-0.5 text-sm">
               {subgraphDiff.subgraphVersion.serviceName}@
-              {subgraphDiff.subgraphVersion.releaseTag ??
+              {subgraphDiff.subgraphVersion.revision ??
                 subgraphDiff.subgraphVersion.id.substring(0, 8)}
             </code>
           )}
@@ -1730,13 +1730,13 @@ function SubgraphRow(props: {
             <>
               <code className="py-0.5 text-sm">
                 {subgraphDiff.subgraphVersion.serviceName}@
-                {subgraphDiff.previousSubgraphVersion.releaseTag ??
+                {subgraphDiff.previousSubgraphVersion.revision ??
                   subgraphDiff.previousSubgraphVersion.id.substring(0, 8)}
               </code>
               <ArrowRight className="h-3 w-3" />
               <code className="py-0.5 text-sm">
                 {subgraphDiff.subgraphVersion.serviceName}@
-                {subgraphDiff.subgraphVersion.releaseTag ??
+                {subgraphDiff.subgraphVersion.revision ??
                   subgraphDiff.subgraphVersion.id.substring(0, 8)}
               </code>
             </>
@@ -1744,7 +1744,7 @@ function SubgraphRow(props: {
           {subgraphDiff.__typename === 'SubgraphDiffRemoved' && (
             <code className="py-0.5 text-sm">
               {subgraphDiff.removedSubgraphVersion.serviceName}@
-              {subgraphDiff.removedSubgraphVersion.releaseTag ??
+              {subgraphDiff.removedSubgraphVersion.revision ??
                 subgraphDiff.removedSubgraphVersion.id.substring(0, 8)}
             </code>
           )}

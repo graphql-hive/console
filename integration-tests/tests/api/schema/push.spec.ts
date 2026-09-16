@@ -11,7 +11,7 @@ const SchemaPush = graphql(/* GraphQL */ `
         schemaRevision {
           id
           service
-          version
+          revision
           digest
         }
       }
@@ -46,17 +46,17 @@ const LatestSchemaRevision = graphql(/* GraphQL */ `
       latestSchemaVersion {
         origin {
           ... on SchemaVersionPublishOrigin {
-            releaseTag
+            revision
             publishedSubgraphs {
               name
-              releaseTag
+              revision
             }
           }
         }
         subgraphDiffs {
           ... on SubgraphDiffAdded {
             subgraphVersion {
-              releaseTag
+              revision
             }
           }
         }
@@ -66,7 +66,7 @@ const LatestSchemaRevision = graphql(/* GraphQL */ `
               revision {
                 id
                 service
-                version
+                revision
                 digest
               }
             }
@@ -75,7 +75,7 @@ const LatestSchemaRevision = graphql(/* GraphQL */ `
               revision {
                 id
                 service
-                version
+                revision
                 digest
               }
             }
@@ -87,7 +87,7 @@ const LatestSchemaRevision = graphql(/* GraphQL */ `
 `);
 
 test.concurrent(
-  'pushes and publishes a monolith revision, and rejects an unknown version',
+  'pushes and publishes a monolith revision, and rejects an unknown revision',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
@@ -101,13 +101,13 @@ test.concurrent(
       variables: {
         input: {
           target: targetReference,
-          version: 'MonolithV1',
+          revision: 'MonolithV1',
           sdl: 'type Query { product: String }',
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
     expect(push.schemaPush.error).toBeNull();
-    expect(push.schemaPush.ok?.schemaRevision.version).toBe('MonolithV1');
+    expect(push.schemaPush.ok?.schemaRevision.revision).toBe('MonolithV1');
 
     const publish = await execute({
       document: SchemaPublish,
@@ -117,7 +117,7 @@ test.concurrent(
           target: targetReference,
           author: 'Test',
           commit: 'monolith-v1',
-          schema: { byVersion: 'MonolithV1' },
+          schema: { byRevision: 'MonolithV1' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
@@ -134,19 +134,19 @@ test.concurrent(
           target: targetReference,
           author: 'Test',
           commit: 'missing',
-          schema: { byVersion: 'MissingVersion' },
+          schema: { byRevision: 'MissingRevision' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
     expect(missing.schemaPublish).toMatchObject({
       __typename: 'SchemaPublishError',
-      errors: { nodes: [{ message: "Schema version 'MissingVersion' was not found." }] },
+      errors: { nodes: [{ message: "Schema revision 'MissingRevision' was not found." }] },
     });
   },
 );
 
 test.concurrent(
-  'pushes and publishes a federation revision, and rejects an unknown version',
+  'pushes and publishes a federation revision, and rejects an unknown revision',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
@@ -161,7 +161,7 @@ test.concurrent(
         input: {
           target: targetReference,
           service: 'Products',
-          version: 'FederationV1',
+          revision: 'FederationV1',
           sdl: 'type Query { product: Product } type Product @key(fields: "id") { id: ID! }',
         },
       },
@@ -169,7 +169,7 @@ test.concurrent(
     expect(push.schemaPush.error).toBeNull();
     expect(push.schemaPush.ok?.schemaRevision).toMatchObject({
       service: 'products',
-      version: 'FederationV1',
+      revision: 'FederationV1',
     });
 
     const publish = await execute({
@@ -182,7 +182,7 @@ test.concurrent(
           url: 'https://products.example.com/graphql',
           author: 'Test',
           commit: 'federation-v1',
-          schema: { byVersion: 'FederationV1' },
+          schema: { byRevision: 'FederationV1' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
@@ -201,18 +201,18 @@ test.concurrent(
           url: 'https://products.example.com/graphql',
           author: 'Test',
           commit: 'missing',
-          schema: { byVersion: 'MissingVersion' },
+          schema: { byRevision: 'MissingRevision' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
     expect(missing.schemaPublish).toMatchObject({
       __typename: 'SchemaPublishError',
-      errors: { nodes: [{ message: "Schema version 'MissingVersion' was not found." }] },
+      errors: { nodes: [{ message: "Schema revision 'MissingRevision' was not found." }] },
     });
   },
 );
 
-test.concurrent('rejects a conflicting monolith revision version', async ({ expect }) => {
+test.concurrent('rejects a conflicting monolith revision', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
   const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
@@ -223,26 +223,26 @@ test.concurrent('rejects a conflicting monolith revision version', async ({ expe
     document: SchemaPush,
     token: token.secret,
     variables: {
-      input: { target: targetReference, version: 'v1', sdl: 'type Query { one: String }' },
+      input: { target: targetReference, revision: 'v1', sdl: 'type Query { one: String }' },
     },
   }).then(result => result.expectNoGraphQLErrors());
   const conflict = await execute({
     document: SchemaPush,
     token: token.secret,
     variables: {
-      input: { target: targetReference, version: 'v1', sdl: 'type Query { two: String }' },
+      input: { target: targetReference, revision: 'v1', sdl: 'type Query { two: String }' },
     },
   }).then(result => result.expectNoGraphQLErrors());
 
   expect(conflict.schemaPush.ok).toBeNull();
   expect(conflict.schemaPush.error?.message).toContain(
-    "Version 'v1' already exists with a different schema.",
+    "Revision 'v1' already exists with a different schema.",
   );
   expect(conflict.schemaPush.error?.message).toContain('Existing digest: hive-sdl-v1:sha256:');
   expect(conflict.schemaPush.error?.message).toContain('Submitted digest: hive-sdl-v1:sha256:');
 });
 
-test.concurrent('rejects a conflicting federation revision version', async ({ expect }) => {
+test.concurrent('rejects a conflicting federation revision', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
   const { target, createTargetAccessToken } = await createProject(ProjectType.Federation);
@@ -256,7 +256,7 @@ test.concurrent('rejects a conflicting federation revision version', async ({ ex
       input: {
         target: targetReference,
         service: 'products',
-        version: 'v1',
+        revision: 'v1',
         sdl: 'type Query { one: String }',
       },
     },
@@ -268,7 +268,7 @@ test.concurrent('rejects a conflicting federation revision version', async ({ ex
       input: {
         target: targetReference,
         service: 'products',
-        version: 'v1',
+        revision: 'v1',
         sdl: 'type Query { two: String }',
       },
     },
@@ -276,7 +276,7 @@ test.concurrent('rejects a conflicting federation revision version', async ({ ex
 
   expect(conflict.schemaPush.ok).toBeNull();
   expect(conflict.schemaPush.error?.message).toContain(
-    "Version 'products@v1' already exists with a different schema.",
+    "Revision 'products@v1' already exists with a different schema.",
   );
   expect(conflict.schemaPush.error?.message).toContain('Existing digest: hive-sdl-v1:sha256:');
   expect(conflict.schemaPush.error?.message).toContain('Submitted digest: hive-sdl-v1:sha256:');
@@ -297,7 +297,7 @@ test.concurrent(
       variables: {
         input: {
           target: targetReference,
-          version: 'MonolithRevision',
+          revision: 'MonolithRevision',
           sdl: 'type Query { product: String }',
         },
       },
@@ -310,7 +310,7 @@ test.concurrent(
           target: targetReference,
           author: 'Test',
           commit: 'monolith-revision',
-          schema: { byVersion: 'MonolithRevision' },
+          schema: { byRevision: 'MonolithRevision' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
@@ -324,12 +324,12 @@ test.concurrent(
       revision: {
         id: push.schemaPush.ok?.schemaRevision.id,
         service: null,
-        version: 'MonolithRevision',
+        revision: 'MonolithRevision',
         digest: push.schemaPush.ok?.schemaRevision.digest,
       },
     });
     expect(result.target?.latestSchemaVersion?.origin).toMatchObject({
-      releaseTag: 'MonolithRevision',
+      revision: 'MonolithRevision',
     });
   },
 );
@@ -350,7 +350,7 @@ test.concurrent(
         input: {
           target: targetReference,
           service: 'products',
-          version: 'FederationRevision',
+          revision: 'FederationRevision',
           sdl: 'type Query { product: Product } type Product @key(fields: "id") { id: ID! }',
         },
       },
@@ -365,7 +365,7 @@ test.concurrent(
           url: 'https://products.example.com/graphql',
           author: 'Test',
           commit: 'federation-revision',
-          schema: { byVersion: 'FederationRevision' },
+          schema: { byRevision: 'FederationRevision' },
         },
       },
     }).then(result => result.expectNoGraphQLErrors());
@@ -380,23 +380,23 @@ test.concurrent(
       revision: {
         id: push.schemaPush.ok?.schemaRevision.id,
         service: 'products',
-        version: 'FederationRevision',
+        revision: 'FederationRevision',
         digest: push.schemaPush.ok?.schemaRevision.digest,
       },
     });
     expect(result.target?.latestSchemaVersion?.origin).toMatchObject({
-      releaseTag: null,
+      revision: null,
       publishedSubgraphs: [
         {
           name: 'products',
-          releaseTag: 'FederationRevision',
+          revision: 'FederationRevision',
         },
       ],
     });
     expect(result.target?.latestSchemaVersion?.subgraphDiffs).toMatchObject([
       {
         subgraphVersion: {
-          releaseTag: 'FederationRevision',
+          revision: 'FederationRevision',
         },
       },
     ]);
