@@ -5,6 +5,8 @@ import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Input } from '@/components/base/input/input';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
@@ -12,14 +14,6 @@ import { PersonalAccessTokensSubPage } from '@/components/organization/settings/
 import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
@@ -762,33 +756,19 @@ export function DeleteOrganizationModalContent(props: {
   handleDelete: () => void;
 }) {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
-        <DialogHeader>
-          <DialogTitle>Delete organization</DialogTitle>
-          <DialogDescription>
-            Every project created under this organization will be deleted as well.
-          </DialogDescription>
-          <DialogDescription>
-            <span className="font-bold">This action is irreversible!</span>
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={ev => {
-              ev.preventDefault();
-              props.toggleModalOpen();
-            }}
-          >
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={props.handleDelete}>
-            Delete
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      title="Delete organization"
+      description={
+        <>
+          Every project created under this organization will be deleted as well.
+          <br />
+          <strong>This action is irreversible!</strong>
+        </>
+      }
+      confirm={{ label: 'Delete', variant: 'destructive', onClick: props.handleDelete }}
+    />
   );
 }
 
@@ -868,57 +848,52 @@ function AuditLogsOrganizationModal(props: {
   }
 
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
-        <Form {...form}>
-          <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
-            <DialogHeader>
-              <DialogTitle>Audit Logs</DialogTitle>
-              <DialogDescription>
-                Select a date range to generate an audit logs report.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-row justify-evenly gap-x-8">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input type="date" onSurface="raised" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="mt-2">
-                <ArrowRightIcon className="text-neutral-10 size-6" />
-              </div>
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input type="date" onSurface="raised" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      title="Audit Logs"
+      description="Select a date range to generate an audit logs report."
+    >
+      <Form {...form}>
+        <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="flex flex-row justify-evenly gap-x-8">
+            <FormField
+              control={form.control}
+              name="startDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input type="date" onSurface="raised" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="mt-2">
+              <ArrowRightIcon className="text-neutral-10 size-6" />
             </div>
-            <DialogFooter>
-              <Button
-                className="w-full"
-                type="submit"
-                disabled={!form.formState.isValid || form.formState.isSubmitting}
-              >
-                Generate Report
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+            <FormField
+              control={form.control}
+              name="endDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input type="date" onSurface="raised" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <Button
+            className="w-full"
+            type="submit"
+            disabled={!form.formState.isValid || form.formState.isSubmitting}
+          >
+            Generate Report
+          </Button>
+        </form>
+      </Form>
     </Dialog>
   );
 }

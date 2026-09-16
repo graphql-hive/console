@@ -4,20 +4,13 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Input } from '@/components/base/input/input';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
@@ -722,31 +715,19 @@ export function DeleteProjectModalContent(props: {
   handleDelete: () => void;
 }) {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
-        <DialogHeader>
-          <DialogTitle>Delete project</DialogTitle>
-          <DialogDescription>
-            Every target and its published schema, reported data, and settings associated with this
-            project will be permanently deleted.
-          </DialogDescription>
-          <DialogDescription className="font-bold">This action is irreversible!</DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={ev => {
-              ev.preventDefault();
-              props.toggleModalOpen();
-            }}
-          >
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={props.handleDelete}>
-            Delete
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      title="Delete project"
+      description={
+        <>
+          Every target and its published schema, reported data, and settings associated with this
+          project will be permanently deleted.
+          <br />
+          <strong>This action is irreversible!</strong>
+        </>
+      }
+      confirm={{ label: 'Delete', variant: 'destructive', onClick: props.handleDelete }}
+    />
   );
 }

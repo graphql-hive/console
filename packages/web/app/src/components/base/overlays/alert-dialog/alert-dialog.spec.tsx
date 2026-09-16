@@ -12,10 +12,16 @@ describe('AlertDialog', () => {
         onOpenChange={onOpenChange}
         title="Remove member?"
         description="They lose access."
-        confirm={{ label: 'Remove', variant: 'destructive', onClick: onConfirm }}
+        confirm={{
+          label: 'Remove',
+          variant: 'destructive',
+          onClick: onConfirm,
+          'data-cy': 'confirm',
+        }}
       />,
     );
     expect(screen.getByRole('alertdialog')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove' }).getAttribute('data-cy')).toBe('confirm');
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(onOpenChange).not.toHaveBeenCalled();

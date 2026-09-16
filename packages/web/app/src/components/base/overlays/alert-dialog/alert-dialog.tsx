@@ -37,9 +37,10 @@ export type AlertDialogProps = {
     onClick: () => void;
     disabled?: boolean;
     variant?: 'primary' | 'destructive';
+    'data-cy'?: string;
   };
   /** The way out. Closes the dialog; `false` for a question with no way out but an answer. */
-  cancel?: { label?: string; onClick?: () => void; disabled?: boolean } | false;
+  cancel?: { label?: string; onClick?: () => void; disabled?: boolean; 'data-cy'?: string } | false;
   attrs?: Record<string, string>;
 };
 
@@ -74,7 +75,12 @@ export function AlertDialog({
             {cancel !== false ? (
               <BaseAlertDialog.Close
                 render={
-                  <Button variant="outline" onClick={cancel.onClick} disabled={cancel.disabled}>
+                  <Button
+                    variant="outline"
+                    onClick={cancel.onClick}
+                    disabled={cancel.disabled}
+                    data-cy={cancel['data-cy']}
+                  >
                     {cancel.label ?? 'Cancel'}
                   </Button>
                 }
@@ -84,6 +90,7 @@ export function AlertDialog({
               variant={confirm.variant ?? 'primary'}
               onClick={confirm.onClick}
               disabled={confirm.disabled}
+              data-cy={confirm['data-cy']}
             >
               {confirm.label}
             </Button>

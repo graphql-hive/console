@@ -19,6 +19,7 @@ import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Switch } from '@/components/base/switch/switch';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -28,14 +29,6 @@ import { CDNAccessTokens } from '@/components/target/settings/cdn-access-tokens'
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
 import { SchemaContracts } from '@/components/target/settings/schema-contracts';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { XIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
@@ -2066,34 +2059,20 @@ export function DeleteTargetModalContent(props: {
   handleDelete: () => void;
 }) {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
-        <DialogHeader>
-          <DialogTitle>Delete target</DialogTitle>
-          <DialogDescription>
-            Every published schema, reported data, and settings associated with this target will be
-            permanently deleted.
-          </DialogDescription>
-          <DialogDescription>
-            <span className="font-bold">This action is irreversible!</span>
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={ev => {
-              ev.preventDefault();
-              props.toggleModalOpen();
-            }}
-          >
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={props.handleDelete}>
-            Delete
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      title="Delete target"
+      description={
+        <>
+          Every published schema, reported data, and settings associated with this target will be
+          permanently deleted.
+          <br />
+          <strong>This action is irreversible!</strong>
+        </>
+      }
+      confirm={{ label: 'Delete', variant: 'destructive', onClick: props.handleDelete }}
+    />
   );
 }
 
