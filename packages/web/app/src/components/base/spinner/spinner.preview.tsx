@@ -3,12 +3,6 @@ import { Spinner } from './spinner';
 
 export const nav: NavPath = 'Base/Primitives/Spinner';
 
-/**
- * Lucide's loader in the accent colour, so a spinner matches the rest of the icon set. It
- * replaces the Chakra-copied ring in `ui/spinner`, which was the same colour but its own shape
- * and spun twice as fast. The three sizes are the ones the app's spinners already use: 16px beside
- * text, 24px as the default, 32px for a page that has nothing else to show yet.
- */
 export const Sizes = createPreview(() => (
   <div className="text-neutral-10 flex items-end gap-8 text-xs">
     <span className="flex flex-col items-center gap-2">
@@ -26,10 +20,6 @@ export const Sizes = createPreview(() => (
   </div>
 ));
 
-/**
- * Where it sits today: the DataTable loading row and cursor paging bar, and the centered block a
- * page shows before its first result.
- */
 export const InContext = createPreview(() => (
   <div className="flex flex-col gap-6 text-sm">
     <div className="border-neutral-5 flex h-24 items-center justify-center rounded-md border text-center">

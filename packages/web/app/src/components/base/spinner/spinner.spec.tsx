@@ -9,7 +9,8 @@ describe('Spinner', () => {
     expect(status.getAttribute('aria-label')).toBe('Loading');
     const icon = status.querySelector('svg') as SVGElement;
     expect(icon.getAttribute('aria-hidden')).toBe('true');
-    expect(icon.classList.contains('animate-spin')).toBe(true);
+    expect(icon.classList.contains('animate-spinner-spin')).toBe(true);
+    expect(icon.classList.contains('[&>path]:animate-spinner-arc')).toBe(true);
     expect(icon.classList.contains('text-accent')).toBe(true);
     expect(icon.classList.contains('size-6')).toBe(true);
   });
