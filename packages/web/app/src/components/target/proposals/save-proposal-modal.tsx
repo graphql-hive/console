@@ -1,18 +1,53 @@
 import { createContext, ReactNode, useContext, useState } from 'react';
-import { TriangleAlertIcon } from 'lucide-react';
+import { Check, TriangleAlert } from 'lucide-react';
 import { useMutation } from 'urql';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Button } from '@/components/ui/button';
-import { CheckIcon } from '@/components/ui/icon';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Spinner } from '@/components/ui/spinner';
-import { Modal, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
+import { Modal } from '@/components/v2';
 import { graphql } from '@/gql';
 import { useNavigate } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 import { ServiceTab } from './editor';
 
 export type Progress = Array<
   { title: string; loading: boolean } | { title: string; error: string }
 >;
+
+type ProgressRow = { id: string } & Progress[number];
+
+const PROGRESS_COLUMNS: ColumnDef<ProgressRow, unknown>[] = [
+  {
+    id: 'schema',
+    header: 'Schema',
+    meta: { width: 'md' },
+    cell: ({ row }) => <DataTableCell kind="text" value={row.original.title} mono truncate />,
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    meta: { width: 'fill' },
+    cell: ({ row }) => {
+      const entry = row.original;
+      if ('error' in entry) {
+        return (
+          <DataTableCell
+            kind="status"
+            label={entry.error}
+            icon={TriangleAlert}
+            iconTone="critical"
+          />
+        );
+      }
+      return entry.loading ? (
+        <DataTableCell kind="status" label="Publishing" dot="info" />
+      ) : (
+        <DataTableCell kind="status" label="Complete" icon={Check} iconTone="success" />
+      );
+    },
+  },
+];
 
 const UpdateProposedChangesMutation = graphql(`
   mutation ProposalsNew_UpdateProposedChanges($input: SchemaCheckInput!) {
@@ -173,36 +208,12 @@ export function SaveProposalModal() {
         subPageTitle="Proposal Submission"
         description={<p className="pb-4">The proposed changes being published.</p>}
       />
-      <Table>
-        <THead>
-          <Th className="max-w-[120px] pl-4 pr-0">schema</Th>
-          <Th>status</Th>
-        </THead>
-        <TBody>
-          {state.map((c, idx) => {
-            if ('error' in c) {
-              return (
-                <Tr key={idx}>
-                  <Td className="max-w-[120px] truncate pr-0">{c.title}</Td>
-                  <Td className="flex items-center break-normal">
-                    <TriangleAlertIcon className="text-red-500" />
-                    {c.error}
-                  </Td>
-                </Tr>
-              );
-            }
-            return (
-              <Tr key={idx}>
-                <Td className="max-w-[120px] truncate pr-0">{c.title}</Td>
-                <Td className="flex items-center break-normal">
-                  {c.loading ? <Spinner /> : <CheckIcon className="text-green-500" />}
-                  {c.loading ? 'loading' : 'complete'}
-                </Td>
-              </Tr>
-            );
-          })}
-        </TBody>
-      </Table>
+      <DataTable
+        data={state.map((entry, index) => ({ id: String(index), ...entry }))}
+        columns={PROGRESS_COLUMNS}
+        getRowId={row => row.id}
+        pagination={{ kind: 'none' }}
+      />
       <div className="mt-4 text-right">
         <Button
           disabled={!state.every(c => 'error' in c || c.loading === false)}
