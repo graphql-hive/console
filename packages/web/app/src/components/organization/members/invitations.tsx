@@ -6,26 +6,9 @@ import { z } from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { useToast } from '@/components/ui/use-toast';
@@ -193,83 +176,74 @@ function MemberInvitationForm(props: {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <DialogContent className="min-w-[800px] max-w-[70vw]">
-          <DialogHeader>
-            <DialogTitle>Membership Invitation</DialogTitle>
-            <DialogDescription>
-              Enter the email address of the person you want to invite and select their role within
-              the organization. Invitation expires after 7 days.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-row items-start space-x-6">
-            <div className="grow">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter an email"
-                        type="email"
-                        onSurface="raised"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div>
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <RoleSelector
-                        roles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
-                        defaultRole={
-                          organization.memberRoles?.edges.find(edge => edge.node.id === field.value)
-                            ?.node ?? viewerRole
-                        }
-                        isRoleActive={role => ({
-                          active: role.canInvite,
-                          reason: role.canInvite ? undefined : 'Not enough permissions',
-                        })}
-                        onSelect={role => {
-                          field.onChange(role.id);
-                          field.onBlur();
-                        }}
-                        onBlur={field.onBlur}
-                        disabled={field.disabled}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-          <div>
-            <ResourceSelector
-              selection={selection}
-              onSelectionChange={setSelection}
-              organization={organization}
+      <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="flex flex-row items-start space-x-6">
+          <div className="grow">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter an email"
+                      type="email"
+                      onSurface="raised"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
-          <DialogFooter>
-            <Button
-              type="submit"
-              onClick={form.handleSubmit(onSubmit)}
-              disabled={form.formState.isSubmitting || !form.formState.isValid}
-            >
-              {form.formState.isSubmitting ? 'Sending invitation...' : 'Send invitation'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+          <div>
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <RoleSelector
+                      roles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
+                      defaultRole={
+                        organization.memberRoles?.edges.find(edge => edge.node.id === field.value)
+                          ?.node ?? viewerRole
+                      }
+                      isRoleActive={role => ({
+                        active: role.canInvite,
+                        reason: role.canInvite ? undefined : 'Not enough permissions',
+                      })}
+                      onSelect={role => {
+                        field.onChange(role.id);
+                        field.onBlur();
+                      }}
+                      onBlur={field.onBlur}
+                      disabled={field.disabled}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+        <div>
+          <ResourceSelector
+            selection={selection}
+            onSelectionChange={setSelection}
+            organization={organization}
+          />
+        </div>
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={form.formState.isSubmitting || !form.formState.isValid}
+          >
+            {form.formState.isSubmitting ? 'Sending invitation...' : 'Send invitation'}
+          </Button>
+        </div>
       </form>
     </Form>
   );
@@ -282,19 +256,25 @@ export function MemberInvitationButton(props: {
   const [open, setOpen] = useState(false);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Dialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
         <Button className="ml-4 min-w-[140px]" data-cy="send-invite-trigger">
           <MailIcon size={14} className="mr-2" /> Send Invite
         </Button>
-      </DialogTrigger>
-      {open ? (
-        <MemberInvitationForm
-          refetchInvitations={props.refetchInvitations}
-          organization={props.organization}
-          close={() => setOpen(false)}
-        />
-      ) : null}
+      }
+      width="xl"
+      title="Membership Invitation"
+      description="Enter the email address of the person you want to invite and select their role within the organization. Invitation expires after 7 days."
+    >
+      {/* Keyed on `open` so the form starts fresh each time without remounting the dialog. */}
+      <MemberInvitationForm
+        key={String(open)}
+        refetchInvitations={props.refetchInvitations}
+        organization={props.organization}
+        close={() => setOpen(false)}
+      />
     </Dialog>
   );
 }
@@ -368,74 +348,65 @@ function InvitationActions(props: {
 
   return (
     <>
-      <AlertDialog open={open} onOpenChange={setOpen}>
-        {open ? (
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the invitation for{' '}
-                <strong>{invitation.email}</strong>.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleteInvitationState.fetching}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                disabled={deleteInvitationState.fetching}
-                onClick={async event => {
-                  event.preventDefault();
+      <AlertDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Are you absolutely sure?"
+        description={
+          <>
+            This action cannot be undone. This will permanently delete the invitation for{' '}
+            <strong>{invitation.email}</strong>.
+          </>
+        }
+        confirm={{
+          label: deleteInvitationState.fetching ? 'Deleting...' : 'Continue',
+          disabled: deleteInvitationState.fetching,
+          onClick: async () => {
+            try {
+              const result = await deleteInvitation({
+                input: {
+                  organization: {
+                    bySelector: {
+                      organizationSlug: props.organizationSlug,
+                    },
+                  },
+                  email: invitation.email,
+                },
+              });
 
-                  try {
-                    const result = await deleteInvitation({
-                      input: {
-                        organization: {
-                          bySelector: {
-                            organizationSlug: props.organizationSlug,
-                          },
-                        },
-                        email: invitation.email,
-                      },
-                    });
-
-                    if (result.error) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Failed to delete invitation',
-                        description: result.error.message,
-                      });
-                    } else if (result.data?.deleteOrganizationInvitation.error) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Failed to delete invitation',
-                        description: result.data?.deleteOrganizationInvitation.error.message,
-                      });
-                    } else if (result.data?.deleteOrganizationInvitation.ok) {
-                      toast({
-                        title: 'Invitation deleted',
-                        description: `Invitation for ${invitation.email} has been deleted.`,
-                      });
-                      setOpen(false);
-                      props.refetchInvitations();
-                    }
-                  } catch (error) {
-                    console.log('Failed to delete invitation');
-                    console.error(error);
-                    toast({
-                      variant: 'destructive',
-                      title: 'Failed to delete invitation',
-                      description: String(error),
-                    });
-                  }
-                }}
-              >
-                {deleteInvitationState.fetching ? 'Deleting...' : 'Continue'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        ) : null}
-      </AlertDialog>
+              if (result.error) {
+                toast({
+                  variant: 'destructive',
+                  title: 'Failed to delete invitation',
+                  description: result.error.message,
+                });
+              } else if (result.data?.deleteOrganizationInvitation.error) {
+                toast({
+                  variant: 'destructive',
+                  title: 'Failed to delete invitation',
+                  description: result.data?.deleteOrganizationInvitation.error.message,
+                });
+              } else if (result.data?.deleteOrganizationInvitation.ok) {
+                toast({
+                  title: 'Invitation deleted',
+                  description: `Invitation for ${invitation.email} has been deleted.`,
+                });
+                setOpen(false);
+                props.refetchInvitations();
+              }
+            } catch (error) {
+              console.log('Failed to delete invitation');
+              console.error(error);
+              toast({
+                variant: 'destructive',
+                title: 'Failed to delete invitation',
+                description: String(error),
+              });
+            }
+          },
+        }}
+        cancel={{ disabled: deleteInvitationState.fetching }}
+      />
       <DataTableCell
         kind="actions"
         label={`Actions for ${invitation.email}`}
