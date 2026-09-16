@@ -194,7 +194,7 @@ function RegistryAccessTokens(props: {
   ];
 
   return (
-    <SubPageLayout>
+    <SubPageLayout data-cy="target-settings-registry-token">
       <SubPageLayoutHeader
         subPageTitle="Registry Access Tokens"
         description="Registry Access Tokens are used to access to Hive Registry and perform actions on your targets/projects. In most cases, this token is used from the Hive CLI."
@@ -208,7 +208,7 @@ function RegistryAccessTokens(props: {
           </Button>
         }
       />
-      <div className="my-3.5 flex justify-end" data-cy="target-settings-registry-token">
+      <div className="my-3.5 flex justify-end">
         {checked.length === 0 ? null : (
           <Button
             data-cy="delete-button"
