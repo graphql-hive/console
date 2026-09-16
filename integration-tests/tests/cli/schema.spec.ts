@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { parse } from 'graphql';
 import { createYoga } from 'graphql-yoga';
 import stripAnsi from 'strip-ansi';
-import { getSchemaCheckDetails, pollFor } from 'testkit/flow';
+import { createContract, getSchemaCheckDetails, pollFor } from 'testkit/flow';
 import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
 import { buildSubgraphSchema } from '@apollo/subgraph';
@@ -1094,6 +1094,159 @@ test.concurrent(
       View full report:
       http://__URL__
     `);
+  },
+);
+
+test.concurrent(
+  'schema:publish rejects federation composition errors with --fail-on-composition-error',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { secret } = await createTargetAccessToken({});
+    const validSchemaPath = join(tmpdir(), `valid-federation-schema-${randomUUID()}.graphql`);
+    const invalidSchemaPath = join(tmpdir(), `invalid-federation-schema-${randomUUID()}.graphql`);
+
+    await Promise.all([
+      writeFile(
+        validSchemaPath,
+        /* GraphQL */ `
+          type Query {
+            user: User
+          }
+
+          type User @key(fields: "id") {
+            id: ID!
+          }
+        `,
+      ),
+      writeFile(
+        invalidSchemaPath,
+        /* GraphQL */ `
+          type Query {
+            user: User
+          }
+
+          type User @key(fields: "missing") {
+            id: ID!
+          }
+        `,
+      ),
+    ]);
+
+    await schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--commit',
+      'valid',
+      '--service',
+      'users',
+      '--url',
+      'http://users.localhost',
+      validSchemaPath,
+    ]);
+
+    await expect(
+      schemaPublish([
+        '--registry.accessToken',
+        secret,
+        '--commit',
+        'invalid',
+        '--service',
+        'users',
+        '--url',
+        'http://users.localhost',
+        '--fail-on-composition-error',
+        invalidSchemaPath,
+      ]),
+    ).rejects.toThrow('Field "User.missing" is not defined');
+  },
+);
+
+test.concurrent(
+  'schema:publish prefixes contract composition errors with the contract name',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
+    const { secret, latestSchema } = await createTargetAccessToken({});
+
+    await createContract(
+      {
+        target: { byId: target.id },
+        contractName: 'my-contract',
+        removeUnreachableTypesFromPublicApiSchema: true,
+        excludeTags: ['internal'],
+      },
+      ownerToken,
+    ).then(result => result.expectNoGraphQLErrors());
+
+    const validSchemaPath = join(tmpdir(), `valid-contract-schema-${randomUUID()}.graphql`);
+    const invalidSchemaPath = join(tmpdir(), `invalid-contract-schema-${randomUUID()}.graphql`);
+
+    await Promise.all([
+      writeFile(
+        validSchemaPath,
+        /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+          type Query {
+            hello: String @tag(name: "internal")
+            helloPublic: String
+          }
+        `,
+      ),
+      writeFile(
+        invalidSchemaPath,
+        /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+          type Query {
+            hello: String @tag(name: "internal")
+            helloPublic: String @tag(name: "internal")
+          }
+        `,
+      ),
+    ]);
+
+    await schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--commit',
+      'valid-contract',
+      '--service',
+      'hello',
+      '--url',
+      'http://hello.localhost',
+      validSchemaPath,
+    ]);
+
+    await expect(
+      schemaPublish([
+        '--registry.accessToken',
+        secret,
+        '--commit',
+        'invalid-contract',
+        '--service',
+        'hello',
+        '--url',
+        'http://hello.localhost',
+        '--fail-on-composition-error',
+        invalidSchemaPath,
+      ]),
+    ).rejects.toThrow(
+      '[my-contract] Type Query is in the API schema but all of its fields are @inaccessible.',
+    );
+
+    const latest = await latestSchema();
+    expect(latest.latestVersion?.schemas.nodes[0]).toMatchObject({
+      commit: 'valid-contract',
+      source: expect.stringContaining('helloPublic: String'),
+    });
   },
 );
 
