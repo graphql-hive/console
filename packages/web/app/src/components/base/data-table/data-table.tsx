@@ -54,7 +54,8 @@ export type DataTableProps<TData> = {
   data: TData[];
   columns: ColumnDef<TData, any>[];
   getRowId?: (row: TData) => string;
-  emptyMessage?: string;
+  /** What the empty table says; a node when it needs a link or a second line. */
+  emptyMessage?: ReactNode;
   /** Replaces the rows with a spinner while the first page loads. */
   loading?: boolean;
   variants?: {

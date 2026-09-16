@@ -121,7 +121,13 @@ export type DataTableCellProps<TTo extends string = '.'> =
       tooltip?: string;
     }
   | { kind: 'status'; from: BadgeItem; to: BadgeItem }
-  | { kind: 'avatar'; name: string; src?: string | null }
+  | {
+      kind: 'avatar';
+      name: string;
+      src?: string | null;
+      /** Something after the name that qualifies it: an icon with a tooltip, a badge. */
+      trailing?: ReactNode;
+    }
   | {
       kind: 'copy';
       value: string;
@@ -475,6 +481,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
         <span className="text-neutral-12 inline-flex items-center gap-2">
           <Avatar size="xs" alt={props.name} src={props.src} />
           {props.name}
+          {props.trailing}
         </span>
       );
     case 'copy':

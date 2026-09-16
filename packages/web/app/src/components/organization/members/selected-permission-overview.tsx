@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import { Badge } from '@/components/base/badge/badge';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { PermissionTable } from '@/components/organization/permission-table';
 import {
   Accordion,
   AccordionContent,
@@ -159,42 +158,28 @@ function PermissionLevelGroup(props: {
           {props.title}
           <span className="ml-auto mr-2">{totalAllowedCount} allowed</span>
         </AccordionTrigger>
-        <AccordionContent className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-scroll">
+        <AccordionContent className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-auto">
           {filteredGroups.map(group =>
             props.showOnlyAllowedPermissions && group.totalAllowedCount === 0 ? null : (
               <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.id}>
-                <table key={group.title} className="w-full">
-                  <tr>
-                    <th className="pb-2 text-left">{group.title}</th>
-                  </tr>
-                  {group.permissions.map(permission =>
-                    props.showOnlyAllowedPermissions &&
-                    props.activePermissionIds.has(permission.id) === false &&
-                    !permission.isReadOnly ? null : (
-                      <tr key={permission.id}>
-                        <td>{permission.title}</td>
-                        <td className="ml-2 text-right">
-                          {props.activePermissionIds.has(permission.id) || permission.isReadOnly ? (
-                            permission.warning ? (
-                              <Tooltip
-                                trigger={
-                                  <span className="inline-flex">
-                                    <Badge content="Allowed" variants={{ variant: 'warning' }} />
-                                  </span>
-                                }
-                                content={permission.warning}
-                              />
-                            ) : (
-                              <Badge content="Allowed" variants={{ variant: 'success' }} />
-                            )
-                          ) : (
-                            <Badge content="Denied" variants={{ variant: 'critical' }} />
-                          )}
-                        </td>
-                      </tr>
-                    ),
-                  )}
-                </table>
+                <PermissionTable
+                  title={group.title}
+                  permissions={group.permissions.flatMap(permission => {
+                    const granted =
+                      props.activePermissionIds.has(permission.id) || permission.isReadOnly;
+                    if (props.showOnlyAllowedPermissions && !granted) {
+                      return [];
+                    }
+                    return [
+                      {
+                        id: permission.id,
+                        title: permission.title,
+                        granted,
+                        warning: permission.warning,
+                      },
+                    ];
+                  })}
+                />
               </div>
             ),
           )}
