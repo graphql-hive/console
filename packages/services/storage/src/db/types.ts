@@ -519,8 +519,8 @@ export interface schema_revisions {
   first_published_at: Date | null;
   id: string;
   project_id: string;
-  service_name: string | null;
   revision: string;
+  service_name: string | null;
 }
 
 export interface schema_version_changes {
