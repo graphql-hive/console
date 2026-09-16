@@ -131,6 +131,9 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           '--experimental_acceptBreakingChanges is enabled by default for newly created projects',
       },
     }),
+    'fail-on-composition-error': Flags.boolean({
+      description: 'prevent publishing a federation schema if it would cause a composition error',
+    }),
     require: Flags.string({
       description:
         'Loads specific require.extensions before running the codegen and reading the configuration',
@@ -301,6 +304,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
               sdl,
               force,
               experimental_acceptBreakingChanges: experimental_acceptBreakingChanges === true,
+              failOnCompositionError: flags['fail-on-composition-error'],
               metadata,
               gitHub,
               supportsRetry: true,

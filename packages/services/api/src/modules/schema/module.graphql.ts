@@ -381,6 +381,10 @@ export default gql`
     """
     experimental_acceptBreakingChanges: Boolean
       @deprecated(reason: "Enabled by default for newly created projects")
+    """
+    Prevent publishing a federation schema if it would cause a composition error.
+    """
+    failOnCompositionError: Boolean = false
     metadata: String
     """
     Talk to GitHub Application and create a check-run
