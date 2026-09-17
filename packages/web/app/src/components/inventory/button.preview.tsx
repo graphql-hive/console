@@ -71,9 +71,9 @@ const ENTRIES = [
     coveredBy: 'Buttons that are links',
   },
   {
-    source: 'ui/alert-dialog.tsx:88, :100, ui/calendar.tsx:21, :37, alert-event-detail.tsx:288',
+    source: 'ui/calendar.tsx:21, :37, alert-event-detail.tsx:288',
     origin: 'ui',
-    what: 'buttonVariants() called directly, so the cva is public API and not just an internal',
+    what: 'buttonVariants() called directly, so the cva is public API and not just an internal (ui/alert-dialog did this too until the overlays round removed it)',
     coveredBy: 'buttonVariants as API',
   },
 ] as const;
@@ -375,21 +375,11 @@ export const ButtonVariantsAsApi = createPreview({
   label: 'buttonVariants as API',
   render: () => (
     <CallSite
-      source="ui/alert-dialog.tsx:88, :100, ui/calendar.tsx:21, :37, alert-event-detail.tsx:288"
+      source="ui/calendar.tsx:21, :37, alert-event-detail.tsx:288"
       origin="ui"
-      note="Five call sites import the cva and apply it to something that is not a Button: AlertDialogAction and AlertDialogCancel, two react-day-picker day cells, and a plain anchor. base/button exports its own buttonVariants and base/filter-dropdown already consumes it as chipClass, so the pattern carries over - but it means the variant set is a public contract, not an implementation detail."
+      note="Three call sites import the cva and apply it to something that is not a Button: two react-day-picker day cells and a plain anchor. ui/alert-dialog's action and cancel did the same until the overlays round removed it. base/button exports its own buttonVariants and base/filter-dropdown already consumes it as chipClass, so the pattern carries over - but it means the variant set is a public contract, not an implementation detail."
     >
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-neutral-10 w-40 text-xs">AlertDialogAction</span>
-          <Button>Continue</Button>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-neutral-10 w-40 text-xs">AlertDialogCancel</span>
-          <Button variant="outline" className="mt-2 sm:mt-0">
-            Cancel
-          </Button>
-        </div>
         <div className="flex items-center gap-3">
           <span className="text-neutral-10 w-40 text-xs">calendar day cell</span>
           <Button variant="ghost" size="icon-sm">
