@@ -5,6 +5,7 @@ import z from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Textarea } from '@/components/base/textarea/textarea';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
@@ -29,7 +30,6 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Modal } from '@/components/v2';
 import { graphql } from '@/gql';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { cn } from '@/lib/utils';
@@ -227,30 +227,17 @@ function ConfirmationModal(props: {
   ];
 
   return (
-    <Modal
+    <Dialog
       open={props.confirmations.length > 0}
       onOpenChange={isOpen => {
-        if (isOpen === false) {
+        if (!isOpen) {
           props.setConfirmations([]);
         }
       }}
-      className="w-[90vw]"
-    >
-      <SubPageLayoutHeader
-        subPageTitle="Issues Found"
-        description={
-          <p className="pb-4">
-            The proposed changes are invalid but can be automatically corrected.
-          </p>
-        }
-      />
-      <DataTable
-        data={rows}
-        columns={columns}
-        getRowId={row => row.id}
-        pagination={{ kind: 'none' }}
-      />
-      <div className="mt-4 text-right">
+      width="xl"
+      title="Issues Found"
+      description="The proposed changes are invalid but can be automatically corrected."
+      footer={
         <Button
           disabled={!confirmed.every(c => c)}
           onClick={() => {
@@ -263,8 +250,16 @@ function ConfirmationModal(props: {
         >
           Confirm Changes
         </Button>
-      </div>
-    </Modal>
+      }
+    >
+      <DataTable
+        data={rows}
+        columns={columns}
+        getRowId={row => row.id}
+        pagination={{ kind: 'none' }}
+        variants={{ onSurface: 'raised' }}
+      />
+    </Dialog>
   );
 }
 
