@@ -4,6 +4,7 @@ import { FolderIcon, FolderOpenIcon, SquareTerminalIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { useToast } from '@/components/base/toast/toast';
 import { CreateCollectionModal } from '@/components/target/laboratory/create-collection-modal';
 import { DeleteCollectionModal } from '@/components/target/laboratory/delete-collection-modal';
 import { DeleteOperationModal } from '@/components/target/laboratory/delete-operation-modal';
@@ -20,7 +21,7 @@ import { PlusIcon } from '@/components/ui/icon';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
-import { useClipboard, useNotifications, useToggle } from '@/lib/hooks';
+import { useClipboard, useToggle } from '@/lib/hooks';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { cn } from '@/lib/utils';
 import { GraphiQLPlugin, useEditorContext, usePluginContext } from '@graphiql/react';
@@ -239,7 +240,7 @@ export function Content() {
       ?.id;
 
   const [createOperationState, createOperation] = useMutation(CreateOperationMutation);
-  const notify = useNotifications();
+  const { toast } = useToast();
 
   const addOperation = async (collectionId: string) => {
     const result = await createOperation({
@@ -257,10 +258,16 @@ export function Content() {
       },
     });
     if (result.error) {
-      notify("Couldn't create operation. Please try again later.", 'error');
+      toast({
+        variant: 'destructive',
+        title: "Couldn't create operation. Please try again later.",
+      });
     }
     if (result.data?.createOperationInDocumentCollection.error) {
-      notify(result.data.createOperationInDocumentCollection.error.message, 'error');
+      toast({
+        variant: 'destructive',
+        title: result.data.createOperationInDocumentCollection.error.message,
+      });
     }
     if (result.data?.createOperationInDocumentCollection.ok) {
       void router.navigate({

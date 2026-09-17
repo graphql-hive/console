@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import { CircleAlert, CircleCheck, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Toast as BaseToast } from '@base-ui/react/toast';
@@ -27,8 +27,8 @@ const timeoutByVariant: Record<ToastVariant, number> = {
 export function useToast() {
   const manager = BaseToast.useToastManager();
 
-  return {
-    toast: ({ title, description, variant = 'default', duration }: ToastOptions) => {
+  const toast = useCallback(
+    ({ title, description, variant = 'default', duration }: ToastOptions) => {
       const id = manager.add({
         title,
         description,
@@ -38,7 +38,10 @@ export function useToast() {
       });
       return { id, dismiss: () => manager.close(id) };
     },
-  };
+    [manager],
+  );
+
+  return { toast };
 }
 
 const iconByVariant: Record<ToastVariant, ReactNode> = {
