@@ -78,7 +78,7 @@ export type DataTableProps<TData> = {
   sorting?: { state: SortingState; onChange: OnChangeFn<SortingState>; manual?: boolean };
   /**
    * The sort a client-sorted table opens with, for rows that arrive in a known order so the
-   * header can say so. Ignored when `sorting` is owned.
+   * header can say so. Ignored when the page passes `sorting` and holds the state itself.
    */
   initialSorting?: SortingState;
   /** A closing row: a label across the columns and a value in the last, such as a total. */
