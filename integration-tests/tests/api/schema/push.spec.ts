@@ -1,26 +1,9 @@
 import 'reflect-metadata';
+import { schemaPush } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
-
-const SchemaPush = graphql(/* GraphQL */ `
-  mutation TestSchemaPush($input: SchemaPushInput!) {
-    schemaPush(input: $input) {
-      ok {
-        schemaRevision {
-          id
-          service
-          revision
-          digest
-        }
-      }
-      error {
-        message
-      }
-    }
-  }
-`);
 
 const SchemaPublish = graphql(/* GraphQL */ `
   mutation TestSchemaRevisionPublish($input: SchemaPublishInput!) {
@@ -95,17 +78,14 @@ test.concurrent(
     const token = await createTargetAccessToken({ mode: 'readWrite' });
     const targetReference = { byId: target.id } as const;
 
-    const push = await execute({
-      document: SchemaPush,
-      token: token.secret,
-      variables: {
-        input: {
-          target: targetReference,
-          revision: 'MonolithV1',
-          sdl: 'type Query { product: String }',
-        },
+    const push = await schemaPush(
+      {
+        target: targetReference,
+        revision: 'MonolithV1',
+        sdl: 'type Query { product: String }',
       },
-    }).then(result => result.expectNoGraphQLErrors());
+      token.secret,
+    ).then(result => result.expectNoGraphQLErrors());
     expect(push.schemaPush.error).toBeNull();
     expect(push.schemaPush.ok?.schemaRevision.revision).toBe('MonolithV1');
 
@@ -154,18 +134,15 @@ test.concurrent(
     const token = await createTargetAccessToken({ mode: 'readWrite' });
     const targetReference = { byId: target.id } as const;
 
-    const push = await execute({
-      document: SchemaPush,
-      token: token.secret,
-      variables: {
-        input: {
-          target: targetReference,
-          service: 'Products',
-          revision: 'FederationV1',
-          sdl: 'type Query { product: Product } type Product @key(fields: "id") { id: ID! }',
-        },
+    const push = await schemaPush(
+      {
+        target: targetReference,
+        service: 'Products',
+        revision: 'FederationV1',
+        sdl: 'type Query { product: Product } type Product @key(fields: "id") { id: ID! }',
       },
-    }).then(result => result.expectNoGraphQLErrors());
+      token.secret,
+    ).then(result => result.expectNoGraphQLErrors());
     expect(push.schemaPush.error).toBeNull();
     expect(push.schemaPush.ok?.schemaRevision).toMatchObject({
       service: 'products',
@@ -219,20 +196,14 @@ test.concurrent('rejects a conflicting monolith revision', async ({ expect }) =>
   const token = await createTargetAccessToken({ mode: 'readWrite' });
   const targetReference = { byId: target.id } as const;
 
-  await execute({
-    document: SchemaPush,
-    token: token.secret,
-    variables: {
-      input: { target: targetReference, revision: 'v1', sdl: 'type Query { one: String }' },
-    },
-  }).then(result => result.expectNoGraphQLErrors());
-  const conflict = await execute({
-    document: SchemaPush,
-    token: token.secret,
-    variables: {
-      input: { target: targetReference, revision: 'v1', sdl: 'type Query { two: String }' },
-    },
-  }).then(result => result.expectNoGraphQLErrors());
+  await schemaPush(
+    { target: targetReference, revision: 'v1', sdl: 'type Query { one: String }' },
+    token.secret,
+  ).then(result => result.expectNoGraphQLErrors());
+  const conflict = await schemaPush(
+    { target: targetReference, revision: 'v1', sdl: 'type Query { two: String }' },
+    token.secret,
+  ).then(result => result.expectNoGraphQLErrors());
 
   expect(conflict.schemaPush.ok).toBeNull();
   expect(conflict.schemaPush.error?.message).toContain(
@@ -249,30 +220,24 @@ test.concurrent('rejects a conflicting federation revision', async ({ expect }) 
   const token = await createTargetAccessToken({ mode: 'readWrite' });
   const targetReference = { byId: target.id } as const;
 
-  await execute({
-    document: SchemaPush,
-    token: token.secret,
-    variables: {
-      input: {
-        target: targetReference,
-        service: 'products',
-        revision: 'v1',
-        sdl: 'type Query { one: String }',
-      },
+  await schemaPush(
+    {
+      target: targetReference,
+      service: 'products',
+      revision: 'v1',
+      sdl: 'type Query { one: String }',
     },
-  }).then(result => result.expectNoGraphQLErrors());
-  const conflict = await execute({
-    document: SchemaPush,
-    token: token.secret,
-    variables: {
-      input: {
-        target: targetReference,
-        service: 'products',
-        revision: 'v1',
-        sdl: 'type Query { two: String }',
-      },
+    token.secret,
+  ).then(result => result.expectNoGraphQLErrors());
+  const conflict = await schemaPush(
+    {
+      target: targetReference,
+      service: 'products',
+      revision: 'v1',
+      sdl: 'type Query { two: String }',
     },
-  }).then(result => result.expectNoGraphQLErrors());
+    token.secret,
+  ).then(result => result.expectNoGraphQLErrors());
 
   expect(conflict.schemaPush.ok).toBeNull();
   expect(conflict.schemaPush.error?.message).toContain(
@@ -291,17 +256,14 @@ test.concurrent(
     const token = await createTargetAccessToken({ mode: 'readWrite' });
     const targetReference = { byId: target.id } as const;
 
-    const push = await execute({
-      document: SchemaPush,
-      token: token.secret,
-      variables: {
-        input: {
-          target: targetReference,
-          revision: 'MonolithRevision',
-          sdl: 'type Query { product: String }',
-        },
+    const push = await schemaPush(
+      {
+        target: targetReference,
+        revision: 'MonolithRevision',
+        sdl: 'type Query { product: String }',
       },
-    }).then(result => result.expectNoGraphQLErrors());
+      token.secret,
+    ).then(result => result.expectNoGraphQLErrors());
     await execute({
       document: SchemaPublish,
       token: token.secret,
@@ -343,18 +305,15 @@ test.concurrent(
     const token = await createTargetAccessToken({ mode: 'readWrite' });
     const targetReference = { byId: target.id } as const;
 
-    const push = await execute({
-      document: SchemaPush,
-      token: token.secret,
-      variables: {
-        input: {
-          target: targetReference,
-          service: 'products',
-          revision: 'FederationRevision',
-          sdl: 'type Query { product: Product } type Product @key(fields: "id") { id: ID! }',
-        },
+    const push = await schemaPush(
+      {
+        target: targetReference,
+        service: 'products',
+        revision: 'FederationRevision',
+        sdl: 'type Query { product: Product } type Product @key(fields: "id") { id: ID! }',
       },
-    }).then(result => result.expectNoGraphQLErrors());
+      token.secret,
+    ).then(result => result.expectNoGraphQLErrors());
     await execute({
       document: SchemaPublish,
       token: token.secret,

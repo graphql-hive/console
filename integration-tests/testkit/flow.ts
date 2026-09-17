@@ -2663,3 +2663,27 @@ export function updateMe(input: GraphQLSchema.UpdateMeInput, authToken: string) 
     authToken,
   });
 }
+
+export function schemaPush(input: GraphQLSchema.SchemaPushInput, authToken: string) {
+  return execute({
+    document: graphql(/* GraphQL */ `
+      mutation TestKit_SchemaPush($input: SchemaPushInput!) {
+        schemaPush(input: $input) {
+          ok {
+            schemaRevision {
+              id
+              service
+              revision
+              digest
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}

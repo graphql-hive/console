@@ -100,7 +100,7 @@ const crontabLines: string[] = [
   '# Every day at 3:00 AM',
   '0 3 * * * purgeExpiredDedupeKeys',
   '# Purge expired schema revisions and orphaned SDL artifacts every Sunday at 11:00 AM',
-  '0 11 * * 0 purgeExpiredSchemaChecks',
+  '0 11 * * 0 purgeExpiredSchemaRevisions',
 ];
 if (env.clickhouse) {
   crontabLines.push(

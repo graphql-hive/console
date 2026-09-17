@@ -17,6 +17,7 @@ import {
 import type { Project, Target } from '../../../shared/entities';
 import { batch, cache } from '../../../shared/helpers';
 import { Logger, NoopLogger } from '../../shared/providers/logger';
+import { SchemaRevisionStore } from './schema-revision-store';
 
 @Injectable({
   scope: Scope.Operation,
@@ -339,6 +340,10 @@ export class SchemaVersionStore {
         url: args.service?.url ?? null,
         schemaRevisionId: args.schemaRevisionId,
       });
+
+      if (args.schemaRevisionId) {
+        await SchemaRevisionStore.markPublished(args.schemaRevisionId, trx);
+      }
 
       // creates a new version
       const version = await this.insertSchemaVersion(trx, {

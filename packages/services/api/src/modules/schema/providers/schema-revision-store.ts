@@ -1,6 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { PostgresDatabasePool, psql } from '@hive/postgres';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import { batch } from '../../../shared/helpers';
 
 const SchemaRevisionModel = z.object({
@@ -121,8 +121,8 @@ export class SchemaRevisionStore {
     return row ? SchemaRevisionModel.parse(row) : null;
   }
 
-  async markPublished(id: string): Promise<void> {
-    await this.pg.query(psql`
+  static async markPublished(id: string, trx: CommonQueryMethods): Promise<void> {
+    await trx.query(psql`
       UPDATE
         "schema_revisions"
       SET
