@@ -82,6 +82,16 @@ export const rawOperationFailures = new metrics.Gauge({
   help: 'Number of raw operations NOT collected by usage service',
 });
 
+export const droppedOversizedOperations = new metrics.Counter({
+  name: 'usage_operations_dropped_payload_too_large',
+  help: 'Number of raw operations permanently dropped because their report cannot be split below the Kafka size limit',
+});
+
+export const fallbackDroppedOperations = new metrics.Counter({
+  name: 'usage_fallback_dropped_operations',
+  help: 'Number of raw operations permanently dropped because the fallback queue reached its maximum size',
+});
+
 export const invalidRawOperations = new metrics.Counter({
   name: 'usage_operations_invalid',
   help: 'Number of invalid raw operations dropped by usage service',
