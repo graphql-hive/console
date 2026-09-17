@@ -402,6 +402,95 @@ test.concurrent('schema publish with failing contract composition', async ({ exp
 });
 
 test.concurrent(
+  'schema publish with failing contract composition can be rejected',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
+    const writeToken = await createTargetAccessToken({});
+
+    const createContractResult = await execute({
+      document: CreateContractMutation,
+      variables: {
+        input: {
+          target: { byId: target.id },
+          contractName: 'my-contract',
+          removeUnreachableTypesFromPublicApiSchema: true,
+          excludeTags: ['toyota'],
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(createContractResult.createContract.error).toBeNull();
+
+    const validSdl = /* GraphQL */ `
+      extend schema
+        @link(url: "https://specs.apollo.dev/link/v1.0")
+        @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+      type Query {
+        hello: String @tag(name: "toyota")
+        helloHidden: String
+      }
+    `;
+
+    const validPublish = await writeToken
+      .publishSchema({
+        sdl: validSdl,
+        service: 'hello',
+        url: 'http://hello.com',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(validPublish.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const rejectedPublish = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+          type Query {
+            hello: String @tag(name: "toyota")
+            helloHidden: String @tag(name: "toyota")
+            bar: String @tag(name: "toyota")
+          }
+        `,
+        service: 'hello',
+        url: 'http://hello.com',
+        failOnCompositionError: true,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(rejectedPublish.schemaPublish).toMatchObject({
+      __typename: 'SchemaPublishError',
+      valid: false,
+      errors: {
+        total: 1,
+      },
+    });
+
+    const unchangedPublish = await writeToken
+      .publishSchema({
+        sdl: validSdl,
+        service: 'hello',
+        url: 'http://hello.com',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(unchangedPublish.schemaPublish).toMatchObject({
+      __typename: 'SchemaPublishSuccess',
+      valid: true,
+      changes: {
+        total: 0,
+      },
+    });
+  },
+);
+
+test.concurrent(
   'schema delete with successful initial contract composition',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();

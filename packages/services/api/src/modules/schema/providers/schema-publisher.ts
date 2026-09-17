@@ -2167,6 +2167,49 @@ export class SchemaPublisher {
       };
     }
 
+    const contractCompositionErrors =
+      publishResult.state.contracts?.flatMap(
+        contract =>
+          contract.compositionErrors?.map(err => ({
+            ...err,
+            message: `[${contract.contractName}] ${err.message}`,
+          })) ?? [],
+      ) ?? [];
+
+    if (
+      project.type === ProjectType.FEDERATION &&
+      input.failOnCompositionError === true &&
+      (publishResult.state.composable === false || contractCompositionErrors.length > 0)
+    ) {
+      this.logger.debug('Publish rejected because it would cause a composition error');
+      increaseSchemaPublishCountMetric('rejected');
+
+      const errors = [
+        ...(publishResult.state.compositionErrors ?? []),
+        ...contractCompositionErrors,
+      ];
+
+      if (githubCheckRun) {
+        return this.updateGithubCheckRunForSchemaPublish({
+          githubCheckRun,
+          force: false,
+          initial: false,
+          valid: false,
+          changes: [],
+          errors,
+          organizationId: organization.id,
+          detailsUrl: null,
+        });
+      }
+
+      return {
+        __typename: 'SchemaPublishError' as const,
+        valid: false,
+        changes: [],
+        errors,
+      };
+    }
+
     const errors = (
       [] as Array<{
         message: string;

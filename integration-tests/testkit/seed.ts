@@ -1027,6 +1027,7 @@ export function initSeed() {
                       author?: string;
                       force?: boolean;
                       experimental_acceptBreakingChanges?: boolean;
+                      failOnCompositionError?: boolean;
                       commit?: string;
                       service?: string;
                       url?: string;
@@ -1047,6 +1048,7 @@ export function initSeed() {
                           metadata: options.metadata,
                           experimental_acceptBreakingChanges:
                             options.experimental_acceptBreakingChanges,
+                          failOnCompositionError: options.failOnCompositionError,
                           github: options.github,
                         },
                         secret,
