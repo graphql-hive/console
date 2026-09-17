@@ -319,7 +319,7 @@ export const usageProcessorV2 = traceInlineSync(
 
       let client: ClientMetadata | undefined;
       if (operation.persistedDocumentHash) {
-        const [name, version] = operation.persistedDocumentHash.split('/');
+        const [name, version] = operation.persistedDocumentHash.split('~');
         client = {
           name,
           version,
