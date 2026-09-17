@@ -1,5 +1,16 @@
 # hive
 
+## 11.14.1
+
+### Patch Changes
+
+- [#8493](https://github.com/graphql-hive/console/pull/8493)
+  [`1de91b9`](https://github.com/graphql-hive/console/commit/1de91b96205be07b15c258efd204220e31c66cbf)
+  Thanks [@jdolle](https://github.com/jdolle)! - Track operations dropped by the usage fallback
+  queue. Messages were silently discarded when they were too large for Kafka or when the queue
+  overflowed its max size, with only a log line and no metric - add dedicated counters for each case
+  so both failure modes are visible to monitoring.
+
 ## 11.14.0
 
 ### Minor Changes
