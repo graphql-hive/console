@@ -1159,7 +1159,7 @@ test.concurrent(
         '--fail-on-composition-error',
         invalidSchemaPath,
       ]),
-    ).rejects.toThrow('Field "User.missing" is not defined');
+    ).rejects.toThrow('- [users] On type User, for @key(fields: missing):');
   },
 );
 
