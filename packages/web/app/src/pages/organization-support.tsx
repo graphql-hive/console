@@ -9,6 +9,7 @@ import { Input } from '@/components/base/input/input';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Textarea } from '@/components/base/textarea/textarea';
+import { useToast } from '@/components/base/toast/toast';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { priorityDescription } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,6 @@ import {
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
 import { useToggle } from '@/lib/hooks';
