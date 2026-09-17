@@ -427,7 +427,7 @@ function V2ModalExamples() {
       <CallSite
         source="components/v2/modals/transfer-organization-ownership.tsx:171"
         origin="v2"
-        note="The only call site that passes size (lg, w-[800px]), and it still adds a className for layout. The real body is a Headless UI Combobox for picking the new owner; a v2 Input stands in for it here since Headless UI is its own migration."
+        note="The only call site that passes size (lg, w-[800px]), and it still adds a className for layout. The real body was a Headless UI Combobox for picking the new owner, now a searchable base Select; a v2 Input stands in for it here."
       >
         <Button variant="outline" onClick={() => setOpenTransfer(true)}>
           Open transfer-ownership modal

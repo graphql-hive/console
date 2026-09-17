@@ -13,10 +13,6 @@ export const nav: NavPath = 'Inventory/V2Leftovers';
  *
  * Unlike the rest of Phase 0 there is nothing to compare against here — no second version exists,
  * so these are transcriptions of the only thing that ships.
- *
- * Counts exclude look-alikes: `<Combobox` also matches the Headless UI one in
- * `transfer-organization-ownership.tsx`, which is a different component entirely (4 matches, 3
- * real).
  */
 
 const ENTRIES = [

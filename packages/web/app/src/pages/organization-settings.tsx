@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
@@ -204,6 +204,7 @@ const OrganizationSettingsContent = (props: {
   const router = useRouter();
   const [isDeleteModalOpen, toggleDeleteModalOpen] = useToggle();
   const [isTransferModalOpen, toggleTransferModalOpen] = useToggle();
+  const [transferSession, setTransferSession] = useState(0);
   const [isAuditLogsModalOpen, toggleAuditLogsModalOpen] = useToggle();
   const { toast } = useToast();
 
@@ -350,8 +351,14 @@ const OrganizationSettingsContent = (props: {
             Transfer Ownership
           </Button>
           <TransferOrganizationOwnershipModal
+            key={transferSession}
             isOpen={isTransferModalOpen}
             toggleModalOpen={toggleTransferModalOpen}
+            onOpenChangeComplete={open => {
+              if (!open) {
+                setTransferSession(s => s + 1);
+              }
+            }}
             organization={organization}
           />
         </SubPageLayout>
