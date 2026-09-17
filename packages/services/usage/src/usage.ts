@@ -163,7 +163,10 @@ function splitReportByEntries(report: RawReport, numOfChunks: number): RawReport
   const chunkIndexByOperationIdentity = new Map<string, number>();
   operationChunks.forEach((operations, chunkIndex) => {
     for (const operation of operations) {
-      chunkIndexByOperationIdentity.set(`${operation.operationMapKey}|${operation.timestamp}`, chunkIndex);
+      chunkIndexByOperationIdentity.set(
+        `${operation.operationMapKey}|${operation.timestamp}`,
+        chunkIndex,
+      );
     }
   });
 
@@ -171,8 +174,9 @@ function splitReportByEntries(report: RawReport, numOfChunks: number): RawReport
   distributeByCount(report.errors ?? [], numOfChunks).forEach((slice, fallbackChunkIndex) => {
     for (const errorRecord of slice) {
       const chunkIndex =
-        chunkIndexByOperationIdentity.get(`${errorRecord.operationMapKey}|${errorRecord.timestamp}`) ??
-        fallbackChunkIndex;
+        chunkIndexByOperationIdentity.get(
+          `${errorRecord.operationMapKey}|${errorRecord.timestamp}`,
+        ) ?? fallbackChunkIndex;
       errorChunks[chunkIndex].push(errorRecord);
     }
   });
@@ -226,6 +230,10 @@ export function isSplittable(report: RawReport): boolean {
     report.operations.length > 1 ||
     (report.subscriptionOperations?.length ?? 0) > 1
   );
+}
+
+export function shouldBecomeReady(isUnhealthy: boolean, fallbackQueueSize: number): boolean {
+  return isUnhealthy && fallbackQueueSize === 0;
 }
 
 export function createUsage(config: {
@@ -398,18 +406,19 @@ export function createUsage(config: {
             stopTimer();
           });
         if (meta[0].errorCode) {
-          rawOperationFailures.inc(numOfOperations);
-          logger.error(`Failed to flush (id=%s, errorCode=%s)`, batchId, meta[0].errorCode);
-          Sentry.setTags({
-            batchId,
-            errorCode: meta[0].errorCode,
-            numOfOperations,
-          });
-          Sentry.captureException(new Error(`Failed to flush usage reports to Kafka`));
-        } else {
-          rawOperationWrites.inc(numOfOperations);
-          logger.info(`Flushed (id=%s, operations=%s)`, batchId, numOfOperations);
+          // kafkajs's own produce-response parsing throws on any non-zero errorCode
+          // before producer.send() can resolve (verified across every response
+          // version it supports), so this should be unreachable in practice. Route
+          // it through the same catch below instead of handling it separately here,
+          // so that IF it's ever somehow reached (e.g. a future kafkajs behavior
+          // change), the operations still get retried via the fallback queue instead
+          // of being silently counted as failed with no way to recover them.
+          throw new Error(
+            `Failed to flush usage reports to Kafka (errorCode=${meta[0].errorCode})`,
+          );
         }
+        rawOperationWrites.inc(numOfOperations);
+        logger.info(`Flushed (id=%s, operations=%s)`, batchId, numOfOperations);
       } catch (error: any) {
         rawOperationFailures.inc(numOfOperations);
 
@@ -441,14 +450,15 @@ export function createUsage(config: {
           ],
         });
         rawOperationWrites.inc(numOfOperations);
-      } catch (error) {
-        rawOperationFailures.inc(numOfOperations);
-        throw error;
+        // These operations were counted as failing when they first entered
+        // the fallback queue. But a failed retry attempt isn't a new failure,
+        // so it must undo the increment here to indicate it's still pending.
+        rawOperationFailures.dec(numOfOperations);
       } finally {
         stopTimer();
       }
 
-      if (fallback.size() === 0) {
+      if (shouldBecomeReady(status === Status.Unhealthy, fallback.size())) {
         logger.info('Fallback queue flushed');
         changeStatus(Status.Ready);
       }
@@ -481,7 +491,7 @@ export function createUsage(config: {
   producer.on(producer.events.CONNECT, () => {
     logger.info(`Kafka producer: connected`);
 
-    if (status === Status.Unhealthy) {
+    if (shouldBecomeReady(status === Status.Unhealthy, fallback.size())) {
       changeStatus(Status.Ready);
     }
   });

@@ -1,5 +1,5 @@
 import type { RawReport } from '@hive/usage-common';
-import { calculateReportSize, isSplittable, splitReport } from '../src/usage';
+import { calculateReportSize, isSplittable, shouldBecomeReady, splitReport } from '../src/usage';
 
 test('should split report based on operation map length', () => {
   const now = Date.now();
@@ -388,4 +388,11 @@ test('isSplittable is true when a report has more than one map key, operation, o
       subscriptionOperations: [subscriptionOp, subscriptionOp],
     }),
   ).toBe(true);
+});
+
+test('shouldBecomeReady is true only when unhealthy and the fallback queue is empty', () => {
+  expect(shouldBecomeReady(true, 0)).toBe(true);
+  expect(shouldBecomeReady(true, 1)).toBe(false);
+  expect(shouldBecomeReady(false, 0)).toBe(false);
+  expect(shouldBecomeReady(false, 1)).toBe(false);
 });
