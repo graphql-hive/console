@@ -1,7 +1,4 @@
 import { createPreview, type NavPath } from 'react-foundry';
-import { Button as LegacyButton } from '@/components/ui/button';
-import { Toaster as LegacyToaster } from '@/components/ui/toaster';
-import { useToast as useLegacyToast } from '@/components/ui/use-toast';
 import { Button } from '../button/button';
 import { useToast } from './toast';
 
@@ -127,61 +124,6 @@ export const Duration = createPreview(() => {
       >
         Sticky, then dismiss()
       </Button>
-    </div>
-  );
-});
-
-/**
- * The same toasts on the legacy toaster and on base, for the gate. Both draw in the same corner,
- * so fire one side at a time. The legacy one keeps a single toast that never leaves on its own.
- */
-export const Legacy = createPreview(() => {
-  const legacy = useLegacyToast();
-  const { toast } = useToast();
-  return (
-    <div className="flex flex-wrap items-center gap-3">
-      <LegacyButton
-        onClick={() =>
-          legacy.toast({
-            variant: 'destructive',
-            title: 'Failed to update the member role',
-            description: 'You do not have permission to perform this action.',
-          })
-        }
-      >
-        Legacy destructive
-      </LegacyButton>
-      <LegacyButton
-        onClick={() =>
-          legacy.toast({
-            title: 'Token created',
-            description: 'The token has been successfully created.',
-          })
-        }
-      >
-        Legacy default
-      </LegacyButton>
-      <Button
-        variant="primary"
-        onClick={() =>
-          toast({
-            variant: 'destructive',
-            title: 'Failed to update the member role',
-            description: 'You do not have permission to perform this action.',
-          })
-        }
-      >
-        Base destructive
-      </Button>
-      <Button
-        variant="primary"
-        onClick={() =>
-          toast({ title: 'Token created', description: 'The token has been successfully created.' })
-        }
-      >
-        Base default
-      </Button>
-      <LegacyToaster />
     </div>
   );
 });

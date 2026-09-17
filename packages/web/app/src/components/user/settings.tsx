@@ -4,9 +4,9 @@ import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { Input } from '@/components/base/input/input';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
 import { Button } from '../ui/button';
-import { useToast } from '../ui/use-toast';
 
 const UserSettings_MeQuery = graphql(`
   query UserSettings_MeQuery {

@@ -5,8 +5,8 @@ import * as Yup from 'yup';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 
 const TransferOrganizationOwnership_Request = graphql(`

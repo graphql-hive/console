@@ -12,7 +12,6 @@ import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { Meta } from '@/components/ui/meta';
-import { Toaster } from '@/components/ui/toaster';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
 import { useLocalStorage } from '@/lib/hooks';
@@ -166,7 +165,6 @@ function RootComponent() {
       <TooltipProvider>
         <ToastProvider>
           <HelmetProvider>
-            <Toaster />
             <SuperTokensWrapper>
               <QueryClientProvider client={queryClient}>
                 <UrqlProvider value={urqlClient}>

@@ -98,7 +98,10 @@ export default defineConfig({
             { label: 'AlertDialog', children: [{ label: 'Component Examples' }] },
           ],
         },
-        { label: 'Feedback', children: [{ label: 'Toast' }] },
+        {
+          label: 'Feedback',
+          children: [{ label: 'Toast', children: [{ label: 'Component Examples' }] }],
+        },
         // Data and layout
         { label: 'DataTable', children: [{ label: 'Component Examples' }] },
         { label: 'DescriptionList' },
@@ -114,7 +117,6 @@ export default defineConfig({
         { label: 'Button' },
         { label: 'Form' },
         { label: 'Presentational' },
-        { label: 'Toast' },
         { label: 'V2Leftovers' },
       ],
     },
