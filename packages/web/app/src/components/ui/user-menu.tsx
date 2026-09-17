@@ -5,6 +5,7 @@ import { useMutation } from 'urql';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { useThemeMenuEntry } from '@/components/theme/theme-switcher';
 import {
   AlertTriangleIcon,
@@ -17,7 +18,6 @@ import {
   SettingsIcon,
   TrendingUpIcon,
 } from '@/components/ui/icon';
-import { useToast } from '@/components/ui/use-toast';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
