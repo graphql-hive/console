@@ -5,9 +5,8 @@ import * as Yup from 'yup';
 import { Badge } from '@/components/base/badge/badge';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
-import { Heading } from '@/components/ui/heading';
-import { Modal } from '@/components/v2';
 import { graphql } from '@/gql';
 import { AlertChannelType } from '@/gql/graphql';
 
@@ -49,11 +48,13 @@ const WEBHOOK_SETUP_GUIDES: Partial<Record<AlertChannelType, { href: string; lab
 export const CreateChannelModal = ({
   isOpen,
   toggleModalOpen,
+  onOpenChangeComplete,
   organizationSlug,
   projectSlug,
 }: {
   isOpen: boolean;
   toggleModalOpen: () => void;
+  onOpenChangeComplete?: (open: boolean) => void;
   organizationSlug: string;
   projectSlug: string;
 }): ReactElement => {
@@ -121,14 +122,29 @@ export const CreateChannelModal = ({
   const setupGuide = values.endpoint ? undefined : WEBHOOK_SETUP_GUIDES[values.type];
 
   return (
-    <Modal open={isOpen} onOpenChange={toggleModalOpen}>
-      <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
-        <Heading>Create a channel</Heading>
+    <Dialog
+      open={isOpen}
+      onOpenChange={toggleModalOpen}
+      onOpenChangeComplete={onOpenChangeComplete}
+      title="Create a channel"
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={toggleModalOpen}>
+            Cancel
+          </Button>
+          <Button type="submit" form="create-channel-form" disabled={isSubmitting}>
+            Create Channel
+          </Button>
+        </>
+      }
+    >
+      <form id="create-channel-form" className="flex flex-col gap-6" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-4">
           <label className="text-sm font-semibold" htmlFor="name">
             Name
           </label>
           <Input
+            id="name"
             name="name"
             value={values.name}
             onChange={handleChange}
@@ -136,6 +152,7 @@ export const CreateChannelModal = ({
             placeholder="Example: Slack #hives"
             disabled={isSubmitting}
             invalid={touched.name && !!errors.name}
+            onSurface="raised"
           />
           {touched.name && errors.name && <div className="text-sm text-red-500">{errors.name}</div>}
           {mutation.data?.addAlertChannel.error?.inputErrors.name && (
@@ -166,6 +183,7 @@ export const CreateChannelModal = ({
               { value: AlertChannelType.Discord, label: 'Discord Webhook' },
             ]}
             width="full"
+            onSurface="raised"
           />
           {touched.type && errors.type && <div className="text-sm text-red-500">{errors.type}</div>}
         </div>
@@ -176,6 +194,7 @@ export const CreateChannelModal = ({
               Endpoint
             </label>
             <Input
+              id="endpoint"
               name="endpoint"
               value={values.endpoint}
               onChange={handleChange}
@@ -183,6 +202,7 @@ export const CreateChannelModal = ({
               placeholder="Your endpoint"
               disabled={isSubmitting}
               invalid={touched.endpoint && !!errors.endpoint}
+              onSurface="raised"
             />
             {touched.endpoint && errors.endpoint && (
               <div className="text-sm text-red-500">{errors.endpoint}</div>
@@ -209,10 +229,11 @@ export const CreateChannelModal = ({
 
         {values.type === AlertChannelType.Slack && (
           <div className="flex flex-col gap-4">
-            <label className="text-sm font-semibold" htmlFor="endpoint">
+            <label className="text-sm font-semibold" htmlFor="slackChannel">
               Slack Channel
             </label>
             <Input
+              id="slackChannel"
               name="slackChannel"
               value={values.slackChannel}
               onChange={handleChange}
@@ -220,6 +241,7 @@ export const CreateChannelModal = ({
               placeholder="Where should Hive post messages?"
               disabled={isSubmitting}
               invalid={touched.slackChannel && !!errors.slackChannel}
+              onSurface="raised"
             />
             {touched.slackChannel && errors.slackChannel && (
               <div className="text-sm text-red-500">{errors.slackChannel}</div>
@@ -235,27 +257,7 @@ export const CreateChannelModal = ({
             </p>
           </div>
         )}
-
-        <div className="flex w-full gap-2">
-          <Button
-            type="button"
-            size="lg"
-            className="w-full justify-center"
-            onClick={toggleModalOpen}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full justify-center text-ellipsis whitespace-nowrap"
-            variant="primary"
-            disabled={isSubmitting}
-          >
-            Create Channel
-          </Button>
-        </div>
       </form>
-    </Modal>
+    </Dialog>
   );
 };
