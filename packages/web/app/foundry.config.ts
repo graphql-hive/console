@@ -98,6 +98,7 @@ export default defineConfig({
             { label: 'AlertDialog', children: [{ label: 'Component Examples' }] },
           ],
         },
+        { label: 'Feedback', children: [{ label: 'Toast' }] },
         // Data and layout
         { label: 'DataTable', children: [{ label: 'Component Examples' }] },
         { label: 'DescriptionList' },
