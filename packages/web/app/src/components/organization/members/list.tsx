@@ -25,7 +25,6 @@ import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { KeyIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import * as Sheet from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
@@ -181,6 +180,7 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     isOwner
     viewerCanRemove
     ...MemberRole_MemberFragment
+    ...MemberRolePicker_MemberFragment
   }
 `);
 
@@ -405,7 +405,7 @@ function MemberRoleCell(props: {
             </div>
           </AlertDialog>
         )}
-      <MemberRole member={member} organization={organization} />
+      <MemberRole member={member} />
     </span>
   );
 }
@@ -418,14 +418,17 @@ function MemberActionsCell(props: {
   const { member, organization } = props;
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [roleOpen, setRoleOpen] = useState(false);
+  // Bumped once the picker has closed, so the next open starts from the member's current role.
+  const [pickerSession, setPickerSession] = useState(0);
   const [deleteMemberState, deleteMember] = useMutation(OrganizationMemberRow_DeleteMember);
 
-  if (!member.viewerCanRemove) {
-    return null;
-  }
+  const isProvisioned =
+    member.user.provisionInfo?.provisioningStatus === GraphQLSchema.ProvisioningStatus.Active;
+  const canChangeRole = organization.viewerCanAssignUserRoles && !member.isOwner && !isProvisioned;
 
-  if (member.user.provisionInfo?.provisioningStatus === GraphQLSchema.ProvisioningStatus.Active) {
-    return (
+  if (isProvisioned) {
+    return member.viewerCanRemove ? (
       <span className="flex justify-end">
         <Tooltip
           trigger={
@@ -436,7 +439,11 @@ function MemberActionsCell(props: {
           content="Provisioned users can only be updated via the SCIM endpoints."
         />
       </span>
-    );
+    ) : null;
+  }
+
+  if (!member.viewerCanRemove && !canChangeRole) {
+    return null;
   }
 
   return (
@@ -445,9 +452,35 @@ function MemberActionsCell(props: {
         kind="actions"
         label={`Actions for ${member.user.displayName}`}
         sections={[
-          [{ label: 'Delete', variant: 'destructiveAction', onClick: () => setOpen(true) }],
+          [
+            ...(canChangeRole ? [{ label: 'Update user', onClick: () => setRoleOpen(true) }] : []),
+            ...(member.viewerCanRemove
+              ? [
+                  {
+                    label: 'Delete',
+                    variant: 'destructiveAction' as const,
+                    onClick: () => setOpen(true),
+                  },
+                ]
+              : []),
+          ],
         ]}
       />
+      {canChangeRole ? (
+        <MemberRolePicker
+          key={pickerSession}
+          open={roleOpen}
+          onOpenChange={setRoleOpen}
+          onOpenChangeComplete={next => {
+            if (!next) {
+              setPickerSession(s => s + 1);
+            }
+          }}
+          organization={organization}
+          member={member}
+          close={() => setRoleOpen(false)}
+        />
+      ) : null}
       <AlertDialog
         open={open}
         onOpenChange={setOpen}
@@ -502,14 +535,6 @@ function MemberActionsCell(props: {
   );
 }
 
-const MemberRole_OrganizationFragment = graphql(`
-  fragment MemberRole_OrganizationFragment on Organization {
-    id
-    viewerCanAssignUserRoles
-    ...MemberRolePicker_OrganizationFragment
-  }
-`);
-
 const MemberRole_MemberFragment = graphql(`
   fragment MemberRole_MemberFragment on Member {
     id
@@ -525,17 +550,11 @@ const MemberRole_MemberFragment = graphql(`
         }
       }
     }
-    ...MemberRolePicker_MemberFragment
   }
 `);
 
-function MemberRole(props: {
-  member: FragmentType<typeof MemberRole_MemberFragment>;
-  organization: FragmentType<typeof MemberRole_OrganizationFragment>;
-}) {
+function MemberRole(props: { member: FragmentType<typeof MemberRole_MemberFragment> }) {
   const member = useFragment(MemberRole_MemberFragment, props.member);
-  const organization = useFragment(MemberRole_OrganizationFragment, props.organization);
-  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
@@ -547,23 +566,7 @@ function MemberRole(props: {
           {' (' + member.resourceAssignment.projects.length} project
           {member.resourceAssignment.projects.length === 1 ? '' : 's'})
         </>
-      ) : null}{' '}
-      {organization.viewerCanAssignUserRoles && (
-        <Sheet.Sheet open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
-          <Sheet.SheetTrigger asChild>
-            <button className="text-accent font-medium transition-colors hover:underline">
-              change
-            </button>
-          </Sheet.SheetTrigger>
-          {isOpen && (
-            <MemberRolePicker
-              organization={organization}
-              member={member}
-              close={() => setIsOpen(false)}
-            />
-          )}
-        </Sheet.Sheet>
-      )}
+      ) : null}
     </>
   );
 }
@@ -599,7 +602,8 @@ const OrganizationMembers_OrganizationFragment = graphql(`
     }
     viewerCanManageInvitations
     ...MemberInvitationForm_OrganizationFragment
-    ...MemberRole_OrganizationFragment
+    viewerCanAssignUserRoles
+    ...MemberRolePicker_OrganizationFragment
   }
 `);
 
@@ -707,12 +711,13 @@ export function OrganizationMembers(props: {
         description="Manage the members of your organization and their permissions."
         sideContent={
           <>
-            <div className="w-56">
+            <div>
               <Input
                 placeholder="Search by username or email"
                 leadingIcon={SearchIcon}
                 onChange={handleSearchChange}
                 defaultValue={searchValue}
+                width="md"
               />
             </div>
             {organization.viewerCanManageInvitations && (

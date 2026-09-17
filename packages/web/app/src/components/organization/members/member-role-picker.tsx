@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useMutation } from 'urql';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -65,6 +65,10 @@ const MemberRolePicker_AssignRoleMutation = graphql(`
 `);
 
 export function MemberRolePicker(props: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpenChangeComplete: (open: boolean) => void;
+  trigger?: ReactElement;
   organization: FragmentType<typeof MemberRolePicker_OrganizationFragment>;
   member: FragmentType<typeof MemberRolePicker_MemberFragment>;
   close: VoidFunction;
@@ -81,7 +85,10 @@ export function MemberRolePicker(props: {
 
   return (
     <RoleMappingPickerSheet
-      close={props.close}
+      open={props.open}
+      onOpenChange={props.onOpenChange}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      trigger={props.trigger}
       organization={organization}
       defaultRoleId={member.role.id}
       resourceAssignment={selection}
