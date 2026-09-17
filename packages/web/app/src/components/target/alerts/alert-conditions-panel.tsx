@@ -3,17 +3,10 @@ import { ExternalLink, Info } from 'lucide-react';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { Button } from '@/components/base/button/button';
 import { DescriptionList } from '@/components/base/description-list/description-list';
-import { FloatingPortalContainerProvider } from '@/components/base/floating/floating-portal-container';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { TimeAgo } from '@/components/ui/time-ago';
 import {
   AlertChannelType,
@@ -329,37 +322,25 @@ function ModifyAlertSheet({
   targetSlug: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [contentEl, setContentEl] = useState<HTMLElement | null>(null);
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <Button label="Modify this alert" onClick={() => setOpen(true)} />
-      <SheetContent
-        ref={setContentEl}
-        side="right"
-        className="flex max-h-screen w-[640px] min-w-[600px] flex-col overflow-y-auto"
-      >
-        <SheetHeader>
-          <SheetTitle>Modify alert</SheetTitle>
-          <SheetDescription>
-            Update the conditions and destinations for this alert.
-          </SheetDescription>
-        </SheetHeader>
-        {open ? (
-          <FloatingPortalContainerProvider container={contentEl}>
-            <AlertForm
-              mode="edit"
-              ruleId={rule.id}
-              organizationSlug={organizationSlug}
-              projectSlug={projectSlug}
-              targetSlug={targetSlug}
-              defaultValues={ruleToFormDefaults(rule)}
-              onSuccess={() => setOpen(false)}
-              onCancel={() => setOpen(false)}
-            />
-          </FloatingPortalContainerProvider>
-        ) : null}
-      </SheetContent>
+    <Sheet
+      open={open}
+      onOpenChange={setOpen}
+      trigger={<Button label="Modify this alert" />}
+      title="Modify alert"
+      description="Update the conditions and destinations for this alert."
+    >
+      <AlertForm
+        mode="edit"
+        ruleId={rule.id}
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        defaultValues={ruleToFormDefaults(rule)}
+        onSuccess={() => setOpen(false)}
+        onCancel={() => setOpen(false)}
+      />
     </Sheet>
   );
 }
@@ -381,19 +362,18 @@ function DeleteRuleButton({
   return (
     <>
       <Button variant="destructive" label="Delete rule" onClick={() => setOpen(true)} />
-      {open ? (
-        <DeleteRuleConfirmationDialog
-          ruleId={ruleId}
-          ruleName={ruleName}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          onCancel={() => setOpen(false)}
-          onConfirm={() => {
-            setOpen(false);
-            onDeleted?.();
-          }}
-        />
-      ) : null}
+      <DeleteRuleConfirmationDialog
+        open={open}
+        ruleId={ruleId}
+        ruleName={ruleName}
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        onCancel={() => setOpen(false)}
+        onConfirm={() => {
+          setOpen(false);
+          onDeleted?.();
+        }}
+      />
     </>
   );
 }

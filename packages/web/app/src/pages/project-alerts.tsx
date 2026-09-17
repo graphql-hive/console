@@ -31,6 +31,7 @@ function Channels(props: {
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [isModalOpen, toggleModalOpen] = useToggle();
+  const [modalSession, setModalSession] = useState(0);
   const channels = props.channels ?? [];
 
   return (
@@ -68,14 +69,18 @@ function Channels(props: {
           />
         )}
       </div>
-      {isModalOpen && (
-        <CreateChannelModal
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          isOpen={isModalOpen}
-          toggleModalOpen={toggleModalOpen}
-        />
-      )}
+      <CreateChannelModal
+        key={modalSession}
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        isOpen={isModalOpen}
+        toggleModalOpen={toggleModalOpen}
+        onOpenChangeComplete={open => {
+          if (!open) {
+            setModalSession(s => s + 1);
+          }
+        }}
+      />
     </Card>
   );
 }
@@ -89,6 +94,7 @@ function Alerts(props: {
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [isModalOpen, toggleModalOpen] = useToggle();
+  const [modalSession, setModalSession] = useState(0);
   const alerts = props.alerts ?? [];
 
   return (
@@ -129,16 +135,20 @@ function Alerts(props: {
           />
         </div>
       </Card>
-      {isModalOpen && (
-        <CreateAlertModal
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
-          targets={props.targets}
-          channels={props.channels}
-          isOpen={isModalOpen}
-          toggleModalOpen={toggleModalOpen}
-        />
-      )}
+      <CreateAlertModal
+        key={modalSession}
+        projectSlug={props.projectSlug}
+        organizationSlug={props.organizationSlug}
+        targets={props.targets}
+        channels={props.channels}
+        isOpen={isModalOpen}
+        toggleModalOpen={toggleModalOpen}
+        onOpenChangeComplete={open => {
+          if (!open) {
+            setModalSession(s => s + 1);
+          }
+        }}
+      />
     </>
   );
 }
