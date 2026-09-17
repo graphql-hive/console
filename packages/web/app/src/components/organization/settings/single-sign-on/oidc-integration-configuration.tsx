@@ -17,6 +17,7 @@ import { Heading } from '@/components/ui/heading';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -465,6 +466,10 @@ function OIDCDomainConfiguration(props: {
         },
   );
   const [enforceOpen, setEnforceOpen] = useState(false);
+  // The sheet keeps its last domain through the exit transition and remounts once closed. It
+  // also remounts when a new domain is registered, which is what moves it to the verify step.
+  const sheetState = useKeepPreviousData(state ?? undefined, state === null);
+  const [domainSheetSession, setDomainSheetSession] = useState(0);
 
   const columns = useMemo<ColumnDef<RegisteredDomain, unknown>[]>(
     () => [
@@ -589,24 +594,28 @@ function OIDCDomainConfiguration(props: {
           </AlertDialog>
         </div>
       </Card>
-      {state && (
-        <OIDCRegisteredDomainSheet
-          key={state.type}
-          oidcIntegrationId={oidcIntegration.id}
-          domain={
-            (state.type === 'manage'
-              ? oidcIntegration.registeredDomains.find(domain => domain.id === state.domainId)
-              : null) ?? null
+      <OIDCRegisteredDomainSheet
+        key={`${sheetState?.type ?? 'none'}-${domainSheetSession}`}
+        open={state !== null}
+        onOpenChangeComplete={isOpen => {
+          if (!isOpen) {
+            setDomainSheetSession(s => s + 1);
           }
-          onClose={() => setState(null)}
-          onRegisterDomainSuccess={domainId =>
-            setState({
-              type: 'manage',
-              domainId,
-            })
-          }
-        />
-      )}
+        }}
+        oidcIntegrationId={oidcIntegration.id}
+        domain={
+          (sheetState?.type === 'manage'
+            ? oidcIntegration.registeredDomains.find(domain => domain.id === sheetState.domainId)
+            : null) ?? null
+        }
+        onClose={() => setState(null)}
+        onRegisterDomainSuccess={domainId =>
+          setState({
+            type: 'manage',
+            domainId,
+          })
+        }
+      />
     </div>
   );
 }
