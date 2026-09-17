@@ -6,7 +6,6 @@ import { Avatar } from '@/components/base/avatar/avatar';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useThemeMenuEntry } from '@/components/theme/theme-switcher';
-import { Button } from '@/components/ui/button';
 import {
   AlertTriangleIcon,
   CalendarIcon,
