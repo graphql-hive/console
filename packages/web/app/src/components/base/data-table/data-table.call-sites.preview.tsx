@@ -811,6 +811,7 @@ export const TanStackTables = createPreview({
             data={OPERATIONS}
             columns={OPERATION_COLUMNS}
             getRowId={row => row.id}
+            initialSorting={[{ id: 'requests', desc: true }]}
             pagination={{ kind: 'client', pageSize: 2 }}
           />
         </div>

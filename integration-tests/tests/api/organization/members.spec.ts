@@ -51,6 +51,7 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
       schemaCheck:approve,
       schemaCheck:create,
       schemaVersion:publish,
+      schema:push,
       schemaVersion:deleteService,
       appDeployment:create,
       appDeployment:publish,

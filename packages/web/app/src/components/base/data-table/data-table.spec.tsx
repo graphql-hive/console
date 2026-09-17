@@ -22,6 +22,13 @@ const COLUMNS: ColumnDef<Row, any>[] = [
   },
 ];
 
+const STATUS_COLUMN: ColumnDef<Row, any> = {
+  accessorKey: 'status',
+  header: 'Status',
+  meta: { sortable: true },
+  cell: ({ row }) => row.original.status,
+};
+
 describe('DataTable', () => {
   it('renders a header row only when a column declares a header', () => {
     const { container, rerender } = render(
@@ -43,11 +50,91 @@ describe('DataTable', () => {
     const names = () =>
       [...container.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
     expect(names()).toEqual(['alpha', 'beta', 'gamma']);
+    const arrow = () => screen.getByText('Count').querySelector('svg')?.getAttribute('class');
+    expect(arrow()).not.toContain('text-success');
     // A numeric column sorts descending first, so the biggest count leads.
     fireEvent.click(screen.getByText('Count'));
     expect(names()).toEqual(['alpha', 'gamma', 'beta']);
+    expect(arrow()).toContain('text-success');
     fireEvent.click(screen.getByText('Count'));
     expect(names()).toEqual(['beta', 'gamma', 'alpha']);
+  });
+
+  it('opens with the initial sort so the first click flips it', () => {
+    const { container } = render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        initialSorting={[{ id: 'count', desc: true }]}
+      />,
+    );
+    const names = () =>
+      [...container.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
+    const arrow = () => screen.getByText('Count').querySelector('svg')?.getAttribute('class');
+    expect(names()).toEqual(['alpha', 'gamma', 'beta']);
+    expect(arrow()).toContain('text-success');
+    fireEvent.click(screen.getByText('Count'));
+    expect(names()).toEqual(['beta', 'gamma', 'alpha']);
+  });
+
+  it('stacks a tiebreaker on shift-click and replaces the sort on a plain click', () => {
+    const rows: Row[] = [
+      { id: 'a', name: 'alpha', count: 1, status: 'open' },
+      { id: 'b', name: 'beta', count: 3, status: 'solved' },
+      { id: 'c', name: 'gamma', count: 2, status: 'open' },
+    ];
+    const { container } = render(
+      <DataTable data={rows} columns={[...COLUMNS, STATUS_COLUMN]} getRowId={row => row.id} />,
+    );
+    const names = () =>
+      [...container.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
+    fireEvent.click(screen.getByText('Status'));
+    expect(names()).toEqual(['alpha', 'gamma', 'beta']);
+    // Both open rows tie on status, so count decides between them.
+    fireEvent.click(screen.getByText('Count'), { shiftKey: true });
+    expect(names()).toEqual(['gamma', 'alpha', 'beta']);
+    fireEvent.click(screen.getByText('Status'));
+    expect(names()).toEqual(['beta', 'alpha', 'gamma']);
+  });
+
+  it('offers shift only once a column is sorted and numbers stacked sorts', () => {
+    render(
+      <DataTable data={ROWS} columns={[...COLUMNS, STATUS_COLUMN]} getRowId={row => row.id} />,
+    );
+    const hint = () => screen.queryByText('Shift-click to add as a secondary sort');
+    const priority = (name: string) =>
+      screen.getByText(name).querySelector('[aria-label="Sort priority"]')?.textContent ?? null;
+
+    fireEvent.focus(screen.getByText('Count'));
+    expect(hint()).toBeNull();
+
+    fireEvent.click(screen.getByText('Status'));
+    fireEvent.focus(screen.getByText('Count'));
+    expect(hint()).not.toBeNull();
+    expect(priority('Status')).toBeNull();
+
+    fireEvent.click(screen.getByText('Count'), { shiftKey: true });
+    expect(priority('Status')).toBe('1');
+    expect(priority('Count')).toBe('2');
+    fireEvent.focus(screen.getByText('Count'));
+    expect(hint()).toBeNull();
+  });
+
+  it('treats shift-click as a plain click on a server-sorted table', () => {
+    const onChange = vi.fn();
+    render(
+      <DataTable
+        data={ROWS}
+        columns={[...COLUMNS, STATUS_COLUMN]}
+        getRowId={row => row.id}
+        sorting={{ state: [{ id: 'count', desc: true }], onChange, manual: true }}
+      />,
+    );
+    fireEvent.click(screen.getByText('Status'), { shiftKey: true });
+    expect(onChange.mock.calls[0][0]([{ id: 'count', desc: true }])).toEqual([
+      { id: 'status', desc: false },
+    ]);
   });
 
   it('toggles a server-sorted column between descending and ascending', () => {

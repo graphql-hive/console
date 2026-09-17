@@ -121,11 +121,35 @@ export const Borderless = createPreview(() => (
 
 /**
  * Columns opt into sorting with `meta.sortable`; the header becomes a toggle with an arrow that
- * fades when inactive. Sorting is the table's own unless `sorting` hands it to the page.
+ * fades when inactive and turns green when it is the sort. Sorting is the table's own unless
+ * `sorting` hands it to the page.
  */
 export const Sortable = createPreview(() => (
   <div className="w-[52rem]">
     <DataTable data={CHECKS.slice(0, 8)} columns={COLUMNS} getRowId={row => row.id} />
+  </div>
+));
+
+const MULTI_SORT_COLUMNS: ColumnDef<Check, any>[] = COLUMNS.map(column =>
+  'accessorKey' in column && column.accessorKey === 'status'
+    ? { ...column, meta: { sortable: true } }
+    : column,
+);
+
+/**
+ * Shift-click a second header to add it as a tiebreaker: rows that tie on the first sort are
+ * ordered by the second. Once a sort exists, hovering any other sortable header says so, and
+ * stacked headers number their priority. `initialSorting` opens the table already sorted, for
+ * rows that arrive in a known order.
+ */
+export const MultiSort = createPreview(() => (
+  <div className="w-[52rem]">
+    <DataTable
+      data={CHECKS.slice(0, 12)}
+      columns={MULTI_SORT_COLUMNS}
+      getRowId={row => row.id}
+      initialSorting={[{ id: 'status', desc: false }]}
+    />
   </div>
 ));
 

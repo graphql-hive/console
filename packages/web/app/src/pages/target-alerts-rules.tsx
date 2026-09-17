@@ -151,6 +151,9 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
   }),
   columnHelper.accessor('type', {
     header: 'Type',
+    meta: { sortable: true },
+    // The enum names order differently from the labels the cell shows.
+    sortingFn: (a, b) => TYPE_LABEL[a.original.type].localeCompare(TYPE_LABEL[b.original.type]),
     cell: info => (
       <DataTableCell
         kind="text"

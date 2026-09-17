@@ -303,6 +303,7 @@ export class SingleModel {
     input: {
       sdl: string;
       metadata: string | null;
+      skipNoChangesCheck: boolean;
     };
     organization: Organization;
     project: Project;
@@ -347,7 +348,7 @@ export class SingleModel {
       },
     });
 
-    if (checksumCheck === 'unchanged') {
+    if (checksumCheck === 'unchanged' && !input.skipNoChangesCheck) {
       return {
         conclusion: SchemaPublishConclusion.Ignore,
         reason: PublishIgnoreReasonCode.NoChanges,
