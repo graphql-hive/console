@@ -8,6 +8,7 @@ import {
 import z from 'zod';
 import { AuthCard, AuthCardStack } from '@/components/auth';
 import { Input } from '@/components/base/input/input';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -18,7 +19,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Meta } from '@/components/ui/meta';
-import { useToast } from '@/components/ui/use-toast';
 import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';

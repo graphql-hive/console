@@ -8,6 +8,7 @@ import z from 'zod';
 import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Input } from '@/components/base/input/input';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -19,7 +20,6 @@ import {
 } from '@/components/ui/form';
 import { Meta } from '@/components/ui/meta';
 import { Text } from '@/components/ui/text';
-import { useToast } from '@/components/ui/use-toast';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
 import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';
 import { enabledProviders, isProviderEnabled } from '@/lib/supertokens/thirdparty';
