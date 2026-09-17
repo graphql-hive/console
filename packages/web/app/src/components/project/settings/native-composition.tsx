@@ -4,10 +4,10 @@ import { CombinedError, useMutation, useQuery } from 'urql';
 import { Badge } from '@/components/base/badge/badge';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Switch } from '@/components/base/switch/switch';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
-import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   NativeFederationCompatibilityStatusType,
