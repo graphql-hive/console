@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useQuery } from 'urql';
+import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
 import { CollectionsQuery as _CollectionsQuery } from '@/gql/graphql';
-import { useNotifications } from '@/lib/hooks';
 
 export const CollectionsQuery = graphql(`
   query Collections($selector: TargetSelectorInput!) {
@@ -57,11 +57,11 @@ export function useCollections(props: {
     },
   });
 
-  const notify = useNotifications();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (error) {
-      notify(error.message, 'error');
+      toast({ variant: 'destructive', title: error.message });
     }
   }, [error]);
 

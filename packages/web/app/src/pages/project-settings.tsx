@@ -5,6 +5,7 @@ import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { PolicySettings } from '@/components/policy/policy-settings';
@@ -23,13 +24,12 @@ import {
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
-import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { getDocsUrl } from '@/lib/docs-url';
-import { useNotifications, useToggle } from '@/lib/hooks';
+import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 
@@ -61,7 +61,7 @@ function GitHubIntegration(props: {
   projectSlug: string;
 }): ReactElement | null {
   const href = getDocsUrl('integrations/ci-cd#github-workflow-for-ci');
-  const notify = useNotifications();
+  const { toast } = useToast();
   const [integrationQuery] = useQuery({
     query: GithubIntegration_GithubIntegrationDetailsQuery,
     variables: {
@@ -138,13 +138,13 @@ function GitHubIntegration(props: {
             }).then(
               result => {
                 if (result.error) {
-                  notify('Failed to enable', 'error');
+                  toast({ variant: 'destructive', title: 'Failed to enable' });
                 } else {
-                  notify('Migration completed', 'success');
+                  toast({ title: 'Migration completed' });
                 }
               },
               _ => {
-                notify('Failed to enable', 'error');
+                toast({ variant: 'destructive', title: 'Failed to enable' });
               },
             );
           }}

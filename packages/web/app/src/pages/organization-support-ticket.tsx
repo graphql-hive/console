@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Textarea } from '@/components/base/textarea/textarea';
+import { useToast } from '@/components/base/toast/toast';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { priorityDescription, statusDescription } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,6 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useNotifications } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
@@ -46,7 +46,7 @@ function ReplyTicketForm(props: {
   ticketId: string;
   onSubmit: () => void;
 }) {
-  const notify = useNotifications();
+  const { toast } = useToast();
   const form = useForm<ReplyTicketFormValues>({
     resolver: zodResolver(replyTicketFormSchema),
     defaultValues: {
@@ -66,19 +66,27 @@ function ReplyTicketForm(props: {
       });
 
       if (result.error) {
-        notify(`Failed to reply: ${result.error.message}`, 'error');
+        toast({
+          variant: 'destructive',
+          title: 'Failed to reply',
+          description: result.error.message,
+        });
         return;
       }
 
       if (result.data?.supportTicketReply.ok) {
         props.onSubmit();
-        notify('Replied to the ticket.', 'success');
+        toast({ title: 'Replied to the ticket.' });
         form.reset({ body: '' });
       } else if (result.data?.supportTicketReply.error) {
-        notify(`Failed to reply: ${result.data.supportTicketReply.error.message}`, 'error');
+        toast({
+          variant: 'destructive',
+          title: 'Failed to reply',
+          description: result.data.supportTicketReply.error.message,
+        });
       }
     } catch (error) {
-      notify(`Failed to reply: ${String(error)}`, 'error');
+      toast({ variant: 'destructive', title: 'Failed to reply', description: String(error) });
     }
   }
 
