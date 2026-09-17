@@ -60,6 +60,24 @@ describe('DataTable', () => {
     expect(names()).toEqual(['beta', 'gamma', 'alpha']);
   });
 
+  it('opens with the initial sort so the first click flips it', () => {
+    const { container } = render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        initialSorting={[{ id: 'count', desc: true }]}
+      />,
+    );
+    const names = () =>
+      [...container.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
+    const arrow = () => screen.getByText('Count').querySelector('svg')?.getAttribute('class');
+    expect(names()).toEqual(['alpha', 'gamma', 'beta']);
+    expect(arrow()).toContain('text-success');
+    fireEvent.click(screen.getByText('Count'));
+    expect(names()).toEqual(['beta', 'gamma', 'alpha']);
+  });
+
   it('stacks a tiebreaker on shift-click and replaces the sort on a plain click', () => {
     const rows: Row[] = [
       { id: 'a', name: 'alpha', count: 1, status: 'open' },

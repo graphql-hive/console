@@ -176,6 +176,8 @@ function OperationsTable({
           data={operations}
           columns={columns}
           getRowId={operation => operation.id}
+          // The API already orders by request count; the header should say so.
+          initialSorting={[{ id: 'requests', desc: true }]}
           pagination={{ kind: 'client', pageSize: 20 }}
           emptyMessage="No operations in the selected period."
         />

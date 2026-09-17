@@ -76,6 +76,11 @@ export type DataTableProps<TData> = {
    * instead of cycling through unsorted.
    */
   sorting?: { state: SortingState; onChange: OnChangeFn<SortingState>; manual?: boolean };
+  /**
+   * The sort a client-sorted table opens with, for rows that arrive in a known order so the
+   * header can say so. Ignored when `sorting` is owned.
+   */
+  initialSorting?: SortingState;
   /** A closing row: a label across the columns and a value in the last, such as a total. */
   footer?: { label: ReactNode; value: ReactNode };
   /** Per-row state the data implies: a solved ticket is muted, a disabled contract is disabled. */
@@ -146,6 +151,7 @@ export function DataTable<TData>({
   variants,
   pagination = { kind: 'client' },
   sorting,
+  initialSorting,
   footer,
   rowState,
   selectedRowId,
@@ -158,7 +164,7 @@ export function DataTable<TData>({
   const bordered = variants?.bordered ?? true;
   const hasTrailingColumn = !hideRowIndicator && (!!renderSubComponent || !!onRowClick);
   const hasHeader = columns.some(column => column.header !== undefined);
-  const [ownSorting, setOwnSorting] = useState<SortingState>([]);
+  const [ownSorting, setOwnSorting] = useState<SortingState>(initialSorting ?? []);
 
   const table = useReactTable({
     data,
