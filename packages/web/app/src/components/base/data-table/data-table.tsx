@@ -100,25 +100,40 @@ function SortHeader<TData>({
   header: Header<TData, unknown>;
   label: ReactNode;
 }) {
-  const sorted = header.column.getIsSorted();
+  const { column } = header;
+  const sorted = column.getIsSorted();
+  const { sorting } = header.getContext().table.getState();
+  // Shift only means something once there is a sort to add to.
+  const teachShift = !sorted && sorting.length > 0 && column.getCanMultiSort();
   return (
-    <button
-      type="button"
-      // Not TanStack's toggle handler: it ignores columns without an accessor, and a
-      // server-sorted column has no reason to carry one. Shift stacks a tiebreaker
-      // the way the handler would.
-      onClick={event => header.column.toggleSorting(undefined, event.shiftKey)}
-      className="text-neutral-10 hover:text-neutral-12 inline-flex items-center gap-1 text-xs font-medium"
-    >
-      {label}
-      <ArrowDown
-        className={cn(
-          'size-3 transition-transform',
-          sorted ? 'text-success' : 'opacity-30',
-          sorted === 'asc' && 'rotate-180',
-        )}
-      />
-    </button>
+    <Tooltip
+      disabled={!teachShift}
+      content="Shift-click to add as a secondary sort"
+      trigger={
+        <button
+          type="button"
+          // Not TanStack's toggle handler: it ignores columns without an accessor, and a
+          // server-sorted column has no reason to carry one. Shift stacks a tiebreaker
+          // the way the handler would.
+          onClick={event => column.toggleSorting(undefined, event.shiftKey)}
+          className="text-neutral-10 hover:text-neutral-12 inline-flex items-center gap-1 text-xs font-medium"
+        >
+          {label}
+          <ArrowDown
+            className={cn(
+              'size-3 transition-transform',
+              sorted ? 'text-success' : 'opacity-30',
+              sorted === 'asc' && 'rotate-180',
+            )}
+          />
+          {sorted && sorting.length > 1 ? (
+            <span className="text-success text-2xs tabular-nums" aria-label="Sort priority">
+              {column.getSortIndex() + 1}
+            </span>
+          ) : null}
+        </button>
+      }
+    />
   );
 }
 

@@ -80,6 +80,29 @@ describe('DataTable', () => {
     expect(names()).toEqual(['beta', 'alpha', 'gamma']);
   });
 
+  it('offers shift only once a column is sorted and numbers stacked sorts', () => {
+    render(
+      <DataTable data={ROWS} columns={[...COLUMNS, STATUS_COLUMN]} getRowId={row => row.id} />,
+    );
+    const hint = () => screen.queryByText('Shift-click to add as a secondary sort');
+    const priority = (name: string) =>
+      screen.getByText(name).querySelector('[aria-label="Sort priority"]')?.textContent ?? null;
+
+    fireEvent.focus(screen.getByText('Count'));
+    expect(hint()).toBeNull();
+
+    fireEvent.click(screen.getByText('Status'));
+    fireEvent.focus(screen.getByText('Count'));
+    expect(hint()).not.toBeNull();
+    expect(priority('Status')).toBeNull();
+
+    fireEvent.click(screen.getByText('Count'), { shiftKey: true });
+    expect(priority('Status')).toBe('1');
+    expect(priority('Count')).toBe('2');
+    fireEvent.focus(screen.getByText('Count'));
+    expect(hint()).toBeNull();
+  });
+
   it('treats shift-click as a plain click on a server-sorted table', () => {
     const onChange = vi.fn();
     render(
