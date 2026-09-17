@@ -162,13 +162,12 @@ export function PersonalAccessTokensTable(props: AccessTokensTable) {
           }}
         />
       )}
-      {detailViewId && (
-        <PersonalAccessTokenDetailViewSheet
-          organizationSlug={props.organizationSlug}
-          accessTokenId={detailViewId}
-          onClose={() => setDetailViewId(null)}
-        />
-      )}
+      <PersonalAccessTokenDetailViewSheet
+        open={detailViewId !== null}
+        organizationSlug={props.organizationSlug}
+        accessTokenId={detailViewId}
+        onClose={() => setDetailViewId(null)}
+      />
     </>
   );
 }
