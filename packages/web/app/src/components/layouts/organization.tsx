@@ -123,7 +123,6 @@ export function OrganizationLayout({
       <SecondaryNavigation
         page={page}
         loading={!currentOrganization}
-        className="min-w-[600px]"
         links={
           currentOrganization
             ? [

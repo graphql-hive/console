@@ -144,7 +144,6 @@ export const TargetLayout = ({
           <SecondaryNavigation
             page={page}
             loading={!currentOrganization || !currentProject || !currentTarget}
-            className="flex h-full grow flex-col"
             links={
               currentOrganization && currentProject && currentTarget
                 ? [

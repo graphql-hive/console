@@ -1,6 +1,7 @@
 import { type ComponentType, type ReactNode } from 'react';
 import { cva } from 'class-variance-authority';
 import { Link, type LinkOptions } from '@tanstack/react-router';
+import { Tooltip } from '../../floating/tooltip/tooltip';
 
 export type SecondaryNavigationVariant = 'underline' | 'pill';
 export type SecondaryNavigationSize = 'default' | 'sm';
@@ -11,6 +12,8 @@ export type SecondaryNavigationItem = LinkAttributes & {
   value: string;
   label: ReactNode;
   icon?: ComponentType<{ className?: string }>;
+  /** Explains the destination on hover: what a filter shows, say. */
+  tooltip?: ReactNode;
   /** Hidden items are left out entirely, as a permission gate needs. */
   visible?: boolean;
 };
@@ -38,16 +41,17 @@ const listVariants = cva('flex flex-row items-center', {
   },
 });
 
+// Colors are keyed on `active` throughout: cva concatenates, so an element must never carry two
+// utilities for one property or the stylesheet's order picks the winner.
 const itemVariants = cva(
   [
     'inline-flex shrink-0 items-center gap-2 whitespace-nowrap font-medium transition-colors',
-    'text-neutral-11 hover:text-neutral-12',
     'outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
   ],
   {
     variants: {
       variant: {
-        underline: 'hover:border-accent_80 border-b-2 border-transparent',
+        underline: 'border-b-2',
         pill: 'rounded-sm',
       },
       size: {
@@ -56,10 +60,11 @@ const itemVariants = cva(
       },
       active: {
         true: 'text-neutral-12',
-        false: '',
+        false: 'text-neutral-11 hover:text-neutral-12',
       },
     },
     compoundVariants: [
+      { variant: 'underline', active: false, class: 'hover:border-accent_80 border-transparent' },
       { variant: 'underline', active: true, class: 'border-accent' },
       { variant: 'pill', size: 'default', class: 'py-1.5' },
       { variant: 'pill', size: 'sm', class: 'py-1' },
@@ -89,18 +94,28 @@ export function SecondaryNavigation({
       <ul className={listVariants({ variant })}>
         {items
           .filter(item => item.visible !== false)
-          .map(({ value: itemValue, label, icon: Icon, visible: _visible, ...link }) => {
+          .map(({ value: itemValue, label, icon: Icon, tooltip, visible: _visible, ...link }) => {
             const active = itemValue === value;
+            const anchor = (
+              <Link
+                {...link}
+                className={itemVariants({ variant, size, active })}
+                aria-current={active ? 'page' : undefined}
+              >
+                {Icon ? <Icon className="size-4 shrink-0" /> : null}
+                {label}
+              </Link>
+            );
             return (
               <li key={itemValue} className="contents">
-                <Link
-                  {...link}
-                  className={itemVariants({ variant, size, active })}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  {Icon ? <Icon className="size-4 shrink-0" /> : null}
-                  {label}
-                </Link>
+                {tooltip == null ? (
+                  anchor
+                ) : (
+                  <Tooltip
+                    trigger={<span className="inline-flex">{anchor}</span>}
+                    content={tooltip}
+                  />
+                )}
               </li>
             );
           })}

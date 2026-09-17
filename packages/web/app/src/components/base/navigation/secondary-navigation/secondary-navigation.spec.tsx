@@ -38,7 +38,12 @@ describe('SecondaryNavigation', () => {
     const checks = screen.getByRole('link', { name: 'Checks' });
     expect(checks.getAttribute('aria-current')).toBe('page');
     expect(checks.getAttribute('href')).toBe('/b');
-    expect(screen.getByRole('link', { name: 'Schema' }).getAttribute('aria-current')).toBeNull();
+    // The accent underline must be the only border color on the current link.
+    expect(checks.classList.contains('border-accent')).toBe(true);
+    expect(checks.classList.contains('border-transparent')).toBe(false);
+    const schema = screen.getByRole('link', { name: 'Schema' });
+    expect(schema.getAttribute('aria-current')).toBeNull();
+    expect(schema.classList.contains('border-transparent')).toBe(true);
   });
 
   it('draws placeholders instead of links while loading', async () => {
@@ -48,6 +53,18 @@ describe('SecondaryNavigation', () => {
     await waitFor(() => expect(document.querySelector('[data-cy="target-nav"]')).toBeTruthy());
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.queryByRole('navigation')).toBeNull();
+  });
+
+  it('keeps an item with a tooltip a link', async () => {
+    renderInRouter(
+      <SecondaryNavigation
+        value="schema"
+        items={[{ ...ITEMS[0], tooltip: 'Shows all types, including unused and deprecated ones' }]}
+      />,
+    );
+    const link = await screen.findByRole('link', { name: 'Schema' });
+    expect(link.getAttribute('href')).toBe('/a');
+    expect(link.getAttribute('aria-current')).toBe('page');
   });
 
   it('keeps the actions outside the nav, after the links', async () => {

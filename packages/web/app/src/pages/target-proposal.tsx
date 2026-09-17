@@ -2,6 +2,10 @@ import { useMemo } from 'react';
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { useMutation, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import {
+  SecondaryNavigation,
+  type SecondaryNavigationItem,
+} from '@/components/base/navigation/secondary-navigation/secondary-navigation';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -17,7 +21,6 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -510,120 +513,68 @@ function TabbedContent(props: {
   me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
   isDistributedGraph: boolean;
 }) {
+  const page = props.page ?? Tab.DETAILS;
+  const proposalLink = {
+    to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
+    params: {
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      targetSlug: props.targetSlug,
+      proposalId: props.proposalId,
+    },
+  } as const;
+  const versionSearch = props.version ? { version: props.version } : {};
+  const sections: SecondaryNavigationItem[] = [
+    {
+      ...proposalLink,
+      value: Tab.DETAILS,
+      label: 'Details',
+      icon: ListBulletIcon,
+      search: { page: 'details', ...versionSearch },
+    },
+    {
+      ...proposalLink,
+      value: Tab.SCHEMA,
+      label: 'Schema',
+      icon: DiffIcon,
+      search: { page: 'schema', ...versionSearch },
+    },
+    {
+      ...proposalLink,
+      value: Tab.SUPERGRAPH,
+      label: 'Supergraph Preview',
+      icon: GraphQLIcon,
+      visible: props.isDistributedGraph,
+      search: { page: 'supergraph', ...versionSearch },
+    },
+    {
+      ...proposalLink,
+      value: Tab.CHECKS,
+      label: 'Checks',
+      icon: PieChartIcon,
+      search: { page: 'checks', ...versionSearch },
+    },
+    // Edit always refers to the latest version, so it carries no version.
+    { ...proposalLink, value: Tab.EDIT, label: 'Edit', icon: EditIcon, search: { page: 'edit' } },
+  ];
+
   return (
-    <Tabs value={props.page} defaultValue={Tab.DETAILS}>
-      <TabsList variant="menu" className="border-b-1 w-full">
-        <TabsTrigger variant="menu" value={Tab.DETAILS} asChild>
-          <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-              proposalId: props.proposalId,
-            }}
-            search={{ page: 'details', ...(props.version ? { version: props.version } : {}) }}
-            className="flex items-center"
-          >
-            <ListBulletIcon className="mr-2 h-5 w-auto flex-none" />
-            Details
-          </Link>
-        </TabsTrigger>
-        <TabsTrigger variant="menu" value={Tab.SCHEMA} asChild>
-          <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-              proposalId: props.proposalId,
-            }}
-            search={{ page: 'schema', ...(props.version ? { version: props.version } : {}) }}
-            className="flex items-center"
-          >
-            <DiffIcon className="mr-2 h-5 w-auto flex-none" />
-            Schema
-          </Link>
-        </TabsTrigger>
-        {props.isDistributedGraph ? (
-          <TabsTrigger variant="menu" value={Tab.SUPERGRAPH} asChild>
-            <Link
-              to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
-              params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
-                proposalId: props.proposalId,
-              }}
-              search={{ page: 'supergraph', ...(props.version ? { version: props.version } : {}) }}
-              className="flex items-center"
-            >
-              <GraphQLIcon className="mr-2 h-4 w-auto flex-none" />
-              Supergraph Preview
-            </Link>
-          </TabsTrigger>
-        ) : null}
-        <TabsTrigger variant="menu" value={Tab.CHECKS} asChild>
-          <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-              proposalId: props.proposalId,
-            }}
-            search={{ page: 'checks', ...(props.version ? { version: props.version } : {}) }}
-            className="flex items-center"
-          >
-            <PieChartIcon className="mr-2 h-4 w-auto flex-none" />
-            Checks
-          </Link>
-        </TabsTrigger>
-        <TabsTrigger variant="menu" value={Tab.EDIT} asChild>
-          <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-              proposalId: props.proposalId,
-            }}
-            search={{ page: 'edit' }} // don't set version here. Always refer to latest on edit.
-            className="flex items-center"
-          >
-            <EditIcon className="mr-2 h-3 w-auto flex-none" />
-            Edit
-          </Link>
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value={Tab.DETAILS} variant="content" className="w-full">
-        <div className="flex grow flex-row">
-          <TargetProposalDetailsPage {...props} />
-        </div>
-      </TabsContent>
-      <TabsContent value={Tab.SCHEMA} variant="content" className="w-full">
-        <div className="flex grow flex-row">
-          <TargetProposalSchemaPage {...props} />
-        </div>
-      </TabsContent>
-      <TabsContent value={Tab.SUPERGRAPH} variant="content" className="w-full">
-        <div className="flex grow flex-row">
-          <TargetProposalSupergraphPage {...props} />
-        </div>
-      </TabsContent>
-      <TabsContent value={Tab.CHECKS} variant="content" className="w-full">
-        <div className="flex grow flex-row">
-          <TargetProposalChecksPage {...props} />
-        </div>
-      </TabsContent>
-      <TabsContent value={Tab.EDIT} variant="content" className="w-full">
-        <div className="flex grow flex-row">
+    <div className="w-full">
+      <div className="border-neutral-5 border-b">
+        <SecondaryNavigation aria-label="Proposal" value={page} items={sections} size="sm" />
+      </div>
+      <div className="flex grow flex-row pt-4">
+        {page === Tab.DETAILS && <TargetProposalDetailsPage {...props} />}
+        {page === Tab.SCHEMA && <TargetProposalSchemaPage {...props} />}
+        {page === Tab.SUPERGRAPH && <TargetProposalSupergraphPage {...props} />}
+        {page === Tab.CHECKS && <TargetProposalChecksPage {...props} />}
+        {page === Tab.EDIT && (
           <SaveProposalProvider>
             <TargetProposalEditPage {...props} />
           </SaveProposalProvider>
-        </div>
-      </TabsContent>
-    </Tabs>
+        )}
+      </div>
+    </div>
   );
 }
 
