@@ -362,6 +362,7 @@ export function CreateProjectAccessTokenSheetContent(
                                   onBlur={field.onBlur}
                                   name={field.name}
                                   width="full"
+                                  onSurface="raised"
                                 />
                               </Form.FormControl>
                               <Form.FormDescription>
@@ -386,6 +387,7 @@ export function CreateProjectAccessTokenSheetContent(
                             </Form.FormLabel>
                             <Form.FormControl>
                               <PermissionSelector
+                                onSurface="raised"
                                 permissionGroups={
                                   project.availableProjectAccessTokenPermissionGroups
                                 }

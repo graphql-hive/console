@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { InfoIcon, TriangleAlert } from 'lucide-react';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
+import type { OnSurface } from '@/components/base/shared-styles';
 import {
   Accordion,
   AccordionContent,
@@ -40,6 +41,8 @@ type MembershipPermissionGroup = AvailableMembershipPermissions[number];
 
 export type PermissionSelectorProps = {
   isReadOnly?: boolean;
+  /** `raised` inside a dialog or sheet, which is everywhere this renders today. */
+  onSurface?: OnSurface;
   permissionGroups: Array<FragmentType<typeof PermissionSelector_PermissionGroupsFragment>>;
   selectedPermissionIds: ReadonlySet<string>;
   onSelectedPermissionsChange: (selectedPermissionIds: ReadonlySet<string>) => void;
@@ -225,6 +228,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         )
                       )}
                       <Select
+                        onSurface={props.onSurface}
                         options={[
                           { value: 'not-selected', label: 'Not Selected' },
                           { value: 'allow', label: 'Allow' },

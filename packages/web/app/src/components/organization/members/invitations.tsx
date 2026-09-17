@@ -205,6 +205,7 @@ function MemberInvitationForm(props: {
                 <FormItem>
                   <FormControl>
                     <RoleSelector
+                      onSurface="raised"
                       roles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
                       defaultRole={
                         organization.memberRoles?.edges.find(edge => edge.node.id === field.value)

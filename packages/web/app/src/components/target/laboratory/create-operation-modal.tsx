@@ -259,6 +259,7 @@ export function CreateOperationModalContent(props: {
                         placeholder="Select a Collection"
                         matchTriggerWidth
                         width="full"
+                        onSurface="raised"
                         data-cy="collection-select-trigger"
                       />
                     </FormControl>

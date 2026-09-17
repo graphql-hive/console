@@ -227,6 +227,7 @@ function OrganizationMemberRoleEditor(props: {
               <FormLabel>Permissions</FormLabel>
               <ScrollArea fill>
                 <PermissionSelector
+                  onSurface="raised"
                   onSelectedPermissionsChange={onChangeSelectedPermissions}
                   permissionGroups={organization.availableMemberPermissionGroups}
                   selectedPermissionIds={selectedPermissions}
@@ -480,6 +481,7 @@ function OrganizationMemberRoleCreator(props: {
                 <FormLabel>Permissions</FormLabel>
                 <ScrollArea fill>
                   <PermissionSelector
+                    onSurface="raised"
                     onSelectedPermissionsChange={onChangeSelectedPermissions}
                     permissionGroups={organization.availableMemberPermissionGroups}
                     selectedPermissionIds={selectedPermissions}
