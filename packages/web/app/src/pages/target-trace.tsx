@@ -871,102 +871,98 @@ export function TraceSheet(props: TraceSheetProps) {
                 </div>
               </div>
               <ScrollArea fill>
-                <div className="h-full">
-                  {activeView === 'span-attributes' ? (
-                    <div>
-                      {spanAttributes.length > 0 ? (
-                        spanAttributes.map(attr => (
-                          <AttributeRow
-                            attributeKey={attr.name}
-                            key={attr.name}
-                            value={attr.value}
-                          />
-                        ))
-                      ) : (
-                        <div className="py-4 text-center">
-                          <AlertTriangle className="text-neutral-10 mx-auto mb-2 size-6" />
-                          <p className="text-neutral-10 text-xs">
-                            No attributes found for this trace
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                  {activeView === 'resource-attributes' ? (
-                    <div>
-                      {resourceAttributes.length > 0 ? (
-                        resourceAttributes.map(attr => (
-                          <AttributeRow
-                            attributeKey={attr.name}
-                            key={attr.name}
-                            value={attr.value}
-                          />
-                        ))
-                      ) : (
-                        <div className="py-4 text-center">
-                          <AlertTriangle className="text-neutral-10 mx-auto mb-2 size-6" />
-                          <p className="text-neutral-10 text-xs">
-                            No resource attributes found for this trace
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                  {activeView === 'events' ? (
-                    <div className="p-4">
-                      <div className="space-y-2">
-                        {!events.length ? (
-                          <div className="text-neutral-8 text-sm">
-                            No events occurred during this trace.
-                          </div>
-                        ) : (
-                          events.map(event => (
-                            <Link
-                              to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
-                              params={{
-                                organizationSlug: props.organizationSlug,
-                                projectSlug: props.projectSlug,
-                                targetSlug: props.targetSlug,
-                                traceId: trace.id,
-                              }}
-                              search={{ activeSpanId: event.spanId, activeSpanTab: 'events' }}
-                              onMouseOver={() =>
-                                setHighlightedEvent({
-                                  spanId: event.spanId,
-                                  eventId: event.id,
-                                })
-                              }
-                              onMouseLeave={() => {
-                                setHighlightedEvent(null);
-                              }}
-                              className="mb-2 block"
-                              key={event.id}
-                            >
-                              <ExceptionTeaser
-                                type={String(event.attributes['exception.type'] ?? '')}
-                                message={String(event.attributes['exception.message'] ?? '')}
-                                stacktrace={String(event.attributes['exception.stacktrace'] ?? '')}
-                                name={event.name}
-                              />
-                            </Link>
-                          ))
-                        )}
+                {activeView === 'span-attributes' ? (
+                  <div>
+                    {spanAttributes.length > 0 ? (
+                      spanAttributes.map(attr => (
+                        <AttributeRow
+                          attributeKey={attr.name}
+                          key={attr.name}
+                          value={attr.value}
+                        />
+                      ))
+                    ) : (
+                      <div className="py-4 text-center">
+                        <AlertTriangle className="text-neutral-10 mx-auto mb-2 size-6" />
+                        <p className="text-neutral-10 text-xs">
+                          No attributes found for this trace
+                        </p>
                       </div>
+                    )}
+                  </div>
+                ) : null}
+                {activeView === 'resource-attributes' ? (
+                  <div>
+                    {resourceAttributes.length > 0 ? (
+                      resourceAttributes.map(attr => (
+                        <AttributeRow
+                          attributeKey={attr.name}
+                          key={attr.name}
+                          value={attr.value}
+                        />
+                      ))
+                    ) : (
+                      <div className="py-4 text-center">
+                        <AlertTriangle className="text-neutral-10 mx-auto mb-2 size-6" />
+                        <p className="text-neutral-10 text-xs">
+                          No resource attributes found for this trace
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+                {activeView === 'events' ? (
+                  <div className="p-4">
+                    <div className="space-y-2">
+                      {!events.length ? (
+                        <div className="text-neutral-8 text-sm">
+                          No events occurred during this trace.
+                        </div>
+                      ) : (
+                        events.map(event => (
+                          <Link
+                            to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                            params={{
+                              organizationSlug: props.organizationSlug,
+                              projectSlug: props.projectSlug,
+                              targetSlug: props.targetSlug,
+                              traceId: trace.id,
+                            }}
+                            search={{ activeSpanId: event.spanId, activeSpanTab: 'events' }}
+                            onMouseOver={() =>
+                              setHighlightedEvent({
+                                spanId: event.spanId,
+                                eventId: event.id,
+                              })
+                            }
+                            onMouseLeave={() => {
+                              setHighlightedEvent(null);
+                            }}
+                            className="mb-2 block"
+                            key={event.id}
+                          >
+                            <ExceptionTeaser
+                              type={String(event.attributes['exception.type'] ?? '')}
+                              message={String(event.attributes['exception.message'] ?? '')}
+                              stacktrace={String(event.attributes['exception.stacktrace'] ?? '')}
+                              name={event.name}
+                            />
+                          </Link>
+                        ))
+                      )}
                     </div>
-                  ) : null}
-                  {activeView === 'operation' ? (
-                    <div className="absolute inset-y-0 w-full">
-                      <GraphQLHighlight
-                        height="100%"
-                        options={{
-                          fontSize: 10,
-                          minimap: { enabled: false },
-                        }}
-                        code={rootSpanUnmasked.spanAttributes['graphql.document'] as string}
-                      />
-                    </div>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
+                {activeView === 'operation' ? (
+                  <GraphQLHighlight
+                    height="100%"
+                    options={{
+                      fontSize: 10,
+                      minimap: { enabled: false },
+                    }}
+                    code={rootSpanUnmasked.spanAttributes['graphql.document'] as string}
+                  />
+                ) : null}
               </ScrollArea>
             </div>
           </ResizablePanel>
