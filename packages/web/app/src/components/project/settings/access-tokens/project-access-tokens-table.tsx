@@ -167,14 +167,13 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
           }}
         />
       )}
-      {detailViewId && (
-        <ProjectAccessTokenDetailViewSheet
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          accessTokenId={detailViewId}
-          onClose={() => setDetailViewId(null)}
-        />
-      )}
+      <ProjectAccessTokenDetailViewSheet
+        open={detailViewId !== null}
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        accessTokenId={detailViewId}
+        onClose={() => setDetailViewId(null)}
+      />
     </>
   );
 }
