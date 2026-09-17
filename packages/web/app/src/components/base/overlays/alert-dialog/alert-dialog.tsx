@@ -22,6 +22,8 @@ const popupClass = cn(
 export type AlertDialogProps = {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Fires once the open or close transition has finished, so state can reset after a close. */
+  onOpenChangeComplete?: (open: boolean) => void;
   /** What opens the dialog. Optional: most are opened by state set somewhere else. */
   trigger?: FloatingProps['trigger'];
   title: ReactNode;
@@ -51,6 +53,7 @@ export type AlertDialogProps = {
 export function AlertDialog({
   open,
   onOpenChange,
+  onOpenChangeComplete,
   trigger,
   title,
   description,
@@ -60,7 +63,11 @@ export function AlertDialog({
   attrs,
 }: AlertDialogProps) {
   return (
-    <BaseAlertDialog.Root open={open} onOpenChange={onOpenChange}>
+    <BaseAlertDialog.Root
+      open={open}
+      onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
+    >
       {trigger ? <BaseAlertDialog.Trigger render={trigger as ReactElement} /> : null}
       <BaseAlertDialog.Portal>
         <BaseAlertDialog.Backdrop className={backdropClass} />
