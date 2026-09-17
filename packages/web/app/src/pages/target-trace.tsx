@@ -24,6 +24,7 @@ import { useQuery } from 'urql';
 import { Badge } from '@/components/base/badge/badge';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -32,17 +33,10 @@ import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard } from '@/lib/hooks';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useWidthSync, WidthSyncProvider } from './traces/target-traces-width';
@@ -763,6 +757,7 @@ export function TraceSheet(props: TraceSheetProps) {
   const trace = useFragment(TraceSheet_TraceFragment, props.trace);
 
   const [highlightedEvent, setHighlightedEvent] = useState<HighlightedEvent | null>(null);
+  const [spanSheetSession, setSpanSheetSession] = useState(0);
 
   const { rootSpan, spansById, events } = useMemo(
     () => createSpanTreeStructure(trace.spans),
@@ -972,23 +967,30 @@ export function TraceSheet(props: TraceSheetProps) {
           </ResizablePanel>
         </ResizablePanelGroup>
       </>
-      {props.activeSpanId && (
-        <SpanSheet
-          span={trace.spans.find(trace => trace.id === props.activeSpanId) ?? null}
-          computedSpanMetrics={spansById.get(props.activeSpanId) ?? null}
-          onClose={() =>
-            navigate({
-              to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
-              search: {},
-            })
+      <SpanSheet
+        key={spanSheetSession}
+        open={!!props.activeSpanId}
+        onOpenChangeComplete={open => {
+          if (!open) {
+            setSpanSheetSession(s => s + 1);
           }
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          traceId={trace.id}
-          activeTab={props.activeSpanTab}
-        />
-      )}
+        }}
+        span={trace.spans.find(trace => trace.id === props.activeSpanId) ?? null}
+        computedSpanMetrics={
+          (props.activeSpanId ? spansById.get(props.activeSpanId) : undefined) ?? null
+        }
+        onClose={() =>
+          navigate({
+            to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+            search: {},
+          })
+        }
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        traceId={trace.id}
+        activeTab={props.activeSpanTab}
+      />
     </div>
   );
 }
@@ -1398,6 +1400,9 @@ const SpanSheet_SpanFragment = graphql(`
 `);
 
 type SpanSheetProps = {
+  open: boolean;
+  onOpenChangeComplete: (open: boolean) => void;
+  /** Null while closed. */
   span: FragmentType<typeof SpanSheet_SpanFragment> | null;
   computedSpanMetrics: ComputedSpanMetrics | null;
   onClose: () => void;
@@ -1409,7 +1414,13 @@ type SpanSheetProps = {
 };
 
 function SpanSheet(props: SpanSheetProps) {
-  const span = useFragment(SpanSheet_SpanFragment, props.span);
+  const currentSpan = useFragment(SpanSheet_SpanFragment, props.span);
+  // The last span stays up through the close transition.
+  const span = useKeepPreviousData(currentSpan ?? undefined, !props.open);
+  const computedSpanMetrics = useKeepPreviousData(
+    props.computedSpanMetrics ?? undefined,
+    !props.open,
+  );
   const [activeView, setActiveView] = useState<
     'span-attributes' | 'resource-attributes' | 'events' | 'operation'
   >((props.activeTab as 'events') ?? 'span-attributes');
@@ -1429,229 +1440,33 @@ function SpanSheet(props: SpanSheetProps) {
   );
 
   return (
-    <Sheet open onOpenChange={props.onClose}>
-      <SheetContent className="border-neutral-5 text-neutral-12 bg-neutral-1 flex flex-col border-l p-0 md:max-w-[50%]">
-        <SheetHeader className="border-neutral-5 relative border-b p-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-neutral-12 text-lg font-medium">
-              {!span.parentId && 'Root '}Span Details
-              <span className="text-neutral-10 ml-2 font-mono font-normal">
-                {span.id.substring(0, 4)}
-              </span>
-              <span className="text-neutral-10 ml-2">{span.name}</span>
-            </SheetTitle>
-          </div>
-          <SheetDescription className="text-neutral-10 mt-1 text-xs">
-            Span ID: <span className="font-mono">{span.id}</span>
-            <CopyIconButton value={span.id} label="Copy Span ID" />
-          </SheetDescription>
-          {props.computedSpanMetrics && (
-            <div className="grid grid-cols-2 gap-4 pt-3 md:grid-cols-4">
-              {/* Duration */}
-              <div className="flex items-center space-x-2">
-                <Clock className="size-4 text-blue-500" />
-                <div>
-                  <p className="text-neutral-10 text-xs">Duration</p>
-                  <p className="text-sm font-medium">
-                    {' '}
-                    {formatNanoseconds(props.computedSpanMetrics.durationNs)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Start Time */}
-              {props.computedSpanMetrics.startNs !== 0n && (
-                <div className="flex items-center space-x-2">
-                  <Play className="size-4 text-green-500" />
-                  <div>
-                    <p className="text-neutral-10 text-xs">Start</p>
-                    <p className="text-sm font-medium">
-                      {' '}
-                      {formatNanoseconds(props.computedSpanMetrics.startNs)}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Percentage of Total */}
-              {props.computedSpanMetrics.percentageOfTotal && (
-                <div className="flex items-center space-x-2">
-                  <PieChart className="size-4 text-purple-500" />
-                  <div>
-                    <p className="text-neutral-10 text-xs">% of Total</p>
-                    <p className="text-sm font-medium">
-                      {' '}
-                      {props.computedSpanMetrics.percentageOfTotal}%
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Percentage of Parent */}
-              {props.computedSpanMetrics.percentageOfParentSpan && (
-                <div className="flex items-center space-x-2">
-                  <TreePine className="text-accent size-4" />
-                  <div>
-                    <p className="text-neutral-10 text-xs">% of Parent</p>
-                    <p className="text-sm font-medium">
-                      {' '}
-                      {props.computedSpanMetrics.percentageOfParentSpan}%
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </SheetHeader>
-        <div className="h-full overflow-hidden">
-          <div className="flex h-full flex-col">
-            <div className="border-neutral-5 sticky top-0 z-10 border-b">
-              <div className="flex w-full gap-x-4 px-2 text-xs font-medium">
-                <TabButton
-                  isActive={activeView === 'span-attributes'}
-                  onClick={() => setActiveView('span-attributes')}
-                >
-                  <div className="flex items-center gap-x-2">
-                    <div>Span Attributes</div>
-                    <div>
-                      <Badge
-                        content={String(Object.keys(span.spanAttributes).length)}
-                        variants={{ variant: 'secondary', size: 'sm' }}
-                      />
-                    </div>
-                  </div>
-                </TabButton>
-                <TabButton
-                  isActive={activeView === 'resource-attributes'}
-                  onClick={() => setActiveView('resource-attributes')}
-                >
-                  <div className="flex items-center gap-x-2">
-                    <div>Resource Attributes</div>
-                    <div>
-                      <Badge
-                        content={String(resourceAttributes.length)}
-                        variants={{ variant: 'secondary', size: 'sm' }}
-                      />
-                    </div>
-                  </div>
-                </TabButton>
-                <TabButton
-                  isActive={activeView === 'events'}
-                  onClick={() => setActiveView('events')}
-                >
-                  <div className="flex items-center gap-x-2">
-                    <div>Events</div>
-                    <div>
-                      <Badge
-                        content={String(span.events.length)}
-                        variants={{ variant: 'secondary', size: 'sm' }}
-                      />
-                    </div>
-                  </div>
-                </TabButton>
-                {(span.spanAttributes['graphql.document'] as string) && (
-                  <TabButton
-                    isActive={activeView === 'operation'}
-                    onClick={() => setActiveView('operation')}
-                  >
-                    <div className="flex items-center gap-x-2">
-                      <div>GraphQL Operation</div>
-                    </div>
-                  </TabButton>
-                )}
-              </div>
-            </div>
-            <ScrollArea fill>
-              {activeView === 'span-attributes' && (
-                <div>
-                  {spanAttributes.length > 0 ? (
-                    <div>
-                      {spanAttributes.map(attribute => (
-                        <AttributeRow
-                          key={attribute.key}
-                          attributeKey={attribute.key}
-                          value={String(attribute.value)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="py-4 text-center">
-                      <AlertTriangle className="text-neutral-10 mx-auto mb-2 size-6" />
-                      <p className="text-neutral-10 text-xs">
-                        No span attributes found for this span.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-              {activeView === 'resource-attributes' && (
-                <div>
-                  {resourceAttributes.length > 0 ? (
-                    <div>
-                      {resourceAttributes.map(attribute => (
-                        <AttributeRow
-                          key={attribute.key}
-                          attributeKey={attribute.key}
-                          value={String(attribute.value)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="py-4 text-center">
-                      <AlertTriangle className="text-neutral-10 mx-auto mb-2 size-6" />
-                      <p className="text-neutral-10 text-xs">
-                        No resource attributes found for this span.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-              {activeView === 'events' && (
-                <div>
-                  {span.events.length > 0 ? (
-                    <div className="px-1 pt-2">
-                      {span.events.map((event, index) => {
-                        return (
-                          <div className="mb-2" key={`${event.name}_${event.date}_${index}`}>
-                            <ExceptionTeaser
-                              type={
-                                (event.attributes['exception.type'] as string | undefined) ?? ''
-                              }
-                              message={
-                                (event.attributes['exception.message'] as string | undefined) ?? ''
-                              }
-                              stacktrace={
-                                (event.attributes['exception.stacktrace'] as string | undefined) ??
-                                ''
-                              }
-                              name={event.name}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="py-4 text-center">
-                      <AlertTriangle className="text-neutral-10 mx-auto mb-2 size-6" />
-                      <p className="text-neutral-10 text-xs">No events found for this span.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-              {activeView === 'operation' && (
-                <GraphQLHighlight
-                  height="100%"
-                  options={{
-                    fontSize: 10,
-                    minimap: { enabled: false },
-                  }}
-                  code={span.spanAttributes['graphql.document'] as string}
-                />
-              )}
-            </ScrollArea>
-          </div>
-        </div>
-        <SheetFooter className="mt-auto border-t p-2">
+    <Sheet
+      open={props.open}
+      onOpenChange={open => {
+        if (!open) {
+          props.onClose();
+        }
+      }}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      width="half"
+      padding="none"
+      title={
+        <>
+          {!span.parentId && 'Root '}Span Details
+          <span className="text-neutral-10 ml-2 font-mono font-normal">
+            {span.id.substring(0, 4)}
+          </span>
+          <span className="text-neutral-10 ml-2">{span.name}</span>
+        </>
+      }
+      description={
+        <>
+          Span ID: <span className="font-mono">{span.id}</span>
+          <CopyIconButton value={span.id} label="Copy Span ID" />
+        </>
+      }
+      footer={
+        <>
           {span.parentId && (
             <Button variant="ghost" size="sm" asChild>
               <Link
@@ -1671,8 +1486,201 @@ function SpanSheet(props: SpanSheetProps) {
           <Button variant="ghost" size="sm" onClick={() => clipboard(window.location.href)}>
             <LinkLucide className="mr-2 size-4" /> Share Link
           </Button>
-        </SheetFooter>
-      </SheetContent>
+        </>
+      }
+    >
+      {computedSpanMetrics && (
+        <div className="grid grid-cols-2 gap-4 px-6 pb-4 md:grid-cols-4">
+          {/* Duration */}
+          <div className="flex items-center space-x-2">
+            <Clock className="size-4 text-blue-500" />
+            <div>
+              <p className="text-neutral-10 text-xs">Duration</p>
+              <p className="text-sm font-medium">
+                {' '}
+                {formatNanoseconds(computedSpanMetrics.durationNs)}
+              </p>
+            </div>
+          </div>
+
+          {/* Start Time */}
+          {computedSpanMetrics.startNs !== 0n && (
+            <div className="flex items-center space-x-2">
+              <Play className="size-4 text-green-500" />
+              <div>
+                <p className="text-neutral-10 text-xs">Start</p>
+                <p className="text-sm font-medium">
+                  {' '}
+                  {formatNanoseconds(computedSpanMetrics.startNs)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Percentage of Total */}
+          {computedSpanMetrics.percentageOfTotal && (
+            <div className="flex items-center space-x-2">
+              <PieChart className="size-4 text-purple-500" />
+              <div>
+                <p className="text-neutral-10 text-xs">% of Total</p>
+                <p className="text-sm font-medium"> {computedSpanMetrics.percentageOfTotal}%</p>
+              </div>
+            </div>
+          )}
+
+          {/* Percentage of Parent */}
+          {computedSpanMetrics.percentageOfParentSpan && (
+            <div className="flex items-center space-x-2">
+              <TreePine className="text-accent size-4" />
+              <div>
+                <p className="text-neutral-10 text-xs">% of Parent</p>
+                <p className="text-sm font-medium">
+                  {' '}
+                  {computedSpanMetrics.percentageOfParentSpan}%
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="border-neutral-5 border-y">
+          <div className="flex w-full gap-x-4 px-4 text-xs font-medium">
+            <TabButton
+              isActive={activeView === 'span-attributes'}
+              onClick={() => setActiveView('span-attributes')}
+            >
+              <div className="flex items-center gap-x-2">
+                <div>Span Attributes</div>
+                <div>
+                  <Badge
+                    content={String(Object.keys(span.spanAttributes).length)}
+                    variants={{ variant: 'secondary', size: 'sm' }}
+                  />
+                </div>
+              </div>
+            </TabButton>
+            <TabButton
+              isActive={activeView === 'resource-attributes'}
+              onClick={() => setActiveView('resource-attributes')}
+            >
+              <div className="flex items-center gap-x-2">
+                <div>Resource Attributes</div>
+                <div>
+                  <Badge
+                    content={String(resourceAttributes.length)}
+                    variants={{ variant: 'secondary', size: 'sm' }}
+                  />
+                </div>
+              </div>
+            </TabButton>
+            <TabButton isActive={activeView === 'events'} onClick={() => setActiveView('events')}>
+              <div className="flex items-center gap-x-2">
+                <div>Events</div>
+                <div>
+                  <Badge
+                    content={String(span.events.length)}
+                    variants={{ variant: 'secondary', size: 'sm' }}
+                  />
+                </div>
+              </div>
+            </TabButton>
+            {(span.spanAttributes['graphql.document'] as string) && (
+              <TabButton
+                isActive={activeView === 'operation'}
+                onClick={() => setActiveView('operation')}
+              >
+                <div className="flex items-center gap-x-2">
+                  <div>GraphQL Operation</div>
+                </div>
+              </TabButton>
+            )}
+          </div>
+        </div>
+        <ScrollArea fill>
+          {activeView === 'span-attributes' && (
+            <div>
+              {spanAttributes.length > 0 ? (
+                <div>
+                  {spanAttributes.map(attribute => (
+                    <AttributeRow
+                      key={attribute.key}
+                      attributeKey={attribute.key}
+                      value={String(attribute.value)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-4 text-center">
+                  <AlertTriangle className="text-neutral-10 mx-auto mb-2 size-6" />
+                  <p className="text-neutral-10 text-xs">No span attributes found for this span.</p>
+                </div>
+              )}
+            </div>
+          )}
+          {activeView === 'resource-attributes' && (
+            <div>
+              {resourceAttributes.length > 0 ? (
+                <div>
+                  {resourceAttributes.map(attribute => (
+                    <AttributeRow
+                      key={attribute.key}
+                      attributeKey={attribute.key}
+                      value={String(attribute.value)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-4 text-center">
+                  <AlertTriangle className="text-neutral-10 mx-auto mb-2 size-6" />
+                  <p className="text-neutral-10 text-xs">
+                    No resource attributes found for this span.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          {activeView === 'events' && (
+            <div>
+              {span.events.length > 0 ? (
+                <div className="px-1 pt-2">
+                  {span.events.map((event, index) => {
+                    return (
+                      <div className="mb-2" key={`${event.name}_${event.date}_${index}`}>
+                        <ExceptionTeaser
+                          type={(event.attributes['exception.type'] as string | undefined) ?? ''}
+                          message={
+                            (event.attributes['exception.message'] as string | undefined) ?? ''
+                          }
+                          stacktrace={
+                            (event.attributes['exception.stacktrace'] as string | undefined) ?? ''
+                          }
+                          name={event.name}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-4 text-center">
+                  <AlertTriangle className="text-neutral-10 mx-auto mb-2 size-6" />
+                  <p className="text-neutral-10 text-xs">No events found for this span.</p>
+                </div>
+              )}
+            </div>
+          )}
+          {activeView === 'operation' && (
+            <GraphQLHighlight
+              height="100%"
+              options={{
+                fontSize: 10,
+                minimap: { enabled: false },
+              }}
+              code={span.spanAttributes['graphql.document'] as string}
+            />
+          )}
+        </ScrollArea>
+      </div>
     </Sheet>
   );
 }

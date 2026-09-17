@@ -55,14 +55,21 @@ export function OverlayBody({
   padBottom,
 }: {
   children: ReactNode;
-  /** `none` for content that lays itself out edge to edge, such as a list or a code editor. */
+  /**
+   * `none` for content that lays itself out edge to edge and owns its scrolling: a trace tree, a
+   * tab strip over a list, a code editor. It gets the remaining height as a flex column and no
+   * scroll area of its own.
+   */
   padding: 'default' | 'none';
   /** When nothing follows the body, it carries the bottom inset itself. */
   padBottom: boolean;
 }) {
+  if (padding === 'none') {
+    return <div className="flex min-h-0 grow flex-col">{children}</div>;
+  }
   return (
     <ScrollArea fill>
-      <div className={cn(padding === 'default' && 'px-6', padBottom && 'pb-6')}>{children}</div>
+      <div className={cn('px-6', padBottom && 'pb-6')}>{children}</div>
     </ScrollArea>
   );
 }
