@@ -1,39 +1,28 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 
 type DiscardAccessTokenDraftProps = {
+  open: boolean;
   onContinue: () => void;
   onDiscard: () => void;
 };
 
 export const DiscardAccessTokenDraft = ({
+  open,
   onContinue,
   onDiscard,
 }: DiscardAccessTokenDraftProps) => {
   return (
-    <AlertDialog open>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Do you want to discard the access token?</AlertDialogTitle>
-          <AlertDialogDescription>
-            If you discard now, any draft information will be lost.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => onContinue()}>
-            Continue creating token
-          </AlertDialogCancel>
-          <AlertDialogAction onClick={() => onDiscard()}>Discard draft token</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <AlertDialog
+      open={open}
+      onOpenChange={next => {
+        if (!next) {
+          onContinue();
+        }
+      }}
+      title="Do you want to discard the access token?"
+      description="If you discard now, any draft information will be lost."
+      confirm={{ label: 'Discard draft token', variant: 'destructive', onClick: onDiscard }}
+      cancel={{ label: 'Continue creating token' }}
+    />
   );
 };

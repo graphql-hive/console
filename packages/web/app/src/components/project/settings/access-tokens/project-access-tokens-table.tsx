@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useClient } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { DeleteAccessTokenConfirmationDialogue } from '@/components/organization/settings/access-tokens/delete-access-token-confirmation-dialogue';
+import { DeleteAccessTokenConfirmationDialog } from '@/components/organization/settings/access-tokens/delete-access-token-confirmation-dialog';
 import { TokenExpiration } from '@/components/organization/settings/access-tokens/token-expiration';
 import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';
 import { usePagedConnection } from '@/lib/hooks';
@@ -157,16 +157,15 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
         pagination={pagination}
         emptyMessage="No access tokens yet."
       />
-      {deleteAccessTokenId && (
-        <DeleteAccessTokenConfirmationDialogue
-          accessTokenId={deleteAccessTokenId}
-          onCancel={() => setDeleteAccessTokenId(null)}
-          onConfirm={() => {
-            setDeleteAccessTokenId(null);
-            props.refetch();
-          }}
-        />
-      )}
+      <DeleteAccessTokenConfirmationDialog
+        open={deleteAccessTokenId !== null}
+        accessTokenId={deleteAccessTokenId}
+        onCancel={() => setDeleteAccessTokenId(null)}
+        onConfirm={() => {
+          setDeleteAccessTokenId(null);
+          props.refetch();
+        }}
+      />
       <ProjectAccessTokenDetailViewSheet
         open={detailViewId !== null}
         organizationSlug={props.organizationSlug}

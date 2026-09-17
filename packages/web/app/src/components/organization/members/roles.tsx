@@ -929,6 +929,7 @@ export function OrganizationMemberRoles(props: {
         }
         confirm={{
           label: deleteRoleState.fetching ? 'Deleting...' : 'Continue',
+          variant: 'destructive',
           disabled: deleteRoleState.fetching,
           onClick: async () => {
             if (!roleToDelete) {

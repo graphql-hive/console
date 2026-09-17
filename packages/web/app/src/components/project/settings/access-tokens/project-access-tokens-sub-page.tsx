@@ -90,6 +90,7 @@ export function ProjectAccessTokensSubPage(
         </Sheet>
         {createAccessTokenState === CreateAccessTokenState.closing && (
           <DiscardAccessTokenDraft
+            open
             onContinue={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
             onDiscard={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
           />

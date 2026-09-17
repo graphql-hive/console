@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery } from 'urql';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { Button } from '@/components/ui/button';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { graphql } from '@/gql';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import { AccessTokenCreatedDialog } from './access-token-created-dialog';
 import { AccessTokensTable } from './access-tokens-table';
 import { CreateAccessTokenSheetContent } from './create-access-token-sheet-content';
 
@@ -45,6 +46,13 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
   const [createAccessTokenState, setCreateAccessTokenState] = useState<CreateAccessTokenState>(
     CreateAccessTokenState.closed,
   );
+  // Bumped once the sheet has finished closing, so the next draft starts fresh without cutting
+  // the exit transition short.
+  const [createSession, setCreateSession] = useState(0);
+  // A new token's key waits in the ref until the sheet has closed, then opens its own dialog.
+  const pendingKey = useRef<string | null>(null);
+  const [createdKey, setCreatedKey] = useState<string | null>(null);
+  const shownKey = useKeepPreviousData(createdKey ?? undefined, createdKey === null);
 
   return (
     <SubPageLayout>
@@ -68,40 +76,53 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
         }}
         sideContent={
           <>
-            <Sheet
-              open={createAccessTokenState !== CreateAccessTokenState.closed}
-              onOpenChange={isOpen => {
-                if (isOpen === false) {
-                  setCreateAccessTokenState(CreateAccessTokenState.closing);
-                  return;
+            {query.data?.organization ? (
+              <CreateAccessTokenSheetContent
+                key={createSession}
+                open={createAccessTokenState !== CreateAccessTokenState.closed}
+                onOpenChange={isOpen => {
+                  if (isOpen === false) {
+                    setCreateAccessTokenState(CreateAccessTokenState.closing);
+                    return;
+                  }
+                  setCreateAccessTokenState(CreateAccessTokenState.open);
+                }}
+                onOpenChangeComplete={isOpen => {
+                  if (!isOpen) {
+                    setCreateSession(s => s + 1);
+                    if (pendingKey.current !== null) {
+                      setCreatedKey(pendingKey.current);
+                      pendingKey.current = null;
+                    }
+                  }
+                }}
+                trigger={
+                  <Button data-cy="organization-settings-access-tokens-create-new">
+                    Create new access token
+                  </Button>
                 }
-                setCreateAccessTokenState(CreateAccessTokenState.open);
-              }}
-            >
-              <SheetTrigger asChild>
-                <Button data-cy="organization-settings-access-tokens-create-new">
-                  Create new access token
-                </Button>
-              </SheetTrigger>
-              {createAccessTokenState !== CreateAccessTokenState.closed &&
-                query.data?.organization && (
-                  <>
-                    <CreateAccessTokenSheetContent
-                      organization={query.data.organization}
-                      onSuccess={() => {
-                        setCreateAccessTokenState(CreateAccessTokenState.closed);
-                        refetchQuery();
-                      }}
-                    />
-                  </>
-                )}
-            </Sheet>
-            {createAccessTokenState === CreateAccessTokenState.closing && (
-              <DiscardAccessTokenDraft
-                onContinue={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
-                onDiscard={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
+                organization={query.data.organization}
+                onSuccess={privateAccessKey => {
+                  pendingKey.current = privateAccessKey;
+                  setCreateAccessTokenState(CreateAccessTokenState.closed);
+                  refetchQuery();
+                }}
               />
+            ) : (
+              <Button disabled data-cy="organization-settings-access-tokens-create-new">
+                Create new access token
+              </Button>
             )}
+            <DiscardAccessTokenDraft
+              open={createAccessTokenState === CreateAccessTokenState.closing}
+              onContinue={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
+              onDiscard={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
+            />
+            <AccessTokenCreatedDialog
+              open={createdKey !== null}
+              privateAccessKey={shownKey ?? ''}
+              onClose={() => setCreatedKey(null)}
+            />
           </>
         }
       />

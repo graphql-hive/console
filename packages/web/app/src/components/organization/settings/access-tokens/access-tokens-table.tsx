@@ -6,7 +6,7 @@ import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gq
 import { usePagedConnection } from '@/lib/hooks';
 import type { ColumnDef } from '@tanstack/react-table';
 import { AccessTokenDetailViewSheet } from './access-token-detail-view-sheet';
-import { DeleteAccessTokenConfirmationDialogue } from './delete-access-token-confirmation-dialogue';
+import { DeleteAccessTokenConfirmationDialog } from './delete-access-token-confirmation-dialog';
 import { TokenExpiration } from './token-expiration';
 
 const privateKeyFiller = new Array(20).fill('•').join('');
@@ -158,16 +158,15 @@ export function AccessTokensTable(props: AccessTokensTable) {
         pagination={pagination}
         emptyMessage="No access tokens yet."
       />
-      {deleteAccessTokenId && (
-        <DeleteAccessTokenConfirmationDialogue
-          accessTokenId={deleteAccessTokenId}
-          onCancel={() => setDeleteAccessTokenId(null)}
-          onConfirm={() => {
-            setDeleteAccessTokenId(null);
-            props.refetch();
-          }}
-        />
-      )}
+      <DeleteAccessTokenConfirmationDialog
+        open={deleteAccessTokenId !== null}
+        accessTokenId={deleteAccessTokenId}
+        onCancel={() => setDeleteAccessTokenId(null)}
+        onConfirm={() => {
+          setDeleteAccessTokenId(null);
+          props.refetch();
+        }}
+      />
       <AccessTokenDetailViewSheet
         open={detailViewId !== null}
         organizationSlug={props.organizationSlug}

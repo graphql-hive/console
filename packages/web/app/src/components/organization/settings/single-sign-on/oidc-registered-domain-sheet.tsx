@@ -452,7 +452,7 @@ export function OIDCRegisteredDomainSheet(props: {
         </Sheet.SheetContent>
       </Sheet.Sheet>
       {showDeleteDomainConfirmation && (
-        <DeleteDomainConfirmationDialogue
+        <DeleteDomainConfirmationDialog
           onClose={() => setShowDeleteDomainConfirmation(false)}
           onConfirm={onDeleteDomain}
         />
@@ -461,7 +461,7 @@ export function OIDCRegisteredDomainSheet(props: {
   );
 }
 
-function DeleteDomainConfirmationDialogue(props: { onClose: () => void; onConfirm: () => void }) {
+function DeleteDomainConfirmationDialog(props: { onClose: () => void; onConfirm: () => void }) {
   return (
     <AlertDialog.AlertDialog open>
       <AlertDialog.AlertDialogContent>
