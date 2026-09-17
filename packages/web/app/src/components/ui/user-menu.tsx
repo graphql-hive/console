@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import cookies from 'js-cookie';
 import { LifeBuoyIcon, UserRoundMinus } from 'lucide-react';
 import { useMutation } from 'urql';
@@ -88,13 +89,20 @@ export function UserMenu(props: {
   const currentOrganization = useFragment(UserMenu_OrganizationFragment, props.currentOrganization);
   const themeEntry = useThemeMenuEntry();
   const [isUserSettingsModalOpen, toggleUserSettingsModalOpen] = useToggle();
+  const [userSettingsSession, setUserSettingsSession] = useState(0);
   const [isLeaveOrganizationModalOpen, toggleLeaveOrganizationModalOpen] = useToggle();
 
   return (
     <>
       <UserSettingsModal
+        key={userSettingsSession}
         toggleModalOpen={toggleUserSettingsModalOpen}
         isOpen={isUserSettingsModalOpen}
+        onOpenChangeComplete={open => {
+          if (!open) {
+            setUserSettingsSession(s => s + 1);
+          }
+        }}
       />
       {currentOrganization?.me?.canLeaveOrganization ? (
         <LeaveOrganizationModal
