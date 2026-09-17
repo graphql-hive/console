@@ -72,6 +72,8 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
   const [_, mutate] = useMutation(SingleSignOnSubpage_CreateOIDCIntegrationMutation);
 
   const [modalState, setModalState] = useState(ConnectSingleSignOnProviderState.closed);
+  // Bumped once the sheet has closed, so the next open starts from a clean form.
+  const [sheetSession, setSheetSession] = useState(0);
 
   const organization = query.data?.organization;
   const oidcIntegration = organization?.oidcIntegration;
@@ -105,51 +107,56 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
               Connect Open ID Connect Provider
             </Button>
             <p>Your organization has currently no Open ID Connect provider configured.</p>
-            {modalState === ConnectSingleSignOnProviderState.open && (
-              <ConnectSingleSignOnProviderSheet
-                onClose={() => setModalState(ConnectSingleSignOnProviderState.closed)}
-                initialValues={null}
-                onSave={async values => {
-                  const result = await mutate({
-                    input: {
-                      organizationId: organization?.id ?? '',
-                      clientId: values.clientId,
-                      clientSecret: values.clientSecret ?? '',
-                      authorizationEndpoint: values.authorizationEndpoint,
-                      tokenEndpoint: values.tokenEndpoint,
-                      userinfoEndpoint: values.userinfoEndpoint,
-                      userIdClaim: values.userIdClaim,
-                      additionalScopes:
-                        values.additionalScopes.trim() === ''
-                          ? []
-                          : values.additionalScopes.trim().split(' '),
-                    },
-                  });
+            <ConnectSingleSignOnProviderSheet
+              key={sheetSession}
+              open={modalState === ConnectSingleSignOnProviderState.open}
+              onClose={() => setModalState(ConnectSingleSignOnProviderState.closed)}
+              onOpenChangeComplete={isOpen => {
+                if (!isOpen) {
+                  setSheetSession(s => s + 1);
+                }
+              }}
+              initialValues={null}
+              onSave={async values => {
+                const result = await mutate({
+                  input: {
+                    organizationId: organization?.id ?? '',
+                    clientId: values.clientId,
+                    clientSecret: values.clientSecret ?? '',
+                    authorizationEndpoint: values.authorizationEndpoint,
+                    tokenEndpoint: values.tokenEndpoint,
+                    userinfoEndpoint: values.userinfoEndpoint,
+                    userIdClaim: values.userIdClaim,
+                    additionalScopes:
+                      values.additionalScopes.trim() === ''
+                        ? []
+                        : values.additionalScopes.trim().split(' '),
+                  },
+                });
 
-                  if (result.data?.createOIDCIntegration.error) {
-                    const { error } = result.data.createOIDCIntegration;
-                    return {
-                      type: 'error',
-                      clientId: error.details.clientId ?? null,
-                      clientSecret: error.details.clientSecret ?? null,
-                      authorizationEndpoint: error.details.authorizationEndpoint ?? null,
-                      userinfoEndpoint: error.details.userinfoEndpoint ?? null,
-                      tokenEndpoint: error.details.tokenEndpoint ?? null,
-                      additionalScopes: error.details.additionalScopes ?? null,
-                    };
-                  }
-
-                  toast({
-                    variant: 'default',
-                    title: 'Set up OIDC provider.',
-                  });
-
+                if (result.data?.createOIDCIntegration.error) {
+                  const { error } = result.data.createOIDCIntegration;
                   return {
-                    type: 'success',
+                    type: 'error',
+                    clientId: error.details.clientId ?? null,
+                    clientSecret: error.details.clientSecret ?? null,
+                    authorizationEndpoint: error.details.authorizationEndpoint ?? null,
+                    userinfoEndpoint: error.details.userinfoEndpoint ?? null,
+                    tokenEndpoint: error.details.tokenEndpoint ?? null,
+                    additionalScopes: error.details.additionalScopes ?? null,
                   };
-                }}
-              />
-            )}
+                }
+
+                toast({
+                  variant: 'default',
+                  title: 'Set up OIDC provider.',
+                });
+
+                return {
+                  type: 'success',
+                };
+              }}
+            />
           </>
         )}
       </div>
