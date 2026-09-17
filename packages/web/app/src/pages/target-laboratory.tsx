@@ -53,7 +53,6 @@ import '@graphiql/plugin-explorer/style.css';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRedirect } from '@/lib/access/common';
 import { Kit } from '@/lib/kit';
 
@@ -457,22 +456,25 @@ function LaboratoryPageContent(props: {
           <div className="flex items-center gap-2">
             <Title>Laboratory</Title>
             <div className="bg-neutral-5 h-4 w-px" />
-            <Tabs
-              defaultValue={props.defaultLaboratoryTab}
+            <ToggleGroup
+              aria-label="Laboratory version"
+              value={props.defaultLaboratoryTab}
               onValueChange={value =>
                 props.onLaboratoryTabChange(value as 'graphiql' | 'hive-laboratory')
               }
-            >
-              <TabsList className="h-auto p-1">
-                <TabsTrigger value="graphiql" className="px-2 py-0">
-                  GraphiQL
-                </TabsTrigger>
-                <TabsTrigger value="hive-laboratory" className="px-2 py-0">
-                  Hive Laboratory
-                  <div className="bg-accent ml-1 size-2 rounded-full" />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+              options={[
+                { value: 'graphiql', label: 'GraphiQL' },
+                {
+                  value: 'hive-laboratory',
+                  label: (
+                    <>
+                      Hive Laboratory
+                      <span className="bg-accent ml-1 size-2 rounded-full" />
+                    </>
+                  ),
+                },
+              ]}
+            />
           </div>
           <Subtitle>Explore your GraphQL schema and run queries against your GraphQL API.</Subtitle>
           <p>
