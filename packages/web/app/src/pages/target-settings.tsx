@@ -221,15 +221,13 @@ function RegistryAccessTokens(props: {
         loading={tokensQuery.fetching && !tokensQuery.data}
         emptyMessage="No registry tokens yet."
       />
-      {isModalOpen && (
-        <CreateAccessTokenModal
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          isOpen={isModalOpen}
-          toggleModalOpen={toggleModalOpen}
-        />
-      )}
+      <CreateAccessTokenModal
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        isOpen={isModalOpen}
+        toggleModalOpen={toggleModalOpen}
+      />
     </SubPageLayout>
   );
 }

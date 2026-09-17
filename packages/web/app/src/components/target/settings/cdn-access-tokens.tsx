@@ -7,13 +7,12 @@ import { z } from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { PageLead } from '@/components/base/page-lead';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { Heading } from '@/components/ui/heading';
-import { AlertTriangleIcon } from '@/components/ui/icon';
 import { SubPageLayout } from '@/components/ui/page-content-layout';
-import { Modal } from '@/components/v2';
 import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -37,6 +36,8 @@ const CDNAccessTokenCreateMutation = graphql(`
 `);
 
 function CreateCDNAccessTokenModal(props: {
+  open: boolean;
+  onOpenChangeComplete: (open: boolean) => void;
   onCreateCDNAccessToken: () => void;
   onClose: () => void;
   organizationSlug: string;
@@ -75,17 +76,77 @@ function CreateCDNAccessTokenModal(props: {
     }
   }, [createCdnAccessToken.data?.createCdnAccessToken.ok?.createdCdnAccessToken.id]);
 
-  let body = (
-    <form className="flex flex-1 flex-col items-stretch gap-12" onSubmit={form.handleSubmit}>
-      <div className="flex flex-col gap-5">
-        <Heading className="text-center">Create CDN Access Token</Heading>
-      </div>
+  const result = createCdnAccessToken.data?.createCdnAccessToken;
 
-      <div className="flex flex-col gap-4">
+  if (result?.ok) {
+    return (
+      <Dialog
+        open={props.open}
+        onOpenChange={props.onClose}
+        onOpenChangeComplete={props.onOpenChangeComplete}
+        width="lg"
+        title="Create CDN Access Token"
+        description="The CDN Access Token was successfully created."
+        footer={<Button onClick={props.onClose}>Close</Button>}
+      >
+        <div className="flex flex-col gap-4">
+          <Callout type="warning">
+            Please store this access token securely. You will not be able to see it again.
+          </Callout>
+          <InlineCode content={result.ok.secretAccessToken} />
+        </div>
+      </Dialog>
+    );
+  }
+
+  if (result?.error) {
+    return (
+      <Dialog
+        open={props.open}
+        onOpenChange={props.onClose}
+        onOpenChangeComplete={props.onOpenChangeComplete}
+        width="lg"
+        title="Create CDN Access Token"
+        description="Something went wrong."
+        footer={<Button onClick={props.onClose}>Close</Button>}
+      >
+        <Callout type="warning">{result.error.message}</Callout>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog
+      open={props.open}
+      onOpenChange={props.onClose}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      width="lg"
+      title="Create CDN Access Token"
+      footer={
+        <>
+          <Button variant="outline" onClick={props.onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="create-cdn-access-token-form"
+            disabled={createCdnAccessToken.fetching}
+          >
+            Create
+          </Button>
+        </>
+      }
+    >
+      <form
+        id="create-cdn-access-token-form"
+        className="flex flex-col gap-4"
+        onSubmit={form.handleSubmit}
+      >
         <label className="text-sm font-semibold" htmlFor="alias">
           CDN Access Token Alias
         </label>
         <Input
+          id="alias"
           placeholder="Alias"
           name="alias"
           value={form.values.alias}
@@ -93,6 +154,7 @@ function CreateCDNAccessTokenModal(props: {
           onBlur={form.handleBlur}
           disabled={form.isSubmitting}
           invalid={form.touched.alias && !!form.errors.alias}
+          onSurface="raised"
           onKeyPress={ev => {
             if (ev.key === 'Enter') {
               ev.preventDefault();
@@ -103,76 +165,8 @@ function CreateCDNAccessTokenModal(props: {
         {form.touched.alias && form.errors.alias ? (
           <span className="text-sm text-red-500">{form.errors.alias}</span>
         ) : null}
-      </div>
-
-      <div className="mt-auto flex w-full gap-2 self-end">
-        <Button
-          variant="secondary"
-          className="ml-auto"
-          onClick={ev => {
-            ev.preventDefault();
-            props.onClose();
-          }}
-        >
-          Cancel
-        </Button>
-
-        <Button type="submit" disabled={createCdnAccessToken.fetching}>
-          Create
-        </Button>
-      </div>
-    </form>
-  );
-
-  if (createCdnAccessToken.data?.createCdnAccessToken.ok) {
-    body = (
-      <div className="flex flex-1 flex-col items-stretch gap-12">
-        <div className="flex flex-col gap-5">
-          <Heading className="text-center">Create CDN Access Token</Heading>
-        </div>
-
-        <p>The CDN Access Token was successfully created.</p>
-
-        <div className="flex items-center gap-2 rounded-sm bg-yellow-500/10 p-4 text-yellow-500">
-          <AlertTriangleIcon className="size-5" />
-          <span>
-            Please store this access token securely. You will not be able to see it again.
-          </span>
-        </div>
-
-        <InlineCode content={createCdnAccessToken.data.createCdnAccessToken.ok.secretAccessToken} />
-
-        <div className="mt-auto flex w-full gap-2 self-end">
-          <Button className="ml-auto" onClick={props.onClose}>
-            Close
-          </Button>
-        </div>
-      </div>
-    );
-  } else if (createCdnAccessToken.data?.createCdnAccessToken.error) {
-    body = (
-      <div className="flex flex-1 flex-col items-stretch gap-12">
-        <div className="flex flex-col gap-5">
-          <Heading className="text-center">Delete CDN Access Token</Heading>
-        </div>
-
-        <p>Something went wrong.</p>
-
-        <Callout type="warning">
-          {createCdnAccessToken.data?.createCdnAccessToken.error.message}
-        </Callout>
-
-        <Button className="ml-auto" onClick={props.onClose}>
-          Close
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <Modal open className="w-[650px]" onOpenChange={props.onClose}>
-      {body}
-    </Modal>
+      </form>
+    </Dialog>
   );
 }
 
@@ -190,7 +184,10 @@ const CDNAccessTokenDeleteMutation = graphql(`
 `);
 
 function DeleteCDNAccessTokenModal(props: {
-  cdnAccessTokenId: string;
+  open: boolean;
+  onOpenChangeComplete: (open: boolean) => void;
+  /** Null while closed. */
+  cdnAccessTokenId: string | null;
   onDeletedAccessTokenId: (deletedAccessTokenId: string) => void;
   onClose: () => void;
   organizationSlug: string;
@@ -207,91 +204,82 @@ function DeleteCDNAccessTokenModal(props: {
     }
   }, [deleteCdnAccessToken.data?.deleteCdnAccessToken.ok?.deletedCdnAccessTokenId ?? null]);
 
-  const onClose = () => props.onClose();
+  const result = deleteCdnAccessToken.data?.deleteCdnAccessToken;
 
-  let body = (
-    <div className="flex flex-1 flex-col items-stretch gap-12">
-      <div className="flex flex-col gap-5">
-        <Heading className="text-center">Delete CDN Access Tokens</Heading>
-      </div>
-      <Callout type="warning">
-        Deleting an CDN access token can not be undone. After deleting the access token it might
-        take up to 5 minutes before the changes are propagated across the CDN.
-      </Callout>
-      <p>Are you sure you want to delete the CDN Access Token?</p>
-
-      <div className="mt-auto flex w-full gap-2 self-end">
-        <Button className="ml-auto" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          disabled={deleteCdnAccessToken.fetching}
-          variant="destructive"
-          onClick={() =>
-            mutate({
-              input: {
-                target: {
-                  bySelector: {
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
-                  },
-                },
-                cdnAccessTokenId: props.cdnAccessTokenId,
-              },
-            })
-          }
-        >
-          Delete
-        </Button>
-      </div>
-    </div>
-  );
-
-  if (deleteCdnAccessToken.data?.deleteCdnAccessToken.ok) {
-    body = (
-      <div className="flex flex-1 flex-col items-stretch gap-12">
-        <div className="flex flex-col gap-5">
-          <Heading className="text-center">Delete CDN Access Token</Heading>
-        </div>
-
-        <p>The CDN Access Token was successfully deleted.</p>
-
+  if (result?.ok) {
+    return (
+      <AlertDialog
+        open={props.open}
+        onOpenChange={props.onClose}
+        onOpenChangeComplete={props.onOpenChangeComplete}
+        title="Delete CDN Access Token"
+        description="The CDN Access Token was successfully deleted."
+        confirm={{ label: 'Close', onClick: props.onClose }}
+        cancel={false}
+      >
         <Callout type="warning">
           It can take up to 5 minutes before the changes are propagated across the CDN.
         </Callout>
-        <div className="mt-auto flex w-full gap-2 self-end">
-          <Button className="ml-auto" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </div>
+      </AlertDialog>
     );
-  } else if (deleteCdnAccessToken.data?.deleteCdnAccessToken.error) {
-    body = (
-      <div className="flex flex-1 flex-col items-stretch gap-12">
-        <div className="flex flex-col gap-5">
-          <Heading className="text-center">Delete CDN Access Token</Heading>
-        </div>
+  }
 
-        <p>Something went wrong.</p>
-
-        <Callout type="warning">
-          {deleteCdnAccessToken.data?.deleteCdnAccessToken.error.message}
-        </Callout>
-        <div className="mt-auto flex w-full gap-2 self-end">
-          <Button className="ml-auto" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </div>
+  if (result?.error) {
+    return (
+      <AlertDialog
+        open={props.open}
+        onOpenChange={props.onClose}
+        onOpenChangeComplete={props.onOpenChangeComplete}
+        title="Delete CDN Access Token"
+        description="Something went wrong."
+        confirm={{ label: 'Close', onClick: props.onClose }}
+        cancel={false}
+      >
+        <Callout type="warning">{result.error.message}</Callout>
+      </AlertDialog>
     );
   }
 
   return (
-    <Modal open className="w-[650px]" onOpenChange={onClose}>
-      {body}
-    </Modal>
+    <AlertDialog
+      open={props.open}
+      onOpenChange={next => {
+        if (!next && !deleteCdnAccessToken.fetching) {
+          props.onClose();
+        }
+      }}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      title="Delete CDN Access Token"
+      description="Are you sure you want to delete the CDN Access Token?"
+      confirm={{
+        label: 'Delete',
+        variant: 'destructive',
+        disabled: deleteCdnAccessToken.fetching || !props.cdnAccessTokenId,
+        onClick: () => {
+          if (!props.cdnAccessTokenId) {
+            return;
+          }
+          void mutate({
+            input: {
+              target: {
+                bySelector: {
+                  organizationSlug: props.organizationSlug,
+                  projectSlug: props.projectSlug,
+                  targetSlug: props.targetSlug,
+                },
+              },
+              cdnAccessTokenId: props.cdnAccessTokenId,
+            },
+          });
+        },
+      }}
+      cancel={{ disabled: deleteCdnAccessToken.fetching }}
+    >
+      <Callout type="warning">
+        Deleting an CDN access token can not be undone. After deleting the access token it might
+        take up to 5 minutes before the changes are propagated across the CDN.
+      </Callout>
+    </AlertDialog>
   );
 }
 
@@ -347,6 +335,13 @@ export function CDNAccessTokens(props: {
         page: 'cdn',
       },
     });
+  };
+
+  const [overlaySession, setOverlaySession] = useState(0);
+  const resetOnClose = (isOpen: boolean) => {
+    if (!isOpen) {
+      setOverlaySession(s => s + 1);
+    }
   };
 
   const [target, reexecuteQuery] = useQuery({
@@ -408,29 +403,31 @@ export function CDNAccessTokens(props: {
         }}
       />
 
-      {searchParams.cdn === 'create' ? (
-        <CreateCDNAccessTokenModal
-          onCreateCDNAccessToken={() => {
-            reexecuteQuery({ requestPolicy: 'network-only' });
-          }}
-          onClose={closeModal}
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-        />
-      ) : null}
-      {searchParams.cdn === 'delete' ? (
-        <DeleteCDNAccessTokenModal
-          cdnAccessTokenId={searchParams.id}
-          onDeletedAccessTokenId={() => {
-            reexecuteQuery({ requestPolicy: 'network-only' });
-          }}
-          onClose={closeModal}
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-        />
-      ) : null}
+      <CreateCDNAccessTokenModal
+        key={`create-${overlaySession}`}
+        open={searchParams.cdn === 'create'}
+        onOpenChangeComplete={resetOnClose}
+        onCreateCDNAccessToken={() => {
+          reexecuteQuery({ requestPolicy: 'network-only' });
+        }}
+        onClose={closeModal}
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+      />
+      <DeleteCDNAccessTokenModal
+        key={`delete-${overlaySession}`}
+        open={searchParams.cdn === 'delete'}
+        onOpenChangeComplete={resetOnClose}
+        cdnAccessTokenId={searchParams.cdn === 'delete' ? searchParams.id : null}
+        onDeletedAccessTokenId={() => {
+          reexecuteQuery({ requestPolicy: 'network-only' });
+        }}
+        onClose={closeModal}
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+      />
     </SubPageLayout>
   );
 }
