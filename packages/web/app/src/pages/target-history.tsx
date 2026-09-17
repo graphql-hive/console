@@ -51,9 +51,11 @@ const HistoryPage_VersionsPageQuery = graphql(`
                 targetSlug
               }
               ... on SchemaVersionPublishOrigin {
+                revision
                 publishedSubgraphs {
                   name
                   versionId
+                  revision
                 }
               }
               ... on SchemaVersionSubgraphRemoveOrigin {
@@ -131,7 +133,10 @@ function ListPage(props: {
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-3">
               <div className="mr-1 truncate font-mono text-xs font-semibold">
-                {version.id.substring(0, 8)}
+                {version.origin.__typename === 'SchemaVersionPublishOrigin' &&
+                version.origin.revision
+                  ? version.origin.revision
+                  : version.id.substring(0, 8)}
               </div>
               {version.origin.__typename === 'SchemaVersionPublishOrigin' && (
                 <span className="text-2xs font-mono uppercase tracking-wide text-emerald-400">
@@ -157,7 +162,7 @@ function ListPage(props: {
                     <span key={idx} className="text-xs">
                       <PackageIcon className="mt-0.25 mr-1 inline size-3" />
                       <span className="font-mono">
-                        {service.name}@{service.versionId.substring(0, 8)}
+                        {service.name}@{service.revision ?? service.versionId.substring(0, 8)}
                       </span>
                     </span>
                   ))}

@@ -3,6 +3,7 @@ import { gql } from 'graphql-modules';
 export default gql`
   extend type Mutation {
     schemaPublish(input: SchemaPublishInput!): SchemaPublishPayload!
+    schemaPush(input: SchemaPushInput!): SchemaPushResult!
     schemaCheck(input: SchemaCheckInput!): SchemaCheckPayload!
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
@@ -335,6 +336,7 @@ export default gql`
     date: DateTime!
     commit: ID! @tag(name: "public")
     metadata: String
+    revision: SchemaRevision
   }
 
   type CompositeSchema {
@@ -346,6 +348,7 @@ export default gql`
     url: String @tag(name: "public")
     service: String @tag(name: "public")
     metadata: String
+    revision: SchemaRevision
   }
 
   union SchemaPublishPayload =
@@ -372,7 +375,8 @@ export default gql`
     target: TargetReferenceInput
     service: ID
     url: String
-    sdl: String!
+    sdl: String @deprecated(reason: "Use 'SchemaPublishInput.schema' instead.")
+    schema: SchemaPublishSchemaInput
     author: String!
     commit: String!
     force: Boolean @deprecated(reason: "Enabled by default for newly created projects")
@@ -398,6 +402,46 @@ export default gql`
     Whether the CLI supports retrying the schema publish, in case acquiring the schema publish lock fails due to a busy queue.
     """
     supportsRetry: Boolean = false
+  }
+
+  input SchemaPublishSchemaInput @oneOf {
+    """
+    Publish a specific sdl as the schema.
+    """
+    sdl: String
+    """
+    Publish a schema revision that was previously pushed via 'Mutation.schemaPush'.
+    """
+    revision: String
+  }
+
+  input SchemaPushInput {
+    target: TargetReferenceInput!
+    service: String
+    sdl: String!
+    revision: String!
+  }
+
+  type SchemaRevision {
+    id: ID!
+    service: String
+    digest: String!
+    revision: String!
+    createdAt: DateTime!
+    expiresAt: DateTime
+  }
+
+  type SchemaPushOk {
+    schemaRevision: SchemaRevision!
+  }
+
+  type SchemaPushError {
+    message: String!
+  }
+
+  type SchemaPushResult {
+    ok: SchemaPushOk
+    error: SchemaPushError
   }
 
   input SchemaComposeInput {
@@ -1982,6 +2026,10 @@ export default gql`
     """
     id: ID!
     """
+    The user-provided immutable revision for this subgraph version, if any.
+    """
+    revision: String
+    """
     The service name.
     """
     serviceName: String!
@@ -2078,6 +2126,10 @@ export default gql`
   type SubgraphOriginSubgraphReference {
     name: String! @tag(name: "public")
     versionId: ID! @tag(name: "public")
+    """
+    The user-provided immutable revision used for this publish, if any.
+    """
+    revision: String
   }
 
   type SchemaVersionSubgraphRemoveOrigin {
@@ -2088,6 +2140,11 @@ export default gql`
   }
 
   type SchemaVersionPublishOrigin {
+    """
+    The user-provided immutable revision used for a monolith publish, if any.
+    """
+    revision: String
+
     """
     The subgraphs published as part of this version.
     This value is 'null' for non-federation projects.

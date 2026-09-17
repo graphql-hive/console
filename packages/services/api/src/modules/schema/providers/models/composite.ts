@@ -532,6 +532,7 @@ export class CompositeModel {
       service: string;
       url: string | null;
       metadata: string | null;
+      skipNoChangesCheck: boolean;
     };
     project: Project;
     organization: Organization;
@@ -605,7 +606,7 @@ export class CompositeModel {
       },
     });
 
-    if (checksumCheck === 'unchanged') {
+    if (checksumCheck === 'unchanged' && !input.skipNoChangesCheck) {
       return {
         conclusion: SchemaPublishConclusion.Ignore,
         reason: PublishIgnoreReasonCode.NoChanges,

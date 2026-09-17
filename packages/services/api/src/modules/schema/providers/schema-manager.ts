@@ -490,6 +490,8 @@ export class SchemaManager {
       existingSchemaLogs: Array<{ id: string; serviceName: string | null }>;
       base_schema: string | null;
       metadata: string | null;
+      schemaRevisionId: string | null;
+      revision: string | null;
       actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: string | null;

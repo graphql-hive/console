@@ -189,7 +189,7 @@ function transformAccessTokenLegacyScopes(args: {
               'appDeployment:retire',
               'schemaVersion:publish',
               'schemaVersion:deleteService',
-              'schemaVersion:publish',
+              'schema:push',
               'schemaCheck:approve',
             ],
             resource: [`hrn:${args.organizationId}:target/${args.targetId}`],

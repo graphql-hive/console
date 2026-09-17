@@ -1022,7 +1022,7 @@ export function initSeed() {
                       );
                     },
                     async publishSchema(options: {
-                      sdl: string;
+                      sdl?: string;
                       headerName?: 'x-api-token' | 'authorization';
                       author?: string;
                       force?: boolean;
@@ -1036,6 +1036,7 @@ export function initSeed() {
                        * @deprecated
                        */
                       github?: boolean | null;
+                      revision?: string;
                     }) {
                       return await publishSchema(
                         {
@@ -1050,6 +1051,7 @@ export function initSeed() {
                             options.experimental_acceptBreakingChanges,
                           failOnCompositionError: options.failOnCompositionError,
                           github: options.github,
+                          schema: options.revision ? { revision: options.revision } : undefined,
                         },
                         secret,
                         options.headerName || 'authorization',
