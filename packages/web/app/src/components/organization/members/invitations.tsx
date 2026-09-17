@@ -356,6 +356,7 @@ function InvitationActions(props: {
         }
         confirm={{
           label: deleteInvitationState.fetching ? 'Deleting...' : 'Continue',
+          variant: 'destructive',
           disabled: deleteInvitationState.fetching,
           onClick: async () => {
             try {

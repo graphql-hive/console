@@ -31,6 +31,11 @@ export type DialogProps = {
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Fires once the open or close transition has finished. The place to reset a form after a
+   * close, since resetting on `onOpenChange` would show the reset mid-transition.
+   */
+  onOpenChangeComplete?: (open: boolean) => void;
   /** What opens the dialog. Optional: most dialogs are opened by state set somewhere else. */
   trigger?: FloatingProps['trigger'];
   title: ReactNode;
@@ -51,6 +56,7 @@ export function Dialog({
   open,
   defaultOpen,
   onOpenChange,
+  onOpenChangeComplete,
   trigger,
   title,
   description,
@@ -70,6 +76,7 @@ export function Dialog({
       open={open}
       defaultOpen={defaultOpen}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       disablePointerDismissal={!dismissible}
     >
       {trigger ? <BaseDialog.Trigger render={trigger as ReactElement} /> : null}

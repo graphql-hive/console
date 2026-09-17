@@ -465,7 +465,7 @@ export function CreatePersonalAccessTokenSheetContent(
         )}
       </Stepper.StepperProvider>
       {createPersonalAccessTokenState.data?.createPersonalAccessToken.ok && (
-        <AcessTokenCreatedConfirmationDialogue
+        <AccessTokenCreatedConfirmationDialog
           onClose={props.onSuccess}
           privateAccessKey={
             createPersonalAccessTokenState.data.createPersonalAccessToken.ok.privateAccessKey
@@ -476,7 +476,7 @@ export function CreatePersonalAccessTokenSheetContent(
   );
 }
 
-function AcessTokenCreatedConfirmationDialogue(props: {
+function AccessTokenCreatedConfirmationDialog(props: {
   privateAccessKey: string;
   onClose: () => void;
 }) {
@@ -500,12 +500,12 @@ function AcessTokenCreatedConfirmationDialogue(props: {
         <AlertDialog.AlertDialogFooter>
           <div className="ml-0 mr-auto flex items-center space-x-2 pr-2">
             <Checkbox
-              id="AcessTokenCreatedConfirmationDialogue-isConfirmed"
+              id="AccessTokenCreatedConfirmationDialog-isConfirmed"
               checked={isConfirmed}
               onCheckedChange={value => setIsConfirmed(!!value)}
             />
             <label
-              htmlFor="AcessTokenCreatedConfirmationDialogue-isConfirmed"
+              htmlFor="AccessTokenCreatedConfirmationDialog-isConfirmed"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               I stored the access token somewhere safe

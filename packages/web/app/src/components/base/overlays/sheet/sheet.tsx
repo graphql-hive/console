@@ -30,6 +30,8 @@ export type SheetProps = {
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Fires once the open or close transition has finished; see Dialog. */
+  onOpenChangeComplete?: (open: boolean) => void;
   /** What opens the sheet. Optional: most sheets are opened by state set somewhere else. */
   trigger?: FloatingProps['trigger'];
   title: ReactNode;
@@ -52,6 +54,7 @@ export function Sheet({
   open,
   defaultOpen,
   onOpenChange,
+  onOpenChangeComplete,
   trigger,
   title,
   description,
@@ -71,6 +74,7 @@ export function Sheet({
       open={open}
       defaultOpen={defaultOpen}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       disablePointerDismissal={!dismissible}
     >
       {trigger ? <BaseDialog.Trigger render={trigger as ReactElement} /> : null}
