@@ -13,6 +13,7 @@ import { PageLead } from '@/components/base/page-lead';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { SubPageLayout } from '@/components/ui/page-content-layout';
+import { useToast } from '@/components/ui/use-toast';
 import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -185,7 +186,6 @@ const CDNAccessTokenDeleteMutation = graphql(`
 
 function DeleteCDNAccessTokenModal(props: {
   open: boolean;
-  onOpenChangeComplete: (open: boolean) => void;
   /** Null while closed. */
   cdnAccessTokenId: string | null;
   onDeletedAccessTokenId: (deletedAccessTokenId: string) => void;
@@ -195,50 +195,7 @@ function DeleteCDNAccessTokenModal(props: {
   targetSlug: string;
 }): ReactElement {
   const [deleteCdnAccessToken, mutate] = useMutation(CDNAccessTokenDeleteMutation);
-
-  useEffect(() => {
-    if (deleteCdnAccessToken.data?.deleteCdnAccessToken.ok?.deletedCdnAccessTokenId) {
-      props.onDeletedAccessTokenId(
-        deleteCdnAccessToken.data.deleteCdnAccessToken.ok.deletedCdnAccessTokenId,
-      );
-    }
-  }, [deleteCdnAccessToken.data?.deleteCdnAccessToken.ok?.deletedCdnAccessTokenId ?? null]);
-
-  const result = deleteCdnAccessToken.data?.deleteCdnAccessToken;
-
-  if (result?.ok) {
-    return (
-      <AlertDialog
-        open={props.open}
-        onOpenChange={props.onClose}
-        onOpenChangeComplete={props.onOpenChangeComplete}
-        title="Delete CDN Access Token"
-        description="The CDN Access Token was successfully deleted."
-        confirm={{ label: 'Close', onClick: props.onClose }}
-        cancel={false}
-      >
-        <Callout type="warning">
-          It can take up to 5 minutes before the changes are propagated across the CDN.
-        </Callout>
-      </AlertDialog>
-    );
-  }
-
-  if (result?.error) {
-    return (
-      <AlertDialog
-        open={props.open}
-        onOpenChange={props.onClose}
-        onOpenChangeComplete={props.onOpenChangeComplete}
-        title="Delete CDN Access Token"
-        description="Something went wrong."
-        confirm={{ label: 'Close', onClick: props.onClose }}
-        cancel={false}
-      >
-        <Callout type="warning">{result.error.message}</Callout>
-      </AlertDialog>
-    );
-  }
+  const { toast } = useToast();
 
   return (
     <AlertDialog
@@ -248,7 +205,6 @@ function DeleteCDNAccessTokenModal(props: {
           props.onClose();
         }
       }}
-      onOpenChangeComplete={props.onOpenChangeComplete}
       title="Delete CDN Access Token"
       description="Are you sure you want to delete the CDN Access Token?"
       confirm={{
@@ -270,6 +226,24 @@ function DeleteCDNAccessTokenModal(props: {
               },
               cdnAccessTokenId: props.cdnAccessTokenId,
             },
+          }).then(result => {
+            const ok = result.data?.deleteCdnAccessToken.ok;
+            if (ok) {
+              props.onDeletedAccessTokenId(ok.deletedCdnAccessTokenId);
+              toast({
+                title: 'CDN access token deleted',
+                description:
+                  'It can take up to 5 minutes before the changes are propagated across the CDN.',
+              });
+              props.onClose();
+              return;
+            }
+            toast({
+              variant: 'destructive',
+              title: 'Failed to delete CDN access token',
+              description:
+                result.error?.message ?? result.data?.deleteCdnAccessToken.error?.message,
+            });
           });
         },
       }}
@@ -404,7 +378,7 @@ export function CDNAccessTokens(props: {
       />
 
       <CreateCDNAccessTokenModal
-        key={`create-${overlaySession}`}
+        key={overlaySession}
         open={searchParams.cdn === 'create'}
         onOpenChangeComplete={resetOnClose}
         onCreateCDNAccessToken={() => {
@@ -416,9 +390,7 @@ export function CDNAccessTokens(props: {
         targetSlug={props.targetSlug}
       />
       <DeleteCDNAccessTokenModal
-        key={`delete-${overlaySession}`}
         open={searchParams.cdn === 'delete'}
-        onOpenChangeComplete={resetOnClose}
         cdnAccessTokenId={searchParams.cdn === 'delete' ? searchParams.id : null}
         onDeletedAccessTokenId={() => {
           reexecuteQuery({ requestPolicy: 'network-only' });
