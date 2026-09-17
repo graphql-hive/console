@@ -105,15 +105,16 @@ function SortHeader<TData>({
     <button
       type="button"
       // Not TanStack's toggle handler: it ignores columns without an accessor, and a
-      // server-sorted column has no reason to carry one.
-      onClick={() => header.column.toggleSorting()}
+      // server-sorted column has no reason to carry one. Shift stacks a tiebreaker
+      // the way the handler would.
+      onClick={event => header.column.toggleSorting(undefined, event.shiftKey)}
       className="text-neutral-10 hover:text-neutral-12 inline-flex items-center gap-1 text-xs font-medium"
     >
       {label}
       <ArrowDown
         className={cn(
           'size-3 transition-transform',
-          sorted ? 'opacity-100' : 'opacity-30',
+          sorted ? 'text-success' : 'opacity-30',
           sorted === 'asc' && 'rotate-180',
         )}
       />
@@ -152,6 +153,8 @@ export function DataTable<TData>({
     onSortingChange: sorting?.onChange ?? setOwnSorting,
     manualSorting: sorting?.manual ?? false,
     enableSortingRemoval: !sorting?.manual,
+    // The server APIs take a single sort key, so shift falls back to a plain click there.
+    enableMultiSort: !sorting?.manual,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: pagination.kind === 'client' ? getPaginationRowModel() : undefined,
