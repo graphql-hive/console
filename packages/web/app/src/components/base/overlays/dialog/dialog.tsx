@@ -27,10 +27,13 @@ const popupClass = cn(
   'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
 );
 
+/** Why the dialog is opening or closing, with `cancel()` to keep it where it is. */
+export type DialogChangeEventDetails = BaseDialog.Root.ChangeEventDetails;
+
 export type DialogProps = {
   open?: boolean;
   defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (open: boolean, details: DialogChangeEventDetails) => void;
   /**
    * Fires once the open or close transition has finished. The place to reset a form after a
    * close, since resetting on `onOpenChange` would show the reset mid-transition.

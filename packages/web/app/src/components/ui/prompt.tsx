@@ -2,91 +2,81 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useState,
   type FC,
   type FormEvent,
   type ReactNode,
 } from 'react';
 import { Input } from '@/components/base/input/input';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 
 interface PromptProps {
   id: number;
   onClose: (id: number, value: string | null) => void;
-  title: string;
-  description?: string;
   defaultValue?: string;
-  isVisible: boolean;
 }
 
-export function Prompt(props: PromptProps) {
-  const defaultValue = props.defaultValue || '';
-  const [value, setValue] = useState(defaultValue);
-
-  useEffect(() => {
-    setValue(defaultValue);
-  }, [defaultValue]);
+function Prompt(props: PromptProps) {
+  const [value, setValue] = useState(props.defaultValue || '');
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     props.onClose(props.id, value);
   };
 
-  if (!props.isVisible) {
-    return null;
-  }
-
   return (
-    <DialogContent data-cy="prompt" hideCloseButton>
-      <DialogHeader>
-        <DialogTitle>{props.title}</DialogTitle>
-        {props.description && <DialogDescription>{props.description}</DialogDescription>}
-      </DialogHeader>
-      <form onSubmit={handleSubmit}>
-        <div className="mt-4">
-          <Input value={value} onChange={e => setValue(e.target.value)} onSurface="raised" />
-        </div>
-        <DialogFooter className="mt-4">
-          <Button
-            type="button"
-            data-cy="prompt-cancel"
-            variant="outline"
-            onClick={() => props.onClose(props.id, null)}
-          >
-            Cancel
-          </Button>
-          <Button type="submit">OK</Button>
-        </DialogFooter>
-      </form>
-    </DialogContent>
+    <form id="prompt-form" onSubmit={handleSubmit}>
+      <Input value={value} onChange={e => setValue(e.target.value)} onSurface="raised" />
+    </form>
   );
 }
 
 export function PromptManager() {
   const { prompts, closePrompt } = usePromptManager();
+  // The last prompt stays up through the close transition.
+  const prompt = useKeepPreviousData(prompts[0], prompts.length === 0);
 
   return (
-    <Dialog open={prompts.length > 0}>
-      {prompts.map((prompt, index) => (
+    <Dialog
+      open={prompts.length > 0}
+      onOpenChange={open => {
+        if (!open && prompt) {
+          closePrompt(prompt.id, null);
+        }
+      }}
+      closeButton={false}
+      dismissible={false}
+      title={prompt?.title ?? ''}
+      description={prompt?.description}
+      attrs={{ 'data-cy': 'prompt' }}
+      footer={
+        prompt ? (
+          <>
+            <Button
+              type="button"
+              data-cy="prompt-cancel"
+              variant="outline"
+              onClick={() => closePrompt(prompt.id, null)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" form="prompt-form">
+              OK
+            </Button>
+          </>
+        ) : null
+      }
+    >
+      {prompt ? (
         <Prompt
           key={prompt.id}
           id={prompt.id}
           onClose={closePrompt}
-          title={prompt.title}
-          description={prompt.description}
           defaultValue={prompt.defaultValue}
-          isVisible={index === 0}
         />
-      ))}
+      ) : null}
     </Dialog>
   );
 }
