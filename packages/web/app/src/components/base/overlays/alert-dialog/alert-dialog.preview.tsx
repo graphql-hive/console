@@ -1,16 +1,5 @@
 import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
-import {
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialog as LegacyAlertDialog,
-} from '@/components/ui/alert-dialog';
-import { Button as LegacyButton } from '@/components/ui/button';
 import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { AlertDialog } from './alert-dialog';
@@ -109,53 +98,6 @@ export const WithField = createPreview(() => {
         aria-label="Project slug"
       />
     </AlertDialog>
-  );
-});
-
-/**
- * The same question on `ui/alert-dialog` and on base, for the gate. The legacy action prevents
- * the default so the dialog stays open, as the members list does.
- */
-export const Legacy = createPreview(() => {
-  const [legacyOpen, setLegacyOpen] = useState(false);
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="flex gap-3">
-      <LegacyButton variant="destructive" onClick={() => setLegacyOpen(true)}>
-        Legacy
-      </LegacyButton>
-      <LegacyAlertDialog open={legacyOpen} onOpenChange={setLegacyOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove member?</AlertDialogTitle>
-            <AlertDialogDescription>
-              They lose access to every project in the organization. You can invite them again
-              later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={event => {
-                event.preventDefault();
-                setLegacyOpen(false);
-              }}
-            >
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </LegacyAlertDialog>
-      <AlertDialog
-        open={open}
-        onOpenChange={setOpen}
-        trigger={<Button variant="destructive">Base</Button>}
-        title="Remove member?"
-        description="They lose access to every project in the organization. You can invite them again later."
-        confirm={{ label: 'Remove', variant: 'destructive', onClick: () => setOpen(false) }}
-      />
-    </div>
   );
 });
 

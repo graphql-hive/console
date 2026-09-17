@@ -1,14 +1,5 @@
 import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
-import { Button as LegacyButton } from '@/components/ui/button';
-import {
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Dialog as LegacyDialog,
-} from '@/components/ui/dialog';
 import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { Dialog } from './dialog';
@@ -140,59 +131,6 @@ export const Locked = createPreview(() => {
     >
       <Input onSurface="raised" defaultValue="GetUser" aria-label="Operation name" />
     </Dialog>
-  );
-});
-
-/**
- * The same dialog on `ui/dialog` and on base, for the gate. The legacy one carries the width
- * classes the laboratory modals set by hand.
- */
-export const Legacy = createPreview(() => {
-  const [legacyOpen, setLegacyOpen] = useState(false);
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="flex gap-3">
-      <LegacyButton onClick={() => setLegacyOpen(true)}>Legacy</LegacyButton>
-      <LegacyDialog open={legacyOpen} onOpenChange={setLegacyOpen}>
-        <DialogContent className="w-4/5 max-w-[600px] md:w-3/5">
-          <DialogHeader>
-            <DialogTitle>Create collection</DialogTitle>
-            <DialogDescription>
-              Collections keep related operations together in the laboratory.
-            </DialogDescription>
-          </DialogHeader>
-          <CollectionFields />
-          <DialogFooter>
-            <LegacyButton variant="outline" onClick={() => setLegacyOpen(false)}>
-              Cancel
-            </LegacyButton>
-            <LegacyButton variant="primary" onClick={() => setLegacyOpen(false)}>
-              Create
-            </LegacyButton>
-          </DialogFooter>
-        </DialogContent>
-      </LegacyDialog>
-      <Dialog
-        open={open}
-        onOpenChange={setOpen}
-        trigger={<Button variant="primary">Base</Button>}
-        width="lg"
-        title="Create collection"
-        description="Collections keep related operations together in the laboratory."
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={() => setOpen(false)}>
-              Create
-            </Button>
-          </>
-        }
-      >
-        <CollectionFields />
-      </Dialog>
-    </div>
   );
 });
 

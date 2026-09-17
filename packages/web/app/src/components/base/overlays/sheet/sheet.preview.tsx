@@ -1,14 +1,5 @@
 import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
-import { Button as LegacyButton } from '@/components/ui/button';
-import {
-  Sheet as LegacySheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { ScrollArea } from '../../scroll-area/scroll-area';
@@ -137,58 +128,6 @@ export const EdgeToEdge = createPreview(() => (
     </ScrollArea>
   </Sheet>
 ));
-
-/**
- * The same sheet on `ui/sheet` and on base, for the gate. The legacy one carries the scroll
- * layout every token sheet set by hand.
- */
-export const Legacy = createPreview(() => {
-  const [legacyOpen, setLegacyOpen] = useState(false);
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="flex gap-3">
-      <LegacyButton onClick={() => setLegacyOpen(true)}>Legacy</LegacyButton>
-      <LegacySheet open={legacyOpen} onOpenChange={setLegacyOpen}>
-        <SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
-          <SheetHeader>
-            <SheetTitle>Create access token</SheetTitle>
-            <SheetDescription>
-              Scope the token to the resources and permissions it needs.
-            </SheetDescription>
-          </SheetHeader>
-          <TokenFields count={14} />
-          <SheetFooter className="mb-0 mt-auto">
-            <LegacyButton variant="outline" onClick={() => setLegacyOpen(false)}>
-              Cancel
-            </LegacyButton>
-            <LegacyButton variant="primary" onClick={() => setLegacyOpen(false)}>
-              Create
-            </LegacyButton>
-          </SheetFooter>
-        </SheetContent>
-      </LegacySheet>
-      <Sheet
-        open={open}
-        onOpenChange={setOpen}
-        trigger={<Button variant="primary">Base</Button>}
-        title="Create access token"
-        description="Scope the token to the resources and permissions it needs."
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={() => setOpen(false)}>
-              Create
-            </Button>
-          </>
-        }
-      >
-        <TokenFields count={14} />
-      </Sheet>
-    </div>
-  );
-});
 
 export const Playground = createPreview({
   controls: controlsFor(Sheet, {
