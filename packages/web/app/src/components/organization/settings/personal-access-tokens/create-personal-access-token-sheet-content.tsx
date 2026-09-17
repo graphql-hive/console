@@ -338,6 +338,7 @@ export function CreatePersonalAccessTokenSheetContent(
                                   onBlur={field.onBlur}
                                   name={field.name}
                                   width="full"
+                                  onSurface="raised"
                                 />
                               </Form.FormControl>
                               <Form.FormDescription>
@@ -362,6 +363,7 @@ export function CreatePersonalAccessTokenSheetContent(
                             </Form.FormLabel>
                             <Form.FormControl>
                               <PermissionSelector
+                                onSurface="raised"
                                 permissionGroups={
                                   organization.me?.availablePersonalAccessTokenPermissionGroups ??
                                   []

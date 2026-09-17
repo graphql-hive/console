@@ -68,6 +68,7 @@ export function RoleMappingPickerSheet(props: {
           Assigned Member Role
         </Heading>
         <MemberRoleSelector
+          onSurface="raised"
           organization={organization}
           currentRoleId={initialSelectedRoleId}
           selectedRoleId={props.selectedRoleId}
