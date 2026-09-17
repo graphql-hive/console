@@ -81,5 +81,5 @@ export type ControlSize = 'compact' | 'default';
 
 export const controlSize = {
   compact: 'h-7.5 text-control',
-  default: 'h-9 text-control',
+  default: 'h-9 text-sm',
 } as const satisfies Record<ControlSize, string>;
