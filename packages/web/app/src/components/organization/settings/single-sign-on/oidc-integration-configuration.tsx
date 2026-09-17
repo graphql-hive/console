@@ -7,22 +7,12 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Switch } from '@/components/base/switch/switch';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
@@ -418,12 +408,13 @@ export function OIDCIntegrationConfiguration(props: {
           };
         }}
       />
-      {modalState === ModalState.openDelete && (
-        <RemoveOIDCIntegrationModal
-          close={() => setModalState(ModalState.closed)}
-          oidcIntegrationId={oidcIntegration.id}
-        />
-      )}
+      <RemoveOIDCIntegrationModal
+        key={`delete-${overlaySession}`}
+        open={modalState === ModalState.openDelete}
+        close={() => setModalState(ModalState.closed)}
+        onOpenChangeComplete={resetOnClose}
+        oidcIntegrationId={oidcIntegration.id}
+      />
       <DebugOIDCIntegrationModal
         key={`debug-${overlaySession}`}
         open={modalState === ModalState.openDebugLogs}
@@ -473,6 +464,7 @@ function OIDCDomainConfiguration(props: {
           domainId: string;
         },
   );
+  const [enforceOpen, setEnforceOpen] = useState(false);
 
   const columns = useMemo<ColumnDef<RegisteredDomain, unknown>[]>(
     () => [
@@ -555,51 +547,45 @@ function OIDCDomainConfiguration(props: {
               blocked. The organization owner is excluded from this restriction.
             </p>
           </div>
-          <AlertDialog>
-            <AlertDialogContent>
-              {oidcIntegration.oidcForVerifiedDomainsRequired ? (
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Disable enforced OIDC login</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Users will be able to login with any method, such as email + password or social
-                    logins.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-              ) : (
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Enforce OIDC login</AlertDialogTitle>{' '}
-                  <AlertDialogDescription>
-                    Users will no longer be able to login with email+password or social logins.
-                    <Callout type="warning">
-                      This action can potentially lock you out of the organization. Make sure your
-                      OIDC provider is configured properly and you can log in using it.
-                    </Callout>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-              )}
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  variant="destructive"
-                  onClick={() =>
-                    props.onRestrictionChange(
-                      'oidcForVerifiedDomainsRequired',
-                      !oidcIntegration.oidcForVerifiedDomainsRequired,
-                    )
-                  }
-                >
-                  {oidcIntegration.oidcForVerifiedDomainsRequired
-                    ? 'Disable enforced ODIC login'
-                    : 'Enforce OIDC login'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-            <AlertDialogTrigger>
-              <Switch
-                checked={oidcIntegration.oidcForVerifiedDomainsRequired}
-                data-cy="oidc-require-verified-domain-login-toggle"
-              />
-            </AlertDialogTrigger>
+          {/* The switch only asks; the dialog's confirm flips the setting. */}
+          <Switch
+            checked={oidcIntegration.oidcForVerifiedDomainsRequired}
+            onCheckedChange={() => setEnforceOpen(true)}
+            data-cy="oidc-require-verified-domain-login-toggle"
+          />
+          <AlertDialog
+            open={enforceOpen}
+            onOpenChange={setEnforceOpen}
+            title={
+              oidcIntegration.oidcForVerifiedDomainsRequired
+                ? 'Disable enforced OIDC login'
+                : 'Enforce OIDC login'
+            }
+            description={
+              oidcIntegration.oidcForVerifiedDomainsRequired
+                ? 'Users will be able to login with any method, such as email + password or social logins.'
+                : 'Users will no longer be able to login with email+password or social logins.'
+            }
+            confirm={{
+              label: oidcIntegration.oidcForVerifiedDomainsRequired
+                ? 'Disable enforced ODIC login'
+                : 'Enforce OIDC login',
+              variant: 'destructive',
+              onClick: () => {
+                props.onRestrictionChange(
+                  'oidcForVerifiedDomainsRequired',
+                  !oidcIntegration.oidcForVerifiedDomainsRequired,
+                );
+                setEnforceOpen(false);
+              },
+            }}
+          >
+            {oidcIntegration.oidcForVerifiedDomainsRequired ? null : (
+              <Callout type="warning">
+                This action can potentially lock you out of the organization. Make sure your OIDC
+                provider is configured properly and you can log in using it.
+              </Callout>
+            )}
           </AlertDialog>
         </div>
       </Card>
@@ -740,32 +726,24 @@ function OIDCAccessSettings(props: {
               : []),
           ]}
         />
-        <AlertDialog open={confirmSCIMProvisioning} onOpenChange={setConfirmSCIMProvisioning}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Require SCIM provisioning?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Users who are not provisioned through SCIM will no longer be able to access this
-                organization. The organization owner is not affected.
-                <Callout type="warning">
-                  Members with unresolved SCIM provisioning conflicts will keep their current access
-                  until you review them. New OIDC users must first be provisioned through SCIM.
-                </Callout>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                onClick={() => {
-                  props.onRestrictionChange('userProvisioningRequired', true);
-                  setConfirmSCIMProvisioning(false);
-                }}
-              >
-                Require SCIM provisioning
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
+        <AlertDialog
+          open={confirmSCIMProvisioning}
+          onOpenChange={setConfirmSCIMProvisioning}
+          title="Require SCIM provisioning?"
+          description="Users who are not provisioned through SCIM will no longer be able to access this organization. The organization owner is not affected."
+          confirm={{
+            label: 'Require SCIM provisioning',
+            variant: 'destructive',
+            onClick: () => {
+              props.onRestrictionChange('userProvisioningRequired', true);
+              setConfirmSCIMProvisioning(false);
+            },
+          }}
+        >
+          <Callout type="warning">
+            Members with unresolved SCIM provisioning conflicts will keep their current access until
+            you review them. New OIDC users must first be provisioned through SCIM.
+          </Callout>
         </AlertDialog>
         {isSCIMProvisioningEnabled ? (
           <>
@@ -989,57 +967,56 @@ const RemoveOIDCIntegrationModal_DeleteOIDCIntegrationMutation = graphql(`
 `);
 
 function RemoveOIDCIntegrationModal(props: {
+  open: boolean;
   close: () => void;
+  /** Fires once the close transition has finished; the parent remounts the modal on it. */
+  onOpenChangeComplete: (open: boolean) => void;
   oidcIntegrationId: null | string;
 }): ReactElement {
   const [mutation, mutate] = useMutation(RemoveOIDCIntegrationModal_DeleteOIDCIntegrationMutation);
   const { oidcIntegrationId } = props;
+  const removed = !!mutation.data?.deleteOIDCIntegration.ok;
 
   return (
-    <Dialog open onOpenChange={props.close}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Remove OpenID Connect Integration</DialogTitle>
-        </DialogHeader>
-        {mutation.data?.deleteOIDCIntegration.ok ? (
-          <>
-            <p>The OIDC integration has been removed successfully.</p>
-            <div className="text-right">
-              <Button onClick={props.close}>Close</Button>
-            </div>
-          </>
-        ) : oidcIntegrationId === null ? (
-          <>
-            <p>This organization does not have an OIDC integration.</p>
-            <div className="text-right">
-              <Button onClick={props.close}>Close</Button>
-            </div>
-          </>
+    <Dialog
+      open={props.open}
+      onOpenChange={props.close}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      title="Remove OpenID Connect Integration"
+      footer={
+        removed || oidcIntegrationId === null ? (
+          <Button onClick={props.close}>Close</Button>
         ) : (
           <>
-            <Callout type="warning">
-              This action is not reversible and revoke access to all users that have signed in with
-              this OIDC integration.
-            </Callout>
-            <p>Do you really want to proceed?</p>
-
-            <div className="space-x-2 text-right">
-              <Button variant="outline" onClick={props.close}>
-                Close
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={mutation.fetching}
-                onClick={async () => {
-                  await mutate({ input: { oidcIntegrationId } });
-                }}
-              >
-                Delete
-              </Button>
-            </div>
+            <Button variant="outline" onClick={props.close}>
+              Close
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={mutation.fetching}
+              onClick={async () => {
+                await mutate({ input: { oidcIntegrationId } });
+              }}
+            >
+              Delete
+            </Button>
           </>
-        )}
-      </DialogContent>
+        )
+      }
+    >
+      {removed ? (
+        <p>The OIDC integration has been removed successfully.</p>
+      ) : oidcIntegrationId === null ? (
+        <p>This organization does not have an OIDC integration.</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <Callout type="warning">
+            This action is not reversible and revoke access to all users that have signed in with
+            this OIDC integration.
+          </Callout>
+          <p>Do you really want to proceed?</p>
+        </div>
+      )}
     </Dialog>
   );
 }
