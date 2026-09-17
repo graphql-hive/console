@@ -1,5 +1,92 @@
 # @graphql-hive/cli
 
+## 0.64.0
+
+### Minor Changes
+
+- [#8498](https://github.com/graphql-hive/console/pull/8498)
+  [`995a5de`](https://github.com/graphql-hive/console/commit/995a5de801ad60071102114f457c1894730b88cd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add `schema:publish --fail-on-composition-error` to
+  prevent publishing a federation schema that would cause a composition error.
+
+  Closes https://github.com/graphql-hive/console/issues/7588
+
+- [#8489](https://github.com/graphql-hive/console/pull/8489)
+  [`a2fef64`](https://github.com/graphql-hive/console/commit/a2fef64a482e6be6ea844c6a03b1ce62bed86ffb)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add custom HTTP headers to requests sent by the
+  Hive CLI to the registry endpoint. This supports internal setups where the registry is available
+  only through a proxy or gateway that requires additional authentication, tenant, routing, or
+  network headers.
+
+  For persistent configuration, add a `headers` object to the `registry` section of `hive.json`:
+
+  ```json
+  {
+    "registry": {
+      "endpoint": "https://hive.internal.example.com/graphql",
+      "accessToken": "YOUR_HIVE_TOKEN",
+      "headers": {
+        "X-Internal-Proxy-Token": "YOUR_PROXY_TOKEN",
+        "X-Tenant-ID": "engineering"
+      }
+    }
+  }
+  ```
+
+  For one-off commands or CI environments, pass the repeatable `--registry.header` flag using
+  `Name=Value` syntax:
+
+  ```shell
+  hive schema:check schema.graphql \
+    --registry.header 'X-Internal-Proxy-Token=YOUR_PROXY_TOKEN' \
+    --registry.header 'X-Tenant-ID=engineering'
+  ```
+
+  Headers supplied with `--registry.header` override headers with the same name from `hive.json`.
+  The CLI-managed authorization and client identification headers cannot be overridden by custom
+  headers.
+
+### Patch Changes
+
+- [#8490](https://github.com/graphql-hive/console/pull/8490)
+  [`dbc26a5`](https://github.com/graphql-hive/console/commit/dbc26a5f88369ca83a54d1d0e50e7acac53a95dd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add `schema:push` for uploading immutable named
+  schema revisions without publishing them immediately. A pushed revision can later be published by
+  passing `--revision` to `schema:publish` instead of retrieving the SDL from a file or GraphQL
+  endpoint.
+
+  Push and publish a monolith schema revision:
+
+  ```sh
+  hive schema:push schema.graphql \
+    --target my-org/my-project/my-target \
+    --revision "$REVISION"
+  
+  hive schema:publish \
+    --target my-org/my-project/my-target \
+    --revision "$REVISION"
+  ```
+
+  For a federated schema, provide the service when pushing:
+
+  ```sh
+  hive schema:push products.graphql \
+    --target my-org/my-project/my-target \
+    --service products \
+    --revision "$REVISION"
+  
+  hive schema:publish \
+    --target my-org/my-project/my-target \
+    --service products \
+    --url https://products.example.com/graphql \
+    --revision "$REVISION"
+  ```
+
+  Revision names are immutable for a service within a project. Pushing different SDL with an
+  existing revision fails with an error such as
+  `Revision 'products@abc123' already exists with a different schema.` Attempting to publish an
+  unknown revision reports `Schema revision 'abc123' was not found.`
+
 ## 0.63.2
 
 ### Patch Changes

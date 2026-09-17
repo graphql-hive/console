@@ -1022,11 +1022,12 @@ export function initSeed() {
                       );
                     },
                     async publishSchema(options: {
-                      sdl: string;
+                      sdl?: string;
                       headerName?: 'x-api-token' | 'authorization';
                       author?: string;
                       force?: boolean;
                       experimental_acceptBreakingChanges?: boolean;
+                      failOnCompositionError?: boolean;
                       commit?: string;
                       service?: string;
                       url?: string;
@@ -1035,6 +1036,7 @@ export function initSeed() {
                        * @deprecated
                        */
                       github?: boolean | null;
+                      revision?: string;
                     }) {
                       return await publishSchema(
                         {
@@ -1047,7 +1049,9 @@ export function initSeed() {
                           metadata: options.metadata,
                           experimental_acceptBreakingChanges:
                             options.experimental_acceptBreakingChanges,
+                          failOnCompositionError: options.failOnCompositionError,
                           github: options.github,
+                          schema: options.revision ? { revision: options.revision } : undefined,
                         },
                         secret,
                         options.headerName || 'authorization',
