@@ -27,9 +27,11 @@ import {
 import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
+import { Select } from '@/components/base/floating/select/select';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
+import { TabbedView } from '@/components/base/tabs/tabbed-view';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import {
   ChangesBlock,
@@ -40,7 +42,6 @@ import { File, MultiFileDiff } from '@/components/ui/diffs';
 import { Link } from '@/components/ui/link';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
@@ -237,43 +238,6 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
     [!!schemaVersion.subgraphDiffs],
   );
 
-  const availableViews: Array<{
-    value: string;
-    label: string | ReactElement;
-    tooltip: string;
-    icon: ReactElement;
-  }> = [
-    {
-      value: 'details',
-      icon: <ListBulletIcon className="h-4 w-auto flex-none" />,
-      label: 'Summary',
-      tooltip: 'A summary of the changes.',
-    },
-    {
-      value: 'full-schema',
-      icon: <FileCode2 className="h-4 w-auto flex-none" />,
-      label: 'Schema',
-      tooltip: 'Show diff of the schema',
-    },
-  ];
-
-  if (schemaVersion.subgraphDiffs) {
-    availableViews.push(
-      {
-        value: 'supergraph',
-        icon: <Layers className="h-4 w-auto flex-none" />,
-        label: 'Supergraph',
-        tooltip: 'Show diff of the supergraph',
-      },
-      {
-        value: 'service-schema',
-        icon: <CubeIcon className="h-4 w-auto flex-none" />,
-        label: 'Subgraphs',
-        tooltip: 'Show diff of the subgraphs',
-      },
-    );
-  }
-
   const contractOrVersion = useMemo(() => {
     if (contractVersionNode) {
       return {
@@ -302,6 +266,106 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
     };
   }, [schemaVersion, contractVersionNode]);
 
+  const contractVersions = schemaVersion.contractVersions?.edges ?? [];
+  const contractPicker = contractVersions.length ? (
+    <Select
+      value={selectedItem}
+      onValueChange={setSelectedItem}
+      options={[
+        {
+          value: 'default',
+          label: 'Default Graph',
+          icon: versionStatusIcon(schemaVersion, {
+            changed: 'Main graph schema changed',
+            succeeded: 'Composition succeeded.',
+            failed: 'Composition failed.',
+          }),
+        },
+        ...contractVersions.map(edge => ({
+          value: edge.node.id,
+          label: `${edge.node.contractName}@${edge.node.id.substring(0, 8)}`,
+          icon: versionStatusIcon(edge.node, {
+            changed: 'Contract schema changed',
+            succeeded: 'Contract composition succeeded.',
+            failed: 'Contract composition failed.',
+          }),
+        })),
+      ]}
+      size="compact"
+      onSurface="raised"
+      width="md"
+    />
+  ) : undefined;
+
+  const summary =
+    schemaVersion.subgraphDiffs === null && contractOrVersion.isFirstComposableVersion ? (
+      <FirstComposableGraphVersion />
+    ) : (
+      <>
+        {contractOrVersion.schemaCompositionErrors && (
+          <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+        )}
+        <SchemaVersionSummary schemaVersion={schemaVersion} contractVersion={contractVersionNode} />
+        {!schemaVersion.subgraphDiffs && (
+          <GraphQLSchemaView
+            title="GraphQL Schema"
+            subtitle="The GraphQL Schema used by GraphQL consumers."
+            changes={contractOrVersion.sdlChanges?.edges.map(edge => edge.node) ?? null}
+            currentSdl={contractOrVersion.sdl ?? ''}
+            previousSdl={contractOrVersion.previousDiffableVersion?.sdl ?? null}
+            fromName={
+              contractOrVersion.previousDiffableVersion
+                ? `schema@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
+                : null
+            }
+            toName={`schema@${contractOrVersion.id.substring(0, 8)}`}
+          />
+        )}
+      </>
+    );
+
+  const publicSchema = contractOrVersion.schemaCompositionErrors ? (
+    <>
+      <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+      <p>No schema available as the composition did not succeed.</p>
+    </>
+  ) : (
+    <GraphQLSchemaView
+      title="Public GraphQL Schema"
+      subtitle="The GraphQL Schema used by GraphQL consumers."
+      changes={contractOrVersion.sdlChanges?.edges.map(edge => edge.node) ?? null}
+      currentSdl={contractOrVersion.sdl ?? ''}
+      previousSdl={contractOrVersion.previousDiffableVersion?.sdl ?? null}
+      fromName={
+        contractOrVersion.previousDiffableVersion
+          ? `schema@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
+          : null
+      }
+      toName={`schema@${contractOrVersion.id.substring(0, 8)}`}
+    />
+  );
+
+  const supergraph = contractOrVersion.schemaCompositionErrors ? (
+    <>
+      <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+      <p>No supergraph available as the composition did not succeed.</p>
+    </>
+  ) : (
+    <GraphQLSchemaView
+      title="Supergraph"
+      subtitle="Learn how the supergraph consumed by the Federation Router is affected."
+      changes={contractOrVersion.supergraphChanges?.edges.map(edge => edge.node) ?? null}
+      currentSdl={contractOrVersion.supergraphSdl ?? ''}
+      previousSdl={contractOrVersion.previousDiffableVersion?.supergraphSdl ?? null}
+      fromName={
+        contractOrVersion.previousDiffableVersion
+          ? `supergraph@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
+          : null
+      }
+      toName={`supergraph@${schemaVersion.id.substring(0, 8)}`}
+    />
+  );
+
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col py-6">
       <div className="mb-3">
@@ -311,176 +375,71 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
           projectSlug={props.projectSlug}
           targetSlug={props.targetSlug}
         />
-        {schemaVersion.contractVersions?.edges && (
-          <Tabs
-            defaultValue="default"
-            className="mt-3"
-            value={selectedItem}
-            onValueChange={value => setSelectedItem(value)}
-          >
-            <TabsList className="w-full justify-start rounded-b-none bg-transparent px-2 py-0">
-              <TabsTrigger
-                value="default"
-                className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
-              >
-                <span className="font-mono text-xs">Default Graph</span>
-                {schemaVersion.hasSchemaChanges ? (
-                  <StatusTooltip
-                    icon={<GitCompareIcon className="size-4 pl-1" />}
-                    label="Main graph schema changed"
-                  />
-                ) : schemaVersion.isComposable ? (
-                  <StatusTooltip
-                    icon={<CheckIcon className="size-4 pl-1" />}
-                    label="Composition succeeded."
-                  />
-                ) : (
-                  <StatusTooltip
-                    icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
-                    label="Composition failed."
-                  />
-                )}
-              </TabsTrigger>
-              {schemaVersion.contractVersions?.edges.map(edge => (
-                <TabsTrigger
-                  value={edge.node.id}
-                  key={edge.node.id}
-                  className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
-                >
-                  <span className="font-mono text-xs">
-                    {edge.node.contractName}@{edge.node.id.substring(0, 8)}
-                  </span>
-
-                  {edge.node.hasSchemaChanges ? (
-                    <StatusTooltip
-                      icon={<GitCompareIcon className="size-4 pl-1" />}
-                      label="Contract schema changed"
-                    />
-                  ) : edge.node.isComposable ? (
-                    <StatusTooltip
-                      icon={<CheckIcon className="size-4 pl-1" />}
-                      label="Contract composition succeeded."
-                    />
-                  ) : (
-                    <StatusTooltip
-                      icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
-                      label="Contract composition failed."
-                    />
-                  )}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        )}
-        {/**
-         * For Monolitic Schemas the tabs do not really make a lot of sense.
-         * Having all the information on a single page here is better.
-         */}
-        {schemaVersion.subgraphDiffs && (
-          <Tabs
-            value={selectedView}
-            onValueChange={value => setSelectedView(value)}
-            className="mt-6"
-          >
-            <TabsList variant="content">
-              {availableViews.map(item => (
-                <TabsTrigger
-                  key={item.value}
-                  value={item.value}
-                  variant="content"
-                  className={cn('items-center-safe mx-3 inline-flex pb-2')}
-                >
-                  {item.icon}
-                  <span className="ml-2">{item.label}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        )}
-        <div className={cn('mt-4 space-y-8', schemaVersion.subgraphDiffs && 'px-4')}>
-          {selectedView === 'details' && (
-            <>
-              {schemaVersion.subgraphDiffs === null &&
-              contractOrVersion.isFirstComposableVersion ? (
-                <FirstComposableGraphVersion />
-              ) : (
-                <>
-                  {contractOrVersion.schemaCompositionErrors && (
-                    <CompositionErrors
-                      compositionErrors={contractOrVersion.schemaCompositionErrors}
-                    />
-                  )}
-                  <SchemaVersionSummary
-                    schemaVersion={schemaVersion}
-                    contractVersion={contractVersionNode}
-                  />
-                  {!schemaVersion.subgraphDiffs && (
-                    <GraphQLSchemaView
-                      title="GraphQL Schema"
-                      subtitle="The GraphQL Schema used by GraphQL consumers."
-                      changes={contractOrVersion.sdlChanges?.edges.map(edge => edge.node) ?? null}
-                      currentSdl={contractOrVersion.sdl ?? ''}
-                      previousSdl={contractOrVersion.previousDiffableVersion?.sdl ?? null}
-                      fromName={
-                        contractOrVersion.previousDiffableVersion
-                          ? `schema@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
-                          : null
-                      }
-                      toName={`schema@${contractOrVersion.id.substring(0, 8)}`}
-                    />
-                  )}
-                </>
-              )}
-            </>
-          )}
-          {selectedView === 'full-schema' &&
-            (contractOrVersion.schemaCompositionErrors ? (
-              <>
-                <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
-                <p>No schema available as the composition did not succeed.</p>
-              </>
-            ) : (
-              <GraphQLSchemaView
-                title="Public GraphQL Schema"
-                subtitle="The GraphQL Schema used by GraphQL consumers."
-                changes={contractOrVersion.sdlChanges?.edges.map(edge => edge.node) ?? null}
-                currentSdl={contractOrVersion.sdl ?? ''}
-                previousSdl={contractOrVersion.previousDiffableVersion?.sdl ?? null}
-                fromName={
-                  contractOrVersion.previousDiffableVersion
-                    ? `schema@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
-                    : null
-                }
-                toName={`schema@${contractOrVersion.id.substring(0, 8)}`}
-              />
-            ))}
-          {selectedView === 'supergraph' &&
-            (contractOrVersion.schemaCompositionErrors ? (
-              <>
-                <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
-                <p>No supergraph available as the composition did not succeed.</p>
-              </>
-            ) : (
-              <GraphQLSchemaView
-                title="Supergraph"
-                subtitle="Learn how the supergraph consumed by the Federation Router is affected."
-                changes={contractOrVersion.supergraphChanges?.edges.map(edge => edge.node) ?? null}
-                currentSdl={contractOrVersion.supergraphSdl ?? ''}
-                previousSdl={contractOrVersion.previousDiffableVersion?.supergraphSdl ?? null}
-                fromName={
-                  contractOrVersion.previousDiffableVersion
-                    ? `supergraph@${contractOrVersion.previousDiffableVersion.id.substring(0, 8)}`
-                    : null
-                }
-                toName={`supergraph@${schemaVersion.id.substring(0, 8)}`}
-              />
-            ))}
-          {selectedView === 'service-schema' && schemaVersion.subgraphDiffs && (
-            <GraphVersionSubgraphView subgraphDiffs={schemaVersion.subgraphDiffs} />
-          )}
-        </div>
       </div>
+      {/* A monolithic schema has no subgraphs, so its summary sits on the page without tabs. */}
+      {schemaVersion.subgraphDiffs ? (
+        <TabbedView
+          value={selectedView}
+          onValueChange={setSelectedView}
+          action={contractPicker}
+          items={[
+            {
+              value: 'details',
+              label: 'Summary',
+              icon: ListBulletIcon,
+              content: <div className="space-y-8">{summary}</div>,
+            },
+            {
+              value: 'full-schema',
+              label: 'Schema',
+              icon: FileCode2,
+              content: <div className="space-y-8">{publicSchema}</div>,
+            },
+            {
+              value: 'supergraph',
+              label: 'Supergraph',
+              icon: Layers,
+              content: <div className="space-y-8">{supergraph}</div>,
+            },
+            {
+              value: 'service-schema',
+              label: 'Subgraphs',
+              icon: CubeIcon,
+              content: (
+                <div className="space-y-8">
+                  <GraphVersionSubgraphView subgraphDiffs={schemaVersion.subgraphDiffs} />
+                </div>
+              ),
+            },
+          ]}
+        />
+      ) : (
+        <div className="mt-4 space-y-8">{summary}</div>
+      )}
     </div>
+  );
+}
+
+function versionStatusIcon(
+  version: { hasSchemaChanges: boolean; isComposable: boolean },
+  labels: { changed: string; succeeded: string; failed: string },
+) {
+  if (version.hasSchemaChanges) {
+    return <StatusTooltip icon={<GitCompareIcon className="size-3.5" />} label={labels.changed} />;
+  }
+  if (version.isComposable) {
+    return (
+      <StatusTooltip
+        icon={<CheckIcon className="text-success size-3.5" />}
+        label={labels.succeeded}
+      />
+    );
+  }
+  return (
+    <StatusTooltip
+      icon={<ExclamationTriangleIcon className="text-warning size-3.5" />}
+      label={labels.failed}
+    />
   );
 }
 
@@ -514,7 +473,7 @@ function GraphQLSchemaView(props: {
 
   return (
     <>
-      <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionHeader title={props.title} subtitle={props.subtitle} />
         {props.previousSdl && <ViewModeToggle active={viewMode} onChange={setViewMode} />}
       </div>
@@ -722,7 +681,7 @@ function GraphVersionSubgraphView(props: {
       function Component(props: { children: ReactNode }) {
         return (
           <>
-            <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+            <div className="flex flex-wrap items-end justify-between gap-4">
               <SectionHeader
                 title="Subgraphs"
                 subtitle="Per-subgraph state and changes introduced by this version."

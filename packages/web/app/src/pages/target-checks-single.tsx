@@ -1,4 +1,4 @@
-import { Fragment, ReactElement, useCallback, useMemo, useState } from 'react';
+import { Fragment, ReactElement, ReactNode, useCallback, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import {
   ArrowRight,
@@ -14,9 +14,11 @@ import {
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { Select } from '@/components/base/floating/select/select';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Switch } from '@/components/base/switch/switch';
+import { TabbedView, type TabbedViewItem } from '@/components/base/tabs/tabbed-view';
 import { Textarea } from '@/components/base/textarea/textarea';
 import {
   ChangesBlock,
@@ -37,7 +39,6 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { DownloadButton } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -613,294 +614,278 @@ function DefaultSchemaView(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  /** The contract picker, leading the tab strip. */
+  action?: ReactNode;
 }) {
   const schemaCheck = useFragment(DefaultSchemaView_SchemaCheckFragment, props.schemaCheck);
   const [selectedView, setSelectedView] = useState<string>('details');
   const [scrollToLine, setScrollToLine] = useState<number | undefined>();
 
-  const items = [
+  const items: TabbedViewItem[] = [
     {
-      testId: 'details-view-btn',
       value: 'details',
-      icon: <ListBulletIcon className="h-5 w-auto flex-none" />,
       label: 'Details',
-      tooltip: 'Details',
-      isDisabled: false,
+      icon: ListBulletIcon,
+      attrs: { 'data-testid': 'details-view-btn' },
+      content: (
+        <div className="p-5">
+          {!schemaCheck.schemaPolicyWarnings?.edges?.length &&
+            !schemaCheck.safeSchemaChanges?.edges?.length &&
+            !schemaCheck.breakingSchemaChanges?.edges?.length &&
+            !schemaCheck.schemaPolicyErrors?.edges?.length &&
+            !schemaCheck.hasSchemaCompositionErrors &&
+            !schemaCheck.baseline?.compositionErrors?.length && <NoGraphChanges />}
+          {schemaCheck.baseline?.compositionErrors?.length ? (
+            <CompositionErrorsList
+              title="Baseline Composition Errors"
+              description="The supplied baseline could not be composed, no schema diff could be performed."
+              errors={schemaCheck.baseline.compositionErrors}
+            />
+          ) : null}
+          {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.compositionErrors && (
+            <CompositionErrorsSection compositionErrors={schemaCheck.compositionErrors} />
+          )}
+          {schemaCheck.breakingSchemaChanges?.edges.length ? (
+            <div className="mb-5">
+              <ChangesBlock
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                schemaCheckId={schemaCheck.id}
+                title={<BreakingChangesTitle />}
+                changesWithUsage={schemaCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
+                conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
+              />
+            </div>
+          ) : null}
+          {schemaCheck.safeSchemaChanges ? (
+            <div className="mb-5">
+              <ChangesBlock
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                schemaCheckId={schemaCheck.id}
+                title="Safe Changes"
+                changes={schemaCheck.safeSchemaChanges.edges.map(edge => edge.node)}
+              />
+            </div>
+          ) : null}
+          {schemaCheck.schemaPolicyErrors?.edges.length ? (
+            <div className="mb-5">
+              <PolicyBlock
+                title="Schema Policy Errors"
+                policies={schemaCheck.schemaPolicyErrors}
+                type="error"
+              />
+            </div>
+          ) : null}
+          {schemaCheck.schemaPolicyWarnings ? (
+            <div className="mb-5">
+              <PolicyBlock
+                title="Schema Policy Warnings"
+                policies={schemaCheck.schemaPolicyWarnings}
+                type="warning"
+                goToline={line => {
+                  setScrollToLine(Math.max((line ?? 0) - 1, 0));
+                  setSelectedView('policy');
+                }}
+              />
+            </div>
+          ) : null}
+          <ConditionalBreakingChangesMetadataSection schemaCheck={schemaCheck} />
+        </div>
+      ),
     },
   ];
 
   if (schemaCheck.serviceName) {
     items.push({
-      testId: 'service-view-btn',
       value: 'service',
-      icon: <DiffIcon className="h-5 w-auto flex-none" />,
       label: 'Service',
-      tooltip: 'Service',
-      isDisabled: false,
+      icon: DiffIcon,
+      attrs: { 'data-testid': 'service-view-btn' },
+      content:
+        schemaCheck.baseline?.sdl === schemaCheck.schemaSDL ? (
+          <SDLSingleView
+            sdl={schemaCheck.schemaSDL}
+            downloadFileName="service.graphqls"
+            title={
+              schemaCheck.serviceName ? (
+                <span className="flex items-center gap-1">
+                  {schemaCheck.baseline?.meta ? (
+                    <>
+                      <span className="font-mono" data-testid="schema-title-before">
+                        {schemaCheck.serviceName}@
+                        {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                      </span>
+                      <ArrowRight className="inline size-3" />
+                    </>
+                  ) : null}
+                  <span className="font-mono" data-testid="schema-title">
+                    {schemaCheck.serviceName}@
+                    {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                  </span>
+                  <span data-testid="schema-title-changed">(unchanged)</span>
+                </span>
+              ) : undefined
+            }
+          />
+        ) : (
+          <SDLSingleDiffToggleView
+            title={
+              schemaCheck.serviceName ? (
+                <span className="flex items-center gap-1">
+                  {schemaCheck.baseline?.meta ? (
+                    <>
+                      <span className="font-mono">
+                        {schemaCheck.serviceName}@
+                        {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                      </span>
+                      <ArrowRight className="inline size-3" />
+                    </>
+                  ) : null}
+                  <span className="font-mono">
+                    {schemaCheck.serviceName}@
+                    {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                  </span>
+                </span>
+              ) : undefined
+            }
+            before={schemaCheck.baseline?.sdl ?? null}
+            after={schemaCheck.schemaSDL}
+            downloadFileName="service.graphqls"
+          />
+        ),
     });
   }
 
   items.push({
-    testId: 'schema-view-btn',
     value: 'schema',
-    icon: <DiffIcon className="h-5 w-auto flex-none" />,
     label: 'Public Schema',
-    tooltip: 'Public Schema',
-    isDisabled: !schemaCheck.compositeSchemaSDL,
+    icon: DiffIcon,
+    attrs: { 'data-testid': 'schema-view-btn' },
+    disabled: !schemaCheck.compositeSchemaSDL,
+    tooltip: schemaCheck.compositeSchemaSDL
+      ? undefined
+      : 'Composition did not succeed. No public schema SDL available.',
+    content:
+      schemaCheck.baseline?.publicSdl === schemaCheck.compositeSchemaSDL ? (
+        <SDLSingleView
+          sdl={schemaCheck.schemaSDL}
+          downloadFileName="schema.graphqls"
+          title={
+            schemaCheck.serviceName ? (
+              <span className="flex items-center gap-1">
+                {schemaCheck.baseline?.meta ? (
+                  <>
+                    <span className="font-mono" data-testid="schema-title-before">
+                      schema@
+                      {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                    </span>
+                    <ArrowRight className="inline size-3" />
+                  </>
+                ) : null}
+                <span className="font-mono" data-testid="schema-title">
+                  schema@
+                  {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                </span>
+                <span data-testid="schema-title-changed">(unchanged)</span>
+              </span>
+            ) : undefined
+          }
+        />
+      ) : (
+        <SDLSingleDiffToggleView
+          before={schemaCheck.baseline?.publicSdl ?? null}
+          after={schemaCheck.compositeSchemaSDL ?? null}
+          downloadFileName="schema.graphqls"
+        />
+      ),
   });
 
   if (props.projectType === ProjectType.Federation) {
     items.push({
-      testId: 'supergraph-view-btn',
       value: 'supergraph',
-      icon: <DiffIcon className="h-5 w-auto flex-none" />,
       label: 'Supergraph',
-      tooltip: 'Supergraph',
-      isDisabled: !schemaCheck.supergraphSDL,
+      icon: DiffIcon,
+      attrs: { 'data-testid': 'supergraph-view-btn' },
+      disabled: !schemaCheck.supergraphSDL,
+      tooltip: schemaCheck.supergraphSDL
+        ? undefined
+        : 'Composition did not succeed. No Supergraph available.',
+      content:
+        schemaCheck?.baseline?.supergraphSdl === schemaCheck.supergraphSDL ? (
+          <SDLSingleView
+            sdl={schemaCheck?.baseline?.supergraphSdl ?? ''}
+            downloadFileName="supergraph.graphqls"
+            title={
+              schemaCheck.serviceName ? (
+                <span className="flex items-center gap-1">
+                  {schemaCheck.baseline?.meta ? (
+                    <>
+                      <span className="font-mono" data-testid="schema-title-before">
+                        supergraph@
+                        {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                      </span>
+                      <ArrowRight className="inline size-3" />
+                    </>
+                  ) : null}
+                  <span className="font-mono" data-testid="schema-title">
+                    supergraph@
+                    {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                  </span>
+                  <span data-testid="schema-title-changed">(unchanged)</span>
+                </span>
+              ) : undefined
+            }
+          />
+        ) : (
+          <SDLSingleDiffToggleView
+            before={schemaCheck?.baseline?.supergraphSdl ?? null}
+            after={schemaCheck?.supergraphSDL ?? null}
+            downloadFileName="supergraph.graphqls"
+          />
+        ),
     });
   }
 
   items.push({
-    testId: 'policy-view-btn',
     value: 'policy',
-    icon: <AlertTriangleIcon className="h-5 w-auto flex-none" />,
     label: 'Policy',
-    tooltip: 'Schema Policy',
-    isDisabled:
+    icon: AlertTriangleIcon,
+    attrs: { 'data-testid': 'policy-view-btn' },
+    disabled:
       !schemaCheck.schemaPolicyWarnings &&
       !(
         schemaCheck.__typename === 'FailedSchemaCheck' &&
         schemaCheck.schemaPolicyErrors?.edges?.length
       ),
+    content: (
+      <>
+        <div className="px-5 py-3">
+          <Heading>Schema Policy</Heading>
+        </div>
+        <SchemaPolicyEditor
+          compositeSchemaSDL={schemaCheck.schemaSDL ?? ''}
+          warnings={schemaCheck.schemaPolicyWarnings ?? null}
+          errors={('schemaPolicyErrors' in schemaCheck && schemaCheck.schemaPolicyErrors) || null}
+          scrollToLine={scrollToLine}
+        />
+      </>
+    ),
   });
 
   return (
-    <>
-      <Tabs
-        value={selectedView}
-        onValueChange={value => {
-          setScrollToLine(undefined);
-          setSelectedView(value);
-        }}
-      >
-        <TabsList className="bg-neutral-5 dark:bg-neutral-3 border-neutral-5 dark:border-neutral-3 w-full justify-start rounded-none border-x border-b">
-          {items.map(item => (
-            <TabsTrigger
-              data-testid={item.testId}
-              key={item.value}
-              value={item.value}
-              disabled={item.isDisabled}
-            >
-              {item.icon}
-              <span className="ml-2">{item.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-      <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
-        {selectedView === 'details' && (
-          <div className="my-4 px-4">
-            {!schemaCheck.schemaPolicyWarnings?.edges?.length &&
-              !schemaCheck.safeSchemaChanges?.edges?.length &&
-              !schemaCheck.breakingSchemaChanges?.edges?.length &&
-              !schemaCheck.schemaPolicyErrors?.edges?.length &&
-              !schemaCheck.hasSchemaCompositionErrors &&
-              !schemaCheck.baseline?.compositionErrors?.length && <NoGraphChanges />}
-            {schemaCheck.baseline?.compositionErrors?.length ? (
-              <CompositionErrorsList
-                title="Baseline Composition Errors"
-                description="The supplied baseline could not be composed, no schema diff could be performed."
-                errors={schemaCheck.baseline.compositionErrors}
-              />
-            ) : null}
-            {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.compositionErrors && (
-              <CompositionErrorsSection compositionErrors={schemaCheck.compositionErrors} />
-            )}
-            {schemaCheck.breakingSchemaChanges?.edges.length ? (
-              <div className="mb-5">
-                <ChangesBlock
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  schemaCheckId={schemaCheck.id}
-                  title={<BreakingChangesTitle />}
-                  changesWithUsage={schemaCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
-                  conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
-                />
-              </div>
-            ) : null}
-            {schemaCheck.safeSchemaChanges ? (
-              <div className="mb-5">
-                <ChangesBlock
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  schemaCheckId={schemaCheck.id}
-                  title="Safe Changes"
-                  changes={schemaCheck.safeSchemaChanges.edges.map(edge => edge.node)}
-                />
-              </div>
-            ) : null}
-            {schemaCheck.schemaPolicyErrors?.edges.length ? (
-              <div className="mb-5">
-                <PolicyBlock
-                  title="Schema Policy Errors"
-                  policies={schemaCheck.schemaPolicyErrors}
-                  type="error"
-                />
-              </div>
-            ) : null}
-            {schemaCheck.schemaPolicyWarnings ? (
-              <div className="mb-5">
-                <PolicyBlock
-                  title="Schema Policy Warnings"
-                  policies={schemaCheck.schemaPolicyWarnings}
-                  type="warning"
-                  goToline={line => {
-                    setScrollToLine(Math.max((line ?? 0) - 1, 0));
-                    setSelectedView('policy');
-                  }}
-                />
-              </div>
-            ) : null}
-            <ConditionalBreakingChangesMetadataSection schemaCheck={schemaCheck} />
-          </div>
-        )}
-        {selectedView === 'service' &&
-          (schemaCheck.baseline?.sdl === schemaCheck.schemaSDL ? (
-            <SDLSingleView
-              sdl={schemaCheck.schemaSDL}
-              downloadFileName="service.graphqls"
-              title={
-                schemaCheck.serviceName ? (
-                  <span className="flex items-center gap-1">
-                    {schemaCheck.baseline?.meta ? (
-                      <>
-                        <span className="font-mono" data-testid="schema-title-before">
-                          {schemaCheck.serviceName}@
-                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
-                        </span>
-                        <ArrowRight className="inline size-3" />
-                      </>
-                    ) : null}
-                    <span className="font-mono" data-testid="schema-title">
-                      {schemaCheck.serviceName}@
-                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
-                    </span>
-                    <span data-testid="schema-title-changed">(unchanged)</span>
-                  </span>
-                ) : undefined
-              }
-            />
-          ) : (
-            <SDLSingleDiffToggleView
-              title={
-                schemaCheck.serviceName ? (
-                  <span className="flex items-center gap-1">
-                    {schemaCheck.baseline?.meta ? (
-                      <>
-                        <span className="font-mono">
-                          {schemaCheck.serviceName}@
-                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
-                        </span>
-                        <ArrowRight className="inline size-3" />
-                      </>
-                    ) : null}
-                    <span className="font-mono">
-                      {schemaCheck.serviceName}@
-                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
-                    </span>
-                  </span>
-                ) : undefined
-              }
-              before={schemaCheck.baseline?.sdl ?? null}
-              after={schemaCheck.schemaSDL}
-              downloadFileName="service.graphqls"
-            />
-          ))}
-        {selectedView === 'schema' &&
-          (schemaCheck.baseline?.publicSdl === schemaCheck.compositeSchemaSDL ? (
-            <SDLSingleView
-              sdl={schemaCheck.schemaSDL}
-              downloadFileName="schema.graphqls"
-              title={
-                schemaCheck.serviceName ? (
-                  <span className="flex items-center gap-1">
-                    {schemaCheck.baseline?.meta ? (
-                      <>
-                        <span className="font-mono" data-testid="schema-title-before">
-                          schema@
-                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
-                        </span>
-                        <ArrowRight className="inline size-3" />
-                      </>
-                    ) : null}
-                    <span className="font-mono" data-testid="schema-title">
-                      schema@
-                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
-                    </span>
-                    <span data-testid="schema-title-changed">(unchanged)</span>
-                  </span>
-                ) : undefined
-              }
-            />
-          ) : (
-            <SDLSingleDiffToggleView
-              before={schemaCheck.baseline?.publicSdl ?? null}
-              after={schemaCheck.compositeSchemaSDL ?? null}
-              downloadFileName="schema.graphqls"
-            />
-          ))}
-        {selectedView === 'supergraph' &&
-          (schemaCheck?.baseline?.supergraphSdl === schemaCheck.supergraphSDL ? (
-            <SDLSingleView
-              sdl={schemaCheck?.baseline?.supergraphSdl ?? ''}
-              downloadFileName="supergraph.graphqls"
-              title={
-                schemaCheck.serviceName ? (
-                  <span className="flex items-center gap-1">
-                    {schemaCheck.baseline?.meta ? (
-                      <>
-                        <span className="font-mono" data-testid="schema-title-before">
-                          supergraph@
-                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
-                        </span>
-                        <ArrowRight className="inline size-3" />
-                      </>
-                    ) : null}
-                    <span className="font-mono" data-testid="schema-title">
-                      supergraph@
-                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
-                    </span>
-                    <span data-testid="schema-title-changed">(unchanged)</span>
-                  </span>
-                ) : undefined
-              }
-            />
-          ) : (
-            <SDLSingleDiffToggleView
-              before={schemaCheck?.baseline?.supergraphSdl ?? null}
-              after={schemaCheck?.supergraphSDL ?? null}
-              downloadFileName="supergraph.graphqls"
-            />
-          ))}
-        {selectedView === 'policy' && (
-          <>
-            <div className="my-2 px-2">
-              <Heading>Schema Policy</Heading>
-            </div>
-            <SchemaPolicyEditor
-              compositeSchemaSDL={schemaCheck.schemaSDL ?? ''}
-              warnings={schemaCheck.schemaPolicyWarnings ?? null}
-              errors={
-                ('schemaPolicyErrors' in schemaCheck && schemaCheck.schemaPolicyErrors) || null
-              }
-              scrollToLine={scrollToLine}
-            />
-          </>
-        )}
-      </div>
-    </>
+    <TabbedView
+      items={items}
+      value={selectedView}
+      onValueChange={value => {
+        setScrollToLine(undefined);
+        setSelectedView(value);
+      }}
+      action={props.action}
+      bodyPadding="none"
+    />
   );
 }
 
@@ -962,184 +947,164 @@ function ContractCheckView(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  /** The contract picker, leading the tab strip. */
+  action?: ReactNode;
 }) {
   const contractCheck = useFragment(ContractCheckView_ContractCheckFragment, props.contractCheck);
   const schemaCheck = useFragment(ContractCheckView_SchemaCheckFragment, props.schemaCheck);
 
   const [selectedView, setSelectedView] = useState<string>('details');
 
-  const items = [
+  const items: TabbedViewItem[] = [
     {
       value: 'details',
-      icon: <ListBulletIcon className="h-5 w-auto flex-none" />,
       label: 'Details',
-      tooltip: 'Details',
-      disabledReason: false,
+      icon: ListBulletIcon,
+      content: (
+        <div className="p-5">
+          {contractCheck.baseline?.compositionErrors?.length ? (
+            <CompositionErrorsList
+              title="Baseline Composition Errors"
+              description="The supplied contract baseline could not be composed, no schema diff could be performed."
+              errors={contractCheck.baseline.compositionErrors}
+            />
+          ) : null}
+          {contractCheck.schemaCompositionErrors && (
+            <CompositionErrorsSection compositionErrors={contractCheck.schemaCompositionErrors} />
+          )}
+          {contractCheck.breakingSchemaChanges?.edges.length && (
+            <div className="mb-2">
+              <ChangesBlock
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                schemaCheckId={schemaCheck.id}
+                title={<BreakingChangesTitle />}
+                changesWithUsage={contractCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
+                conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
+              />
+            </div>
+          )}
+          {contractCheck.safeSchemaChanges && (
+            <div className="mb-2">
+              <ChangesBlock
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                schemaCheckId={schemaCheck.id}
+                title="Safe Changes"
+                changes={contractCheck.safeSchemaChanges.edges.map(edge => edge.node)}
+              />
+            </div>
+          )}
+          {!contractCheck.breakingSchemaChanges &&
+          !contractCheck.safeSchemaChanges &&
+          !contractCheck.schemaCompositionErrors &&
+          !contractCheck.baseline?.compositionErrors?.length ? (
+            <NoGraphChanges />
+          ) : (
+            <ConditionalBreakingChangesMetadataSection schemaCheck={schemaCheck} />
+          )}
+        </div>
+      ),
     },
     {
       value: 'schema',
-      icon: <DiffIcon className="h-5 w-auto flex-none" />,
       label: 'Public Schema',
-      tooltip: 'Public Schema',
-      disabledReason: !contractCheck.compositeSchemaSDL && (
-        <>Composition did not succeed. No public schema SDL available.</>
-      ),
+      icon: DiffIcon,
+      disabled: !contractCheck.compositeSchemaSDL,
+      tooltip: contractCheck.compositeSchemaSDL
+        ? undefined
+        : 'Composition did not succeed. No public schema SDL available.',
+      content:
+        contractCheck?.baseline?.publicSdl === contractCheck.compositeSchemaSDL ? (
+          <SDLSingleView
+            sdl={contractCheck.compositeSchemaSDL ?? ''}
+            downloadFileName="service.graphqls"
+            title={
+              schemaCheck.serviceName ? (
+                <span className="flex items-center gap-1">
+                  {schemaCheck.baseline?.meta ? (
+                    <>
+                      <span className="font-mono">
+                        schema@
+                        {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                      </span>
+                      <ArrowRight className="inline size-3" />
+                    </>
+                  ) : null}
+                  <span className="font-mono">
+                    schema@
+                    {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                  </span>
+                  (unchanged)
+                </span>
+              ) : undefined
+            }
+          />
+        ) : (
+          <SDLSingleDiffToggleView
+            before={contractCheck?.baseline?.publicSdl ?? null}
+            after={contractCheck.compositeSchemaSDL ?? null}
+            downloadFileName="schema.graphqls"
+          />
+        ),
     },
   ];
 
   if (props.projectType === ProjectType.Federation) {
     items.push({
       value: 'supergraph',
-      icon: <DiffIcon className="h-5 w-auto flex-none" />,
       label: 'Supergraph',
-      tooltip: 'Supergraph',
-      disabledReason: !contractCheck.supergraphSDL && (
-        <>Composition did not succeed. No Supergraph available.</>
-      ),
+      icon: DiffIcon,
+      disabled: !contractCheck.supergraphSDL,
+      tooltip: contractCheck.supergraphSDL
+        ? undefined
+        : 'Composition did not succeed. No Supergraph available.',
+      content:
+        contractCheck?.baseline?.supergraphSdl === contractCheck?.supergraphSDL ? (
+          <SDLSingleView
+            sdl={contractCheck?.supergraphSDL ?? ''}
+            downloadFileName="supergraph.graphqls"
+            title={
+              schemaCheck.serviceName ? (
+                <span className="flex items-center gap-1">
+                  {schemaCheck.baseline?.meta ? (
+                    <>
+                      <span className="font-mono">
+                        supergraph@
+                        {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
+                      </span>
+                      <ArrowRight className="inline size-3" />
+                    </>
+                  ) : null}
+                  <span className="font-mono">
+                    supergraph@
+                    {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
+                  </span>
+                  (unchanged)
+                </span>
+              ) : undefined
+            }
+          />
+        ) : (
+          <SDLSingleDiffToggleView
+            before={contractCheck?.baseline?.supergraphSdl ?? null}
+            after={contractCheck?.supergraphSDL ?? null}
+            downloadFileName="supergraph.graphqls"
+          />
+        ),
     });
   }
 
   return (
-    <>
-      <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-        <TabsList className="bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b">
-          {items.map(item => (
-            <Tooltip
-              key={item.value}
-              trigger={
-                <span className="inline-flex">
-                  <TabsTrigger value={item.value} disabled={!!item.disabledReason}>
-                    {item.icon}
-                    <span className="ml-2">{item.label}</span>
-                  </TabsTrigger>
-                </span>
-              }
-              content={item.disabledReason}
-              disabled={!item.disabledReason}
-              maxWidth="lg"
-              padding="lg"
-            />
-          ))}
-        </TabsList>
-      </Tabs>
-      <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
-        {selectedView === 'details' && (
-          <div className="my-4 px-4">
-            {contractCheck.baseline?.compositionErrors?.length ? (
-              <CompositionErrorsList
-                title="Baseline Composition Errors"
-                description="The supplied contract baseline could not be composed, no schema diff could be performed."
-                errors={contractCheck.baseline.compositionErrors}
-              />
-            ) : null}
-            {contractCheck.schemaCompositionErrors && (
-              <CompositionErrorsSection compositionErrors={contractCheck.schemaCompositionErrors} />
-            )}
-            {contractCheck.breakingSchemaChanges?.edges.length && (
-              <div className="mb-2">
-                <ChangesBlock
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  schemaCheckId={schemaCheck.id}
-                  title={<BreakingChangesTitle />}
-                  changesWithUsage={contractCheck.breakingSchemaChanges.edges.map(
-                    edge => edge.node,
-                  )}
-                  conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
-                />
-              </div>
-            )}
-            {contractCheck.safeSchemaChanges && (
-              <div className="mb-2">
-                <ChangesBlock
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  schemaCheckId={schemaCheck.id}
-                  title="Safe Changes"
-                  changes={contractCheck.safeSchemaChanges.edges.map(edge => edge.node)}
-                />
-              </div>
-            )}
-            {!contractCheck.breakingSchemaChanges &&
-            !contractCheck.safeSchemaChanges &&
-            !contractCheck.schemaCompositionErrors &&
-            !contractCheck.baseline?.compositionErrors?.length ? (
-              <NoGraphChanges />
-            ) : (
-              <ConditionalBreakingChangesMetadataSection schemaCheck={schemaCheck} />
-            )}
-          </div>
-        )}
-        {selectedView === 'schema' &&
-          (contractCheck?.baseline?.publicSdl === contractCheck.compositeSchemaSDL ? (
-            <SDLSingleView
-              sdl={contractCheck.compositeSchemaSDL ?? ''}
-              downloadFileName="service.graphqls"
-              title={
-                schemaCheck.serviceName ? (
-                  <span className="flex items-center gap-1">
-                    {schemaCheck.baseline?.meta ? (
-                      <>
-                        <span className="font-mono">
-                          schema@
-                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
-                        </span>
-                        <ArrowRight className="inline size-3" />
-                      </>
-                    ) : null}
-                    <span className="font-mono">
-                      schema@
-                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
-                    </span>
-                    (unchanged)
-                  </span>
-                ) : undefined
-              }
-            />
-          ) : (
-            <SDLSingleDiffToggleView
-              before={contractCheck?.baseline?.publicSdl ?? null}
-              after={contractCheck.compositeSchemaSDL ?? null}
-              downloadFileName="schema.graphqls"
-            />
-          ))}
-        {selectedView === 'supergraph' &&
-          (contractCheck?.baseline?.supergraphSdl === contractCheck?.supergraphSDL ? (
-            <SDLSingleView
-              sdl={contractCheck?.supergraphSDL ?? ''}
-              downloadFileName="supergraph.graphqls"
-              title={
-                schemaCheck.serviceName ? (
-                  <span className="flex items-center gap-1">
-                    {schemaCheck.baseline?.meta ? (
-                      <>
-                        <span className="font-mono">
-                          supergraph@
-                          {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
-                        </span>
-                        <ArrowRight className="inline size-3" />
-                      </>
-                    ) : null}
-                    <span className="font-mono">
-                      supergraph@
-                      {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
-                    </span>
-                    (unchanged)
-                  </span>
-                ) : undefined
-              }
-            />
-          ) : (
-            <SDLSingleDiffToggleView
-              before={contractCheck?.baseline?.supergraphSdl ?? null}
-              after={contractCheck?.supergraphSDL ?? null}
-              downloadFileName="supergraph.graphqls"
-            />
-          ))}
-      </div>
-    </>
+    <TabbedView
+      items={items}
+      value={selectedView}
+      onValueChange={setSelectedView}
+      action={props.action}
+      bodyPadding="none"
+    />
   );
 }
 
@@ -1243,93 +1208,83 @@ function SchemaChecksView(props: {
     [selectedItem],
   );
 
+  const contractChecks = schemaCheck.contractChecks?.edges ?? [];
+  const contractPicker = contractChecks.length ? (
+    <Select
+      value={selectedItem}
+      onValueChange={setSelectedItem}
+      options={[
+        {
+          value: 'default',
+          label: 'Default Graph',
+          icon: checkStatusIcon(schemaCheck, 'Schema changed'),
+        },
+        ...contractChecks.map(edge => ({
+          value: edge.node.id,
+          label: edge.node.contractName,
+          icon: checkStatusIcon(edge.node, 'Contract schema changed'),
+        })),
+      ]}
+      size="compact"
+      onSurface="raised"
+      width="md"
+    />
+  ) : undefined;
+
+  return selectedContractCheckNode ? (
+    <ContractCheckView
+      organizationSlug={props.organizationSlug}
+      projectSlug={props.projectSlug}
+      targetSlug={props.targetSlug}
+      contractCheck={selectedContractCheckNode}
+      schemaCheck={schemaCheck}
+      projectType={props.projectType}
+      action={contractPicker}
+    />
+  ) : (
+    <DefaultSchemaView
+      organizationSlug={props.organizationSlug}
+      projectSlug={props.projectSlug}
+      targetSlug={props.targetSlug}
+      schemaCheck={schemaCheck}
+      projectType={props.projectType}
+      action={contractPicker}
+    />
+  );
+}
+
+function checkStatusIcon(
+  check: {
+    hasSchemaCompositionErrors: boolean;
+    hasUnapprovedBreakingChanges: boolean;
+    hasSchemaChanges: boolean;
+  },
+  changedLabel: string,
+) {
+  if (check.hasSchemaCompositionErrors) {
+    return (
+      <StatusTooltip
+        icon={<ExclamationTriangleIcon className="text-warning size-3.5" />}
+        label="Composition failed."
+      />
+    );
+  }
+  if (check.hasUnapprovedBreakingChanges) {
+    return (
+      <StatusTooltip
+        icon={<ExclamationTriangleIcon className="text-warning size-3.5" />}
+        label="Unapproved breaking changes!"
+      />
+    );
+  }
+  if (check.hasSchemaChanges) {
+    return <StatusTooltip icon={<GitCompareIcon className="size-3.5" />} label={changedLabel} />;
+  }
   return (
-    <>
-      <Tabs
-        defaultValue="default"
-        className="mt-3"
-        value={selectedItem}
-        onValueChange={value => setSelectedItem(value)}
-      >
-        <TabsList className="w-full justify-start rounded-b-none bg-transparent px-2 py-0">
-          <TabsTrigger
-            value="default"
-            className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
-          >
-            <span>Default Graph</span>
-            {schemaCheck.hasSchemaCompositionErrors ? (
-              <StatusTooltip
-                icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
-                label="Composition failed."
-              />
-            ) : schemaCheck.hasUnapprovedBreakingChanges ? (
-              <StatusTooltip
-                icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
-                label="Unapproved breaking changes!"
-              />
-            ) : schemaCheck.hasSchemaChanges ? (
-              <StatusTooltip
-                icon={<GitCompareIcon className="size-4 pl-1" />}
-                label="Schema changed"
-              />
-            ) : (
-              <StatusTooltip
-                icon={<CheckIcon className="size-4 pl-1" />}
-                label="Composition succeeded."
-              />
-            )}
-          </TabsTrigger>
-          {schemaCheck.contractChecks?.edges.map(edge => (
-            <TabsTrigger
-              value={edge.node.id}
-              key={edge.node.id}
-              className="mt-1 py-2 data-[state=active]:rounded-b-none"
-            >
-              {edge.node.contractName}
-              {edge.node.hasSchemaCompositionErrors ? (
-                <StatusTooltip
-                  icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
-                  label="Composition failed."
-                />
-              ) : edge.node.hasUnapprovedBreakingChanges ? (
-                <StatusTooltip
-                  icon={<ExclamationTriangleIcon className="size-4 pl-1 text-yellow-500" />}
-                  label="Unapproved breaking changes!"
-                />
-              ) : edge.node.hasSchemaChanges ? (
-                <StatusTooltip
-                  icon={<GitCompareIcon className="size-4 pl-1" />}
-                  label="Contract schema changed"
-                />
-              ) : (
-                <StatusTooltip
-                  icon={<CheckIcon className="size-4 pl-1" />}
-                  label="Composition succeeded."
-                />
-              )}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-      {selectedContractCheckNode ? (
-        <ContractCheckView
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          contractCheck={selectedContractCheckNode}
-          schemaCheck={schemaCheck}
-          projectType={props.projectType}
-        />
-      ) : (
-        <DefaultSchemaView
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          schemaCheck={schemaCheck}
-          projectType={props.projectType}
-        />
-      )}
-    </>
+    <StatusTooltip
+      icon={<CheckIcon className="text-success size-3.5" />}
+      label="Composition succeeded."
+    />
   );
 }
 

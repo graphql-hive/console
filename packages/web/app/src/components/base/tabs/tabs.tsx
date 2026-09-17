@@ -70,7 +70,7 @@ const listVariants = cva('relative flex', {
 const tabVariants = cva(
   cn(
     'relative z-10 inline-flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap font-medium transition-colors',
-    'text-neutral-11 hover:text-neutral-12 data-[active]:text-neutral-12',
+    'text-neutral-10 hover:text-neutral-12 data-[active]:text-accent',
     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
     'outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
   ),
