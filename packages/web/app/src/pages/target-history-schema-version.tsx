@@ -1081,7 +1081,7 @@ function SchemaVersionHeader(props: {
       <p className="text-neutral-10 mt-1.5 text-sm">Detailed view of the graph version changes.</p>
       <div
         className={cn(
-          'bg-neutral-2 dark:bg-neutral-3 mt-6 grid grid-cols-3 gap-x-6 gap-y-4 rounded-xl border px-5 py-4',
+          'bg-neutral-2 dark:bg-neutral-3 mt-6 grid grid-cols-3 gap-x-6 gap-y-4 rounded-md border px-5 py-4',
           (schemaVersion.githubMetadata || schemaVersion.meta?.commit) &&
             'grid-cols-3 xl:grid-cols-4',
         )}
