@@ -1,6 +1,6 @@
 import { GitCompare, Layers, List, Pencil, PieChart } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
-import { SecondaryNavigation as LegacySecondaryNavigation } from '@/components/navigation/secondary-navigation';
+import { SecondaryNavigation as SecondaryNavigationBar } from '@/components/navigation/secondary-navigation';
 import { Button } from '../../button/button';
 import { SecondaryNavigation, type SecondaryNavigationItem } from './secondary-navigation';
 
@@ -8,9 +8,10 @@ export const nav: NavPath = 'Base/Navigation/SecondaryNavigation';
 
 /**
  * Links between the pages of one area. A `<nav>` of router links with `aria-current` on the
- * current one; each item is a `Link`'s props plus a value and label. Replaces the `ui/tabs`
- * mounts that were navigation: the sub-navigation bar, the proposal page sections and the
- * explorer filter. The foundry router resolves the app's routes, so the links here are real.
+ * current one; each item is a `Link`'s props plus a value and label. Mounted by the
+ * sub-navigation bar (through the app composite in `navigation/secondary-navigation`), the
+ * proposal page sections and the explorer filter. The foundry router resolves the app's routes,
+ * so the links here are real.
  */
 
 const TARGET = {
@@ -48,17 +49,14 @@ const PROPOSAL_ITEMS: SecondaryNavigationItem[] = [
   { value: 'edit', label: 'Edit', icon: Pencil },
 ].map(item => ({ ...item, to: '/$organizationSlug/$projectSlug/$targetSlug', params: TARGET }));
 
-/** The bar under every org, project and target header, with the layout's action at its edge. */
+/** The bar under every org, project and target header: the app composite, with the layout's action at its edge. */
 export const Bar = createPreview(() => (
-  <div className="border-neutral-5 bg-neutral-2 dark:bg-neutral-3 -mx-6 border-b">
-    <div className="px-6">
-      <SecondaryNavigation
-        aria-label="Target"
-        value="checks"
-        items={TARGET_ITEMS}
-        actions={<Button variant="ghost">Connect to CDN</Button>}
-      />
-    </div>
+  <div className="-mx-6">
+    <SecondaryNavigationBar
+      page="checks"
+      links={TARGET_ITEMS}
+      actions={<Button variant="ghost">Connect to CDN</Button>}
+    />
   </div>
 ));
 
@@ -70,7 +68,7 @@ export const WithIcons = createPreview(() => (
   <SecondaryNavigation aria-label="Proposal" value="schema" items={PROPOSAL_ITEMS} size="sm" />
 ));
 
-/** Three routes as a pill: the explorer's All, Unused and Deprecated. */
+/** Three routes as a pill, each explained on hover: the explorer's All, Unused and Deprecated. */
 export const Pill = createPreview(() => (
   <SecondaryNavigation
     aria-label="Type filter"
@@ -81,18 +79,21 @@ export const Pill = createPreview(() => (
       {
         value: 'all',
         label: 'All',
+        tooltip: 'Shows all types, including unused and deprecated ones',
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: TARGET,
       },
       {
         value: 'unused',
         label: 'Unused',
+        tooltip: 'Shows only types that are not used in any operation',
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: TARGET,
       },
       {
         value: 'deprecated',
         label: 'Deprecated',
+        tooltip: 'Shows only types that are marked as deprecated',
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: TARGET,
       },
@@ -107,26 +108,6 @@ export const Gated = createPreview(() => (
     value="schema"
     items={TARGET_ITEMS.map(item => ({ ...item, visible: item.value !== 'settings' }))}
   />
-));
-
-/** The same bar on the legacy composite (ui/tabs inside) and on base, for the gate. */
-export const Legacy = createPreview(() => (
-  <div className="-mx-6 flex flex-col gap-8">
-    <LegacySecondaryNavigation
-      page="schema"
-      links={TARGET_PAGES.map(label => ({
-        value: label.toLowerCase(),
-        label,
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: TARGET,
-      }))}
-    />
-    <div className="border-neutral-5 bg-neutral-2 dark:bg-neutral-3 border-b">
-      <div className="container">
-        <SecondaryNavigation aria-label="Target" value="schema" items={TARGET_ITEMS} />
-      </div>
-    </div>
-  </div>
 ));
 
 export const Playground = createPreview({
