@@ -145,6 +145,13 @@ export function OIDCIntegrationConfiguration(props: {
     UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation,
   );
   const [modalState, setModalState] = useState(ModalState.closed);
+  // Bumped once a sheet or modal has closed, so the next open starts fresh.
+  const [overlaySession, setOverlaySession] = useState(0);
+  const resetOnClose = (isOpen: boolean) => {
+    if (!isOpen) {
+      setOverlaySession(s => s + 1);
+    }
+  };
 
   const onOidcRestrictionChange = async (
     name:
@@ -357,71 +364,73 @@ export function OIDCIntegrationConfiguration(props: {
           Delete OIDC Provider
         </Button>
       </div>
-      {modalState === ModalState.openSettings && (
-        <ConnectSingleSignOnProviderSheet
-          onClose={() => setModalState(ModalState.closed)}
-          initialValues={{
-            additionalScopes: oidcIntegration.additionalScopes.join(' '),
-            userIdClaim: oidcIntegration.userIdClaim ?? '',
-            clientId: oidcIntegration.clientId,
-            authorizationEndpoint: oidcIntegration.authorizationEndpoint,
-            tokenEndpoint: oidcIntegration.tokenEndpoint,
-            userinfoEndpoint: oidcIntegration.userinfoEndpoint,
-            clientSecretPreview: oidcIntegration.clientSecretPreview,
-          }}
-          onSave={async args => {
-            const result = await updateOIDCIntegrationMutate({
-              input: {
-                oidcIntegrationId: oidcIntegration.id,
-                clientId: args.clientId || undefined,
-                clientSecret: args.clientSecret || undefined,
-                userIdClaim: args.userIdClaim || undefined,
-                additionalScopes: args.additionalScopes?.trim()
-                  ? args.additionalScopes.trim().split(' ')
-                  : undefined,
-                authorizationEndpoint: args.authorizationEndpoint || undefined,
-                tokenEndpoint: args.tokenEndpoint || undefined,
-                userinfoEndpoint: args.userinfoEndpoint || undefined,
-              },
-            });
+      <ConnectSingleSignOnProviderSheet
+        key={`settings-${overlaySession}`}
+        open={modalState === ModalState.openSettings}
+        onClose={() => setModalState(ModalState.closed)}
+        onOpenChangeComplete={resetOnClose}
+        initialValues={{
+          additionalScopes: oidcIntegration.additionalScopes.join(' '),
+          userIdClaim: oidcIntegration.userIdClaim ?? '',
+          clientId: oidcIntegration.clientId,
+          authorizationEndpoint: oidcIntegration.authorizationEndpoint,
+          tokenEndpoint: oidcIntegration.tokenEndpoint,
+          userinfoEndpoint: oidcIntegration.userinfoEndpoint,
+          clientSecretPreview: oidcIntegration.clientSecretPreview,
+        }}
+        onSave={async args => {
+          const result = await updateOIDCIntegrationMutate({
+            input: {
+              oidcIntegrationId: oidcIntegration.id,
+              clientId: args.clientId || undefined,
+              clientSecret: args.clientSecret || undefined,
+              userIdClaim: args.userIdClaim || undefined,
+              additionalScopes: args.additionalScopes?.trim()
+                ? args.additionalScopes.trim().split(' ')
+                : undefined,
+              authorizationEndpoint: args.authorizationEndpoint || undefined,
+              tokenEndpoint: args.tokenEndpoint || undefined,
+              userinfoEndpoint: args.userinfoEndpoint || undefined,
+            },
+          });
 
-            if (result.data?.updateOIDCIntegration.error) {
-              const { error } = result.data.updateOIDCIntegration;
-
-              return {
-                type: 'error',
-                clientId: error.details.clientId ?? null,
-                clientSecret: error.details.clientSecret ?? null,
-                authorizationEndpoint: error.details.authorizationEndpoint ?? null,
-                userinfoEndpoint: error.details.userinfoEndpoint ?? null,
-                tokenEndpoint: error.details.tokenEndpoint ?? null,
-                additionalScopes: error.details.additionalScopes ?? null,
-              };
-            }
-
-            toast({
-              variant: 'default',
-              title: 'Updated OIDC Configuration',
-            });
+          if (result.data?.updateOIDCIntegration.error) {
+            const { error } = result.data.updateOIDCIntegration;
 
             return {
-              type: 'success',
+              type: 'error',
+              clientId: error.details.clientId ?? null,
+              clientSecret: error.details.clientSecret ?? null,
+              authorizationEndpoint: error.details.authorizationEndpoint ?? null,
+              userinfoEndpoint: error.details.userinfoEndpoint ?? null,
+              tokenEndpoint: error.details.tokenEndpoint ?? null,
+              additionalScopes: error.details.additionalScopes ?? null,
             };
-          }}
-        />
-      )}
+          }
+
+          toast({
+            variant: 'default',
+            title: 'Updated OIDC Configuration',
+          });
+
+          return {
+            type: 'success',
+          };
+        }}
+      />
       {modalState === ModalState.openDelete && (
         <RemoveOIDCIntegrationModal
           close={() => setModalState(ModalState.closed)}
           oidcIntegrationId={oidcIntegration.id}
         />
       )}
-      {modalState === ModalState.openDebugLogs && (
-        <DebugOIDCIntegrationModal
-          close={() => setModalState(ModalState.closed)}
-          oidcIntegrationId={oidcIntegration.id}
-        />
-      )}
+      <DebugOIDCIntegrationModal
+        key={`debug-${overlaySession}`}
+        open={modalState === ModalState.openDebugLogs}
+        close={() => setModalState(ModalState.closed)}
+        onOpenChangeComplete={resetOnClose}
+        oidcIntegrationId={oidcIntegration.id}
+      />
     </div>
   );
 }
