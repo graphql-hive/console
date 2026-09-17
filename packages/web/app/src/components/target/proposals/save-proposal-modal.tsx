@@ -3,9 +3,8 @@ import { Check, TriangleAlert } from 'lucide-react';
 import { useMutation } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
-import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Modal } from '@/components/v2';
 import { graphql } from '@/gql';
 import { useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -182,63 +181,51 @@ export function SaveProposalModal() {
   const navigate = useNavigate();
   const { state, isSaving, selector } = useContext(SaveProposalContext);
 
+  async function viewProposal() {
+    if (!selector) {
+      return;
+    }
+    await navigate({
+      to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
+      params: {
+        organizationSlug: selector.organizationSlug,
+        projectSlug: selector.projectSlug,
+        targetSlug: selector.targetSlug,
+        proposalId: selector.schemaProposalId,
+      },
+      search: {
+        ts: Date.now(), // force refresh by updating a timestamp
+      },
+    });
+  }
+
   return (
-    <Modal
+    <Dialog
       open={isSaving && !!selector}
-      onOpenChange={async isOpen => {
-        if (isOpen === false && selector) {
-          // on close, navigate to the proposal's show page
-          await navigate({
-            to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
-            params: {
-              organizationSlug: selector.organizationSlug,
-              projectSlug: selector.projectSlug,
-              targetSlug: selector.targetSlug,
-              proposalId: selector.schemaProposalId!,
-            },
-            search: {
-              ts: Date.now(), // force refresh by updating a timestamp
-            },
-          });
+      onOpenChange={isOpen => {
+        if (!isOpen) {
+          void viewProposal();
         }
       }}
-      className="w-[90vw]"
+      width="xl"
+      title="Proposal Submission"
+      description="The proposed changes being published."
+      footer={
+        <Button
+          disabled={!state.every(c => 'error' in c || c.loading === false)}
+          onClick={viewProposal}
+        >
+          View Proposal
+        </Button>
+      }
     >
-      <SubPageLayoutHeader
-        subPageTitle="Proposal Submission"
-        description={<p className="pb-4">The proposed changes being published.</p>}
-      />
       <DataTable
         data={state.map((entry, index) => ({ id: String(index), ...entry }))}
         columns={PROGRESS_COLUMNS}
         getRowId={row => row.id}
         pagination={{ kind: 'none' }}
+        variants={{ onSurface: 'raised' }}
       />
-      <div className="mt-4 text-right">
-        <Button
-          disabled={!state.every(c => 'error' in c || c.loading === false)}
-          onClick={async () => {
-            if (!selector) {
-              // should never happen
-              return;
-            }
-            await navigate({
-              to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
-              params: {
-                organizationSlug: selector.organizationSlug,
-                projectSlug: selector.projectSlug,
-                targetSlug: selector.targetSlug,
-                proposalId: selector.schemaProposalId!,
-              },
-              search: {
-                ts: Date.now(), // force refresh by updating a timestamp
-              },
-            });
-          }}
-        >
-          View Proposal
-        </Button>
-      </div>
-    </Modal>
+    </Dialog>
   );
 }
