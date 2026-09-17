@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '../../button/button';
 import { Input } from '../../input/input';
+import { ScrollArea } from '../../scroll-area/scroll-area';
 import { Sheet } from './sheet';
 
 export const nav: NavPath = 'Base/Overlays/Sheet';
@@ -103,7 +104,10 @@ export const LongContent = createPreview(() => (
   </Sheet>
 ));
 
-/** `padding="none"`: a body that draws its own rows to the edges, like the trace tree. */
+/**
+ * `padding="none"`: a body that draws its own rows to the edges and scrolls on its own, like the
+ * trace tree.
+ */
 export const EdgeToEdge = createPreview(() => (
   <Sheet
     trigger={<Button>Span details</Button>}
@@ -117,18 +121,20 @@ export const EdgeToEdge = createPreview(() => (
     }
     description="Span ID: a3f9c2d1e8b74f60"
   >
-    <ul className="divide-neutral-5 border-neutral-5 divide-y border-t text-sm">
-      {[
-        'http.method GET',
-        'http.route /graphql',
-        'graphql.operation.name GetUser',
-        'db.system postgres',
-      ].map(row => (
-        <li key={row} className="text-neutral-11 px-6 py-3 font-mono">
-          {row}
-        </li>
-      ))}
-    </ul>
+    <ScrollArea fill>
+      <ul className="divide-neutral-5 border-neutral-5 divide-y border-t text-sm">
+        {[
+          'http.method GET',
+          'http.route /graphql',
+          'graphql.operation.name GetUser',
+          'db.system postgres',
+        ].map(row => (
+          <li key={row} className="text-neutral-11 px-6 py-3 font-mono">
+            {row}
+          </li>
+        ))}
+      </ul>
+    </ScrollArea>
   </Sheet>
 ));
 

@@ -41,7 +41,10 @@ export type SheetProps = {
   /** Actions, pinned to the bottom edge. */
   footer?: ReactNode;
   width?: keyof typeof widthClass;
-  /** `none` for a body that lays itself out edge to edge, such as a list or a trace tree. */
+  /**
+   * `none` for a body that lays itself out edge to edge and scrolls on its own, such as a trace
+   * tree or a tab strip over a list. It gets the remaining height as a flex column.
+   */
   padding?: 'default' | 'none';
   /** The × in the corner. */
   closeButton?: boolean;
