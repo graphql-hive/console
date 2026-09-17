@@ -6,8 +6,8 @@ import { z } from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
+import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Textarea } from '@/components/base/textarea/textarea';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { priorityDescription } from '@/components/organization/support';
@@ -24,17 +24,10 @@ import {
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
-import { useNotifications, useToggle } from '@/lib/hooks';
+import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -81,7 +74,7 @@ function NewTicketForm(props: {
   onClose: () => void;
   onSubmit: () => void;
 }) {
-  const notify = useNotifications();
+  const { toast } = useToast();
   const form = useForm<NewTicketFormValues>({
     resolver: zodResolver(newTicketFormSchema),
     defaultValues: {
@@ -92,14 +85,9 @@ function NewTicketForm(props: {
   });
   const [_, mutate] = useMutation(NewTicketForm_SupportTicketCreateMutation);
 
-  const onClose = useCallback(() => {
-    form.reset({
-      subject: '',
-      priority: SupportTicketPriority.Normal,
-      description: '',
-    });
-    props.onClose();
-  }, [form.reset]);
+  function failed(message: string) {
+    toast({ variant: 'destructive', title: 'Failed to submit your ticket', description: message });
+  }
 
   async function onSubmit(data: NewTicketFormValues) {
     try {
@@ -113,112 +101,103 @@ function NewTicketForm(props: {
       });
 
       if (result.error) {
-        notify(`Failed to submit your ticket: ${result.error.message}`, 'error');
+        failed(result.error.message);
         return;
       }
 
       if (result.data?.supportTicketCreate.ok) {
-        notify('Your ticket has been submitted.', 'success');
+        toast({ title: 'Your ticket has been submitted.' });
         props.onSubmit();
       } else if (result.data?.supportTicketCreate.error) {
-        notify(
-          `Failed to submit your ticket: ${result.data.supportTicketCreate.error.message}`,
-          'error',
-        );
+        failed(result.data.supportTicketCreate.error.message);
       }
     } catch (error) {
-      notify(`Failed to submit your ticket: ${String(error)}`, 'error');
+      failed(String(error));
     }
   }
 
   return (
     <Sheet
-      defaultOpen={false}
       open={props.isOpen}
       onOpenChange={open => {
         if (!open) {
-          onClose();
+          props.onClose();
         }
       }}
+      onOpenChangeComplete={open => {
+        if (!open) {
+          form.reset();
+        }
+      }}
+      title="New ticket"
+      description="Create a new case for the support team"
+      footer={
+        <Button type="submit" form="new-ticket-form">
+          Submit
+        </Button>
+      }
     >
-      <SheetContent className="flex h-full w-1/3 max-w-none grow flex-col sm:w-1/2 sm:max-w-none md:w-1/3 md:max-w-[500px]">
-        <Form {...form}>
-          <form
-            className="flex h-full grow flex-col justify-between gap-y-4"
-            onSubmit={form.handleSubmit(onSubmit)}
-          >
-            <SheetHeader>
-              <SheetTitle>New ticket</SheetTitle>
-              <SheetDescription className="text-ellipsis">
-                Create a new case for the support team
-              </SheetDescription>
-            </SheetHeader>
-
-            <div className="flex min-h-0 flex-1 flex-col">
-              <ScrollArea fill>
-                <div className="w-full space-y-6 text-ellipsis px-2 text-sm">
-                  <FormField
-                    control={form.control}
-                    name="priority"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>Priority level</FormLabel>
-                        <RadioGroup
-                          variant="as-card"
-                          orientation="vertical"
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          items={PRIORITY_ITEMS}
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
+      <Form {...form}>
+        <form
+          id="new-ticket-form"
+          className="space-y-6 text-sm"
+          onSubmit={form.handleSubmit(onSubmit)}
+        >
+          <FormField
+            control={form.control}
+            name="priority"
+            render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormLabel>Priority level</FormLabel>
+                <RadioGroup
+                  variant="as-card"
+                  onSurface="raised"
+                  orientation="vertical"
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  items={PRIORITY_ITEMS}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="subject"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Subject</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Enter a subject of your issue"
+                    onSurface="raised"
+                    {...field}
                   />
-                  <FormField
-                    control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subject</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter a subject of your issue"
-                            onSurface="raised"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Enter a short description of your issue"
+                    onSurface="raised"
+                    {...field}
                   />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Enter a short description of your issue"
-                            onSurface="raised"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>Help us understand it better.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </ScrollArea>
-            </div>
-
-            <SheetFooter className="flex flex-col gap-y-2 sm:flex-col">
-              <Button type="submit">Submit</Button>
-            </SheetFooter>
-          </form>
-        </Form>
-      </SheetContent>
+                </FormControl>
+                <FormDescription>Help us understand it better.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </Form>
     </Sheet>
   );
 }
