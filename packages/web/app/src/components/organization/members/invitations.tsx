@@ -236,11 +236,7 @@ function MemberInvitationForm(props: {
           />
         </div>
         <div className="flex justify-end">
-          <Button
-            type="submit"
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={form.formState.isSubmitting || !form.formState.isValid}
-          >
+          <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isValid}>
             {form.formState.isSubmitting ? 'Sending invitation...' : 'Send invitation'}
           </Button>
         </div>

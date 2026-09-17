@@ -10,28 +10,11 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Input } from '@/components/base/input/input';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Textarea } from '@/components/base/textarea/textarea';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -43,6 +26,7 @@ import {
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -197,78 +181,68 @@ function OrganizationMemberRoleEditor(props: {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <DialogContent className="max-w-[960px]">
-          <DialogHeader>
-            <DialogTitle>Member Role Editor</DialogTitle>
-            <DialogDescription>Adjust the permissions of this role.</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-row space-x-6">
-            <div className="w-72 shrink-0 space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter a name"
-                        type="text"
-                        autoComplete="off"
-                        onSurface="raised"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter a description"
-                        autoComplete="off"
-                        onSurface="raised"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grow">
-              <div className="flex h-[400px] flex-col space-y-2">
-                <FormLabel>Permissions</FormLabel>
-                <ScrollArea fill>
-                  <PermissionSelector
-                    onSelectedPermissionsChange={onChangeSelectedPermissions}
-                    permissionGroups={organization.availableMemberPermissionGroups}
-                    selectedPermissionIds={selectedPermissions}
-                  />
-                </ScrollArea>
-              </div>
+      <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="flex flex-row space-x-6">
+          <div className="w-72 shrink-0 space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter a name"
+                      type="text"
+                      autoComplete="off"
+                      onSurface="raised"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter a description"
+                      autoComplete="off"
+                      onSurface="raised"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="grow">
+            <div className="flex h-[400px] flex-col space-y-2">
+              <FormLabel>Permissions</FormLabel>
+              <ScrollArea fill>
+                <PermissionSelector
+                  onSelectedPermissionsChange={onChangeSelectedPermissions}
+                  permissionGroups={organization.availableMemberPermissionGroups}
+                  selectedPermissionIds={selectedPermissions}
+                />
+              </ScrollArea>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={props.close}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              onClick={form.handleSubmit(onSubmit)}
-              disabled={form.formState.isSubmitting || form.formState.disabled}
-            >
-              {form.formState.isSubmitting ? 'Creating...' : 'Confirm selection'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={props.close}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={form.formState.isSubmitting || form.formState.disabled}>
+            {form.formState.isSubmitting ? 'Creating...' : 'Confirm selection'}
+          </Button>
+        </div>
       </form>
     </Form>
   );
@@ -297,23 +271,17 @@ function OrganizationMemberRoleView(props: {
   const [showOnlyGrantedPermissions, setShowOnlyGrantedPermissions] = useState(true);
 
   return (
-    <DialogContent className="max-w-[960px]">
-      <DialogHeader>
-        <DialogTitle>Member Role: {role.name}</DialogTitle>
-        <DialogDescription>{role.description}</DialogDescription>
-      </DialogHeader>
-      <div className="grow">
-        <div className="flex h-[400px] flex-col space-y-2">
-          <ScrollArea fill>
-            <SelectedPermissionOverview
-              showOnlyAllowedPermissions={showOnlyGrantedPermissions}
-              activePermissionIds={role.permissions}
-              permissionsGroups={organization.availableMemberPermissionGroups}
-            />
-          </ScrollArea>
-        </div>
+    <div className="flex flex-col gap-4">
+      <div className="flex h-[400px] flex-col space-y-2">
+        <ScrollArea fill>
+          <SelectedPermissionOverview
+            showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+            activePermissionIds={role.permissions}
+            permissionsGroups={organization.availableMemberPermissionGroups}
+          />
+        </ScrollArea>
       </div>
-      <DialogFooter>
+      <div className="flex items-center justify-end gap-2">
         <div className="mr-2 flex items-center space-x-2">
           <Checkbox
             id="show-only-granted-permissions"
@@ -330,8 +298,8 @@ function OrganizationMemberRoleView(props: {
         <Button variant="ghost" onClick={props.close}>
           Close
         </Button>
-      </DialogFooter>
-    </DialogContent>
+      </div>
+    </div>
   );
 }
 
@@ -464,130 +432,123 @@ function OrganizationMemberRoleCreator(props: {
 
   return (
     <Form {...form}>
-      <form>
-        <DialogContent className="max-w-[960px]">
-          <DialogHeader>
-            <DialogTitle>Member Role Creator</DialogTitle>
-            <DialogDescription>
-              Create a new role that can be assigned to members of this organization.
-            </DialogDescription>
-          </DialogHeader>
-          {state === 'select' ? (
-            <div className="flex flex-row space-x-6">
-              <div className="w-72 shrink-0 space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter a name"
-                          type="text"
-                          autoComplete="off"
-                          onSurface="raised"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          autoComplete="off"
-                          placeholder="Enter a description"
-                          onSurface="raised"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grow">
-                <div className="flex h-[400px] flex-col space-y-2">
-                  <FormLabel>Permissions</FormLabel>
-                  <ScrollArea fill>
-                    <PermissionSelector
-                      onSelectedPermissionsChange={onChangeSelectedPermissions}
-                      permissionGroups={organization.availableMemberPermissionGroups}
-                      selectedPermissionIds={selectedPermissions}
-                    />
-                  </ScrollArea>
-                </div>
-              </div>
+      {/* The buttons drive the two steps themselves, so a native submit must not fire. */}
+      <form className="flex flex-col gap-4" onSubmit={event => event.preventDefault()}>
+        {state === 'select' ? (
+          <div className="flex flex-row space-x-6">
+            <div className="w-72 shrink-0 space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter a name"
+                        type="text"
+                        autoComplete="off"
+                        onSurface="raised"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        autoComplete="off"
+                        placeholder="Enter a description"
+                        onSurface="raised"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-          ) : (
-            <div className="flex h-[400px] flex-col">
-              <ScrollArea fill>
-                <SelectedPermissionOverview
-                  activePermissionIds={Array.from(selectedPermissions)}
-                  permissionsGroups={organization.availableMemberPermissionGroups}
-                  showOnlyAllowedPermissions={showOnlyGrantedPermissions}
-                />
-              </ScrollArea>
-            </div>
-          )}
-          <DialogFooter>
-            {state === 'select' ? (
-              <>
-                <Button variant="ghost" onClick={props.close}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  onClick={async () => {
-                    const isValid = await form.trigger();
-                    if (!isValid) {
-                      return;
-                    }
-                    setState('confirm');
-                  }}
-                  disabled={form.formState.isSubmitting || form.formState.disabled}
-                >
-                  Confirm selection
-                </Button>
-              </>
-            ) : (
-              <>
-                <div className="mr-2 flex items-center space-x-2">
-                  <Checkbox
-                    id="show-only-granted-permissions"
-                    checked={showOnlyGrantedPermissions}
-                    onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
+            <div className="grow">
+              <div className="flex h-[400px] flex-col space-y-2">
+                <FormLabel>Permissions</FormLabel>
+                <ScrollArea fill>
+                  <PermissionSelector
+                    onSelectedPermissionsChange={onChangeSelectedPermissions}
+                    permissionGroups={organization.availableMemberPermissionGroups}
+                    selectedPermissionIds={selectedPermissions}
                   />
-                  <label
-                    htmlFor="show-only-granted-permissions"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Show only granted permissions
-                  </label>
-                </div>
-                <Button variant="ghost" onClick={() => setState('select')}>
-                  Go back
-                </Button>
-                <Button
-                  type="submit"
-                  onClick={form.handleSubmit(onSubmit)}
-                  disabled={form.formState.isSubmitting || form.formState.disabled}
+                </ScrollArea>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex h-[400px] flex-col">
+            <ScrollArea fill>
+              <SelectedPermissionOverview
+                activePermissionIds={Array.from(selectedPermissions)}
+                permissionsGroups={organization.availableMemberPermissionGroups}
+                showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+              />
+            </ScrollArea>
+          </div>
+        )}
+        <div className="flex items-center justify-end gap-2">
+          {state === 'select' ? (
+            <>
+              <Button type="button" variant="ghost" onClick={props.close}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={async () => {
+                  const isValid = await form.trigger();
+                  if (!isValid) {
+                    return;
+                  }
+                  setState('confirm');
+                }}
+                disabled={form.formState.isSubmitting || form.formState.disabled}
+              >
+                Confirm selection
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="mr-2 flex items-center space-x-2">
+                <Checkbox
+                  id="show-only-granted-permissions"
+                  checked={showOnlyGrantedPermissions}
+                  onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
+                />
+                <label
+                  htmlFor="show-only-granted-permissions"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  {form.formState.isSubmitting
-                    ? 'Creating...'
-                    : `Create role "${form.getValues().name}"`}
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
+                  Show only granted permissions
+                </label>
+              </div>
+              <Button type="button" variant="ghost" onClick={() => setState('select')}>
+                Go back
+              </Button>
+              <Button
+                type="button"
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={form.formState.isSubmitting || form.formState.disabled}
+              >
+                {form.formState.isSubmitting
+                  ? 'Creating...'
+                  : `Create role "${form.getValues().name}"`}
+              </Button>
+            </>
+          )}
+        </div>
       </form>
     </Form>
   );
@@ -597,18 +558,28 @@ function OrganizationMemberRoleCreateButton(props: {
   organization: FragmentType<typeof OrganizationMemberRoleCreator_OrganizationFragment>;
 }) {
   const [open, setOpen] = useState(false);
+  // Bumped on each open so the creator starts fresh without remounting the dialog.
+  const [session, setSession] = useState(0);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>Create a new role</Button>
-      </DialogTrigger>
-      {open ? (
-        <OrganizationMemberRoleCreator
-          organization={props.organization}
-          close={() => setOpen(false)}
-        />
-      ) : null}
+    <Dialog
+      open={open}
+      onOpenChange={next => {
+        if (next) {
+          setSession(s => s + 1);
+        }
+        setOpen(next);
+      }}
+      trigger={<Button>Create a new role</Button>}
+      width="xl"
+      title="Member Role Creator"
+      description="Create a new role that can be assigned to members of this organization."
+    >
+      <OrganizationMemberRoleCreator
+        key={session}
+        organization={props.organization}
+        close={() => setOpen(false)}
+      />
     </Dialog>
   );
 }
@@ -843,6 +814,17 @@ export function OrganizationMemberRoles(props: {
   const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
   const [roleToShow, setRoleToShow] = useState<Role | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+  // Each dialog keeps its last role while it closes, so the exit transition is not empty, and a
+  // session counter remounts the editor and viewer on every open so they start from the role.
+  const editRole = useKeepPreviousData(roleToEdit ?? undefined, roleToEdit === null);
+  const showRole = useKeepPreviousData(roleToShow ?? undefined, roleToShow === null);
+  const showRoleHeader = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, showRole);
+  const deleteTarget = useKeepPreviousData(roleToDelete ?? undefined, roleToDelete === null);
+  const [session, setSession] = useState(0);
+  const openFor = (set: (role: Role) => void) => (role: Role) => {
+    setSession(s => s + 1);
+    set(role);
+  };
 
   const defaultMemberRoleId = organization.oidcIntegration?.defaultMemberRole?.id;
   const canChangeOIDCDefaultRole = organization.me?.role?.name === 'Admin';
@@ -879,8 +861,8 @@ export function OrganizationMemberRoles(props: {
         cell: ({ row }) => (
           <RoleActionsCell
             role={row.original}
-            onShow={() => setRoleToShow(row.original)}
-            onEdit={() => setRoleToEdit(row.original)}
+            onShow={() => openFor(setRoleToShow)(row.original)}
+            onEdit={() => openFor(setRoleToEdit)(row.original)}
             onDelete={() => setRoleToDelete(row.original)}
           />
         ),
@@ -898,11 +880,15 @@ export function OrganizationMemberRoles(props: {
             setRoleToEdit(null);
           }
         }}
+        width="xl"
+        title="Member Role Editor"
+        description="Adjust the permissions of this role."
       >
-        {roleToEdit ? (
+        {editRole ? (
           <OrganizationMemberRoleEditor
+            key={session}
             organization={organization}
-            role={roleToEdit}
+            role={editRole}
             close={() => setRoleToEdit(null)}
           />
         ) : null}
@@ -914,11 +900,15 @@ export function OrganizationMemberRoles(props: {
             setRoleToShow(null);
           }
         }}
+        width="xl"
+        title={`Member Role: ${showRoleHeader?.name ?? ''}`}
+        description={showRoleHeader?.description}
       >
-        {roleToShow ? (
+        {showRole ? (
           <OrganizationMemberRoleView
+            key={session}
             organization={organization}
-            role={roleToShow}
+            role={showRole}
             close={() => setRoleToShow(null)}
           />
         ) : null}
@@ -930,61 +920,54 @@ export function OrganizationMemberRoles(props: {
             setRoleToDelete(null);
           }
         }}
-      >
-        {roleToDelete ? (
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete{' '}
-                <strong>{roleToDelete.name}</strong> from the organization.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleteRoleState.fetching}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                disabled={deleteRoleState.fetching}
-                onClick={async event => {
-                  event.preventDefault();
+        title="Are you absolutely sure?"
+        description={
+          <>
+            This action cannot be undone. This will permanently delete{' '}
+            <strong>{deleteTarget?.name}</strong> from the organization.
+          </>
+        }
+        confirm={{
+          label: deleteRoleState.fetching ? 'Deleting...' : 'Continue',
+          disabled: deleteRoleState.fetching,
+          onClick: async () => {
+            if (!roleToDelete) {
+              return;
+            }
+            try {
+              const result = await deleteRole({
+                input: {
+                  memberRole: {
+                    byId: roleToDelete.id,
+                  },
+                },
+              });
 
-                  try {
-                    const result = await deleteRole({
-                      input: {
-                        memberRole: {
-                          byId: roleToDelete.id,
-                        },
-                      },
-                    });
-
-                    if (result.error) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Failed to delete a role',
-                        description: result.error.message,
-                      });
-                    } else {
-                      toast({
-                        title: 'Role deleted',
-                      });
-                      setRoleToDelete(null);
-                    }
-                  } catch (error) {
-                    console.log('Failed to delete a role');
-                    console.error(error);
-                    toast({
-                      variant: 'destructive',
-                      title: 'Failed to delete a role',
-                      description: String(error),
-                    });
-                  }
-                }}
-              >
-                {deleteRoleState.fetching ? 'Deleting...' : 'Continue'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        ) : null}
-      </AlertDialog>
+              if (result.error) {
+                toast({
+                  variant: 'destructive',
+                  title: 'Failed to delete a role',
+                  description: result.error.message,
+                });
+              } else {
+                toast({
+                  title: 'Role deleted',
+                });
+                setRoleToDelete(null);
+              }
+            } catch (error) {
+              console.log('Failed to delete a role');
+              console.error(error);
+              toast({
+                variant: 'destructive',
+                title: 'Failed to delete a role',
+                description: String(error),
+              });
+            }
+          },
+        }}
+        cancel={{ disabled: deleteRoleState.fetching }}
+      />
       <SubPageLayout>
         <SubPageLayoutHeader
           subPageTitle="List of roles"
