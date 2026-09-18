@@ -11,6 +11,7 @@ import {
 } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 import {
   AssignedTarget,
   GranularAssignedProjects,
@@ -26,6 +27,7 @@ export class ResourceAssignments {
 
   constructor(
     private storage: Storage,
+    private targetStore: TargetStore,
     logger: Logger,
   ) {
     this.logger = logger.child({
@@ -50,7 +52,7 @@ export class ResourceAssignments {
       project.targets.mode === 'granular' ? project.targets.targets : [],
     );
 
-    const targets = await this.storage.findTargetsByIds({
+    const targets = await this.targetStore.findTargetsByIds({
       organizationId: args.organizationId,
       targetIds: targetAssignments.map(target => target.id),
     });
@@ -197,7 +199,7 @@ export class ResourceAssignments {
       }
     }
 
-    const targets = await this.storage.findTargetsByIds({
+    const targets = await this.targetStore.findTargetsByIds({
       organizationId,
       targetIds: Array.from(targetLookupIds),
     });
@@ -320,7 +322,7 @@ export class ResourceAssignments {
       }
     }
 
-    const targets = await this.storage.findTargetsByIds({
+    const targets = await this.targetStore.findTargetsByIds({
       organizationId,
       targetIds: Array.from(targetLookupIds),
     });

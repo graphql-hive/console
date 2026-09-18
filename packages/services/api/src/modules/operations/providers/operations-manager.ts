@@ -13,6 +13,7 @@ import type {
   TargetSelector,
 } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 import { FieldMetricsState, OperationsReader } from './operations-reader';
 
 const DAY_IN_MS = 86_400_000;
@@ -82,6 +83,7 @@ export class OperationsManager {
     private session: Session,
     private reader: OperationsReader,
     private storage: Storage,
+    private targetStore: TargetStore,
   ) {
     this.logger = logger.child({ source: 'OperationsManager' });
 
@@ -379,7 +381,7 @@ export class OperationsManager {
     period: DateRange;
   } & ProjectSelector): Promise<number> {
     this.logger.info('Counting requests of project (period=%o, project=%s)', period, project);
-    const targets = await this.storage.getTargetIdsOfProject({
+    const targets = await this.targetStore.getTargetIdsOfProject({
       organizationId: organization,
       projectId: project,
     });
@@ -578,7 +580,7 @@ export class OperationsManager {
       resolution,
       project,
     );
-    const targets = await this.storage.getTargetIdsOfProject({
+    const targets = await this.targetStore.getTargetIdsOfProject({
       organizationId: organization,
       projectId: project,
     });
@@ -1285,7 +1287,7 @@ export class OperationsManager {
       'Checking existence of collected operations (organization=%s)',
       selector.organizationId,
     );
-    const targets = await this.storage.getTargetIdsOfOrganization(selector);
+    const targets = await this.targetStore.getTargetIdsOfOrganization(selector);
 
     if (targets.length === 0) {
       return false;

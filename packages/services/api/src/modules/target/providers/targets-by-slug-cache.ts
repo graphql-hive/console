@@ -3,13 +3,12 @@ import { memoryDriver } from 'bentocache/build/src/drivers/memory';
 import { redisDriver } from 'bentocache/build/src/drivers/redis';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
-import { PostgresDatabasePool } from '@hive/postgres';
-import { findTargetBySlug } from '@hive/storage';
 import {
   PROMETHEUS_CACHE_KEY_GROUPS,
   PrometheusConfig,
 } from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
+import { TargetStore } from './target-store';
 
 /**
  * Cache for performant Target lookups.
@@ -23,7 +22,7 @@ export class TargetsBySlugCache {
 
   constructor(
     @Inject(REDIS_INSTANCE) redis: Redis,
-    private pool: PostgresDatabasePool,
+    private targetStore: TargetStore,
     prometheusConfig: PrometheusConfig,
   ) {
     this.cache = new BentoCache({
@@ -52,7 +51,7 @@ export class TargetsBySlugCache {
   get(selector: { organizationSlug: string; projectSlug: string; targetSlug: string }) {
     return this.cache.getOrSet({
       key: `${selector.organizationSlug}/${selector.projectSlug}/${selector.targetSlug}`,
-      factory: () => findTargetBySlug({ pool: this.pool })(selector),
+      factory: () => this.targetStore.getTargetBySlugPath(selector),
       ttl: '5min',
       grace: '24h',
     });

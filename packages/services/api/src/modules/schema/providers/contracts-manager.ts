@@ -6,7 +6,7 @@ import { cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
-import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import {
   Contracts,
@@ -25,7 +25,7 @@ export class ContractsManager {
   constructor(
     logger: Logger,
     private contracts: Contracts,
-    private storage: Storage,
+    private targetStore: TargetStore,
     private session: Session,
     private idTranslator: IdTranslator,
     private breakingSchemaChangeUsageHelper: BreakingSchemaChangeUsageHelper,
@@ -79,7 +79,7 @@ export class ContractsManager {
       };
     }
 
-    const breadcrumb = await this.storage.getTargetBreadcrumbForTargetId({
+    const breadcrumb = await this.targetStore.getTargetBreadcrumbForTargetId({
       targetId: contract.targetId,
     });
     if (!breadcrumb) {
@@ -115,7 +115,7 @@ export class ContractsManager {
       return false;
     }
 
-    const breadcrumb = await this.storage.getTargetBreadcrumbForTargetId({
+    const breadcrumb = await this.targetStore.getTargetBreadcrumbForTargetId({
       targetId: contract.targetId,
     });
 

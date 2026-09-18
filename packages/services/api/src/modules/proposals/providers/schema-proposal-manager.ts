@@ -8,7 +8,7 @@ import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
-import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 import { SchemaProposalStorage } from './schema-proposal-storage';
 
 @Injectable({
@@ -20,7 +20,7 @@ export class SchemaProposalManager {
   constructor(
     logger: Logger,
     private proposalStorage: SchemaProposalStorage,
-    private storage: Storage,
+    private targetStore: TargetStore,
     private session: Session,
     private idTranslator: IdTranslator,
     @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
@@ -213,7 +213,7 @@ export class SchemaProposalManager {
     }
 
     const user = await this.session.getViewer();
-    const target = await this.storage.getTargetById(proposal.targetId);
+    const target = await this.targetStore.getTargetById(proposal.targetId);
 
     if (!target) {
       throw new HiveError('Proposal target lookup failed.');
