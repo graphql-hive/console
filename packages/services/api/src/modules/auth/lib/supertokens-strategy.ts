@@ -26,6 +26,7 @@ export class SuperTokensCookieBasedSession extends Session {
   public superTokensUserId: string;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
+  private superadminForeignOrganizationActions: ReadonlyArray<string>;
   /**
    * The properties `userId` and `oidcIntegrationId` are nullable for backwards compatibility.
    * In the future, when all still active sessions are using the new format, we can remove the nullability.
@@ -39,6 +40,7 @@ export class SuperTokensCookieBasedSession extends Session {
       organizationMembers: OrganizationMembers;
       storage: Storage;
       logger: Logger;
+      superadminForeignOrganizationActions: ReadonlyArray<string>;
     },
   ) {
     super({ logger: deps.logger });
@@ -46,6 +48,7 @@ export class SuperTokensCookieBasedSession extends Session {
 
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
+    this.superadminForeignOrganizationActions = deps.superadminForeignOrganizationActions;
 
     if (sessionPayload.version === '2') {
       this.userId = sessionPayload.userId;
@@ -106,21 +109,16 @@ export class SuperTokensCookieBasedSession extends Session {
         organizationId,
       );
 
-      // Allow admins to use all describe actions within foreign organizations
-      // This makes it much more pleasant to debug.
+      // Allow admins to act within foreign organizations per SUPERADMIN_FOREIGN_ORGANIZATION_ACTIONS.
+      // This makes it much more pleasant to debug. Defaults to describe-only access.
+      // The action names come from operator-supplied env config, so they can't be statically
+      // verified against the closed ActionStrings union the way a literal could.
       if (user.isAdmin) {
-        return [
-          {
-            action: '*:describe',
-            effect: 'allow',
-            resource: `hrn:${organizationId}:organization/${organizationId}`,
-          },
-          {
-            action: 'alert:modify',
-            effect: 'allow',
-            resource: `hrn:${organizationId}:organization/${organizationId}`,
-          },
-        ];
+        return this.superadminForeignOrganizationActions.map(action => ({
+          action: action as AuthorizationPolicyStatement['action'],
+          effect: 'allow' as const,
+          resource: `hrn:${organizationId}:organization/${organizationId}`,
+        }));
       }
 
       return [];
@@ -197,6 +195,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   private emailVerification: EmailVerification | null;
   private accessTokenKey: AccessTokenKeyContainer;
   private oidcIntegrationStore: OIDCIntegrationStore;
+  private superadminForeignOrganizationActions: ReadonlyArray<string>;
 
   constructor(deps: {
     logger: Logger;
@@ -205,6 +204,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     emailVerification: EmailVerification | null;
     accessTokenKey: AccessTokenKeyContainer;
     oidcIntegrationStore: OIDCIntegrationStore;
+    superadminForeignOrganizationActions: ReadonlyArray<string>;
   }) {
     super();
     this.organizationMembers = deps.organizationMembers;
@@ -213,6 +213,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     this.supertokensStore = new SuperTokensStore(deps.storage.pool, deps.logger);
     this.accessTokenKey = deps.accessTokenKey;
     this.oidcIntegrationStore = deps.oidcIntegrationStore;
+    this.superadminForeignOrganizationActions = deps.superadminForeignOrganizationActions;
   }
 
   private async _verifySuperTokensAtHomeSession(args: {
@@ -402,6 +403,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       storage: this.storage,
       organizationMembers: this.organizationMembers,
       logger: args.req.log,
+      superadminForeignOrganizationActions: this.superadminForeignOrganizationActions,
     });
   }
 }
