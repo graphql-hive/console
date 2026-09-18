@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from 'urql';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import { KeyIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { OIDCIntegrationConfiguration } from './oidc-integration-configuration';

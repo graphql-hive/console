@@ -2,9 +2,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { useMutation } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { useToast } from '@/components/base/toast/toast';
 import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';
 

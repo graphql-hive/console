@@ -1,8 +1,8 @@
 import { ReactNode, useState } from 'react';
 import { useMutation } from 'urql';
 import { Badge } from '@/components/base/badge/badge';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { RoleMappingPickerSheet } from '../../settings/shared/role-mapping-picker-sheet';

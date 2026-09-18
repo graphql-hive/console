@@ -1,18 +1,20 @@
 import { lazy, useCallback, useEffect, useMemo } from 'react';
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import { HelmetProvider } from 'react-helmet-async';
-import { ToastContainer } from 'react-toastify';
 import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
 import Session from 'supertokens-auth-react/recipe/session';
 import { Provider as UrqlProvider } from 'urql';
 import { z } from 'zod';
 import { TooltipProvider } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { ToastProvider } from '@/components/base/toast/toast';
 import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
+import { Page, TargetLayout } from '@/components/layouts/target';
 import { ThemeProvider } from '@/components/theme/theme-provider';
-import { Toaster } from '@/components/ui/toaster';
+import { Meta } from '@/components/ui/meta';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
+import { useLocalStorage } from '@/lib/hooks';
 import { urqlClient } from '@/lib/urql';
 import { captureMessage, getCurrentScope, init } from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -29,13 +31,9 @@ import {
   useParams,
   useRouter,
 } from '@tanstack/react-router';
-import { ErrorComponent } from './components/error';
-import 'react-toastify/dist/ReactToastify.css';
-import { Page, TargetLayout } from '@/components/layouts/target';
-import { Meta } from '@/components/ui/meta';
-import { useLocalStorage } from '@/lib/hooks';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
+import { ErrorComponent } from './components/error';
 import { AlertActivitySearch } from './components/target/alerts/search-schemas';
 import { InsightsFilterSearch } from './components/target/insights/search-schemas';
 import { DiffsWorkerPoolProvider } from './components/theme/diffs-worker-pool-provider';
@@ -165,20 +163,20 @@ function RootComponent() {
   return (
     <ThemeProvider>
       <TooltipProvider>
-        <HelmetProvider>
-          <Toaster />
-          <SuperTokensWrapper>
-            <QueryClientProvider client={queryClient}>
-              <UrqlProvider value={urqlClient}>
-                <LoadingAPIIndicator />
-                <Outlet />
-              </UrqlProvider>
-            </QueryClientProvider>
-          </SuperTokensWrapper>
-          <ToastContainer hideProgressBar />
-          {/* eslint-disable-next-line no-process-env */}
-          {process.env.NODE_ENV === 'development' && <LazyTanStackRouterDevtools />}
-        </HelmetProvider>
+        <ToastProvider>
+          <HelmetProvider>
+            <SuperTokensWrapper>
+              <QueryClientProvider client={queryClient}>
+                <UrqlProvider value={urqlClient}>
+                  <LoadingAPIIndicator />
+                  <Outlet />
+                </UrqlProvider>
+              </QueryClientProvider>
+            </SuperTokensWrapper>
+            {/* eslint-disable-next-line no-process-env */}
+            {process.env.NODE_ENV === 'development' && <LazyTanStackRouterDevtools />}
+          </HelmetProvider>
+        </ToastProvider>
       </TooltipProvider>
     </ThemeProvider>
   );

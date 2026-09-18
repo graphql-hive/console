@@ -11,10 +11,10 @@ import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialo
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Switch } from '@/components/base/switch/switch';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
-import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';

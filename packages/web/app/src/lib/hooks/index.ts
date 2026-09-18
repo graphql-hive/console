@@ -5,7 +5,6 @@ export { formatNumber, useFormattedNumber } from './use-formatted-number';
 export { formatRpm, formatThroughput, useFormattedThroughput } from './use-formatted-throughput';
 export { useLocalStorageJson } from './use-local-storage-json';
 export { useLocalStorage } from './use-local-storage';
-export { useNotifications } from './use-notifications';
 export { usePagedConnection } from './use-paged-connection';
 export { usePrettify } from './use-prettify';
 export { useToggle } from './use-toggle';
