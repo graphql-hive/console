@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { Sheet } from './sheet';
 
 describe('Sheet', () => {
-  it('anchors to the right edge on the width rung and pads the body by default', () => {
+  it('anchors to the right edge, caps at the requested width and pads the body by default', () => {
     render(
       <Sheet
         open

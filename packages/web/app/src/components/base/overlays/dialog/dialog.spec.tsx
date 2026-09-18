@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { Dialog } from './dialog';
 
 describe('Dialog', () => {
-  it('renders the title, description, body and footer when open, on the width rung', () => {
+  it('renders the title, description, body and footer when open, capped at the requested width', () => {
     render(
       <Dialog
         open
