@@ -4,6 +4,7 @@ import { PostgresDatabasePool, psql, TaggedTemplateLiteralInvocation } from '@hi
 import { FeatureFlagsModel, TargetBreadcrumbModel } from '@hive/storage';
 import type { Target } from '../../../shared/entities';
 import { batch, batchBy } from '../../../shared/helpers';
+import { GraphStore } from '../../graph/providers/graph-store';
 import { Logger } from '../../shared/providers/logger';
 
 @Injectable({
@@ -15,6 +16,7 @@ export class TargetStore {
 
   constructor(
     logger: Logger,
+    private graphStore: GraphStore,
     private pg: PostgresDatabasePool,
   ) {
     this.logger = logger.child({ source: 'TargetStore' });
@@ -60,9 +62,24 @@ export class TargetStore {
         RETURNING ${targetFields}
       `);
 
+      const target = { ...TargetModel.parse(result), orgId: args.organizationId };
+
+      const defaultGraph = await this.graphStore.createGraph(
+        {
+          name: 'default',
+          config: null,
+          organizationId: args.organizationId,
+          projectId: args.projectId,
+          targetId: target.id,
+          sourceGraphId: null,
+        },
+        trx,
+      );
+
       return {
         ok: true,
-        target: { ...TargetModel.parse(result), orgId: args.organizationId },
+        target,
+        defaultGraph,
       } as const;
     });
   }
