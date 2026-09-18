@@ -1,7 +1,8 @@
 import { Injectable, Scope } from 'graphql-modules';
+import lodash from 'lodash';
 import { z } from 'zod';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
-import { invariant } from '@hive/service-common';
+import { invariant, traceFn } from '@hive/service-common';
 import {
   ConditionalBreakingChangeMetadata,
   ConditionalBreakingChangeMetadataModel,
@@ -16,8 +17,28 @@ import {
 } from '@hive/storage';
 import type { Project, Target } from '../../../shared/entities';
 import { batch, cache } from '../../../shared/helpers';
+import { Graph } from '../../graph/providers/graph-store';
 import { Logger, NoopLogger } from '../../shared/providers/logger';
 import { SchemaRevisionStore } from './schema-revision-store';
+
+const DefaultGraphMetadataModel = z.object({
+  type: z.literal('default'),
+  id: z.string(),
+  name: z.string(),
+});
+
+const ContractGraphMetadataModel = z.object({
+  type: z.literal('contract'),
+  id: z.string(),
+  name: z.string(),
+});
+
+const GraphMetadataModel = z.discriminatedUnion('type', [
+  ContractGraphMetadataModel,
+  DefaultGraphMetadataModel,
+]);
+
+type GraphMetadata = z.TypeOf<typeof GraphMetadataModel>;
 
 @Injectable({
   scope: Scope.Operation,
@@ -59,6 +80,15 @@ export class SchemaVersionStore {
       };
       meta: SchemaVersionMeta | null;
       conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadata | null;
+      /** The UUID of the graph this schema version belongs to */
+      graphId: string | null;
+      /**
+       * Additional metadata about the graph
+       * Since graphs can be deleted but its version could still be referenced somewhere else, we store that information here.
+       */
+      graphMetadata: GraphMetadata | null;
+      /** Contracts have a direct relationship to the parent schema version that caused it. */
+      sourceSchemaVersionId: string | null;
     },
   ) {
     const query = psql`/* insertSchemaVersion */
@@ -83,7 +113,10 @@ export class SchemaVersionStore {
           "schema_metadata",
           "metadata_attributes",
           "origin",
-          "meta"
+          "meta",
+          "graph_id",
+          "graph_metadata",
+          "source_schema_version_id"
         )
       VALUES
         (
@@ -106,7 +139,14 @@ export class SchemaVersionStore {
           ${psql.jsonbOrNull(args.schemaMetadata)},
           ${psql.jsonbOrNull(args.metadataAttributes)},
           ${psql.jsonb(SchemaVersionOriginModel.parse(args.origin))},
+<<<<<<< HEAD
           ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))}
+=======
+          ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))},
+          ${args.graphId},
+          ${psql.jsonbOrNull(GraphMetadataModel.nullable().parse(args.graphMetadata))},
+          ${args.sourceSchemaVersionId}
+>>>>>>> 8c30cec74 (associate new schema versions with the default graph (if it exists))
         )
       RETURNING
         ${schemaVersionSQLFields()}
@@ -266,6 +306,16 @@ export class SchemaVersionStore {
     `);
   }
 
+  @traceFn('SchemaVersionsStore.createPublishSchemaVersion', {
+    initAttributes: args => ({
+      'hive.target.id': args.targetId,
+      'hive.organization.id': args.organizationId,
+      'hive.project.id': args.projectId,
+      'hive.version.commit': args.commit,
+      'hive.version.valid': args.valid,
+      'hive.version.service': args.service?.name || '',
+    }),
+  })
   async createPublishSchemaVersion(
     args: {
       schema: string;
@@ -297,6 +347,7 @@ export class SchemaVersionStore {
       organizationId: string;
       schemaRevisionId: string | null;
       revision: string | null;
+      graph: Graph | null;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -321,6 +372,22 @@ export class SchemaVersionStore {
         }
     ),
   ): Promise<SchemaVersion> {
+    this.logger.info(
+      'Creating a new version (input=%o)',
+      lodash.pick(args, [
+        'commit',
+        'author',
+        'valid',
+        'service',
+        'logIds',
+        'url',
+        'previousSchemaVersion',
+        'diffSchemaVersionId',
+        'github',
+        'conditionalBreakingChangeMetadata',
+      ]),
+    );
+
     const output = await this.pg.transaction('createPublishSchemaVersion', async trx => {
       const newLog = await this.insertPushSchemaLog(trx, {
         author: args.author,
@@ -341,6 +408,15 @@ export class SchemaVersionStore {
       const version = await this.insertSchemaVersion(trx, {
         isComposable: args.valid,
         targetId: args.targetId,
+        graphId: args.graph?.id ?? null,
+        graphMetadata: args.graph
+          ? {
+              id: args.graph.id,
+              name: args.graph.name,
+              type: 'default',
+            }
+          : null,
+        sourceSchemaVersionId: null,
         origin: {
           type: 'publish',
           revision: args.service ? null : args.revision,
@@ -448,6 +524,7 @@ export class SchemaVersionStore {
       diffSchemaVersionId: string | null;
       conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
       contracts: null | Array<CreateContractVersionInput>;
+      graph: Graph | null;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -550,6 +627,11 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
+        graphId: args.graph?.id ?? null,
+        graphMetadata: args.graph
+          ? { id: args.graph.id, name: args.graph.name, type: 'default' }
+          : null,
+        sourceSchemaVersionId: null,
       });
 
       // Move all the schema_version_to_log entries of the previous version to the new version
@@ -1306,6 +1388,7 @@ export class SchemaVersionStore {
     origin: {
       version: SchemaVersion;
       target: Target;
+      graph: Graph | null;
       /** Because of legacy schema versions we cannot rely on the value on the version itself. */
       publicSchemaSdl: string | null;
       /** Because of legacy schema versions we cannot rely on the value on the version itself. */
@@ -1313,6 +1396,7 @@ export class SchemaVersionStore {
     };
     target: {
       target: Target;
+      graph: Graph | null;
       latestVersion: SchemaVersion | null;
       latestValidVersion: SchemaVersion | null;
     };
@@ -1332,6 +1416,9 @@ export class SchemaVersionStore {
           source: {
             schemaVersion: { id: args.origin.version.id },
             target: { id: args.origin.target.id, name: args.origin.target.name },
+            graph: args.origin.graph
+              ? { id: args.origin.graph.id, name: args.origin.graph.name }
+              : undefined,
           },
         },
         baseSchema: args.origin.version.baseSchema,
@@ -1349,6 +1436,11 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
+        graphId: args.target.graph?.id ?? null,
+        graphMetadata: args.target.graph
+          ? { id: args.target.graph.id, name: args.target.graph.name, type: 'default' }
+          : null,
+        sourceSchemaVersionId: null,
       });
 
       if (args.publicSchemaChanges?.length) {
@@ -1494,6 +1586,9 @@ const schemaVersionSQLFields = (t = psql``) => psql`
   , ${t}"origin"
   , ${t}"meta"
   , ${t}"supergraph_changes" as "supergraphChanges"
+  , ${t}"graph_id" as "graphId"
+  , ${t}"graph_metadata" as "graphMetadata"
+  , ${t}"source_schema_version_id" as "sourceSchemaVersionId"
 `;
 
 const schemaLogFields = (prefix = psql``) => psql`
@@ -1592,6 +1687,12 @@ const SchemaVersionOriginPromotionModel = z.object({
       id: z.string(),
       name: z.string(),
     }),
+    graph: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+      })
+      .optional(),
   }),
 });
 
@@ -1665,6 +1766,9 @@ const SchemaVersionModel = z
     /** This property only exists for legacy backfill behaviour, do not use it unless you know what you are doing. */
     actionId: z.string().nullable(),
     origin: SchemaVersionOriginModel.nullable(),
+    graphId: z.string(),
+    graphMetadata: GraphMetadataModel.nullable(),
+    sourceSchemaVersionId: z.string().nullable(),
   })
   .and(
     z
