@@ -7,6 +7,7 @@ import type { SchemaPushInput } from '../../../__generated__/types';
 import { ProjectType } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
+import { ProjectStore } from '../../project/providers/project-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import {
   registryOperationOutcomeCount,
@@ -33,6 +34,7 @@ export class SchemaPusher {
     private session: Session,
     private idTranslator: IdTranslator,
     private storage: Storage,
+    private projectStore: ProjectStore,
     private revisions: SchemaRevisionStore,
   ) {}
 
@@ -89,7 +91,7 @@ export class SchemaPusher {
       },
     });
 
-    const project = await this.storage.getProject({
+    const project = await this.projectStore.getProject({
       organizationId: selector.organizationId,
       projectId: selector.projectId,
     });
