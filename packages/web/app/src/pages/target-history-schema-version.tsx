@@ -278,7 +278,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
         {
           value: 'default',
           label: 'Default Graph',
-          icon: versionStatusIcon(schemaVersion, {
+          trailing: versionStatusIcon(schemaVersion, {
             changed: 'Main graph schema changed',
             succeeded: 'Composition succeeded.',
             failed: 'Composition failed.',
@@ -287,7 +287,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
         ...contractVersions.map(edge => ({
           value: edge.node.id,
           label: `${edge.node.contractName}@${edge.node.id.substring(0, 8)}`,
-          icon: versionStatusIcon(edge.node, {
+          trailing: versionStatusIcon(edge.node, {
             changed: 'Contract schema changed',
             succeeded: 'Contract composition succeeded.',
             failed: 'Contract composition failed.',

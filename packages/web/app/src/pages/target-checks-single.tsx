@@ -1218,12 +1218,12 @@ function SchemaChecksView(props: {
         {
           value: 'default',
           label: 'Default Graph',
-          icon: checkStatusIcon(schemaCheck, 'Schema changed'),
+          trailing: checkStatusIcon(schemaCheck, 'Schema changed'),
         },
         ...contractChecks.map(edge => ({
           value: edge.node.id,
           label: edge.node.contractName,
-          icon: checkStatusIcon(edge.node, 'Contract schema changed'),
+          trailing: checkStatusIcon(edge.node, 'Contract schema changed'),
         })),
       ]}
       size="compact"

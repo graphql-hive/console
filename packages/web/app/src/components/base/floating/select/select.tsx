@@ -32,6 +32,11 @@ export type SelectOption = {
   tooltip?: ReactNode;
   /** Extra text the search field matches besides the label: an email, a full name, an alias. */
   keywords?: string;
+  /**
+   * Sits at the row's far end: a status, a count, a shortcut. The leading slot belongs to the
+   * selection check, so metadata that would collide with it goes here.
+   */
+  trailing?: ReactNode;
   'data-cy'?: string;
 };
 
@@ -223,6 +228,11 @@ export function Select({
                             </span>
                           ) : null}
                         </BaseSelect.ItemText>
+                        {option.trailing ? (
+                          <span className="ml-auto inline-flex shrink-0 items-center pl-2">
+                            {option.trailing}
+                          </span>
+                        ) : null}
                       </BaseSelect.Item>
                     );
                     // Same wrap as a Menu row: a disabled item has pointer-events-none, so the

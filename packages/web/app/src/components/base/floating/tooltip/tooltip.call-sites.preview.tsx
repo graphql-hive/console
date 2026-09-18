@@ -285,7 +285,7 @@ function ContractPicker() {
         {
           value: 'default',
           label: 'Default Graph',
-          icon: (
+          trailing: (
             <StatusTooltip
               icon={<GitCompareIcon className="size-3.5" />}
               label="Main graph schema changed"
@@ -295,7 +295,7 @@ function ContractPicker() {
         {
           value: 'contract',
           label: 'public@1a2b3c4d',
-          icon: (
+          trailing: (
             <StatusTooltip
               icon={<CheckIcon className="text-success size-3.5" />}
               label="Contract composition succeeded."
