@@ -645,9 +645,7 @@ function ChangesTab(props: {
           </Subtitle>
         </div>
       )}
-      {props.diffs?.map((changeProps, idx) => (
-        <DiffService key={idx} {...changeProps} />
-      ))}
+      {props.diffs?.map((changeProps, idx) => <DiffService key={idx} {...changeProps} />)}
     </>
   );
 }
