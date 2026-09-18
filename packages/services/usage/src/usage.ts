@@ -22,7 +22,9 @@ import { createFallbackQueue } from './fallback-queue';
 import {
   bufferFlushes,
   compressDuration,
+  droppedOversizedOperations,
   estimationError,
+  fallbackDroppedOperations,
   kafkaDuration,
   rawOperationFailures,
   rawOperationWrites,
@@ -294,6 +296,18 @@ export function createUsage(config: {
         logger.info('Fallback queue flushed');
         changeStatus(Status.Ready);
       }
+    },
+    onTooLarge(numOfOperations) {
+      // Already counted in rawOperationFailures when it entered the queue, so no
+      // further metric change there; it stays counted, permanently, by simply never
+      // being decremented.
+      droppedOversizedOperations.inc(numOfOperations);
+    },
+    onQueueFull(numOfOperations) {
+      // Distinct reason from onTooLarge: we're backlogged, not that this one payload
+      // is too big. Also already counted in rawOperationFailures at entry; stays
+      // counted by never being decremented.
+      fallbackDroppedOperations.inc(numOfOperations);
     },
     logger: logger.child({ component: 'fallback' }),
   });
