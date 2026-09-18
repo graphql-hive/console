@@ -51,6 +51,7 @@ export default defineConfig({
             { label: 'Avatar', children: [{ label: 'Component Examples' }] },
             { label: 'Badge', children: [{ label: 'Component Examples' }] },
             { label: 'StatusDot' },
+            { label: 'Legend' },
             { label: 'Spinner' },
             { label: 'Button' },
             { label: 'Card' },
@@ -61,7 +62,6 @@ export default defineConfig({
             { label: 'Collapsible', children: [{ label: 'Component Examples' }] },
             { label: 'ScrollArea', children: [{ label: 'Component Examples' }] },
             { label: 'Tabs', children: [{ label: 'Component Examples' }] },
-            { label: 'TabbedView', children: [{ label: 'Component Examples' }] },
             { label: 'Separator', children: [{ label: 'Component Examples' }] },
           ],
         },
@@ -131,7 +131,13 @@ export default defineConfig({
     // compositions that actually ship.
     {
       label: 'Components',
-      children: [{ label: 'BillingPlanPicker' }, { label: 'PageLead' }, { label: 'NotFound' }],
+      children: [
+        { label: 'BillingPlanPicker' },
+        { label: 'PageLead' },
+        { label: 'NotFound' },
+        { label: 'FailureCard' },
+        { label: 'TabbedView', children: [{ label: 'Component Examples' }] },
+      ],
     },
   ],
   theme: {
