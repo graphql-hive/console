@@ -99,6 +99,9 @@ export function SecondaryNavigation({
             const anchor = (
               <Link
                 {...link}
+                // The router marks a link current on a prefix match, which would make the area's
+                // root page current everywhere; `value` decides, so its own match must be exact.
+                activeOptions={{ exact: true }}
                 className={itemVariants({ variant, size, active })}
                 aria-current={active ? 'page' : undefined}
               >

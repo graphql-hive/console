@@ -36,17 +36,4 @@ describe('Tabs', () => {
     expect(policy.getAttribute('aria-disabled')).toBe('true');
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
   });
-
-  it('leads the strip with the action without making it a tab', () => {
-    render(
-      <Tabs
-        items={ITEMS}
-        defaultValue="details"
-        variant="header"
-        action={<button type="button">Pick graph</button>}
-      />,
-    );
-    expect(screen.getByRole('button', { name: 'Pick graph' })).toBeTruthy();
-    expect(screen.getAllByRole('tab')).toHaveLength(3);
-  });
 });

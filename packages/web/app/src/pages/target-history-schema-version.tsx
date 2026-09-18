@@ -226,12 +226,15 @@ type SchemaVersionViewProps = {
 function SchemaVersionView(props: SchemaVersionViewProps) {
   const schemaVersion = useFragment(SchemaVersionView_SchemaVersionFragment, props.schemaVersion);
 
-  const [selectedItem, setSelectedItem] = useState<string>('default');
+  const [selectedItem, setSelectedItem] = useResetState<string>(
+    () => 'default',
+    [schemaVersion.id],
+  );
   const contractVersionNode = useMemo(
     () =>
       schemaVersion.contractVersions?.edges?.find(edge => edge.node.id === selectedItem)?.node ??
       null,
-    [selectedItem],
+    [selectedItem, schemaVersion],
   );
   const [selectedView, setSelectedView] = useResetState<string>(
     () => 'details',

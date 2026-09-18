@@ -23,6 +23,8 @@ describe('TabbedView', () => {
     const band = view.firstElementChild!;
     expect(band.querySelectorAll('[role="tab"]')).toHaveLength(2);
     expect(band.textContent).toContain('Pick graph');
+    // The picker is a sibling of the tablist, never a child of it.
+    expect(band.querySelector('[role="tablist"]')!.textContent).not.toContain('Pick graph');
     expect(screen.getByRole('tabpanel').textContent).toBe('Details view');
     expect(screen.queryByText('Schema view')).toBeNull();
 

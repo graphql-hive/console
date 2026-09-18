@@ -113,7 +113,9 @@ export function ProposalEditor(props: {
     }
   }, [changedServices, activeTab]);
 
-  const activeService = changedServices[activeTab] as ServiceTab | undefined;
+  // Clamped for the render in which the parent shortens the list, before the effect syncs the state.
+  const activeIndex = Math.min(activeTab, Math.max(changedServices.length - 1, 0));
+  const activeService = changedServices[activeIndex] as ServiceTab | undefined;
 
   const onAddNewService = useCallback(
     (
@@ -211,28 +213,28 @@ export function ProposalEditor(props: {
 
   const setActiveTabSource = useCallback(
     (source: string | undefined) => {
-      changedServices[activeTab] = { ...changedServices[activeTab], source: source ?? '' };
+      changedServices[activeIndex] = { ...changedServices[activeIndex], source: source ?? '' };
       setChangedServices([...changedServices]);
     },
-    [activeTab, changedServices],
+    [activeIndex, changedServices],
   );
   const setActiveTabUrl = useCallback(
     (url: string | undefined) => {
-      if (changedServices[activeTab].__typename === 'CompositeSchema') {
-        changedServices[activeTab] = { ...changedServices[activeTab], url: url ?? '' };
+      if (changedServices[activeIndex].__typename === 'CompositeSchema') {
+        changedServices[activeIndex] = { ...changedServices[activeIndex], url: url ?? '' };
         setChangedServices([...changedServices]);
       }
     },
-    [activeTab, changedServices],
+    [activeIndex, changedServices],
   );
   const setActiveTabName = useCallback(
     (name: string) => {
-      if (changedServices[activeTab].__typename === 'CompositeSchema') {
-        changedServices[activeTab] = { ...changedServices[activeTab], service: name };
+      if (changedServices[activeIndex].__typename === 'CompositeSchema') {
+        changedServices[activeIndex] = { ...changedServices[activeIndex], service: name };
         setChangedServices([...changedServices]);
       }
     },
-    [activeTab, changedServices],
+    [activeIndex, changedServices],
   );
   const onToggleTabSettings = (e: any) => {
     e?.preventDefault?.();
@@ -263,17 +265,17 @@ export function ProposalEditor(props: {
         />
       </div>
       {props.error}
-      {(activeService || changedServices.length > 0) && (
+      {activeService && (
         <div className="mt-4">
           <Tabs
-            value={activeService ? tabValue(activeService, activeTab) : undefined}
+            value={tabValue(activeService, activeIndex)}
             onValueChange={value =>
               setActiveTab(
                 changedServices.findIndex((service, idx) => tabValue(service, idx) === value),
               )
             }
             items={changedServices.map((service, idx) => {
-              const isActiveTab = idx === activeTab;
+              const isActiveTab = idx === activeIndex;
               const isNewService = service.__typename === 'CompositeSchema' && service.unpublished;
               const hasNameConflict =
                 isNewService &&

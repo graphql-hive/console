@@ -43,6 +43,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { DownloadButton } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
+import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import {
   CheckIcon,
@@ -1201,11 +1202,11 @@ function SchemaChecksView(props: {
 }) {
   const schemaCheck = useFragment(SchemaChecksView_SchemaCheckFragment, props.schemaCheck);
 
-  const [selectedItem, setSelectedItem] = useState<string>('default');
+  const [selectedItem, setSelectedItem] = useResetState<string>(() => 'default', [schemaCheck.id]);
   const selectedContractCheckNode = useMemo(
     () =>
       schemaCheck.contractChecks?.edges?.find(edge => edge.node.id === selectedItem)?.node ?? null,
-    [selectedItem],
+    [selectedItem, schemaCheck],
   );
 
   const contractChecks = schemaCheck.contractChecks?.edges ?? [];
@@ -1233,6 +1234,7 @@ function SchemaChecksView(props: {
 
   return selectedContractCheckNode ? (
     <ContractCheckView
+      key={selectedContractCheckNode.id}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
