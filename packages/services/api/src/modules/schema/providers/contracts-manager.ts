@@ -4,6 +4,7 @@ import * as GraphQLSchema from '../../../__generated__/types';
 import type { Target } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
+import { GraphStore } from '../../graph/providers/graph-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { TargetStore } from '../../target/providers/target-store';
@@ -26,6 +27,7 @@ export class ContractsManager {
     logger: Logger,
     private contracts: Contracts,
     private targetStore: TargetStore,
+    private graphStore: GraphStore,
     private session: Session,
     private idTranslator: IdTranslator,
     private breakingSchemaChangeUsageHelper: BreakingSchemaChangeUsageHelper,
@@ -62,7 +64,12 @@ export class ContractsManager {
       },
     });
 
+    const sourceGraph = await this.graphStore.findGraphForTargetIdByName(targetId, 'default');
+
     return await this.contracts.createContract({
+      organizationId,
+      projectId,
+      sourceGraphId: sourceGraph?.id ?? null,
       contract: {
         ...args.contract,
         targetId,
