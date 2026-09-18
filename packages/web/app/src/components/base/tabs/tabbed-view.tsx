@@ -23,7 +23,7 @@ type TabbedViewProps = {
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
-  /** Leads the strip: the picker that scopes the views, such as a contract. */
+  /** Leads the strip in the band, outside the tablist: the picker that scopes the views. */
   action?: ReactNode;
   bodyPadding?: 'default' | 'none';
   attrs?: Record<string, string>;
@@ -47,7 +47,8 @@ export function TabbedView({
       {...attrs}
     >
       <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 flex items-center border-b">
-        <TabStrip items={items} variant="header" action={action} />
+        {action != null ? <div className="flex items-center pl-2">{action}</div> : null}
+        <TabStrip items={items} variant="header" />
       </div>
       {items.map(item => (
         <BaseTabs.Panel

@@ -31,8 +31,6 @@ type TabsProps = {
   size?: TabsSize;
   /** `vertical` stacks the tabs in a column with the panels beside them. */
   orientation?: TabsOrientation;
-  /** Leads the strip: a picker that scopes what the tabs show, say. */
-  action?: ReactNode;
   attrs?: Record<string, string>;
 };
 
@@ -54,7 +52,7 @@ const listVariants = cva('relative flex', {
     variant: {
       underline: 'border-neutral-5 gap-1',
       // The band around it draws the border and fill.
-      header: 'h-10 w-full gap-1 px-2',
+      header: 'h-10 grow gap-1 px-2',
     },
     orientation: {
       horizontal: 'items-center',
@@ -78,11 +76,13 @@ const tabVariants = cva(
     variants: {
       variant: {
         underline: '',
-        header: 'text-neutral-10 h-full',
+        header: 'h-full',
       },
+      // Padding and text size are set per variant and size pair below: cva concatenates, so an
+      // element must never carry two utilities for one property.
       size: {
-        default: 'px-3 py-2 text-sm',
-        sm: 'px-2.5 py-1.5 text-xs',
+        default: '',
+        sm: '',
       },
       orientation: {
         horizontal: '',
@@ -90,10 +90,12 @@ const tabVariants = cva(
       },
     },
     compoundVariants: [
-      { variant: 'underline', orientation: 'horizontal', class: '-mb-px' },
-      { variant: 'underline', orientation: 'vertical', class: '-ml-px' },
+      { variant: 'underline', size: 'default', class: 'px-3 py-2 text-sm' },
+      { variant: 'underline', size: 'sm', class: 'px-2.5 py-1.5 text-xs' },
       { variant: 'header', size: 'default', class: 'px-2.5 py-0 text-xs' },
       { variant: 'header', size: 'sm', class: 'px-2 py-0 text-xs' },
+      { variant: 'underline', orientation: 'horizontal', class: '-mb-px' },
+      { variant: 'underline', orientation: 'vertical', class: '-ml-px' },
     ],
   },
 );
@@ -142,12 +144,10 @@ export function TabStrip({
   variant = 'underline',
   size = 'default',
   orientation = 'horizontal',
-  action,
-}: Pick<TabsProps, 'items' | 'variant' | 'size' | 'orientation' | 'action'>) {
+}: Pick<TabsProps, 'items' | 'variant' | 'size' | 'orientation'>) {
   const icon = variant === 'header' ? iconSize.sm : iconSize[size];
   return (
     <BaseTabs.List className={listVariants({ variant, orientation })}>
-      {action != null ? <div className="flex items-center pr-1">{action}</div> : null}
       {items.map(item => {
         const Icon = item.icon;
         const tab = (
@@ -187,7 +187,6 @@ export function Tabs({
   variant = 'underline',
   size = 'default',
   orientation = 'horizontal',
-  action,
   attrs,
 }: TabsProps) {
   return (
@@ -199,13 +198,7 @@ export function Tabs({
       className={rootVariants({ variant, orientation })}
       {...attrs}
     >
-      <TabStrip
-        items={items}
-        variant={variant}
-        size={size}
-        orientation={orientation}
-        action={action}
-      />
+      <TabStrip items={items} variant={variant} size={size} orientation={orientation} />
       {items.map(item =>
         item.content != null ? (
           <BaseTabs.Panel
