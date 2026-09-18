@@ -7,6 +7,7 @@ import { AccessError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 
 /**
  * Responsible for auth checks.
@@ -19,6 +20,7 @@ import { Storage } from '../../shared/providers/storage';
 export class ResourceSelector {
   constructor(
     private storage: Storage,
+    private targetStore: TargetStore,
     private session: Session,
     private schemaVersions: SchemaVersionStore,
   ) {}
@@ -128,7 +130,7 @@ export class ResourceSelector {
   }
 
   async getTargetsFromOrganizationForResourceSelector(project: ProjectForResourceSelector) {
-    const targets = await this.storage.getTargets({
+    const targets = await this.targetStore.getTargets({
       organizationId: project.organizationId,
       projectId: project.projectId,
     });
@@ -144,7 +146,7 @@ export class ResourceSelector {
     project: ProjectForResourceSelector,
     targetId: string,
   ) {
-    const target = await this.storage.getTargetById(targetId);
+    const target = await this.targetStore.getTargetById(targetId);
 
     if (!target) {
       return null;

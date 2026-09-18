@@ -1,7 +1,7 @@
 import type { Schema } from '../../../shared/entities';
 import { SchemaManager } from '../../schema/providers/schema-manager';
 import { toGraphQLSchemaCheckCurry } from '../../schema/to-graphql-schema-check';
-import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 import { SchemaProposalManager } from '../providers/schema-proposal-manager';
 import type { SchemaProposalResolvers } from './../../../__generated__/types';
 
@@ -16,7 +16,7 @@ export const SchemaProposal: SchemaProposalResolvers = {
     if (proposal.rebasedSchemaSDL) {
       return proposal.rebasedSchemaSDL;
     }
-    const target = await injector.get(Storage).getTargetById((proposal as any).targetId);
+    const target = await injector.get(TargetStore).getTargetById((proposal as any).targetId);
     if (!target) {
       throw new Error('uh oh');
     }
@@ -64,7 +64,7 @@ export const SchemaProposal: SchemaProposalResolvers = {
     throw new Error('Something went wrong.');
   },
   async checks(proposal, args, { injector }) {
-    const target = await injector.get(Storage).getTargetById((proposal as any).targetId);
+    const target = await injector.get(TargetStore).getTargetById((proposal as any).targetId);
     if (!target) {
       throw new Error('oops');
     }

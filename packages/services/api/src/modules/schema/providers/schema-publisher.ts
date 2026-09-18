@@ -40,6 +40,7 @@ import {
 } from '../../shared/providers/registry-operation-metrics';
 import { Storage, type TargetSelector } from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
+import { TargetStore } from '../../target/providers/target-store';
 import { toGraphQLSchemaCheck } from '../to-graphql-schema-check';
 import { ArtifactStorageWriter } from './artifact-storage-writer';
 import type { SchemaModuleConfig } from './config';
@@ -167,6 +168,7 @@ export class SchemaPublisher {
     logger: Logger,
     private session: Session,
     private storage: Storage,
+    private targetStore: TargetStore,
     private schemaManager: SchemaManager,
     private targetManager: TargetManager,
     private alertsManager: AlertsManager,
@@ -211,7 +213,7 @@ export class SchemaPublisher {
     failDangerousChangeTypes: Types.DangerousChangeType[];
   }> {
     try {
-      const settings = await this.storage.getTargetSettings(selector);
+      const settings = await this.targetStore.getTargetSettings(selector);
 
       if (!settings.validation.isEnabled) {
         this.logger.debug('Usage validation disabled');
@@ -365,7 +367,7 @@ export class SchemaPublisher {
     });
 
     const [target, project, organization, schemaProposal] = await Promise.all([
-      this.storage.getTarget({
+      this.targetStore.getTarget({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
         targetId: selector.targetId,
@@ -1339,7 +1341,7 @@ export class SchemaPublisher {
     );
 
     const [target, project] = await Promise.all([
-      this.storage.getTarget({
+      this.targetStore.getTarget({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
         targetId: selector.targetId,
@@ -1590,7 +1592,7 @@ export class SchemaPublisher {
               organizationId: selector.organizationId,
               projectId: selector.projectId,
             }),
-            this.storage.getTarget({
+            this.targetStore.getTarget({
               organizationId: selector.organizationId,
               projectId: selector.projectId,
               targetId: selector.targetId,
@@ -1889,7 +1891,7 @@ export class SchemaPublisher {
         organizationId: organizationId,
         projectId: projectId,
       }),
-      this.storage.getTarget({
+      this.targetStore.getTarget({
         organizationId: organizationId,
         projectId: projectId,
         targetId: targetId,
@@ -3045,7 +3047,7 @@ export class SchemaPublisher {
     const [organization, project, target] = await Promise.all([
       this.storage.getOrganization({ organizationId: args.target.organizationId }),
       this.storage.getProjectById(args.target.projectId),
-      this.storage.getTargetById(args.target.targetId),
+      this.targetStore.getTargetById(args.target.targetId),
     ]);
 
     if (!organization || !target || !project) {
@@ -3095,7 +3097,7 @@ export class SchemaPublisher {
       const sourceTarget =
         args.source.targetId === target.id
           ? target
-          : await this.storage.getTargetById(args.source.targetId);
+          : await this.targetStore.getTargetById(args.source.targetId);
 
       if (!sourceTarget) {
         this.logger.debug(

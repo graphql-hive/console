@@ -5,6 +5,7 @@ import { cache } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { Session } from '../../auth/lib/authz';
 import { TargetAccessTokenSession } from '../../auth/lib/target-access-token-strategy';
+import { TargetStore } from '../../target/providers/target-store';
 import { Logger } from './logger';
 import { Storage } from './storage';
 
@@ -27,6 +28,7 @@ export class IdTranslator {
   private logger: Logger;
   constructor(
     private storage: Storage,
+    private targetStore: TargetStore,
     private session: Session,
     logger: Logger,
   ) {
@@ -84,7 +86,7 @@ export class IdTranslator {
       filterSelector('target', selector),
     );
 
-    return this.storage.getTargetId({
+    return this.targetStore.getTargetId({
       organizationSlug: selector.organizationSlug,
       projectSlug: selector.projectSlug,
       targetSlug: selector.targetSlug,
@@ -137,7 +139,7 @@ export class IdTranslator {
         return null;
       }
 
-      const target = await this.storage.getTargetById(args.reference.byId);
+      const target = await this.targetStore.getTargetById(args.reference.byId);
       if (!target) {
         this.logger.debug('Target not found. (targetId=%s)', args.reference.byId);
         return null;

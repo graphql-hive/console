@@ -16,6 +16,7 @@ import { parseGraphQLSource } from '../../../shared/schema';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks } from './registry-checks';
@@ -39,6 +40,7 @@ export class SchemaVersionHelper {
     private projectManager: ProjectManager,
     private registryChecks: RegistryChecks,
     private storage: Storage,
+    private targetStore: TargetStore,
     private logger: Logger,
     private compositionOrchestrator: CompositionOrchestrator,
     private schemaVersions: SchemaVersionStore,
@@ -236,7 +238,7 @@ export class SchemaVersionHelper {
       { failDiffOnDangerousChange, failAllDangerousChanges, failDangerousChangeTypes },
     ] = await Promise.all([
       this.projectManager.getProjectById(schemaVersion.projectId),
-      this.storage.getTargetSettings({
+      this.targetStore.getTargetSettings({
         targetId: schemaVersion.targetId,
         projectId: schemaVersion.projectId,
         organizationId: schemaVersion.organizationId,

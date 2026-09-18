@@ -39,6 +39,7 @@ import {
   TargetSelector,
 } from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
+import { TargetStore } from '../../target/providers/target-store';
 import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { SCHEMA_MODULE_CONFIG, type SchemaModuleConfig } from './config';
 import { Contracts } from './contracts';
@@ -74,6 +75,7 @@ export class SchemaManager {
     logger: Logger,
     private session: Session,
     private storage: Storage,
+    private targetStore: TargetStore,
     private projectManager: ProjectManager,
     private compositionOrchestrator: CompositionOrchestrator,
     private crypto: Encryptor,
@@ -168,7 +170,7 @@ export class SchemaManager {
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
-      this.storage.getTarget({
+      this.targetStore.getTarget({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
         targetId: selector.targetId,
@@ -320,7 +322,7 @@ export class SchemaManager {
       return null;
     }
 
-    const target = await this.storage.getTargetById(schemaVersion.targetId);
+    const target = await this.targetStore.getTargetById(schemaVersion.targetId);
 
     if (!target) {
       this.logger.debug(
@@ -843,7 +845,7 @@ export class SchemaManager {
       return null;
     }
 
-    const breadcrumb = await this.storage.getTargetBreadcrumbForTargetId({
+    const breadcrumb = await this.targetStore.getTargetBreadcrumbForTargetId({
       targetId: args.targetId,
     });
     if (!breadcrumb) {
@@ -1000,7 +1002,7 @@ export class SchemaManager {
         targetId: args.targetId,
         schemaCheckId: args.schemaCheckId,
       }),
-      this.storage.getTarget({
+      this.targetStore.getTarget({
         organizationId: args.organizationId,
         projectId: args.projectId,
         targetId: args.targetId,

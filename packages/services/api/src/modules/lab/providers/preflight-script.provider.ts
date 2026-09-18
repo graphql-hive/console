@@ -7,6 +7,7 @@ import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 
 const SourceCodeModel = z.string().max(5_000);
 
@@ -36,6 +37,7 @@ export class PreflightScriptProvider {
   constructor(
     logger: Logger,
     private storage: Storage,
+    private targetStore: TargetStore,
     private session: Session,
     private idTranslator: IdTranslator,
     private auditLogs: AuditLogRecorder,
@@ -162,7 +164,7 @@ export class PreflightScriptProvider {
       },
     });
 
-    const updatedTarget = await this.storage.getTarget({
+    const updatedTarget = await this.targetStore.getTarget({
       organizationId,
       projectId,
       targetId,

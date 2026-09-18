@@ -50,7 +50,20 @@ export class ProjectManager {
     organization: GraphQLSchema.OrganizationReferenceInput;
     slug: string;
     type: ProjectType;
-  }) {
+  }): Promise<
+    | {
+        ok: true;
+        project: Project;
+        targets: Array<Target>;
+      }
+    | {
+        ok: false;
+        message: string;
+        inputErrors?: {
+          slug?: string | null;
+        };
+      }
+  > {
     this.logger.info('Creating a project (input=%o)', input);
 
     const inputParseResult = CreateProjectModel.safeParse(input);
