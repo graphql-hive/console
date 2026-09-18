@@ -69,7 +69,7 @@ export const Widths = createPreview(() => (
         width={width}
         trigger={<Button>{width}</Button>}
         title={`Width ${width}`}
-        description="Full width below the sm breakpoint, then capped at the rung."
+        description="Full width below the sm breakpoint, then capped at this width's max-width."
         footer={<Button variant="primary">Done</Button>}
       >
         <TokenFields />

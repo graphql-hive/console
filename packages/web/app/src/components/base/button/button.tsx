@@ -49,7 +49,7 @@ export const buttonVariants = cva(
       },
       // What is inside. `label` and `iconOnly` pad their own segments, so the separators between
       // segments can run the full height; only `children` pads the button itself, by size.
-      // `iconOnly` is a square: its width is the rung's height, set in the compound variants.
+      // `iconOnly` is a square: its width is the size's height, set in the compound variants.
       layout: {
         children: '',
         label: '',

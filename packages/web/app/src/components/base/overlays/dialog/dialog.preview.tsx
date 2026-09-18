@@ -55,7 +55,7 @@ export const Default = createPreview(() => {
   );
 });
 
-/** The four rungs. `md` is the default and the most common legacy width. */
+/** The four widths. `md` is the default and the most common legacy width. */
 export const Widths = createPreview(() => (
   <div className="flex flex-wrap gap-3">
     {(['sm', 'md', 'lg', 'xl'] as const).map(width => (
@@ -64,7 +64,7 @@ export const Widths = createPreview(() => (
         width={width}
         trigger={<Button>{width}</Button>}
         title={`Width ${width}`}
-        description="The dialog is full width below the rung and never wider than it."
+        description="The dialog is full width below this width's max-width and never wider than it."
         footer={<Button variant="primary">Done</Button>}
       >
         <p className="text-neutral-11 text-sm">
