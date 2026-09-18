@@ -182,8 +182,12 @@ export const TransferOrganizationOwnershipModal = ({
               keywords: `${member.user.fullName} ${member.user.email}`,
             }))}
             value={values.newOwner}
-            onValueChange={value => void setFieldValue('newOwner', value, true)}
-            onBlur={() => void setFieldTouched('newOwner')}
+            // Touched on pick rather than on blur: the popup takes focus when it opens, which
+            // would blur the trigger and show "not defined" before anyone has chosen.
+            onValueChange={value => {
+              void setFieldTouched('newOwner', true, false);
+              void setFieldValue('newOwner', value, true);
+            }}
             width="full"
             onSurface="raised"
           />

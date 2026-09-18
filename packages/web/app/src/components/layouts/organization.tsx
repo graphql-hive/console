@@ -300,7 +300,7 @@ function CreateProjectModal(props: {
       },
     });
     if (data?.createProject.ok) {
-      toggleModalOpen();
+      props.toggleModalOpen();
       void router.navigate({
         to: '/$organizationSlug/$projectSlug',
         params: {
@@ -321,17 +321,17 @@ function CreateProjectModal(props: {
     }
   }
 
-  // The form clears on close rather than by remounting the modal on each toggle, which would
-  // skip the open and close transitions.
-  function toggleModalOpen() {
-    props.toggleModalOpen();
-    form.reset();
-  }
-
   return (
     <CreateProjectModalContent
       isOpen={props.isOpen}
-      toggleModalOpen={toggleModalOpen}
+      toggleModalOpen={props.toggleModalOpen}
+      // The form clears once the close transition has finished, rather than on toggle, which
+      // would blank it mid-fade, or by remounting, which would skip the transitions.
+      onOpenChangeComplete={open => {
+        if (!open) {
+          form.reset();
+        }
+      }}
       form={form}
       onSubmit={onSubmit}
     />
@@ -341,6 +341,7 @@ function CreateProjectModal(props: {
 export function CreateProjectModalContent(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
+  onOpenChangeComplete?: (open: boolean) => void;
   form: UseFormReturn<z.infer<typeof createProjectFormSchema>>;
   onSubmit: (values: z.infer<typeof createProjectFormSchema>) => void | Promise<void>;
 }) {
@@ -348,6 +349,7 @@ export function CreateProjectModalContent(props: {
     <Dialog
       open={props.isOpen}
       onOpenChange={props.toggleModalOpen}
+      onOpenChangeComplete={props.onOpenChangeComplete}
       width="lg"
       title="Create a project"
       description={
