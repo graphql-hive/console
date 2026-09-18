@@ -592,7 +592,7 @@ function OIDCDomainConfiguration(props: {
         </div>
       </Card>
       <OIDCRegisteredDomainSheet
-        key={`${sheetState?.type ?? 'none'}-${domainSheetSession}`}
+        key={`${sheetState?.type ?? 'none'}-${sheetState?.type === 'manage' ? sheetState.domainId : ''}-${domainSheetSession}`}
         open={state !== null}
         onOpenChangeComplete={isOpen => {
           if (!isOpen) {
