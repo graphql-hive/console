@@ -8,6 +8,7 @@ import type { GitHubIntegration } from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
+import { ProjectStore } from '../../project/providers/project-store';
 import { Logger } from '../../shared/providers/logger';
 import { OrganizationSelector, ProjectSelector, Storage } from '../../shared/providers/storage';
 
@@ -36,6 +37,7 @@ export class GitHubIntegrationManager {
     logger: Logger,
     private session: Session,
     private storage: Storage,
+    private projectStore: ProjectStore,
     private auditLog: AuditLogRecorder,
     @Inject(GITHUB_APP_CONFIG) private config: GitHubApplicationConfig | null,
   ) {
@@ -502,13 +504,13 @@ export class GitHubIntegrationManager {
       },
     });
 
-    const project = await this.storage.getProject(input);
+    const project = await this.projectStore.getProject(input);
 
     if (project.useProjectNameInGithubCheck) {
       return project;
     }
 
-    return this.storage.enableProjectNameInGithubCheck(input);
+    return this.projectStore.enableProjectNameInGithubCheck(input);
   }
 
   private limitOutput(output: { title: string; summary: string; shortSummaryFallback?: string }) {

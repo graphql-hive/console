@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Member, Organization, OrganizationInvitation, Project, Storage } from '@hive/api';
+import type { Member, Organization, OrganizationInvitation, Storage } from '@hive/api';
 import {
   CommonQueryMethods,
   createPostgresDatabasePool,
@@ -10,7 +10,7 @@ import {
   UniqueIntegrityConstraintViolationError,
   type ConnectionStringProvider,
 } from '@hive/postgres';
-import { createSDLHash, ProjectType } from '../../api/src/shared/entities';
+import { createSDLHash } from '../../api/src/shared/entities';
 import { batch, batchBy } from '../../api/src/shared/helpers';
 import { type organizations } from './db';
 import {
@@ -597,38 +597,6 @@ export async function createStorage(
         tokens: result.tokens,
       };
     },
-    async createProject({ organizationId: organization, slug, type }) {
-      // Native Composition is enabled by default for fresh Federation-type projects
-      return pool.transaction('createProject', async t => {
-        const projectSlugExists = await t.exists(
-          psql`/* projectSlugExists */ SELECT 1 FROM projects WHERE clean_id = ${slug} AND org_id = ${organization} LIMIT 1`,
-        );
-
-        if (projectSlugExists) {
-          return {
-            ok: false,
-            message: 'Project slug is already taken',
-          };
-        }
-
-        const project = await t
-          .maybeOne(
-            psql`/* createProject */
-              INSERT INTO projects
-                ("name", "clean_id", "type", "org_id", "native_federation")
-              VALUES
-                (${slug}, ${slug}, ${type}, ${organization}, ${type === ProjectType.FEDERATION})
-              RETURNING ${projectFields(psql``)}
-            `,
-          )
-          .then(ProjectModel.parse);
-
-        return {
-          ok: true,
-          project,
-        };
-      });
-    },
     async getOrganizationId({ organizationSlug }) {
       // Based on clean_id, resolve id
       const result = await pool
@@ -1154,20 +1122,6 @@ export async function createStorage(
         `,
       );
     },
-    async getProjectId({ projectSlug, organizationSlug }) {
-      // Based on project's clean_id and organization's clean_id, resolve the actual uuid of the project
-      const result = await pool
-        .maybeOne(
-          psql`/* getProjectId */
-          SELECT p.id as id
-          FROM projects as p
-          LEFT JOIN organizations as org ON (p.org_id = org.id)
-          WHERE p.clean_id = ${projectSlug} AND org.clean_id = ${organizationSlug} AND p.type != 'CUSTOM' LIMIT 1`,
-        )
-        .then(z.object({ id: z.string() }).parse);
-
-      return result.id;
-    },
     async getOrganization({ organizationId }) {
       return pool
         .maybeOne(
@@ -1221,163 +1175,6 @@ export async function createStorage(
         `,
         )
         .then(OrganizationModel.nullable().parse);
-    },
-    async getProject({ projectId: project }) {
-      return pool
-        .maybeOne(
-          psql`/* getProject */ SELECT ${projectFields(psql``)} FROM projects WHERE id = ${project} AND type != 'CUSTOM' LIMIT 1`,
-        )
-        .then(ProjectModel.parse);
-    },
-    async getProjectBySlug({ slug, organizationId: organization }) {
-      return pool
-        .maybeOne(
-          psql`/* getProjectBySlug */ SELECT ${projectFields(psql``)} FROM projects WHERE clean_id = ${slug} AND org_id = ${organization} AND type != 'CUSTOM' LIMIT 1`,
-        )
-        .then(ProjectModel.nullable().parse);
-    },
-    async getProjects({ organizationId: organization }) {
-      return pool
-        .any(
-          psql`/* getProjects */ SELECT ${projectFields(psql``)} FROM projects WHERE org_id = ${organization} AND type != 'CUSTOM' ORDER BY created_at DESC`,
-        )
-        .then(z.array(ProjectModel).parse);
-    },
-    findProjectsByIds: batch<{ projectIds: Array<string> }, Map<string, Project>>(
-      async function FindProjectByIdsBatchHandler(args) {
-        const allProjectIds = args.flatMap(args => args.projectIds);
-        const allProjectsLookupMap = new Map<string, Project>();
-
-        if (allProjectIds.length === 0) {
-          return args.map(async () => allProjectsLookupMap);
-        }
-
-        const result = await pool
-          .any(
-            psql`/* findProjectsByIds */ SELECT ${projectFields(psql``)} FROM projects WHERE id = ANY(${psql.array(allProjectIds, 'uuid')}) AND type != 'CUSTOM'`,
-          )
-          .then(z.array(ProjectModel).parse);
-
-        result.forEach(project => {
-          allProjectsLookupMap.set(project.id, project);
-        });
-
-        return args.map(async arg => {
-          const map = new Map<string, Project>();
-          for (const projectId of arg.projectIds) {
-            const project = allProjectsLookupMap.get(projectId);
-            if (!project) continue;
-            map.set(projectId, project);
-          }
-
-          return map;
-        });
-      },
-    ),
-    getProjectById(projectId) {
-      return this.findProjectsByIds({ projectIds: [projectId] }).then(
-        map => map.get(projectId) ?? null,
-      );
-    },
-    async updateProjectSlug({ slug, organizationId: organization, projectId: project }) {
-      return pool.transaction('updateProjectSlug', async t => {
-        const projectSlugExists = await t.exists(
-          psql`/* projectSlugExists */ SELECT 1 FROM projects WHERE clean_id = ${slug} AND id != ${project} AND org_id = ${organization} LIMIT 1`,
-        );
-
-        if (projectSlugExists) {
-          return {
-            ok: false,
-            message: 'Project slug is already taken',
-          };
-        }
-
-        return {
-          ok: true,
-          project: await t
-            .maybeOne(
-              psql`/* updateProjectSlug */
-              UPDATE projects
-              SET clean_id = ${slug}, name = ${slug}
-              WHERE id = ${project} AND org_id = ${organization}
-              RETURNING ${projectFields(psql``)}
-            `,
-            )
-            .then(ProjectModel.parse),
-        };
-      });
-    },
-    async updateNativeSchemaComposition({ projectId: project, enabled }) {
-      return pool
-        .maybeOne(
-          psql`/* updateNativeSchemaComposition */
-          UPDATE projects
-          SET
-            native_federation = ${enabled},
-            external_composition_enabled = FALSE
-          WHERE id = ${project}
-          RETURNING ${projectFields(psql``)}
-        `,
-        )
-        .then(ProjectModel.parse);
-    },
-    async enableExternalSchemaComposition({ projectId: project, endpoint, encryptedSecret }) {
-      return pool
-        .maybeOne(
-          psql`/* enableExternalSchemaComposition */
-          UPDATE projects
-          SET
-            native_federation = FALSE,
-            external_composition_enabled = TRUE,
-            external_composition_endpoint = ${endpoint},
-            external_composition_secret = ${encryptedSecret}
-          WHERE id = ${project}
-          RETURNING ${projectFields(psql``)}
-        `,
-        )
-        .then(ProjectModel.parse);
-    },
-    async enableProjectNameInGithubCheck({ projectId: project }) {
-      return pool
-        .maybeOne(
-          psql`/* enableProjectNameInGithubCheck */
-          UPDATE projects
-          SET github_check_with_project_name = true
-          WHERE id = ${project}
-          RETURNING ${projectFields(psql``)}
-        `,
-        )
-        .then(ProjectModel.parse);
-    },
-
-    async deleteProject({ organizationId: organization, projectId: project }) {
-      const result = await pool.transaction('deleteProject', async t => {
-        const tokens = await t
-          .any(
-            psql`/* deleteProject */
-            SELECT token FROM tokens WHERE project_id = ${project} AND deleted_at IS NULL
-          `,
-          )
-          .then(z.array(z.object({ token: z.string() })).parse);
-
-        return {
-          project: await t
-            .maybeOne(
-              psql`/* deleteProject */
-                DELETE FROM projects
-                WHERE id = ${project} AND org_id = ${organization}
-                RETURNING ${projectFields(psql``)}
-              `,
-            )
-            .then(ProjectModel.parse),
-          tokens: tokens.map(row => row.token),
-        };
-      });
-
-      return {
-        ...result.project,
-        tokens: result.tokens,
-      };
     },
     async addSlackIntegration({ organizationId: organization, token }) {
       await pool.any(
@@ -3811,23 +3608,6 @@ const organizationFields = (prefix: TaggedTemplateLiteralInvocation) => psql`
   , ${prefix}"user_id" AS "ownerId"
 `;
 
-const projectFields = (prefix: TaggedTemplateLiteralInvocation) => psql`
-  ${prefix}"id"
-  , ${prefix}"clean_id" AS "slug"
-  , ${prefix}"name"
-  , ${prefix}"org_id" AS "orgId"
-  , ${prefix}"type"
-  , to_json(${prefix}"created_at") AS "createdAt"
-  , ${prefix}"build_url" AS "buildUrl"
-  , ${prefix}"validation_url" AS "validationUrl"
-  , ${prefix}"git_repository" AS "gitRepository"
-  , ${prefix}"github_check_with_project_name" AS "useProjectNameInGithubCheck"
-  , ${prefix}"external_composition_enabled" AS "externalCompositionEnabled"
-  , ${prefix}"external_composition_endpoint" AS "externalCompositionEndpoint"
-  , ${prefix}"external_composition_secret" AS "externalCompositionEncryptedSecret"
-  , ${prefix}"native_federation" AS "nativeFederation"
-`;
-
 const schemaPolicyFields = (prefix: TaggedTemplateLiteralInvocation) => psql`
   ${prefix}"resource_type" AS "resourceType"
   , ${prefix}"resource_id" AS "resourceId"
@@ -3925,42 +3705,6 @@ const OrganizationModel = z
     featureFlags: org.featureFlags,
     zendeskId: org.zendeskId,
     ownerId: org.ownerId,
-  }));
-
-const ProjectModel = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    name: z.string(),
-    orgId: z.string(),
-    type: z.string(),
-    createdAt: z.string(),
-    buildUrl: z.string().nullable(),
-    validationUrl: z.string().nullable(),
-    gitRepository: z.string().nullable(),
-    useProjectNameInGithubCheck: z.boolean(),
-    externalCompositionEnabled: z.boolean(),
-    externalCompositionEndpoint: z.string().nullable(),
-    externalCompositionEncryptedSecret: z.string().nullable(),
-    nativeFederation: z.boolean().nullable(),
-  })
-  .transform(project => ({
-    id: project.id,
-    slug: project.slug,
-    orgId: project.orgId,
-    name: project.name,
-    type: project.type as ProjectType,
-    createdAt: project.createdAt,
-    buildUrl: project.buildUrl,
-    validationUrl: project.validationUrl,
-    gitRepository: project.gitRepository as `${string}/${string}` | null,
-    useProjectNameInGithubCheck: project.useProjectNameInGithubCheck === true,
-    externalComposition: {
-      enabled: project.externalCompositionEnabled,
-      endpoint: project.externalCompositionEndpoint,
-      encryptedSecret: project.externalCompositionEncryptedSecret,
-    },
-    nativeFederation: project.nativeFederation === true,
   }));
 
 const OrganizationBillingModel = z.object({
