@@ -1424,6 +1424,16 @@ function SpanSheet(props: SpanSheetProps) {
   const [activeView, setActiveView] = useState<
     'span-attributes' | 'resource-attributes' | 'events' | 'operation'
   >((props.activeTab as 'events') ?? 'span-attributes');
+  // The sheet mounts closed, so the tab the URL asks for is read each time it opens rather than
+  // once at mount.
+  const requestedView = `${props.open}:${props.activeTab ?? ''}`;
+  const [seenRequestedView, setSeenRequestedView] = useState(requestedView);
+  if (requestedView !== seenRequestedView) {
+    setSeenRequestedView(requestedView);
+    if (props.open) {
+      setActiveView((props.activeTab as 'events') ?? 'span-attributes');
+    }
+  }
   const clipboard = useClipboard();
 
   // TODO: maybe loading or not found state???

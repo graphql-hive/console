@@ -77,37 +77,41 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
         sideContent={
           <>
             {query.data?.organization ? (
-              <CreateAccessTokenSheetContent
-                key={createSession}
-                open={createAccessTokenState !== CreateAccessTokenState.closed}
-                onOpenChange={isOpen => {
-                  if (isOpen === false) {
-                    setCreateAccessTokenState(CreateAccessTokenState.closing);
-                    return;
-                  }
-                  setCreateAccessTokenState(CreateAccessTokenState.open);
-                }}
-                onOpenChangeComplete={isOpen => {
-                  if (!isOpen) {
-                    setCreateSession(s => s + 1);
-                    if (pendingKey.current !== null) {
-                      setCreatedKey(pendingKey.current);
-                      pendingKey.current = null;
+              <>
+                {/* Outside the keyed sheet, so it is still there to take focus back on close. */}
+                <Button
+                  data-cy="organization-settings-access-tokens-create-new"
+                  onClick={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
+                >
+                  Create new access token
+                </Button>
+                <CreateAccessTokenSheetContent
+                  key={createSession}
+                  open={createAccessTokenState !== CreateAccessTokenState.closed}
+                  onOpenChange={isOpen => {
+                    if (isOpen === false) {
+                      setCreateAccessTokenState(CreateAccessTokenState.closing);
+                      return;
                     }
-                  }
-                }}
-                trigger={
-                  <Button data-cy="organization-settings-access-tokens-create-new">
-                    Create new access token
-                  </Button>
-                }
-                organization={query.data.organization}
-                onSuccess={privateAccessKey => {
-                  pendingKey.current = privateAccessKey;
-                  setCreateAccessTokenState(CreateAccessTokenState.closed);
-                  refetchQuery();
-                }}
-              />
+                    setCreateAccessTokenState(CreateAccessTokenState.open);
+                  }}
+                  onOpenChangeComplete={isOpen => {
+                    if (!isOpen) {
+                      setCreateSession(s => s + 1);
+                      if (pendingKey.current !== null) {
+                        setCreatedKey(pendingKey.current);
+                        pendingKey.current = null;
+                      }
+                    }
+                  }}
+                  organization={query.data.organization}
+                  onSuccess={privateAccessKey => {
+                    pendingKey.current = privateAccessKey;
+                    setCreateAccessTokenState(CreateAccessTokenState.closed);
+                    refetchQuery();
+                  }}
+                />
+              </>
             ) : (
               <Button disabled data-cy="organization-settings-access-tokens-create-new">
                 Create new access token

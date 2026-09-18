@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactElement } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
@@ -73,8 +73,6 @@ type CreateAccessTokenSheetContentProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpenChangeComplete: (open: boolean) => void;
-  /** The button that opens the sheet. */
-  trigger: ReactElement;
   /** Called with the new token's key; the caller closes the sheet and shows the key. */
   onSuccess: (privateAccessKey: string) => void;
   organization: FragmentType<typeof CreateAccessTokenSheetContent_OrganizationFragment>;
@@ -208,7 +206,6 @@ export function CreateAccessTokenSheetContent(
           open={props.open}
           onOpenChange={props.onOpenChange}
           onOpenChangeComplete={props.onOpenChangeComplete}
-          trigger={props.trigger}
           title="Create Access Token"
           description="Create a new access token with specified permissions and optionally assigned resources."
           footer={
