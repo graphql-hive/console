@@ -150,7 +150,7 @@ export const Orientations = createPreview(() => {
   );
 });
 
-/** The same cards on a floating surface (popover, dialog), which sits a step lighter. */
+/** The same cards on a raised surface (popover, dialog), which sits a step lighter. */
 export const AsCardFloating = createPreview(() => {
   const [value, setValue] = useState('high');
 
@@ -158,7 +158,7 @@ export const AsCardFloating = createPreview(() => {
     <div className="bg-neutral-3 w-[533px] rounded-md p-5">
       <RadioGroup
         variant="as-card"
-        onSurface="floating"
+        onSurface="raised"
         value={value}
         onValueChange={setValue}
         items={SEVERITY_ITEMS}

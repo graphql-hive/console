@@ -18,7 +18,7 @@ export const nav: NavPath = 'Base/FormControls/RadioGroup/Component Examples';
 
 // ---------------------------------------------------------------------------
 // components/layouts/organization.tsx:388 - create-project dialog
-// The only `onSurface="floating"` in the app, because it sits inside a Dialog.
+// The only `onSurface="raised"` in the app, because it sits inside a Dialog.
 // ---------------------------------------------------------------------------
 
 const PROJECT_TYPES = [
@@ -49,7 +49,7 @@ function ProjectTypePicker() {
     <div className="w-[28rem]">
       <RadioGroup
         variant="as-card"
-        onSurface="floating"
+        onSurface="raised"
         orientation="vertical"
         value={value}
         onValueChange={setValue}
@@ -298,7 +298,7 @@ export const Playground = createPreview({
   controls: defineControls({
     variant: { type: 'radio', options: ['as-card', 'as-button'], default: 'as-card' },
     orientation: { type: 'radio', options: ['vertical', 'horizontal'], default: 'vertical' },
-    onSurface: { type: 'radio', options: ['base', 'floating'], default: 'base' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
     disabled: { type: 'boolean', default: false },
     itemShape: { type: 'radio', options: ['label', 'content'], default: 'label' },
     withIndicator: { type: 'boolean', default: false },

@@ -1,19 +1,23 @@
 import { ReactElement, useEffect, useState } from 'react';
 import { useFormik } from 'formik';
+import { Trash2 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { z } from 'zod';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
+import { PageLead } from '@/components/base/page-lead';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
-import { AlertTriangleIcon, TrashIcon } from '@/components/ui/icon';
-import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { TimeAgo } from '@/components/ui/time-ago';
-import { Modal, Table, TBody, Td, Tr } from '@/components/v2';
+import { AlertTriangleIcon } from '@/components/ui/icon';
+import { SubPageLayout } from '@/components/ui/page-content-layout';
+import { Modal } from '@/components/v2';
 import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Link, useRouter } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const CDNAccessTokenCreateMutation = graphql(`
   mutation CDNAccessTokens_CDNAccessTokenCreateMutation($input: CreateCdnAccessTokenInput!) {
@@ -361,14 +365,15 @@ export function CDNAccessTokens(props: {
 
   return (
     <SubPageLayout>
-      <SubPageLayoutHeader
-        subPageTitle="CDN Access Token"
+      <PageLead
+        title="CDN Access Token"
         description="CDN Access Tokens are used to access to Hive High-Availability CDN and read your schema artifacts."
         docsLink={{
           href: '/schema-registry/management/targets#cdn-access-tokens',
           text: 'Learn more about CDN Access Tokens',
         }}
       />
+
       <div className="my-3.5 flex justify-between">
         <Button asChild>
           <Link
@@ -381,48 +386,27 @@ export function CDNAccessTokens(props: {
           </Link>
         </Button>
       </div>
-      <Table>
-        <TBody>
-          {target?.data?.target?.cdnAccessTokens.edges?.map(edge => (
-            <CDNAccessTokenRow cdnAccessToken={edge.node} key={edge.node.id} />
-          ))}
-        </TBody>
-      </Table>
-
-      <div className="my-3.5 flex justify-end">
-        {target.data?.target?.cdnAccessTokens.pageInfo.hasPreviousPage ? (
-          <Button
-            variant="secondary"
-            className="mr-2 px-5"
-            onClick={() => {
-              setEndCursors(cursors => {
-                if (cursors.length === 0) {
-                  return cursors;
-                }
-                return cursors.slice(0, cursors.length - 1);
-              });
-            }}
-          >
-            Previous Page
-          </Button>
-        ) : null}
-        {target.data?.target?.cdnAccessTokens.pageInfo.hasNextPage ? (
-          <Button
-            variant="secondary"
-            className="px-5"
-            onClick={() => {
-              setEndCursors(cursors => {
-                if (!target.data?.target?.cdnAccessTokens.pageInfo.endCursor) {
-                  return cursors;
-                }
-                return [...cursors, target.data?.target?.cdnAccessTokens.pageInfo.endCursor];
-              });
-            }}
-          >
-            Next Page
-          </Button>
-        ) : null}
-      </div>
+      <DataTable
+        data={target.data?.target?.cdnAccessTokens.edges.map(edge => edge.node) ?? []}
+        columns={CDN_TOKEN_COLUMNS}
+        getRowId={token => token.id}
+        loading={target.fetching && !target.data}
+        emptyMessage="No CDN tokens yet."
+        pagination={{
+          kind: 'cursor',
+          hasPreviousPage: target.data?.target?.cdnAccessTokens.pageInfo.hasPreviousPage ?? false,
+          hasNextPage: target.data?.target?.cdnAccessTokens.pageInfo.hasNextPage ?? false,
+          onPrevious: () => setEndCursors(cursors => cursors.slice(0, -1)),
+          onNext: () => {
+            const endCursor = target.data?.target?.cdnAccessTokens.pageInfo.endCursor;
+            if (endCursor) {
+              setEndCursors(cursors => [...cursors, endCursor]);
+            }
+          },
+          summary: `Page ${endCursors.length + 1}`,
+          loading: target.fetching && !!target.data,
+        }}
+      />
 
       {searchParams.cdn === 'create' ? (
         <CreateCDNAccessTokenModal
@@ -461,38 +445,68 @@ const CDNAccessTokenRowFragment = graphql(`
   }
 `);
 
-type CDNAccessTokenRowProps = {
-  cdnAccessToken: FragmentType<typeof CDNAccessTokenRowFragment>;
-};
+type CdnTokenNode = FragmentType<typeof CDNAccessTokenRowFragment> & { id: string };
 
-function CDNAccessTokenRow(props: CDNAccessTokenRowProps): React.ReactNode {
-  const node = useFragment(CDNAccessTokenRowFragment, props.cdnAccessToken);
-  const router = useRouter();
-
+function CdnTokenKeyCell(props: { token: CdnTokenNode }) {
+  const node = useFragment(CDNAccessTokenRowFragment, props.token);
   return (
-    <Tr key={node.id}>
-      <Td>{node.firstCharacters + new Array(10).fill('•').join('') + node.lastCharacters}</Td>
-      <Td>{node.alias}</Td>
-      <Td align="right">
-        created <TimeAgo date={node.createdAt} />
-      </Td>
-      <Td align="right">
-        <Button
-          className="hover:text-red-500"
-          variant="ghost"
-          onClick={() => {
-            void router.navigate({
-              search: {
-                page: 'cdn',
-                cdn: 'delete',
-                id: node.id,
-              },
-            });
-          }}
-        >
-          <TrashIcon />
-        </Button>
-      </Td>
-    </Tr>
+    <DataTableCell
+      kind="text"
+      value={node.firstCharacters + new Array(10).fill('•').join('') + node.lastCharacters}
+      mono
+    />
   );
 }
+
+function CdnTokenAliasCell(props: { token: CdnTokenNode }) {
+  const node = useFragment(CDNAccessTokenRowFragment, props.token);
+  return <DataTableCell kind="text" value={node.alias} weight="medium" />;
+}
+
+function CdnTokenCreatedCell(props: { token: CdnTokenNode }) {
+  const node = useFragment(CDNAccessTokenRowFragment, props.token);
+  return <DataTableCell kind="time" date={node.createdAt} />;
+}
+
+function CdnTokenDeleteCell(props: { token: CdnTokenNode }) {
+  const node = useFragment(CDNAccessTokenRowFragment, props.token);
+  const router = useRouter();
+  return (
+    <DataTableCell
+      kind="icon-button"
+      icon={Trash2}
+      label={`Delete ${node.alias}`}
+      destructive
+      onClick={() => {
+        void router.navigate({
+          search: {
+            page: 'cdn',
+            cdn: 'delete',
+            id: node.id,
+          },
+        });
+      }}
+    />
+  );
+}
+
+const CDN_TOKEN_COLUMNS: ColumnDef<CdnTokenNode, unknown>[] = [
+  { id: 'key', header: 'Key', cell: ({ row }) => <CdnTokenKeyCell token={row.original} /> },
+  {
+    id: 'alias',
+    header: 'Alias',
+    meta: { width: 'fill' },
+    cell: ({ row }) => <CdnTokenAliasCell token={row.original} />,
+  },
+  {
+    id: 'createdAt',
+    header: 'Created At',
+    meta: { align: 'right' },
+    cell: ({ row }) => <CdnTokenCreatedCell token={row.original} />,
+  },
+  {
+    id: 'delete',
+    meta: { width: 'xs' },
+    cell: ({ row }) => <CdnTokenDeleteCell token={row.original} />,
+  },
+];

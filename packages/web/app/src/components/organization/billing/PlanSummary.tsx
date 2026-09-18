@@ -1,7 +1,10 @@
 import { ReactElement, ReactNode } from 'react';
-import { Stat, Table, TBody, Td, TFoot, Th, THead, Tr } from '@/components/v2';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { Stat } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
+import type { ColumnDef } from '@tanstack/react-table';
 import { CurrencyFormatter, formatMillionOrBillion } from './helpers';
 
 const PriceEstimationTable_PlanFragment = graphql(`
@@ -13,6 +16,51 @@ const PriceEstimationTable_PlanFragment = graphql(`
     planType
   }
 `);
+
+type PriceRow = {
+  id: string;
+  feature: string;
+  aside?: string;
+  units: string | null;
+  unitPrice: number;
+  total: number;
+};
+
+const PRICE_COLUMNS: ColumnDef<PriceRow, unknown>[] = [
+  {
+    id: 'feature',
+    header: 'Feature',
+    meta: { width: 'fill' },
+    cell: ({ row }) => (
+      <DataTableCell kind="text" value={row.original.feature} secondary={row.original.aside} />
+    ),
+  },
+  {
+    id: 'units',
+    header: 'Units',
+    meta: { align: 'right', width: 'sm' },
+    cell: ({ row }) =>
+      row.original.units ? (
+        <DataTableCell kind="number" value={row.original.units} />
+      ) : (
+        <DataTableCell kind="placeholder" />
+      ),
+  },
+  {
+    id: 'unitPrice',
+    header: 'Unit Price',
+    meta: { align: 'right', width: 'sm' },
+    cell: ({ row }) => (
+      <DataTableCell kind="number" value={row.original.unitPrice} format="currency" />
+    ),
+  },
+  {
+    id: 'total',
+    header: 'Total',
+    meta: { align: 'right', width: 'sm' },
+    cell: ({ row }) => <DataTableCell kind="number" value={row.original.total} format="currency" />,
+  },
+];
 
 function PriceEstimationTable(props: {
   plan: FragmentType<typeof PriceEstimationTable_PlanFragment>;
@@ -27,53 +75,47 @@ function PriceEstimationTable(props: {
   const operationsTotal = (plan.pricePerOperationsUnit ?? 0) * additionalOperations;
   const total = (plan.basePrice ?? 0) + operationsTotal;
 
+  const rows: PriceRow[] = [
+    {
+      id: 'base',
+      feature: 'Base price',
+      aside: '(unlimited seats)',
+      units: null,
+      unitPrice: plan.basePrice ?? 0,
+      total: plan.basePrice ?? 0,
+    },
+  ];
+  if (includedOperationsInMillions > 0) {
+    rows.push({
+      id: 'included',
+      feature: 'Included Operations',
+      aside: '(free)',
+      units: formatMillionOrBillion(includedOperationsInMillions),
+      unitPrice: 0,
+      total: 0,
+    });
+  }
+  if (plan.planType === BillingPlanType.Pro) {
+    rows.push({
+      id: 'operations',
+      feature: 'Operations',
+      units: formatMillionOrBillion(additionalOperations),
+      unitPrice: plan.pricePerOperationsUnit ?? 0,
+      total: operationsTotal,
+    });
+  }
+
   return (
-    <Table>
-      <THead>
-        <Th>Feature</Th>
-        <Th align="right" className="min-w-[150px]">
-          Units
-        </Th>
-        <Th align="right" className="min-w-[150px]">
-          Unit Price
-        </Th>
-        <Th align="right" className="min-w-[150px]">
-          Total
-        </Th>
-      </THead>
-      <TBody>
-        <Tr>
-          <Td>
-            Base price <span className="text-neutral-10">(unlimited seats)</span>
-          </Td>
-          <Td align="right" />
-          <Td align="right">{CurrencyFormatter.format(plan.basePrice ?? 0)}</Td>
-          <Td align="right">{CurrencyFormatter.format(plan.basePrice ?? 0)}</Td>
-        </Tr>
-        {includedOperationsInMillions > 0 && (
-          <Tr>
-            <Td>
-              Included Operations <span className="text-neutral-10">(free)</span>
-            </Td>
-            <Td align="right">{formatMillionOrBillion(includedOperationsInMillions)}</Td>
-            <Td align="right">{CurrencyFormatter.format(0)}</Td>
-            <Td align="right">{CurrencyFormatter.format(0)}</Td>
-          </Tr>
-        )}
-        {plan.planType === BillingPlanType.Pro && (
-          <Tr>
-            <Td>Operations</Td>
-            <Td align="right">{formatMillionOrBillion(additionalOperations)}</Td>
-            <Td align="right">{CurrencyFormatter.format(plan.pricePerOperationsUnit ?? 0)}</Td>
-            <Td align="right">{CurrencyFormatter.format(operationsTotal)}</Td>
-          </Tr>
-        )}
-      </TBody>
-      <TFoot>
-        <Th>Total monthly (after trial ends)</Th>
-        <Th align="right">{total === 0 ? 'FREE' : CurrencyFormatter.format(total)}</Th>
-      </TFoot>
-    </Table>
+    <DataTable
+      data={rows}
+      columns={PRICE_COLUMNS}
+      getRowId={row => row.id}
+      pagination={{ kind: 'none' }}
+      footer={{
+        label: 'Total monthly (after trial ends)',
+        value: total === 0 ? 'FREE' : CurrencyFormatter.format(total),
+      }}
+    />
   );
 }
 
@@ -112,7 +154,8 @@ export function PlanSummary({
     <>
       <div className="flex gap-32">
         <Stat className="mb-8">
-          <Stat.Label>Plan Type</Stat.Label>
+          <Stat.Label>Plan</Stat.Label>
+          <Stat.HelpText>type</Stat.HelpText>
           <Stat.Number>{plan.planType}</Stat.Number>
         </Stat>
 
@@ -120,9 +163,8 @@ export function PlanSummary({
 
         <Stat>
           <Stat.Label>Operations Limit</Stat.Label>
-          <Stat.HelpText>up to</Stat.HelpText>
+          <Stat.HelpText>up to / per month</Stat.HelpText>
           <Stat.Number>{formatMillionOrBillion(operationsRateLimit)}</Stat.Number>
-          <Stat.HelpText>per month</Stat.HelpText>
         </Stat>
         <Stat className="mb-8">
           <Stat.Label>Retention</Stat.Label>

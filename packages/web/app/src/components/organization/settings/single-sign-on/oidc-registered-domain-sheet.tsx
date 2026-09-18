@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import z from 'zod';
+import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Input } from '@/components/base/input/input';
 import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import {
   Form,
   FormControl,
@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/form';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
-import * as Table from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
@@ -317,48 +316,34 @@ export function OIDCRegisteredDomainSheet(props: {
                         challenge.
                       </p>
                       <p>Within your hosted zone create the following DNS record.</p>
-                      <Table.Table
-                        className={cn(!domain?.challenge && 'opacity-33 pointer-events-none')}
-                      >
-                        <Table.TableHeader>
-                          <Table.TableRow>
-                            <Table.TableHead>Property</Table.TableHead>
-                            <Table.TableHead>Value</Table.TableHead>
-                          </Table.TableRow>
-                        </Table.TableHeader>
-                        <Table.TableBody>
-                          <Table.TableRow>
-                            <Table.TableCell>Type</Table.TableCell>
-                            <Table.TableCell className="font-mono font-medium">
-                              {domain?.challenge?.recordType}{' '}
-                              <CopyIconButton
-                                label="Copy"
-                                value={domain?.challenge?.recordType ?? ''}
-                              />
-                            </Table.TableCell>
-                          </Table.TableRow>
-                          <Table.TableRow>
-                            <Table.TableCell>Name</Table.TableCell>
-                            <Table.TableCell className="font-mono font-medium">
-                              {domain?.challenge?.recordName}{' '}
-                              <CopyIconButton
-                                label="Copy"
-                                value={domain?.challenge?.recordName ?? ''}
-                              />
-                            </Table.TableCell>
-                          </Table.TableRow>
-                          <Table.TableRow>
-                            <Table.TableCell>Value</Table.TableCell>
-                            <Table.TableCell className="font-mono font-medium">
-                              {domain?.challenge?.recordValue}
-                              <CopyIconButton
-                                label="Copy"
-                                value={domain?.challenge?.recordValue ?? ''}
-                              />
-                            </Table.TableCell>
-                          </Table.TableRow>
-                        </Table.TableBody>
-                      </Table.Table>
+                      <div className={cn(!domain?.challenge && 'opacity-33 pointer-events-none')}>
+                        <DescriptionList
+                          rows={[
+                            {
+                              items: [
+                                {
+                                  term: 'Type',
+                                  description: domain?.challenge?.recordType ?? '',
+                                  mono: true,
+                                  copyable: true,
+                                },
+                                {
+                                  term: 'Name',
+                                  description: domain?.challenge?.recordName ?? '',
+                                  mono: true,
+                                  copyable: true,
+                                },
+                                {
+                                  term: 'Value',
+                                  description: domain?.challenge?.recordValue ?? '',
+                                  mono: true,
+                                  copyable: true,
+                                },
+                              ],
+                            },
+                          ]}
+                        />
+                      </div>
                       {domain && !domain.challenge && (
                         <>
                           <Callout type="warning">This challenge has expired.</Callout>

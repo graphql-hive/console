@@ -655,6 +655,7 @@ export function AlertForm(props: AlertFormProps) {
                             value={channelField.value}
                             onValueChange={channelField.onChange}
                             placeholder="Select a channel"
+                            onSurface="raised"
                           />
                         </FormControl>
                         <FormMessage />
@@ -695,6 +696,7 @@ export function AlertForm(props: AlertFormProps) {
                         options={METRIC_OPTIONS}
                         value={field.value}
                         onValueChange={field.onChange}
+                        onSurface="raised"
                       />
                     </FormControl>
                     <FormMessage />
@@ -712,6 +714,7 @@ export function AlertForm(props: AlertFormProps) {
                         options={RANGE_OPTIONS}
                         value={field.value}
                         onValueChange={field.onChange}
+                        onSurface="raised"
                       />
                     </FormControl>
                     <FormMessage />
@@ -734,7 +737,7 @@ export function AlertForm(props: AlertFormProps) {
                   <FormItem>
                     <FormLabel label="Alert name" />
                     <FormControl>
-                      <Input placeholder="Enter alert name" {...field} />
+                      <Input placeholder="Enter alert name" onSurface="raised" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -749,6 +752,7 @@ export function AlertForm(props: AlertFormProps) {
                     <FormControl>
                       <RadioGroup
                         variant="as-button"
+                        onSurface="raised"
                         value={field.value}
                         onValueChange={field.onChange}
                         items={SEVERITIES.map(sev => ({
@@ -789,6 +793,7 @@ export function AlertForm(props: AlertFormProps) {
                             options={conditionOptions}
                             value={field.value}
                             onValueChange={field.onChange}
+                            onSurface="raised"
                           />
                         </FormControl>
                         <FormMessage />
@@ -806,6 +811,7 @@ export function AlertForm(props: AlertFormProps) {
                             options={THRESHOLD_TYPE_OPTIONS}
                             value={field.value}
                             onValueChange={field.onChange}
+                            onSurface="raised"
                           />
                         </FormControl>
                         <FormMessage />
@@ -825,6 +831,7 @@ export function AlertForm(props: AlertFormProps) {
                             min={0}
                             max={valueMax}
                             placeholder={valuePlaceholder}
+                            onSurface="raised"
                             {...field}
                           />
                         </FormControl>
@@ -894,6 +901,7 @@ export function AlertForm(props: AlertFormProps) {
                                   onValueChange={field.onChange}
                                   placeholder="Select a filter name"
                                   searchable={savedFilterOptions.length > 10}
+                                  onSurface="raised"
                                 />
                               </FormControl>
                               <FormDescription description="Only shared filters can be attached to alerts." />
@@ -908,7 +916,7 @@ export function AlertForm(props: AlertFormProps) {
                           <FormItem>
                             <FormLabel label="Hold minutes" />
                             <FormControl>
-                              <Input type="number" min={0} {...field} />
+                              <Input type="number" min={0} onSurface="raised" {...field} />
                             </FormControl>
                             <FormDescription
                               description={

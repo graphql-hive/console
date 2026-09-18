@@ -82,6 +82,72 @@ export const RichDescriptions = createPreview(() => (
   </div>
 ));
 
+/**
+ * `mono` for identifiers, `copyable` for values the reader pastes somewhere, and `attrs` lands on
+ * the value element for a test hook.
+ */
+export const CopyableValues = createPreview(() => (
+  <div className="w-[36rem]">
+    <DescriptionList
+      rows={[
+        {
+          items: [
+            {
+              term: 'Sign-in redirect URI',
+              description: 'https://app.graphql-hive.com/auth/callback/oidc',
+              mono: true,
+              copyable: true,
+              attrs: { 'data-oidc-property-sign-in-redirect-uri': '' },
+            },
+          ],
+        },
+        {
+          items: [
+            { term: 'Type', description: 'TXT', mono: true, copyable: true },
+            {
+              term: 'Name',
+              description: '_hive-challenge.example.com',
+              mono: true,
+              copyable: true,
+            },
+            {
+              term: 'Value',
+              description: 'hive-domain-verification=3af771c7',
+              mono: true,
+              copyable: true,
+            },
+          ],
+        },
+      ]}
+    />
+  </div>
+));
+
+/** A term that needs explaining carries it on an info icon. */
+export const TermTooltips = createPreview(() => (
+  <div className="w-[36rem]">
+    <DescriptionList
+      rows={[
+        {
+          items: [
+            {
+              term: 'User ID Claim',
+              tooltip: 'The claim that should be used to uniquely identify an user.',
+              description: 'sub',
+              mono: true,
+            },
+            {
+              term: 'Additional Scopes',
+              tooltip: 'Additional scopes that are requested from the OIDC provider.',
+              description: <span className="text-neutral-8">none</span>,
+            },
+          ],
+        },
+      ]}
+    />
+  </div>
+));
+
 export const SingleColumn = createPreview(() => (
   <div className="w-80">
     <DescriptionList
