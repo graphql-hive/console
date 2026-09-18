@@ -446,6 +446,7 @@ function CreateContractDialog(props: {
           </label>
           <Input
             placeholder="Contract Name"
+            id="contractName"
             name="contractName"
             value={form.values.contractName}
             onChange={form.handleChange}

@@ -107,8 +107,13 @@ export function PersonalAccessTokensSubPage(
                   }}
                   organization={query.data.organization}
                   onSuccess={privateAccessKey => {
-                    pendingKey.current = privateAccessKey;
-                    setCreateAccessTokenState(CreateAccessTokenState.closed);
+                    // Resolved after the draft was discarded: no close is coming to show it, so show it now.
+                    if (createAccessTokenState === CreateAccessTokenState.closed) {
+                      setCreatedKey(privateAccessKey);
+                    } else {
+                      pendingKey.current = privateAccessKey;
+                      setCreateAccessTokenState(CreateAccessTokenState.closed);
+                    }
                     refetchQuery();
                   }}
                 />
