@@ -1,12 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Box, Check, FileCode2, GitCompare, Layers, List } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
-import {
-  Tabs as LegacyTabs,
-  TabsContent as LegacyTabsContent,
-  TabsList as LegacyTabsList,
-  TabsTrigger as LegacyTabsTrigger,
-} from '@/components/ui/tabs';
 import { Badge } from '../badge/badge';
 import { Select } from '../floating/select/select';
 import { TabbedView, type TabbedViewItem } from './tabbed-view';
@@ -246,31 +240,6 @@ export const Vertical = createPreview(() => (
       defaultValue="editor"
     />
   </Labelled>
-));
-
-/** The same strip on `ui/tabs` and on base, for the gate. */
-export const Legacy = createPreview(() => (
-  <div className="flex flex-col gap-8">
-    <Labelled label="ui/tabs content variant, the CDN access dialog">
-      <LegacyTabs defaultValue="hive-gateway">
-        <LegacyTabsList variant="content">
-          {GATEWAYS.map(item => (
-            <LegacyTabsTrigger key={item.value} value={item.value} variant="content">
-              {item.label}
-            </LegacyTabsTrigger>
-          ))}
-        </LegacyTabsList>
-        {GATEWAYS.map(item => (
-          <LegacyTabsContent key={item.value} value={item.value} variant="content">
-            {item.content}
-          </LegacyTabsContent>
-        ))}
-      </LegacyTabs>
-    </Labelled>
-    <Labelled label="base underline">
-      <Tabs items={GATEWAYS} defaultValue="hive-gateway" />
-    </Labelled>
-  </div>
 ));
 
 export const Playground = createPreview({
