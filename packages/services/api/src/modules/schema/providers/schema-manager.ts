@@ -5,12 +5,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
 import { Encryptor, trace, traceFn } from '@hive/service-common';
-import type {
-  ConditionalBreakingChangeMetadata,
-  SchemaChangeType,
-  SchemaCheck,
-  SchemaCompositionError,
-} from '@hive/storage';
+import type { SchemaCheck } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
 import { SchemaChecksFilter } from '../../../__generated__/types';
 import * as GraphQLSchema from '../../../__generated__/types';
@@ -467,97 +462,6 @@ export class SchemaManager {
   async getSchemaLogById(schemaLogId: string) {
     this.logger.debug('Fetching schema log by id (schemaLogId=%s)', schemaLogId);
     return this.schemaVersions.getSchemaLogById(schemaLogId);
-  }
-
-  @traceFn('SchemaManager.createVersion', {
-    initAttributes: input => ({
-      'hive.target.id': input.targetId,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
-      'hive.version.commit': input.commit,
-      'hive.version.valid': input.valid,
-      'hive.version.service': input.service?.name || '',
-    }),
-  })
-  async createPublishVersion(
-    input: ({
-      service: {
-        name: string;
-        url: string;
-      } | null;
-      serviceChanges: Array<SchemaChangeType> | null;
-      previousSchemaLogId: string | null;
-      commit: string;
-      schema: string;
-      author: string;
-      valid: boolean;
-      existingSchemaLogs: Array<{ id: string; serviceName: string | null }>;
-      base_schema: string | null;
-      metadata: string | null;
-      schemaRevisionId: string | null;
-      revision: string | null;
-      actionFn(versionId: string): Promise<void>;
-      changes: Array<SchemaChangeType>;
-      previousSchemaVersion: string | null;
-      diffSchemaVersionId: string | null;
-      github: null | {
-        repository: string;
-        sha: string;
-      };
-      contracts: null | Array<{
-        contractId: string;
-        contractName: string;
-        compositeSchemaSDL: string | null;
-        supergraphSDL: string | null;
-        schemaCompositionErrors: Array<SchemaCompositionError> | null;
-        changes: null | Array<SchemaChangeType>;
-      }>;
-      conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
-    } & TargetSelector) &
-      (
-        | {
-            compositeSchemaSDL: null;
-            supergraphSDL: null;
-            supergraphChanges: null;
-            schemaCompositionErrors: Array<SchemaCompositionError>;
-            tags: null;
-            schemaMetadata: null;
-            metadataAttributes: null;
-          }
-        | {
-            compositeSchemaSDL: string;
-            supergraphSDL: string | null;
-            supergraphChanges: Array<SchemaChangeType> | null;
-            schemaCompositionErrors: null;
-            tags: Array<string> | null;
-            schemaMetadata: null | Record<
-              string,
-              Array<{ name: string; content: string; source: string | null }>
-            >;
-            metadataAttributes: null | Record<string, string[]>;
-          }
-      ),
-  ) {
-    this.logger.info(
-      'Creating a new version (input=%o)',
-      lodash.pick(input, [
-        'commit',
-        'author',
-        'valid',
-        'service',
-        'logIds',
-        'url',
-        'previousSchemaVersion',
-        'diffSchemaVersionId',
-        'github',
-        'conditionalBreakingChangeMetadata',
-      ]),
-    );
-
-    return this.schemaVersions.createPublishSchemaVersion({
-      ...input,
-      existingSchemaLogs: input.existingSchemaLogs,
-    });
   }
 
   async testExternalSchemaComposition(selector: { projectId: string; organizationId: string }) {
