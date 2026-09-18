@@ -42,7 +42,8 @@ const rootVariants = cva('', {
     },
     orientation: {
       horizontal: '',
-      vertical: 'flex gap-8',
+      // min-h-0 lets a page that fixes its height shrink the root, so the panel scrolls.
+      vertical: 'flex min-h-0 gap-8',
     },
   },
 });
@@ -132,7 +133,7 @@ const panelVariants = cva('outline-none', {
   variants: {
     orientation: {
       horizontal: 'pt-4',
-      vertical: 'min-w-0 flex-1',
+      vertical: 'min-w-0 flex-1 overflow-y-auto',
     },
   },
 });

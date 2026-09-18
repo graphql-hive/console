@@ -1,11 +1,11 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { Button } from '@/components/ui/button';
 import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
-import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -105,7 +105,6 @@ export function ProposalEditor(props: {
 }) {
   const { changedServices, setChangedServices } = props;
   const [activeTab, setActiveTab] = useState<number>(0);
-  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (changedServices.length - 1 < activeTab) {
@@ -236,10 +235,6 @@ export function ProposalEditor(props: {
     },
     [activeIndex, changedServices],
   );
-  const onToggleTabSettings = (e: any) => {
-    e?.preventDefault?.();
-    setShowSettings(!showSettings);
-  };
   /** A reference to the monaco editor so we can force set the value on prettify */
   const [editor, setEditor] = useState<editor.IStandaloneCodeEditor | null>(null);
 
@@ -309,7 +304,7 @@ export function ProposalEditor(props: {
                   ? 'New service name cannot match an existing service name'
                   : undefined,
                 content: (
-                  <div className="relative rounded-sm border">
+                  <div className="rounded-sm border">
                     <div className="flex items-center justify-end border-b px-2 py-1">
                       <Link
                         className="hover:text-accent ml-2 cursor-pointer p-1"
@@ -323,17 +318,52 @@ export function ProposalEditor(props: {
                       >
                         <MagicWandIcon className="size-4" />
                       </Link>
-                      <Link
-                        className={cn(
-                          'hover:text-accent ml-2 cursor-pointer p-1',
-                          showSettings && 'border-accent border-b-2',
-                          projectType?.project.type === ProjectType.Single && 'hidden',
-                        )}
-                        title="Edit schema settings"
-                        onClick={onToggleTabSettings}
-                      >
-                        <GearIcon />
-                      </Link>
+                      {service.__typename === 'CompositeSchema' && (
+                        <Popover
+                          trigger={
+                            <button
+                              type="button"
+                              className="hover:text-accent ml-2 cursor-pointer p-1"
+                              aria-label="Edit schema settings"
+                              title="Edit schema settings"
+                            >
+                              <GearIcon />
+                            </button>
+                          }
+                          align="end"
+                          width="sm"
+                          title="Settings"
+                          description="Additional service configuration"
+                          content={
+                            <div className="flex flex-col gap-4 text-sm">
+                              {isNewService && (
+                                <div>
+                                  <div className="mb-2 font-semibold">Service name</div>
+                                  <Input
+                                    onSurface="raised"
+                                    value={service.service ?? ''}
+                                    onChange={ev => setActiveTabName(ev.target.value)}
+                                    invalid={hasNameConflict}
+                                  />
+                                  {hasNameConflict && (
+                                    <p className="text-critical mt-1 text-xs">
+                                      New service name cannot match an existing service name
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                              <div>
+                                <div className="mb-2 font-semibold">Service URL</div>
+                                <Input
+                                  onSurface="raised"
+                                  value={service.url ?? ''}
+                                  onChange={ev => setActiveTabUrl(ev.target.value)}
+                                />
+                              </div>
+                            </div>
+                          }
+                        />
+                      )}
                     </div>
                     <DiffEditor
                       before={existing?.source ?? ''}
@@ -343,36 +373,6 @@ export function ProposalEditor(props: {
                       onMount={setEditor}
                       onChange={setActiveTabSource}
                     />
-                    {showSettings && service.__typename === 'CompositeSchema' && (
-                      <div className="bg-neutral-1 absolute right-0 top-0 z-10 h-full w-[20vw] min-w-[200px] max-w-full border p-4 pt-6 text-sm">
-                        {!!service.service && (
-                          <SubPageLayoutHeader
-                            subPageTitle="Settings"
-                            description={<p className="pb-4">Additional service configuration</p>}
-                          />
-                        )}
-                        {isNewService && (
-                          <>
-                            <div className="my-2 font-semibold">Service name</div>
-                            <Input
-                              value={service.service ?? ''}
-                              onChange={ev => setActiveTabName(ev.target.value)}
-                              invalid={hasNameConflict}
-                            />
-                            {hasNameConflict && (
-                              <p className="text-critical mt-1 text-xs">
-                                New service name cannot match an existing service name
-                              </p>
-                            )}
-                          </>
-                        )}
-                        <div className="my-2 font-semibold">Service URL</div>
-                        <Input
-                          value={service.url ?? ''}
-                          onChange={ev => setActiveTabUrl(ev.target.value)}
-                        />
-                      </div>
-                    )}
                   </div>
                 ),
               };

@@ -392,7 +392,7 @@ export const ServiceTabsPreview = createPreview({
     <CallSite
       source="components/target/proposals/editor.tsx:268"
       origin="base"
-      note="A published service is keyed by id, a new one by position. The third tab is a new service named like an existing one: the warning icon and the tooltip say so, and its name is edited in the settings panel rather than in the tab. Close shows on the active tab only."
+      note="A published service is keyed by id, a new one by position. The third tab is a new service named like an existing one: the warning icon and the tooltip say so, and its name is edited in the settings popover behind the gear rather than in the tab. Close shows on the active tab only."
     >
       <ServiceTabs />
     </CallSite>
