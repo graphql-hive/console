@@ -30,6 +30,7 @@ import { parseGraphQLSource } from '../../../shared/schema';
 import { Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
+import { ProjectStore } from '../../project/providers/project-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -75,6 +76,7 @@ export class SchemaManager {
     logger: Logger,
     private session: Session,
     private storage: Storage,
+    private projectStore: ProjectStore,
     private targetStore: TargetStore,
     private projectManager: ProjectManager,
     private compositionOrchestrator: CompositionOrchestrator,
@@ -166,7 +168,7 @@ export class SchemaManager {
       this.storage.getOrganization({
         organizationId: selector.organizationId,
       }),
-      this.storage.getProject({
+      this.projectStore.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
@@ -568,7 +570,7 @@ export class SchemaManager {
       },
     });
 
-    const project = await this.storage.getProject({
+    const project = await this.projectStore.getProject({
       organizationId: selector.organizationId,
       projectId: selector.projectId,
     });
@@ -714,7 +716,7 @@ export class SchemaManager {
       case 'native': {
         return {
           ok: {
-            updatedProject: await this.storage.updateNativeSchemaComposition({
+            updatedProject: await this.projectStore.updateNativeSchemaComposition({
               projectId: input.projectId,
               organizationId: input.organizationId,
               enabled: true,
@@ -725,7 +727,7 @@ export class SchemaManager {
       case 'legacy': {
         return {
           ok: {
-            updatedProject: await this.storage.updateNativeSchemaComposition({
+            updatedProject: await this.projectStore.updateNativeSchemaComposition({
               projectId: input.projectId,
               organizationId: input.organizationId,
               enabled: false,
@@ -754,7 +756,7 @@ export class SchemaManager {
 
         return {
           ok: {
-            updatedProject: await this.storage.enableExternalSchemaComposition({
+            updatedProject: await this.projectStore.enableExternalSchemaComposition({
               projectId: input.projectId,
               organizationId: input.organizationId,
               endpoint: parseResult.data.endpoint.trim(),

@@ -12,6 +12,7 @@ import { OrganizationSelector, ProjectSelector, Storage } from '../../shared/pro
 import { TargetManager } from '../../target/providers/target-manager';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { ProjectSlugModel } from '../validation';
+import { ProjectStore } from './project-store';
 
 const reservedSlugs = ['view', 'new'];
 
@@ -37,6 +38,7 @@ export class ProjectManager {
   constructor(
     logger: Logger,
     private storage: Storage,
+    private projectStore: ProjectStore,
     private session: Session,
     private tokenStorage: TokenStorage,
     private auditLog: AuditLogRecorder,
@@ -102,7 +104,7 @@ export class ProjectManager {
       };
     }
 
-    const result = await this.storage.createProject({
+    const result = await this.projectStore.createProject({
       slug,
       type,
       organizationId,
@@ -184,7 +186,7 @@ export class ProjectManager {
       },
     });
 
-    const deletedProject = await this.storage.deleteProject({
+    const deletedProject = await this.projectStore.deleteProject({
       projectId: selector.projectId,
       organizationId: selector.organizationId,
     });
@@ -213,13 +215,13 @@ export class ProjectManager {
       },
     });
 
-    return this.storage.getProject(selector);
+    return this.projectStore.getProject(selector);
   }
 
   @cache((projectId: string) => projectId)
   async getProjectById(projectId: string): Promise<Project> {
     this.logger.debug('Fetching project by id (projectId=%s)', projectId);
-    const project = await this.storage.getProjectById(projectId);
+    const project = await this.projectStore.getProjectById(projectId);
     if (!project) {
       throw new Error('Could not find project.');
     }
@@ -240,7 +242,7 @@ export class ProjectManager {
     organization: Organization,
     projectSlug: string,
   ): Promise<Project | null> {
-    const project = await this.storage.getProjectBySlug({
+    const project = await this.projectStore.getProjectBySlug({
       organizationId: organization.id,
       slug: projectSlug,
     });
@@ -267,7 +269,7 @@ export class ProjectManager {
 
   async getProjects(selector: OrganizationSelector): Promise<Project[]> {
     this.logger.debug('Fetching projects (selector=%o)', selector);
-    const projects = await this.storage.getProjects(selector);
+    const projects = await this.projectStore.getProjects(selector);
 
     const filteredProjects: Project[] = [];
 
@@ -334,7 +336,7 @@ export class ProjectManager {
       };
     }
 
-    const result = await this.storage.updateProjectSlug({
+    const result = await this.projectStore.updateProjectSlug({
       organizationId: selector.organizationId,
       projectId: selector.projectId,
       slug,

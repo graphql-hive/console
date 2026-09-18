@@ -5,6 +5,7 @@ import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization, ProjectType } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
+import { ProjectStore } from '../../project/providers/project-store';
 import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
@@ -20,6 +21,7 @@ import { TargetStore } from '../../target/providers/target-store';
 export class ResourceSelector {
   constructor(
     private storage: Storage,
+    private projectStore: ProjectStore,
     private targetStore: TargetStore,
     private session: Session,
     private schemaVersions: SchemaVersionStore,
@@ -61,7 +63,7 @@ export class ResourceSelector {
     organization: Organization,
     intent: GraphQLSchema.ResourceSelectorIntentType,
   ) {
-    let projects = await this.storage.getProjects({ organizationId: organization.id });
+    let projects = await this.projectStore.getProjects({ organizationId: organization.id });
 
     if (intent === 'ADMIN') {
       await this._assertResourceSelectorAdminPermissions(organization.id);
@@ -97,7 +99,7 @@ export class ResourceSelector {
     projectId: string,
     intent: GraphQLSchema.ResourceSelectorIntentType,
   ) {
-    const project = await this.storage.getProjectById(projectId);
+    const project = await this.projectStore.getProjectById(projectId);
 
     if (!project) {
       return null;

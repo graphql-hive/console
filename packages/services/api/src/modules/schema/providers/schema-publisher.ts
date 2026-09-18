@@ -28,6 +28,7 @@ import {
   type GitHubCheckRun,
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
+import { ProjectStore } from '../../project/providers/project-store';
 import { SchemaProposalStorage } from '../../proposals/providers/schema-proposal-storage';
 import { DistributedCache } from '../../shared/providers/distributed-cache';
 import { IdTranslator } from '../../shared/providers/id-translator';
@@ -168,6 +169,7 @@ export class SchemaPublisher {
     logger: Logger,
     private session: Session,
     private storage: Storage,
+    private projectStore: ProjectStore,
     private targetStore: TargetStore,
     private schemaManager: SchemaManager,
     private targetManager: TargetManager,
@@ -372,7 +374,7 @@ export class SchemaPublisher {
         projectId: selector.projectId,
         targetId: selector.targetId,
       }),
-      this.storage.getProject({
+      this.projectStore.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
@@ -1346,7 +1348,7 @@ export class SchemaPublisher {
         projectId: selector.projectId,
         targetId: selector.targetId,
       }),
-      this.storage.getProject({
+      this.projectStore.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
@@ -1588,7 +1590,7 @@ export class SchemaPublisher {
             this.storage.getOrganization({
               organizationId: selector.organizationId,
             }),
-            this.storage.getProject({
+            this.projectStore.getProject({
               organizationId: selector.organizationId,
               projectId: selector.projectId,
             }),
@@ -1887,7 +1889,7 @@ export class SchemaPublisher {
       this.storage.getOrganization({
         organizationId: organizationId,
       }),
-      this.storage.getProject({
+      this.projectStore.getProject({
         organizationId: organizationId,
         projectId: projectId,
       }),
@@ -2571,7 +2573,7 @@ export class SchemaPublisher {
         'hive.source.target.id': target.targetId,
       });
     } else if (args.source.fromSchemaVersionById) {
-      const project = await this.storage.getProject({
+      const project = await this.projectStore.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       });
@@ -3046,7 +3048,7 @@ export class SchemaPublisher {
     this.logger.debug('start schema version promotion process');
     const [organization, project, target] = await Promise.all([
       this.storage.getOrganization({ organizationId: args.target.organizationId }),
-      this.storage.getProjectById(args.target.projectId),
+      this.projectStore.getProjectById(args.target.projectId),
       this.targetStore.getTargetById(args.target.targetId),
     ]);
 
