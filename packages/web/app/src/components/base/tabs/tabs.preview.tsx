@@ -200,7 +200,7 @@ export const Underline = createPreview(() => {
 export const Header = createPreview(() => {
   const [contract, setContract] = useState('default');
   return (
-    <Labelled label="pages/target-checks-single.tsx, through TabbedView; see Base/Primitives/TabbedView for the page">
+    <Labelled label="pages/target-checks-single.tsx, through TabbedView; see Components/TabbedView for the page">
       <TabbedView
         items={checkViews(contract)}
         defaultValue="details"

@@ -12,42 +12,58 @@ import {
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '../badge/badge';
 import { Button } from '../button/button';
+import { FailureCard } from '../failure-card/failure-card';
 import { Select } from '../floating/select/select';
 import { Tooltip } from '../floating/tooltip/tooltip';
+import { Legend } from '../legend/legend';
 import { TabbedView, type TabbedViewItem } from './tabbed-view';
 
-export const nav: NavPath = 'Base/Primitives/TabbedView';
+export const nav: NavPath = 'Components/TabbedView';
 
 /**
  * Tabs in a header band, one view per tab in the body, and a picker leading the strip that
- * scopes every view. The schema check and schema version pages, which today nest a contract
+ * scopes every view. The schema check and schema version pages, which used to nest a contract
  * tab row above a view tab row.
  */
 
-const CONTRACTS = [
+type ContractStatus = 'failed' | 'changed' | 'ok';
+
+const CONTRACTS: Array<{ value: string; label: string; status: ContractStatus }> = [
   { value: 'default', label: 'Default Graph', status: 'failed' },
   { value: 'public-api', label: 'public-api', status: 'changed' },
   { value: 'partner-api', label: 'partner-api', status: 'ok' },
   { value: 'mobile', label: 'mobile', status: 'failed' },
 ];
 
-function StatusIcon({ status }: { status: string }) {
-  const [icon, label] =
-    status === 'failed'
-      ? [<AlertTriangle key="i" className="text-warning size-3.5" />, 'Composition failed.']
-      : status === 'changed'
-        ? [<GitCompare key="i" className="size-3.5" />, 'Schema changed']
-        : [<Check key="i" className="text-success size-3.5" />, 'Composition succeeded.'];
-  return <Tooltip trigger={<span className="inline-flex">{icon}</span>} content={label} />;
+const STATUS_LABEL: Record<ContractStatus, string> = {
+  failed: 'Composition failed.',
+  changed: 'Schema changed',
+  ok: 'Composition succeeded.',
+};
+
+function StatusGlyph({ status }: { status: ContractStatus }) {
+  if (status === 'failed') return <AlertTriangle className="text-critical size-3.5 shrink-0" />;
+  if (status === 'changed') return <GitCompare className="size-3.5 shrink-0" />;
+  return <Check className="text-success size-3.5 shrink-0" />;
 }
 
+/** The picker as the pages build it: the contract's name, its status under a tooltip at the far end. */
 function ContractSelect(props: { value: string; onValueChange: (value: string) => void }) {
   return (
     <Select
       options={CONTRACTS.map(entry => ({
         value: entry.value,
         label: entry.label,
-        icon: <StatusIcon status={entry.status} />,
+        trailing: (
+          <Tooltip
+            trigger={
+              <span className="inline-flex">
+                <StatusGlyph status={entry.status} />
+              </span>
+            }
+            content={STATUS_LABEL[entry.status]}
+          />
+        ),
       }))}
       value={props.value}
       onValueChange={props.onValueChange}
@@ -131,9 +147,14 @@ export const Default = createPreview(() => {
   );
 });
 
-/** The schema check page around it, with its content mocked. */
+/**
+ * The schema check page around it, with its content mocked. The key to the picker's icons and
+ * the FailureCard sit between the status card and the band; the card lists contracts only, since
+ * the default graph's own failure is the view the page opens on.
+ */
 export const ChecksPage = createPreview(() => {
   const [contract, setContract] = useState('default');
+  const failed = CONTRACTS.filter(entry => entry.value !== 'default' && entry.status === 'failed');
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -155,11 +176,33 @@ export const ChecksPage = createPreview(() => {
         </div>
         <Button variant="destructive">Approve</Button>
       </div>
-      <TabbedView
-        items={checkViews(contract)}
-        defaultValue="details"
-        action={<ContractSelect value={contract} onValueChange={setContract} />}
-      />
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-end">
+          <Legend
+            items={[
+              { icon: <StatusGlyph status="failed" />, label: 'Failed' },
+              { icon: <StatusGlyph status="changed" />, label: 'Schema changed' },
+              { icon: <StatusGlyph status="ok" />, label: 'Passed' },
+            ]}
+          />
+        </div>
+        <FailureCard
+          title={`${failed.length} of ${CONTRACTS.length - 1} contracts failed`}
+          aside={`${CONTRACTS.length - 1 - failed.length} passed`}
+          items={failed.map(entry => ({
+            key: entry.value,
+            label: entry.label,
+            reason: STATUS_LABEL.failed,
+            detail: '2 errors',
+            onView: () => setContract(entry.value),
+          }))}
+        />
+        <TabbedView
+          items={checkViews(contract)}
+          defaultValue="details"
+          action={<ContractSelect value={contract} onValueChange={setContract} />}
+        />
+      </div>
     </div>
   );
 });

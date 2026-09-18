@@ -6,7 +6,7 @@ import { Select } from '../floating/select/select';
 import { Tooltip } from '../floating/tooltip/tooltip';
 import { TabbedView, type TabbedViewItem } from './tabbed-view';
 
-export const nav: NavPath = 'Base/Primitives/TabbedView/Component Examples';
+export const nav: NavPath = 'Components/TabbedView/Component Examples';
 
 /**
  * The two pages on TabbedView, transcribed with their real labels, hooks and disabled reasons.
@@ -81,7 +81,7 @@ function ContractPicker(props: {
       options={props.contracts.map(entry => ({
         value: entry.value,
         label: entry.label,
-        icon: <StatusIcon status={entry.status} changedLabel={props.changedLabel} />,
+        trailing: <StatusIcon status={entry.status} changedLabel={props.changedLabel} />,
       }))}
       size="compact"
       onSurface="raised"
