@@ -30,6 +30,8 @@ export type SelectOption = {
    * for: the description says what the option is, the tooltip says why it cannot be picked now.
    */
   tooltip?: ReactNode;
+  /** Extra text the search field matches besides the label: an email, a full name, an alias. */
+  keywords?: string;
   'data-cy'?: string;
 };
 
@@ -112,9 +114,15 @@ export function Select({
   const [search, setSearch] = useState('');
   const portalContainer = useFloatingPortalContainer();
 
+  const normalizedSearch = search.toLowerCase();
   const displayedOptions =
     searchable && search
-      ? options.filter(o => o.value === '' || o.label.toLowerCase().includes(search.toLowerCase()))
+      ? options.filter(
+          o =>
+            o.value === '' ||
+            o.label.toLowerCase().includes(normalizedSearch) ||
+            o.keywords?.toLowerCase().includes(normalizedSearch),
+        )
       : options;
 
   const handleOpenChange = (nextOpen: boolean) => {

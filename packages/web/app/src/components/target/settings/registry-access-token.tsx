@@ -1,19 +1,12 @@
 import { useState } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
-import { AnyVariables, useMutation, UseMutationState } from 'urql';
+import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Input } from '@/components/base/input/input';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { PermissionScopeItem } from '@/components/organization/Permissions';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { InputCopy } from '@/components/ui/input-copy';
 import { useToast } from '@/components/ui/use-toast';
@@ -55,17 +48,22 @@ export function CreateAccessTokenModal(props: {
   projectSlug: string;
   targetSlug: string;
 }) {
-  const { isOpen, toggleModalOpen } = props;
+  const [session, setSession] = useState(0);
 
   return (
-    <Dialog open={isOpen} onOpenChange={toggleModalOpen}>
-      <ModalContent
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        toggleModalOpen={toggleModalOpen}
-      />
-    </Dialog>
+    <ModalContent
+      key={session}
+      open={props.isOpen}
+      onOpenChangeComplete={open => {
+        if (!open) {
+          setSession(s => s + 1);
+        }
+      }}
+      organizationSlug={props.organizationSlug}
+      projectSlug={props.projectSlug}
+      targetSlug={props.targetSlug}
+      toggleModalOpen={props.toggleModalOpen}
+    />
   );
 }
 
@@ -99,6 +97,8 @@ const createRegistryTokenFormSchema = z.object({
 });
 
 export function ModalContent(props: {
+  open: boolean;
+  onOpenChangeComplete?: (open: boolean) => void;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -144,44 +144,58 @@ export function ModalContent(props: {
   }
 
   const noPermissionsSelected = selectedScope === 'no-access';
-  if (mutation.data?.createToken.ok) {
-    return <CreatedTokenContent mutation={mutation} toggleModalOpen={props.toggleModalOpen} />;
+  const created = mutation.data?.createToken.ok;
+
+  if (created) {
+    return (
+      <Dialog
+        open={props.open}
+        onOpenChange={props.toggleModalOpen}
+        onOpenChangeComplete={props.onOpenChangeComplete}
+        width="lg"
+        title="Token successfully created!"
+        attrs={{ 'data-cy': 'registry-token-created' }}
+        footer={
+          <Button data-cy="close" onClick={props.toggleModalOpen}>
+            Ok, got it!
+          </Button>
+        }
+      >
+        <CreatedTokenContent secret={created.secret} />
+      </Dialog>
+    );
   }
 
   return (
-    <GenerateTokenContent
-      form={form}
-      noPermissionsSelected={noPermissionsSelected}
-      onSubmit={onSubmit}
-      selectedScope={selectedScope} // Ensure selectedScope is passed correctly
-      setSelectedScope={setSelectedScope}
-      toggleModalOpen={props.toggleModalOpen}
-    />
+    <Dialog
+      open={props.open}
+      onOpenChange={props.toggleModalOpen}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      width="lg"
+      title="Create an access token"
+      description="To access Hive Console, your application or tool needs an active API key."
+    >
+      <GenerateTokenContent
+        form={form}
+        noPermissionsSelected={noPermissionsSelected}
+        onSubmit={onSubmit}
+        selectedScope={selectedScope}
+        setSelectedScope={setSelectedScope}
+        toggleModalOpen={props.toggleModalOpen}
+      />
+    </Dialog>
   );
 }
 
-export function CreatedTokenContent(props: {
-  mutation: UseMutationState<any, AnyVariables>;
-  toggleModalOpen: () => void;
-}) {
+export function CreatedTokenContent(props: { secret: string }) {
   return (
-    <DialogContent className="w-4/5 max-w-[600px] md:w-3/5" data-cy="registry-token-created">
-      <DialogHeader className="flex flex-col gap-5">
-        <DialogTitle>Token successfully created!</DialogTitle>
-        <DialogDescription className="flex flex-col gap-5">
-          <InputCopy value={props.mutation.data.createToken.ok.secret} />
-          <Callout type="info">
-            This is your unique API key and it is non-recoverable. If you lose this key, you will
-            need to create a new one.
-          </Callout>
-        </DialogDescription>
-      </DialogHeader>
-      <DialogFooter>
-        <Button data-cy="close" onClick={props.toggleModalOpen}>
-          Ok, got it!
-        </Button>
-      </DialogFooter>
-    </DialogContent>
+    <div className="flex flex-col gap-4">
+      <InputCopy value={props.secret} onSurface="raised" />
+      <Callout type="info">
+        This is your unique API key and it is non-recoverable. If you lose this key, you will need
+        to create a new one.
+      </Callout>
+    </div>
   );
 }
 
@@ -194,88 +208,73 @@ export function GenerateTokenContent(props: {
   noPermissionsSelected: boolean;
 }) {
   return (
-    <DialogContent className="w-4/5 max-w-[600px] md:w-3/5">
-      <Form {...props.form}>
-        <form
-          className="flex grow flex-col gap-5"
-          data-cy="create-registry-token-form"
-          onSubmit={props.form.handleSubmit(props.onSubmit)}
-        >
-          <DialogHeader>
-            <DialogTitle>Create an access token</DialogTitle>
-            <DialogDescription>
-              To access Hive Console, your application or tool needs an active API key.
-            </DialogDescription>
-          </DialogHeader>
-          <FormField
-            control={props.form.control}
-            name="tokenDescription"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Input
-                    placeholder="Token description"
-                    data-cy="description"
-                    autoComplete="off"
-                    onSurface="raised"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <Accordion defaultValue="Permissions">
-              <Accordion.Item value="Permissions">
-                <Accordion.Header>Registry & Usage</Accordion.Header>
-                <Accordion.Content>
-                  <PermissionScopeItem
-                    dataCy="registry-access-scope"
-                    key={props.selectedScope}
-                    scope={RegistryAccessScope}
-                    canManageScope
-                    checkAccess={() => true}
-                    onChange={value => {
-                      if (value === 'no-access') {
-                        props.setSelectedScope('no-access');
-                        return;
-                      }
-                      props.setSelectedScope(value);
-                    }}
-                    possibleScope={Object.values(RegistryAccessScope.mapping)}
-                    initialScope={props.selectedScope}
-                    selectedScope={props.selectedScope} // Ensure selectedScope is passed correctly
-                  />
-                </Accordion.Content>
-              </Accordion.Item>
-            </Accordion>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              type="button"
-              onClick={ev => {
-                ev.preventDefault();
-                props.toggleModalOpen();
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              data-cy="submit"
-              disabled={
-                !props.form.formState.isValid ||
-                props.noPermissionsSelected ||
-                props.form.formState.isSubmitting
-              }
-            >
-              Generate Token
-            </Button>
-          </DialogFooter>
-        </form>
-      </Form>
-    </DialogContent>
+    <Form {...props.form}>
+      {/* The buttons stay inside the form: the e2e helper selects the submit through it. */}
+      <form
+        className="flex flex-col gap-5"
+        data-cy="create-registry-token-form"
+        onSubmit={props.form.handleSubmit(props.onSubmit)}
+      >
+        <FormField
+          control={props.form.control}
+          name="tokenDescription"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Input
+                  placeholder="Token description"
+                  data-cy="description"
+                  autoComplete="off"
+                  onSurface="raised"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Accordion defaultValue="Permissions">
+          <Accordion.Item value="Permissions">
+            <Accordion.Header>Registry & Usage</Accordion.Header>
+            <Accordion.Content>
+              <PermissionScopeItem
+                dataCy="registry-access-scope"
+                onSurface="raised"
+                key={props.selectedScope}
+                scope={RegistryAccessScope}
+                canManageScope
+                checkAccess={() => true}
+                onChange={value => {
+                  if (value === 'no-access') {
+                    props.setSelectedScope('no-access');
+                    return;
+                  }
+                  props.setSelectedScope(value);
+                }}
+                possibleScope={Object.values(RegistryAccessScope.mapping)}
+                initialScope={props.selectedScope}
+                selectedScope={props.selectedScope}
+              />
+            </Accordion.Content>
+          </Accordion.Item>
+        </Accordion>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" type="button" onClick={props.toggleModalOpen}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            data-cy="submit"
+            disabled={
+              !props.form.formState.isValid ||
+              props.noPermissionsSelected ||
+              props.form.formState.isSubmitting
+            }
+          >
+            Generate Token
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

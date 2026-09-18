@@ -1,19 +1,13 @@
-import { Fragment, ReactElement, useCallback, useState } from 'react';
-import clsx from 'clsx';
+import { ReactElement } from 'react';
 import { useFormik } from 'formik';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
+import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
-import { Heading } from '@/components/ui/heading';
-import { ArrowDownIcon, CheckIcon } from '@/components/ui/icon';
-import { Modal } from '@/components/v2';
-import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
-import { useNotifications } from '@/lib/hooks';
-import { Combobox as HeadlessCombobox, Transition as HeadlessTransition } from '@headlessui/react';
-
-const Combobox = HeadlessCombobox as any;
-const Transition = HeadlessTransition as any;
+import { useToast } from '@/components/ui/use-toast';
+import { FragmentType, graphql, useFragment } from '@/gql';
 
 const TransferOrganizationOwnership_Request = graphql(`
   mutation TransferOrganizationOwnership_Request($input: RequestOrganizationTransferInput!) {
@@ -51,10 +45,6 @@ const TransferOrganizationOwnership_Members = graphql(`
   }
 `);
 
-type Member = NonNullable<
-  DocumentType<typeof TransferOrganizationOwnership_Members>['organization']
->['members']['edges'][number]['node'];
-
 const TransferOrganizationOwnershipModal_OrganizationFragment = graphql(`
   fragment TransferOrganizationOwnershipModal_OrganizationFragment on Organization {
     id
@@ -65,17 +55,19 @@ const TransferOrganizationOwnershipModal_OrganizationFragment = graphql(`
 export const TransferOrganizationOwnershipModal = ({
   isOpen,
   toggleModalOpen,
+  onOpenChangeComplete,
   ...props
 }: {
   isOpen: boolean;
   toggleModalOpen: () => void;
+  onOpenChangeComplete?: (open: boolean) => void;
   organization: FragmentType<typeof TransferOrganizationOwnershipModal_OrganizationFragment>;
 }): ReactElement => {
   const organization = useFragment(
     TransferOrganizationOwnershipModal_OrganizationFragment,
     props.organization,
   );
-  const notify = useNotifications();
+  const { toast } = useToast();
   const [, mutate] = useMutation(TransferOrganizationOwnership_Request);
   const [query] = useQuery({
     query: TransferOrganizationOwnership_Members,
@@ -85,9 +77,6 @@ export const TransferOrganizationOwnershipModal = ({
       },
     },
   });
-
-  const [searchPhrase, setSearchPhrase] = useState('');
-  const normalizedSearchPhrase = searchPhrase.toLowerCase().replace(/\s+/g, '');
 
   const {
     handleSubmit,
@@ -100,6 +89,7 @@ export const TransferOrganizationOwnershipModal = ({
     errors,
     touched,
     setFieldValue,
+    setFieldTouched,
   } = useFormik({
     enableReinitialize: true,
     initialValues: {
@@ -122,172 +112,125 @@ export const TransferOrganizationOwnershipModal = ({
       });
 
       if (result.error) {
-        notify('Failed to transfer ownership', 'error');
+        toast({
+          variant: 'destructive',
+          title: 'Failed to transfer ownership',
+          description: result.error.message,
+        });
       }
 
       if (result.data?.requestOrganizationTransfer.error?.message) {
-        notify(result.data.requestOrganizationTransfer.error.message, 'error');
+        toast({
+          variant: 'destructive',
+          title: 'Failed to transfer ownership',
+          description: result.data.requestOrganizationTransfer.error.message,
+        });
       }
 
       if (result.data?.requestOrganizationTransfer.ok) {
-        notify('Ownership transfer requested', 'success');
+        toast({
+          title: 'Ownership transfer requested',
+          description: `${result.data.requestOrganizationTransfer.ok.email} has been sent a link to accept it.`,
+        });
         resetForm();
         toggleModalOpen();
       }
     },
   });
 
-  const [selected, setSelected] = useState<Member | undefined>();
-
-  const onSelect = useCallback(
-    (member: Member) => {
-      setSelected(member);
-      void setFieldValue('newOwner', member.user.id, true);
-    },
-    [setSelected, setFieldValue],
-  );
-
   const members = (query.data?.organization?.members?.edges ?? [])
     .map(edge => edge.node)
     .filter(member => !member.isOwner);
 
-  const filteredMembers = (
-    searchPhrase === ''
-      ? members
-      : members.filter(
-          member =>
-            member.user.fullName
-              .toLowerCase()
-              .replace(/\s+/g, '')
-              .includes(normalizedSearchPhrase) ||
-            member.user.displayName
-              .toLowerCase()
-              .replace(/\s+/g, '')
-              .includes(normalizedSearchPhrase) ||
-            member.user.email.toLowerCase().replace(/\s+/g, '').includes(normalizedSearchPhrase),
-        )
-  ).slice(0, 5);
-
   return (
-    <Modal open={isOpen} onOpenChange={toggleModalOpen} size="lg" className="flex flex-col gap-5">
-      <Heading>Transfer ownership</Heading>
-
-      <p>Transferring is completed after the new owner approves the transfer.</p>
-
-      <div className="flex flex-col gap-2">
-        <div className="font-bold">New owner</div>
-        <Combobox value={selected} onChange={onSelect}>
-          <div className="relative">
-            <div
-              className={clsx(
-                'bg-neutral-5 text-neutral-12 ring-neutral-2 rounded-sm p-4 text-sm font-medium ring-1 focus-within:ring',
-                touched.newOwner && !!errors.newOwner
-                  ? 'caret-neutral-12 text-red-500 ring-red-500'
-                  : null,
-              )}
-            >
-              <Combobox.Input
-                className="placeholder:text-neutral-10 w-full bg-transparent disabled:cursor-not-allowed"
-                name="newOwner"
-                displayValue={(member: Member | null) => member?.user.displayName}
-                onChange={(event: any) => setSearchPhrase(event.target.value)}
-                onBlur={handleBlur}
-              />
-              <Combobox.Button className="absolute inset-y-0 right-0 flex items-center px-6">
-                <ArrowDownIcon className="text-neutral-10 size-5" aria-hidden="true" />
-              </Combobox.Button>
-            </div>
-            <Transition
-              as={Fragment}
-              leave="transition ease-in duration-100"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-              afterLeave={() => setSearchPhrase('')}
-            >
-              <Combobox.Options className="bg-neutral-5 ring-neutral-1/5 absolute mt-1 max-h-60 w-full overflow-auto rounded-md text-base shadow-lg ring-1 focus:outline-none">
-                {filteredMembers.length === 0 && searchPhrase !== '' ? (
-                  <div className="text-neutral-2 relative cursor-default select-none px-4 py-2 text-base">
-                    Nothing found.
-                  </div>
-                ) : (
-                  filteredMembers.map(member => (
-                    <Combobox.Option
-                      key={member.user.id}
-                      className={({ active, selected }: { active?: boolean; selected?: boolean }) =>
-                        clsx(
-                          'text-neutral-11 relative cursor-pointer select-none p-2 font-medium',
-                          active || selected ? 'bg-neutral-2' : null,
-                        )
-                      }
-                      value={member}
-                    >
-                      {({ selected }: { selected?: boolean }) => (
-                        <div className="flex flex-row items-center justify-between gap-2">
-                          <div className="ml-2 flex flex-1 flex-col gap-x-2">
-                            <div className="block truncate text-sm">{member.user.displayName}</div>
-                            <div className="text-neutral-10 text-xs font-normal">
-                              {member.user.email}
-                            </div>
-                          </div>
-                          {selected ? <CheckIcon /> : null}
-                        </div>
-                      )}
-                    </Combobox.Option>
-                  ))
-                )}
-              </Combobox.Options>
-            </Transition>
-          </div>
-        </Combobox>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <div>
-          Type <span className="font-bold">{organization.slug}</span> to confirm.
+    <Dialog
+      open={isOpen}
+      onOpenChange={toggleModalOpen}
+      onOpenChangeComplete={onOpenChangeComplete}
+      width="xl"
+      title="Transfer ownership"
+      description="Transferring is completed after the new owner approves the transfer."
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={toggleModalOpen}>
+            Cancel
+          </Button>
+          <Button
+            disabled={isSubmitting || !isValid || !touched.confirmation || !touched.newOwner}
+            onClick={() => handleSubmit()}
+          >
+            Transfer this organization
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-normal" htmlFor="newOwner">
+            New owner
+          </label>
+          <Select
+            id="newOwner"
+            name="newOwner"
+            placeholder="Select a member"
+            searchable
+            searchPlaceholder="Search by name or email..."
+            options={members.map(member => ({
+              value: member.user.id,
+              label: member.user.displayName,
+              description: member.user.email,
+              keywords: `${member.user.fullName} ${member.user.email}`,
+            }))}
+            value={values.newOwner}
+            // Touched on pick rather than on blur: the popup takes focus when it opens, which
+            // would blur the trigger and show "not defined" before anyone has chosen.
+            onValueChange={value => {
+              void setFieldTouched('newOwner', true, false);
+              void setFieldValue('newOwner', value, true);
+            }}
+            width="full"
+            onSurface="raised"
+          />
+          {touched.newOwner && errors.newOwner && (
+            <span className="text-sm text-red-500">{errors.newOwner}</span>
+          )}
         </div>
 
-        <Input
-          name="confirmation"
-          value={values.confirmation}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          disabled={isSubmitting}
-          invalid={touched.confirmation && !!errors.confirmation}
-        />
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-normal" htmlFor="confirmation">
+            Type <span className="font-bold">{organization.slug}</span> to confirm.
+          </label>
+
+          <Input
+            id="confirmation"
+            name="confirmation"
+            value={values.confirmation}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            disabled={isSubmitting}
+            invalid={touched.confirmation && !!errors.confirmation}
+            onSurface="raised"
+          />
+        </div>
+
+        <div className="border-neutral-5 h-0 w-full border-t" />
+
+        <div className="font-medium">About the ownership transfer</div>
+        <ul className="text-neutral-11 list-inside list-disc px-2 text-sm">
+          <li>
+            The new owner will receive a confirmation email. If the new owner doesn't accept the
+            transfer within 24 hours, the invitation will expire.
+          </li>
+          <li className="pt-3">
+            When you transfer an organization to one of the members, the new owner will get access
+            to organization's contents, projects, members, and settings.
+          </li>
+          <li className="pt-3">
+            You will keep your access to the organization's contents, projects, members, and
+            settings, except you won't be able to remove the organization.
+          </li>
+        </ul>
       </div>
-
-      <div className="border-neutral-2 h-0 w-full border-t-2" />
-
-      <div className="font-bold">About the ownership transfer</div>
-      <ul className="text-neutral-12 list-inside list-disc px-5 text-sm">
-        <li>
-          The new owner will receive a confirmation email. If the new owner doesn't accept the
-          transfer within 24 hours, the invitation will expire.
-        </li>
-        <li className="pt-5">
-          When you transfer an organization to one of the members, the new owner will get access to
-          organization's contents, projects, members, and settings.
-        </li>
-        <li className="pt-5">
-          You will keep your access to the organization's contents, projects, members, and settings,
-          except you won't be able to remove the organization.
-        </li>
-      </ul>
-
-      <div className="flex w-full gap-2">
-        <Button type="button" className="w-full justify-center" size="lg" onClick={toggleModalOpen}>
-          Cancel
-        </Button>
-        <Button
-          size="lg"
-          className="w-full justify-center"
-          variant="default"
-          disabled={isSubmitting || !isValid || !touched.confirmation || !touched.newOwner}
-          onClick={() => handleSubmit()}
-        >
-          Transfer this organization
-        </Button>
-      </div>
-    </Modal>
+    </Dialog>
   );
 };

@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { Button } from './button';
 
 describe('Button', () => {
-  it('renders an icon-only button as a square at each size rung', () => {
+  it('renders an icon-only button as a square at each size', () => {
     const { rerender } = render(<Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" />);
     const button = screen.getByRole('button', { name: 'Refresh' });
     expect(button.className).toContain('h-9');

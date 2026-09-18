@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Select } from '@/components/base/floating/select/select';
+import type { OnSurface } from '@/components/base/shared-styles';
 
 type Role<T> = {
   id: string;
@@ -21,6 +22,8 @@ export function RoleSelector<T>(props: {
   onSelect(role: Role<T>): void | Promise<void>;
   onBlur?(): void;
   width?: 'auto' | 'full';
+  /** `raised` inside a dialog or sheet. */
+  onSurface?: OnSurface;
 }) {
   // The trigger stays disabled while an async `onSelect` settles, so a slow mutation cannot be
   // double-fired.
@@ -64,6 +67,7 @@ export function RoleSelector<T>(props: {
       onBlur={props.onBlur}
       align="end"
       width={props.width}
+      onSurface={props.onSurface}
       data-cy="role-selector-trigger"
     />
   );

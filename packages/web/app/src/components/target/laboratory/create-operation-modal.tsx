@@ -4,15 +4,8 @@ import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -189,92 +182,95 @@ export function CreateOperationModalContent(props: {
         props.close();
         props.form.reset();
       }}
+      width="lg"
+      attrs={{ 'data-cy': 'create-operation-modal' }}
+      title="Create Operation"
+      description="Create a new operation and add it to a collection"
+      footer={
+        <>
+          <Button
+            type="button"
+            size="lg"
+            className="w-full justify-center"
+            onClick={() => {
+              props.close();
+              props.form.reset();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="create-operation-form"
+            size="lg"
+            className="w-full justify-center"
+            variant="primary"
+            disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
+          >
+            Add Operation
+          </Button>
+        </>
+      }
     >
-      <DialogContent className="w-4/5 max-w-[600px] md:w-3/5" data-cy="create-operation-modal">
-        {!props.fetching && (
-          <Form {...props.form}>
-            <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
-              <DialogHeader>
-                <DialogTitle>Create Operation</DialogTitle>
-                <DialogDescription>
-                  Create a new operation and add it to a collection
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-8">
-                <FormField
-                  control={props.form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Operation Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          autoComplete="off"
-                          {...field}
-                          placeholder="Your Operation Name"
-                          onSurface="raised"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={props.form.control}
-                  name="collectionId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Which collection would you like to save this operation to?
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          options={props.collections.map(c => ({
-                            value: c.id,
-                            label: c.name,
-                            description: c.description,
-                            'data-cy': 'collection-select-item',
-                          }))}
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          placeholder="Select a Collection"
-                          matchTriggerWidth
-                          width="full"
-                          data-cy="collection-select-trigger"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  size="lg"
-                  className="w-full justify-center"
-                  onClick={ev => {
-                    ev.preventDefault();
-                    props.close();
-                    props.form.reset();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full justify-center"
-                  variant="primary"
-                  disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
-                >
-                  Add Operation
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        )}
-      </DialogContent>
+      {!props.fetching && (
+        <Form {...props.form}>
+          <form
+            id="create-operation-form"
+            className="space-y-8"
+            onSubmit={props.form.handleSubmit(props.onSubmit)}
+          >
+            <div className="space-y-8">
+              <FormField
+                control={props.form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Operation Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        autoComplete="off"
+                        {...field}
+                        placeholder="Your Operation Name"
+                        onSurface="raised"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={props.form.control}
+                name="collectionId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Which collection would you like to save this operation to?
+                    </FormLabel>
+                    <FormControl>
+                      <Select
+                        options={props.collections.map(c => ({
+                          value: c.id,
+                          label: c.name,
+                          description: c.description,
+                          'data-cy': 'collection-select-item',
+                        }))}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Select a Collection"
+                        matchTriggerWidth
+                        width="full"
+                        onSurface="raised"
+                        data-cy="collection-select-trigger"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </form>
+        </Form>
+      )}
     </Dialog>
   );
 }

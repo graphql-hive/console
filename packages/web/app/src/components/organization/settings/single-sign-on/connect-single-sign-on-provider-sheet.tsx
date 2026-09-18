@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Input } from '@/components/base/input/input';
+import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -12,14 +13,16 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import * as Sheet from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation as useRQMutation } from '@tanstack/react-query';
 
 type ConnectSingleSignOnProviderSheetProps = {
+  open: boolean;
   onClose: () => void;
+  /** Fires once the close transition has finished; the parent remounts the sheet on it. */
+  onOpenChangeComplete: (open: boolean) => void;
   initialValues: null | {
     authorizationEndpoint: string;
     tokenEndpoint: string;
@@ -272,59 +275,22 @@ export function ConnectSingleSignOnProviderSheet(
   );
 
   return (
-    <Sheet.Sheet open onOpenChange={props.onClose}>
-      <Sheet.SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
-        <Sheet.SheetHeader>
-          <Sheet.SheetTitle>Connect OpenID Connect Provider</Sheet.SheetTitle>
-          <Sheet.SheetDescription>
-            Connecting an OIDC provider to this organization allows users to automatically log in
-            and be part of this organization.
-          </Sheet.SheetDescription>
-          <Sheet.SheetDescription>
-            Use Okta, Auth0, Google Workspaces or any other OAuth2 Open ID Connect compatible
-            provider.
-          </Sheet.SheetDescription>
-        </Sheet.SheetHeader>
-        <Tabs value={state}>
-          <TabsList variant="content" className="mt-1">
-            <TabsTrigger
-              variant="content"
-              value="discovery"
-              onClick={() => setState('discovery')}
-              data-button-oidc-discovery
-            >
-              Discovery Document
-            </TabsTrigger>
-            <TabsTrigger
-              variant="content"
-              value="manual"
-              onClick={() => setState('manual')}
-              data-button-oidc-manual
-            >
-              Manual
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="discovery" variant="content">
-            <OIDCMetadataFetcher
-              onEndpointChange={args => {
-                form.setValue('authorization_endpoint', args.authorization, {
-                  shouldValidate: true,
-                });
-                form.setValue('token_endpoint', args.token, {
-                  shouldValidate: true,
-                });
-                form.setValue('userinfo_endpoint', args.userinfo, {
-                  shouldValidate: true,
-                });
-              }}
-            />
-            {formNode}
-          </TabsContent>
-          <TabsContent value="manual" variant="content">
-            {formNode}
-          </TabsContent>
-        </Tabs>
-        <Sheet.SheetFooter className="mb-0 mt-auto">
+    <Sheet
+      open={props.open}
+      onOpenChange={props.onClose}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      title="Connect OpenID Connect Provider"
+      description={
+        <>
+          Connecting an OIDC provider to this organization allows users to automatically log in and
+          be part of this organization.
+          <br />
+          Use Okta, Auth0, Google Workspaces or any other OAuth2 Open ID Connect compatible
+          provider.
+        </>
+      }
+      footer={
+        <>
           <Button variant="secondary" onClick={props.onClose}>
             Abort
           </Button>
@@ -336,9 +302,49 @@ export function ConnectSingleSignOnProviderSheet(
           >
             Save
           </Button>
-        </Sheet.SheetFooter>
-      </Sheet.SheetContent>
-    </Sheet.Sheet>
+        </>
+      }
+    >
+      <Tabs value={state}>
+        <TabsList variant="content" className="mt-1">
+          <TabsTrigger
+            variant="content"
+            value="discovery"
+            onClick={() => setState('discovery')}
+            data-button-oidc-discovery
+          >
+            Discovery Document
+          </TabsTrigger>
+          <TabsTrigger
+            variant="content"
+            value="manual"
+            onClick={() => setState('manual')}
+            data-button-oidc-manual
+          >
+            Manual
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="discovery" variant="content">
+          <OIDCMetadataFetcher
+            onEndpointChange={args => {
+              form.setValue('authorization_endpoint', args.authorization, {
+                shouldValidate: true,
+              });
+              form.setValue('token_endpoint', args.token, {
+                shouldValidate: true,
+              });
+              form.setValue('userinfo_endpoint', args.userinfo, {
+                shouldValidate: true,
+              });
+            }}
+          />
+          {formNode}
+        </TabsContent>
+        <TabsContent value="manual" variant="content">
+          {formNode}
+        </TabsContent>
+      </Tabs>
+    </Sheet>
   );
 }
 

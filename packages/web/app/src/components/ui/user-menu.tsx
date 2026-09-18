@@ -1,18 +1,11 @@
+import { useState } from 'react';
 import cookies from 'js-cookie';
 import { LifeBuoyIcon, UserRoundMinus } from 'lucide-react';
 import { useMutation } from 'urql';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { Menu } from '@/components/base/floating/menu/menu';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useThemeMenuEntry } from '@/components/theme/theme-switcher';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   AlertTriangleIcon,
   CalendarIcon,
@@ -24,12 +17,12 @@ import {
   SettingsIcon,
   TrendingUpIcon,
 } from '@/components/ui/icon';
+import { useToast } from '@/components/ui/use-toast';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle } from '@/lib/hooks';
-import { useNotifications } from '@/lib/hooks/use-notifications';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { GetStartedProgress } from '../get-started/trigger';
@@ -88,13 +81,20 @@ export function UserMenu(props: {
   const currentOrganization = useFragment(UserMenu_OrganizationFragment, props.currentOrganization);
   const themeEntry = useThemeMenuEntry();
   const [isUserSettingsModalOpen, toggleUserSettingsModalOpen] = useToggle();
+  const [userSettingsSession, setUserSettingsSession] = useState(0);
   const [isLeaveOrganizationModalOpen, toggleLeaveOrganizationModalOpen] = useToggle();
 
   return (
     <>
       <UserSettingsModal
+        key={userSettingsSession}
         toggleModalOpen={toggleUserSettingsModalOpen}
         isOpen={isUserSettingsModalOpen}
+        onOpenChangeComplete={open => {
+          if (!open) {
+            setUserSettingsSession(s => s + 1);
+          }
+        }}
       />
       {currentOrganization?.me?.canLeaveOrganization ? (
         <LeaveOrganizationModal
@@ -249,8 +249,8 @@ export function LeaveOrganizationModal(props: {
   organizationSlug: string;
 }) {
   const { organizationSlug } = props;
-  const [, mutate] = useMutation(LeaveOrganizationModal_LeaveOrganizationMutation);
-  const notify = useNotifications();
+  const [mutationState, mutate] = useMutation(LeaveOrganizationModal_LeaveOrganizationMutation);
+  const { toast } = useToast();
 
   async function onSubmit() {
     const result = await mutate({
@@ -260,11 +260,19 @@ export function LeaveOrganizationModal(props: {
     });
 
     if (result.error) {
-      notify("Couldn't leave organization. Please try again.", 'error');
+      toast({
+        variant: 'destructive',
+        title: "Couldn't leave organization. Please try again.",
+        description: result.error.message,
+      });
     }
 
     if (result.data?.leaveOrganization.error) {
-      notify(result.data.leaveOrganization.error.message, 'error');
+      toast({
+        variant: 'destructive',
+        title: "Couldn't leave organization.",
+        description: result.data.leaveOrganization.error.message,
+      });
     }
 
     if (result.data?.leaveOrganization.ok) {
@@ -280,6 +288,7 @@ export function LeaveOrganizationModal(props: {
       toggleModalOpen={props.toggleModalOpen}
       organizationSlug={organizationSlug}
       onSubmit={onSubmit}
+      isSubmitting={mutationState.fetching}
     />
   );
 }
@@ -289,34 +298,31 @@ export function LeaveOrganizationModalContent(props: {
   toggleModalOpen: () => void;
   organizationSlug: string;
   onSubmit: () => void;
+  isSubmitting?: boolean;
 }) {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
-        <DialogHeader>
-          <DialogTitle>Leave {props.organizationSlug}?</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to leave this organization?
-            <br />
-            You will lose access to{' '}
-            <span className="text-neutral-12 font-semibold">{props.organizationSlug}</span>.
-          </DialogDescription>
-          <DialogDescription className="font-bold">This action is irreversible!</DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button
-            onClick={ev => {
-              ev.preventDefault();
-              props.toggleModalOpen();
-            }}
-          >
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={props.onSubmit}>
-            Leave organization
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog
+      open={props.isOpen}
+      onOpenChange={open => {
+        if (!open && !props.isSubmitting) {
+          props.toggleModalOpen();
+        }
+      }}
+      title={`Leave ${props.organizationSlug}?`}
+      description={
+        <>
+          Are you sure you want to leave this organization? You will lose access to{' '}
+          <span className="text-neutral-12 font-semibold">{props.organizationSlug}</span>.{' '}
+          <span className="text-neutral-12 font-semibold">This action is irreversible!</span>
+        </>
+      }
+      confirm={{
+        label: 'Leave organization',
+        variant: 'destructive',
+        disabled: props.isSubmitting,
+        onClick: props.onSubmit,
+      }}
+      cancel={{ disabled: props.isSubmitting }}
+    />
   );
 }

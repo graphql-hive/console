@@ -1,14 +1,7 @@
 import { type ReactElement } from 'react';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link } from '@/components/ui/link';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -51,15 +44,19 @@ export const ConnectLabModalContent = (props: {
   docsUrl: string;
 }) => {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.close}>
-      <DialogContent className="w-4/5 max-w-[600px] md:w-3/5">
-        <DialogHeader>
-          <DialogTitle>Use GraphQL Schema Externally</DialogTitle>
-          <DialogDescription>
-            Hive allow you to consume and use the Laboratory schema with your configured mocks while
-            developing.
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.close}
+      width="lg"
+      title="Use GraphQL Schema Externally"
+      description="Hive allow you to consume and use the Laboratory schema with your configured mocks while developing."
+      footer={
+        <Button variant="default" onClick={() => props.close()}>
+          Close
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-4">
         {props?.isCDNEnabled ? (
           <div>
             <h3 className="text-neutral-12 text-sm">High-availability CDN:</h3>
@@ -70,7 +67,7 @@ export const ConnectLabModalContent = (props: {
           </div>
         ) : null}
         <span className="text-neutral-12 text-sm">You can use the following endpoint:</span>
-        <InputCopy value={props.endpoint} />
+        <InputCopy value={props.endpoint} onSurface="raised" />
         <span className="text-neutral-12 text-sm">
           To authenticate, use the following HTTP headers, with a token that has `target:read`
           scope:
@@ -96,18 +93,7 @@ export const ConnectLabModalContent = (props: {
           </Link>{' '}
           chapter in our documentation to create a Registry Access Token.
         </p>
-        <DialogFooter className="gap-2">
-          <Button
-            variant="default"
-            onClick={ev => {
-              ev.preventDefault();
-              props.close();
-            }}
-          >
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+      </div>
     </Dialog>
   );
 };

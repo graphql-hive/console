@@ -1,5 +1,5 @@
 import { useMutation } from 'urql';
-import * as AlertDialog from '@/components/ui/alert-dialog';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 
@@ -17,6 +17,7 @@ const DeleteRuleConfirmationDialog_Mutation = graphql(`
 `);
 
 type DeleteRuleConfirmationDialogProps = {
+  open: boolean;
   ruleId: string;
   ruleName: string;
   organizationSlug: string;
@@ -30,63 +31,61 @@ export function DeleteRuleConfirmationDialog(props: DeleteRuleConfirmationDialog
   const { toast } = useToast();
 
   return (
-    <AlertDialog.AlertDialog open>
-      <AlertDialog.AlertDialogContent>
-        <AlertDialog.AlertDialogHeader>
-          <AlertDialog.AlertDialogTitle>Delete this alert rule?</AlertDialog.AlertDialogTitle>
-          <AlertDialog.AlertDialogDescription>
-            This will permanently delete{' '}
-            <span className="text-neutral-12 font-medium">{props.ruleName}</span>, its incident
-            history, and state-log entries. This cannot be undone.
-          </AlertDialog.AlertDialogDescription>
-        </AlertDialog.AlertDialogHeader>
-        <AlertDialog.AlertDialogFooter>
-          <AlertDialog.AlertDialogCancel
-            onClick={mutationState.fetching ? undefined : props.onCancel}
-            disabled={mutationState.fetching}
-          >
-            Cancel
-          </AlertDialog.AlertDialogCancel>
-          <AlertDialog.AlertDialogAction
-            onClick={() =>
-              mutate({
-                input: {
-                  project: {
-                    bySelector: {
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
-                    },
-                  },
-                  ruleIds: [props.ruleId],
+    <AlertDialog
+      open={props.open}
+      onOpenChange={next => {
+        if (!next && !mutationState.fetching) {
+          props.onCancel();
+        }
+      }}
+      title="Delete this alert rule?"
+      description={
+        <>
+          This will permanently delete{' '}
+          <span className="text-neutral-12 font-medium">{props.ruleName}</span>, its incident
+          history, and state-log entries. This cannot be undone.
+        </>
+      }
+      confirm={{
+        label: 'Delete rule',
+        variant: 'destructive',
+        disabled: mutationState.fetching,
+        onClick: () => {
+          void mutate({
+            input: {
+              project: {
+                bySelector: {
+                  organizationSlug: props.organizationSlug,
+                  projectSlug: props.projectSlug,
                 },
-              }).then(result => {
-                if (result.error) {
-                  toast({
-                    variant: 'destructive',
-                    title: 'Delete alert rule failed.',
-                    description: result.error.message,
-                  });
-                  return;
-                }
-                if (result.data?.deleteMetricAlertRules.error) {
-                  toast({
-                    variant: 'destructive',
-                    title: 'Delete alert rule failed.',
-                    description: result.data.deleteMetricAlertRules.error.message,
-                  });
-                  return;
-                }
-                if (result.data?.deleteMetricAlertRules.ok) {
-                  toast({ variant: 'default', title: 'Alert rule deleted.' });
-                  props.onConfirm();
-                }
-              })
+              },
+              ruleIds: [props.ruleId],
+            },
+          }).then(result => {
+            if (result.error) {
+              toast({
+                variant: 'destructive',
+                title: 'Delete alert rule failed.',
+                description: result.error.message,
+              });
+              return;
             }
-          >
-            Delete rule
-          </AlertDialog.AlertDialogAction>
-        </AlertDialog.AlertDialogFooter>
-      </AlertDialog.AlertDialogContent>
-    </AlertDialog.AlertDialog>
+            if (result.data?.deleteMetricAlertRules.error) {
+              toast({
+                variant: 'destructive',
+                title: 'Delete alert rule failed.',
+                description: result.data.deleteMetricAlertRules.error.message,
+              });
+              return;
+            }
+            if (result.data?.deleteMetricAlertRules.ok) {
+              toast({ variant: 'default', title: 'Alert rule deleted.' });
+              props.onConfirm();
+            }
+          });
+        },
+      }}
+      cancel={{ disabled: mutationState.fetching }}
+    />
   );
 }

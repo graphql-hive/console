@@ -3,20 +3,12 @@ import { buildSchema, introspectionFromSchema, Kind, parse, print } from 'graphq
 import { throttle } from 'lodash';
 import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -910,6 +902,10 @@ export function TargetLaboratoryPage(props: {
     'false',
   );
 
+  // Read once: the effect below marks it shown on the first render, so the dialog owns its own
+  // open state from then on.
+  const [welcomeOpen, setWelcomeOpen] = useState(isWelcomeDialogShown === 'false');
+
   useEffect(() => {
     if (isWelcomeDialogShown === 'false') {
       setIsWelcomeDialogShown('true');
@@ -919,28 +915,18 @@ export function TargetLaboratoryPage(props: {
   return (
     <>
       <Meta title="Schema laboratory" />
-      <Dialog defaultOpen={isWelcomeDialogShown === 'false'}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Welcome to new Hive Laboratory</DialogTitle>
-            <DialogDescription>
-              <p>
-                Hive Laboratory is a new way to explore your GraphQL schema and run queries against
-                your GraphQL API.
-              </p>
-              <br />
-              <p>
-                You always can switch to the old GraphiQL based Laboratory by using the tab switcher
-                in the top left cornder.
-              </p>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button>Get started</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
+      <Dialog
+        open={welcomeOpen}
+        onOpenChange={setWelcomeOpen}
+        width="sm"
+        title="Welcome to new Hive Laboratory"
+        description="Hive Laboratory is a new way to explore your GraphQL schema and run queries against your GraphQL API."
+        footer={<Button onClick={() => setWelcomeOpen(false)}>Get started</Button>}
+      >
+        <p className="text-neutral-11 text-sm">
+          You always can switch to the old GraphiQL based Laboratory by using the tab switcher in
+          the top left cornder.
+        </p>
       </Dialog>
       <TargetLayout
         organizationSlug={props.organizationSlug}
