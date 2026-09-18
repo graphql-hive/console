@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery } from 'urql';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { Button } from '@/components/ui/button';
@@ -42,9 +42,10 @@ export function PersonalAccessTokensSubPage(
   const [createAccessTokenState, setCreateAccessTokenState] = useState<CreateAccessTokenState>(
     CreateAccessTokenState.closed,
   );
-  // See the organization sub-page: the draft resets after the close transition, and the key
-  // opens its own dialog as soon as it arrives.
+  // See the organization sub-page: the draft resets after the close transition, and a new key
+  // waits in the ref until then before opening its own dialog.
   const [createSession, setCreateSession] = useState(0);
+  const pendingKey = useRef<string | null>(null);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const shownKey = useKeepPreviousData(createdKey ?? undefined, createdKey === null);
 
@@ -77,33 +78,46 @@ export function PersonalAccessTokensSubPage(
         sideContent={
           <>
             {query.data?.organization?.me ? (
-              <CreatePersonalAccessTokenSheetContent
-                key={createSession}
-                open={createAccessTokenState !== CreateAccessTokenState.closed}
-                onOpenChange={isOpen => {
-                  if (isOpen === false) {
-                    setCreateAccessTokenState(CreateAccessTokenState.closing);
-                    return;
-                  }
-                  setCreateAccessTokenState(CreateAccessTokenState.open);
-                }}
-                onOpenChangeComplete={isOpen => {
-                  if (!isOpen) {
-                    setCreateSession(s => s + 1);
-                  }
-                }}
-                trigger={
-                  <Button data-cy="organization-settings-access-tokens-create-new">
-                    Create new access token
-                  </Button>
-                }
-                organization={query.data.organization}
-                onSuccess={privateAccessKey => {
-                  setCreatedKey(privateAccessKey);
-                  setCreateAccessTokenState(CreateAccessTokenState.closed);
-                  refetchQuery();
-                }}
-              />
+              <>
+                {/* Outside the keyed sheet, so it is still there to take focus back on close. */}
+                <Button
+                  data-cy="organization-settings-access-tokens-create-new"
+                  onClick={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
+                >
+                  Create new access token
+                </Button>
+                <CreatePersonalAccessTokenSheetContent
+                  key={createSession}
+                  open={createAccessTokenState !== CreateAccessTokenState.closed}
+                  onOpenChange={isOpen => {
+                    if (isOpen === false) {
+                      setCreateAccessTokenState(CreateAccessTokenState.closing);
+                      return;
+                    }
+                    setCreateAccessTokenState(CreateAccessTokenState.open);
+                  }}
+                  onOpenChangeComplete={isOpen => {
+                    if (!isOpen) {
+                      setCreateSession(s => s + 1);
+                      if (pendingKey.current !== null) {
+                        setCreatedKey(pendingKey.current);
+                        pendingKey.current = null;
+                      }
+                    }
+                  }}
+                  organization={query.data.organization}
+                  onSuccess={privateAccessKey => {
+                    // Resolved after the draft was discarded: no close is coming to show it, so show it now.
+                    if (createAccessTokenState === CreateAccessTokenState.closed) {
+                      setCreatedKey(privateAccessKey);
+                    } else {
+                      pendingKey.current = privateAccessKey;
+                      setCreateAccessTokenState(CreateAccessTokenState.closed);
+                    }
+                    refetchQuery();
+                  }}
+                />
+              </>
             ) : (
               <Button disabled data-cy="organization-settings-access-tokens-create-new">
                 Create new access token

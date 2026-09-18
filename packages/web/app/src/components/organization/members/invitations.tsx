@@ -265,9 +265,7 @@ export function MemberInvitationButton(props: {
       title="Membership Invitation"
       description="Enter the email address of the person you want to invite and select their role within the organization. Invitation expires after 7 days."
     >
-      {/* Keyed on `open` so the form starts fresh each time without remounting the dialog. */}
       <MemberInvitationForm
-        key={String(open)}
         refetchInvitations={props.refetchInvitations}
         organization={props.organization}
         close={() => setOpen(false)}
