@@ -13,6 +13,11 @@ export type FailureCardItem = {
   onView?: () => void;
 };
 
+/** "2 errors", "1 breaking change": the `detail` a row shows after its reason. */
+export function formatCount(count: number, noun: string) {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
 type FailureCardProps = {
   /** "2 of 11 contracts failed" */
   title: string;
@@ -34,7 +39,7 @@ export function FailureCard({ title, aside, items, viewLabel = 'View' }: Failure
         <span className="text-neutral-12 text-sm font-medium">{title}</span>
         {aside ? <span className="text-neutral-10 ml-auto text-xs">{aside}</span> : null}
       </div>
-      <ul className="divide-critical_30 divide-y">
+      <ul className="divide-critical_10 divide-y">
         {items.map(item => (
           <li
             key={item.key}
@@ -48,7 +53,7 @@ export function FailureCard({ title, aside, items, viewLabel = 'View' }: Failure
               {item.detail ? <span className="text-neutral-10"> {item.detail}</span> : null}
             </span>
             {item.onView ? (
-              <Button variant="outline" size="compact" onClick={item.onView}>
+              <Button variant="ghost" size="compact" onClick={item.onView}>
                 {viewLabel}
               </Button>
             ) : (

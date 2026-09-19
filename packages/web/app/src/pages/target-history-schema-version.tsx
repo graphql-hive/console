@@ -27,8 +27,11 @@ import {
 import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
+import { DescriptionList } from '@/components/base/description-list/description-list';
+import { FailureCard, formatCount } from '@/components/base/failure-card/failure-card';
 import { Select } from '@/components/base/floating/select/select';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Legend } from '@/components/base/legend/legend';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { TabbedView } from '@/components/base/tabs/tabbed-view';
@@ -202,6 +205,11 @@ const SchemaVersionView_SchemaVersionFragment = graphql(`
             }
           }
           schemaCompositionErrors {
+            edges {
+              node {
+                message
+              }
+            }
             ...CompositionErrorsSection_SchemaErrorConnection
           }
           previousDiffableVersion: previousDiffableContractVersion {
@@ -274,24 +282,26 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
     <Select
       value={selectedItem}
       onValueChange={setSelectedItem}
+      label={
+        <span className="inline-flex items-center gap-1.5">
+          {contractVersionNode
+            ? versionStatus(contractVersionNode, CONTRACT_LABELS).icon
+            : versionStatus(schemaVersion, DEFAULT_GRAPH_LABELS).icon}
+          {contractVersionNode
+            ? `${contractVersionNode.contractName}@${contractVersionNode.id.substring(0, 8)}`
+            : 'Default Graph'}
+        </span>
+      }
       options={[
         {
           value: 'default',
           label: 'Default Graph',
-          trailing: versionStatusIcon(schemaVersion, {
-            changed: 'Main graph schema changed',
-            succeeded: 'Composition succeeded.',
-            failed: 'Composition failed.',
-          }),
+          trailing: versionStatusIcon(schemaVersion, DEFAULT_GRAPH_LABELS),
         },
         ...contractVersions.map(edge => ({
           value: edge.node.id,
           label: `${edge.node.contractName}@${edge.node.id.substring(0, 8)}`,
-          trailing: versionStatusIcon(edge.node, {
-            changed: 'Contract schema changed',
-            succeeded: 'Contract composition succeeded.',
-            failed: 'Contract composition failed.',
-          }),
+          trailing: versionStatusIcon(edge.node, CONTRACT_LABELS),
         })),
       ]}
       size="compact"
@@ -299,6 +309,21 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
       width="md"
     />
   ) : undefined;
+
+  // The picker opens on the default graph, so a contract version that failed is named here first.
+  const failures = contractVersions.flatMap(edge =>
+    edge.node.isComposable
+      ? []
+      : [
+          {
+            key: edge.node.id,
+            label: `${edge.node.contractName}@${edge.node.id.substring(0, 8)}`,
+            reason: 'Contract composition failed.',
+            detail: formatCount(edge.node.schemaCompositionErrors?.edges.length ?? 0, 'error'),
+            onView: () => setSelectedItem(edge.node.id),
+          },
+        ],
+  );
 
   const summary =
     schemaVersion.subgraphDiffs === null && contractOrVersion.isFirstComposableVersion ? (
@@ -381,41 +406,57 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
       </div>
       {/* A monolithic schema has no subgraphs, so its summary sits on the page without tabs. */}
       {schemaVersion.subgraphDiffs ? (
-        <TabbedView
-          value={selectedView}
-          onValueChange={setSelectedView}
-          action={contractPicker}
-          items={[
-            {
-              value: 'details',
-              label: 'Summary',
-              icon: ListBulletIcon,
-              content: <div className="space-y-8">{summary}</div>,
-            },
-            {
-              value: 'full-schema',
-              label: 'Schema',
-              icon: FileCode2,
-              content: <div className="space-y-8">{publicSchema}</div>,
-            },
-            {
-              value: 'supergraph',
-              label: 'Supergraph',
-              icon: Layers,
-              content: <div className="space-y-8">{supergraph}</div>,
-            },
-            {
-              value: 'service-schema',
-              label: 'Subgraphs',
-              icon: CubeIcon,
-              content: (
-                <div className="space-y-8">
-                  <GraphVersionSubgraphView subgraphDiffs={schemaVersion.subgraphDiffs} />
-                </div>
-              ),
-            },
-          ]}
-        />
+        <div className="mt-3 flex flex-col gap-3">
+          {contractPicker ? (
+            <div className="flex justify-end">
+              <Legend items={CONTRACT_STATUS_LEGEND} />
+            </div>
+          ) : null}
+          {failures.length ? (
+            <div className="mb-3">
+              <FailureCard
+                title={`${failures.length} of ${contractVersions.length} contracts failed`}
+                aside={`${contractVersions.length - failures.length} passed`}
+                items={failures}
+              />
+            </div>
+          ) : null}
+          <TabbedView
+            value={selectedView}
+            onValueChange={setSelectedView}
+            action={contractPicker}
+            items={[
+              {
+                value: 'details',
+                label: 'Summary',
+                icon: ListBulletIcon,
+                content: <div className="space-y-8">{summary}</div>,
+              },
+              {
+                value: 'full-schema',
+                label: 'Schema',
+                icon: FileCode2,
+                content: <div className="space-y-8">{publicSchema}</div>,
+              },
+              {
+                value: 'supergraph',
+                label: 'Supergraph',
+                icon: Layers,
+                content: <div className="space-y-8">{supergraph}</div>,
+              },
+              {
+                value: 'service-schema',
+                label: 'Subgraphs',
+                icon: CubeIcon,
+                content: (
+                  <div className="space-y-8">
+                    <GraphVersionSubgraphView subgraphDiffs={schemaVersion.subgraphDiffs} />
+                  </div>
+                ),
+              },
+            ]}
+          />
+        </div>
       ) : (
         <div className="mt-4 space-y-8">{summary}</div>
       )}
@@ -423,28 +464,45 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
   );
 }
 
-function versionStatusIcon(
-  version: { hasSchemaChanges: boolean; isComposable: boolean },
-  labels: { changed: string; succeeded: string; failed: string },
-) {
+type VersionStatusFlags = { hasSchemaChanges: boolean; isComposable: boolean };
+type VersionStatusLabels = { changed: string; succeeded: string; failed: string };
+
+/** The glyph and the words for a version's outcome; the trigger takes the glyph, the list both. */
+function versionStatus(version: VersionStatusFlags, labels: VersionStatusLabels) {
   if (version.hasSchemaChanges) {
-    return <StatusTooltip icon={<GitCompareIcon className="size-3.5" />} label={labels.changed} />;
+    return { icon: <GitCompareIcon className="size-3.5" />, label: labels.changed };
   }
   if (version.isComposable) {
-    return (
-      <StatusTooltip
-        icon={<CheckIcon className="text-success size-3.5" />}
-        label={labels.succeeded}
-      />
-    );
+    return { icon: <CheckIcon className="text-success size-3.5" />, label: labels.succeeded };
   }
-  return (
-    <StatusTooltip
-      icon={<ExclamationTriangleIcon className="text-warning size-3.5" />}
-      label={labels.failed}
-    />
-  );
+  return {
+    icon: <ExclamationTriangleIcon className="text-critical size-3.5" />,
+    label: labels.failed,
+  };
 }
+
+function versionStatusIcon(version: VersionStatusFlags, labels: VersionStatusLabels) {
+  const status = versionStatus(version, labels);
+  return <StatusTooltip icon={status.icon} label={status.label} />;
+}
+
+const DEFAULT_GRAPH_LABELS: VersionStatusLabels = {
+  changed: 'Main graph schema changed',
+  succeeded: 'Composition succeeded.',
+  failed: 'Composition failed.',
+};
+
+const CONTRACT_LABELS: VersionStatusLabels = {
+  changed: 'Contract schema changed',
+  succeeded: 'Contract composition succeeded.',
+  failed: 'Contract composition failed.',
+};
+
+const CONTRACT_STATUS_LEGEND = [
+  { icon: <ExclamationTriangleIcon className="text-critical size-3.5" />, label: 'Failed' },
+  { icon: <GitCompareIcon className="size-3.5" />, label: 'Schema changed' },
+  { icon: <CheckIcon className="text-success size-3.5" />, label: 'Passed' },
+];
 
 function GraphQLSchemaView(props: {
   title: string;
@@ -964,15 +1022,6 @@ function NoGraphChanges() {
   );
 }
 
-function MetaCell(props: { label: string; children: ReactNode; className?: string }): ReactElement {
-  return (
-    <div className={cn('min-w-0', props.className)}>
-      <div className="text-xs font-bold capitalize">{props.label}</div>
-      <div className="mt-1">{props.children}</div>
-    </div>
-  );
-}
-
 const SchemaVersionHeader_SchemaVersionFragment = graphql(`
   fragment SchemaVersionHeader_SchemaVersionFragment on SchemaVersion {
     id
@@ -1036,11 +1085,11 @@ function SchemaVersionPromotionOriginContents(props: {
 
   return (
     <>
-      <span className="mt-1 inline-flex items-center gap-1.5 text-sm">
+      <span className="inline-flex items-center gap-1.5">
         <GitCommit className="h-3.5 w-3.5" />
         {origin.targetSlug === props.targetSlug ? (
           <Link
-            className="font-mono text-xs"
+            className="font-mono"
             to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
             params={{
               organizationSlug: props.organizationSlug,
@@ -1052,10 +1101,10 @@ function SchemaVersionPromotionOriginContents(props: {
             {origin.targetSlug}@{origin.schemaVersionId.substring(0, 8)}
           </Link>
         ) : (
-          <span className="text-xs">{displayName}</span>
+          <span>{displayName}</span>
         )}
       </span>
-      <div className="text-xs">via Graph Version Promotion</div>
+      <div>via Graph Version Promotion</div>
     </>
   );
 }
@@ -1067,6 +1116,79 @@ function SchemaVersionHeader(props: {
   schemaVersion: FragmentType<typeof SchemaVersionHeader_SchemaVersionFragment>;
 }) {
   const schemaVersion = useFragment(SchemaVersionHeader_SchemaVersionFragment, props.schemaVersion);
+
+  const origin = (
+    <>
+      {schemaVersion.origin.__typename === 'SchemaVersionPromoteOrigin' && (
+        <SchemaVersionPromotionOriginContents
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          origin={schemaVersion.origin}
+        />
+      )}
+      {schemaVersion.origin.__typename === 'SchemaVersionPublishOrigin' && (
+        <>
+          {schemaVersion.origin.publishedSubgraphs?.map(subgraph => (
+            <span
+              className="inline-flex items-center gap-1.5"
+              key={subgraph.name + '|' + subgraph.versionId}
+            >
+              <GitCommit className="h-3.5 w-3.5" />
+              <CopyChip
+                value={subgraph.versionId}
+                label={`${subgraph.name}@${subgraph.revision ?? subgraph.versionId.substring(0, 8)}`}
+              />
+            </span>
+          ))}
+          <div>
+            {schemaVersion.origin.publishedSubgraphs?.length ? (
+              <>via Subgraph Publish</>
+            ) : (
+              <>Schema Publish</>
+            )}
+          </div>
+        </>
+      )}
+      {schemaVersion.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
+        <>
+          {schemaVersion.origin.removedSubgraphs.map(subgraph => (
+            <span
+              className="inline-flex items-center gap-1.5"
+              key={subgraph.name + '|' + subgraph.versionId}
+            >
+              <GitCommit className="h-3.5 w-3.5" />
+              <CopyChip
+                value={subgraph.versionId}
+                label={`${subgraph.name}@${subgraph.versionId.substring(0, 8)}`}
+              />
+            </span>
+          ))}
+          <div>via Subgraph Delete</div>
+        </>
+      )}
+    </>
+  );
+
+  const sourceControl = schemaVersion.githubMetadata ? (
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      <GitCommit className="h-3.5 w-3.5" />
+      <CopyChip
+        value={schemaVersion.githubMetadata.commit}
+        label={schemaVersion.githubMetadata.commit.slice(0, 7)}
+      />
+      <span className="ml-1 inline-flex items-center gap-1">
+        <GitBranch className="h-3 w-3" />
+        {schemaVersion.githubMetadata.repository}
+      </span>
+    </span>
+  ) : schemaVersion.meta?.commit ? (
+    <span className="inline-flex items-center gap-1.5">
+      <GitCommit className="h-3.5 w-3.5" />
+      <CopyChip value={schemaVersion.meta.commit} label={schemaVersion.meta.commit.slice(0, 7)} />
+    </span>
+  ) : null;
+
   return (
     <header>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
@@ -1082,103 +1204,43 @@ function SchemaVersionHeader(props: {
         />
       </div>
       <p className="text-neutral-10 mt-1.5 text-sm">Detailed view of the graph version changes.</p>
-      <div
-        className={cn(
-          'bg-neutral-2 dark:bg-neutral-3 mt-6 grid grid-cols-3 gap-x-6 gap-y-4 rounded-md border px-5 py-4',
-          (schemaVersion.githubMetadata || schemaVersion.meta?.commit) &&
-            'grid-cols-3 xl:grid-cols-4',
-        )}
-      >
-        <MetaCell label="Status">
-          <span className="inline-flex items-center gap-1.5">
-            <StatusDot color={schemaVersion.isValid ? 'success' : 'critical'} />
-            <span className="text-xs">{schemaVersion.isValid ? 'Composable' : 'Failed'}</span>
-          </span>
-        </MetaCell>
-        <MetaCell label="Origin">
-          {schemaVersion.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-            <SchemaVersionPromotionOriginContents
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
-              origin={schemaVersion.origin}
-            />
-          )}
-          {schemaVersion.origin.__typename === 'SchemaVersionPublishOrigin' && (
-            <>
-              {schemaVersion.origin.publishedSubgraphs?.map(subgraph => (
-                <span
-                  className="mt-1 inline-flex items-center gap-1.5 text-sm"
-                  key={subgraph.name + '|' + subgraph.versionId}
-                >
-                  <GitCommit className="h-3.5 w-3.5" />
-                  <CopyChip
-                    value={subgraph.versionId}
-                    label={`${subgraph.name}@${subgraph.revision ?? subgraph.versionId.substring(0, 8)}`}
-                  />
-                </span>
-              ))}
-              <div className="text-xs">
-                {schemaVersion.origin.publishedSubgraphs?.length ? (
-                  <>via Subgraph Publish</>
-                ) : (
-                  <>Schema Publish</>
-                )}
-              </div>
-            </>
-          )}
-          {schemaVersion.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
-            <>
-              {schemaVersion.origin.removedSubgraphs.map(subgraph => (
-                <span
-                  className="mt-1 inline-flex items-center gap-1.5 text-sm"
-                  key={subgraph.name + '|' + subgraph.versionId}
-                >
-                  <GitCommit className="h-3.5 w-3.5" />
-                  <CopyChip
-                    value={subgraph.versionId}
-                    label={`${subgraph.name}@${subgraph.versionId.substring(0, 8)}`}
-                  />
-                </span>
-              ))}
-              <div className="text-xs">via Subgraph Delete</div>
-            </>
-          )}
-        </MetaCell>
-        {schemaVersion.githubMetadata ? (
-          <MetaCell label="Source Control">
-            <span className="mt-1 inline-flex items-center gap-1.5 text-sm">
-              <GitCommit className="h-3.5 w-3.5" />
-              <CopyChip
-                value={schemaVersion.githubMetadata.commit}
-                label={schemaVersion.githubMetadata.commit.slice(0, 7)}
-              />
-              <span className="ml-1 inline-flex items-center gap-1 text-xs">
-                <GitBranch className="h-3 w-3" />
-                {schemaVersion.githubMetadata.repository}
-              </span>
-            </span>
-          </MetaCell>
-        ) : schemaVersion.meta?.commit ? (
-          <MetaCell label="Source Control">
-            <span className="mt-1 inline-flex items-center gap-1.5 text-sm">
-              <GitCommit className="h-3.5 w-3.5" />
-              <CopyChip
-                value={schemaVersion.meta.commit}
-                label={schemaVersion.meta.commit.slice(0, 7)}
-              />
-            </span>
-          </MetaCell>
-        ) : null}
-        <MetaCell label="created at" className="hidden xl:block">
-          <span className="inline-flex items-center gap-1.5 text-xs">
-            <Clock className="size-2.5" />
-            <TimeAgo date={schemaVersion.date} />
-          </span>
-          {schemaVersion.meta?.author && (
-            <span className="mt-0.5 block truncate text-xs">by {schemaVersion.meta.author}</span>
-          )}
-        </MetaCell>
+      <div className="bg-neutral-2 dark:bg-neutral-3 mt-6 rounded-md border px-5 py-4">
+        <DescriptionList
+          variants={{ termStyle: 'title', columns: 'auto' }}
+          rows={[
+            {
+              items: [
+                {
+                  term: 'Status',
+                  description: (
+                    <span className="inline-flex items-center gap-1.5">
+                      <StatusDot color={schemaVersion.isValid ? 'success' : 'critical'} />
+                      {schemaVersion.isValid ? 'Composable' : 'Failed'}
+                    </span>
+                  ),
+                },
+                { term: 'Origin', description: origin },
+                ...(sourceControl ? [{ term: 'Source Control', description: sourceControl }] : []),
+                {
+                  term: 'Created at',
+                  description: (
+                    <>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock className="size-3" />
+                        <TimeAgo date={schemaVersion.date} />
+                      </span>
+                      {schemaVersion.meta?.author && (
+                        <span className="mt-0.5 block truncate">
+                          by {schemaVersion.meta.author}
+                        </span>
+                      )}
+                    </>
+                  ),
+                },
+              ],
+            },
+          ]}
+        />
       </div>
     </header>
   );
@@ -1217,7 +1279,7 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
 }
 
 const breakingChangeTypeModes: { id: SeverityLevelType; label: string; dotColor: string }[] = [
-  { id: SeverityLevelType.Breaking, label: 'Breaking', dotColor: 'bg-red-500' },
+  { id: SeverityLevelType.Breaking, label: 'Breaking', dotColor: 'bg-critical' },
   { id: SeverityLevelType.Dangerous, label: 'Dangerous', dotColor: 'bg-orange-500' },
   { id: SeverityLevelType.Safe, label: 'Safe', dotColor: 'bg-blue-400' },
 ];
@@ -1267,21 +1329,21 @@ const CompositionErrors = (props: {
   );
 
   return (
-    <div className="bg-neutral-1 overflow-hidden rounded-xl border border-red-300/20">
-      <div className="flex items-start gap-3 border-b border-red-300/20 bg-red-700 px-5 py-4 dark:bg-red-900/40">
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-red-300/20">
-          <XCircleIcon className="h-4 w-4 text-red-500" />
+    <div className="border-critical_30 overflow-hidden rounded-xl border">
+      <div className="border-critical_30 bg-critical_08 flex items-start gap-3 border-b px-5 py-4">
+        <div className="border-critical_30 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border">
+          <XCircleIcon className="text-critical h-4 w-4" />
         </div>
 
-        <div className="text-neutral-4 dark:text-neutral-12 min-w-0">
+        <div className="text-neutral-12 min-w-0">
           <h3 className="text-sm font-semibold">Supergraph not composable</h3>
           <p className="mt-0.5 text-[12.5px]">
             Errors occurred while attempting to compose the supergraph from its subgraphs.
           </p>
         </div>
 
-        <span className="focus:ring-ring text-2xs ml-auto inline-flex items-center rounded-full border border-red-700 bg-red-900 px-2.5 py-0.5 font-semibold text-red-300 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
-          <span className="mr-1 h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(237,46,57,0.7)]" />
+        <span className="focus:ring-ring text-2xs border-critical_30 bg-critical_10 text-critical ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
+          <span className="bg-critical mr-1 h-1.5 w-1.5 rounded-full" />
           {compositionErrors.edges.length} error
           {compositionErrors.edges.length === 1 ? '' : 's'}
         </span>
@@ -1491,7 +1553,7 @@ export const SchemaVersionSummary = (props: {
               publicChangeStats.notSafeChanges ? (
                 <Tooltip
                   trigger={
-                    <span className="ml-2 flex items-center gap-0.5 text-xs text-red-500/80 lg:text-sm">
+                    <span className="text-critical ml-2 flex items-center gap-0.5 text-xs lg:text-sm">
                       <ShieldAlertIcon size="14" className="inline" />
                       {publicChangeStats.notSafeChanges} not safe
                     </span>
@@ -1581,10 +1643,10 @@ const kindMeta = {
   SubgraphDiffRemoved: {
     label: 'Removed',
     Icon: Minus,
-    text: 'text-red-600',
-    bg: 'bg-red-400',
-    ring: 'ring-red-500/25',
-    dot: 'bg-red-600',
+    text: 'text-critical',
+    bg: 'bg-critical_30',
+    ring: 'ring-critical_30',
+    dot: 'bg-critical',
   },
   SubgraphDiffChanged: {
     label: 'Updated',

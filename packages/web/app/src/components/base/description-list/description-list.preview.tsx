@@ -1,4 +1,4 @@
-import { createPreview, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '../badge/badge';
 import { DescriptionList } from './description-list';
 
@@ -148,6 +148,29 @@ export const TermTooltips = createPreview(() => (
   </div>
 ));
 
+/**
+ * `termStyle: 'title'` swaps the small caps for 12px sentence-case terms, and `columns: 'auto'`
+ * fits as many columns as the width allows. Together they make the meta card at the top of the
+ * schema check and schema version pages; the wrapper is the page's.
+ */
+export const PageCard = createPreview(() => (
+  <div className="bg-neutral-2 dark:bg-neutral-3 w-[48rem] rounded-md border px-5 py-4">
+    <DescriptionList
+      variants={{ termStyle: 'title', columns: 'auto' }}
+      rows={[
+        {
+          items: [
+            { term: 'Status', description: <span className="text-critical">Failed</span> },
+            { term: 'Service', description: 'products' },
+            { term: 'Triggered', description: '3 days ago by Ada Lovelace' },
+            { term: 'Commit', description: 'bf0e040f', mono: true },
+          ],
+        },
+      ]}
+    />
+  </div>
+));
+
 export const SingleColumn = createPreview(() => (
   <div className="w-80">
     <DescriptionList
@@ -159,3 +182,31 @@ export const SingleColumn = createPreview(() => (
     />
   </div>
 ));
+
+export const Playground = createPreview({
+  controls: controlsFor(DescriptionList, {
+    variants: {
+      termStyle: { type: 'radio', options: ['label', 'title'], default: 'label' },
+      columns: { type: 'radio', options: ['fixed', 'auto'], default: 'fixed' },
+    },
+  }),
+  // The rows stay fixed: a list of lists is more than a control can draw. Resize the frame to
+  // see `columns: 'auto'` wrap where `fixed` squeezes.
+  render: v => (
+    <div className="max-w-[48rem]">
+      <DescriptionList
+        variants={v.variants}
+        rows={[
+          {
+            items: [
+              { term: 'Status', description: 'Failed' },
+              { term: 'Service', description: 'products' },
+              { term: 'Triggered', description: '3 days ago by Ada Lovelace' },
+              { term: 'Commit', description: 'bf0e040f', mono: true },
+            ],
+          },
+        ]}
+      />
+    </div>
+  ),
+});
