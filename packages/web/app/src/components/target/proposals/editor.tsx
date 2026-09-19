@@ -360,6 +360,16 @@ export function ProposalEditor(props: {
                                   onChange={ev => setActiveTabUrl(ev.target.value)}
                                 />
                               </div>
+                              {/* The X on the tab sits inside the tab button, out of the keyboard's reach. */}
+                              <div>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => onRemoveTab(idx)}
+                                >
+                                  Remove from proposal
+                                </Button>
+                              </div>
                             </div>
                           }
                         />
