@@ -44,6 +44,7 @@ export const PermissionScopeItem = <
         <div className="text-neutral-10 text-xs">{props.scope.description}</div>
       </div>
       <Select
+        aria-label={`${props.scope.name} access`}
         options={[
           { value: NoAccess, label: 'No access' },
           props.scope.mapping['read-only'] &&

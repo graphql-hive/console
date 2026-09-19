@@ -27,6 +27,7 @@ export function OrganizationSelector(props: {
 
   return (
     <Select
+      aria-label="Organization"
       options={organizations.map(org => ({ value: org.slug, label: org.slug }))}
       value={props.currentOrganizationSlug}
       onValueChange={slug => {

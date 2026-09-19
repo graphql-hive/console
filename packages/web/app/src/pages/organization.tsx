@@ -221,6 +221,7 @@ function OrganizationPageContent(
                 </div>
                 <Separator orientation="vertical" />
                 <Select
+                  aria-label="Sort projects by"
                   options={[
                     {
                       value: 'requests',

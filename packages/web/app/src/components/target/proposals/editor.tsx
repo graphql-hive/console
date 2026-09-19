@@ -422,6 +422,7 @@ function ServiceSelect(props: {
   return schemaEdges && schemaEdges.length > 1 ? (
     <div className="flex grow flex-row">
       <Select
+        aria-label="Add a service"
         options={selectableServices}
         value=""
         onValueChange={props.onSelect}

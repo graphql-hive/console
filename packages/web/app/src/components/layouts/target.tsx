@@ -361,8 +361,9 @@ export function ConnectSchemaModal(props: {
           <>
             <div className="mb-5 mt-1 flex flex-row justify-start gap-3">
               <div>
-                <Label>Graph Variant</Label>
+                <Label htmlFor="cdn-graph">Graph Variant</Label>
                 <Select
+                  id="cdn-graph"
                   options={[
                     { value: 'DEFAULT_GRAPH', label: 'Default Graph' },
                     ...target.activeContracts.edges.map(({ node }) => ({
@@ -387,8 +388,9 @@ export function ConnectSchemaModal(props: {
                 />
               </div>
               <div>
-                <Label>Artifact</Label>
+                <Label htmlFor="cdn-artifact">Artifact</Label>
                 <Select
+                  id="cdn-artifact"
                   options={ArtifactToProjectTypeMapping[target.project.type].map(t => ({
                     value: t,
                     label: ArtifactTypeToDisplayName[t],

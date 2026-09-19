@@ -102,6 +102,7 @@ export function TargetSelector(props: {
       <div className="text-neutral-10 italic">/</div>
       {targetEdges?.length && currentOrganization && currentProject && currentTarget ? (
         <Select
+          aria-label="Target"
           options={targetEdges.map(edge => ({ value: edge.node.slug, label: edge.node.slug }))}
           value={props.currentTargetSlug}
           onValueChange={onTargetChange}
