@@ -2,6 +2,7 @@ import { type ComponentType, type ReactNode } from 'react';
 import { cva } from 'class-variance-authority';
 import { Link, type LinkOptions } from '@tanstack/react-router';
 import { Tooltip } from '../../floating/tooltip/tooltip';
+import { focusRingQuiet } from '../../shared-styles';
 
 export type SecondaryNavigationVariant = 'underline' | 'pill';
 export type SecondaryNavigationSize = 'default' | 'sm';
@@ -46,7 +47,9 @@ const listVariants = cva('flex flex-row items-center', {
 const itemVariants = cva(
   [
     'inline-flex shrink-0 items-center gap-2 whitespace-nowrap font-medium transition-colors',
-    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+    // Text on the page, like a tab, so it takes the quiet ring rather than a control's.
+    focusRingQuiet,
+    'focus-visible:outline-offset-2',
   ],
   {
     variants: {

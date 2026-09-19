@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
 import { Tooltip } from '../floating/tooltip/tooltip';
+import { focusRingQuiet } from '../shared-styles';
 
 export type TabsVariant = 'underline' | 'header';
 export type TabsSize = 'default' | 'sm';
@@ -90,10 +91,7 @@ const tabVariants = cva(
     'relative z-10 inline-flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap font-medium transition-colors',
     'text-neutral-10 hover:text-neutral-12 data-[active]:text-accent',
     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-    // Quieter than the shared focus ring, since a tab is text on the page rather than a control
-    // with an edge: 1px dotted, following the rounded corner. No `outline-none` beside these: in
-    // Tailwind v4 it zeroes the variable the focus outline reads.
-    'rounded-sm focus-visible:outline-1 focus-visible:outline-dotted focus-visible:outline-accent',
+    focusRingQuiet,
   ),
   {
     variants: {
