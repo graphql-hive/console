@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { MailIcon, MailQuestionIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
@@ -479,42 +479,45 @@ export function OrganizationInvitations(props: {
     props.organization,
   );
 
+  type InvitationRow = NonNullable<typeof organization.invitations>['edges'][number]['node'];
+  const columns = useMemo<ColumnDef<InvitationRow, unknown>[]>(
+    () => [
+      {
+        id: 'email',
+        header: 'Email',
+        meta: { width: 'fill' },
+        cell: ({ row }) => <InvitationEmailCell invitation={row.original} />,
+      },
+      {
+        id: 'role',
+        header: 'Assigned role',
+        meta: { align: 'center', width: 'md' },
+        cell: ({ row }) => <InvitationRoleCell invitation={row.original} />,
+      },
+      {
+        id: 'expiresAt',
+        header: 'Expiration date',
+        meta: { align: 'center', width: 'md' },
+        cell: ({ row }) => <InvitationExpiryCell invitation={row.original} />,
+      },
+      {
+        id: 'actions',
+        meta: { width: 'xs' },
+        cell: ({ row }) => (
+          <InvitationActions
+            invitation={row.original}
+            organizationSlug={organization.slug}
+            refetchInvitations={props.refetchInvitations}
+          />
+        ),
+      },
+    ],
+    [organization.slug, props.refetchInvitations],
+  );
+
   if (!organization.invitations) {
     return null;
   }
-
-  type InvitationRow = NonNullable<typeof organization.invitations>['edges'][number]['node'];
-  const columns: ColumnDef<InvitationRow, unknown>[] = [
-    {
-      id: 'email',
-      header: 'Email',
-      meta: { width: 'fill' },
-      cell: ({ row }) => <InvitationEmailCell invitation={row.original} />,
-    },
-    {
-      id: 'role',
-      header: 'Assigned role',
-      meta: { align: 'center', width: 'md' },
-      cell: ({ row }) => <InvitationRoleCell invitation={row.original} />,
-    },
-    {
-      id: 'expiresAt',
-      header: 'Expiration date',
-      meta: { align: 'center', width: 'md' },
-      cell: ({ row }) => <InvitationExpiryCell invitation={row.original} />,
-    },
-    {
-      id: 'actions',
-      meta: { width: 'xs' },
-      cell: ({ row }) => (
-        <InvitationActions
-          invitation={row.original}
-          organizationSlug={organization.slug}
-          refetchInvitations={props.refetchInvitations}
-        />
-      ),
-    },
-  ];
 
   return (
     <SubPageLayout>

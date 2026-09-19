@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { LockIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
@@ -846,45 +846,48 @@ export function OrganizationMemberRoles(props: {
 
   const defaultMemberRoleId = organization.oidcIntegration?.defaultMemberRole?.id;
   const canChangeOIDCDefaultRole = organization.me?.role?.name === 'Admin';
-  const columns: ColumnDef<NonNullable<Role>, unknown>[] = [
-    {
-      id: 'name',
-      header: 'Name',
-      meta: { width: 'md' },
-      cell: ({ row }) => (
-        <RoleNameCell
-          role={row.original}
-          organizationSlug={organization.slug}
-          isOIDCDefaultRole={defaultMemberRoleId === row.original.id}
-          canChangeOIDCDefaultRole={canChangeOIDCDefaultRole}
-        />
-      ),
-    },
-    {
-      id: 'description',
-      header: 'Description',
-      meta: { width: 'fill' },
-      cell: ({ row }) => <RoleDescriptionCell role={row.original} />,
-    },
-    {
-      id: 'members',
-      header: 'Members',
-      meta: { align: 'center', width: 'sm' },
-      cell: ({ row }) => <RoleMembersCell role={row.original} />,
-    },
-    {
-      id: 'actions',
-      meta: { width: 'xs' },
-      cell: ({ row }) => (
-        <RoleActionsCell
-          role={row.original}
-          onShow={() => setRoleToShow(row.original)}
-          onEdit={() => setRoleToEdit(row.original)}
-          onDelete={() => setRoleToDelete(row.original)}
-        />
-      ),
-    },
-  ];
+  const columns = useMemo<ColumnDef<NonNullable<Role>, unknown>[]>(
+    () => [
+      {
+        id: 'name',
+        header: 'Name',
+        meta: { width: 'md' },
+        cell: ({ row }) => (
+          <RoleNameCell
+            role={row.original}
+            organizationSlug={organization.slug}
+            isOIDCDefaultRole={defaultMemberRoleId === row.original.id}
+            canChangeOIDCDefaultRole={canChangeOIDCDefaultRole}
+          />
+        ),
+      },
+      {
+        id: 'description',
+        header: 'Description',
+        meta: { width: 'fill' },
+        cell: ({ row }) => <RoleDescriptionCell role={row.original} />,
+      },
+      {
+        id: 'members',
+        header: 'Members',
+        meta: { align: 'center', width: 'sm' },
+        cell: ({ row }) => <RoleMembersCell role={row.original} />,
+      },
+      {
+        id: 'actions',
+        meta: { width: 'xs' },
+        cell: ({ row }) => (
+          <RoleActionsCell
+            role={row.original}
+            onShow={() => setRoleToShow(row.original)}
+            onEdit={() => setRoleToEdit(row.original)}
+            onDelete={() => setRoleToDelete(row.original)}
+          />
+        ),
+      },
+    ],
+    [organization.slug, defaultMemberRoleId, canChangeOIDCDefaultRole],
+  );
 
   return (
     <>
@@ -993,6 +996,7 @@ export function OrganizationMemberRoles(props: {
           columns={columns}
           getRowId={role => role.id}
           pagination={{ kind: 'none' }}
+          emptyMessage="No roles yet."
         />
       </SubPageLayout>
     </>

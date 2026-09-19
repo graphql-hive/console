@@ -221,6 +221,8 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
                   type="button"
                   aria-label="Destinations"
                   className="text-neutral-9 hover:text-neutral-11 inline-flex"
+                  // The row opens the rule; a click on the icon only means the popover.
+                  onClick={event => event.stopPropagation()}
                 >
                   <Info className="size-3.5" />
                 </button>

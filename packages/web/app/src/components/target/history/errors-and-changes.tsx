@@ -479,6 +479,7 @@ function UsageStatisticsPanels(props: {
           getRowId={operation => operation.hash}
           pagination={{ kind: 'none' }}
           variants={{ bordered: false }}
+          emptyMessage="No affected operations."
         />
       </div>
       <div className="min-w-0 flex-1">
@@ -488,6 +489,7 @@ function UsageStatisticsPanels(props: {
           getRowId={client => client.name}
           pagination={{ kind: 'none' }}
           variants={{ bordered: false }}
+          emptyMessage="No affected clients."
         />
       </div>
     </div>

@@ -393,11 +393,14 @@ describe('DataTableCell', () => {
       <>
         <DataTableCell kind="number" value={12_408} />
         <DataTableCell kind="number" value={38.2} format="percent" />
+        <DataTableCell kind="number" value={12} format="percent" />
         <DataTableCell kind="number" value={130} format="currency" />
+        <DataTableCell kind="number" value={1_234_567} format="compact" />
+        <DataTableCell kind="number" value={512} format="compact" />
       </>,
     );
     const texts = [...container.querySelectorAll('span')].map(span => span.textContent);
-    expect(texts).toEqual(['12,408', '38.20%', '$130.00']);
+    expect(texts).toEqual(['12,408', '38.20%', '12.00%', '$130.00', '1.2M', '512']);
   });
 
   it('formats time relatively with the absolute time to hand', () => {
@@ -454,6 +457,81 @@ describe('DataTableCell', () => {
     );
     fireEvent.click(screen.getAllByLabelText('Row actions')[0]);
     expect(onRowClick).not.toHaveBeenCalled();
+  });
+
+  it('keeps a click on a link cell from reaching the row', () => {
+    const onRowClick = vi.fn();
+    const columns: ColumnDef<Row, unknown>[] = [
+      {
+        id: 'link',
+        cell: ({ row }) => (
+          <DataTableCell kind="link" label={row.original.name} href={`#${row.original.id}`} />
+        ),
+      },
+    ];
+    render(
+      <DataTable data={ROWS} columns={columns} getRowId={row => row.id} onRowClick={onRowClick} />,
+    );
+    fireEvent.click(screen.getByText('alpha'));
+    expect(onRowClick).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('alpha').closest('td')!);
+    expect(onRowClick).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it('stripes data rows only, so an expanded panel does not shift the stripes', () => {
+    const { container } = render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        renderSubComponent={row => <div>panel {row.original.name}</div>}
+      />,
+    );
+    const dataRows = () =>
+      [...container.querySelectorAll('tbody > tr')].filter(
+        tr => !tr.textContent?.startsWith('panel'),
+      );
+    const striped = () => dataRows().map(tr => tr.className.includes('bg-neutral-2/60'));
+    expect(striped()).toEqual([false, true, false]);
+
+    fireEvent.click(dataRows()[0]);
+    expect(container.textContent).toContain('panel alpha');
+    expect(striped()).toEqual([false, true, false]);
+  });
+
+  it('tints a critical row and strikes through a name that no longer counts', () => {
+    const columns: ColumnDef<Row, unknown>[] = [
+      {
+        id: 'who',
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="avatar"
+            name={row.original.name}
+            strikethrough={row.original.status === 'solved'}
+          />
+        ),
+      },
+    ];
+    const { container } = render(
+      <DataTable
+        data={ROWS}
+        columns={columns}
+        getRowId={row => row.id}
+        rowState={row => (row.status === 'solved' ? { critical: true } : undefined)}
+      />,
+    );
+    const rows = [...container.querySelectorAll('tbody > tr')];
+    expect(rows.map(tr => tr.className.includes('bg-critical_08'))).toEqual([false, true, false]);
+    expect(screen.getByText('beta').className).toContain('line-through');
+    expect(screen.getByText('alpha').className).not.toContain('line-through');
+  });
+
+  it('shows only the label when a link-out cell has nowhere to go', () => {
+    const { container } = render(
+      <DataTableCell kind="link-out" label="GetCart" targets={[]} tooltip="Open in Insights" />,
+    );
+    expect(container.textContent).toBe('GetCart');
+    expect(container.querySelector('a, button')).toBeNull();
   });
 
   it('collapses badges past the maximum into a +N badge', () => {

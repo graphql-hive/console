@@ -49,13 +49,13 @@ const surface = {
   base: {
     wrapper: 'bg-neutral-1 dark:bg-neutral-2',
     head: 'bg-neutral-2 dark:bg-neutral-3',
-    stripe: 'even:bg-neutral-2/60 dark:even:bg-neutral-3/60',
+    stripe: 'bg-neutral-2/60 dark:bg-neutral-3/60',
     hover: 'hover:bg-neutral-3 dark:hover:bg-neutral-4',
   },
   raised: {
     wrapper: 'bg-neutral-2 dark:bg-neutral-3',
     head: 'bg-neutral-3 dark:bg-neutral-4',
-    stripe: 'even:bg-neutral-3/60 dark:even:bg-neutral-4/60',
+    stripe: 'bg-neutral-3/60 dark:bg-neutral-4/60',
     hover: 'hover:bg-neutral-4 dark:hover:bg-neutral-5',
   },
 } as const satisfies Record<OnSurface, Record<string, string>>;
@@ -69,11 +69,7 @@ export function wrapperClass(onSurface: OnSurface, bordered: boolean) {
 }
 
 export function DataTableHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <thead className="[&_tr:hover]:bg-transparent [&_tr:nth-child(even)]:bg-transparent">
-      {children}
-    </thead>
-  );
+  return <thead className="[&_tr:hover]:bg-transparent">{children}</thead>;
 }
 
 export function DataTableBody({ children }: { children: React.ReactNode }) {
@@ -89,10 +85,12 @@ export function DataTableRow({
   selected = false,
   muted = false,
   disabled = false,
+  critical = false,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   onSurface?: OnSurface;
+  /** This row takes the stripe tint. The table decides which rows, counting data rows only. */
   striped?: boolean;
   expanded?: boolean;
   /** The row the page is showing details for; brighter than hover so it survives the pointer leaving. */
@@ -101,6 +99,8 @@ export function DataTableRow({
   muted?: boolean;
   /** A row that no longer applies, such as a disabled contract: faded, still readable. */
   disabled?: boolean;
+  /** A row that needs attention, such as a disabled member: a critical tint over the stripe. */
+  critical?: boolean;
 }) {
   return (
     <tr
@@ -111,6 +111,7 @@ export function DataTableRow({
         // Hover means "this row does something": only a clickable or expandable row gets it.
         onClick && surface[onSurface].hover,
         striped && surface[onSurface].stripe,
+        critical && 'bg-critical_08',
         'data-[state=expanded]:bg-neutral-3 data-[state=expanded]:border-b-0',
         'data-[state=selected]:bg-neutral-12/10 dark:data-[state=selected]:bg-neutral-12/10',
         onClick && 'cursor-pointer',
