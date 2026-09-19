@@ -110,7 +110,8 @@ export function DataTableRow({
         'border-neutral-5 border-b transition-colors',
         // Hover means "this row does something": only a clickable or expandable row gets it.
         onClick && surface[onSurface].hover,
-        striped && surface[onSurface].stripe,
+        // The critical tint replaces the stripe rather than layering on it.
+        striped && !critical && surface[onSurface].stripe,
         critical && 'bg-critical_08',
         'data-[state=expanded]:bg-neutral-3 data-[state=expanded]:border-b-0',
         'data-[state=selected]:bg-neutral-12/10 dark:data-[state=selected]:bg-neutral-12/10',
