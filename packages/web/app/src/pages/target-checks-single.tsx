@@ -1237,6 +1237,7 @@ function SchemaChecksView(props: {
   const contractChecks = schemaCheck.contractChecks?.edges ?? [];
   const contractPicker = contractChecks.length ? (
     <Select
+      aria-label="Contract"
       value={selectedItem}
       onValueChange={setSelectedItem}
       label={
@@ -1373,6 +1374,8 @@ type CheckStatusFlags = {
   hasSchemaCompositionErrors: boolean;
   hasUnapprovedBreakingChanges: boolean;
   hasSchemaChanges: boolean;
+  /** Only a contract check has one; a failed baseline sets neither flag above. */
+  baseline?: { compositionErrors: ReadonlyArray<unknown> | null } | null;
 };
 
 /** The glyph and the words for a check's outcome; the trigger takes the glyph, the list both. */
@@ -1387,6 +1390,12 @@ function checkStatus(check: CheckStatusFlags, changedLabel: string) {
     return {
       icon: <ExclamationTriangleIcon className="text-critical size-3.5" />,
       label: 'Unapproved breaking changes!',
+    };
+  }
+  if (check.baseline?.compositionErrors?.length) {
+    return {
+      icon: <ExclamationTriangleIcon className="text-critical size-3.5" />,
+      label: 'Baseline composition failed.',
     };
   }
   if (check.hasSchemaChanges) {
