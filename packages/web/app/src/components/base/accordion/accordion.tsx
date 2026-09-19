@@ -17,6 +17,8 @@ export type AccordionItem = {
   disabled?: boolean;
   /** Test hooks and the like, landed on the item. */
   attrs?: Record<string, string>;
+  /** Test hooks on the trigger button itself. */
+  triggerAttrs?: Record<string, string>;
 };
 
 export type AccordionVariant = 'list' | 'boxed' | 'plain';
@@ -168,7 +170,10 @@ export function Accordion({
         >
           <div className={headerRowVariants({ variant })}>
             <BaseAccordion.Header className="flex min-w-0 grow">
-              <BaseAccordion.Trigger className={triggerVariants({ size, tone })}>
+              <BaseAccordion.Trigger
+                className={triggerVariants({ size, tone })}
+                {...item.triggerAttrs}
+              >
                 {chevron === 'start' ? chevronIcon : null}
                 <span className="min-w-0 grow">{item.label}</span>
                 {item.trailing != null ? (
