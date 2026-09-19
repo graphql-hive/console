@@ -128,7 +128,9 @@ function OperationsTable({
       accessorKey: 'requests',
       header: 'Requests',
       meta: { align: 'right', sortable: true },
-      cell: ({ row }) => <DataTableCell kind="number" value={row.original.requests} />,
+      cell: ({ row }) => (
+        <DataTableCell kind="number" value={row.original.requests} format="compact" />
+      ),
     },
     {
       accessorKey: 'impact',
@@ -142,6 +144,7 @@ function OperationsTable({
       cell: ({ row }) => (
         <DataTableCell
           kind="number"
+          format="compact"
           value={
             row.original.impact < 1000
               ? Math.round(row.original.impact * 100) / 100

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 /**
  * Previous and next pages over a relay connection that graphcache merges (`relayPagination`).
@@ -19,8 +19,12 @@ export function usePagedConnection<TEdge>(args: {
   const loadedPages = Math.max(1, Math.ceil(args.edges.length / args.pageSize));
   // A refetch can shrink the connection under the current page; stay on the last one that exists.
   const page = Math.min(pageIndex, loadedPages - 1);
-  const start = page * args.pageSize;
-  const rows = args.edges.slice(start, start + args.pageSize);
+  const { edges, pageSize } = args;
+  // A stable slice, so a memoized list below only re-renders when the page's rows change.
+  const rows = useMemo(
+    () => edges.slice(page * pageSize, (page + 1) * pageSize),
+    [edges, page, pageSize],
+  );
   const hasNextLoaded = page + 1 < loadedPages;
   const hasNextPage = hasNextLoaded || args.pageInfo.hasNextPage;
 

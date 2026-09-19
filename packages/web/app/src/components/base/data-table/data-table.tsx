@@ -83,8 +83,13 @@ export type DataTableProps<TData> = {
   initialSorting?: SortingState;
   /** A closing row: a label across the columns and a value in the last, such as a total. */
   footer?: { label: ReactNode; value: ReactNode };
-  /** Per-row state the data implies: a solved ticket is muted, a disabled contract is disabled. */
-  rowState?: (row: TData) => { muted?: boolean; disabled?: boolean } | undefined;
+  /**
+   * Per-row state the data implies: a solved ticket is muted, a disabled contract is disabled, a
+   * disabled member is critical (tinted so it stands out from the rows around it).
+   */
+  rowState?: (
+    row: TData,
+  ) => { muted?: boolean; disabled?: boolean; critical?: boolean } | undefined;
   /** The row the page is showing details for. */
   selectedRowId?: string;
   /**
@@ -251,7 +256,7 @@ export function DataTable<TData>({
                 </DataTableCellSlot>
               </DataTableRow>
             ) : (
-              rows.map(row => {
+              rows.map((row, index) => {
                 const handleClick = renderSubComponent
                   ? () => row.toggleExpanded()
                   : onRowClick
@@ -262,11 +267,13 @@ export function DataTable<TData>({
                   <Fragment key={row.id}>
                     <DataTableRow
                       onSurface={onSurface}
-                      striped={striped}
+                      // Counted over data rows, so an expanded panel does not shift the stripes.
+                      striped={striped && index % 2 === 1}
                       expanded={row.getIsExpanded()}
                       selected={selectedRowId !== undefined && row.id === selectedRowId}
                       muted={state?.muted}
                       disabled={state?.disabled}
+                      critical={state?.critical}
                       onClick={handleClick}
                     >
                       {row.getVisibleCells().map(cell => (

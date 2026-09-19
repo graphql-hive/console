@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useClient } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
@@ -84,64 +84,67 @@ export function PersonalAccessTokensTable(props: AccessTokensTable) {
         .toPromise(),
   });
 
-  const columns: ColumnDef<AccessTokenEdge, unknown>[] = [
-    {
-      id: 'title',
-      header: 'Title',
-      meta: { width: 'fill' },
-      cell: ({ row }) => (
-        <DataTableCell kind="text" value={row.original.node.title} weight="medium" />
-      ),
-    },
-    {
-      id: 'key',
-      header: 'Private Key',
-      cell: ({ row }) => (
-        <DataTableCell
-          kind="text"
-          value={row.original.node.firstCharacters + privateKeyFiller}
-          mono
-        />
-      ),
-    },
-    {
-      id: 'createdAt',
-      header: 'Created At',
-      meta: { align: 'center' },
-      cell: ({ row }) => <DataTableCell kind="time" date={row.original.node.createdAt} />,
-    },
-    {
-      id: 'expiresAt',
-      header: 'Expiration',
-      meta: { align: 'center' },
-      cell: ({ row }) => (
-        <DataTableCell
-          kind="text"
-          value={<TokenExpiration expiresAt={row.original.node.expiresAt ?? null} />}
-        />
-      ),
-    },
-    {
-      id: 'actions',
-      meta: { width: 'xs' },
-      cell: ({ row }) => (
-        <DataTableCell
-          kind="actions"
-          label={`Actions for ${row.original.node.title}`}
-          sections={[
-            [
-              { label: 'View Details', onClick: () => setDetailViewId(row.original.node.id) },
-              {
-                label: 'Delete',
-                variant: 'destructiveAction',
-                onClick: () => setDeleteAccessTokenId(row.original.node.id),
-              },
-            ],
-          ]}
-        />
-      ),
-    },
-  ];
+  const columns = useMemo<ColumnDef<AccessTokenEdge, unknown>[]>(
+    () => [
+      {
+        id: 'title',
+        header: 'Title',
+        meta: { width: 'fill' },
+        cell: ({ row }) => (
+          <DataTableCell kind="text" value={row.original.node.title} weight="medium" />
+        ),
+      },
+      {
+        id: 'key',
+        header: 'Private Key',
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="text"
+            value={row.original.node.firstCharacters + privateKeyFiller}
+            mono
+          />
+        ),
+      },
+      {
+        id: 'createdAt',
+        header: 'Created At',
+        meta: { align: 'center' },
+        cell: ({ row }) => <DataTableCell kind="time" date={row.original.node.createdAt} />,
+      },
+      {
+        id: 'expiresAt',
+        header: 'Expiration',
+        meta: { align: 'center' },
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="text"
+            value={<TokenExpiration expiresAt={row.original.node.expiresAt ?? null} />}
+          />
+        ),
+      },
+      {
+        id: 'actions',
+        meta: { width: 'xs' },
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="actions"
+            label={`Actions for ${row.original.node.title}`}
+            sections={[
+              [
+                { label: 'View Details', onClick: () => setDetailViewId(row.original.node.id) },
+                {
+                  label: 'Delete',
+                  variant: 'destructiveAction',
+                  onClick: () => setDeleteAccessTokenId(row.original.node.id),
+                },
+              ],
+            ]}
+          />
+        ),
+      },
+    ],
+    [setDetailViewId, setDeleteAccessTokenId],
+  );
 
   return (
     <>

@@ -15,7 +15,7 @@ const PERMISSION_COLUMNS: ColumnDef<PermissionRow, unknown>[] = [
   {
     id: 'title',
     meta: { width: 'fill' },
-    cell: ({ row }) => <DataTableCell kind="text" value={row.original.title} />,
+    cell: ({ row }) => <DataTableCell kind="text" value={row.original.title} truncate />,
   },
   {
     id: 'state',

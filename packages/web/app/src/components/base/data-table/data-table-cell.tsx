@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { format } from 'date-fns';
 import {
   ArrowRight,
@@ -10,6 +10,8 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import { toDecimal } from '@/lib/hooks/use-decimal';
+import { formatNumber as formatCompact } from '@/lib/hooks/use-formatted-number';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate, type LinkOptions, type RegisteredRouter } from '@tanstack/react-router';
 import { Avatar } from '../avatar/avatar';
@@ -62,8 +64,11 @@ export type DataTableCellProps<TTo extends string = '.'> =
   | {
       kind: 'number';
       value: number | string;
-      /** How a number is written; a string is shown as given. */
-      format?: 'count' | 'percent' | 'currency';
+      /**
+       * How a number is written; a string is shown as given. `compact` abbreviates a large count
+       * ("1.2M") for a column scanned for magnitude; `percent` always carries two decimals.
+       */
+      format?: 'count' | 'compact' | 'percent' | 'currency';
     }
   | {
       kind: 'time';
@@ -125,6 +130,8 @@ export type DataTableCellProps<TTo extends string = '.'> =
       kind: 'avatar';
       name: string;
       src?: string | null;
+      /** The person no longer counts here, such as a disabled member: the name is struck through. */
+      strikethrough?: boolean;
       /** Something after the name that qualifies it: an icon with a tooltip, a badge. */
       trailing?: ReactNode;
     }
@@ -186,11 +193,20 @@ export function formatDay(date: Date): string {
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-function formatNumber(value: number | string, kind: 'count' | 'percent' | 'currency' | undefined) {
+function formatCellNumber(
+  value: number | string,
+  kind: 'count' | 'compact' | 'percent' | 'currency' | undefined,
+) {
   if (typeof value === 'string') return value;
   if (kind === 'currency') return currency.format(value);
-  if (kind === 'percent') return `${Number.isInteger(value) ? value : value.toFixed(2)}%`;
+  if (kind === 'percent') return `${toDecimal(value)}%`;
+  if (kind === 'compact') return String(formatCompact(value));
   return value.toLocaleString('en-US');
+}
+
+/** Controls inside a clickable or expandable row act on their own: the click stops here. */
+function stopPropagation(event: MouseEvent) {
+  event.stopPropagation();
 }
 
 const tone = { default: 'text-neutral-12', muted: 'text-neutral-10' } as const;
@@ -326,7 +342,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
     case 'number':
       return (
         <span className="text-neutral-12 block text-right tabular-nums">
-          {formatNumber(props.value, props.format)}
+          {formatCellNumber(props.value, props.format)}
         </span>
       );
     case 'time': {
@@ -380,9 +396,12 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
           {props.label}
         </Destination>
       );
-      if (!props.trailing) return link;
+      // `contents` keeps a truncating link laid out by the cell itself.
       return (
-        <span className="flex items-center gap-2">
+        <span
+          className={props.trailing ? 'flex items-center gap-2' : 'contents'}
+          onClick={stopPropagation}
+        >
           {link}
           {props.trailing}
         </span>
@@ -394,9 +413,10 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
           {props.label}
         </span>
       );
+      if (props.targets.length === 0) return label;
       if (props.targets.length === 1) {
         return (
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1.5" onClick={stopPropagation}>
             {label}
             <Tooltip
               trigger={
@@ -414,7 +434,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
         );
       }
       return (
-        <span className="inline-flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-1.5" onClick={stopPropagation}>
           {label}
           <LinkOutMenu targets={props.targets} tooltip={props.tooltip} />
         </span>
@@ -426,8 +446,8 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       const rest = items.slice(shown.length);
       return (
         <span className="inline-flex items-center gap-1">
-          {shown.map(item => (
-            <Badge key={item.content} content={item.content} variants={{ variant: item.variant }} />
+          {shown.map((item, index) => (
+            <Badge key={index} content={item.content} variants={{ variant: item.variant }} />
           ))}
           {rest.length > 0 ? (
             <Tooltip
@@ -480,16 +500,19 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       return (
         <span className="text-neutral-12 inline-flex items-center gap-2">
           <Avatar size="xs" alt={props.name} src={props.src} />
-          {props.name}
+          <span className={cn(props.strikethrough && 'line-through')}>{props.name}</span>
           {props.trailing}
         </span>
       );
     case 'copy':
-      return <CopyChip value={props.value} label={props.label} />;
-    // Controls inside a clickable or expandable row act on their own: the click stops here.
+      return (
+        <span className="inline-flex" onClick={stopPropagation}>
+          <CopyChip value={props.value} label={props.label} />
+        </span>
+      );
     case 'checkbox':
       return (
-        <span className="inline-flex" onClick={event => event.stopPropagation()}>
+        <span className="inline-flex" onClick={stopPropagation}>
           <Checkbox
             checked={props.checked}
             onCheckedChange={checked => props.onCheckedChange(checked === true)}
@@ -499,7 +522,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       );
     case 'actions':
       return (
-        <span className="flex justify-end" onClick={event => event.stopPropagation()}>
+        <span className="flex justify-end" onClick={stopPropagation}>
           <Menu
             align="end"
             width="sm"
@@ -518,7 +541,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       );
     case 'icon-button':
       return (
-        <span className="flex justify-end" onClick={event => event.stopPropagation()}>
+        <span className="flex justify-end" onClick={stopPropagation}>
           <Tooltip
             trigger={
               <Button

@@ -99,6 +99,8 @@ export function DataTablePagination({
           onBlur={jump}
           onKeyDown={event => {
             if (event.key === 'Enter') {
+              // A table inside a form must not submit it from here.
+              event.preventDefault();
               jump();
             }
           }}
