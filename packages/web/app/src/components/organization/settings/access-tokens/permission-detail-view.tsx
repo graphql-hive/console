@@ -1,6 +1,6 @@
+import { Accordion } from '@/components/base/accordion/accordion';
 import { Badge } from '@/components/base/badge/badge';
 import { PermissionTable } from '@/components/organization/permission-table';
-import * as Accordion from '@/components/ui/accordion';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { permissionLevelToResourceName } from './shared-helpers';
 
@@ -42,52 +42,52 @@ export function PermissionDetailView(props: {
   );
 
   return (
-    <Accordion.Accordion
-      type="single"
-      defaultValue={totalAllowedCount > 0 ? group.title : undefined}
-      collapsible
-    >
-      <Accordion.AccordionItem value={group.title}>
-        <Accordion.AccordionTrigger className="w-full">
-          {group.title}
-          <span className="ml-auto mr-2">{totalAllowedCount} allowed</span>
-        </Accordion.AccordionTrigger>
-        <Accordion.AccordionContent className="flex max-w-[800px] flex-wrap items-start overflow-x-auto pl-2">
-          {group.resolvedPermissionGroups.map(group => (
-            <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.title}>
-              <PermissionTable
-                title={group.title}
-                permissions={group.permissions.map(permission => ({
-                  id: permission.permission.id,
-                  title: permission.permission.title,
-                  granted: permission.isGranted,
-                  warning: permission.permission.warning,
-                }))}
-              />
+    <Accordion
+      defaultValue={totalAllowedCount > 0 ? [group.title] : undefined}
+      items={[
+        {
+          value: group.title,
+          label: group.title,
+          trailing: <span>{totalAllowedCount} allowed</span>,
+          content: (
+            <div className="flex max-w-[800px] flex-wrap items-start overflow-x-auto pl-2">
+              {group.resolvedPermissionGroups.map(group => (
+                <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.title}>
+                  <PermissionTable
+                    title={group.title}
+                    permissions={group.permissions.map(permission => ({
+                      id: permission.permission.id,
+                      title: permission.permission.title,
+                      granted: permission.isGranted,
+                      warning: permission.permission.warning,
+                    }))}
+                  />
+                </div>
+              ))}
+              <div className="w-full space-y-1">
+                {group.resolvedResourceIds == null ? (
+                  <p className="text-red-500">
+                    Not granted on any {permissionLevelToResourceName(group.level).slice(0, -1)}.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-neutral-10">
+                      Granted on {permissionLevelToResourceName(group.level)}:
+                    </p>
+                    <ul className="flex list-none flex-wrap gap-1">
+                      {group.resolvedResourceIds.map(id => (
+                        <li key={id}>
+                          <Badge content={id} variants={{ variant: 'outline', mono: true }} />
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
             </div>
-          ))}
-          <div className="w-full space-y-1">
-            {group.resolvedResourceIds == null ? (
-              <p className="text-red-500">
-                Not granted on any {permissionLevelToResourceName(group.level).slice(0, -1)}.
-              </p>
-            ) : (
-              <>
-                <p className="text-neutral-10">
-                  Granted on {permissionLevelToResourceName(group.level)}:
-                </p>
-                <ul className="flex list-none flex-wrap gap-1">
-                  {group.resolvedResourceIds.map(id => (
-                    <li key={id}>
-                      <Badge content={id} variants={{ variant: 'outline', mono: true }} />
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-        </Accordion.AccordionContent>
-      </Accordion.AccordionItem>
-    </Accordion.Accordion>
+          ),
+        },
+      ]}
+    />
   );
 }
