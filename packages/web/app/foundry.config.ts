@@ -76,7 +76,8 @@ export default defineConfig({
             { label: 'Switch', children: [{ label: 'Component Examples' }] },
             { label: 'Slider', children: [{ label: 'Component Examples' }] },
             { label: 'ToggleGroup', children: [{ label: 'Component Examples' }] },
-            { label: 'Form' },
+            { label: 'Form', children: [{ label: 'Component Examples' }] },
+            { label: 'Label' },
           ],
         },
         {
