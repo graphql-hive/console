@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { format } from 'date-fns';
 import { BoxIcon, CheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
+import { Accordion } from '@/components/base/accordion/accordion';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
@@ -10,13 +11,6 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Label, Label as LegacyLabel } from '@/components/common';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionHeader,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { PulseIcon } from '@/components/ui/icon';
@@ -230,10 +224,11 @@ function ChangeItem(
   );
 
   return (
-    <Accordion type="single" collapsible>
-      <AccordionItem value="item-1">
-        <AccordionHeader className="flex">
-          <AccordionTrigger className="py-3 hover:no-underline">
+    <Accordion
+      items={[
+        {
+          value: 'item-1',
+          label: (
             <div
               className={clsx(
                 'text-left',
@@ -292,105 +287,108 @@ function ChangeItem(
                 )}
               </div>
             </div>
-          </AccordionTrigger>
-        </AccordionHeader>
-        <AccordionContent className="pb-8 pt-4">
-          {change.approval && (
-            <SchemaChangeApproval
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
-              schemaCheckId={props.schemaCheckId}
-              approval={change.approval}
-            />
-          )}
-          {'usageStatistics' in change && change.usageStatistics && metadata ? (
-            <div>
-              <h4 className="text-neutral-12 mb-1 text-sm font-medium">
-                Affected Operations (based on usage)
-              </h4>
-              <div className="text-neutral-10 mb-2 flex justify-between text-sm">
-                <span>
-                  Top 10 operations and clients affected by this change based on usage data.
-                </span>
-                {metadata && (
-                  <span className="text-neutral-11 text-xs">
-                    See{' '}
-                    {metadata.settings.targets.map((target, index, arr) => (
-                      <>
-                        {!target.target ? (
-                          <Tooltip
-                            key={index}
-                            trigger={target.slug}
-                            content="Target does no longer exist."
-                          />
-                        ) : (
-                          <Link
-                            key={index}
-                            className="text-accent_80 hover:text-accent"
-                            to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                              targetSlug: target.target.slug,
-                              coordinate: change.path!.join('.'),
-                            }}
-                            target="_blank"
-                          >
-                            {target.slug}
-                          </Link>
-                        )}
-                        {index === arr.length - 1
-                          ? null
-                          : index === arr.length - 2
-                            ? ' and '
-                            : ', '}
-                      </>
-                    ))}{' '}
-                    target insights for live usage data.
-                  </span>
-                )}
-              </div>
-              <UsageStatisticsPanels
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                usageStatistics={change.usageStatistics}
-                targets={metadata.settings.targets}
-              />
-              {'affectedAppDeployments' in change &&
-              change.affectedAppDeployments?.edges?.length ? (
-                <div className="mt-6">
-                  <AffectedAppDeploymentsPanel
+          ),
+          content: (
+            <div className="pb-4 pt-4">
+              {change.approval && (
+                <SchemaChangeApproval
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
+                  schemaCheckId={props.schemaCheckId}
+                  approval={change.approval}
+                />
+              )}
+              {'usageStatistics' in change && change.usageStatistics && metadata ? (
+                <div>
+                  <h4 className="text-neutral-12 mb-1 text-sm font-medium">
+                    Affected Operations (based on usage)
+                  </h4>
+                  <div className="text-neutral-10 mb-2 flex justify-between text-sm">
+                    <span>
+                      Top 10 operations and clients affected by this change based on usage data.
+                    </span>
+                    {metadata && (
+                      <span className="text-neutral-11 text-xs">
+                        See{' '}
+                        {metadata.settings.targets.map((target, index, arr) => (
+                          <>
+                            {!target.target ? (
+                              <Tooltip
+                                key={index}
+                                trigger={target.slug}
+                                content="Target does no longer exist."
+                              />
+                            ) : (
+                              <Link
+                                key={index}
+                                className="text-accent_80 hover:text-accent"
+                                to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
+                                params={{
+                                  organizationSlug: props.organizationSlug,
+                                  projectSlug: props.projectSlug,
+                                  targetSlug: target.target.slug,
+                                  coordinate: change.path!.join('.'),
+                                }}
+                                target="_blank"
+                              >
+                                {target.slug}
+                              </Link>
+                            )}
+                            {index === arr.length - 1
+                              ? null
+                              : index === arr.length - 2
+                                ? ' and '
+                                : ', '}
+                          </>
+                        ))}{' '}
+                        target insights for live usage data.
+                      </span>
+                    )}
+                  </div>
+                  <UsageStatisticsPanels
                     organizationSlug={props.organizationSlug}
                     projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                    schemaCheckId={props.schemaCheckId}
-                    coordinate={change.path?.join('.')}
-                    connection={change.affectedAppDeployments}
+                    usageStatistics={change.usageStatistics}
+                    targets={metadata.settings.targets}
                   />
+                  {'affectedAppDeployments' in change &&
+                  change.affectedAppDeployments?.edges?.length ? (
+                    <div className="mt-6">
+                      <AffectedAppDeploymentsPanel
+                        organizationSlug={props.organizationSlug}
+                        projectSlug={props.projectSlug}
+                        targetSlug={props.targetSlug}
+                        schemaCheckId={props.schemaCheckId}
+                        coordinate={change.path?.join('.')}
+                        connection={change.affectedAppDeployments}
+                      />
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
+              ) : 'affectedAppDeployments' in change &&
+                change.affectedAppDeployments?.edges?.length ? (
+                <AffectedAppDeploymentsPanel
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
+                  schemaCheckId={props.schemaCheckId}
+                  coordinate={change.path?.join('.')}
+                  connection={change.affectedAppDeployments}
+                />
+              ) : (
+                <>
+                  {change.severityReason ??
+                    `No details available for this ${
+                      change.severityLevel === SeverityLevelType.Breaking ? 'breaking ' : ''
+                    }change.`}
+                </>
+              )}
             </div>
-          ) : 'affectedAppDeployments' in change && change.affectedAppDeployments?.edges?.length ? (
-            <AffectedAppDeploymentsPanel
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
-              schemaCheckId={props.schemaCheckId}
-              coordinate={change.path?.join('.')}
-              connection={change.affectedAppDeployments}
-            />
-          ) : (
-            <>
-              {change.severityReason ??
-                `No details available for this ${
-                  change.severityLevel === SeverityLevelType.Breaking ? 'breaking ' : ''
-                }change.`}
-            </>
-          )}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+          ),
+        },
+      ]}
+    />
   );
 }
 
