@@ -13,9 +13,12 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { DescriptionList } from '@/components/base/description-list/description-list';
+import { FailureCard, formatCount } from '@/components/base/failure-card/failure-card';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Legend } from '@/components/base/legend/legend';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Switch } from '@/components/base/switch/switch';
 import { TabbedView, type TabbedViewItem } from '@/components/base/tabs/tabbed-view';
@@ -89,14 +92,14 @@ function AnnotatedSDLView(props: {
               'border-l-5 flex items-center pl-1',
               annotation.metadata.severity === 'warning'
                 ? 'border-yellow-400 bg-yellow-100 text-yellow-800'
-                : 'border-red-500 bg-red-100 text-red-800',
+                : 'border-critical bg-critical_10 text-critical',
             )}
           >
             <span>{annotation.metadata.message}</span>
             {annotation.metadata.severity === 'warning' ? (
               <TriangleAlertIcon className="ml-auto mr-2 size-4 text-yellow-800" />
             ) : (
-              <ShieldAlertIcon className="ml-auto mr-2 size-4 text-red-800" />
+              <ShieldAlertIcon className="text-critical ml-auto mr-2 size-4" />
             )}
           </div>
         )}
@@ -365,7 +368,7 @@ const PolicyBlock = (props: {
         {policies.edges.map((edge, key) => (
           <li
             key={key}
-            className={cn(props.type === 'warning' ? 'text-yellow-400' : 'text-red-400', 'my-1')}
+            className={cn(props.type === 'warning' ? 'text-yellow-400' : 'text-critical', 'my-1')}
           >
             <span className="text-neutral-10 text-left">
               {labelize(edge.node.message.replace(/\.$/, ''))}{' '}
@@ -1184,6 +1187,28 @@ const SchemaChecksView_SchemaCheckFragment = graphql(`
           hasSchemaCompositionErrors
           hasUnapprovedBreakingChanges
           hasSchemaChanges
+          schemaCompositionErrors {
+            edges {
+              node {
+                message
+              }
+            }
+          }
+          breakingSchemaChanges {
+            edges {
+              node {
+                isSafeBasedOnUsage
+                approval {
+                  __typename
+                }
+              }
+            }
+          }
+          baseline {
+            compositionErrors {
+              message
+            }
+          }
           ...ContractCheckView_ContractCheckFragment
         }
       }
@@ -1214,6 +1239,14 @@ function SchemaChecksView(props: {
     <Select
       value={selectedItem}
       onValueChange={setSelectedItem}
+      label={
+        <span className="inline-flex items-center gap-1.5">
+          {selectedContractCheckNode
+            ? checkStatus(selectedContractCheckNode, 'Contract schema changed').icon
+            : checkStatus(schemaCheck, 'Schema changed').icon}
+          {selectedContractCheckNode?.contractName ?? 'Default Graph'}
+        </span>
+      }
       options={[
         {
           value: 'default',
@@ -1232,7 +1265,21 @@ function SchemaChecksView(props: {
     />
   ) : undefined;
 
-  return selectedContractCheckNode ? (
+  const failures = contractChecks.flatMap(edge => {
+    const failure = contractFailure(edge.node);
+    return failure
+      ? [
+          {
+            key: edge.node.id,
+            label: edge.node.contractName,
+            ...failure,
+            onView: () => setSelectedItem(edge.node.id),
+          },
+        ]
+      : [];
+  });
+
+  const view = selectedContractCheckNode ? (
     <ContractCheckView
       key={selectedContractCheckNode.id}
       organizationSlug={props.organizationSlug}
@@ -1253,41 +1300,107 @@ function SchemaChecksView(props: {
       action={contractPicker}
     />
   );
+
+  if (!contractPicker) {
+    return view;
+  }
+
+  // The picker opens on the default graph, so a contract that failed is named here first.
+  return (
+    <div className="mt-3 flex flex-col gap-3">
+      <div className="flex justify-end">
+        <Legend items={CONTRACT_STATUS_LEGEND} />
+      </div>
+      {failures.length ? (
+        <div className="mb-3">
+          <FailureCard
+            title={`${failures.length} of ${contractChecks.length} contracts failed`}
+            aside={`${contractChecks.length - failures.length} passed`}
+            items={failures}
+          />
+        </div>
+      ) : null}
+      {view}
+    </div>
+  );
 }
 
-function checkStatusIcon(
-  check: {
-    hasSchemaCompositionErrors: boolean;
-    hasUnapprovedBreakingChanges: boolean;
-    hasSchemaChanges: boolean;
-  },
-  changedLabel: string,
-) {
+const CONTRACT_STATUS_LEGEND = [
+  { icon: <ExclamationTriangleIcon className="text-critical size-3.5" />, label: 'Failed' },
+  { icon: <GitCompareIcon className="size-3.5" />, label: 'Schema changed' },
+  { icon: <CheckIcon className="text-success size-3.5" />, label: 'Passed' },
+];
+
+/**
+ * Why a contract check failed, in the CLI's words, with how much it found. A contract fails to
+ * compose or fails its diff, never both: no diff runs after a composition failure. A baseline that
+ * failed to compose sets neither flag, so it is the third case.
+ */
+function contractFailure(check: {
+  hasSchemaCompositionErrors: boolean;
+  hasUnapprovedBreakingChanges: boolean;
+  schemaCompositionErrors: { edges: ReadonlyArray<unknown> } | null;
+  breakingSchemaChanges: {
+    edges: ReadonlyArray<{ node: { isSafeBasedOnUsage: boolean; approval: unknown } }>;
+  } | null;
+  baseline: { compositionErrors: ReadonlyArray<unknown> | null } | null;
+}): { reason: string; detail?: string } | null {
   if (check.hasSchemaCompositionErrors) {
-    return (
-      <StatusTooltip
-        icon={<ExclamationTriangleIcon className="text-warning size-3.5" />}
-        label="Composition failed."
-      />
-    );
+    const count = check.schemaCompositionErrors?.edges.length ?? 0;
+    return {
+      reason: 'Composition failed.',
+      detail: count ? formatCount(count, 'error') : undefined,
+    };
   }
   if (check.hasUnapprovedBreakingChanges) {
-    return (
-      <StatusTooltip
-        icon={<ExclamationTriangleIcon className="text-warning size-3.5" />}
-        label="Unapproved breaking changes!"
-      />
-    );
+    const count =
+      check.breakingSchemaChanges?.edges.filter(
+        edge => edge.node.approval == null && !edge.node.isSafeBasedOnUsage,
+      ).length ?? 0;
+    return {
+      reason: 'Unapproved breaking changes!',
+      detail: count ? formatCount(count, 'breaking change') : undefined,
+    };
+  }
+  const baselineErrors = check.baseline?.compositionErrors?.length ?? 0;
+  if (baselineErrors) {
+    return { reason: 'Baseline composition failed.', detail: formatCount(baselineErrors, 'error') };
+  }
+  return null;
+}
+
+type CheckStatusFlags = {
+  hasSchemaCompositionErrors: boolean;
+  hasUnapprovedBreakingChanges: boolean;
+  hasSchemaChanges: boolean;
+};
+
+/** The glyph and the words for a check's outcome; the trigger takes the glyph, the list both. */
+function checkStatus(check: CheckStatusFlags, changedLabel: string) {
+  if (check.hasSchemaCompositionErrors) {
+    return {
+      icon: <ExclamationTriangleIcon className="text-critical size-3.5" />,
+      label: 'Composition failed.',
+    };
+  }
+  if (check.hasUnapprovedBreakingChanges) {
+    return {
+      icon: <ExclamationTriangleIcon className="text-critical size-3.5" />,
+      label: 'Unapproved breaking changes!',
+    };
   }
   if (check.hasSchemaChanges) {
-    return <StatusTooltip icon={<GitCompareIcon className="size-3.5" />} label={changedLabel} />;
+    return { icon: <GitCompareIcon className="size-3.5" />, label: changedLabel };
   }
-  return (
-    <StatusTooltip
-      icon={<CheckIcon className="text-success size-3.5" />}
-      label="Composition succeeded."
-    />
-  );
+  return {
+    icon: <CheckIcon className="text-success size-3.5" />,
+    label: 'Composition succeeded.',
+  };
+}
+
+function checkStatusIcon(check: CheckStatusFlags, changedLabel: string) {
+  const status = checkStatus(check, changedLabel);
+  return <StatusTooltip icon={status.icon} label={status.label} />;
 }
 
 const ActiveSchemaCheck_SchemaCheckFragment = graphql(`
@@ -1420,52 +1533,49 @@ const ActiveSchemaCheck = (props: {
         <Subtitle>Detailed view of the schema check</Subtitle>
       </div>
       <div className="mb-3">
-        <div className="border-neutral-5 text-neutral-10 grid items-center justify-between gap-x-4 gap-y-2 rounded-md border p-4 font-medium md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
-          <div className="min-w-0">
-            <div className="text-xs">Status</div>
-            <div
-              className={cn(
-                'text-neutral-12 truncate text-sm font-semibold',
-                schemaCheck.__typename === 'FailedSchemaCheck' && 'text-red-600',
-              )}
-            >
-              {schemaCheck.__typename === 'FailedSchemaCheck' ? <>Failed</> : <>Success</>}
-            </div>
+        <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center gap-4 rounded-md border px-5 py-4">
+          <div className="min-w-0 flex-1">
+            <DescriptionList
+              variants={{ termStyle: 'title', columns: 'auto' }}
+              rows={[
+                {
+                  items: [
+                    {
+                      term: 'Status',
+                      description:
+                        schemaCheck.__typename === 'FailedSchemaCheck' ? (
+                          <span className="text-critical">Failed</span>
+                        ) : (
+                          'Success'
+                        ),
+                    },
+                    ...(schemaCheck.serviceName
+                      ? [{ term: 'Service', description: schemaCheck.serviceName }]
+                      : []),
+                    {
+                      term: 'Triggered',
+                      description: (
+                        <>
+                          <TimeAgo date={schemaCheck.createdAt} />
+                          {schemaCheck.meta?.author ? <> by {schemaCheck.meta.author}</> : null}
+                        </>
+                      ),
+                    },
+                    ...(schemaCheck.meta?.commit
+                      ? [
+                          {
+                            term: 'Commit',
+                            description: <CopyText>{schemaCheck.meta.commit}</CopyText>,
+                          },
+                        ]
+                      : []),
+                  ],
+                },
+              ]}
+            />
           </div>
-          {schemaCheck.serviceName ? (
-            <div className="min-w-0">
-              <div className="text-xs">Service</div>
-              <div
-                className="text-neutral-12 truncate text-sm font-semibold"
-                title={schemaCheck.serviceName}
-              >
-                {schemaCheck.serviceName}
-              </div>
-            </div>
-          ) : null}
-          <div className="min-w-0">
-            <div className="text-xs">
-              Triggered <TimeAgo date={schemaCheck.createdAt} />
-            </div>
-            {schemaCheck.meta?.author && (
-              <div className="text-neutral-12 truncate text-sm" title={schemaCheck.meta.author}>
-                by {schemaCheck.meta.author}
-              </div>
-            )}
-          </div>
-          {schemaCheck.meta?.commit && (
-            <div className="min-w-0">
-              <div className="text-xs">Commit</div>
-              <div
-                className="text-neutral-12 truncate text-sm font-semibold"
-                title={schemaCheck.meta.commit}
-              >
-                <CopyText>{schemaCheck.meta.commit}</CopyText>
-              </div>
-            </div>
-          )}
           {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.canBeApproved ? (
-            <div className="ml-auto mr-0 pl-4">
+            <div className="shrink-0">
               {schemaCheck.canBeApprovedByViewer ? (
                 <Popover
                   open={approvalOpen}

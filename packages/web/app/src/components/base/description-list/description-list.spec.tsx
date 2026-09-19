@@ -47,4 +47,28 @@ describe('DescriptionList', () => {
     expect(document.querySelector('[data-cy="user-id-claim"]')?.textContent).toBe('sub');
     expect(screen.getByText('User ID Claim').querySelector('svg')).not.toBeNull();
   });
+
+  it('draws small-caps terms in fixed columns by default, and title terms in auto columns on request', () => {
+    const rows = [
+      {
+        items: [
+          { term: 'Status', description: 'Failed' },
+          { term: 'Origin', description: 'CLI' },
+        ],
+      },
+    ];
+    const { rerender } = render(<DescriptionList rows={rows} />);
+    expect(screen.getByText('Status').className).toContain('uppercase');
+    expect(screen.getByText('Failed').parentElement!.parentElement!.className).toContain(
+      'grid-cols-2',
+    );
+
+    rerender(<DescriptionList rows={rows} variants={{ termStyle: 'title', columns: 'auto' }} />);
+    const term = screen.getByText('Status');
+    expect(term.className).not.toContain('uppercase');
+    expect(term.className).toContain('text-xs');
+    const row = screen.getByText('Failed').parentElement!.parentElement!;
+    expect(row.className).toContain('auto-fit');
+    expect(row.className).not.toContain('grid-cols-2');
+  });
 });
