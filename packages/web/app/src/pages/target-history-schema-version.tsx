@@ -280,6 +280,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
   const contractVersions = schemaVersion.contractVersions?.edges ?? [];
   const contractPicker = contractVersions.length ? (
     <Select
+      aria-label="Contract version"
       value={selectedItem}
       onValueChange={setSelectedItem}
       label={

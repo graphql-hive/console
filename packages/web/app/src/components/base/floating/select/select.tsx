@@ -79,6 +79,12 @@ type SelectProps = Partial<
    * make the panel wider than the control it belongs to.
    */
   matchTriggerWidth?: boolean;
+  /**
+   * What the select chooses, for assistive tech: "Contract", "Sort by". The trigger is a combobox,
+   * a role that takes no name from its text, so without this or a `<label htmlFor>` on `id` the
+   * control is announced as nothing at all.
+   */
+  'aria-label'?: string;
   /** Lands on the trigger, so a `<label htmlFor>` can point at it. */
   id?: string;
   /** Form field name, for a select inside a native form. */
@@ -109,6 +115,7 @@ export function Select({
   size,
   width = 'auto',
   matchTriggerWidth,
+  'aria-label': ariaLabel,
   id,
   name,
   onBlur,
@@ -160,6 +167,7 @@ export function Select({
                 onSurface={onSurface}
                 size={size}
                 width={width === 'auto' ? 'auto' : 'full'}
+                aria-label={ariaLabel}
                 id={id}
                 onBlur={onBlur}
                 data-cy={dataCy}

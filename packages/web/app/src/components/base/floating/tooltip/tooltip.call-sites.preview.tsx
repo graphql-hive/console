@@ -279,6 +279,7 @@ function ContractPicker() {
   const [contract, setContract] = useState('default');
   return (
     <Select
+      aria-label="Contract"
       value={contract}
       onValueChange={setContract}
       options={[

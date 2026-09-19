@@ -51,6 +51,7 @@ function StatusGlyph({ status }: { status: ContractStatus }) {
 function ContractSelect(props: { value: string; onValueChange: (value: string) => void }) {
   return (
     <Select
+      aria-label="Contract"
       options={CONTRACTS.map(entry => ({
         value: entry.value,
         label: entry.label,
