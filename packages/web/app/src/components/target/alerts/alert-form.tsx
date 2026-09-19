@@ -11,7 +11,6 @@ import { Select } from '@/components/base/floating/select/select';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -610,11 +609,8 @@ export function AlertForm(props: AlertFormProps) {
         : 'Save changes';
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className={showPreview ? 'flex gap-8' : undefined}
-      >
+    <Form form={form} onSubmit={onSubmit}>
+      <div className={showPreview ? 'flex gap-8' : undefined}>
         <div
           className={showPreview ? 'min-w-0 max-w-[700px] space-y-6' : 'min-w-0 flex-1 space-y-6'}
         >
@@ -899,7 +895,10 @@ export function AlertForm(props: AlertFormProps) {
 
                             return (
                               <FormItem>
-                                <FormLabel label="On filter" />
+                                <FormLabel
+                                  label="On filter"
+                                  tooltip="Only shared filters can be attached to alerts."
+                                />
                                 <FormControl>
                                   <Select
                                     options={savedFilterOptions}
@@ -910,7 +909,6 @@ export function AlertForm(props: AlertFormProps) {
                                     onSurface="raised"
                                   />
                                 </FormControl>
-                                <FormDescription description="Only shared filters can be attached to alerts." />
                               </FormItem>
                             );
                           }}
@@ -920,12 +918,9 @@ export function AlertForm(props: AlertFormProps) {
                           name="confirmationMinutes"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel label="Hold minutes" />
-                              <FormControl>
-                                <Input type="number" min={0} onSurface="raised" {...field} />
-                              </FormControl>
-                              <FormDescription
-                                description={
+                              <FormLabel
+                                label="Hold minutes"
+                                tooltip={
                                   <>
                                     Wait for the condition to exist for{' '}
                                     <span className="text-neutral-12 font-medium">
@@ -938,6 +933,9 @@ export function AlertForm(props: AlertFormProps) {
                                   </>
                                 }
                               />
+                              <FormControl>
+                                <Input type="number" min={0} onSurface="raised" {...field} />
+                              </FormControl>
                             </FormItem>
                           )}
                         />
@@ -978,7 +976,7 @@ export function AlertForm(props: AlertFormProps) {
             />
           </div>
         ) : null}
-      </form>
+      </div>
     </Form>
   );
 }
