@@ -1,51 +1,182 @@
 import { type ReactNode } from 'react';
+import { cva } from 'class-variance-authority';
 import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Accordion as BaseAccordion } from '@base-ui/react/accordion';
+import { focusRingQuiet } from '../shared-styles';
+
+export type AccordionItem = {
+  value: string;
+  /** Text, or a two-line header, badges, icons. */
+  label: ReactNode;
+  /** At the far end of the trigger, before the chevron: a count, a status. */
+  trailing?: ReactNode;
+  /** Beside the trigger, outside it: a menu button. A button cannot nest in a button. */
+  action?: ReactNode;
+  content: ReactNode;
+  disabled?: boolean;
+  /** Test hooks and the like, landed on the item. */
+  attrs?: Record<string, string>;
+};
+
+export type AccordionVariant = 'list' | 'boxed';
+export type AccordionSize = 'default' | 'sm';
+export type AccordionChevron = 'end' | 'start' | 'none';
+export type AccordionTone = 'default' | 'accent';
+
+type AccordionProps = {
+  items: readonly AccordionItem[];
+  value?: string[];
+  defaultValue?: string[];
+  onValueChange?: (value: string[]) => void;
+  /** More than one item open at once. */
+  multiple?: boolean;
+  /** `list` draws a hairline under each item; `boxed` gives each item a card border, spaced apart. */
+  variant?: AccordionVariant;
+  size?: AccordionSize;
+  /** Where the chevron sits. `start` for a disclosure under a form; `none` when the label carries its own icon. */
+  chevron?: AccordionChevron;
+  /** `accent` calls the trigger out: a disclosure that invites, like Advanced settings, rather than a section. */
+  tone?: AccordionTone;
+  /** Closed panels stay in the DOM. */
+  keepMounted?: boolean;
+  attrs?: Record<string, string>;
+};
+
+const rootVariants = cva('', {
+  variants: {
+    variant: {
+      list: '',
+      boxed: 'flex flex-col gap-4',
+    },
+  },
+});
+
+const itemVariants = cva('', {
+  variants: {
+    variant: {
+      list: 'border-neutral-5 border-b',
+      boxed: 'border-neutral-5 rounded-md border',
+    },
+  },
+});
+
+const headerRowVariants = cva('flex items-center', {
+  variants: {
+    variant: {
+      list: '',
+      boxed: 'px-4',
+    },
+  },
+});
+
+const triggerVariants = cva(
+  cn(
+    'group flex w-full items-center gap-2 text-left font-medium transition-colors',
+    focusRingQuiet,
+    'focus-visible:-outline-offset-2',
+    'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+  ),
+  {
+    variants: {
+      size: {
+        default: 'py-3 text-sm',
+        sm: 'py-2 text-xs',
+      },
+      tone: {
+        default: 'text-neutral-12 hover:text-neutral-11',
+        accent: 'text-accent hover:text-accent/80',
+      },
+    },
+  },
+);
+
+const chevronVariants = cva('shrink-0 transition-transform duration-200', {
+  variants: {
+    size: {
+      default: 'size-4',
+      sm: 'size-3',
+    },
+    tone: {
+      default: 'text-neutral-8',
+      accent: 'text-accent',
+    },
+    chevron: {
+      end: 'ml-auto group-data-[panel-open]:rotate-180',
+      start: '-rotate-90 group-data-[panel-open]:rotate-0',
+      none: 'hidden',
+    },
+  },
+});
+
+// Base UI measures the panel into a variable, which is what lets the height animate.
+const panelVariants = cva(
+  'h-[var(--accordion-panel-height)] overflow-hidden text-sm transition-[height] duration-200 ease-out data-[ending-style]:h-0 data-[starting-style]:h-0',
+);
+
+const panelInnerVariants = cva('', {
+  variants: {
+    variant: {
+      list: '',
+      boxed: 'px-4',
+    },
+    size: {
+      default: 'pb-4',
+      sm: 'pb-2',
+    },
+  },
+});
 
 export function Accordion({
-  children,
+  items,
+  value,
   defaultValue,
-}: {
-  children: ReactNode;
-  defaultValue?: number[];
-}) {
-  return <BaseAccordion.Root defaultValue={defaultValue}>{children}</BaseAccordion.Root>;
-}
-
-export function AccordionItem({ children, value }: { children: ReactNode; value: number }) {
-  return <BaseAccordion.Item value={value}>{children}</BaseAccordion.Item>;
-}
-
-export function AccordionTrigger({
-  label,
-  variant = 'default',
-}: {
-  label: string;
-  variant?: 'default' | 'accent';
-}) {
-  const colorClass =
-    variant === 'accent'
-      ? 'text-accent hover:text-accent/80'
-      : 'text-neutral-12 hover:text-neutral-11';
-
-  const chevronColor = variant === 'accent' ? 'text-accent' : 'text-neutral-8';
-
+  onValueChange,
+  multiple = false,
+  variant = 'list',
+  size = 'default',
+  chevron = 'end',
+  tone = 'default',
+  keepMounted,
+  attrs,
+}: AccordionProps) {
+  const chevronIcon = <ChevronDown className={chevronVariants({ size, tone, chevron })} />;
   return (
-    <BaseAccordion.Trigger
-      className={`${colorClass} flex w-full items-center gap-1.5 py-2 text-xs font-medium [&[data-panel-open]>svg]:rotate-0`}
+    <BaseAccordion.Root
+      value={value}
+      defaultValue={defaultValue}
+      onValueChange={next => onValueChange?.(next.map(String))}
+      multiple={multiple}
+      keepMounted={keepMounted}
+      className={rootVariants({ variant })}
+      {...attrs}
     >
-      <ChevronDown
-        className={`${chevronColor} size-3 shrink-0 -rotate-90 transition-transform duration-200`}
-      />
-      {label}
-    </BaseAccordion.Trigger>
-  );
-}
-
-export function AccordionContent({ children }: { children: ReactNode }) {
-  return (
-    <BaseAccordion.Panel className="overflow-hidden text-sm data-[ending-style]:h-0 data-[starting-style]:h-0">
-      <div className="pb-2 pt-2">{children}</div>
-    </BaseAccordion.Panel>
+      {items.map(item => (
+        <BaseAccordion.Item
+          key={item.value}
+          value={item.value}
+          disabled={item.disabled}
+          className={itemVariants({ variant })}
+          {...item.attrs}
+        >
+          <div className={headerRowVariants({ variant })}>
+            <BaseAccordion.Header className="flex min-w-0 grow">
+              <BaseAccordion.Trigger className={triggerVariants({ size, tone })}>
+                {chevron === 'start' ? chevronIcon : null}
+                <span className="min-w-0 grow">{item.label}</span>
+                {item.trailing != null ? (
+                  <span className="ml-auto shrink-0">{item.trailing}</span>
+                ) : null}
+                {chevron === 'end' ? chevronIcon : null}
+              </BaseAccordion.Trigger>
+            </BaseAccordion.Header>
+            {item.action != null ? <div className="shrink-0 pl-2">{item.action}</div> : null}
+          </div>
+          <BaseAccordion.Panel className={panelVariants()}>
+            <div className={panelInnerVariants({ variant, size })}>{item.content}</div>
+          </BaseAccordion.Panel>
+        </BaseAccordion.Item>
+      ))}
+    </BaseAccordion.Root>
   );
 }
