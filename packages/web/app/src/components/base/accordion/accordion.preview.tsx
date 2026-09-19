@@ -141,12 +141,13 @@ export const Boxed = createPreview(() => (
 ));
 
 /**
- * alerts/alert-form.tsx, Advanced settings: small, the chevron at the start as a disclosure, and
- * the accent tone to call it out.
+ * alerts/alert-form.tsx, Advanced settings: `plain`, so no hairline under a lone disclosure;
+ * small, the chevron at the start, and the accent tone to call it out.
  */
 export const SmallAccentDisclosure = createPreview(() => (
   <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 w-[28rem] rounded-md border p-4">
     <Accordion
+      variant="plain"
       size="sm"
       chevron="start"
       tone="accent"
@@ -250,7 +251,7 @@ export const Disabled = createPreview(() => (
 
 export const Playground = createPreview({
   controls: controlsFor(Accordion, {
-    variant: { type: 'radio', options: ['list', 'boxed'], default: 'list' },
+    variant: { type: 'radio', options: ['list', 'boxed', 'plain'], default: 'list' },
     size: { type: 'radio', options: ['default', 'sm'], default: 'default' },
     chevron: { type: 'radio', options: ['end', 'start', 'none'], default: 'end' },
     tone: { type: 'radio', options: ['default', 'accent'], default: 'default' },

@@ -19,7 +19,7 @@ export type AccordionItem = {
   attrs?: Record<string, string>;
 };
 
-export type AccordionVariant = 'list' | 'boxed';
+export type AccordionVariant = 'list' | 'boxed' | 'plain';
 export type AccordionSize = 'default' | 'sm';
 export type AccordionChevron = 'end' | 'start' | 'none';
 export type AccordionTone = 'default' | 'accent';
@@ -31,7 +31,10 @@ type AccordionProps = {
   onValueChange?: (value: string[]) => void;
   /** More than one item open at once. */
   multiple?: boolean;
-  /** `list` draws a hairline between items; `boxed` gives each item a card border, spaced apart. */
+  /**
+   * `list` draws a hairline under each item, so rows read as a list even one at a time; `boxed`
+   * gives each item a card border, spaced apart; `plain` draws nothing, for a lone disclosure.
+   */
   variant?: AccordionVariant;
   size?: AccordionSize;
   /** Where the chevron sits. `start` for a disclosure under a form; `none` when the label carries its own icon. */
@@ -48,6 +51,7 @@ const rootVariants = cva('', {
     variant: {
       list: '',
       boxed: 'flex flex-col gap-4',
+      plain: '',
     },
   },
 });
@@ -55,9 +59,9 @@ const rootVariants = cva('', {
 const itemVariants = cva('', {
   variants: {
     variant: {
-      // Hairlines separate items; a lone disclosure has nothing to separate from.
-      list: 'border-neutral-5 border-b last:border-b-0',
+      list: 'border-neutral-5 border-b',
       boxed: 'border-neutral-5 rounded-md border',
+      plain: '',
     },
   },
 });
@@ -67,6 +71,7 @@ const headerRowVariants = cva('flex items-center', {
     variant: {
       list: '',
       boxed: 'px-4',
+      plain: '',
     },
   },
 });
@@ -120,6 +125,7 @@ const panelInnerVariants = cva('', {
     variant: {
       list: '',
       boxed: 'px-4',
+      plain: '',
     },
     size: {
       default: 'pb-4',

@@ -866,6 +866,7 @@ export function AlertForm(props: AlertFormProps) {
               />
 
               <Accordion
+                variant="plain"
                 size="sm"
                 chevron="start"
                 tone="accent"
