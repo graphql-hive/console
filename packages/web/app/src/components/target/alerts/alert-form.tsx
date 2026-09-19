@@ -4,12 +4,7 @@ import { Plus, X } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/base/accordion/accordion';
+import { Accordion } from '@/components/base/accordion/accordion';
 import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { Select } from '@/components/base/floating/select/select';
@@ -870,77 +865,86 @@ export function AlertForm(props: AlertFormProps) {
                 clipToCurrentWindow
               />
 
-              <Accordion defaultValue={expandAdvanced ? [0] : undefined}>
-                <AccordionItem value={0}>
-                  <AccordionTrigger label="Advanced settings" variant="accent" />
-                  <AccordionContent>
-                    <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="savedFilterId"
-                        render={({ field }) => {
-                          const isLoading = savedFiltersQuery.fetching;
-                          const savedFilterOptions = [
-                            {
-                              value: '',
-                              label: isLoading
-                                ? 'Loading filters...'
-                                : 'No filter (all operations)',
-                            },
-                            ...(savedFiltersQuery.data?.target?.savedFilters?.edges?.map(edge => ({
-                              value: edge.node.id,
-                              label: edge.node.name,
-                            })) ?? []),
-                          ];
+              <Accordion
+                size="sm"
+                chevron="start"
+                tone="accent"
+                defaultValue={expandAdvanced ? ['advanced'] : undefined}
+                items={[
+                  {
+                    value: 'advanced',
+                    label: 'Advanced settings',
+                    content: (
+                      <div className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="savedFilterId"
+                          render={({ field }) => {
+                            const isLoading = savedFiltersQuery.fetching;
+                            const savedFilterOptions = [
+                              {
+                                value: '',
+                                label: isLoading
+                                  ? 'Loading filters...'
+                                  : 'No filter (all operations)',
+                              },
+                              ...(savedFiltersQuery.data?.target?.savedFilters?.edges?.map(
+                                edge => ({
+                                  value: edge.node.id,
+                                  label: edge.node.name,
+                                }),
+                              ) ?? []),
+                            ];
 
-                          return (
+                            return (
+                              <FormItem>
+                                <FormLabel label="On filter" />
+                                <FormControl>
+                                  <Select
+                                    options={savedFilterOptions}
+                                    value={field.value || ''}
+                                    onValueChange={field.onChange}
+                                    placeholder="Select a filter name"
+                                    searchable={savedFilterOptions.length > 10}
+                                    onSurface="raised"
+                                  />
+                                </FormControl>
+                                <FormDescription description="Only shared filters can be attached to alerts." />
+                              </FormItem>
+                            );
+                          }}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="confirmationMinutes"
+                          render={({ field }) => (
                             <FormItem>
-                              <FormLabel label="On filter" />
+                              <FormLabel label="Hold minutes" />
                               <FormControl>
-                                <Select
-                                  options={savedFilterOptions}
-                                  value={field.value || ''}
-                                  onValueChange={field.onChange}
-                                  placeholder="Select a filter name"
-                                  searchable={savedFilterOptions.length > 10}
-                                  onSurface="raised"
-                                />
+                                <Input type="number" min={0} onSurface="raised" {...field} />
                               </FormControl>
-                              <FormDescription description="Only shared filters can be attached to alerts." />
+                              <FormDescription
+                                description={
+                                  <>
+                                    Wait for the condition to exist for{' '}
+                                    <span className="text-neutral-12 font-medium">
+                                      {field.value || '0'}
+                                    </span>{' '}
+                                    minutes before firing. Helps prevent false alarms from brief
+                                    spikes. Leave at 0 to fire as soon as the condition holds for
+                                    two consecutive evaluations (recommended for alert ranges
+                                    greater than 1 day).
+                                  </>
+                                }
+                              />
                             </FormItem>
-                          );
-                        }}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="confirmationMinutes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel label="Hold minutes" />
-                            <FormControl>
-                              <Input type="number" min={0} onSurface="raised" {...field} />
-                            </FormControl>
-                            <FormDescription
-                              description={
-                                <>
-                                  Wait for the condition to exist for{' '}
-                                  <span className="text-neutral-12 font-medium">
-                                    {field.value || '0'}
-                                  </span>{' '}
-                                  minutes before firing. Helps prevent false alarms from brief
-                                  spikes. Leave at 0 to fire as soon as the condition holds for two
-                                  consecutive evaluations (recommended for alert ranges greater than
-                                  1 day).
-                                </>
-                              }
-                            />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+                          )}
+                        />
+                      </div>
+                    ),
+                  },
+                ]}
+              />
             </div>
           </Card>
 
