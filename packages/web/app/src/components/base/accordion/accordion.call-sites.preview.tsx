@@ -2,93 +2,87 @@ import { useState } from 'react';
 import { FolderIcon, FolderOpenIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '@/components/base/badge/badge';
+import { Card } from '@/components/base/card/card';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Select } from '@/components/base/floating/select/select';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { PermissionTable } from '@/components/organization/permission-table';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionHeader,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionTriggerPrimitive,
-} from '@/components/ui/accordion';
 import { PulseIcon } from '@/components/ui/icon';
-import { Accordion as V2Accordion } from '@/components/v2/accordion';
 import {
   CheckIcon,
   DotsHorizontalIcon,
   ExclamationTriangleIcon,
   PlusIcon,
 } from '@radix-ui/react-icons';
+import { Accordion } from './accordion';
 
 export const nav: NavPath = 'Base/Primitives/Accordion/Component Examples';
 
 /**
- * Every accordion in the app as it ships today, on `ui/accordion` (Radix, shadcn parts) and
- * `v2/accordion` (Radix, compound `Accordion.Item/Header/Content`). Nine mounts in eight files.
- * The pages around them run queries and mutations, so the content inside each item is stood in
- * where it would need one: the schema highlighter is a `<pre>`, the change details a paragraph,
+ * Every accordion in the app, transcribed as it ships on base Accordion. Nine mounts in eight
+ * files. The pages around them run queries and mutations, so the content inside each item is stood
+ * in where it would need one: the schema highlighter is a `<pre>`, the change details a paragraph,
  * the approval badge a Badge.
  *
- * Read with `base/accordion`, which exists (Base UI) and is on one call site, the alert rule
- * form's Advanced settings. What these sites use that it does not offer is the round's API work.
+ * History: until round 7 six of these were on `ui/accordion` (Radix, shadcn parts) and three on
+ * `v2/accordion` (Radix, compound parts, always collapsible), one site mixing the two. A single
+ * service on the target page was an accordion locked open with its trigger disabled; it is a Card
+ * now. Both old components and `@radix-ui/react-accordion` are deleted.
  */
 
 const ENTRIES = [
   {
-    source: 'components/organization/members/permission-selector.tsx:98',
-    origin: 'ui',
-    what: 'Permission groups on the role form: multiple open, controlled, every panel kept mounted, "N selected" at the trigger end',
+    source: 'components/organization/members/permission-selector.tsx:93',
+    origin: 'base',
+    what: 'Permission groups on the role form: multiple open, controlled, panels kept mounted for the dependency jump, "N selected" trailing',
     coveredBy: 'Permission selector',
   },
   {
-    source: 'components/organization/members/selected-permission-overview.tsx:151',
-    origin: 'ui',
-    what: 'A role\'s granted permissions: one item, open by default when anything is granted, "N allowed" at the trigger end',
+    source: 'components/organization/members/selected-permission-overview.tsx:146',
+    origin: 'base',
+    what: 'A role\'s granted permissions: one item, open by default when anything is granted, "N allowed" trailing',
     coveredBy: 'Permission overview',
   },
   {
     source: 'components/organization/settings/access-tokens/permission-detail-view.tsx:45',
-    origin: 'ui',
+    origin: 'base',
     what: "An access token's permissions per level, the same shape plus the resources it was granted on",
     coveredBy: 'Permission overview',
   },
   {
-    source: 'components/target/history/errors-and-changes.tsx:233',
-    origin: 'ui',
-    what: 'One accordion per schema change on the check, version and proposal pages: a rich trigger, details below',
+    source: 'components/target/history/errors-and-changes.tsx:227',
+    origin: 'base',
+    what: 'One accordion per schema change on the check, version and proposal pages: a rich label, details below',
     coveredBy: 'Schema changes',
   },
   {
-    source: 'components/target/proposals/change-detail.tsx:22',
-    origin: 'v2',
-    what: 'A proposal change: v2 root around ui parts, message and an icon in the trigger',
+    source: 'components/target/proposals/change-detail.tsx:20',
+    origin: 'base',
+    what: 'A proposal change: dimmed message and an icon in the label',
     coveredBy: 'Proposal change',
   },
   {
     source: 'components/target/settings/registry-access-token.tsx:231',
-    origin: 'v2',
-    what: "The registry token form's permission section, open by default",
+    origin: 'base',
+    what: "The registry token form's permission section, plain and open by default",
     coveredBy: 'Registry token',
   },
   {
-    source: 'pages/target.tsx:74',
-    origin: 'v2',
-    what: 'The services of a federation target, each a boxed item with a two-line header and the SDL inside',
+    source: 'pages/target.tsx:67',
+    origin: 'base',
+    what: 'The services of a federation target, boxed, a two-line header and the SDL inside',
     coveredBy: 'Target services',
   },
   {
-    source: 'pages/target.tsx:94',
-    origin: 'v2',
-    what: 'A single service: the same item, always open, trigger disabled',
+    source: 'pages/target.tsx:86',
+    origin: 'base',
+    what: 'A single service: a Card with the same header and SDL, since there is nothing to collapse',
     coveredBy: 'Target services',
   },
   {
-    source: 'lib/hooks/laboratory/use-operation-collections-plugin.tsx:302',
-    origin: 'ui',
-    what: 'Laboratory collections: multiple open, controlled, a raw trigger with folder icons and a menu beside it, e2e hooks',
+    source: 'lib/hooks/laboratory/use-operation-collections-plugin.tsx:301',
+    origin: 'base',
+    what: 'Laboratory collections: plain, no chevron, folder icons in the label, a menu through action, e2e hooks on item and trigger',
     coveredBy: 'Laboratory collections',
   },
 ] as const;
@@ -97,13 +91,12 @@ export const Inventory = createPreview({
   label: 'Inventory',
   render: () => (
     <InventoryList
-      component="ui/accordion + v2/accordion"
+      component="base/accordion"
       summary={
         <>
-          Nine mounts. Six on ui/accordion, which is Radix with a chevron trigger and a bordered
-          item; three on v2/accordion, which is Radix with a boxed header and its own chevron, and
-          always collapsible. One site mixes the two. Base already has an Accordion on Base UI with
-          numeric values and a text-only trigger, used once.
+          Nine mounts, all on base Accordion. Three of the four variants ship: list on the
+          permission views and the change rows, boxed on the target services, plain on the alert
+          form's disclosure, the registry token section and the collections sidebar.
         </>
       }
       entries={ENTRIES}
@@ -112,7 +105,7 @@ export const Inventory = createPreview({
 });
 
 // ---------------------------------------------------------------------------
-// components/organization/members/permission-selector.tsx:98
+// components/organization/members/permission-selector.tsx:93
 // ---------------------------------------------------------------------------
 
 const PERMISSION_GROUPS = [
@@ -165,33 +158,26 @@ function PermissionSelector() {
   const [selected, setSelected] = useState(new Set(['organization:describe', 'project:describe']));
   return (
     <Accordion
-      type="multiple"
-      className="w-full"
+      multiple
+      keepMounted
       value={openAccordions}
-      onValueChange={values => setOpenAccordions(values)}
-    >
-      {PERMISSION_GROUPS.map(group => {
+      onValueChange={setOpenAccordions}
+      items={PERMISSION_GROUPS.map(group => {
         const count = group.permissions.filter(p => selected.has(p.id)).length;
-        return (
-          <AccordionItem value={group.title} key={group.title}>
-            <AccordionTrigger
-              className="w-full"
-              aria-label={`${group.title} permission group with ${count} permissions selected`}
-            >
-              {group.title}{' '}
-              <span className="ml-auto mr-0">
-                {count > 0 && <span className="mr-1 inline-block text-sm">{count} selected</span>}
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pl-2 pt-1" forceMount>
+        return {
+          value: group.title,
+          label: group.title,
+          trailing: count > 0 ? <span>{count} selected</span> : undefined,
+          content: (
+            <div className="pl-2 pt-1">
               {group.permissions.map(permission => (
                 <div
                   key={permission.id}
-                  className="flex flex-row items-center justify-between space-x-4 py-2"
+                  className="flex flex-row items-center justify-between space-x-4 pb-2 pr-2 text-sm"
                 >
                   <div>
                     <div className="text-neutral-12 font-semibold">{permission.title}</div>
-                    <div className="text-neutral-10 text-xs">{permission.description}</div>
+                    <div className="text-neutral-11 text-xs">{permission.description}</div>
                   </div>
                   <Select
                     aria-label={permission.title}
@@ -209,11 +195,11 @@ function PermissionSelector() {
                   />
                 </div>
               ))}
-            </AccordionContent>
-          </AccordionItem>
-        );
+            </div>
+          ),
+        };
       })}
-    </Accordion>
+    />
   );
 }
 
@@ -221,9 +207,9 @@ export const PermissionSelectorPreview = createPreview({
   label: 'Permission selector',
   render: () => (
     <CallSite
-      source="components/organization/members/permission-selector.tsx:98"
-      origin="ui"
-      note="Multiple groups open at once, the open set held by the form. Every panel is force-mounted, so a closed group's selects stay in the DOM. The count sits at the far end of the trigger, before the chevron."
+      source="components/organization/members/permission-selector.tsx:93"
+      origin="base"
+      note="Multiple groups open at once, the open set held by the form. Closed panels stay mounted: the View permission link finds a dependency's row by ref before opening its group. The count sits in the trailing slot, before the chevron."
     >
       <div className="w-[36rem]">
         <PermissionSelector />
@@ -233,7 +219,7 @@ export const PermissionSelectorPreview = createPreview({
 });
 
 // ---------------------------------------------------------------------------
-// components/organization/members/selected-permission-overview.tsx:151
+// components/organization/members/selected-permission-overview.tsx:146
 // components/organization/settings/access-tokens/permission-detail-view.tsx:45
 // ---------------------------------------------------------------------------
 
@@ -246,39 +232,43 @@ const GRANTED_ROWS = [
 function PermissionOverview(props: { withResources?: boolean }) {
   const allowed = GRANTED_ROWS.filter(row => row.granted).length;
   return (
-    <Accordion type="single" defaultValue={allowed > 0 ? 'Target' : undefined} collapsible>
-      <AccordionItem value="Target">
-        <AccordionTrigger className="w-full">
-          Target
-          <span className="ml-auto mr-2">{allowed} allowed</span>
-        </AccordionTrigger>
-        <AccordionContent className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-auto">
-          <div className="w-[50%] min-w-[400px] pb-4 pr-12">
-            <PermissionTable title="Schema Registry" permissions={GRANTED_ROWS} />
-          </div>
-          <div className="w-[50%] min-w-[400px] pb-4 pr-12">
-            <PermissionTable
-              title="Laboratory"
-              permissions={[
-                { id: 'laboratory:describe', title: 'Describe laboratory', granted: true },
-              ]}
-            />
-          </div>
-          {props.withResources ? (
-            <div className="w-full space-y-1">
-              <p className="text-neutral-10">Granted on targets:</p>
-              <ul className="flex list-none flex-wrap gap-1">
-                {['the-guild/hive/production', 'the-guild/hive/staging'].map(id => (
-                  <li key={id}>
-                    <Badge content={id} variants={{ variant: 'outline', mono: true }} />
-                  </li>
-                ))}
-              </ul>
+    <Accordion
+      defaultValue={allowed > 0 ? ['Target'] : undefined}
+      items={[
+        {
+          value: 'Target',
+          label: 'Target',
+          trailing: <span>{allowed} allowed</span>,
+          content: (
+            <div className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-auto">
+              <div className="w-[50%] min-w-[400px] pb-4 pr-12">
+                <PermissionTable title="Schema Registry" permissions={GRANTED_ROWS} />
+              </div>
+              <div className="w-[50%] min-w-[400px] pb-4 pr-12">
+                <PermissionTable
+                  title="Laboratory"
+                  permissions={[
+                    { id: 'laboratory:describe', title: 'Describe laboratory', granted: true },
+                  ]}
+                />
+              </div>
+              {props.withResources ? (
+                <div className="w-full space-y-1">
+                  <p className="text-neutral-10">Granted on targets:</p>
+                  <ul className="flex list-none flex-wrap gap-1">
+                    {['the-guild/hive/production', 'the-guild/hive/staging'].map(id => (
+                      <li key={id}>
+                        <Badge content={id} variants={{ variant: 'outline', mono: true }} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+          ),
+        },
+      ]}
+    />
   );
 }
 
@@ -287,8 +277,8 @@ export const PermissionOverviewPreview = createPreview({
   render: () => (
     <div className="flex flex-col gap-10">
       <CallSite
-        source="components/organization/members/selected-permission-overview.tsx:151"
-        origin="ui"
+        source="components/organization/members/selected-permission-overview.tsx:146"
+        origin="base"
         note="One item per permission level, open by default when the role grants anything at that level. The tables wrap in two columns inside the panel."
       >
         <div className="w-[52rem]">
@@ -297,8 +287,8 @@ export const PermissionOverviewPreview = createPreview({
       </CallSite>
       <CallSite
         source="components/organization/settings/access-tokens/permission-detail-view.tsx:45"
-        origin="ui"
-        note="The access token sheet's copy of the same shape, through a namespace import, with the resources the level was granted on listed under the tables."
+        origin="base"
+        note="The access token sheet's copy of the same shape, with the resources the level was granted on listed under the tables."
       >
         <div className="w-[52rem]">
           <PermissionOverview withResources />
@@ -309,7 +299,7 @@ export const PermissionOverviewPreview = createPreview({
 });
 
 // ---------------------------------------------------------------------------
-// components/target/history/errors-and-changes.tsx:233
+// components/target/history/errors-and-changes.tsx:227
 // ---------------------------------------------------------------------------
 
 const CHANGES = [
@@ -336,10 +326,11 @@ const CHANGES = [
 function ChangeRow(props: { change: (typeof CHANGES)[number] }) {
   const { change } = props;
   return (
-    <Accordion type="single" collapsible>
-      <AccordionItem value="item-1">
-        <AccordionHeader className="flex">
-          <AccordionTrigger className="py-3 hover:no-underline">
+    <Accordion
+      items={[
+        {
+          value: 'item-1',
+          label: (
             <div className={`text-left ${change.severity}`}>
               <div>
                 <span className="text-neutral-10">{change.message}</span>
@@ -366,11 +357,11 @@ function ChangeRow(props: { change: (typeof CHANGES)[number] }) {
                 ) : null}
               </div>
             </div>
-          </AccordionTrigger>
-        </AccordionHeader>
-        <AccordionContent className="pb-8 pt-4">{change.reason}</AccordionContent>
-      </AccordionItem>
-    </Accordion>
+          ),
+          content: <div className="pb-4 pt-4">{change.reason}</div>,
+        },
+      ]}
+    />
   );
 }
 
@@ -378,9 +369,9 @@ export const SchemaChangesPreview = createPreview({
   label: 'Schema changes',
   render: () => (
     <CallSite
-      source="components/target/history/errors-and-changes.tsx:233"
-      origin="ui"
-      note="Every change on the check, version and proposal pages is its own single-item accordion, so the rows stack into a list. The trigger carries the message colored by severity, the usage pill and the approval badge; the panel the reason, the affected operations and the approval form. The ui trigger's hover underline is switched off here."
+      source="components/target/history/errors-and-changes.tsx:227"
+      origin="base"
+      note="Every change on the check, version and proposal pages is its own single-item accordion, so the rows stack into a list with a hairline under each. The label carries the message colored by severity, the usage pill and the approval badge; the panel the reason, the affected operations and the approval form."
     >
       <div className="w-[48rem]">
         {CHANGES.map(change => (
@@ -392,33 +383,34 @@ export const SchemaChangesPreview = createPreview({
 });
 
 // ---------------------------------------------------------------------------
-// components/target/proposals/change-detail.tsx:22
+// components/target/proposals/change-detail.tsx:20
 // ---------------------------------------------------------------------------
 
 export const ProposalChangePreview = createPreview({
   label: 'Proposal change',
   render: () => (
     <CallSite
-      source="components/target/proposals/change-detail.tsx:22"
-      origin="v2"
-      note="The v2 root around ui parts, which works because both are Radix underneath. The v2 root is always collapsible and stamps data-cy=accordion; the trigger text is dimmed and an icon sits after the message."
+      source="components/target/proposals/change-detail.tsx:20"
+      origin="base"
+      note="The message is dimmed and an icon sits after it; the panel holds the error, or a line saying there is none."
     >
       <div className="w-[48rem]">
-        <V2Accordion type="single">
-          <AccordionItem value="item-1">
-            <AccordionHeader className="flex">
-              <AccordionTrigger className="text-neutral-8 py-3 hover:no-underline">
-                <div className="flex w-full flex-row items-center text-left">
+        <Accordion
+          items={[
+            {
+              value: 'item-1',
+              label: (
+                <div className="text-neutral-8 flex w-full flex-row items-center">
                   <div>Field 'Query.invoices' was removed</div>
                   <div className="min-w-fit grow pr-2 md:flex-none">
                     <ExclamationTriangleIcon className="text-critical ml-2 inline size-4" />
                   </div>
                 </div>
-              </AccordionTrigger>
-            </AccordionHeader>
-            <AccordionContent>No details available for this change.</AccordionContent>
-          </AccordionItem>
-        </V2Accordion>
+              ),
+              content: 'No details available for this change.',
+            },
+          ]}
+        />
       </div>
     </CallSite>
   ),
@@ -433,45 +425,50 @@ export const RegistryTokenPreview = createPreview({
   render: () => (
     <CallSite
       source="components/target/settings/registry-access-token.tsx:231"
-      origin="v2"
-      note="Inside the create token dialog: one item, open by default, holding the registry scope row. The v2 header pads and rounds itself; the content pads too."
+      origin="base"
+      note="Inside the create token dialog: one item, plain and open by default, holding the registry scope row."
     >
       <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 w-[32rem] rounded-md border p-4">
-        <V2Accordion defaultValue="Permissions">
-          <V2Accordion.Item value="Permissions">
-            <V2Accordion.Header>Registry &amp; Usage</V2Accordion.Header>
-            <V2Accordion.Content>
-              <div
-                className="flex flex-row items-center justify-between space-x-4 py-2"
-                data-cy="registry-access-scope"
-              >
-                <div>
-                  <div className="text-neutral-12 font-semibold">Registry &amp; Usage</div>
-                  <div className="text-neutral-10 text-xs">
-                    Manage access to schema registry and usage reporting.
+        <Accordion
+          variant="plain"
+          defaultValue={['Permissions']}
+          items={[
+            {
+              value: 'Permissions',
+              label: 'Registry & Usage',
+              content: (
+                <div
+                  className="flex flex-row items-center justify-between space-x-4 py-2"
+                  data-cy="registry-access-scope"
+                >
+                  <div>
+                    <div className="text-neutral-12 font-semibold">Registry &amp; Usage</div>
+                    <div className="text-neutral-10 text-xs">
+                      Manage access to schema registry and usage reporting.
+                    </div>
                   </div>
+                  <Select
+                    aria-label="Registry & Usage access"
+                    options={[
+                      { value: 'no-access', label: 'No access' },
+                      { value: 'read', label: 'Read-only' },
+                      { value: 'write', label: 'Read & write' },
+                    ]}
+                    value="write"
+                    onSurface="raised"
+                  />
                 </div>
-                <Select
-                  aria-label="Registry & Usage access"
-                  options={[
-                    { value: 'no-access', label: 'No access' },
-                    { value: 'read', label: 'Read-only' },
-                    { value: 'write', label: 'Read & write' },
-                  ]}
-                  value="write"
-                  onSurface="raised"
-                />
-              </div>
-            </V2Accordion.Content>
-          </V2Accordion.Item>
-        </V2Accordion>
+              ),
+            },
+          ]}
+        />
       </div>
     </CallSite>
   ),
 });
 
 // ---------------------------------------------------------------------------
-// pages/target.tsx:74 and :94
+// pages/target.tsx:67 and :86
 // ---------------------------------------------------------------------------
 
 const SERVICES = [
@@ -491,22 +488,21 @@ const SERVICES = [
   },
 ];
 
-function SchemaBlock({ schema }: { schema: (typeof SERVICES)[number] }) {
+function serviceHeader(schema: (typeof SERVICES)[number]) {
   return (
-    <V2Accordion.Item value={schema.id} className="border-neutral-5/50 border-2">
-      <V2Accordion.Header>
-        <div>
-          <div className="text-base">{schema.service}</div>
-          <div className="text-neutral-10 text-xs">{schema.url}</div>
-        </div>
-      </V2Accordion.Header>
-      <V2Accordion.Content>
-        <div className="p-2">
-          {/* GraphQLHighlight is a Monaco editor; a code block stands in for it. */}
-          <pre className="text-neutral-11 font-mono text-xs leading-relaxed">{schema.source}</pre>
-        </div>
-      </V2Accordion.Content>
-    </V2Accordion.Item>
+    <div>
+      <div className="text-base">{schema.service}</div>
+      <div className="text-neutral-10 text-xs font-normal">{schema.url}</div>
+    </div>
+  );
+}
+
+/** GraphQLHighlight is a Monaco editor; a code block stands in for it. */
+function serviceSchema(schema: (typeof SERVICES)[number]) {
+  return (
+    <div className="p-2">
+      <pre className="text-neutral-11 font-mono text-xs leading-relaxed">{schema.source}</pre>
+    </div>
   );
 }
 
@@ -515,27 +511,31 @@ export const TargetServicesPreview = createPreview({
   render: () => (
     <div className="flex flex-col gap-10">
       <CallSite
-        source="pages/target.tsx:74"
-        origin="v2"
-        note="Each service is a boxed item with a thick border, a two-line header (service name, URL) and the SDL inside. Single open, spaced by the root's className."
+        source="pages/target.tsx:67"
+        origin="base"
+        note="Each service is a boxed item with a two-line header (service name, URL) and the SDL inside. Single open, spaced by the variant."
       >
         <div className="w-[48rem]">
-          <V2Accordion className="space-y-4" type="single">
-            {SERVICES.map(schema => (
-              <SchemaBlock key={schema.id} schema={schema} />
-            ))}
-          </V2Accordion>
+          <Accordion
+            variant="boxed"
+            items={SERVICES.map(schema => ({
+              value: schema.id,
+              label: serviceHeader(schema),
+              content: serviceSchema(schema),
+            }))}
+          />
         </div>
       </CallSite>
       <CallSite
-        source="pages/target.tsx:94"
-        origin="v2"
-        note="With one service the same item is forced open and the trigger disabled, so the chevron is decoration. An accordion standing in for a card with a header."
+        source="pages/target.tsx:86"
+        origin="base"
+        note="With one service there is nothing to collapse, so it is a Card with the same header and SDL. Until round 7 this was an accordion locked open with its trigger disabled."
       >
         <div className="w-[48rem]">
-          <V2Accordion type="single" disabled value={SERVICES[0].id}>
-            <SchemaBlock schema={SERVICES[0]} />
-          </V2Accordion>
+          <Card>
+            {serviceHeader(SERVICES[0])}
+            {serviceSchema(SERVICES[0])}
+          </Card>
         </div>
       </CallSite>
     </div>
@@ -543,7 +543,7 @@ export const TargetServicesPreview = createPreview({
 });
 
 // ---------------------------------------------------------------------------
-// lib/hooks/laboratory/use-operation-collections-plugin.tsx:302
+// lib/hooks/laboratory/use-operation-collections-plugin.tsx:301
 // ---------------------------------------------------------------------------
 
 const COLLECTIONS = [
@@ -559,40 +559,50 @@ const COLLECTIONS = [
 function Collections() {
   const [value, setValue] = useState<string[]>(['c1']);
   return (
-    <Accordion value={value} onValueChange={setValue} type="multiple">
-      {COLLECTIONS.map(collection => (
-        <AccordionItem key={collection.id} value={collection.id} className="border-b-0">
-          <AccordionHeader className="flex items-center justify-between" data-cy="collection-item">
-            <AccordionTriggerPrimitive
-              className="text-neutral-12 hover:bg-neutral-11/10 group flex w-full items-center gap-x-3 rounded-sm p-2 text-left font-medium"
-              data-cy="collection-item-trigger"
-            >
-              <FolderIcon className="size-4 group-data-[state=open]:hidden" />
-              <FolderOpenIcon className="size-4 group-data-[state=closed]:hidden" />
-              {collection.name}
-            </AccordionTriggerPrimitive>
-            <Menu
-              align="end"
-              trigger={
-                <button
-                  type="button"
-                  aria-label="More"
-                  className="hover:bg-neutral-11/10 rounded-sm p-1"
-                  data-cy="collection-menu-trigger"
-                >
-                  <DotsHorizontalIcon />
-                </button>
-              }
-              sections={[
-                [{ label: 'Add operation', trailingIcon: PlusIcon, onClick: () => {} }],
-                [
-                  { label: 'Edit', onClick: () => {} },
-                  { label: 'Delete', variant: 'destructiveAction', onClick: () => {} },
-                ],
-              ]}
-            />
-          </AccordionHeader>
-          <AccordionContent className="space-y-0 pb-2 pl-2">
+    <Accordion
+      variant="plain"
+      chevron="none"
+      multiple
+      value={value}
+      onValueChange={setValue}
+      items={COLLECTIONS.map(collection => ({
+        value: collection.id,
+        label: (
+          <span className="inline-flex items-center gap-x-3">
+            {value.includes(collection.id) ? (
+              <FolderOpenIcon className="size-4" />
+            ) : (
+              <FolderIcon className="size-4" />
+            )}
+            {collection.name}
+          </span>
+        ),
+        attrs: { 'data-cy': 'collection-item' },
+        triggerAttrs: { 'data-cy': 'collection-item-trigger' },
+        action: (
+          <Menu
+            align="end"
+            trigger={
+              <button
+                type="button"
+                aria-label="More"
+                className="hover:bg-neutral-11/10 rounded-sm p-1"
+                data-cy="collection-menu-trigger"
+              >
+                <DotsHorizontalIcon />
+              </button>
+            }
+            sections={[
+              [{ label: 'Add operation', trailingIcon: PlusIcon, onClick: () => {} }],
+              [
+                { label: 'Edit', onClick: () => {} },
+                { label: 'Delete', variant: 'destructiveAction', onClick: () => {} },
+              ],
+            ]}
+          />
+        ),
+        content: (
+          <div className="space-y-0 pb-2 pl-2">
             {collection.operations.length ? (
               collection.operations.map(name => (
                 <div key={name} className="flex items-center">
@@ -610,10 +620,11 @@ function Collections() {
                 <PlusIcon className="mr-1 inline size-4" /> Add Operation
               </button>
             )}
-          </AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
+          </div>
+        ),
+      }))}
+      attrs={{ id: 'laboratory-collections' }}
+    />
   );
 }
 
@@ -621,9 +632,9 @@ export const LaboratoryCollectionsPreview = createPreview({
   label: 'Laboratory collections',
   render: () => (
     <CallSite
-      source="lib/hooks/laboratory/use-operation-collections-plugin.tsx:302"
-      origin="ui"
-      note="The laboratory sidebar. The trigger is the raw Radix trigger with its own styling: folder icons that swap on open, no chevron. The menu button is a sibling of the trigger inside the header, not a child, since a button cannot nest in a button. Multiple open, controlled so a collection can be opened from the URL, and the root takes a ref for scrolling. Three e2e hooks: collection-item, collection-item-trigger, collection-menu-trigger."
+      source="lib/hooks/laboratory/use-operation-collections-plugin.tsx:301"
+      origin="base"
+      note="The laboratory sidebar. No chevron; folder icons in the label swap on the open set. The menu comes through action, beside the trigger and outside it. Multiple open, controlled so a collection can be opened from the URL, and the root carries an id the page scrolls within. Three e2e hooks: collection-item on the item, collection-item-trigger on the trigger, collection-menu-trigger on the menu button."
     >
       <div className="w-72">
         <Collections />
