@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { FolderIcon, FolderOpenIcon, SquareTerminalIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { Accordion } from '@/components/base/accordion/accordion';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { useToast } from '@/components/base/toast/toast';
@@ -9,13 +10,6 @@ import { CreateCollectionModal } from '@/components/target/laboratory/create-col
 import { DeleteCollectionModal } from '@/components/target/laboratory/delete-collection-modal';
 import { DeleteOperationModal } from '@/components/target/laboratory/delete-operation-modal';
 import { EditOperationModal } from '@/components/target/laboratory/edit-operation-modal';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionHeader,
-  AccordionItem,
-  AccordionTriggerPrimitive,
-} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from '@/components/ui/icon';
 import { Link } from '@/components/ui/link';
@@ -30,6 +24,9 @@ import { useParams, useRouter } from '@tanstack/react-router';
 import { useCollections } from './use-collections';
 import { useCurrentOperation } from './use-current-operation';
 import { useSyncOperationState } from './use-sync-operation-state';
+
+// The accordion hands out no ref, so the operation opened from the URL is found by id instead.
+const COLLECTIONS_ID = 'laboratory-collections';
 
 const CreateOperationMutation = graphql(`
   mutation CreateOperation(
@@ -144,7 +141,6 @@ export function Content() {
   });
   const router = useRouter();
   const [accordionValue, setAccordionValue] = useState<string[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const copyToClipboard = useClipboard();
 
@@ -289,7 +285,9 @@ export function Content() {
 
     setAccordionValue([initialSelectedCollection]);
     setTimeout(() => {
-      const link = containerRef.current!.querySelector(`a[href$="${queryParamsOperationId}"]`);
+      const link = document
+        .getElementById(COLLECTIONS_ID)
+        ?.querySelector(`a[href$="${queryParamsOperationId}"]`);
 
       if (link) {
         link.scrollIntoView();
@@ -298,64 +296,67 @@ export function Content() {
     }, 150);
   }, [initialSelectedCollection]);
 
-  const renderedCollections = collections.map(collection => (
-    <AccordionItem key={collection.id} value={collection.id} className="border-b-0">
-      <AccordionHeader className="flex items-center justify-between" data-cy="collection-item">
-        <AccordionTriggerPrimitive
-          className="text-neutral-12 hover:bg-neutral-11/10 group flex w-full items-center gap-x-3 rounded-sm p-2 text-left font-medium"
-          data-cy="collection-item-trigger"
-        >
-          <FolderIcon className="size-4 group-data-[state=open]:hidden" />
-          <FolderOpenIcon className="size-4 group-data-[state=closed]:hidden" />
-          {collection.name}
-        </AccordionTriggerPrimitive>
-        {shouldShowMenu && (
-          <Menu
-            align="end"
-            trigger={
-              <button
-                type="button"
-                aria-label="More"
-                className="graphiql-toolbar-button"
-                data-cy="collection-menu-trigger"
-              >
-                <DotsHorizontalIcon />
-              </button>
-            }
-            sections={[
-              [
-                {
-                  label: 'Add operation',
-                  trailingIcon: PlusIcon,
-                  onClick: () => void addOperation(collection.id),
-                  disabled: createOperationState.fetching,
-                  attrs: { 'data-cy': 'add-operation-to-collection' },
-                },
-              ],
-              [
-                {
-                  label: 'Edit',
-                  onClick: () => {
-                    setCollectionId(collection.id);
-                    toggleCollectionModal();
-                  },
-                  attrs: { 'data-cy': 'edit-collection' },
-                },
-                {
-                  label: 'Delete',
-                  variant: 'destructiveAction',
-                  onClick: () => {
-                    setCollectionId(collection.id);
-                    toggleDeleteCollectionModalOpen();
-                  },
-                  attrs: { 'data-cy': 'delete-collection' },
-                },
-              ],
-            ]}
-          />
+  const renderedCollections = collections.map(collection => ({
+    value: collection.id,
+    label: (
+      <span className="inline-flex items-center gap-x-3">
+        {accordionValue.includes(collection.id) ? (
+          <FolderOpenIcon className="size-4" />
+        ) : (
+          <FolderIcon className="size-4" />
         )}
-      </AccordionHeader>
-      <AccordionContent className="space-y-0 pb-2 pl-2">
+        {collection.name}
+      </span>
+    ),
+    attrs: { 'data-cy': 'collection-item' },
+    triggerAttrs: { 'data-cy': 'collection-item-trigger' },
+    action: shouldShowMenu ? (
+      <Menu
+        align="end"
+        trigger={
+          <button
+            type="button"
+            aria-label="More"
+            className="graphiql-toolbar-button"
+            data-cy="collection-menu-trigger"
+          >
+            <DotsHorizontalIcon />
+          </button>
+        }
+        sections={[
+          [
+            {
+              label: 'Add operation',
+              trailingIcon: PlusIcon,
+              onClick: () => void addOperation(collection.id),
+              disabled: createOperationState.fetching,
+              attrs: { 'data-cy': 'add-operation-to-collection' },
+            },
+          ],
+          [
+            {
+              label: 'Edit',
+              onClick: () => {
+                setCollectionId(collection.id);
+                toggleCollectionModal();
+              },
+              attrs: { 'data-cy': 'edit-collection' },
+            },
+            {
+              label: 'Delete',
+              variant: 'destructiveAction',
+              onClick: () => {
+                setCollectionId(collection.id);
+                toggleDeleteCollectionModalOpen();
+              },
+              attrs: { 'data-cy': 'delete-collection' },
+            },
+          ],
+        ]}
+      />
+    ) : undefined,
+    content: (
+      <div className="space-y-0 pb-2 pl-2">
         {collection.operations.edges.length ? (
           collection.operations.edges.map(({ node }) => (
             <div key={node.id} className="flex items-center">
@@ -433,9 +434,9 @@ export function Content() {
             <PlusIcon className="mr-1 inline size-4" /> Add Operation
           </Button>
         )}
-      </AccordionContent>
-    </AccordionItem>
-  ));
+      </div>
+    ),
+  }));
 
   const target = query.data?.target;
 
@@ -476,13 +477,14 @@ export function Content() {
         </div>
       ) : collections.length ? (
         <Accordion
-          ref={containerRef}
+          variant="plain"
+          chevron="none"
+          multiple
           value={accordionValue}
           onValueChange={setAccordionValue}
-          type="multiple"
-        >
-          {renderedCollections}
-        </Accordion>
+          items={renderedCollections}
+          attrs={{ id: COLLECTIONS_ID }}
+        />
       ) : (
         <div className="flex h-fit flex-1 items-center justify-center">
           <div className="flex flex-col items-center">

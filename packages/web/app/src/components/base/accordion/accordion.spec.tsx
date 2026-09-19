@@ -35,7 +35,7 @@ describe('Accordion', () => {
     expect(screen.queryByText('Breaking panel')).toBeNull();
   });
 
-  it('puts trailing inside the trigger and action beside it, and lands attrs on the item', () => {
+  it('puts trailing inside the trigger and action beside it, and lands attrs on item and trigger', () => {
     render(
       <Accordion
         items={[
@@ -43,12 +43,14 @@ describe('Accordion', () => {
             ...ITEMS[0],
             trailing: <span>3 selected</span>,
             action: <button type="button">More</button>,
+            triggerAttrs: { 'data-cy': 'row-a-trigger' },
           },
         ]}
       />,
     );
     const trigger = screen.getByRole('button', { name: /Breaking/ });
     expect(trigger.textContent).toContain('3 selected');
+    expect(trigger.getAttribute('data-cy')).toBe('row-a-trigger');
     const more = screen.getByRole('button', { name: 'More' });
     expect(trigger.contains(more)).toBe(false);
     expect(document.querySelector('[data-cy="row-a"]')!.contains(more)).toBe(true);
