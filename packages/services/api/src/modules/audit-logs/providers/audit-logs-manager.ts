@@ -9,6 +9,8 @@ import { Session } from '../../auth/lib/authz';
 import { type AwsClient } from '../../cdn/providers/aws';
 import { ClickHouse, sql } from '../../operations/providers/clickhouse-client';
 import { Logger } from '../../shared/providers/logger';
+import { S3Config } from '../../shared/providers/s3-config';
+import { S3Writer } from '../../shared/providers/s3-writer';
 import { Storage } from '../../shared/providers/storage';
 import { formatToClickhouseDateTime } from './audit-log-recorder';
 import { AuditLogClickhouseArrayModel } from './audit-logs-types';
@@ -165,8 +167,16 @@ export class AuditLogManager {
       const cleanEndDate = filter.endDate.toISOString().split('T')[0];
       const unixTimestampInSeconds = Math.floor(Date.now() / 1000);
       const key = `audit-logs/${organizationId}/${unixTimestampInSeconds}-${cleanStartDate}-${cleanEndDate}.csv`;
-      const uploadResult = await client.fetch([endpoint, bucket, key].join('/'), {
-        method: 'PUT',
+      const auditLogS3 = new S3Writer(
+        new S3Config([
+          {
+            client,
+            endpoint,
+            bucket,
+          },
+        ]),
+      );
+      const uploadResult = await auditLogS3.writePrimary(key, 'audit_log_export', {
         headers: {
           'Content-Type': 'text/csv',
         },

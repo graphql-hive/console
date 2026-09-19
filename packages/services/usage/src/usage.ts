@@ -14,7 +14,7 @@ import {
   type ServiceLogger,
 } from '@hive/service-common';
 import type { RawOperationMap, RawReport } from '@hive/usage-common';
-import { compress } from '@hive/usage-common';
+import { compressZstd } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
 import { calculateChunkSize, createKVBuffer } from './buffer';
 import type { KafkaEnvironment } from './environment';
@@ -22,7 +22,9 @@ import { createFallbackQueue } from './fallback-queue';
 import {
   bufferFlushes,
   compressDuration,
+  droppedOversizedOperations,
   estimationError,
+  fallbackDroppedOperations,
   kafkaDuration,
   rawOperationFailures,
   rawOperationWrites,
@@ -216,7 +218,7 @@ export function createUsage(config: {
     async sender(reports, estimatedSizeInBytes, batchId, validateSize) {
       const numOfOperations = reports.reduce((sum, report) => report.size + sum, 0);
       const compressLatencyStop = compressDuration.startTimer();
-      const value = await compress(JSON.stringify(reports)).finally(() => {
+      const value = await compressZstd(JSON.stringify(reports)).finally(() => {
         compressLatencyStop();
       });
       estimationError.observe(Math.abs(estimatedSizeInBytes - value.byteLength) / value.byteLength);
@@ -294,6 +296,18 @@ export function createUsage(config: {
         logger.info('Fallback queue flushed');
         changeStatus(Status.Ready);
       }
+    },
+    onTooLarge(numOfOperations) {
+      // Already counted in rawOperationFailures when it entered the queue, so no
+      // further metric change there; it stays counted, permanently, by simply never
+      // being decremented.
+      droppedOversizedOperations.inc(numOfOperations);
+    },
+    onQueueFull(numOfOperations) {
+      // Distinct reason from onTooLarge: we're backlogged, not that this one payload
+      // is too big. Also already counted in rawOperationFailures at entry; stays
+      // counted by never being decremented.
+      fallbackDroppedOperations.inc(numOfOperations);
     },
     logger: logger.child({ component: 'fallback' }),
   });

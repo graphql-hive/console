@@ -5,7 +5,10 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
 import { PostgresDatabasePool } from '@hive/postgres';
 import { findTargetBySlug } from '@hive/storage';
-import { PrometheusConfig } from '../../shared/providers/prometheus-config';
+import {
+  PROMETHEUS_CACHE_KEY_GROUPS,
+  PrometheusConfig,
+} from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 
 /**
@@ -29,6 +32,7 @@ export class TargetsBySlugCache {
         ? [
             prometheusPlugin({
               prefix: 'bentocache_targetsBySlug',
+              keyGroups: PROMETHEUS_CACHE_KEY_GROUPS,
             }),
           ]
         : undefined,

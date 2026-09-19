@@ -1,5 +1,19 @@
 # @graphql-hive/external-composition
 
+## 0.0.6
+
+### Patch Changes
+
+- [#8442](https://github.com/graphql-hive/console/pull/8442)
+  [`e7ca358`](https://github.com/graphql-hive/console/commit/e7ca358d10b3ac8e3bd376622004a51cf412e68d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [GHSA-3m5p-2c4r-xxw2](https://github.com/advisories/GHSA-3m5p-2c4r-xxw2),
+  [GHSA-w2qp-rph6-63g4](https://github.com/advisories/GHSA-w2qp-rph6-63g4),
+  [GHSA-jqff-g426-hqxp](https://github.com/advisories/GHSA-jqff-g426-hqxp),
+  [GHSA-f65p-4m7j-42xc](https://github.com/advisories/GHSA-f65p-4m7j-42xc),
+  [GHSA-5jgf-p345-68v8](https://github.com/advisories/GHSA-5jgf-p345-68v8), and
+  [GHSA-fph4-wmhf-6fwf](https://github.com/advisories/GHSA-fph4-wmhf-6fwf).
+
 ## 0.0.5
 
 ### Patch Changes

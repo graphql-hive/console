@@ -1,7 +1,8 @@
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Table, Tag, TBody, Td, Tr } from '@/components/v2';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { AlertChannelType, ChannelsTable_AlertChannelFragmentFragment } from '@/gql/graphql';
+import { ChannelsTable_AlertChannelFragmentFragment } from '@/gql/graphql';
+import type { ColumnDef } from '@tanstack/react-table';
 
 export const ChannelsTable_AlertChannelFragment = graphql(`
   fragment ChannelsTable_AlertChannelFragment on AlertChannel {
@@ -23,12 +24,20 @@ export const ChannelsTable_AlertChannelFragment = graphql(`
   }
 `);
 
-const colorMap = {
-  [AlertChannelType.Slack]: 'green' as const,
-  [AlertChannelType.Webhook]: 'yellow' as const,
-  [AlertChannelType.MsteamsWebhook]: 'orange' as const,
-  [AlertChannelType.Discord]: 'blue' as const,
-};
+function channelEndpoint(channel: ChannelsTable_AlertChannelFragmentFragment): string {
+  if (channel.__typename === 'AlertSlackChannel') {
+    return channel.channel;
+  }
+  if (
+    channel.__typename === 'AlertWebhookChannel' ||
+    channel.__typename === 'TeamsWebhookChannel' ||
+    channel.__typename === 'DiscordWebhookChannel'
+  ) {
+    return channel.endpoint;
+  }
+
+  return '';
+}
 
 export function ChannelsTable(props: {
   channels: FragmentType<typeof ChannelsTable_AlertChannelFragment>[];
@@ -37,46 +46,45 @@ export function ChannelsTable(props: {
 }) {
   const channels = useFragment(ChannelsTable_AlertChannelFragment, props.channels);
 
-  const renderChannelEndpoint = (channel: ChannelsTable_AlertChannelFragmentFragment) => {
-    if (channel.__typename === 'AlertSlackChannel') {
-      return channel.channel;
-    }
-    if (
-      channel.__typename === 'AlertWebhookChannel' ||
-      channel.__typename === 'TeamsWebhookChannel' ||
-      channel.__typename === 'DiscordWebhookChannel'
-    ) {
-      return channel.endpoint;
-    }
-
-    return '';
-  };
+  const columns: ColumnDef<ChannelsTable_AlertChannelFragmentFragment, unknown>[] = [
+    {
+      id: 'select',
+      meta: { width: 'xs' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="checkbox"
+          checked={props.isChecked(row.original.id)}
+          onCheckedChange={checked => props.onCheckedChange(row.original.id, checked)}
+          label={`Select ${row.original.name}`}
+        />
+      ),
+    },
+    {
+      id: 'name',
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.name} weight="medium" />,
+    },
+    {
+      id: 'endpoint',
+      meta: { width: 'fill' },
+      cell: ({ row }) => (
+        <DataTableCell kind="text" value={channelEndpoint(row.original)} tone="muted" truncate />
+      ),
+    },
+    {
+      id: 'type',
+      cell: ({ row }) => (
+        <DataTableCell kind="badge" items={{ content: row.original.type, variant: 'secondary' }} />
+      ),
+    },
+  ];
 
   return (
-    <Table>
-      <TBody>
-        {channels.map(channel => (
-          <Tr key={channel.id}>
-            <Td width="1">
-              <Checkbox
-                onCheckedChange={isChecked => {
-                  props.onCheckedChange(channel.id, isChecked === true);
-                }}
-                checked={props.isChecked(channel.id)}
-              />
-            </Td>
-            <Td className="text-ellipsis whitespace-nowrap">{channel.name}</Td>
-            <Td className="text-neutral-10 max-w-xs truncate text-xs">
-              {renderChannelEndpoint(channel)}
-            </Td>
-            <Td className="flex max-w-24 content-end">
-              <Tag color={colorMap[channel.type]} className="whitespace-nowrap">
-                {channel.type}
-              </Tag>
-            </Td>
-          </Tr>
-        ))}
-      </TBody>
-    </Table>
+    <DataTable
+      data={[...channels]}
+      columns={columns}
+      getRowId={channel => channel.id}
+      pagination={{ kind: 'none' }}
+      emptyMessage="No channels yet."
+    />
   );
 }

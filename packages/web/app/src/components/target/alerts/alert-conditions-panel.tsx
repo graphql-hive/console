@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { ExternalLink, Info } from 'lucide-react';
+import { Avatar } from '@/components/base/avatar/avatar';
 import { Button } from '@/components/base/button/button';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { FloatingPortalContainerProvider } from '@/components/base/floating/floating-portal-container';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
-import { BadgeRounded } from '@/components/ui/badge';
 import {
   Sheet,
   SheetContent,
@@ -13,8 +15,6 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Avatar } from '@/components/v2/avatar';
 import {
   AlertChannelType,
   MetricAlertRuleSeverity,
@@ -135,18 +135,18 @@ export type AlertConditionsPanelProps = {
 
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
-    <span className="text-neutral-12 inline-flex items-center gap-1 font-mono text-[10px]">
+    <span className="text-neutral-12 text-2xs inline-flex items-center gap-1 font-mono">
       <TimeAgo date={iso} />
-      <TooltipProvider delayDuration={100}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info className="text-neutral-10 size-3" />
-          </TooltipTrigger>
-          <TooltipContent>
-            <span className="text-xs">{new Date(iso).toUTCString()}</span>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Popover
+        trigger={
+          <button type="button" aria-label="Exact time" className="text-neutral-10 inline-flex">
+            <Info className="size-3" />
+          </button>
+        }
+        openOnHover
+        width="auto"
+        content={<span className="text-neutral-11 text-xs">{new Date(iso).toUTCString()}</span>}
+      />
     </span>
   );
 }
@@ -155,7 +155,7 @@ function UserCell({ user }: { user: User }) {
   if (!user) return <>—</>;
   return (
     <span className="inline-flex items-center gap-2">
-      <Avatar size="xs" shape="circle" alt={user.displayName} />
+      <Avatar size="xs" alt={user.displayName} />
       <span>{user.displayName}</span>
     </span>
   );
@@ -235,7 +235,7 @@ export function AlertConditionsPanel({
                 term: 'Severity',
                 description: (
                   <span className="inline-flex items-center gap-0.5">
-                    <BadgeRounded color={SEVERITY_DOT_COLOR[rule.severity]} className="size-2" />
+                    <StatusDot color={SEVERITY_DOT_COLOR[rule.severity]} />
                     <span className="capitalize">{rule.severity.toLowerCase()}</span>
                   </span>
                 ),

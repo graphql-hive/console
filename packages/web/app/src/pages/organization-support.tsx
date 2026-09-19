@@ -3,8 +3,14 @@ import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { Input } from '@/components/base/input/input';
+import { RadioGroup } from '@/components/base/radio-group/radio-group';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Textarea } from '@/components/base/textarea/textarea';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
-import { Priority, priorityDescription, Status } from '@/components/organization/support';
+import { priorityDescription } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -15,11 +21,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Sheet,
   SheetContent,
@@ -28,23 +32,21 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
-import { TimeAgo } from '@/components/ui/time-ago';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
 import { useNotifications, useToggle } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
+
+const PRIORITY_ITEMS = [
+  SupportTicketPriority.Normal,
+  SupportTicketPriority.High,
+  SupportTicketPriority.Urgent,
+].map(priority => ({
+  value: priority,
+  label: priority.charAt(0) + priority.slice(1).toLowerCase(),
+  description: priorityDescription[priority],
+}));
 
 const newTicketFormSchema = z.object({
   subject: z.string().min(2, {
@@ -152,84 +154,63 @@ function NewTicketForm(props: {
               </SheetDescription>
             </SheetHeader>
 
-            <div className="flex flex-1">
-              <div className="w-full space-y-6 overflow-y-auto text-ellipsis px-2 text-sm">
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Priority level</FormLabel>
-                      <FormControl>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <ScrollArea fill>
+                <div className="w-full space-y-6 text-ellipsis px-2 text-sm">
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Priority level</FormLabel>
                         <RadioGroup
+                          variant="as-card"
+                          orientation="vertical"
+                          value={field.value}
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-1"
-                        >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value={SupportTicketPriority.Normal} />
-                            </FormControl>
-                            <FormLabel className="text-neutral-10 font-normal">
-                              <span className="text-neutral-12 font-semibold">Normal</span> -{' '}
-                              {priorityDescription[SupportTicketPriority.Normal]}
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value={SupportTicketPriority.High} />
-                            </FormControl>
-                            <FormLabel className="text-neutral-10 font-normal">
-                              <span className="text-neutral-12 font-semibold">High</span> -{' '}
-                              {priorityDescription[SupportTicketPriority.High]}
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value={SupportTicketPriority.Urgent} />
-                            </FormControl>
-                            <FormLabel className="text-neutral-10 font-normal">
-                              <span className="text-neutral-12 font-semibold">Urgent</span> -{' '}
-                              {priorityDescription[SupportTicketPriority.Urgent]}
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="subject"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Subject</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter a subject of your issue" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter a short description of your issue"
-                          {...field}
+                          items={PRIORITY_ITEMS}
                         />
-                      </FormControl>
-                      <FormDescription>Help us understand it better.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter a subject of your issue"
+                            onSurface="raised"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter a short description of your issue"
+                            onSurface="raised"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>Help us understand it better.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </ScrollArea>
             </div>
 
             <SheetFooter className="flex flex-col gap-y-2 sm:flex-col">
@@ -252,42 +233,20 @@ const SupportTicketRow_SupportTicket = graphql(`
   }
 `);
 
-function SupportTicketRow(props: {
-  organizationSlug: string;
-  ticket: FragmentType<typeof SupportTicketRow_SupportTicket>;
-}) {
-  const ticket = useFragment(SupportTicketRow_SupportTicket, props.ticket);
-  const isSolved = ticket.status === SupportTicketStatus.Solved;
+type SupportTicket = DocumentType<typeof SupportTicketRow_SupportTicket>;
 
-  return (
-    <TableRow className={cn(isSolved ? 'text-neutral-10' : '')}>
-      <TableCell className="text-center">{ticket.id}</TableCell>
-      <TableCell>
-        <Button
-          variant="link"
-          className={cn(isSolved ? 'text-neutral-10' : '', 'h-auto p-0 text-left')}
-          asChild
-        >
-          <Link
-            to="/$organizationSlug/view/support/ticket/$ticketId"
-            params={{ organizationSlug: props.organizationSlug, ticketId: ticket.id }}
-          >
-            {ticket.subject}
-          </Link>
-        </Button>
-      </TableCell>
-      <TableCell className="w-[150px] text-center">
-        <Status status={ticket.status} />
-      </TableCell>
-      <TableCell className="w-[150px] text-center">
-        <Priority level={ticket.priority} />
-      </TableCell>
-      <TableCell className="w-[200px] text-right text-xs">
-        <TimeAgo date={ticket.updatedAt} className="text-neutral-10" />
-      </TableCell>
-    </TableRow>
-  );
-}
+const STATUS_BADGE = {
+  [SupportTicketStatus.Open]: 'info',
+  [SupportTicketStatus.Solved]: 'success',
+} as const;
+
+const PRIORITY_DOT = {
+  [SupportTicketPriority.Normal]: 'info',
+  [SupportTicketPriority.High]: 'warning',
+  [SupportTicketPriority.Urgent]: 'critical',
+} as const;
+
+const titleCase = (value: string) => value.charAt(0) + value.slice(1).toLowerCase();
 
 const Support_OrganizationFragment = graphql(`
   fragment Support_OrganizationFragment on Organization {
@@ -325,10 +284,70 @@ function Support(props: {
     props.refetch();
   }, [toggle, props.refetch]);
 
-  const tickets = supportTicketsConnection?.edges.map(e => e.node);
+  const tickets = useFragment(
+    SupportTicketRow_SupportTicket,
+    supportTicketsConnection?.edges.map(e => e.node) ?? [],
+  );
+
+  const columns: ColumnDef<SupportTicket, unknown>[] = [
+    {
+      id: 'id',
+      header: 'ID',
+      meta: { align: 'center', width: 'xs' },
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.id} mono />,
+    },
+    {
+      id: 'subject',
+      header: 'Subject',
+      meta: { width: 'fill' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="link"
+          label={row.original.subject}
+          link={{
+            to: '/$organizationSlug/view/support/ticket/$ticketId',
+            params: { organizationSlug: organization.slug, ticketId: row.original.id },
+          }}
+        />
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      meta: { align: 'center', width: 'sm' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="badge"
+          items={{
+            content: titleCase(row.original.status),
+            variant: STATUS_BADGE[row.original.status],
+          }}
+        />
+      ),
+    },
+    {
+      id: 'priority',
+      header: 'Priority',
+      meta: { width: 'sm' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="status"
+          label={titleCase(row.original.priority)}
+          dot={PRIORITY_DOT[row.original.priority]}
+          tooltip={priorityDescription[row.original.priority]}
+        />
+      ),
+    },
+    {
+      id: 'updatedAt',
+      header: 'Last updated',
+      meta: { align: 'right', width: 'md' },
+      cell: ({ row }) => <DataTableCell kind="time" date={row.original.updatedAt} tone="muted" />,
+    },
+  ];
 
   return (
-    <TooltipProvider>
+    <>
       <div>
         <div className="flex flex-row items-center justify-between py-6">
           <div>
@@ -349,29 +368,19 @@ function Support(props: {
           </div>
         </div>
         <div className="flex flex-col gap-y-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px] text-center">ID</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead className="w-[150px] text-center">Status</TableHead>
-                <TableHead className="w-[150px] text-center">Priority</TableHead>
-                <TableHead className="w-[150px] text-right">Last updated</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(tickets ?? []).map(ticket => (
-                <SupportTicketRow
-                  key={ticket.id}
-                  organizationSlug={organization.slug}
-                  ticket={ticket}
-                />
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            data={tickets}
+            columns={columns}
+            getRowId={ticket => ticket.id}
+            pagination={{ kind: 'none' }}
+            emptyMessage="No support tickets yet."
+            rowState={ticket =>
+              ticket.status === SupportTicketStatus.Solved ? { muted: true } : undefined
+            }
+          />
         </div>
       </div>
-    </TooltipProvider>
+    </>
   );
 }
 

@@ -22,7 +22,7 @@
     "noUncheckedSideEffectImports": true
   },
   "include": ["vite.config.ts", "vite.lib.config.ts", "vite.umd.config.ts", "dev/**/*.ts"],
-  /* Fixtures the browser app imports belong to the app program: they pull in JSX
-     and the @/* alias, neither of which this node config has. */
-  "exclude": ["dev/collections.ts"]
+  /* Fixtures the browser app imports belong to the app program: they pull in JSX,
+     the @/* alias and the DOM lib, none of which this node config has. */
+  "exclude": ["dev/collections.ts", "dev/legacy-ws-shim.ts"]
 }

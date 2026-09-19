@@ -1,8 +1,8 @@
 import { createServer } from 'node:http';
-import { GraphQLError } from 'graphql';
+import { GraphQLError, type GraphQLResolveInfo, type ValidationRule } from 'graphql';
 import { createClient } from 'graphql-ws';
 import { useServer as useWSServer } from 'graphql-ws/lib/use/ws';
-import { createLogger, createSchema, createYoga } from 'graphql-yoga';
+import { createLogger, createSchema, createYoga, type Plugin } from 'graphql-yoga';
 import { describe, expect, test, vi } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
 import { useDeferStream } from '@graphql-yoga/plugin-defer-stream';
@@ -32,6 +32,67 @@ const resolvers = {
     },
   },
 };
+
+test('injects Hive typenames after validation', async () => {
+  const executedSelections: string[] = [];
+  await using yoga = createYoga({
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        interface Item {
+          id: ID!
+        }
+        type Product implements Item {
+          id: ID!
+        }
+        type Query {
+          item: Item
+        }
+      `,
+      resolvers: {
+        Query: {
+          item(_parent: unknown, _args: unknown, _context: unknown, info: GraphQLResolveInfo) {
+            executedSelections.push(
+              ...(info.fieldNodes[0].selectionSet?.selections.flatMap(selection =>
+                selection.kind === 'Field' ? [selection.name.value] : [],
+              ) ?? []),
+            );
+            return { __typename: 'Product', id: '1' };
+          },
+        },
+      },
+    }),
+    plugins: [
+      {
+        onValidate({ addValidationRule }) {
+          addValidationRule((context => ({
+            Field(node) {
+              if (node.alias?.value === '__hive_typename__') {
+                context.reportError(new GraphQLError('Hive typename was injected too early'));
+              }
+            },
+          })) satisfies ValidationRule);
+        },
+      } satisfies Plugin,
+      useHive({
+        enabled: false,
+        token: 'dummy-token',
+        reporting: false,
+        usage: { fieldLevelMetricsEnabled: true },
+      }),
+    ],
+    logging: false,
+  });
+
+  const response = await yoga.fetch('http://localhost/graphql', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ query: '{ item { id } }' }),
+  });
+
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ data: { item: { id: '1' } } });
+  expect(executedSelections).toEqual(['id', '__typename']);
+});
 
 function handleProcess() {
   function fail(error: any) {
@@ -674,6 +735,58 @@ test('respects "graphql-client-name" and "graphql-client-version" headers by def
 });
 
 describe('subscription usage reporting', () => {
+  test('ignores subscribe hooks for schemas without subscriptions', async () => {
+    const logger = createHiveTestingLogger();
+
+    const hive = createHive({
+      enabled: true,
+      token: 'dummy-token',
+      agent: {
+        logger,
+        maxSize: 1,
+        sendInterval: 1,
+      },
+      usage: {
+        endpoint: 'http://localhost/usage',
+        clientInfo() {
+          return {
+            name: 'brrr',
+            version: '1',
+          };
+        },
+      },
+    });
+    const collectSubscriptionUsage = vi.spyOn(hive, 'collectSubscriptionUsage');
+    const yoga = createYoga({
+      schema: createSchema({ typeDefs, resolvers }),
+      plugins: [useHive(hive)],
+    });
+
+    const response = await yoga.fetch('http://localhost/graphql', {
+      method: 'POST',
+      headers: {
+        accept: 'text/event-stream',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ query: 'subscription { hello }' }),
+    });
+    expect(await response.text()).toMatchInlineSnapshot(`
+      :
+
+      event: next
+      data: {"errors":[{"message":"Schema is not configured to execute subscription operation.","locations":[{"line":1,"column":1}]}]}
+
+      event: complete
+      data:
+    `);
+    expect(response.headers.get('content-type')).toContain('text/event-stream');
+
+    // make sure no error occurs
+    expect(logger.getLogs()).toEqual('');
+    expect(collectSubscriptionUsage).not.toHaveBeenCalled();
+    await hive.dispose();
+  });
+
   describe('built-in see', () => {
     test('reports usage for successful subscription operation', async ({ expect }) => {
       const d = Promise.withResolvers<RequestInit>();

@@ -261,8 +261,12 @@ export function registerUsageCollectionRoute(args: {
   >({
     method: 'POST',
     url: '/:targetId',
-    onRequest(req, _, done) {
+    onRequest(req, reply, done) {
       req.onRequestHRTime = process.hrtime();
+      if (args.usage.readiness() === false) {
+        void reply.status(503).send();
+        return;
+      }
       done();
     },
     onResponse(req, _, done) {
@@ -283,8 +287,12 @@ export function registerUsageCollectionRoute(args: {
   >({
     method: 'POST',
     url: '/:organizationSlug/:projectSlug/:targetSlug',
-    onRequest(req, _, done) {
+    onRequest(req, reply, done) {
       req.onRequestHRTime = process.hrtime();
+      if (args.usage.readiness() === false) {
+        void reply.status(503).send();
+        return;
+      }
       done();
     },
     onResponse(req, _, done) {

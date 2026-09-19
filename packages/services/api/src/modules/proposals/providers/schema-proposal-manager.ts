@@ -2,8 +2,7 @@
  * This wraps the higher level logic with schema proposals.
  */
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
-import type { SchemaProposalStage } from '../../../__generated__/types';
+import type { SchemaProposalStage, TargetReferenceInput } from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';

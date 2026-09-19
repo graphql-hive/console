@@ -1,8 +1,5 @@
-import { ArrowRight } from 'lucide-react';
 import { DataTable } from '@/components/base/data-table/data-table';
-import { BadgeRounded } from '@/components/ui/badge';
-import { TimeAgo } from '@/components/ui/time-ago';
-import { Avatar } from '@/components/v2/avatar';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import {
   MetricAlertRuleType,
   type MetricAlertRuleSeverity,
@@ -11,7 +8,7 @@ import {
 import { createColumnHelper } from '@tanstack/react-table';
 import {
   AlertEventDetail,
-  StateBadge,
+  stateBadgeItem,
   type AlertEventDetailRule,
   type AlertEventRow,
 } from './alert-event-detail';
@@ -23,21 +20,6 @@ export type ActivityEventRow = AlertEventRow & {
     createdBy?: { id: string; displayName: string } | null;
   };
 };
-
-const TIMESTAMP_FORMAT = new Intl.DateTimeFormat('en-US', {
-  month: 'long',
-  day: 'numeric',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: true,
-  timeZoneName: 'short',
-});
-
-function formatTimestamp(iso: string): string {
-  return TIMESTAMP_FORMAT.format(new Date(iso)).toUpperCase();
-}
 
 const TYPE_LABEL: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.ErrorRate]: 'Reliability',
@@ -62,42 +44,36 @@ const columnHelper = createColumnHelper<ActivityEventRow>();
 const COLUMNS = [
   columnHelper.accessor('createdAt', {
     header: 'Timestamp',
-    cell: info => (
-      <span className="text-neutral-12 font-mono text-[11px] tracking-wide">
-        {formatTimestamp(info.getValue())}
-      </span>
-    ),
+    cell: info => <DataTableCell kind="time" date={info.getValue()} mode="absolute" mono />,
   }),
   columnHelper.display({
     id: 'age',
     header: 'Age',
-    cell: ctx => (
-      <TimeAgo
-        date={ctx.row.original.createdAt}
-        className="text-neutral-12 font-mono text-[11px]"
-      />
-    ),
+    cell: ctx => <DataTableCell kind="time" date={ctx.row.original.createdAt} mono />,
   }),
   columnHelper.display({
     id: 'status',
     header: 'Status',
     cell: ctx => (
-      <div className="text-neutral-11 inline-flex items-center gap-2">
-        <StateBadge state={ctx.row.original.fromState as MetricAlertRuleState} />
-        <ArrowRight className="text-neutral-8 size-3.5" />
-        <StateBadge state={ctx.row.original.toState as MetricAlertRuleState} />
-      </div>
+      <DataTableCell
+        kind="status"
+        from={stateBadgeItem(ctx.row.original.fromState as MetricAlertRuleState)}
+        to={stateBadgeItem(ctx.row.original.toState as MetricAlertRuleState)}
+      />
     ),
   }),
   columnHelper.display({
     id: 'name',
     header: 'Alert name',
-    cell: ctx => <span className="text-neutral-12 font-medium">{ctx.row.original.rule.name}</span>,
+    meta: { width: 'fill' },
+    cell: ctx => <DataTableCell kind="text" value={ctx.row.original.rule.name} weight="medium" />,
   }),
   columnHelper.display({
     id: 'type',
     header: 'Type',
-    cell: ctx => <span className="text-neutral-11">{TYPE_LABEL[ctx.row.original.rule.type]}</span>,
+    cell: ctx => (
+      <DataTableCell kind="text" value={TYPE_LABEL[ctx.row.original.rule.type]} tone="muted" />
+    ),
   }),
   columnHelper.display({
     id: 'severity',
@@ -105,10 +81,11 @@ const COLUMNS = [
     cell: ctx => {
       const sev = String(ctx.row.original.rule.severity);
       return (
-        <span className="text-neutral-12 inline-flex items-center gap-1.5">
-          <BadgeRounded color={SEVERITY_DOT_COLOR[sev] ?? 'info'} className="size-2" />
-          {SEVERITY_LABEL[sev] ?? sev}
-        </span>
+        <DataTableCell
+          kind="status"
+          label={SEVERITY_LABEL[sev] ?? sev}
+          dot={SEVERITY_DOT_COLOR[sev] ?? 'info'}
+        />
       );
     },
   }),
@@ -117,12 +94,10 @@ const COLUMNS = [
     header: 'Created by',
     cell: ctx => {
       const u = ctx.row.original.rule.createdBy;
-      if (!u) return <span className="text-neutral-10">—</span>;
-      return (
-        <span className="text-neutral-12 inline-flex items-center gap-2">
-          <Avatar size="xs" shape="circle" alt={u.displayName} />
-          {u.displayName}
-        </span>
+      return u ? (
+        <DataTableCell kind="avatar" name={u.displayName} />
+      ) : (
+        <DataTableCell kind="placeholder" />
       );
     },
   }),
@@ -130,11 +105,14 @@ const COLUMNS = [
 
 export function AlertActivityTable({
   events,
+  loading = false,
   organizationSlug,
   projectSlug,
   targetSlug,
 }: {
   events: ActivityEventRow[];
+  /** The first fetch, before there is anything to show or to call empty. */
+  loading?: boolean;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -144,6 +122,7 @@ export function AlertActivityTable({
       data={events}
       columns={COLUMNS}
       getRowId={row => row.id}
+      loading={loading}
       emptyMessage="No alert activity in the selected time range."
       renderSubComponent={row => (
         <AlertEventDetail

@@ -1,20 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { endOfDay, endOfToday, formatDate, subMonths } from 'date-fns';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, ChevronDown, SearchIcon, X } from 'lucide-react';
 import { DateRange, Matcher } from 'react-day-picker';
+import { Button } from '@/components/base/button/button';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { Input } from '@/components/base/input/input';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { type ControlSize } from '@/components/base/shared-styles';
 import { DurationUnit, formatDateToString, parse, units } from '@/lib/date-math';
 import { useResetState } from '@/lib/hooks/use-reset-state';
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  Cross1Icon,
-  MagnifyingGlassIcon,
-} from '@radix-ui/react-icons';
-import { Button } from './button';
 import { Calendar } from './calendar';
-import { Input } from './input';
 import { Label } from './label';
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from './popover';
 
 export interface DateRangePickerProps {
   presets?: Preset[];
@@ -32,7 +28,9 @@ export interface DateRangePickerProps {
   startDate?: Date;
   /** valid units allowed */
   validUnits?: DurationUnit[];
-  /** Custom trigger element. Must forward ref. Replaces the default Button trigger. */
+  /** Height of the default trigger: `compact` in a filter row, `default` beside form controls. */
+  size?: ControlSize;
+  /** Custom trigger element. Must forward ref. Replaces the default segmented Button trigger. */
   trigger?: React.ReactElement;
 }
 
@@ -172,7 +170,7 @@ export function findMatchingPreset(
   });
 }
 
-function getDisplayLabel(
+export function getDateRangeDisplayLabel(
   selectedRange: { from: string; to: string } | null | undefined,
   presets: Preset[],
   validUnits: DurationUnit[],
@@ -233,6 +231,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
     });
   }
 
+  const calendarAnchor = useRef<HTMLDivElement>(null);
   const [showCalendar, setShowCalendar] = useState(false);
 
   function getInitialPreset() {
@@ -321,6 +320,9 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
         return (
           <Button
             variant="ghost"
+            size="compact"
+            width="full"
+            label={preset.label}
             onClick={() => {
               setActivePreset(preset);
               setFromValue(preset.range.from);
@@ -332,10 +334,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
               props.onClose?.();
             }}
             disabled={isDisabled}
-            className="w-full justify-start text-left"
-          >
-            {preset.label}
-          </Button>
+          />
         );
       },
     [props.startDate, props.onClose],
@@ -365,169 +364,180 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
 
   return (
     <div className="flex h-[380px]">
-      <Popover modal open={showCalendar} onOpenChange={setShowCalendar}>
-        <PopoverAnchor asChild>
-          <div className="flex flex-col py-2">
-            <div className="flex flex-col items-center justify-end gap-2 lg:flex-row lg:items-start">
-              <div className="flex flex-col gap-1 pl-3">
-                <div className="mb-2 mt-1 text-sm">Absolute date range</div>
-                <div className="space-y-2">
-                  <div className="grid w-full max-w-sm items-center gap-1.5">
-                    <Label htmlFor="from" className="text-neutral-10 text-xs">
-                      From
-                    </Label>
-                    <div className="flex w-full max-w-sm items-center space-x-2">
-                      <div className="relative flex w-full">
-                        <Input
-                          type="text"
-                          id="from"
-                          value={fromValue}
-                          onChange={ev => {
-                            setFromValue(ev.target.value);
-                          }}
-                          className="font-mono text-xs"
-                        />
-                        <Button
-                          variant="ghost"
-                          className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
-                          onClick={() => setShowCalendar(true)}
-                        >
-                          <CalendarDays className="size-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="text-red-500">
-                      {hasInvalidUnitRegex?.test(fromValue) ? (
-                        <>Only allowed units are {validUnits.join(', ')}</>
-                      ) : !fromParsed ? (
-                        <>Invalid date string</>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="grid w-full max-w-sm items-center gap-1.5">
-                    <Label htmlFor="to" className="text-neutral-10 text-xs">
-                      To
-                    </Label>
-                    <div className="flex w-full max-w-sm items-center space-x-2">
-                      <div className="relative flex w-full">
-                        <Input
-                          type="text"
-                          id="to"
-                          value={toValue}
-                          onChange={ev => {
-                            setToValue(ev.target.value);
-                          }}
-                          className="font-mono text-xs"
-                        />
-                        <Button
-                          variant="ghost"
-                          className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
-                          onClick={() => setShowCalendar(true)}
-                        >
-                          <CalendarDays className="size-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="text-red-500">
-                      {hasInvalidUnitRegex?.test(toValue) ? (
-                        <>Only allowed units are {validUnits.join(', ')}</>
-                      ) : !toParsed ? (
-                        <>Invalid date string</>
-                      ) : fromParsed && toParsed && fromParsed.getTime() > toParsed.getTime() ? (
-                        <div className="text-red-500">To cannot be before from.</div>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <Button
-                    variant="primary"
-                    className="w-full text-center"
-                    onClick={() => {
-                      const fromWithoutWhitespace = fromValue.trim();
-                      const toWithoutWhitespace = toValue.trim();
-                      const resolvedRange = resolveRange(fromValue, toValue);
-                      if (resolvedRange) {
-                        const preset = findMatchingPreset(
-                          {
-                            from: fromWithoutWhitespace,
-                            to: toWithoutWhitespace,
-                          },
-                          availablePresets,
-                        ) ?? {
-                          name: `${fromWithoutWhitespace}_${toWithoutWhitespace}`,
-                          label: buildDateRangeString(resolvedRange),
-                          range: { from: fromWithoutWhitespace, to: toWithoutWhitespace },
-                        };
-                        setActivePreset(preset);
-                        setShowCalendar(false);
-                        setQuickRangeFilter('');
-                        props.onUpdate?.({ preset });
-                        props.onClose?.();
-                      }
+      <div ref={calendarAnchor} className="flex flex-col py-2">
+        <div className="flex flex-col items-center justify-end gap-2 lg:flex-row lg:items-start">
+          <div className="flex flex-col gap-1 pl-3">
+            <div className="text-control mb-2 mt-1">Absolute date range</div>
+            <div className="space-y-2">
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor="from" className="text-neutral-10 text-xs">
+                  From
+                </Label>
+                <div className="flex w-full max-w-sm items-center space-x-2">
+                  <Input
+                    type="text"
+                    id="from"
+                    value={fromValue}
+                    onChange={ev => {
+                      setFromValue(ev.target.value);
                     }}
-                    disabled={
-                      !toParsed ||
-                      !fromParsed ||
-                      (activePreset?.range.from === fromValue.trim() &&
-                        activePreset.range.to === toValue.trim())
+                    mono
+                    trailing={
+                      <Button
+                        layout="iconOnly"
+                        icon={CalendarDays}
+                        aria-label="Pick a date"
+                        variant="ghost"
+                        size="compact"
+                        onClick={() => setShowCalendar(true)}
+                      />
                     }
-                  >
-                    Apply date range
-                  </Button>
+                  />
+                </div>
+                <div className="text-red-500">
+                  {hasInvalidUnitRegex?.test(fromValue) ? (
+                    <>Only allowed units are {validUnits.join(', ')}</>
+                  ) : !fromParsed ? (
+                    <>Invalid date string</>
+                  ) : null}
                 </div>
               </div>
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor="to" className="text-neutral-10 text-xs">
+                  To
+                </Label>
+                <div className="flex w-full max-w-sm items-center space-x-2">
+                  <Input
+                    type="text"
+                    id="to"
+                    value={toValue}
+                    onChange={ev => {
+                      setToValue(ev.target.value);
+                    }}
+                    mono
+                    trailing={
+                      <Button
+                        layout="iconOnly"
+                        icon={CalendarDays}
+                        aria-label="Pick a date"
+                        variant="ghost"
+                        size="compact"
+                        onClick={() => setShowCalendar(true)}
+                      />
+                    }
+                  />
+                </div>
+                <div className="text-red-500">
+                  {hasInvalidUnitRegex?.test(toValue) ? (
+                    <>Only allowed units are {validUnits.join(', ')}</>
+                  ) : !toParsed ? (
+                    <>Invalid date string</>
+                  ) : fromParsed && toParsed && fromParsed.getTime() > toParsed.getTime() ? (
+                    <div className="text-red-500">To cannot be before from.</div>
+                  ) : null}
+                </div>
+              </div>
+
+              <Button
+                variant="primary"
+                width="full"
+                onClick={() => {
+                  const fromWithoutWhitespace = fromValue.trim();
+                  const toWithoutWhitespace = toValue.trim();
+                  const resolvedRange = resolveRange(fromValue, toValue);
+                  if (resolvedRange) {
+                    const preset = findMatchingPreset(
+                      {
+                        from: fromWithoutWhitespace,
+                        to: toWithoutWhitespace,
+                      },
+                      availablePresets,
+                    ) ?? {
+                      name: `${fromWithoutWhitespace}_${toWithoutWhitespace}`,
+                      label: buildDateRangeString(resolvedRange),
+                      range: { from: fromWithoutWhitespace, to: toWithoutWhitespace },
+                    };
+                    setActivePreset(preset);
+                    setShowCalendar(false);
+                    setQuickRangeFilter('');
+                    props.onUpdate?.({ preset });
+                    props.onClose?.();
+                  }
+                }}
+                disabled={
+                  !toParsed ||
+                  !fromParsed ||
+                  (activePreset?.range.from === fromValue.trim() &&
+                    activePreset.range.to === toValue.trim())
+                }
+              >
+                Apply date range
+              </Button>
             </div>
           </div>
-        </PopoverAnchor>
-        <PopoverContent side="left" sideOffset={4} collisionPadding={8} className="w-auto">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="absolute right-2 top-1 rounded-sm bg-transparent opacity-70 transition-opacity hover:bg-transparent hover:opacity-100 focus:outline-none"
-            onClick={() => setShowCalendar(false)}
-          >
-            <Cross1Icon className="size-2" />
-          </Button>
-          <Calendar
-            id="selectedRange"
-            mode="range"
-            defaultMonth={subMonths(new Date(), 1)}
-            numberOfMonths={2}
-            selected={range}
-            onSelect={range => {
-              if (range?.from && range.to) {
-                setFromValue(formatDateToString(range.from));
-                setToValue(formatDateToString(endOfDay(range.to)));
-              }
-              setRange(range);
-            }}
-            disabled={disabledDays}
-          />
-        </PopoverContent>
-      </Popover>
+        </div>
+      </div>
+      <Popover
+        modal
+        open={showCalendar}
+        onOpenChange={setShowCalendar}
+        anchor={calendarAnchor}
+        side="left"
+        sideOffset={4}
+        collisionPadding={8}
+        width="auto"
+        content={
+          <>
+            <div className="absolute right-2 top-1">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Close calendar"
+                onClick={() => setShowCalendar(false)}
+              >
+                <X className="size-3" />
+              </Button>
+            </div>
+            <Calendar
+              id="selectedRange"
+              mode="range"
+              defaultMonth={subMonths(new Date(), 1)}
+              numberOfMonths={2}
+              selected={range}
+              onSelect={range => {
+                if (range?.from && range.to) {
+                  setFromValue(formatDateToString(range.from));
+                  setToValue(formatDateToString(endOfDay(range.to)));
+                }
+                setRange(range);
+              }}
+              disabled={disabledDays}
+            />
+          </>
+        }
+      />
       <div className="ml-3 flex flex-col gap-1 border-l py-2 pl-3 pr-2">
-        <div className="relative flex items-center">
-          <MagnifyingGlassIcon className="absolute left-2" />
-          <Input
-            placeholder="Filter quick ranges"
-            className="w-full pl-7"
-            value={quickRangeFilter}
-            onChange={ev => setQuickRangeFilter(ev.target.value)}
-          />
-        </div>
-        <div className="flex w-full flex-1 flex-col items-start gap-1 overflow-y-scroll pb-2 pt-1">
-          {dynamicPresets.length > 0
-            ? dynamicPresets
-                .filter(preset =>
-                  preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
-                )
-                .map(preset => <PresetButton key={preset.name} preset={preset} />)
-            : staticPresets
-                .filter(preset =>
-                  preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
-                )
-                .map(preset => <PresetButton key={preset.name} preset={preset} />)}
-        </div>
+        <Input
+          placeholder="Filter quick ranges"
+          leadingIcon={SearchIcon}
+          value={quickRangeFilter}
+          onChange={ev => setQuickRangeFilter(ev.target.value)}
+        />
+        <ScrollArea fill>
+          <div className="flex w-full flex-col items-start gap-1 pb-2 pt-1">
+            {dynamicPresets.length > 0
+              ? dynamicPresets
+                  .filter(preset =>
+                    preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
+                  )
+                  .map(preset => <PresetButton key={preset.name} preset={preset} />)
+              : staticPresets
+                  .filter(preset =>
+                    preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
+                  )
+                  .map(preset => <PresetButton key={preset.name} preset={preset} />)}
+          </div>
+        </ScrollArea>
       </div>
     </div>
   );
@@ -551,7 +561,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
     );
   }
 
-  const label = getDisplayLabel(props.selectedRange, staticPresets, validUnits);
+  const label = getDateRangeDisplayLabel(props.selectedRange, staticPresets, validUnits);
 
   return (
     <Popover
@@ -560,20 +570,20 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
       onOpenChange={(open: boolean) => {
         setIsOpen(open);
       }}
-    >
-      {props.trigger ? (
-        <PopoverTrigger asChild>{props.trigger}</PopoverTrigger>
-      ) : (
-        <PopoverTrigger asChild>
-          <Button variant="outline">
-            {label}
-            <div className="-mr-2 scale-125 pl-1 opacity-60">
-              {isOpen ? <ChevronUpIcon width={24} /> : <ChevronDownIcon width={24} />}
-            </div>
-          </Button>
-        </PopoverTrigger>
-      )}
-      <PopoverContent align={props.align} side={props.side} className="mt-1 w-auto p-0">
+      trigger={
+        props.trigger ?? (
+          <Button
+            label={label}
+            size={props.size}
+            rightIcon={{ icon: ChevronDown, withSeparator: true }}
+          />
+        )
+      }
+      align={props.align}
+      side={props.side}
+      width="auto"
+      padding="none"
+      content={
         <DateRangePickerPanel
           presets={props.presets}
           selectedRange={props.selectedRange}
@@ -582,7 +592,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
           validUnits={props.validUnits}
           onClose={() => setIsOpen(false)}
         />
-      </PopoverContent>
-    </Popover>
+      }
+    />
   );
 }

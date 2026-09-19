@@ -1,7 +1,13 @@
 import { useLayoutEffect, useState } from 'react';
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
 import { useTheme } from '@/components/theme/theme-provider';
+
+// tailwind-merge only knows the stock font sizes. Without this it reads `text-control` as a
+// colour and drops the real colour merged next to it (`text-neutral-12 text-control`).
+const twMerge = extendTailwindMerge({
+  extend: { classGroups: { 'font-size': [{ text: ['control'] }] } },
+});
 
 // Style-related
 export function cn(...inputs: ClassValue[]) {

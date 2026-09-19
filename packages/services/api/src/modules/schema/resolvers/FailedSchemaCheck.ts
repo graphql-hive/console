@@ -49,4 +49,7 @@ export const FailedSchemaCheck: FailedSchemaCheckResolvers = {
   schemaChanges: (schemaCheck, _, { injector }) => {
     return injector.get(SchemaCheckManager).getAllSchemaChanges(schemaCheck);
   },
+  baseline: async (schemaCheck, _arg, { injector }) => {
+    return injector.get(SchemaCheckManager).getGraphQLSchemaCheckBaseline(schemaCheck);
+  },
 };

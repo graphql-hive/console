@@ -1097,3 +1097,39 @@ test('(processVariables: true) custom scalar in input object field (variable)', 
     ]
   `);
 });
+
+test('throws when passed an operation with unknown parent', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+    processVariables: true,
+  });
+  await expect(
+    collect(
+      parse(/* GraphQL */ `
+        subscription subUnknown {
+          noop
+        }
+      `),
+      {},
+    ),
+  ).rejects.toThrow();
+});
+
+test('throws when passed an operation with unknown field', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+    processVariables: true,
+  });
+  await expect(
+    collect(
+      parse(/* GraphQL */ `
+        query fieldUnknown {
+          noop
+        }
+      `),
+      {},
+    ),
+  ).rejects.toThrow();
+});

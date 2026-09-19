@@ -10,6 +10,7 @@ import {
   CommitRequiredError,
   InvalidSDLError,
   InvalidTargetError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingEnvironmentError,
   MissingRegistryTokenError,
@@ -113,6 +114,9 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       description:
         'The associated commit SHA, or optionally any external identifier that references the schema',
     }),
+    revision: Flags.string({
+      description: 'publish a previously pushed schema revision',
+    }),
     github: Flags.boolean({
       description: 'Connect with GitHub Application',
       default: false,
@@ -131,6 +135,9 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           '--experimental_acceptBreakingChanges is enabled by default for newly created projects',
       },
     }),
+    'fail-on-composition-error': Flags.boolean({
+      description: 'prevent publishing a federation schema if it would cause a composition error',
+    }),
     require: Flags.string({
       description:
         'Loads specific require.extensions before running the codegen and reading the configuration',
@@ -148,8 +155,8 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
   static args = {
     file: Args.string({
       name: 'file',
-      required: true,
-      description: 'Path to the schema file(s)',
+      required: false,
+      description: 'Path to the schema file(s), must be omitted when using --revision',
       hidden: false,
     }),
   };
@@ -206,6 +213,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       const service = flags.service;
       const url = flags.url;
       const file = args.file;
+      const revision = flags.revision;
       const force = flags.force;
       const experimental_acceptBreakingChanges = flags.experimental_acceptBreakingChanges;
       const metadata = this.resolveMetadata(flags.metadata);
@@ -273,18 +281,25 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         target = result.data;
       }
 
-      let sdl: string;
-      try {
-        const rawSdl = await loadSchema('first-federation-then-graphql-introspection', file, {
-          logger: this.logger,
-        });
-        invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
-        sdl = minifySchema(rawSdl);
-      } catch (err) {
-        if (err instanceof GraphQLError) {
-          throw new InvalidSDLError(err);
+      let schema: GraphQLSchema.SchemaPublishSchemaInput | null = null;
+      if (revision) {
+        schema = { revision: revision };
+      } else {
+        if (!file) {
+          throw new MissingArgumentsError(['file', 'Path to the schema file(s)']);
         }
-        throw err;
+        try {
+          const rawSdl = await loadSchema('first-federation-then-graphql-introspection', file, {
+            logger: this.logger,
+          });
+          invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
+          schema = { sdl: minifySchema(rawSdl) };
+        } catch (err) {
+          if (err instanceof GraphQLError) {
+            throw new InvalidSDLError(err);
+          }
+          throw err;
+        }
       }
 
       let result: DocumentType<typeof schemaPublishMutation> | null = null;
@@ -298,9 +313,10 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
               url,
               author,
               commit,
-              sdl,
+              schema,
               force,
               experimental_acceptBreakingChanges: experimental_acceptBreakingChanges === true,
+              failOnCompositionError: flags['fail-on-composition-error'],
               metadata,
               gitHub,
               supportsRetry: true,
@@ -336,13 +352,19 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           this.log('Waiting for other schema publishes to complete...');
           result = null;
         } else if (result.schemaPublish.__typename === 'SchemaPublishMissingServiceError') {
-          throw new SchemaPublishMissingServiceError(result.schemaPublish.missingServiceError);
+          throw new SchemaPublishMissingServiceError(
+            result.schemaPublish.missingServiceError || 'Unknown schemaPublish.missingServiceError',
+          );
         } else if (result.schemaPublish.__typename === 'SchemaPublishMissingUrlError') {
-          throw new SchemaPublishMissingUrlError(result.schemaPublish.missingUrlError);
+          throw new SchemaPublishMissingUrlError(
+            result.schemaPublish.missingUrlError || 'Unknown schemaPublish.missingUrlError',
+          );
         } else if (result.schemaPublish.__typename === 'SchemaPublishError') {
           const changes = result.schemaPublish.changes;
           const errors = result.schemaPublish.errors;
-          this.log(renderErrors(errors));
+          if (errors) {
+            this.log(renderErrors(errors));
+          }
 
           if (changes?.edges.length) {
             this.log('');
@@ -364,7 +386,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         } else {
           throw new APIError(
             'message' in result.schemaPublish
-              ? result.schemaPublish.message
+              ? result.schemaPublish.message || 'Unknown schemaPublish.message'
               : `Received unhandled type "${(result.schemaPublish as any)?.__typename}" in response.`,
           );
         }

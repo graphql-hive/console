@@ -2,6 +2,7 @@ import { ReactElement, useMemo } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,7 +20,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
@@ -184,7 +184,12 @@ export const EditOperationModalContent = (props: {
                       <FormItem>
                         <FormLabel>Operation Name</FormLabel>
                         <FormControl>
-                          <Input autoComplete="off" {...field} placeholder="Your Operation Name" />
+                          <Input
+                            autoComplete="off"
+                            {...field}
+                            placeholder="Your Operation Name"
+                            onSurface="raised"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

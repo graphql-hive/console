@@ -1,5 +1,15 @@
 import { AddressInfo } from 'node:net';
-import { DocumentNode, GraphQLError, parse } from 'graphql';
+import {
+  GraphQLError,
+  parse,
+  TypeInfo,
+  ValidationContext,
+  visit,
+  visitInParallel,
+  visitWithTypeInfo,
+  type DocumentNode,
+  type FieldNode,
+} from 'graphql';
 import { createLogger, createYoga } from 'graphql-yoga';
 import { pollFor, readOperationsStats } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
@@ -8,7 +18,8 @@ import { getServiceHost } from 'testkit/utils';
 import { describe, expect, test } from 'vitest';
 import { buildSubgraphSchema } from '@apollo/subgraph';
 import { useHive } from '@graphql-hive/gateway-plugin-console-sdk';
-import { createGatewayRuntime } from '@graphql-hive/gateway-runtime';
+import { createGatewayRuntime, GatewayPlugin } from '@graphql-hive/gateway-runtime';
+import { unifiedGraphHandler, useQueryPlan } from '@graphql-hive/router-runtime';
 import { createServer } from '@hive/service-common';
 import { composeServices, ServiceDefinition } from '@theguild/federation-composition';
 
@@ -48,12 +59,16 @@ async function createSubgraphService(name: string, modulesOrSDL: ModulesOrSDL) {
   };
 }
 
-async function setup(subgraphs: {
-  [key: string]: {
-    typeDefs: DocumentNode;
-    resolvers: any;
-  };
-}) {
+async function setup(
+  subgraphs: {
+    [key: string]: {
+      typeDefs: DocumentNode;
+      resolvers: any;
+    };
+  },
+  gatewayType: 'js' | 'rust',
+  additionalPlugins?: GatewayPlugin[],
+) {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
   const {
@@ -81,6 +96,7 @@ async function setup(subgraphs: {
       graphqlEndpoint: 'http://noop/',
       applicationUrl: 'http://noop/',
     },
+    logger: createLogger('debug') as any,
   });
 
   const services = await Promise.all(
@@ -95,14 +111,20 @@ async function setup(subgraphs: {
   );
   const supergraph = composeServices(services);
   expect(supergraph.errors).toBeUndefined();
-  const gateway = createGatewayRuntime({
+  const jsGateway = createGatewayRuntime({
     supergraph: supergraph.supergraphSdl!,
-    plugins: () => [plugin],
+    plugins: () => [plugin, ...(additionalPlugins ?? [])],
+  });
+
+  const rustGateway = createGatewayRuntime({
+    unifiedGraphHandler: unifiedGraphHandler as any,
+    supergraph: supergraph.supergraphSdl!,
+    plugins: () => [plugin, useQueryPlan() as any, ...(additionalPlugins ?? [])],
   });
 
   return {
     target,
-    gateway,
+    gateway: gatewayType === 'js' ? jsGateway : rustGateway,
     waitForRequestsCollected,
     readSchemaCoordinateStats,
     readErrorCodes,
@@ -110,7 +132,7 @@ async function setup(subgraphs: {
   };
 }
 
-describe('GraphQL Hive Plugin', () => {
+describe.each(['js', 'rust'] as const)('GraphQL Hive Plugin (%s)', gatewayType => {
   test('usage data includes subgraph request data', async () => {
     const subgraphs = {
       products: {
@@ -135,7 +157,7 @@ describe('GraphQL Hive Plugin', () => {
     };
 
     const { readSchemaCoordinateStats, target, gateway, token, waitForRequestsCollected } =
-      await setup(subgraphs);
+      await setup(subgraphs, gatewayType);
 
     const request = new Request('http://localhost:4000/graphql', {
       method: 'POST',
@@ -237,7 +259,7 @@ describe('GraphQL Hive Plugin', () => {
     };
 
     const { readSchemaCoordinateStats, target, gateway, token, waitForRequestsCollected } =
-      await setup(subgraphs);
+      await setup(subgraphs, gatewayType);
 
     const request = new Request('http://localhost:4000/graphql', {
       method: 'POST',
@@ -306,7 +328,13 @@ describe('GraphQL Hive Plugin', () => {
     });
   });
 
-  test('supports abstract type', async () => {
+  /**
+   * The unifiedGraphHandler parses and generates the query plan earlier in this flow. The document
+   * passed to the subgraph is then already determined ahead of time. To support rust, it's necessary
+   * to either address the root cause and somehow modify the document prior to planning, or
+   * to add the hive typenames on subgraph execute every time.
+   */
+  test.skipIf(gatewayType === 'rust')('supports abstract type', async () => {
     const subgraphs = {
       products: {
         typeDefs: parse(/* GraphQL */ `
@@ -322,19 +350,27 @@ describe('GraphQL Hive Plugin', () => {
           type GoodieBag implements Product @key(fields: "id") {
             id: ID!
             price: Int
+            contents: String
           }
         `),
         resolvers: {
           Query: {
             product: () => {
-              return { __typename: 'GoodieBag', id: 1, price: 20.2 };
+              return {
+                __typename: 'GoodieBag',
+                id: 1,
+                price: 20.2,
+              };
             },
           },
         },
       },
     };
 
-    const { readSchemaCoordinateStats, gateway, waitForRequestsCollected } = await setup(subgraphs);
+    const { readSchemaCoordinateStats, gateway, waitForRequestsCollected } = await setup(
+      subgraphs,
+      gatewayType,
+    );
 
     const request = new Request('http://localhost:4000/graphql', {
       method: 'POST',
@@ -375,14 +411,18 @@ describe('GraphQL Hive Plugin', () => {
       to: new Date().toISOString(),
     };
 
+    // @note the rust gateway doesn't track the implemented type: "GoodieBag" here.
     await pollFor(async () => {
       const productStats = await readSchemaCoordinateStats('Product', period);
       const goodieStats = await readSchemaCoordinateStats('GoodieBag', period);
+      const productRes = productStats.target?.schemaCoordinateStats.totalResolutions;
+      const goodieRes = goodieStats.target?.schemaCoordinateStats.totalResolutions;
 
-      return (
-        productStats.target?.schemaCoordinateStats.totalResolutions === 1 &&
-        goodieStats.target?.schemaCoordinateStats.totalResolutions === 1
-      );
+      const success = productRes === 1 && goodieRes === 1;
+      if (!success) {
+        console.warn(`"Product" resolutions: ${productRes}\n"GoodieBag" resolutions: ${goodieRes}`);
+      }
+      return success;
     });
   });
 
@@ -409,7 +449,7 @@ describe('GraphQL Hive Plugin', () => {
         },
       },
     };
-    const { gateway, waitForRequestsCollected } = await setup(subgraphs);
+    const { gateway, waitForRequestsCollected } = await setup(subgraphs, gatewayType);
     const query = /* GraphQL */ `
       {
         product {
@@ -441,7 +481,7 @@ describe('GraphQL Hive Plugin', () => {
     });
   });
 
-  test('errors are tracked', async () => {
+  test.skipIf(gatewayType === 'rust')('errors are tracked', async () => {
     const thrownErrorCode = 'OOPSIE';
     const subgraphs = {
       products: {
@@ -497,7 +537,7 @@ describe('GraphQL Hive Plugin', () => {
       gateway,
       token,
       waitForRequestsCollected,
-    } = await setup(subgraphs);
+    } = await setup(subgraphs, gatewayType);
 
     const request = new Request('http://localhost:4000/graphql', {
       method: 'POST',
@@ -524,6 +564,8 @@ describe('GraphQL Hive Plugin', () => {
 
     const usageCollected = waitForRequestsCollected(1);
     const result = await gateway.handle(request);
+
+    // @note that the rust gateway returns the error path as ["users"].
     await expect(result.json()).resolves.toMatchInlineSnapshot(`
       {
         data: {
@@ -599,6 +641,108 @@ describe('GraphQL Hive Plugin', () => {
     });
   });
 
+  test('errors thrown in the gateway are tracked', async () => {
+    const subgraphs = {
+      products: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            product: Product
+          }
+
+          type Product @key(fields: "id") {
+            id: ID!
+            price: Int
+          }
+        `),
+        resolvers: {
+          Query: {
+            product: () => {
+              return { id: 1, price: 20.2 };
+            },
+          },
+        },
+      },
+      users: {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            users: [User]
+          }
+          type User {
+            id: ID!
+            name: String
+          }
+        `),
+        resolvers: {
+          Query: {
+            users: () => [{ id: 2 }],
+          },
+          User: {
+            name: () => {
+              'j';
+            },
+          },
+        },
+      },
+    };
+
+    let typeInfo: TypeInfo | undefined;
+    const { readErrorCodes, gateway, waitForRequestsCollected } = await setup(
+      subgraphs,
+      gatewayType,
+      [
+        {
+          onSchemaChange({ schema }) {
+            typeInfo = new TypeInfo(schema);
+          },
+          async onExecute({ args, setResultAndStopExecution }) {
+            setResultAndStopExecution({
+              data: null,
+              errors: [
+                new GraphQLError('oops', {
+                  extensions: { code: 'NOPE' },
+                  path: ['product'],
+                }),
+              ],
+            });
+          },
+        },
+      ],
+    );
+
+    const request = new Request('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'x-graphql-client-name': 'app-name',
+        'x-graphql-client-version': 'app-version',
+        'content-type': 'application/json',
+        accept: 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+          { product { id } }
+        `,
+      }),
+    });
+
+    const usageCollected = waitForRequestsCollected(1);
+    await gateway.handle(request);
+    await usageCollected;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const period = {
+      from: yesterday.toISOString(),
+      to: new Date().toISOString(),
+    };
+
+    await pollFor(async () => {
+      const errorCodes = await readErrorCodes('Query.product', period);
+      const code = errorCodes.target?.schemaCoordinateStats?.errorCodes?.edges?.[0]?.node?.code;
+
+      return code === 'NOPE';
+    });
+  });
+
   test('errors with special characters are tracked', async () => {
     const thrownErrorCode = 'OOPS\"IE';
     const subgraphs = {
@@ -648,7 +792,10 @@ describe('GraphQL Hive Plugin', () => {
       },
     };
 
-    const { readErrorCodes, gateway, waitForRequestsCollected } = await setup(subgraphs);
+    const { readErrorCodes, gateway, waitForRequestsCollected } = await setup(
+      subgraphs,
+      gatewayType,
+    );
 
     const request = new Request('http://localhost:4000/graphql', {
       method: 'POST',
@@ -689,6 +836,77 @@ describe('GraphQL Hive Plugin', () => {
       const code = errorCodes.target?.schemaCoordinateStats?.errorCodes?.edges?.[0]?.node?.code;
 
       return code === thrownErrorCode;
+    });
+  });
+
+  test('supports named root types', async () => {
+    const subgraphs = {
+      products: {
+        typeDefs: parse(/* GraphQL */ `
+          schema {
+            query: RootQuery
+          }
+          type RootQuery {
+            product: Product
+          }
+
+          interface Product {
+            id: ID!
+          }
+
+          type GoodieBag implements Product @key(fields: "id") {
+            id: ID!
+          }
+        `),
+        resolvers: {
+          RootQuery: {
+            product: () => ({ __typename: 'GoodieBag', id: 1 }),
+          },
+        },
+      },
+    };
+    const { gateway, waitForRequestsCollected, readSchemaCoordinateStats } = await setup(
+      subgraphs,
+      gatewayType,
+    );
+    const query = /* GraphQL */ `
+      {
+        product {
+          id
+        }
+      }
+    `;
+
+    const usageCollected = waitForRequestsCollected(1);
+    const result = await gateway.handle(
+      new Request('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      }),
+    );
+
+    const response = await result.json();
+    await usageCollected;
+    expect(response).toEqual({
+      data: {
+        product: {
+          id: '1',
+        },
+      },
+    });
+    pollFor(async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const period = {
+        from: yesterday.toISOString(),
+        to: new Date().toISOString(),
+      };
+      const stats = await readSchemaCoordinateStats('RootQuery', period);
+      return stats.target?.schemaCoordinateStats.totalResolutions === 1;
     });
   });
 });

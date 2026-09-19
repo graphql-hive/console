@@ -1,52 +1,25 @@
-import {
-  isValidElement,
-  ReactElement,
-  ReactNode,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { ReactElement, useMemo, useRef } from 'react';
 import ReactECharts from 'echarts-for-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
-import {
-  DataWrapper,
-  Sortable,
-  Stat,
-  Table,
-  TBody,
-  Td,
-  Th,
-  THead,
-  Tooltip,
-  Tr,
-} from '@/components/v2';
-import { env } from '@/env/frontend';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { DataWrapper, Stat } from '@/components/v2';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { theme } from '@/lib/charts';
 import { useChartStyles } from '@/lib/utils';
-import { ChevronUpIcon } from '@radix-ui/react-icons';
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  PaginationState,
-  SortingState,
-  useReactTable,
-} from '@tanstack/react-table';
-import { Button } from '../ui/button';
+import type { ColumnDef } from '@tanstack/react-table';
 
 interface Organization {
-  name: ReactElement;
+  id: string;
+  slug: string;
+  owner: string;
   users: number;
   projects: number;
   targets: number;
   versions: number;
   persistedOperations: number;
-  operations: any;
+  operations: number;
 }
 
 function formatNumber(value: number) {
@@ -216,150 +189,56 @@ function filterStats(
   return true;
 }
 
-const columnHelper = createColumnHelper<Organization>();
+const countColumn = (
+  key: 'users' | 'projects' | 'targets' | 'versions' | 'persistedOperations' | 'operations',
+  header: string,
+): ColumnDef<Organization, unknown> => ({
+  accessorKey: key,
+  header,
+  meta: { align: 'right', sortable: true },
+  cell: ({ row }) => <DataTableCell kind="number" value={row.original[key]} />,
+});
 
-const columns = [
-  columnHelper.accessor('name', {
+const ORGANIZATION_COLUMNS: ColumnDef<Organization, unknown>[] = [
+  {
+    accessorKey: 'slug',
     header: 'Organization',
-    enableSorting: false,
-  }),
-  columnHelper.accessor('users', {
-    header: 'Users',
-    meta: { align: 'right' },
-  }),
-  columnHelper.accessor('projects', {
-    header: 'Projects',
-    meta: { align: 'right' },
-  }),
-  columnHelper.accessor('targets', {
-    header: 'Targets',
-    meta: { align: 'right' },
-  }),
-  columnHelper.accessor('versions', {
-    header: 'Schema pushes',
-    meta: { align: 'right' },
-  }),
-  columnHelper.accessor('persistedOperations', {
-    header: 'Persisted Ops',
-    meta: { align: 'right' },
-  }),
-  columnHelper.accessor('operations', {
-    header: 'Collected Ops',
-    meta: { align: 'right' },
-  }),
+    meta: { sortable: true },
+    cell: ({ row }) => <DataTableCell kind="text" value={row.original.slug} weight="medium" />,
+  },
+  {
+    id: 'id',
+    header: 'ID',
+    cell: ({ row }) => (
+      <DataTableCell kind="copy" value={row.original.id} label={row.original.id.slice(0, 8)} />
+    ),
+  },
+  {
+    accessorKey: 'owner',
+    header: 'Owner',
+    // The email is the longest thing on the row, so it takes the leftover width and truncates.
+    meta: { sortable: true, width: 'fill' },
+    cell: ({ row }) => (
+      <DataTableCell kind="text" value={row.original.owner} mono tone="muted" truncate />
+    ),
+  },
+  countColumn('users', 'Users'),
+  countColumn('projects', 'Projects'),
+  countColumn('targets', 'Targets'),
+  countColumn('versions', 'Schema pushes'),
+  countColumn('persistedOperations', 'Persisted Ops'),
+  countColumn('operations', 'Collected Ops'),
 ];
 
 function OrganizationTable({ data }: { data: Organization[] }) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 20,
-  });
-
-  const tableInstance = useReactTable({
-    data,
-    columns,
-    state: { sorting, pagination },
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    debugTable: env.nodeEnv !== 'production',
-  });
-
-  const firstPage = useCallback(() => {
-    tableInstance.setPageIndex(0);
-  }, [tableInstance]);
-  const lastPage = useCallback(() => {
-    tableInstance.setPageIndex(tableInstance.getPageCount() - 1);
-  }, [tableInstance]);
-
-  const { headers } = tableInstance.getHeaderGroups()[0];
-
   return (
-    <>
-      <Table>
-        <THead>
-          <Tooltip.Provider>
-            {headers.map(header => {
-              const align =
-                (header.column.columnDef.meta as { align: 'right' } | undefined)?.align ?? 'left';
-              const canSort = header.column.getCanSort();
-              const name = flexRender(header.column.columnDef.header, header.getContext());
-              return (
-                <Th key={header.id} align={align}>
-                  {canSort ? (
-                    <Sortable
-                      sortOrder={header.column.getIsSorted()}
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      {name}
-                    </Sortable>
-                  ) : (
-                    name
-                  )}
-                </Th>
-              );
-            })}
-          </Tooltip.Provider>
-        </THead>
-        <TBody>
-          {tableInstance.getRowModel().rows.map(row => (
-            <Tr key={row.id}>
-              {row.getVisibleCells().map(cell => {
-                const isNumeric = typeof cell.getValue() === 'number';
-                const isReact =
-                  typeof cell.getValue() === 'object' && isValidElement(cell.getValue());
-                const align =
-                  (cell.column.columnDef.meta as { align: 'right' } | undefined)?.align ?? 'left';
-                return (
-                  <Td key={cell.id} align={align}>
-                    {isNumeric
-                      ? formatNumber(cell.getValue() as number)
-                      : isReact
-                        ? (cell.getValue() as ReactNode)
-                        : flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </Td>
-                );
-              })}
-            </Tr>
-          ))}
-        </TBody>
-      </Table>
-
-      <div className="flex flex-row items-center justify-center gap-4 py-3">
-        <Button
-          variant="secondary"
-          onClick={firstPage}
-          disabled={!tableInstance.getCanPreviousPage()}
-        >
-          First
-        </Button>
-        <Button
-          variant="secondary"
-          aria-label="Go to previous page"
-          onClick={tableInstance.previousPage}
-          disabled={!tableInstance.getCanPreviousPage()}
-        >
-          <ChevronUpIcon className="h-5 w-auto -rotate-90" />
-        </Button>
-        <span className="whitespace-nowrap text-sm font-bold">
-          {tableInstance.getState().pagination.pageIndex + 1} / {tableInstance.getPageCount()}
-        </span>
-        <Button
-          variant="secondary"
-          aria-label="Go to next page"
-          onClick={tableInstance.nextPage}
-          disabled={!tableInstance.getCanNextPage()}
-        >
-          <ChevronUpIcon className="h-5 w-auto rotate-90" />
-        </Button>
-        <Button variant="secondary" onClick={lastPage} disabled={!tableInstance.getCanNextPage()}>
-          Last
-        </Button>
-      </div>
-    </>
+    <DataTable
+      data={data}
+      columns={ORGANIZATION_COLUMNS}
+      getRowId={organization => organization.id}
+      pagination={{ kind: 'client', pageSize: 20 }}
+      emptyMessage="No organizations match the filters."
+    />
   );
 }
 
@@ -391,13 +270,9 @@ export function AdminStats({
       (query.data?.admin?.stats.organizations ?? [])
         .filter(node => filterStats(node, filters))
         .map(node => ({
-          name: (
-            <div>
-              <div style={{ paddingBottom: 5, fontWeight: 'bold' }}>{node.organization.slug}</div>
-              <pre title="id">{node.organization.id}</pre>
-              <pre title="owner">{node.organization.owner.user.email}</pre>
-            </div>
-          ),
+          id: node.organization.id,
+          slug: node.organization.slug,
+          owner: node.organization.owner.user.email,
           users: node.users,
           projects: node.projects,
           targets: node.targets,

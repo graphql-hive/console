@@ -62,6 +62,9 @@ export interface cdn_access_tokens {
 }
 
 export interface contract_checks {
+  baseline_composite_schema_sdl_store_id: string | null;
+  baseline_schema_composition_errors: any | null;
+  baseline_supergraph_sdl_store_id: string | null;
   breaking_schema_changes: any | null;
   compared_contract_version_id: string | null;
   composite_schema_sdl_store_id: string | null;
@@ -402,6 +405,11 @@ export interface schema_change_approvals {
 }
 
 export interface schema_checks {
+  baseline_composite_schema_sdl_store_id: string | null;
+  baseline_schema_composition_errors: any | null;
+  baseline_schema_hash: string | null;
+  baseline_schema_sdl_store_id: string | null;
+  baseline_supergraph_sdl_store_id: string | null;
   breaking_schema_changes: any | null;
   composite_schema_sdl: string | null;
   composite_schema_sdl_store_id: string | null;
@@ -453,6 +461,7 @@ export interface schema_log {
   id: string;
   metadata: string | null;
   project_id: string;
+  schema_revision_id: string | null;
   sdl: string | null;
   service_name: string | null;
   service_url: string | null;
@@ -503,6 +512,17 @@ export interface schema_proposals {
   updated_at: Date;
 }
 
+export interface schema_revisions {
+  created_at: Date;
+  digest: string;
+  expires_at: Date | null;
+  first_published_at: Date | null;
+  id: string;
+  project_id: string;
+  revision: string;
+  service_name: string | null;
+}
+
 export interface schema_version_changes {
   change_type: string;
   id: string;
@@ -545,6 +565,13 @@ export interface schema_versions {
   supergraph_sdl: string | null;
   tags: Array<string> | null;
   target_id: string;
+}
+
+export interface sdl_artifacts {
+  created_at: Date;
+  digest: string;
+  hash_version: number;
+  sdl: string;
 }
 
 export interface sdl_store {
@@ -610,6 +637,7 @@ export interface users {
   last_updated_at: Date | null;
   oidc_integration_id: string | null;
   provisioned_by_organization_id: string | null;
+  provisioning_status: string | null;
   supertoken_user_id: string | null;
   zendesk_user_id: string | null;
 }
@@ -677,9 +705,11 @@ export interface DBTables {
   schema_proposal_comments: schema_proposal_comments;
   schema_proposal_reviews: schema_proposal_reviews;
   schema_proposals: schema_proposals;
+  schema_revisions: schema_revisions;
   schema_version_changes: schema_version_changes;
   schema_version_to_log: schema_version_to_log;
   schema_versions: schema_versions;
+  sdl_artifacts: sdl_artifacts;
   sdl_store: sdl_store;
   target_validation: target_validation;
   targets: targets;

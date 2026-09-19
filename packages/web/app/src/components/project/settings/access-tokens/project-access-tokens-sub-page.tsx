@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
+import { PageLead } from '@/components/base/page-lead';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
-import { DocsLink } from '@/components/ui/docs-note';
-import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { SubPageLayout } from '@/components/ui/page-content-layout';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { graphql } from '@/gql';
 import { CreateAccessTokenState } from '../../../organization/settings/access-tokens/access-tokens-sub-page';
@@ -53,25 +52,13 @@ export function ProjectAccessTokensSubPage(
 
   return (
     <SubPageLayout>
-      <SubPageLayoutHeader
-        subPageTitle="Access Tokens"
-        description={
-          <>
-            <CardDescription>
-              These are the access tokens created for this project. Members with permissions can
-              manage and issues access tokens for CI/CD integrations with the CLI or local
-              development.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/access-tokens"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                Learn more about Access Tokens
-              </DocsLink>
-            </CardDescription>
-          </>
-        }
+      <PageLead
+        title="Project Access Tokens"
+        description="These are the access tokens created for this project. Members with permissions can manage and issues access tokens for CI/CD integrations with the CLI or local development."
+        docsLink={{
+          href: '/schema-registry/management/access-tokens',
+          text: 'Learn more about Access Tokens',
+        }}
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
         <Sheet
@@ -107,6 +94,7 @@ export function ProjectAccessTokensSubPage(
             onDiscard={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
           />
         )}
+
         {query.data?.organization?.project?.accessTokens && (
           <ProjectAccessTokensTable
             accessTokens={query.data.organization.project.accessTokens}

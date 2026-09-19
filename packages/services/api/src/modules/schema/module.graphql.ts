@@ -3,6 +3,7 @@ import { gql } from 'graphql-modules';
 export default gql`
   extend type Mutation {
     schemaPublish(input: SchemaPublishInput!): SchemaPublishPayload!
+    schemaPush(input: SchemaPushInput!): SchemaPushResult!
     schemaCheck(input: SchemaCheckInput!): SchemaCheckPayload!
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
@@ -335,6 +336,7 @@ export default gql`
     date: DateTime!
     commit: ID! @tag(name: "public")
     metadata: String
+    revision: SchemaRevision
   }
 
   type CompositeSchema {
@@ -346,6 +348,7 @@ export default gql`
     url: String @tag(name: "public")
     service: String @tag(name: "public")
     metadata: String
+    revision: SchemaRevision
   }
 
   union SchemaPublishPayload =
@@ -372,7 +375,8 @@ export default gql`
     target: TargetReferenceInput
     service: ID
     url: String
-    sdl: String!
+    sdl: String @deprecated(reason: "Use 'SchemaPublishInput.schema' instead.")
+    schema: SchemaPublishSchemaInput
     author: String!
     commit: String!
     force: Boolean @deprecated(reason: "Enabled by default for newly created projects")
@@ -381,6 +385,10 @@ export default gql`
     """
     experimental_acceptBreakingChanges: Boolean
       @deprecated(reason: "Enabled by default for newly created projects")
+    """
+    Prevent publishing a federation schema if it would cause a composition error.
+    """
+    failOnCompositionError: Boolean = false
     metadata: String
     """
     Talk to GitHub Application and create a check-run
@@ -394,6 +402,46 @@ export default gql`
     Whether the CLI supports retrying the schema publish, in case acquiring the schema publish lock fails due to a busy queue.
     """
     supportsRetry: Boolean = false
+  }
+
+  input SchemaPublishSchemaInput @oneOf {
+    """
+    Publish a specific sdl as the schema.
+    """
+    sdl: String
+    """
+    Publish a schema revision that was previously pushed via 'Mutation.schemaPush'.
+    """
+    revision: String
+  }
+
+  input SchemaPushInput {
+    target: TargetReferenceInput!
+    service: String
+    sdl: String!
+    revision: String!
+  }
+
+  type SchemaRevision {
+    id: ID!
+    service: String
+    digest: String!
+    revision: String!
+    createdAt: DateTime!
+    expiresAt: DateTime
+  }
+
+  type SchemaPushOk {
+    schemaRevision: SchemaRevision!
+  }
+
+  type SchemaPushError {
+    message: String!
+  }
+
+  type SchemaPushResult {
+    ok: SchemaPushOk
+    error: SchemaPushError
   }
 
   input SchemaComposeInput {
@@ -881,10 +929,37 @@ export default gql`
     commit: String!
   }
 
+  input SchemaCheckBaselineInput {
+    """
+    The service schema SDL.
+    """
+    sdl: String!
+    """
+    An identifier for the supplied baseline schema, e.g. a Git SHA
+    """
+    hash: String
+  }
+
   input SchemaCheckInput {
     target: TargetReferenceInput
     service: ID
+    """
+    The schema SDL after applying the proposed change.
+    """
     sdl: String!
+
+    """
+    The baseline service SDL before applying the proposed changes.
+
+    When provided for a distributed schema, Hive composes this service SDL
+    with the other services currently stored in the registry and compares
+    that composition against the composition produced from 'SchemaCheckInput.sdl'.
+
+    Intended for checks where the comparison baseline differs from the
+    latest schema stored in the registry, such as GitHub Merge Queue builds.
+    """
+    baseline: SchemaCheckBaselineInput = null
+
     github: GitHubSchemaCheckInput
     meta: SchemaCheckMetaInput
     """
@@ -984,9 +1059,9 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
     """
-    The data on which this schema version was published.
+    The date on which this schema version was published.
     """
-    date: DateTime!
+    date: DateTime! @tag(name: "public")
     """
     The log that initiated this schema version.
     For a federation schema this is the published or removed subgraph/service.
@@ -1077,7 +1152,7 @@ export default gql`
     This is only available for non monolithic projects.
     """
     subgraphDiffs: [SubgraphDiff!]
-    origin: SchemaVersionOrigin!
+    origin: SchemaVersionOrigin! @tag(name: "public")
     """
     Additional metadata associated with the schema version that help identifying it.
     """
@@ -1121,6 +1196,7 @@ export default gql`
 
   type SchemaExplorer {
     metadataAttributes: [MetadataAttribute!]
+    subgraphNames: [String!]!
     types: [GraphQLNamedType!]!
     type(name: String!): GraphQLNamedType
     query: GraphQLObjectType
@@ -1428,7 +1504,13 @@ export default gql`
     """
     The previous schema SDL. For composite schemas this is the service.
     """
-    previousSchemaSDL: String @tag(name: "public")
+    previousSchemaSDL: String
+      @tag(name: "public")
+      @deprecated(reason: "Please use the 'SchemaCheck.baseline' field instead.")
+    """
+    The schema used as the baseline for this check.
+    """
+    baseline: SchemaCheckBaseline
     """
     The name of the service that owns the schema. Is null for non composite project types.
     """
@@ -1487,6 +1569,24 @@ export default gql`
   }
 
   """
+  The contract schema used as the baseline for this check.
+  """
+  type ContractCheckBaseline {
+    """
+    The supergraph SDL of the baseline contract schema, if composition succeeded.
+    """
+    supergraphSdl: String
+    """
+    The public SDL of the baseline contract schema, if composition succeeded.
+    """
+    publicSdl: String
+    """
+    Composition errors produced by the baseline contract schema.
+    """
+    compositionErrors: [SchemaError!]
+  }
+
+  """
   Schema check result for contracts
   """
   type ContractCheck {
@@ -1522,6 +1622,11 @@ export default gql`
     The contract version against this check was performed.
     """
     contractVersion: ContractVersion @tag(name: "public")
+
+    """
+    The contract schema used as the baseline for this check.
+    """
+    baseline: ContractCheckBaseline
   }
 
   type ContractCheckEdge {
@@ -1569,6 +1674,43 @@ export default gql`
   }
 
   """
+  Metadata associated with a schema check baseline.
+  """
+  type SchemaCheckBaselineMeta {
+    """
+    The caller-supplied identifier for the baseline, such as a Git commit SHA.
+    """
+    commit: String
+  }
+
+  """
+  The schema used as the baseline for a schema check.
+  """
+  type SchemaCheckBaseline {
+    """
+    The service SDL of the baseline schema.
+    """
+    sdl: String
+    """
+    The supergraph SDL of the baseline schema, if composition succeeded.
+    """
+    supergraphSdl: String
+    """
+    The public SDL of the baseline schema, if composition succeeded.
+    """
+    publicSdl: String
+    """
+    Composition errors produced by the baseline schema.
+    """
+    compositionErrors: [SchemaError!]
+
+    """
+    Metadata associated with the baseline schema.
+    """
+    meta: SchemaCheckBaselineMeta!
+  }
+
+  """
   A successful schema check.
   """
   type SuccessfulSchemaCheck implements SchemaCheck {
@@ -1585,7 +1727,13 @@ export default gql`
     """
     The previous schema SDL. For composite schemas this is the service.
     """
-    previousSchemaSDL: String @tag(name: "public")
+    previousSchemaSDL: String
+      @tag(name: "public")
+      @deprecated(reason: "Please use the 'SchemaCheck.baseline' field instead.")
+    """
+    The schema used as the baseline for this check.
+    """
+    baseline: SchemaCheckBaseline
     """
     The name of the service that owns the schema. Is null for non composite project types.
     """
@@ -1639,8 +1787,8 @@ export default gql`
     """
     schemaPolicyErrors: SchemaPolicyWarningConnection
 
-    compositeSchemaSDL: String
-    supergraphSDL: String
+    compositeSchemaSDL: String @tag(name: "public")
+    supergraphSDL: String @tag(name: "public")
     """
     Results of the contracts
     """
@@ -1686,7 +1834,13 @@ export default gql`
     """
     The previous schema SDL. For composite schemas this is the service.
     """
-    previousSchemaSDL: String @tag(name: "public")
+    previousSchemaSDL: String
+      @tag(name: "public")
+      @deprecated(reason: "Please use the 'SchemaCheck.baseline' field instead.")
+    """
+    The schema used as the baseline for this check.
+    """
+    baseline: SchemaCheckBaseline
     """
     The name of the service that owns the schema. Is null for non composite project types.
     """
@@ -1872,6 +2026,10 @@ export default gql`
     """
     id: ID!
     """
+    The user-provided immutable revision for this subgraph version, if any.
+    """
+    revision: String
+    """
     The service name.
     """
     serviceName: String!
@@ -1945,7 +2103,7 @@ export default gql`
   """
   Describes the action that caused the creation of a new SchemaVersion.
   """
-  union SchemaVersionOrigin =
+  union SchemaVersionOrigin @tag(name: "public") =
     | SchemaVersionPublishOrigin
     | SchemaVersionSubgraphRemoveOrigin
     | SchemaVersionPromoteOrigin
@@ -1954,7 +2112,7 @@ export default gql`
     """
     The ID of the target from which the promotion originated.
     """
-    targetId: ID!
+    targetId: ID! @tag(name: "public")
     """
     The slug of the target from which the promotion originated.
     """
@@ -1962,27 +2120,36 @@ export default gql`
     """
     The exact ID of the schema version that was promoted from within the target.
     """
-    schemaVersionId: ID!
+    schemaVersionId: ID! @tag(name: "public")
   }
 
   type SubgraphOriginSubgraphReference {
-    name: String!
-    versionId: ID!
+    name: String! @tag(name: "public")
+    versionId: ID! @tag(name: "public")
+    """
+    The user-provided immutable revision used for this publish, if any.
+    """
+    revision: String
   }
 
   type SchemaVersionSubgraphRemoveOrigin {
     """
     The subgraphs that were removed in this version.
     """
-    removedSubgraphs: [SubgraphOriginSubgraphReference!]!
+    removedSubgraphs: [SubgraphOriginSubgraphReference!]! @tag(name: "public")
   }
 
   type SchemaVersionPublishOrigin {
     """
+    The user-provided immutable revision used for a monolith publish, if any.
+    """
+    revision: String
+
+    """
     The subgraphs published as part of this version.
     This value is 'null' for non-federation projects.
     """
-    publishedSubgraphs: [SubgraphOriginSubgraphReference!]
+    publishedSubgraphs: [SubgraphOriginSubgraphReference!] @tag(name: "public")
   }
 
   input SchemaVersionPromoteTargetInput @oneOf {

@@ -1,6 +1,19 @@
+import { Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { CopyChip } from '../copy-chip/copy-chip';
+import { Tooltip } from '../floating/tooltip/tooltip';
+
 type DescriptionListItemProps = {
   term: string;
   description: React.ReactNode;
+  /** Explains the term, on an info icon after it. */
+  tooltip?: string;
+  /** An identifier, endpoint or record value rather than prose. */
+  mono?: boolean;
+  /** A string description the reader will paste somewhere: rendered as a copy chip. */
+  copyable?: boolean;
+  /** Attributes for the value element, such as a hook for a test. */
+  attrs?: Record<string, string>;
 };
 
 type DescriptionListItemRowProps = {
@@ -21,13 +34,41 @@ const COLS_CLASS: Record<number, string> = {
   6: 'grid-cols-6',
 };
 
-function DescriptionListItem({ term, description }: DescriptionListItemProps) {
+function DescriptionListItem({
+  term,
+  description,
+  tooltip,
+  mono,
+  copyable,
+  attrs,
+}: DescriptionListItemProps) {
+  const value =
+    copyable && typeof description === 'string' ? (
+      <CopyChip value={description} attrs={attrs} />
+    ) : attrs ? (
+      <span {...attrs}>{description}</span>
+    ) : (
+      description
+    );
   return (
     <>
-      <div className="text-neutral-10 mb-1 inline-block text-[9px] font-medium uppercase tracking-[0.75px]">
+      <div className="text-neutral-10 mb-1 inline-flex items-center gap-1 text-[9px] font-medium uppercase tracking-[0.75px]">
         {term}
+        {tooltip ? (
+          <Tooltip
+            trigger={
+              <span className="text-neutral-9 inline-flex">
+                <Info className="size-3" />
+              </span>
+            }
+            content={tooltip}
+          />
+        ) : null}
       </div>
-      <div className="text-neutral-12 text-[13px]">{description}</div>
+      {/* An identifier has no spaces to wrap at, so it breaks anywhere rather than overflowing. */}
+      <div className={cn('text-neutral-12 text-control', mono && 'break-all font-mono')}>
+        {value}
+      </div>
     </>
   );
 }
@@ -42,7 +83,7 @@ export function DescriptionList({ rows }: DescriptionListProps) {
         >
           {row.items.map((item, itemIndex) => (
             <div key={itemIndex}>
-              <DescriptionListItem term={item.term} description={item.description} />
+              <DescriptionListItem {...item} />
             </div>
           ))}
         </div>

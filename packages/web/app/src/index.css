@@ -2,12 +2,19 @@
 @plugin "./lib/tailwind-plugins.js";
 
 /* Configure dark mode to use .dark class instead of prefers-color-scheme */
-@variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* Typography */
   --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SFMono-Regular', 'Menlo', 'Monaco', monospace;
+
+  /* Two steps Tailwind lacks and the app kept typing by hand: micro text (badges, chips, tick
+     labels) below xs, and UI control text (buttons, inputs, menus) between xs and sm. */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: calc(0.875 / 0.625);
+  --text-control: 0.8125rem;
+  --text-control--line-height: calc(1.125 / 0.8125);
 
   /* Disable all default Tailwind colors */
   --color-*: initial;
@@ -226,6 +233,13 @@
 
   --color-ring: hsl(var(--ring));
 
+  --color-card-bg: var(--color-neutral-3);
+  --color-card-border: var(--color-neutral-4);
+  --color-card-bg-hover: var(--color-neutral-4);
+  --color-card-border-hover: var(--color-neutral-5);
+  --color-floating-bg: var(--color-neutral-4);
+  --color-floating-border: var(--color-neutral-5);
+
   /* Border Radius */
   --radius: 0.5rem;
   --radius-lg: var(--radius);
@@ -240,6 +254,11 @@
   --animate-slide-left-fade: slide-left-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shimmer: shimmer 1.5s linear infinite;
   --animate-shake: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  --animate-spinner-spin: spinner-spin 1.6s linear infinite;
+  --animate-spinner-arc: spinner-arc 1.6s var(--ease-authentic) infinite;
+
+  /* Easing */
+  --ease-authentic: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Min Height */
   --min-h-content: var(--content-height);
@@ -397,9 +416,11 @@
 }
 
 @layer components {
+  /* No !important: the utilities layer sits above this one, so a component's own
+     focus-visible outline wins, while anything without one stays outline-free. */
   *:active,
   *:focus {
-    outline: none !important;
+    outline: none;
   }
 
   #root {
@@ -512,6 +533,30 @@
   @apply border-b-accent bg-accent_80 absolute right-2 size-1.5 rounded-full border content-[''];
 }
 
+/*
+ * Thin, muted scrollbar. The standard properties cover Firefox, Chromium 121+ and Safari 18.2+;
+ * the -webkit- rules cover older Chromium and Safari, which ignore the standard ones. Browsers
+ * that support both prefer the standard properties, so the two never fight.
+ *
+ * `@utility` rather than a plain class in `@layer utilities`: both emit working CSS, but only
+ * `@utility` registers the name with Tailwind, which is what lets tooling resolve it.
+ */
+@utility thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-7) transparent;
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-neutral-7);
+    border-radius: 4px;
+  }
+}
+
 /* Custom container - matches v3 config: full-width until 2xl, then 1800px max */
 @utility container {
   width: 100%;
@@ -524,6 +569,28 @@
 }
 
 /* Keyframes (must be outside @theme) */
+
+@keyframes spinner-spin {
+  to {
+    transform: rotate(580deg);
+  }
+}
+
+@keyframes spinner-arc {
+  0% {
+    stroke-dasharray: 16 46;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 38 46;
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dasharray: 16 46;
+    stroke-dashoffset: -22;
+  }
+}
+
 @keyframes slide-up-fade {
   0% {
     opacity: 0;

@@ -42,7 +42,7 @@ type CacheRecord = {
    */
   parsedDocument?: DocumentNode;
   /** persisted document id */
-  experimental__documentId?: string;
+  documentId?: string;
 };
 
 export type YogaPluginOptions = HivePluginOptions & {
@@ -111,7 +111,8 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
         });
       }
     },
-    // since response-cache modifies the executed GraphQL document, we need to extract it after parsing.
+    // Capture the original parsed document before execution plugins transform it,
+    // so usage reporting reflects the client operation.
     onParse(parseCtx) {
       return ctx => {
         const result = ctx.result as ASTNode;
@@ -122,35 +123,34 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
             record.parsedDocument = result;
             parsedDocumentCache.set(parseCtx.params.source, result);
           }
-
-          if (fieldLevelMetricsEnabled && operationCache) {
-            // We need __typename on every object in the result so we can
-            // resolve abstract types (unions/interfaces) to concrete type coordinates
-            // when recording field-level metrics downstream.
-            // This is done here for more performant caching of the result.
-            const query = parseCtx.params.source;
-            const cachedDocument = operationCache.get(query);
-            if (cachedDocument) {
-              // If "true" is cached, then this operation doesn't need stored because it's identical to the original.
-              // Else, the document hash been modified and cached
-              if (cachedDocument !== true) {
-                parseCtx.setParsedDocument(cachedDocument);
-              }
-            } else if (latestSchema) {
-              const modifiedDocument = addHiveTypenames(ctx.result, latestSchema);
-              operationCache.set(query, result === modifiedDocument || modifiedDocument);
-              if (result !== modifiedDocument) {
-                parseCtx.setParsedDocument(modifiedDocument);
-              }
-            }
-          }
         }
       };
     },
-    onExecute() {
+    onExecute({ args, executeFn, setExecuteFn }) {
+      const record = contextualCache.get(args.contextValue);
+
+      if (fieldLevelMetricsEnabled && operationCache && latestSchema) {
+        // Validation must run against the client document. Add the metadata fields only
+        // to the document passed to execution and cache that transformed document.
+        const query = record?.paramsArgs.query || args.document.loc?.source.body;
+        const cachedDocument = query ? operationCache.get(query) : undefined;
+        const modifiedDocument =
+          cachedDocument === true
+            ? args.document
+            : cachedDocument || addHiveTypenames(args.document, latestSchema);
+
+        if (query && cachedDocument === undefined) {
+          operationCache.set(query, args.document === modifiedDocument || modifiedDocument);
+        }
+        if (args.document !== modifiedDocument) {
+          setExecuteFn(executionArgs =>
+            executeFn({ ...executionArgs, document: modifiedDocument }),
+          );
+        }
+      }
+
       return {
         onExecuteDone({ args, result }) {
-          const record = contextualCache.get(args.contextValue);
           if (!record) {
             return;
           }
@@ -170,7 +170,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                   document: record.parsedDocument ?? record.executionArgs.document,
                 },
                 result,
-                record.experimental__documentId,
+                record.documentId,
               ),
             );
             return;
@@ -198,7 +198,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                       record.parsedDocument ?? record.executionArgs?.document ?? args.document,
                   },
                   errors.length ? { errors } : {},
-                  record.experimental__documentId,
+                  record.documentId,
                 ),
               );
             },
@@ -207,11 +207,18 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
       };
     },
     onSubscribe(context) {
+      // In GraphQL.js 16 `onSubscribe` is called even if the schema does not contain a subscription type.
+      // In GraphQL.js 17 there is a new validation rule [`KnownOperationTypes`](https://github.com/graphql/graphql-js/pull/3601)
+      // that prevents `onSubscribe` being called if the schema has no subscription type.
+      // We want to avoid running SDK code here as it would raise an exception in the schema coordinate collection.
+      if (!context.args.schema.getSubscriptionType()) {
+        return;
+      }
       const record = contextualCache.get(context.args.contextValue);
 
       return {
         onSubscribeResult() {
-          const experimental__persistedDocumentHash = record?.experimental__documentId;
+          const persistedDocumentId = record?.documentId;
           hive.collectSubscriptionUsage({
             args: {
               ...context.args, // spread the context because the record might not have all the necessary fields
@@ -219,7 +226,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
               document:
                 record?.parsedDocument ?? record?.executionArgs?.document ?? context.args.document,
             },
-            experimental__persistedDocumentHash,
+            experimental__persistedDocumentHash: persistedDocumentId,
           });
         },
       };
@@ -253,7 +260,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                 contextValue: serverContext,
               },
               result,
-              record.experimental__documentId,
+              record.documentId,
             ),
           );
         } catch (err) {
@@ -339,7 +346,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
               if (document) {
                 const record = contextualCache.get(context);
                 if (record) {
-                  record.experimental__documentId = key;
+                  record.documentId = key;
                   record.paramsArgs = {
                     ...record.paramsArgs,
                     query: document,

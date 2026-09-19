@@ -1,12 +1,11 @@
 import { useMemo } from 'react';
+import { PermissionTable } from '@/components/organization/permission-table';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { PermissionLevelType } from '@/gql/graphql';
 import { ResultOf } from '@graphql-typed-document-node/core';
@@ -159,42 +158,28 @@ function PermissionLevelGroup(props: {
           {props.title}
           <span className="ml-auto mr-2">{totalAllowedCount} allowed</span>
         </AccordionTrigger>
-        <AccordionContent className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-scroll">
+        <AccordionContent className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-auto">
           {filteredGroups.map(group =>
             props.showOnlyAllowedPermissions && group.totalAllowedCount === 0 ? null : (
               <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.id}>
-                <table key={group.title} className="w-full">
-                  <tr>
-                    <th className="pb-2 text-left">{group.title}</th>
-                  </tr>
-                  {group.permissions.map(permission =>
-                    props.showOnlyAllowedPermissions &&
-                    props.activePermissionIds.has(permission.id) === false &&
-                    !permission.isReadOnly ? null : (
-                      <tr key={permission.id}>
-                        <td>{permission.title}</td>
-                        <td className="ml-2 text-right">
-                          {props.activePermissionIds.has(permission.id) || permission.isReadOnly ? (
-                            permission.warning ? (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Badge variant="warning">Allowed</Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>{permission.warning}</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            ) : (
-                              <Badge variant="success">Allowed</Badge>
-                            )
-                          ) : (
-                            <Badge variant="failure">Denied</Badge>
-                          )}
-                        </td>
-                      </tr>
-                    ),
-                  )}
-                </table>
+                <PermissionTable
+                  title={group.title}
+                  permissions={group.permissions.flatMap(permission => {
+                    const granted =
+                      props.activePermissionIds.has(permission.id) || permission.isReadOnly;
+                    if (props.showOnlyAllowedPermissions && !granted) {
+                      return [];
+                    }
+                    return [
+                      {
+                        id: permission.id,
+                        title: permission.title,
+                        granted,
+                        warning: permission.warning,
+                      },
+                    ];
+                  })}
+                />
               </div>
             ),
           )}

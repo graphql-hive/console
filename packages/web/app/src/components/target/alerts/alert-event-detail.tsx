@@ -30,6 +30,25 @@ export const STATE_ICON: Record<
   [MetricAlertRuleState.Recovering]: { Icon: CircleDotDashed, className: 'text-info' },
 };
 
+const STATE_BADGE_VARIANT: Record<
+  MetricAlertRuleState,
+  'success' | 'warning' | 'critical' | 'info'
+> = {
+  [MetricAlertRuleState.Normal]: 'success',
+  [MetricAlertRuleState.Pending]: 'warning',
+  [MetricAlertRuleState.Firing]: 'critical',
+  [MetricAlertRuleState.Recovering]: 'info',
+};
+
+/** The state as a badge item for a DataTable status cell. */
+export function stateBadgeItem(state: MetricAlertRuleState) {
+  const label = ALERT_STATE_LABEL[state];
+  return {
+    content: label.charAt(0) + label.slice(1).toLowerCase(),
+    variant: STATE_BADGE_VARIANT[state],
+  };
+}
+
 const STATE_SUMMARY_CLASS: Record<MetricAlertRuleState, string> = {
   [MetricAlertRuleState.Normal]: 'border-success_10 bg-success_08 text-success',
   [MetricAlertRuleState.Pending]: 'border-warning_10 bg-warning_08 text-warning',
@@ -255,7 +274,7 @@ export function AlertEventDetail({
   return (
     <div className="space-y-4 px-4 pb-4">
       <div
-        className={`rounded-md border px-3 py-2 text-[13px] ${STATE_SUMMARY_CLASS[event.toState]}`}
+        className={`text-control rounded-md border px-3 py-2 ${STATE_SUMMARY_CLASS[event.toState]}`}
       >
         {transitionSentence(rule, event.toState, event.value)}
       </div>
@@ -285,9 +304,9 @@ export function AlertEventDetail({
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/alerts/$ruleId"
             params={{ organizationSlug, projectSlug, targetSlug, ruleId }}
-            className={buttonVariants({ variant: 'primary' })}
+            className={buttonVariants({ variant: 'primary', layout: 'label' })}
           >
-            <span className="px-2.5 py-1.5 text-[13px]">View alert rule detail</span>
+            <span className="text-control px-2.5 py-1.5">View alert rule detail</span>
             <span className="border-l-current/20 border-l px-2 py-1.5">
               <ArrowRight className="size-3.5" />
             </span>

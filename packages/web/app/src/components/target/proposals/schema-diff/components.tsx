@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { CheckIcon, XIcon } from '@/components/ui/icon';
 import { SeverityLevelType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
@@ -36,7 +37,7 @@ export function AnnotatedProvider(props: { children: ReactNode }) {
 
 export function ChangeDocument(props: { children: ReactNode; className?: string }) {
   return (
-    <div className="w-full overflow-x-auto">
+    <ScrollArea axis="horizontal">
       <table
         aria-label="change-document"
         className={cn(
@@ -46,7 +47,7 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
       >
         {props.children}
       </table>
-    </div>
+    </ScrollArea>
   );
 }
 

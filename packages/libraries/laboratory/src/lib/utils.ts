@@ -60,6 +60,43 @@ export function isAsyncIterable<T>(val: unknown): val is AsyncIterable<T> {
   return typeof Object(val)[Symbol.asyncIterator] === 'function';
 }
 
+/**
+ * Ends a stream when the signal aborts, whatever the source does with it:
+ * @graphql-tools/executor-legacy-ws ignores `request.signal` entirely, so a stopped
+ * LEGACY_WS subscription would otherwise keep streaming until the server finished.
+ * Racing the abort also covers a source whose return() never settles a pending next().
+ */
+export async function* untilAborted<T>(
+  source: AsyncIterable<T>,
+  signal: AbortSignal,
+): AsyncIterable<T> {
+  const iterator = source[Symbol.asyncIterator]();
+  const aborted = new Promise<{ done: true }>(resolve => {
+    if (signal.aborted) {
+      resolve({ done: true });
+      return;
+    }
+
+    signal.addEventListener('abort', () => resolve({ done: true }), { once: true });
+  });
+
+  try {
+    // The signal is checked first because a source that always has a value ready
+    // wins every race against it, and the run would never stop.
+    while (!signal.aborted) {
+      const next = await Promise.race([iterator.next(), aborted]);
+
+      if (next.done) {
+        return;
+      }
+
+      yield next.value;
+    }
+  } finally {
+    await iterator.return?.(undefined);
+  }
+}
+
 // Exclude whitespace and characters that are never part of a bare URL in log text.
 const URL_PATTERN = /https?:\/\/[^\s<>"'`]+/g;
 

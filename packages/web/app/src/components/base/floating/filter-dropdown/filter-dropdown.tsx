@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { buttonVariants } from '@/components/base/button/button';
 import { disabledStyle, segmentButton, segmentSeparator } from '@/components/base/shared-styles';
 import { pluralize } from '@/lib/utils';
-import { Menu, MenuItem } from '../menu/menu';
+import { Menu } from '../menu/menu';
 import { FilterContent } from './filter-content';
 import type { FilterItem, FilterSelection } from './types';
 
@@ -32,9 +32,18 @@ export type FilterDropdownProps = {
   excludeMode?: boolean;
   /** Called when the exclude mode changes */
   onExcludeModeChange?: (exclude: boolean) => void;
+  /** When true, picking an item replaces the selection instead of adding to it. */
+  singleSelect?: boolean;
+  /** Show the search box regardless of how many items there are. */
+  alwaysShowSearch?: boolean;
 };
 
-const chipClass = buttonVariants({ variant: 'default' });
+/** Outer shell shared by every filter chip. */
+export const chipClass = buttonVariants({ variant: 'default', size: 'compact', layout: 'label' });
+
+/** The chip's trailing remove button. */
+export const chipRemoveButtonClass =
+  'text-neutral-8 hover:text-neutral-12 flex cursor-pointer items-center px-2 py-1.5 transition-colors';
 
 export function FilterDropdown({
   label,
@@ -47,6 +56,8 @@ export function FilterDropdown({
   disabled,
   excludeMode,
   onExcludeModeChange,
+  singleSelect,
+  alwaysShowSearch,
 }: FilterDropdownProps) {
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -63,7 +74,7 @@ export function FilterDropdown({
       style={disabled ? disabledStyle : undefined}
     >
       {/* Label — static */}
-      <span className="px-2.5 py-1.5 text-[13px]">{label}</span>
+      <span className="text-control px-2.5 py-1.5">{label}</span>
 
       {/* Operator — dropdown for "is" / "is not" */}
       {onExcludeModeChange && (
@@ -89,12 +100,8 @@ export function FilterDropdown({
             minWidth="none"
             sections={[
               [
-                <MenuItem key="is" onClick={() => onExcludeModeChange(false)}>
-                  is
-                </MenuItem>,
-                <MenuItem key="is-not" onClick={() => onExcludeModeChange(true)}>
-                  is not
-                </MenuItem>,
+                { label: 'is', onClick: () => onExcludeModeChange(false) },
+                { label: 'is not', onClick: () => onExcludeModeChange(true) },
               ],
             ]}
           />
@@ -116,24 +123,24 @@ export function FilterDropdown({
           side="bottom"
           align="start"
           maxWidth="lg"
-          stableWidth
-          sections={[
+          content={
             <FilterContent
-              key="content"
               label={label}
               items={items}
               selectedItems={selectedItems}
               onChange={onChange}
               valuesLabel={valuesLabel}
-            />,
-          ]}
+              singleSelect={singleSelect}
+              alwaysShowSearch={alwaysShowSearch}
+            />
+          }
         />
       </span>
 
       {/* Remove button */}
       <button
         type="button"
-        className={`${segmentSeparator} text-neutral-8 hover:text-neutral-12 flex cursor-pointer items-center px-2 py-1.5 transition-colors`}
+        className={`${segmentSeparator} ${chipRemoveButtonClass}`}
         aria-label={`Remove ${label} filter`}
         onClick={onRemove}
       >

@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import type { MenuSection } from '../menu/menu';
 import { FilterChips, FilterMenu } from './filter-menu';
 import type { FilterDimension } from './types';
 
@@ -22,7 +23,7 @@ export function Filters({
 }: {
   dimensions: FilterDimension[];
   /** Forwarded to FilterMenu — e.g. saved-filter sub-menus + manage link. */
-  extraSections?: Array<ReactNode | ReactNode[]>;
+  extraSections?: MenuSection[];
   /** Always-rendered controls between the trigger and the chips. */
   pinnedControls?: ReactNode;
   /** Rendered after the chips. */
@@ -36,14 +37,21 @@ export function Filters({
   /** Handler for the trigger's clear-X icon. Matched pair with `activeLabel`. */
   onClearActive?: () => void;
 }) {
+  // A menu with nothing in it opens as an empty panel, so the row starts at the pinned controls
+  // instead. An active view keeps the trigger because its clear button lives there.
+  const hasMenu =
+    dimensions.length > 0 || !!extraSections?.length || !!(activeLabel && onClearActive);
+
   return (
     <div className="flex items-center gap-2">
-      <FilterMenu
-        dimensions={dimensions}
-        extraSections={extraSections}
-        activeLabel={activeLabel}
-        onClearActive={onClearActive}
-      />
+      {hasMenu && (
+        <FilterMenu
+          dimensions={dimensions}
+          extraSections={extraSections}
+          activeLabel={activeLabel}
+          onClearActive={onClearActive}
+        />
+      )}
       {pinnedControls}
       <FilterChips dimensions={dimensions} />
       {afterChips}

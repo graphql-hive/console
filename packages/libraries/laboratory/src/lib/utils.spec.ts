@@ -1,4 +1,4 @@
-import { formatBytes, tokenizeUrls } from './utils';
+import { formatBytes, tokenizeUrls, untilAborted } from './utils';
 
 describe('formatBytes', () => {
   it('renders small payloads in bytes instead of rounding them away to 0', () => {
@@ -129,5 +129,41 @@ describe('tokenizeUrls', () => {
       { type: 'url', value: 'https://example.com/b' },
       { type: 'text', value: '.' },
     ]);
+  });
+});
+
+describe('untilAborted', () => {
+  it('ends the stream when the signal aborts, even if the source never settles', async () => {
+    const controller = new AbortController();
+    const source = {
+      [Symbol.asyncIterator]: () => ({ next: () => new Promise<never>(() => {}) }),
+    } as AsyncIterable<unknown>;
+
+    const drained = (async () => {
+      for await (const _ of untilAborted(source, controller.signal)) {
+        // nothing arrives; the source never resolves a value
+      }
+    })();
+
+    controller.abort();
+
+    await expect(drained).resolves.toBeUndefined();
+  });
+
+  it('releases the source it wrapped', async () => {
+    const controller = new AbortController();
+    const returned = vi.fn(async () => ({ done: true as const, value: undefined }));
+    const source = {
+      [Symbol.asyncIterator]: () => ({
+        next: async () => ({ done: false as const, value: 'tick' }),
+        return: returned,
+      }),
+    } as AsyncIterable<string>;
+
+    for await (const _ of untilAborted(source, controller.signal)) {
+      controller.abort();
+    }
+
+    expect(returned).toHaveBeenCalled();
   });
 });

@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { parse } from 'graphql';
 import { createYoga } from 'graphql-yoga';
 import stripAnsi from 'strip-ansi';
+import { createContract, getSchemaCheckDetails, pollFor } from 'testkit/flow';
 import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
 import { buildSubgraphSchema } from '@apollo/subgraph';
@@ -807,7 +808,7 @@ test('schema:check gives correct error message for missing `--service` name flag
     1
     stderr--------------------------------------------:
      ›   Warning: Could not resolve pull request number. Are you running this
-     ›   command on a 'pull_request' event?
+     ›   command on a 'pull_request' or 'merge_group' event?
      ›   See https://__URL__
      ›   b-workflow-for-ci
     stdout--------------------------------------------:
@@ -1097,6 +1098,159 @@ test.concurrent(
 );
 
 test.concurrent(
+  'schema:publish rejects federation composition errors with --fail-on-composition-error',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { secret } = await createTargetAccessToken({});
+    const validSchemaPath = join(tmpdir(), `valid-federation-schema-${randomUUID()}.graphql`);
+    const invalidSchemaPath = join(tmpdir(), `invalid-federation-schema-${randomUUID()}.graphql`);
+
+    await Promise.all([
+      writeFile(
+        validSchemaPath,
+        /* GraphQL */ `
+          type Query {
+            user: User
+          }
+
+          type User @key(fields: "id") {
+            id: ID!
+          }
+        `,
+      ),
+      writeFile(
+        invalidSchemaPath,
+        /* GraphQL */ `
+          type Query {
+            user: User
+          }
+
+          type User @key(fields: "missing") {
+            id: ID!
+          }
+        `,
+      ),
+    ]);
+
+    await schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--commit',
+      'valid',
+      '--service',
+      'users',
+      '--url',
+      'http://users.localhost',
+      validSchemaPath,
+    ]);
+
+    await expect(
+      schemaPublish([
+        '--registry.accessToken',
+        secret,
+        '--commit',
+        'invalid',
+        '--service',
+        'users',
+        '--url',
+        'http://users.localhost',
+        '--fail-on-composition-error',
+        invalidSchemaPath,
+      ]),
+    ).rejects.toThrow('- [users] On type User, for @key(fields: missing):');
+  },
+);
+
+test.concurrent(
+  'schema:publish prefixes contract composition errors with the contract name',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
+    const { secret, latestSchema } = await createTargetAccessToken({});
+
+    await createContract(
+      {
+        target: { byId: target.id },
+        contractName: 'my-contract',
+        removeUnreachableTypesFromPublicApiSchema: true,
+        excludeTags: ['internal'],
+      },
+      ownerToken,
+    ).then(result => result.expectNoGraphQLErrors());
+
+    const validSchemaPath = join(tmpdir(), `valid-contract-schema-${randomUUID()}.graphql`);
+    const invalidSchemaPath = join(tmpdir(), `invalid-contract-schema-${randomUUID()}.graphql`);
+
+    await Promise.all([
+      writeFile(
+        validSchemaPath,
+        /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+          type Query {
+            hello: String @tag(name: "internal")
+            helloPublic: String
+          }
+        `,
+      ),
+      writeFile(
+        invalidSchemaPath,
+        /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+          type Query {
+            hello: String @tag(name: "internal")
+            helloPublic: String @tag(name: "internal")
+          }
+        `,
+      ),
+    ]);
+
+    await schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--commit',
+      'valid-contract',
+      '--service',
+      'hello',
+      '--url',
+      'http://hello.localhost',
+      validSchemaPath,
+    ]);
+
+    await expect(
+      schemaPublish([
+        '--registry.accessToken',
+        secret,
+        '--commit',
+        'invalid-contract',
+        '--service',
+        'hello',
+        '--url',
+        'http://hello.localhost',
+        '--fail-on-composition-error',
+        invalidSchemaPath,
+      ]),
+    ).rejects.toThrow(
+      '[my-contract] Type Query is in the API schema but all of its fields are @inaccessible.',
+    );
+
+    const latest = await latestSchema();
+    expect(latest.latestVersion?.schemas.nodes[0]).toMatchObject({
+      commit: 'valid-contract',
+      source: expect.stringContaining('helloPublic: String'),
+    });
+  },
+);
+
+test.concurrent(
   'schema:check displays affected app deployments for breaking changes',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
@@ -1239,6 +1393,89 @@ Multi line description:
 # with single line comment
 """`),
   );
+});
+
+test.concurrent('schema:check ignores SDL formatting', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { inviteAndJoinMember, createProject, organization } = await createOrg();
+  await inviteAndJoinMember();
+  const { createTargetAccessToken, project, target } = await createProject(ProjectType.Federation);
+  const { latestSchema, latestSchemaCheck } = await createTargetAccessToken({});
+
+  const targetSlug = [organization.slug, project.slug, target.slug].join('/');
+
+  // publish multiple subgraphs to ensure composition is processing and merging them
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      ownerToken,
+      '--author',
+      'me',
+      '--target',
+      targetSlug,
+      '--service',
+      'x',
+      '--url',
+      'https://x.graphql-hive.com/graphql',
+      'fixtures/federation-00.graphql',
+    ]),
+  ).resolves.not.toThrow();
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      ownerToken,
+      '--author',
+      'me',
+      '--target',
+      targetSlug,
+      '--service',
+      'y',
+      '--url',
+      'https://y.graphql-hive.com/graphql',
+      'fixtures/federation-01.graphql',
+    ]),
+  ).resolves.not.toThrow();
+
+  const { latestVersion } = await latestSchema();
+  expect(latestVersion?.isValid).toBe(true);
+
+  // check the exact same schema
+  await expect(
+    schemaCheck([
+      '--registry.accessToken',
+      ownerToken,
+      '--target',
+      targetSlug,
+      '--author',
+      'me',
+      '--commit',
+      'abc1234',
+      '--service',
+      'y',
+      '--url',
+      'https://y.graphql-hive.com/graphql',
+      'fixtures/federation-01.graphql',
+    ]),
+  ).resolves.not.toThrow();
+
+  const lastCheckId = await latestSchemaCheck();
+  const details = await getSchemaCheckDetails(
+    {
+      byId: target.id,
+    },
+    lastCheckId!,
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  // compare the check's SDLs to the schema version's SDLs
+  const lastCheck = details.target?.schemaCheck!;
+  expect(lastCheck.__typename).toBe('SuccessfulSchemaCheck');
+  assert(lastCheck.__typename === 'SuccessfulSchemaCheck');
+
+  expect(lastCheck.supergraphSDL).toEqual(lastCheck.schemaVersion?.supergraph);
+  expect(lastCheck.compositeSchemaSDL).toEqual(lastCheck.schemaVersion?.sdl);
+  expect(lastCheck.schemaSDL).toEqual(lastCheck.previousSchemaSDL);
 });
 
 test.concurrent(

@@ -14,7 +14,13 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { z } from 'zod';
+import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { Input } from '@/components/base/input/input';
+import { RadioGroup } from '@/components/base/radio-group/radio-group';
+import { Switch } from '@/components/base/switch/switch';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { SchemaEditor } from '@/components/schema-editor';
@@ -22,7 +28,6 @@ import { CDNAccessTokens } from '@/components/target/settings/cdn-access-tokens'
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
 import { SchemaContracts } from '@/components/target/settings/schema-contracts';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -31,10 +36,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { DocsLink } from '@/components/ui/docs-note';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { XIcon } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -44,15 +47,10 @@ import {
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { Spinner } from '@/components/ui/spinner';
-import { TimeAgo } from '@/components/ui/time-ago';
 import { useToast } from '@/components/ui/use-toast';
 import { Combobox } from '@/components/v2/combobox';
-import { Switch } from '@/components/v2/switch';
-import { Table, TBody, Td, Tr } from '@/components/v2/table';
-import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
 import {
@@ -67,8 +65,8 @@ import { useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckIcon } from '@radix-ui/react-icons';
-import { RadioGroupIndicator } from '@radix-ui/react-radio-group';
 import { Link, useRouter } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 
 /**
  * We previously used a different character for token masking.
@@ -143,31 +141,74 @@ function RegistryAccessTokens(props: {
     setChecked([]);
   }, [checked, mutate, props.organizationSlug, props.projectSlug, props.targetSlug]);
 
+  type Token = NonNullable<typeof tokens>[number];
+  const columns: ColumnDef<Token, unknown>[] = [
+    {
+      id: 'select',
+      meta: { width: 'xs' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="checkbox"
+          checked={checked.includes(row.original.id)}
+          onCheckedChange={isChecked =>
+            setChecked(
+              isChecked
+                ? [...checked, row.original.id]
+                : checked.filter(k => k !== row.original.id),
+            )
+          }
+          label={`Select ${row.original.name}`}
+        />
+      ),
+    },
+    {
+      id: 'alias',
+      header: 'Key',
+      cell: ({ row }) => (
+        <DataTableCell kind="text" value={normalizeTokenAlias(row.original.alias)} mono />
+      ),
+    },
+    {
+      id: 'name',
+      header: 'Name',
+      meta: { width: 'fill' },
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.name} weight="medium" />,
+    },
+    {
+      id: 'lastUsedAt',
+      header: 'Last Used',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        row.original.lastUsedAt ? (
+          <DataTableCell kind="time" date={row.original.lastUsedAt} />
+        ) : (
+          <DataTableCell kind="text" value="not used yet" tone="muted" />
+        ),
+    },
+    {
+      id: 'date',
+      header: 'Created At',
+      meta: { align: 'right' },
+      cell: ({ row }) => <DataTableCell kind="time" date={row.original.date} />,
+    },
+  ];
+
   return (
-    <SubPageLayout>
+    <SubPageLayout data-cy="target-settings-registry-token">
       <SubPageLayoutHeader
         subPageTitle="Registry Access Tokens"
-        description={
-          <>
-            <CardDescription>
-              Registry Access Tokens are used to access to Hive Registry and perform actions on your
-              targets/projects. In most cases, this token is used from the Hive CLI.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/targets#registry-access-tokens"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                Learn more about Registry Access Tokens
-              </DocsLink>
-            </CardDescription>
-          </>
+        description="Registry Access Tokens are used to access to Hive Registry and perform actions on your targets/projects. In most cases, this token is used from the Hive CLI."
+        docsLink={{
+          href: '/schema-registry/management/targets#registry-access-tokens',
+          text: 'Learn more about Registry Access Tokens',
+        }}
+        sideContent={
+          <Button data-cy="new-button" onClick={toggleModalOpen}>
+            Create new registry token
+          </Button>
         }
       />
-      <div className="my-3.5 flex justify-between" data-cy="target-settings-registry-token">
-        <Button data-cy="new-button" onClick={toggleModalOpen}>
-          Create new registry token
-        </Button>
+      <div className="my-3.5 flex justify-end">
         {checked.length === 0 ? null : (
           <Button
             data-cy="delete-button"
@@ -179,38 +220,14 @@ function RegistryAccessTokens(props: {
           </Button>
         )}
       </div>
-      <Table>
-        <TBody>
-          {tokens?.map(token => (
-            <Tr key={token.id}>
-              <Td width="1">
-                <Checkbox
-                  onCheckedChange={isChecked =>
-                    setChecked(
-                      isChecked ? [...checked, token.id] : checked.filter(k => k !== token.id),
-                    )
-                  }
-                  checked={checked.includes(token.id)}
-                />
-              </Td>
-              <Td className="font-mono">{normalizeTokenAlias(token.alias)}</Td>
-              <Td>{token.name}</Td>
-              <Td align="right">
-                {token.lastUsedAt ? (
-                  <>
-                    last used <TimeAgo date={token.lastUsedAt} />
-                  </>
-                ) : (
-                  'not used yet'
-                )}
-              </Td>
-              <Td align="right">
-                created <TimeAgo date={token.date} />
-              </Td>
-            </Tr>
-          ))}
-        </TBody>
-      </Table>
+      <DataTable
+        data={tokens ?? []}
+        columns={columns}
+        getRowId={token => token.id}
+        pagination={{ kind: 'none' }}
+        loading={tokensQuery.fetching && !tokensQuery.data}
+        emptyMessage="No registry tokens yet."
+      />
       {isModalOpen && (
         <CreateAccessTokenModal
           organizationSlug={props.organizationSlug}
@@ -256,25 +273,13 @@ const ExtendBaseSchema = (props: {
     <SubPageLayout>
       <SubPageLayoutHeader
         subPageTitle="Extend Your Schema"
-        description={
-          <>
-            <CardDescription>
-              Schema Extensions is pre-defined GraphQL schema that is automatically merged with your
-              published schemas, before being checked and validated.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/targets#schema-extensions"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                You can find more details and examples in the documentation
-              </DocsLink>
-            </CardDescription>
-          </>
-        }
+        description="Schema Extensions is pre-defined GraphQL schema that is automatically merged with your published schemas, before being checked and validated."
+        docsLink={{
+          href: '/schema-registry/management/targets#schema-extensions',
+          text: 'You can find more details and examples in the documentation',
+        }}
       />
       <SchemaEditor
-        theme="vs-dark"
         options={{ readOnly: mutation.fetching }}
         value={baseSchema}
         height={300}
@@ -753,50 +758,44 @@ const BreakingChanges = (props: {
           subPageTitle="Fail Checks for Dangerous Changes"
           description={
             <>
-              <CardDescription className="max-w-[700px]">
+              <p>
                 Dangerous changes are not technically breaking the protocol, but could cause issues
                 for consumers of the schema. Failing schema checks for dangerous changes helps
                 safeguard against these situations by requiring approval for dangerous changes.
-                <br />
-                <br />
-                Before enabling this feature, be sure "contextId" is used on schema checks.
-              </CardDescription>
-              <CardDescription>
-                <DocsLink
-                  href="/schema-registry/management/targets#dangerous-changes"
-                  className="text-neutral-10 hover:text-neutral-11"
-                >
-                  Learn more
-                </DocsLink>
-                <br />
-              </CardDescription>
+              </p>
+              <p>Before enabling this feature, be sure "contextId" is used on schema checks.</p>
             </>
           }
-        >
-          {targetSettings.fetching ? (
-            <Spinner />
-          ) : (
-            <Switch
-              className="shrink-0"
-              checked={considerDangerousAsBreaking}
-              onCheckedChange={async failDiffOnDangerousChange => {
-                await updateTargetDangerousChangeClassification({
-                  input: {
-                    failDiffOnDangerousChange,
-                    target: {
-                      bySelector: {
-                        targetSlug: props.targetSlug,
-                        projectSlug: props.projectSlug,
-                        organizationSlug: props.organizationSlug,
+          docsLink={{
+            href: '/schema-registry/management/targets#dangerous-changes',
+            text: 'Learn more',
+          }}
+          sideContent={
+            targetSettings.fetching ? (
+              <Spinner />
+            ) : (
+              <Switch
+                checked={considerDangerousAsBreaking}
+                onCheckedChange={async failDiffOnDangerousChange => {
+                  await updateTargetDangerousChangeClassification({
+                    input: {
+                      failDiffOnDangerousChange,
+                      target: {
+                        bySelector: {
+                          targetSlug: props.targetSlug,
+                          projectSlug: props.projectSlug,
+                          organizationSlug: props.organizationSlug,
+                        },
                       },
                     },
-                  },
-                });
-              }}
-              disabled={dangerousAsBreaking.fetching}
-            />
-          )}
-        </SubPageLayoutHeader>
+                  });
+                }}
+                disabled={dangerousAsBreaking.fetching}
+              />
+            )
+          }
+        />
+
         {dangerousAsBreaking.error && (
           <span className="ml-2 text-red-500">
             {dangerousAsBreaking.error?.graphQLErrors[0]?.message ??
@@ -818,129 +817,126 @@ const BreakingChanges = (props: {
         <SubPageLayout>
           <SubPageLayoutHeader
             subPageTitle="Conditional Breaking Changes"
-            description={
-              <>
-                <CardDescription>
-                  Conditional Breaking Changes can change the behavior of schema checks, based on
-                  real traffic data sent to Hive.
-                </CardDescription>
-                <CardDescription>
-                  <DocsLink
-                    href="/schema-registry/management/targets#conditional-breaking-changes"
-                    className="text-neutral-10 hover:text-neutral-11"
-                  >
-                    Learn more
-                  </DocsLink>
-                </CardDescription>
-              </>
-            }
-          >
-            {targetSettings.fetching ? (
-              <Spinner />
-            ) : (
-              <Switch
-                className="shrink-0"
-                checked={isEnabled}
-                onCheckedChange={async isEnabled => {
-                  await updateValidation({
-                    input: {
-                      target: {
-                        bySelector: {
-                          organizationSlug: props.organizationSlug,
-                          targetSlug: props.targetSlug,
-                          projectSlug: props.projectSlug,
+            description="Conditional Breaking Changes can change the behavior of schema checks, based on real traffic data sent to Hive."
+            docsLink={{
+              href: '/schema-registry/management/targets#conditional-breaking-changes',
+              text: 'Learn more',
+            }}
+            sideContent={
+              targetSettings.fetching ? (
+                <Spinner />
+              ) : (
+                <Switch
+                  checked={isEnabled}
+                  onCheckedChange={async isEnabled => {
+                    await updateValidation({
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: props.organizationSlug,
+                            targetSlug: props.targetSlug,
+                            projectSlug: props.projectSlug,
+                          },
+                        },
+                        conditionalBreakingChangeConfiguration: {
+                          isEnabled,
                         },
                       },
-                      conditionalBreakingChangeConfiguration: {
-                        isEnabled,
-                      },
-                    },
-                  });
-                }}
-                disabled={mutation.fetching}
-              />
-            )}
-          </SubPageLayoutHeader>
+                    });
+                  }}
+                  disabled={mutation.fetching}
+                />
+              )
+            }
+          />
           <div className={clsx('text-neutral-11', !isEnabled && 'pointer-events-none opacity-25')}>
             <div>A schema change is considered as breaking only if it affects more than</div>
-            <div className="mx-4 my-2">
+            <div className="my-2 w-auto max-w-4xl">
               <RadioGroup
-                name="breakingChangeFormula"
+                variant="as-card"
+                orientation="vertical"
+                disabled={isSubmitting}
                 value={values.breakingChangeFormula}
-                onValueChange={async value => {
-                  await setFieldValue('breakingChangeFormula', value);
+                onValueChange={value => {
+                  void setFieldValue('breakingChangeFormula', value);
                 }}
-              >
-                <div>
-                  <RadioGroupItem
-                    id="percentage"
-                    key="percentage"
-                    value="PERCENTAGE"
-                    disabled={isSubmitting}
-                    data-cy="target-cbc-breakingChangeFormula-option-percentage"
-                  >
-                    <RadioGroupIndicator />
-                  </RadioGroupItem>
-                  <Input
-                    name="percentage"
-                    onChange={async event => {
-                      const value = Number(event.target.value);
-                      if (!Number.isNaN(value)) {
-                        await setFieldValue('percentage', value < 0 ? 0 : value, true);
-                      }
-                    }}
-                    onBlur={handleBlur}
-                    value={values.percentage}
-                    disabled={isSubmitting}
-                    type="number"
-                    step="0.01"
-                    className="inline-flex! mx-2 w-16 text-center"
-                  />
-                  <label htmlFor="percentage">Percent of Traffic</label>
-                </div>
-                <div>
-                  <RadioGroupItem
-                    id="requestCount"
-                    key="requestCount"
-                    value="REQUEST_COUNT"
-                    disabled={isSubmitting}
-                    data-cy="target-cbc-breakingChangeFormula-option-requestCount"
-                  >
-                    <RadioGroupIndicator />
-                  </RadioGroupItem>
-                  <Input
-                    name="requestCount"
-                    onChange={async event => {
-                      const value = Math.round(Number(event.target.value));
-                      if (!Number.isNaN(value)) {
-                        await setFieldValue('requestCount', value <= 0 ? 1 : value, true);
-                      }
-                    }}
-                    onBlur={handleBlur}
-                    value={values.requestCount}
-                    disabled={isSubmitting}
-                    type="number"
-                    step="1"
-                    className="inline-flex! mx-2 w-16 text-center"
-                  />
-                  <label htmlFor="requestCount">Total Operations</label>
-                </div>
-              </RadioGroup>
+                items={[
+                  {
+                    value: 'PERCENTAGE',
+                    ariaLabel: 'Percent of Traffic',
+                    withIndicator: true,
+                    content: (
+                      <span
+                        data-cy="target-cbc-breakingChangeFormula-option-percentage"
+                        className="inline-flex items-center gap-2"
+                      >
+                        <Input
+                          name="percentage"
+                          onChange={async event => {
+                            const value = Number(event.target.value);
+                            if (!Number.isNaN(value)) {
+                              await setFieldValue('percentage', value < 0 ? 0 : value, true);
+                            }
+                          }}
+                          onBlur={handleBlur}
+                          value={values.percentage}
+                          disabled={isSubmitting}
+                          invalid={touched.percentage && !!errors.percentage}
+                          type="number"
+                          step="0.01"
+                          width="xs"
+                        />
+                        Percent of Traffic
+                      </span>
+                    ),
+                  },
+                  {
+                    value: 'REQUEST_COUNT',
+                    ariaLabel: 'Total Operations',
+                    withIndicator: true,
+                    content: (
+                      <span
+                        data-cy="target-cbc-breakingChangeFormula-option-requestCount"
+                        className="inline-flex items-center gap-2"
+                      >
+                        <Input
+                          name="requestCount"
+                          onChange={async event => {
+                            const value = Math.round(Number(event.target.value));
+                            if (!Number.isNaN(value)) {
+                              await setFieldValue('requestCount', value <= 0 ? 1 : value, true);
+                            }
+                          }}
+                          onBlur={handleBlur}
+                          value={values.requestCount}
+                          disabled={isSubmitting}
+                          invalid={touched.requestCount && !!errors.requestCount}
+                          type="number"
+                          step="1"
+                          width="xs"
+                        />
+                        Total Operations
+                      </span>
+                    ),
+                  },
+                ]}
+              />
             </div>
-            <div>
-              in the past
+            <div className="flex flex-wrap items-center gap-2">
+              <span>in the past</span>
               <Input
                 name="period"
                 onChange={handleChange}
                 onBlur={handleBlur}
                 value={values.period}
                 disabled={isSubmitting}
+                invalid={touched.period && !!errors.period}
                 type="number"
                 min="1"
                 max={targetSettings.data?.organization?.usageRetentionInDays ?? 30}
-                className="inline-flex! mx-2 w-16"
+                width="xs"
               />
-              days.
+              <span>days.</span>
             </div>
             <div className="mt-3">
               {touched.percentage && errors.percentage && (
@@ -1082,24 +1078,19 @@ const BreakingChanges = (props: {
             {touched.targetIds && errors.targetIds && (
               <div className="text-red-500">{errors.targetIds}</div>
             )}
-            <div className="border-neutral-5 bg-neutral-8/10 text-neutral-10 mb-3 mt-5 space-y-2 rounded-sm border py-2 pl-5">
+            <div className="border-neutral-5 bg-neutral-8/10 text-neutral-10 mb-3 mt-5 w-auto max-w-4xl space-y-2 rounded-sm border py-2 pl-5">
               <div>
                 <div className="font-semibold">Example settings</div>
                 <div className="text-sm">Removal of a field is considered breaking if</div>
               </div>
 
               <div className="text-sm">
-                <Tag color="yellow" className="py-0">
-                  0%
-                </Tag>{' '}
-                - the field was used at least once in past 30 days
+                <Badge content="0%" variants={{ variant: 'warning' }} /> - the field was used at
+                least once in past 30 days
               </div>
               <div className="text-sm">
-                <Tag color="yellow" className="py-0">
-                  10%
-                </Tag>{' '}
-                - the field was requested by more than 10% of all GraphQL operations in recent 30
-                days
+                <Badge content="10%" variants={{ variant: 'warning' }} /> - the field was requested
+                by more than 10% of all GraphQL operations in recent 30 days
               </div>
             </div>
             <Button type="submit" disabled={isSubmitting}>
@@ -1229,55 +1220,51 @@ const AppDeploymentProtection = (props: {
           subPageTitle="App Deployment Protection"
           description={
             <>
-              <CardDescription>
+              <p>
                 Protect app deployments from being accidentally retired while still in use. When
                 enabled, the CLI will block retirement if the deployment has been active within the
                 specified period or exceeds the traffic threshold.
-              </CardDescription>
-              <CardDescription>
+              </p>
+              <p>
                 Use{' '}
                 <code className="bg-neutral-3 rounded-sm px-1 py-0.5 text-xs">
                   hive app:retire --force
                 </code>{' '}
                 to bypass protection.
-              </CardDescription>
-              <CardDescription>
-                <DocsLink
-                  href="/schema-registry/app-deployments#retire-an-app-deployment"
-                  className="text-neutral-8 hover:text-neutral-10"
-                >
-                  Learn more
-                </DocsLink>
-              </CardDescription>
+              </p>
             </>
           }
-        >
-          {targetSettings.fetching ? (
-            <Spinner />
-          ) : (
-            <Switch
-              className="shrink-0"
-              checked={isEnabled}
-              onCheckedChange={async isEnabled => {
-                await updateProtection({
-                  input: {
-                    target: {
-                      bySelector: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
+          docsLink={{
+            href: '/schema-registry/app-deployments#retire-an-app-deployment',
+            text: 'Learn more',
+          }}
+          sideContent={
+            targetSettings.fetching ? (
+              <Spinner />
+            ) : (
+              <Switch
+                checked={isEnabled}
+                onCheckedChange={async isEnabled => {
+                  await updateProtection({
+                    input: {
+                      target: {
+                        bySelector: {
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                          targetSlug: props.targetSlug,
+                        },
+                      },
+                      appDeploymentProtectionConfiguration: {
+                        isEnabled,
                       },
                     },
-                    appDeploymentProtectionConfiguration: {
-                      isEnabled,
-                    },
-                  },
-                });
-              }}
-              disabled={mutation.fetching}
-            />
-          )}
-        </SubPageLayoutHeader>
+                  });
+                }}
+                disabled={mutation.fetching}
+              />
+            )
+          }
+        />
         <div className={clsx('text-neutral-10', !isEnabled && 'pointer-events-none opacity-25')}>
           <div className="space-y-4">
             <div>
@@ -1291,9 +1278,10 @@ const AppDeploymentProtection = (props: {
                     onBlur={handleBlur}
                     value={values.minDaysSinceCreation}
                     disabled={isSubmitting}
+                    invalid={touched.minDaysSinceCreation && !!errors.minDaysSinceCreation}
                     type="number"
                     min="0"
-                    className="inline-flex! w-20 text-center"
+                    width="xs"
                   />
                   <span>days ago and has not been used for at least</span>
                   <Input
@@ -1302,9 +1290,10 @@ const AppDeploymentProtection = (props: {
                     onBlur={handleBlur}
                     value={values.minDaysInactive}
                     disabled={isSubmitting}
+                    invalid={touched.minDaysInactive && !!errors.minDaysInactive}
                     type="number"
                     min="0"
-                    className="inline-flex! w-20 text-center"
+                    width="xs"
                   />
                   <span>days</span>
                 </div>
@@ -1327,11 +1316,12 @@ const AppDeploymentProtection = (props: {
                     onBlur={handleBlur}
                     value={values.maxTrafficPercentage}
                     disabled={isSubmitting}
+                    invalid={touched.maxTrafficPercentage && !!errors.maxTrafficPercentage}
                     type="number"
                     min="0"
                     max="100"
                     step="0.01"
-                    className="inline-flex! w-20 text-center"
+                    width="xs"
                   />
                   <span>percent of traffic over the last</span>
                   <Input
@@ -1340,9 +1330,10 @@ const AppDeploymentProtection = (props: {
                     onBlur={handleBlur}
                     value={values.trafficPeriodDays}
                     disabled={isSubmitting}
+                    invalid={touched.trafficPeriodDays && !!errors.trafficPeriodDays}
                     type="number"
                     min="1"
-                    className="inline-flex! w-20 text-center"
+                    width="xs"
                   />
                   <span>days</span>
                 </div>
@@ -1498,19 +1489,16 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
           <SubPageLayoutHeader
             subPageTitle="Target Slug"
             description={
-              <CardDescription>
+              <p>
                 This is your target's URL namespace on Hive. Changing it{' '}
                 <span className="font-bold">will</span> invalidate any existing links to your
                 target.
-                <br />
-                <DocsLink
-                  className="text-neutral-10 text-sm"
-                  href="/schema-registry/management/targets#change-slug-of-a-target"
-                >
-                  You can read more about it in the documentation
-                </DocsLink>
-              </CardDescription>
+              </p>
             }
+            docsLink={{
+              href: '/schema-registry/management/targets#change-slug-of-a-target',
+              text: 'Read more in the documentation',
+            }}
           />
           <div>
             <FormField
@@ -1519,13 +1507,12 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="flex items-center">
-                      <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 rounded-md rounded-r-none border-y border-l px-3 py-2 text-sm">
-                        {env.appBaseUrl.replace(/https?:\/\//i, '')}/{props.organizationSlug}/
-                        {props.projectSlug}/
-                      </div>
-                      <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
-                    </div>
+                    <Input
+                      placeholder="slug"
+                      prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${props.organizationSlug}/${props.projectSlug}/`}
+                      width="sm"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -1615,20 +1602,18 @@ function GraphQLEndpointUrl(props: {
         subPageTitle="GraphQL Endpoint URL"
         description={
           <>
-            <CardDescription>
-              The endpoint url will be used for querying the target from the{' '}
-              <Link
-                to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
-                params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
-                }}
-              >
-                Hive Laboratory
-              </Link>
-              .
-            </CardDescription>
+            The endpoint url will be used for querying the target from the{' '}
+            <Link
+              to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
+              params={{
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              }}
+            >
+              Hive Laboratory
+            </Link>
+            .
           </>
         }
       />
@@ -1642,7 +1627,10 @@ function GraphQLEndpointUrl(props: {
               onChange={handleChange}
               onBlur={handleBlur}
               disabled={isSubmitting}
-              className="w-96"
+              invalid={
+                touched.graphqlEndpointUrl && !!(errors.graphqlEndpointUrl || mutation.error)
+              }
+              width="md"
             />
             <Button type="submit" disabled={isSubmitting}>
               Save
@@ -1699,21 +1687,15 @@ function TargetDelete(props: {
       <SubPageLayoutHeader
         subPageTitle="Delete Target"
         description={
-          <>
-            <CardDescription>
-              Deleting an project also delete all schemas and data associated with it.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                href="/schema-registry/management/targets#delete-a-target"
-                className="text-neutral-10 hover:text-neutral-11"
-              >
-                <strong>This action is not reversible!</strong> You can find more information about
-                this process in the documentation
-              </DocsLink>
-            </CardDescription>
-          </>
+          <p>
+            Deleting an project also delete all schemas and data associated with it.{' '}
+            <strong>This action is not reversible!</strong>
+          </p>
         }
+        docsLink={{
+          href: '/schema-registry/management/targets#delete-a-target',
+          text: 'Read more in the documentation',
+        }}
       />
       <Button variant="destructive" onClick={toggleModalOpen}>
         Delete Target
@@ -1850,7 +1832,7 @@ function TargetSettingsContent(props: {
     }
 
     return pages;
-  }, [currentTarget]);
+  }, [currentTarget, currentProject]);
 
   const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
 

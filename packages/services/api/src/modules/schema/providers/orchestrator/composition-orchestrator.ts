@@ -1,7 +1,7 @@
 import { CONTEXT, Inject, Injectable, Scope } from 'graphql-modules';
 import { abortSignalAny } from '@graphql-hive/signal';
 import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
-import { trace, traceFn } from '@hive/service-common';
+import { errorSourceLink, trace, traceFn } from '@hive/service-common';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import {
   ComposeAndValidateResult,
@@ -52,6 +52,7 @@ export class CompositionOrchestrator {
     this.logger = logger.child({ service: 'FederationOrchestrator' });
     this.schemaService = createTRPCProxyClient<SchemaBuilderApi>({
       links: [
+        errorSourceLink('schema-service'),
         httpLink({
           url: `${serviceConfig.endpoint}/trpc`,
           fetch,

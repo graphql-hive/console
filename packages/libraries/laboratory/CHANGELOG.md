@@ -1,5 +1,86 @@
 # @graphql-hive/laboratory
 
+## 0.3.0
+
+### Minor Changes
+
+- [#8450](https://github.com/graphql-hive/console/pull/8450)
+  [`017aee2`](https://github.com/graphql-hive/console/commit/017aee21212244951cc8643d93b5d33d1a0f4a6e)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Union and interface fields are
+  now expandable in the query builder: each abstract field lists its possible types as a
+  `... on Type` row, with `__typename` selected automatically so the operation stays valid.
+  Previously an abstract field was written with no selection set and servers rejected the request.
+  Search now finds fields inside those branches, and a field selected inside a hand-written inline
+  fragment checks the row under its own type rather than the parent's.
+
+## 0.2.7
+
+### Patch Changes
+
+- [#8440](https://github.com/graphql-hive/console/pull/8440)
+  [`f9baa80`](https://github.com/graphql-hive/console/commit/f9baa802e523eba58bea99e77cad83269033b1ed)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Make Stop cancel a running
+  subscription on every transport. Cancellation relied on the executor honouring `request.signal`,
+  which `@graphql-tools/executor-legacy-ws` does not, so stopping a `LEGACY_WS` subscription did
+  nothing and the run kept rendering events until the server completed on its own. The stream is now
+  ended from the laboratory side as well.
+
+## 0.2.6
+
+### Patch Changes
+
+- [#8369](https://github.com/graphql-hive/console/pull/8369)
+  [`dc32e0b`](https://github.com/graphql-hive/console/commit/dc32e0b43081f87cf6f41a820e5e6e76cd4aa687)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-yoga package to patch vulnerability
+
+## 0.2.5
+
+### Patch Changes
+
+- [#8363](https://github.com/graphql-hive/console/pull/8363)
+  [`1f7c817`](https://github.com/graphql-hive/console/commit/1f7c8177bd945b614ec18bee909b88c374b1f2ed)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-55q2-fjhq-7xh7](https://github.com/advisories/GHSA-55q2-fjhq-7xh7).
+
+## 0.2.4
+
+### Patch Changes
+
+- [#8355](https://github.com/graphql-hive/console/pull/8355)
+  [`b8b4499`](https://github.com/graphql-hive/console/commit/b8b4499af882ae6f711d6553957105120d98fd31)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Lab: Add a schema documentation
+  pane, opt-in via the new `enableDocs` prop.
+
+  When enabled, a third icon appears in the left rail and opens documentation in the same slot as
+  Collections and History: browse root types, types and fields, search across the whole type map
+  (including input objects and enum values), and read descriptions, deprecations and argument
+  defaults. Builder rows gain an "Open in Docs" context menu entry, and the GraphQL editor hover
+  gains an "Open in Docs" link. `renderLaboratory` enables the pane by default, so standalone
+  embedders of the UMD bundle get it without passing `enableDocs`.
+
+  `enableDocs` also decides whether introspection asks for descriptions, so a host that supplies
+  `defaultSchemaIntrospection` must build it with descriptions itself. Building it with
+  `introspectionFromSchema` does that by default.
+
+  **Removed:** the `introspection.schemaDescription` setting and its toggle in the settings dialog.
+  It was wired to graphql-js's `descriptions` option rather than `schemaDescription`, and defaulted
+  to `false` where graphql-js defaults to `true`, so nothing rendered descriptions and the toggle
+  had no discoverable effect. Descriptions now follow `enableDocs`. `render-laboratory` no longer
+  maps Yoga's `schemaDescription` option.
+
+- [#8357](https://github.com/graphql-hive/console/pull/8357)
+  [`ee824bd`](https://github.com/graphql-hive/console/commit/ee824bd3fb254d65f16340296b19930dd53f4a50)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Laboratory: restore preflight
+  behaviour that was lost when the lab moved into this package, and stop a script from being able to
+  wedge a run.
+
+  - `lab.prompt(title, defaultValue, { placeholder, description })`. **The first argument is now the
+    field label rather than the input's placeholder**.
+  - `lab.environment.set()` accepts strings, numbers, booleans and `null`; anything else is dropped
+    with a warning, since environment values are interpolated into headers as text.
+  - New `preflightNotice` prop. The preflight editor warns that scripts run in the reader's browser;
+    hosts that share one script between people should say so here.
+
 ## 0.2.3
 
 ### Patch Changes

@@ -1,10 +1,18 @@
-import { InjectionToken } from 'graphql-modules';
+import { Injectable, Scope } from 'graphql-modules';
 import type { AwsClient } from '../../cdn/providers/aws';
 
-export type S3Config = Array<{
+type AtLeastOneReadonlyArray<T> = readonly [T, ...T[]];
+
+export type S3Destination = {
   client: AwsClient;
   endpoint: string;
   bucket: string;
-}>;
+};
 
-export const S3_CONFIG = new InjectionToken<S3Config>('S3_CONFIG');
+/**
+ * S3 bucket storage configurations for dual writes to a primary and secondary destination.
+ */
+@Injectable({ scope: Scope.Singleton, global: true })
+export class S3Config {
+  constructor(public destinations: AtLeastOneReadonlyArray<S3Destination>) {}
+}

@@ -490,6 +490,8 @@ export class SchemaManager {
       existingSchemaLogs: Array<{ id: string; serviceName: string | null }>;
       base_schema: string | null;
       metadata: string | null;
+      schemaRevisionId: string | null;
+      revision: string | null;
       actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: string | null;
@@ -783,6 +785,7 @@ export class SchemaManager {
       cursor: args.cursor,
       transformNode: node => args.transformNode(node),
       filters: args.filters,
+      withSDL: args.withSDL,
       withChanges: args.withChanges,
     });
 
@@ -871,6 +874,14 @@ export class SchemaManager {
       schemaCheck.id,
     );
 
+    if (schemaCheck.baselineCompositionErrors !== null) {
+      this.logger.debug(
+        'Check can not be approved due to baseline composition errors. (schemaCheckId=%s)',
+        schemaCheck.id,
+      );
+      return false;
+    }
+
     if (schemaCheck.schemaCompositionErrors !== null) {
       this.logger.debug(
         'Check can not be approved due to composition errors. (schemaCheckId=%s)',
@@ -905,6 +916,14 @@ export class SchemaManager {
     );
 
     for (const contract of contracts) {
+      if (contract.baselineSchemaCompositionErrors !== null) {
+        this.logger.debug(
+          'Contract has baseline composition errors, schema check can not be approved. (schemaCheckId=%s, contractId=%s)',
+          schemaCheck.id,
+          contract.contractId,
+        );
+        return false;
+      }
       if (contract.schemaCompositionErrors !== null) {
         this.logger.debug(
           'Contract has composition errors, schema check can not be approved. (schemaCheckId=%s, contractId=%s)',

@@ -48,6 +48,12 @@ export default gql`
     assignMemberRole(input: AssignMemberRoleInput! @tag(name: "public")): AssignMemberRoleResult!
       @tag(name: "public")
     """
+    Confirm that an existing member should be managed through SCIM.
+    """
+    confirmSCIMManagementForMember(
+      input: ConfirmSCIMManagementForMemberInput!
+    ): ConfirmSCIMManagementForMemberResult!
+    """
     Create a new access token scoped to an organization.
     """
     createOrganizationAccessToken(
@@ -909,6 +915,10 @@ export default gql`
     members.
     """
     searchTerm: String
+    """
+    When true, returns only members awaiting confirmation of SCIM management.
+    """
+    needsSCIMManagementConfirmation: Boolean = false
   }
 
   type Organization {
@@ -932,6 +942,10 @@ export default gql`
       after: String @tag(name: "public")
       filters: MembersFilter
     ): MemberConnection! @tag(name: "public")
+    """
+    The number of members awaiting confirmation of SCIM management.
+    """
+    pendingSCIMManagementConfirmationsCount: Int!
     invitations(
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
@@ -1690,21 +1704,82 @@ export default gql`
     message: String!
   }
 
+  """
+  The lifecycle state of a SCIM-provisioned user.
+  """
+  enum ProvisioningStatus {
+    """
+    SCIM provisioning is active. The user's effective access is derived from SCIM group
+    assignments, and deactivation by the identity provider is enforced.
+    """
+    active
+    """
+    SCIM matched an existing account and the adoption is awaiting confirmation. Until confirmed,
+    the user's existing role assignments remain effective and SCIM deactivation is not enforced.
+    """
+    pendingConfirmation
+  }
+
+  input ConfirmSCIMManagementForMemberInput {
+    """
+    The organization managing the user through SCIM.
+    """
+    organization: OrganizationReferenceInput!
+    """
+    The organization member whose pending SCIM provisioning conflict should be confirmed.
+    """
+    member: MemberReferenceInput!
+  }
+
+  type ConfirmSCIMManagementForMemberResultOk {
+    """
+    The member after the SCIM provisioning conflict has been confirmed.
+    """
+    confirmedMember: Member!
+  }
+
+  type ConfirmSCIMManagementForMemberResultError {
+    message: String!
+  }
+
+  """
+  @oneOf
+  """
+  type ConfirmSCIMManagementForMemberResult {
+    ok: ConfirmSCIMManagementForMemberResultOk
+    error: ConfirmSCIMManagementForMemberResultError
+  }
+
+  """
+  SCIM provisioning information for a user.
+  """
   type MemberProvisionInformation {
+    """
+    Whether the identity provider has deactivated the user. Deactivation is enforced only when
+    provisioningStatus is active.
+    """
     isDisabled: Boolean!
+    """
+    The current lifecycle state of the user's SCIM provisioning.
+    """
+    provisioningStatus: ProvisioningStatus!
+    """
+    The stable identifier assigned to the user by the identity provider.
+    """
+    externalId: ID!
   }
 
   extend type Member {
     """
-    The groups the member is part of.
+    The SCIM groups to which the member currently belongs.
     """
     groups: [Group!]!
   }
 
   extend type User {
     """
-    Information about the user if provisioned.
-    The fields value is null if the user is not a provisioned user.
+    SCIM provisioning information for the user, or null when the user is not provisioned through
+    SCIM.
     """
     provisionInfo: MemberProvisionInformation
   }

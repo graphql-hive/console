@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react';
 import { subMinutes } from 'date-fns';
 import { useQuery } from 'urql';
 import { Select } from '@/components/base/floating/select/select';
+import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { PageLead } from '@/components/base/page-lead';
 import { BackLink } from '@/components/navigation/back-link';
-import { ResourceNotFoundComponent } from '@/components/resource-not-found';
 import { AlertConditionsPanel } from '@/components/target/alerts/alert-conditions-panel';
 import {
   AlertEventsTable,
@@ -121,6 +121,7 @@ const TargetAlertsDetailPage_StateLogQuery = graphql(`
       id
       metricAlertRule(id: $ruleId) {
         id
+        lastEvaluatedAt
         stateAt(timestamp: $from)
         stateLog(from: $from, to: $to) {
           id
@@ -233,7 +234,13 @@ export function TargetAlertsDetailPage(props: {
   }
 
   if (!rule) {
-    return <ResourceNotFoundComponent title="Alert rule not found" />;
+    return (
+      <NotFound
+        variants={{ layout: 'horizontal', illustration: 'connection' }}
+        title="Alert rule not found"
+        description={resourceAccessDescription}
+      />
+    );
   }
 
   return (
@@ -323,6 +330,9 @@ function RuleStateLogSection(props: {
   const data = useKeepPreviousData(result.data, result.fetching || result.stale);
   const stateLog = data?.target?.metricAlertRule?.stateLog ?? [];
   const stateAtWindowStart = data?.target?.metricAlertRule?.stateAt;
+  // Read from the polling query, not the rule config: the chart's scored window
+  // has to advance with each evaluation, and the config query never refetches.
+  const lastEvaluatedAt = data?.target?.metricAlertRule?.lastEvaluatedAt;
   const operationsStats = data?.target?.operationsStats ?? null;
   const hasNoData = !data;
   const stateLogStatus =
@@ -369,6 +379,7 @@ function RuleStateLogSection(props: {
           direction={rule.direction}
           thresholdType={rule.thresholdType}
           timeWindowMinutes={rule.timeWindowMinutes}
+          evaluatedAt={lastEvaluatedAt}
         />
       </section>
 

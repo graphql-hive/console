@@ -1,12 +1,12 @@
 import { parse, printSchema } from 'graphql';
-import LRU from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import { composeServices } from '@apollo/composition';
 import { Supergraph } from '@apollo/federation-internals';
 import { compose, signatureHeaderName, verifyRequest } from '@graphql-hive/external-composition';
 import { createServerAdapter } from '@whatwg-node/server';
 import { ResolvedEnv } from './environment';
 
-const cache = new LRU<string, Promise<string>>({
+const cache = new LRUCache<string, Promise<string>>({
   max: 20,
   allowStale: true,
 });

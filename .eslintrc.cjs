@@ -53,7 +53,7 @@ module.exports = {
     'packages/libraries/cli/src/gql/**/*',
     'packages/services/storage/src/db/types.ts',
     'packages/web/app/src/gql/**/*',
-    'codegen.cjs',
+    'codegen.mts',
     'tsup',
     'packages/libraries/render-laboratory/src/laboratory.ts',
     'packages/web/app/vite.config.ts',
@@ -271,7 +271,13 @@ module.exports = {
       },
     },
     {
-      files: ['packages/web/app/**/*.stories.tsx', 'packages/web/docs/**'],
+      files: [
+        // Foundry mounts a preview's `render` as a component, so hooks inside it are legitimate,
+        // but the rule only recognises a component by a capitalised name.
+        'packages/web/app/**/*.preview.tsx',
+        'packages/libraries/laboratory/dev/previews/**/*.preview.tsx',
+        'packages/web/docs/**',
+      ],
       rules: {
         'react-hooks/rules-of-hooks': 'off',
       },

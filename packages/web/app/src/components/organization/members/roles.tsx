@@ -1,9 +1,17 @@
-import { useCallback, useState } from 'react';
-import { LockIcon, MoreHorizontalIcon } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { LockIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Input } from '@/components/base/input/input';
+import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Textarea } from '@/components/base/textarea/textarea';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,12 +33,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Form,
   FormControl,
   FormField,
@@ -39,14 +40,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 import { PermissionSelector } from './permission-selector';
 import { SelectedPermissionOverview } from './selected-permission-overview';
 
@@ -213,7 +212,13 @@ function OrganizationMemberRoleEditor(props: {
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter a name" type="text" autoComplete="off" {...field} />
+                      <Input
+                        placeholder="Enter a name"
+                        type="text"
+                        autoComplete="off"
+                        onSurface="raised"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -226,7 +231,12 @@ function OrganizationMemberRoleEditor(props: {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Enter a description" autoComplete="off" {...field} />
+                      <Textarea
+                        placeholder="Enter a description"
+                        autoComplete="off"
+                        onSurface="raised"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -236,13 +246,13 @@ function OrganizationMemberRoleEditor(props: {
             <div className="grow">
               <div className="flex h-[400px] flex-col space-y-2">
                 <FormLabel>Permissions</FormLabel>
-                <div className="overflow-y-auto">
+                <ScrollArea fill>
                   <PermissionSelector
                     onSelectedPermissionsChange={onChangeSelectedPermissions}
                     permissionGroups={organization.availableMemberPermissionGroups}
                     selectedPermissionIds={selectedPermissions}
                   />
-                </div>
+                </ScrollArea>
               </div>
             </div>
           </div>
@@ -294,13 +304,13 @@ function OrganizationMemberRoleView(props: {
       </DialogHeader>
       <div className="grow">
         <div className="flex h-[400px] flex-col space-y-2">
-          <div className="overflow-scroll">
+          <ScrollArea fill>
             <SelectedPermissionOverview
               showOnlyAllowedPermissions={showOnlyGrantedPermissions}
               activePermissionIds={role.permissions}
               permissionsGroups={organization.availableMemberPermissionGroups}
             />
-          </div>
+          </ScrollArea>
         </div>
       </div>
       <DialogFooter>
@@ -476,6 +486,7 @@ function OrganizationMemberRoleCreator(props: {
                           placeholder="Enter a name"
                           type="text"
                           autoComplete="off"
+                          onSurface="raised"
                           {...field}
                         />
                       </FormControl>
@@ -490,7 +501,12 @@ function OrganizationMemberRoleCreator(props: {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea autoComplete="off" placeholder="Enter a description" {...field} />
+                        <Textarea
+                          autoComplete="off"
+                          placeholder="Enter a description"
+                          onSurface="raised"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -500,23 +516,25 @@ function OrganizationMemberRoleCreator(props: {
               <div className="grow">
                 <div className="flex h-[400px] flex-col space-y-2">
                   <FormLabel>Permissions</FormLabel>
-                  <div className="overflow-y-auto">
+                  <ScrollArea fill>
                     <PermissionSelector
                       onSelectedPermissionsChange={onChangeSelectedPermissions}
                       permissionGroups={organization.availableMemberPermissionGroups}
                       selectedPermissionIds={selectedPermissions}
                     />
-                  </div>
+                  </ScrollArea>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="h-[400px] overflow-scroll">
-              <SelectedPermissionOverview
-                activePermissionIds={Array.from(selectedPermissions)}
-                permissionsGroups={organization.availableMemberPermissionGroups}
-                showOnlyAllowedPermissions={showOnlyGrantedPermissions}
-              />
+            <div className="flex h-[400px] flex-col">
+              <ScrollArea fill>
+                <SelectedPermissionOverview
+                  activePermissionIds={Array.from(selectedPermissions)}
+                  permissionsGroups={organization.availableMemberPermissionGroups}
+                  showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+                />
+              </ScrollArea>
             </div>
           )}
           <DialogFooter>
@@ -608,137 +626,137 @@ const OrganizationMemberRoleRow_MemberRoleFragment = graphql(`
   }
 `);
 
-function OrganizationMemberRoleRow(props: {
+type RoleNode = FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>;
+
+function RoleNameCell(props: {
+  role: RoleNode;
   organizationSlug: string;
-  canChangeOIDCDefaultRole: boolean;
   isOIDCDefaultRole: boolean;
-  role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>;
-  onEdit(role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>): void;
-  onDelete(role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>): void;
-  onShow(role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>): void;
+  canChangeOIDCDefaultRole: boolean;
+}) {
+  const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
+  const trailing =
+    role.isLocked || props.isOIDCDefaultRole ? (
+      <>
+        {role.isLocked ? (
+          <Tooltip
+            trigger={
+              <span className="inline-flex">
+                <LockIcon className="size-4" />
+              </span>
+            }
+            side="right"
+            content={
+              <div className="flex flex-col items-start gap-y-1 p-2">
+                <div className="text-xs font-medium">This role is locked</div>
+                <div className="text-neutral-10 text-xs">
+                  Locked roles are created by the system and cannot be modified or deleted.
+                </div>
+              </div>
+            }
+          />
+        ) : null}
+        {props.isOIDCDefaultRole ? (
+          <Popover
+            trigger={
+              <button type="button" aria-label="About the default role">
+                <Badge content="default" variants={{ variant: 'outline' }} />
+              </button>
+            }
+            openOnHover
+            side="right"
+            content={
+              <div className="flex flex-col items-start gap-y-2">
+                <div className="font-medium">Default role for new members</div>
+                <div className="text-neutral-10 text-sm">
+                  <p>New members will be assigned to this role by default.</p>
+                  {props.canChangeOIDCDefaultRole ? (
+                    <p>
+                      You can change it in the{' '}
+                      <Link
+                        to="/$organizationSlug/view/settings"
+                        hash="manage-oidc-integration"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                        }}
+                        className="underline"
+                      >
+                        OIDC settings
+                      </Link>
+                      .
+                    </p>
+                  ) : (
+                    <p>Only admins can change it in the OIDC settings.</p>
+                  )}
+                </div>
+              </div>
+            }
+          />
+        ) : null}
+      </>
+    ) : undefined;
+  return <DataTableCell kind="text" value={role.name} weight="medium" trailing={trailing} />;
+}
+
+function RoleDescriptionCell(props: { role: RoleNode }) {
+  const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
+  return (
+    <DataTableCell
+      kind="text"
+      value={<span title={role.description}>{role.description}</span>}
+      tone="muted"
+      truncate
+    />
+  );
+}
+
+function RoleMembersCell(props: { role: RoleNode }) {
+  const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
+  return (
+    <DataTableCell
+      kind="text"
+      value={`${role.membersCount} ${role.membersCount === 1 ? 'member' : 'members'}`}
+    />
+  );
+}
+
+function RoleActionsCell(props: {
+  role: RoleNode;
+  onShow(): void;
+  onEdit(): void;
+  onDelete(): void;
 }) {
   const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
   return (
-    <tr>
-      <td className="py-3 text-sm font-medium">
-        <div className="flex flex-row items-center">
-          <div>{role.name}</div>
-          {role.isLocked ? (
-            <div className="ml-2">
-              <TooltipProvider>
-                <Tooltip delayDuration={100}>
-                  <TooltipTrigger asChild>
-                    <LockIcon className="size-4" />
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <div className="flex flex-col items-start gap-y-2 p-2">
-                      <div className="font-medium">This role is locked</div>
-                      <div className="text-neutral-10 text-sm">
-                        Locked roles are created by the system and cannot be modified or deleted.
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          ) : null}
-          {props.isOIDCDefaultRole ? (
-            <div className="ml-2">
-              <TooltipProvider>
-                <Tooltip delayDuration={100}>
-                  <TooltipTrigger>
-                    <Badge variant="outline">default</Badge>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <div className="flex flex-col items-start gap-y-2 p-2">
-                      <div className="font-medium">Default role for new members</div>
-                      <div className="text-neutral-10 text-sm">
-                        <p>New members will be assigned to this role by default.</p>
-                        {props.canChangeOIDCDefaultRole ? (
-                          <p>
-                            You can change it in the{' '}
-                            <Link
-                              to="/$organizationSlug/view/settings"
-                              hash="manage-oidc-integration"
-                              params={{
-                                organizationSlug: props.organizationSlug,
-                              }}
-                              className="underline"
-                            >
-                              OIDC settings
-                            </Link>
-                            .
-                          </p>
-                        ) : (
-                          <p>Only admins can change it in the OIDC settings.</p>
-                        )}
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          ) : null}
-        </div>
-      </td>
-      <td className="text-neutral-10 break-words py-3 text-sm" title={role.description}>
-        {role.description}
-      </td>
-      <td className="py-3 text-center text-sm">
-        {role.membersCount} {role.membersCount === 1 ? 'member' : 'members'}
-      </td>
-      <td className="py-3 text-right text-sm">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
-              <MoreHorizontalIcon className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[160px]">
-            <DropdownMenuItem onClick={() => props.onShow(props.role)}>Show</DropdownMenuItem>
-            <TooltipProvider>
-              <Tooltip delayDuration={200} {...(role.canUpdate ? { open: false } : {})}>
-                <TooltipTrigger className="block w-full">
-                  <DropdownMenuItem
-                    onClick={() => props.onEdit(props.role)}
-                    disabled={!role.canUpdate}
-                  >
-                    Edit
-                  </DropdownMenuItem>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {role.canUpdate
-                    ? null
-                    : "You cannot edit this role as you don't have enough permissions."}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip delayDuration={200} {...(role.canDelete ? { open: false } : {})}>
-                <TooltipTrigger className="block w-full">
-                  <DropdownMenuItem
-                    onClick={() => props.onDelete(props.role)}
-                    disabled={!role.canDelete}
-                  >
-                    Delete
-                  </DropdownMenuItem>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {role.canDelete
-                    ? null
-                    : `You cannot delete this role as ${
-                        role.membersCount > 0
-                          ? 'it has members.'
-                          : "you don't have enough permissions."
-                      }`}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </td>
-    </tr>
+    <DataTableCell
+      kind="actions"
+      label={`Actions for ${role.name}`}
+      sections={[
+        [
+          { label: 'Show', onClick: props.onShow },
+          {
+            label: 'Edit',
+            onClick: props.onEdit,
+            disabled: !role.canUpdate,
+            // Only set when it applies, so an allowed row gets no tooltip wrapper at all.
+            tooltip: role.canUpdate
+              ? undefined
+              : "You cannot edit this role as you don't have enough permissions.",
+          },
+          {
+            label: 'Delete',
+            variant: 'destructiveAction',
+            onClick: props.onDelete,
+            disabled: !role.canDelete,
+            tooltip: role.canDelete
+              ? undefined
+              : `You cannot delete this role as ${
+                  role.membersCount > 0 ? 'it has members.' : "you don't have enough permissions."
+                }`,
+          },
+        ],
+      ]}
+    />
   );
 }
 
@@ -825,6 +843,51 @@ export function OrganizationMemberRoles(props: {
   const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
   const [roleToShow, setRoleToShow] = useState<Role | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+
+  const defaultMemberRoleId = organization.oidcIntegration?.defaultMemberRole?.id;
+  const canChangeOIDCDefaultRole = organization.me?.role?.name === 'Admin';
+  const columns = useMemo<ColumnDef<NonNullable<Role>, unknown>[]>(
+    () => [
+      {
+        id: 'name',
+        header: 'Name',
+        meta: { width: 'md' },
+        cell: ({ row }) => (
+          <RoleNameCell
+            role={row.original}
+            organizationSlug={organization.slug}
+            isOIDCDefaultRole={defaultMemberRoleId === row.original.id}
+            canChangeOIDCDefaultRole={canChangeOIDCDefaultRole}
+          />
+        ),
+      },
+      {
+        id: 'description',
+        header: 'Description',
+        meta: { width: 'fill' },
+        cell: ({ row }) => <RoleDescriptionCell role={row.original} />,
+      },
+      {
+        id: 'members',
+        header: 'Members',
+        meta: { align: 'center', width: 'sm' },
+        cell: ({ row }) => <RoleMembersCell role={row.original} />,
+      },
+      {
+        id: 'actions',
+        meta: { width: 'xs' },
+        cell: ({ row }) => (
+          <RoleActionsCell
+            role={row.original}
+            onShow={() => setRoleToShow(row.original)}
+            onEdit={() => setRoleToEdit(row.original)}
+            onDelete={() => setRoleToDelete(row.original)}
+          />
+        ),
+      },
+    ],
+    [organization.slug, defaultMemberRoleId, canChangeOIDCDefaultRole],
+  );
 
   return (
     <>
@@ -926,33 +989,15 @@ export function OrganizationMemberRoles(props: {
         <SubPageLayoutHeader
           subPageTitle="List of roles"
           description="Manage the roles that can be assigned to members of this organization."
-        >
-          <OrganizationMemberRoleCreateButton organization={organization} />
-        </SubPageLayoutHeader>
-        <table className="divide-neutral-10/20 w-full table-auto divide-y-[1px]">
-          <thead>
-            <tr>
-              <th className="min-w-[200px] py-3 text-left text-sm font-semibold">Name</th>
-              <th className="py-3 text-left text-sm font-semibold">Description</th>
-              <th className="min-w-[150px] py-3 text-center text-sm font-semibold">Members</th>
-              <th className="w-12 py-3 text-right text-sm font-semibold" />
-            </tr>
-          </thead>
-          <tbody className="divide-neutral-10/20 divide-y-[1px]">
-            {organization.memberRoles?.edges.map(({ node: role }) => (
-              <OrganizationMemberRoleRow
-                organizationSlug={organization.slug}
-                isOIDCDefaultRole={organization.oidcIntegration?.defaultMemberRole?.id === role.id}
-                canChangeOIDCDefaultRole={organization.me?.role?.name === 'Admin'}
-                key={role.id}
-                role={role}
-                onEdit={() => setRoleToEdit(role)}
-                onDelete={() => setRoleToDelete(role)}
-                onShow={() => setRoleToShow(role)}
-              />
-            ))}
-          </tbody>
-        </table>
+          sideContent={<OrganizationMemberRoleCreateButton organization={organization} />}
+        />
+        <DataTable
+          data={organization.memberRoles?.edges.map(({ node }) => node) ?? []}
+          columns={columns}
+          getRowId={role => role.id}
+          pagination={{ kind: 'none' }}
+          emptyMessage="No roles yet."
+        />
       </SubPageLayout>
     </>
   );

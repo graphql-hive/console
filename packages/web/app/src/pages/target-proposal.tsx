@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { useMutation, useQuery } from 'urql';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -10,7 +11,6 @@ import {
 } from '@/components/target/proposals';
 import { SaveProposalProvider } from '@/components/target/proposals/save-proposal-modal';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
-import { CardDescription } from '@/components/ui/card';
 import { CheckIcon, DiffIcon, EditIcon, GraphQLIcon, XIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -18,8 +18,7 @@ import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { TimeAgo } from '@/components/v2';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
@@ -414,11 +413,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 )}
               </span>
             }
-            description={
-              <CardDescription>
-                Collaborate on schema changes to reduce friction during development.
-              </CardDescription>
-            }
+            description="Collaborate on schema changes to reduce friction during development."
           />
         </div>
       </div>
@@ -432,17 +427,21 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 {/* <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} /> */}
                 <Title className="flex grow flex-row items-center gap-2 truncate">
                   <div className="truncate">{proposal.title}</div>
-                  <TooltipProvider delayDuration={0}>
-                    <Tooltip>
-                      <TooltipTrigger>
+                  <Tooltip
+                    align="start"
+                    maxWidth="lg"
+                    trigger={
+                      <span className="inline-flex">
                         {proposal?.compositionStatus === 'ERROR' ? (
                           <XIcon className="text-red-600" />
                         ) : null}
                         {proposal?.compositionStatus === 'SUCCESS' ? (
                           <CheckIcon className="text-emerald-500" />
                         ) : null}
-                      </TooltipTrigger>
-                      <TooltipContent align="start">
+                      </span>
+                    }
+                    content={
+                      <>
                         {proposal?.compositionStatus === 'ERROR' ? (
                           <>
                             Composition Error{' '}
@@ -457,13 +456,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                           </>
                         ) : null}
                         {proposal?.compositionStatus === 'SUCCESS' ? 'Composes Successfully' : null}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                      </>
+                    }
+                  />
                 </Title>
                 <div className="flex-col justify-end">
                   <StageTransitionSelect
-                    className="w-full sm:w-auto"
                     stage={proposal.stage}
                     onSelect={async stage => {
                       const _review = await reviewSchemaProposal({

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -11,7 +12,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import * as Sheet from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
@@ -58,7 +58,7 @@ export function ConnectSingleSignOnProviderSheet(
 ): React.ReactNode {
   const [state, setState] = useState<'discovery' | 'manual'>('discovery');
   const form = useForm({
-    resolver: zodResolver(OIDCMetadataSchema),
+    resolver: zodResolver(ConnectProviderFormSchema),
     defaultValues: {
       authorization_endpoint: props.initialValues?.authorizationEndpoint ?? '',
       token_endpoint: props.initialValues?.tokenEndpoint ?? '',
@@ -138,6 +138,7 @@ export function ConnectSingleSignOnProviderSheet(
                 <FormLabel>Authorization Endpoint</FormLabel>
                 <FormControl>
                   <Input
+                    onSurface="raised"
                     disabled={state === 'discovery'}
                     placeholder="https://my.okta.com/oauth2/v1/authorize"
                     autoComplete="off"
@@ -158,6 +159,7 @@ export function ConnectSingleSignOnProviderSheet(
                 <FormLabel>Token Endpoint</FormLabel>
                 <FormControl>
                   <Input
+                    onSurface="raised"
                     disabled={state === 'discovery'}
                     placeholder="https://my.okta.com/oauth2/v1/token"
                     autoComplete="off"
@@ -178,6 +180,7 @@ export function ConnectSingleSignOnProviderSheet(
                 <FormLabel>Userinfo Endpoint</FormLabel>
                 <FormControl>
                   <Input
+                    onSurface="raised"
                     disabled={state === 'discovery'}
                     placeholder="https://my.okta.com/oauth2/v1/userinfo"
                     autoComplete="off"
@@ -197,7 +200,7 @@ export function ConnectSingleSignOnProviderSheet(
               <FormItem>
                 <FormLabel>Client ID</FormLabel>
                 <FormControl>
-                  <Input placeholder="Client ID" autoComplete="off" {...field} />
+                  <Input placeholder="Client ID" autoComplete="off" onSurface="raised" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -220,6 +223,7 @@ export function ConnectSingleSignOnProviderSheet(
                     }
                     autoComplete="off"
                     type="password"
+                    onSurface="raised"
                     {...field}
                   />
                 </FormControl>
@@ -236,7 +240,7 @@ export function ConnectSingleSignOnProviderSheet(
               <FormItem>
                 <FormLabel>User ID Claim</FormLabel>
                 <FormControl>
-                  <Input placeholder="sub" autoComplete="off" {...field} />
+                  <Input placeholder="sub" autoComplete="off" onSurface="raised" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -251,7 +255,12 @@ export function ConnectSingleSignOnProviderSheet(
               <FormItem>
                 <FormLabel>Additional Scopes</FormLabel>
                 <FormControl>
-                  <Input placeholder="Separated by spaces" autoComplete="off" {...field} />
+                  <Input
+                    placeholder="Separated by spaces"
+                    autoComplete="off"
+                    onSurface="raised"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -417,6 +426,7 @@ function OIDCMetadataFetcher(props: {
                 <div className="flex flex-row justify-center gap-x-4">
                   <FormControl>
                     <Input
+                      onSurface="raised"
                       disabled={fetchMetadata.isPending}
                       placeholder="https://my.okta.com/.well-known/openid-configuration"
                       autoComplete="off"
@@ -448,7 +458,6 @@ async function fetchOIDCMetadata(url: string) {
   const res = await fetch(url, {
     method: 'GET',
     headers: {
-      'Content-Type': 'application/json',
       Accept: 'application/json',
     },
   });
@@ -490,4 +499,13 @@ const OIDCMetadataSchema = z.object({
       required_error: 'Authorization endpoint not found',
     })
     .url('Authorization endpoint must be a valid URL'),
+});
+
+// Only the endpoints are validated client-side; the remaining fields are
+// checked by the server on save and surfaced through form.setError.
+const ConnectProviderFormSchema = OIDCMetadataSchema.extend({
+  clientId: z.string(),
+  clientSecret: z.string(),
+  userIdClaim: z.string(),
+  additionalScopes: z.string(),
 });

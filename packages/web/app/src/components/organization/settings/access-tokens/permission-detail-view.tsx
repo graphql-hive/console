@@ -1,6 +1,6 @@
+import { Badge } from '@/components/base/badge/badge';
+import { PermissionTable } from '@/components/organization/permission-table';
 import * as Accordion from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import * as Tooltip from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { permissionLevelToResourceName } from './shared-helpers';
 
@@ -52,43 +52,18 @@ export function PermissionDetailView(props: {
           {group.title}
           <span className="ml-auto mr-2">{totalAllowedCount} allowed</span>
         </Accordion.AccordionTrigger>
-        <Accordion.AccordionContent className="flex max-w-[800px] flex-wrap items-start overflow-x-scroll pl-2">
+        <Accordion.AccordionContent className="flex max-w-[800px] flex-wrap items-start overflow-x-auto pl-2">
           {group.resolvedPermissionGroups.map(group => (
             <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.title}>
-              <table key={group.title} className="w-full">
-                <tr>
-                  <th className="pb-2 text-left">{group.title}</th>
-                </tr>
-                {group.permissions.map(permission => (
-                  <tr key={permission.permission.id}>
-                    <td className="pl-2">{permission.permission.title}</td>
-                    <td className="ml-2 pb-1 text-right">
-                      {permission.isGranted ? (
-                        permission.permission.warning ? (
-                          <Tooltip.TooltipProvider>
-                            <Tooltip.Tooltip>
-                              <Tooltip.TooltipTrigger>
-                                <Badge variant="warning">Allowed</Badge>
-                              </Tooltip.TooltipTrigger>
-                              <Tooltip.TooltipContent>
-                                {permission.permission.warning}
-                              </Tooltip.TooltipContent>
-                            </Tooltip.Tooltip>
-                          </Tooltip.TooltipProvider>
-                        ) : (
-                          <Badge className="w-[69px] justify-center" variant="success">
-                            Allowed
-                          </Badge>
-                        )
-                      ) : (
-                        <Badge className="w-[69px] justify-center" variant="failure">
-                          Denied
-                        </Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </table>
+              <PermissionTable
+                title={group.title}
+                permissions={group.permissions.map(permission => ({
+                  id: permission.permission.id,
+                  title: permission.permission.title,
+                  granted: permission.isGranted,
+                  warning: permission.permission.warning,
+                }))}
+              />
             </div>
           ))}
           <div className="w-full space-y-1">
@@ -104,12 +79,7 @@ export function PermissionDetailView(props: {
                 <ul className="flex list-none flex-wrap gap-1">
                   {group.resolvedResourceIds.map(id => (
                     <li key={id}>
-                      <Badge
-                        className="text-neutral-11 px-3 py-1 font-mono text-xs"
-                        variant="outline"
-                      >
-                        {id}
-                      </Badge>
+                      <Badge content={id} variants={{ variant: 'outline', mono: true }} />
                     </li>
                   ))}
                 </ul>

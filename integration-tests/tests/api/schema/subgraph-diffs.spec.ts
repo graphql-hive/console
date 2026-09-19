@@ -526,6 +526,57 @@ test.concurrent(
  * These tests cover the legacy fallback logic for existing database records that do not have the new data on the schema log edges
  */
 describe('legacy schema version yields correct subgraph diff', () => {
+  test.concurrent('initial single schema publication', async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject, createOrganizationAccessToken } = await createOrg();
+    const { createTargetAccessToken, fetchVersions, target, createTarget } = await createProject(
+      ProjectType.Single,
+    );
+    const destination = await createTarget().then(r => r.expectNoGraphQLErrors());
+    assertNonNullish(destination.createTarget.ok);
+    const destinationTarget = destination.createTarget.ok.createdTarget;
+    const { privateAccessKey } = await createOrganizationAccessToken({
+      resources: {
+        mode: ResourceAssignmentModeType.All,
+      },
+      permissions: ['schemaVersion:promote'],
+    });
+    const targetToken = await createTargetAccessToken({});
+
+    await targetToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            a: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const [initialVersion] = await fetchVersions(1);
+    assertNonNullish(initialVersion);
+
+    const { pool } = await seed.createDbConnection();
+    await clearSchemaLogEdgeHistory(pool, target.id);
+
+    const result = await schemaVersionPromote(
+      {
+        source: {
+          fromSchemaVersionById: initialVersion.id,
+        },
+        target: {
+          toTarget: {
+            byId: destinationTarget.id,
+          },
+        },
+      },
+      privateAccessKey,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(result.schemaVersionPromote.error).toEqual(null);
+    assertNonNullish(result.schemaVersionPromote.ok);
+  });
+
   test.concurrent('publish new subgraph version', async ({ expect }) => {
     const seed = initSeed();
     const { createOrg, ownerToken } = await initSeed().createOwner();

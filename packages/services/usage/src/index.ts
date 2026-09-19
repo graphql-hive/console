@@ -90,10 +90,10 @@ async function main() {
   const authN = createAuthN({
     pgPool,
     redis,
-    isPrometheusEnabled: !!tracing,
+    isPrometheusEnabled: !!env.prometheus,
   });
 
-  const prometheusConfig = new PrometheusConfig(!!tracing);
+  const prometheusConfig = new PrometheusConfig(!!env.prometheus);
   const targetsByIdCache = new TargetsByIdCache(redis, pgPool, prometheusConfig);
   const targetsBySlugCache = new TargetsBySlugCache(redis, pgPool, prometheusConfig);
   const targetTokenCache = new TargetTokenCache(redis, pgPool, prometheusConfig);

@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
+import { invariant } from '@hive/service-common';
 import {
   ConditionalBreakingChangeMetadata,
   ConditionalBreakingChangeMetadataModel,
@@ -16,6 +17,7 @@ import {
 import type { Project, Target } from '../../../shared/entities';
 import { batch, cache } from '../../../shared/helpers';
 import { Logger, NoopLogger } from '../../shared/providers/logger';
+import { SchemaRevisionStore } from './schema-revision-store';
 
 @Injectable({
   scope: Scope.Operation,
@@ -167,6 +169,7 @@ export class SchemaVersionStore {
       schema: string;
       projectId: string;
       metadata: string | null;
+      schemaRevisionId: string | null;
     },
   ) {
     const query = psql`/* insertSchemaLog */
@@ -179,6 +182,7 @@ export class SchemaVersionStore {
           "sdl",
           "project_id",
           "metadata",
+          "schema_revision_id",
           "action"
         )
       VALUES
@@ -190,6 +194,7 @@ export class SchemaVersionStore {
         ${args.schema}::text,
         ${args.projectId},
         ${args.metadata},
+        ${args.schemaRevisionId},
         'PUSH'
       )
       RETURNING
@@ -298,6 +303,8 @@ export class SchemaVersionStore {
       targetId: string;
       projectId: string;
       organizationId: string;
+      schemaRevisionId: string | null;
+      revision: string | null;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -331,7 +338,12 @@ export class SchemaVersionStore {
         schema: args.schema,
         service: args.service?.name ?? null,
         url: args.service?.url ?? null,
+        schemaRevisionId: args.schemaRevisionId,
       });
+
+      if (args.schemaRevisionId) {
+        await SchemaRevisionStore.markPublished(args.schemaRevisionId, trx);
+      }
 
       // creates a new version
       const version = await this.insertSchemaVersion(trx, {
@@ -339,11 +351,13 @@ export class SchemaVersionStore {
         targetId: args.targetId,
         origin: {
           type: 'publish',
+          revision: args.service ? null : args.revision,
           services: args.service
             ? [
                 {
                   name: args.service.name,
                   versionId: newLog.id,
+                  revision: args.revision,
                 },
               ]
             : null,
@@ -805,6 +819,33 @@ export class SchemaVersionStore {
       .then(z.array(SchemaPushLogModel).parse);
   }
 
+  async getSchemaRevisionsBySchemaLogIds(schemaLogIds: Array<string>) {
+    if (schemaLogIds.length === 0) {
+      return new Map<string, string>();
+    }
+
+    const rows = await this.pg.any(psql`/* getSchemaRevisionsBySchemaLogIds */
+      SELECT
+        "schema_log"."id" AS "schemaLogId"
+        , "schema_revisions"."revision"
+      FROM
+        "schema_log"
+      INNER JOIN
+        "schema_revisions"
+      ON
+        "schema_revisions"."id" = "schema_log"."schema_revision_id"
+      WHERE
+        "schema_log"."id" = ANY(${psql.array(schemaLogIds, 'uuid')})
+    `);
+
+    return new Map(
+      z
+        .array(z.object({ schemaLogId: z.string(), revision: z.string() }))
+        .parse(rows)
+        .map(row => [row.schemaLogId, row.revision]),
+    );
+  }
+
   async getServiceSchemaOfVersion(schemaVersion: SchemaVersion, serviceName: string) {
     return this.pg
       .maybeOne(
@@ -1123,9 +1164,7 @@ export class SchemaVersionStore {
 
     for (const edge of edges) {
       const node = nodesById.get(edge.actionId);
-      if (!node) {
-        throw new Error(`Invariant: Could not resolve node with id '${edge.actionId}' for edge.`);
-      }
+      invariant(node, `Could not resolve node with id '${edge.actionId}' for edge.`);
 
       if (edge.type !== null) {
         edgesWithNodes.push(
@@ -1146,17 +1185,15 @@ export class SchemaVersionStore {
       // Legacy case: We need to produce the edge by looking at the node adn previous schema version
       // In legacy versions a PUSH and DELETE action can be identified by looking at the `actionId`
 
-      if (!schemaVersion.actionId) {
-        throw new Error(
-          `Invariant: The schema version '${schemaVersion.id}' without actionId should not have an edge without a type.`,
-        );
-      }
+      invariant(
+        schemaVersion.actionId,
+        `The schema version '${schemaVersion.id}' without actionId should not have an edge without a type.`,
+      );
 
       // if the actionId does not match the node, we have a unchanged edge
       if (schemaVersion.actionId !== node.id) {
-        if (node.action === 'DELETE') {
-          throw new Error(`Invariant: The action can not be delete in this scenario.`);
-        }
+        invariant(node.action !== 'DELETE', ` The action can not be delete in this scenario.`);
+
         edgesWithNodes.push({
           type: 'unchanged',
           subgraphName: node.service_name,
@@ -1178,12 +1215,8 @@ export class SchemaVersionStore {
 
       // if no previous schema version exists this is the initial one and we have an "added" action
       if (!previousSchemaVersion) {
-        if (node.action === 'DELETE') {
-          throw new Error(`Invariant: The action can not be delete in this scenario.`);
-        }
-        if (node.kind === 'single') {
-          throw new Error(`Invariant: The action can not be a single schema.`);
-        }
+        invariant(node.action !== 'DELETE', `The action can not be delete in this scenario.`);
+
         edgesWithNodes.push({
           type: 'added',
           subgraphName: node.service_name,
@@ -1234,10 +1267,6 @@ export class SchemaVersionStore {
           continue;
         }
 
-        if (node.kind === 'single') {
-          throw new Error(`Invariant: The action can not be a single schema.`);
-        }
-
         // if there is no log in the previous schema version, we have an "added" event
         edgesWithNodes.push({
           type: 'added',
@@ -1252,11 +1281,10 @@ export class SchemaVersionStore {
       }
 
       if (node.action === 'DELETE') {
-        if (!previousNode) {
-          throw new Error(
-            `Invariant: This should never happen. A 'DELETE' node can exist only if the node existed in the previous version.`,
-          );
-        }
+        invariant(
+          previousNode,
+          `This should never happen. A 'DELETE' node can exist only if the node existed in the previous version.`,
+        );
 
         // if the node action is DELETE we have a removal edge
         edgesWithNodes.push({
@@ -1271,7 +1299,7 @@ export class SchemaVersionStore {
         continue;
       }
 
-      throw new Error(`Invariant: This should never happen.`);
+      invariant(previousNode, `All node action cases exhausted.`);
     }
 
     return edgesWithNodes;
@@ -1350,7 +1378,7 @@ export class SchemaVersionStore {
         });
       }
 
-      if (args.schemaLogs.deleted.length) {
+      if (args.schemaLogs.removed.length) {
         // Insert new nodes
         const insertDeleteSchemaLogsQuery = psql` /* insertDeleteSchemaLogs */
           INSERT INTO "schema_log" (
@@ -1363,7 +1391,7 @@ export class SchemaVersionStore {
             , "action"
           )
           SELECT * FROM ${psql.unnest(
-            args.schemaLogs.deleted.map(log => [
+            args.schemaLogs.removed.map(log => [
               log.id,
               log.projectId,
               log.targetId,
@@ -1383,7 +1411,7 @@ export class SchemaVersionStore {
       if (
         args.schemaLogs.added.length ||
         args.schemaLogs.changed.length ||
-        args.schemaLogs.deleted.length ||
+        args.schemaLogs.removed.length ||
         args.schemaLogs.unchanged.length
       ) {
         const insertAddedAndChangedSchemaLogEdges = psql` /* insertAddedAndChangedSchemaLogEdges */
@@ -1396,11 +1424,11 @@ export class SchemaVersionStore {
             , "subgraph_name"
           )
           SELECT * FROM ${psql.unnest(
-            args.schemaLogs.deleted
+            args.schemaLogs.removed
               .map(log => [
                 schemaVersion.id,
                 log.id,
-                'removed',
+                log.type,
                 log.previousId,
                 null,
                 log.serviceName,
@@ -1409,7 +1437,7 @@ export class SchemaVersionStore {
                 args.schemaLogs.changed.map(log => [
                   schemaVersion.id,
                   log.id,
-                  'changed',
+                  log.type,
                   log.previousId,
                   JSON.stringify(log.changes?.map(toSerializableSchemaChange)) ?? null,
                   log.serviceName,
@@ -1419,7 +1447,7 @@ export class SchemaVersionStore {
                 args.schemaLogs.added.map(log => [
                   schemaVersion.id,
                   log.id,
-                  'added',
+                  log.type,
                   null,
                   null,
                   log.serviceName,
@@ -1429,7 +1457,7 @@ export class SchemaVersionStore {
                 args.schemaLogs.unchanged.map(log => [
                   schemaVersion.id,
                   log.id,
-                  'unchanged',
+                  log.type,
                   null,
                   null,
                   log.serviceName,
@@ -1498,6 +1526,7 @@ const schemaLogFields = (prefix = psql``) => psql`
   , lower(${prefix}"service_name") AS "service_name"
   , ${prefix}"service_url"
   , ${prefix}"action"
+  , ${prefix}"schema_revision_id" AS "schemaRevisionId"
 `;
 
 export type CreateContractVersionInput = {
@@ -1519,6 +1548,7 @@ const SchemaLogBase = z.object({
 const SchemaPushLogBase = SchemaLogBase.extend({
   sdl: z.string(),
   metadata: z.string().nullish().default(null),
+  schemaRevisionId: z.string().nullable(),
 });
 
 const SinglePushSchemaLogModel = SchemaPushLogBase.extend({
@@ -1589,12 +1619,14 @@ const SchemaVersionOriginPromotionModel = z.object({
 
 const SchemaVersionOriginPublishModel = z.object({
   type: z.literal('publish'),
+  revision: z.string().nullable().optional(),
   /** This is nullable in case it is a monolith. */
   services: z
     .array(
       z.object({
         name: z.string(),
         versionId: z.string(),
+        revision: z.string().nullable().optional(),
       }),
     )
     .nullable(),
@@ -1758,21 +1790,38 @@ const schemaLogEdgesFields = (prefix = psql``) => psql`
 `;
 
 export type SchemaLogDiffInput = {
-  deleted: Array<{
+  removed: Array<{
     id: string;
     previousId: string;
     serviceName: string;
     targetId: string;
     projectId: string;
+    type: 'removed';
   }>;
-  added: Array<{ id: string; serviceName: string; targetId: string; projectId: string }>;
-  changed: Array<{
+  added: Array<{
     id: string;
-    previousId: string | null;
-    serviceName: string | null;
-    changes: Array<SchemaChangeType> | null;
+    serviceName: string;
+    targetId: string;
+    projectId: string;
+    type: 'added';
   }>;
-  unchanged: Array<{ id: string; serviceName: string | null }>;
+  changed: Array<
+    | {
+        id: string;
+        previousId: string | null;
+        serviceName: string;
+        type: 'changed';
+        changes: Array<SchemaChangeType> | null;
+      }
+    | {
+        id: string;
+        previousId: null;
+        serviceName: null;
+        type: null;
+        changes: null;
+      }
+  >;
+  unchanged: Array<{ id: string; serviceName: string | null; type: 'unchanged' }>;
 };
 
 const SchemaLogWithEdgesModel = z.union([

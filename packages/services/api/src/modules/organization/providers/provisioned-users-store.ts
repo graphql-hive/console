@@ -100,6 +100,7 @@ export class ProvisionedUsersStore {
             , "provisioned_by_organization_id"
             , "external_id"
             , "deactivated_at"
+            , "provisioning_status"
           ) VALUES (
             lower(${args.email})
             , ${args.displayName}
@@ -109,6 +110,7 @@ export class ProvisionedUsersStore {
             , ${args.provisionedByOrganizationId}
             , ${args.externalId}
             , ${args.isDisabled ? psql`NOW()` : null}
+            , 'active'
           )
           ON CONFLICT ("supertoken_user_id")
             DO UPDATE
@@ -120,6 +122,7 @@ export class ProvisionedUsersStore {
                 , "provisioned_by_organization_id" = EXCLUDED."provisioned_by_organization_id"
                 , "external_id" = EXCLUDED."external_id"
                 , "deactivated_at" = EXCLUDED."deactivated_at"
+                , "provisioning_status" = 'pendingConfirmation'
           RETURNING
             ${userFields}
         `;
@@ -217,6 +220,21 @@ export class ProvisionedUsersStore {
     `;
 
     return await trx.maybeOne(query).then(ProvisionedUserModel.parse);
+  }
+
+  async confirmSCIMManagementForMember(organizationId: string, userId: string) {
+    const query = psql`
+      UPDATE "users"
+      SET "provisioning_status" = 'active'
+      WHERE
+        "id" = ${userId}
+        AND "provisioned_by_organization_id" = ${organizationId}
+        AND "provisioning_status" = 'pendingConfirmation'
+      RETURNING
+        ${userFields}
+    `;
+
+    return await this.pool.maybeOne(query).then(ProvisionedUserModel.nullable().parse);
   }
 
   async updateUserEmail(
@@ -353,11 +371,29 @@ export class ProvisionedUsersStore {
     return await this.pool.oneFirst(query).then(z.number().parse);
   }
 
-  async isUserWithIdAdminOfAnyOrganization(userId: string) {
+  /** Find out whether any supertoken identity linked to the identity is allowed to access the organization. */
+  async isIdentityAdminOfOrganization(superTokensUserId: string, organizationId: string) {
     const query = psql`
       SELECT TRUE as "exists"
-      FROM "organizations"
-      WHERE "user_id" = ${userId}
+      FROM "organizations" "o"
+      WHERE
+        "o"."id" = ${organizationId}
+        AND EXISTS (
+          SELECT 1
+          FROM "users" "u"
+          WHERE
+            "u"."id" = "o"."user_id"
+            AND (
+              "u"."supertoken_user_id" = ${superTokensUserId}
+              OR EXISTS (
+                SELECT 1
+                FROM "users_linked_identities" "uli"
+                WHERE
+                  "uli"."user_id" = "u"."id"
+                  AND "uli"."identity_id" = ${superTokensUserId}
+              )
+            )
+          )
       LIMIT 1
     `;
 
@@ -376,6 +412,7 @@ const ProvisionedUserModel = z.object({
   provisionedByOrganizationId: z.string().uuid(),
   externalId: z.string(),
   deactivatedAt: z.string().nullable(),
+  provisioningStatus: z.enum(['pendingConfirmation', 'active']),
   supertokenUserId: z.string(),
   createdAt: z.string(),
   lastUpdatedAt: z.string().nullable(),
@@ -391,6 +428,7 @@ const userFields = psql`
   , "provisioned_by_organization_id" AS "provisionedByOrganizationId"
   , "external_id" AS "externalId"
   , to_json("deactivated_at") AS "deactivatedAt"
+  , "provisioning_status" AS "provisioningStatus"
   , "supertoken_user_id" AS "supertokenUserId"
   , to_json("created_at") AS "createdAt"
   , to_json("last_updated_at") AS "lastUpdatedAt"

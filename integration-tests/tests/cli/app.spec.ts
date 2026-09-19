@@ -6,7 +6,7 @@ import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
 import { getServiceHost } from 'testkit/utils';
 import { createHive } from '@graphql-hive/core';
-import { appCreate, appPublish, appRetire } from '../../testkit/cli';
+import { appCheck, appCreate, appPublish, appRetire } from '../../testkit/cli';
 import { graphql } from '../../testkit/gql';
 import { execute } from '../../testkit/graphql';
 import { initSeed } from '../../testkit/seed';
@@ -136,6 +136,85 @@ test('app:create --version is optional and auto-generates a version', async () =
   expect(output).toContain('created');
 });
 
+test('app:check validates an Apollo manifest against the latest schema', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+  });
+
+  const operationsFile = join(tmpdir(), `operations-${Date.now()}.json`);
+  await writeFile(
+    operationsFile,
+    JSON.stringify({
+      format: 'apollo-persisted-query-manifest',
+      version: 1,
+      operations: [{ id: 'op-hash-1', body: 'query { hello }' }],
+    }),
+    'utf-8',
+  );
+
+  const output = await appCheck(['--registry.accessToken', token.secret, operationsFile]);
+
+  expect(output).toContain('All operations are valid (1)');
+
+  await writeFile(
+    operationsFile,
+    JSON.stringify({
+      format: 'apollo-persisted-query-manifest',
+      version: 1,
+      operations: [{ id: 'op-hash-1', body: 'query { goodbye }' }],
+    }),
+    'utf-8',
+  );
+
+  await expect(appCheck(['--registry.accessToken', token.secret, operationsFile])).rejects.toThrow(
+    /Cannot query field .*goodbye.* on type .*Query.*\./,
+  );
+
+  await writeFile(
+    operationsFile,
+    JSON.stringify({
+      format: 'apollo-persisted-query-manifest',
+      version: 1,
+      operations: [
+        {
+          id: 'multi-operation-hash',
+          body: 'query First { hello } query Second { hello }',
+        },
+      ],
+    }),
+    'utf-8',
+  );
+
+  await expect(appCheck(['--registry.accessToken', token.secret, operationsFile])).rejects.toThrow(
+    /Multiple operation definitions found\./,
+  );
+});
+
+test('app:check handles missing and empty operation inputs', async () => {
+  const accessToken = 'unused-access-token';
+  const missingOperationsFile = join(tmpdir(), `missing-operations-${Date.now()}.json`);
+
+  await expect(
+    appCheck(['--registry.accessToken', accessToken, missingOperationsFile]),
+  ).rejects.toThrow(/Unable to find any GraphQL type definitions/);
+
+  const emptyOperationsFile = join(tmpdir(), `empty-operations-${Date.now()}.json`);
+  await writeFile(emptyOperationsFile, '{}', 'utf-8');
+
+  await expect(
+    appCheck(['--registry.accessToken', accessToken, emptyOperationsFile]),
+  ).resolves.toContain('No operations found');
+});
+
 test('app:create --publish creates and immediately activates the deployment', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, setFeatureFlag, organization } = await createOrg();
@@ -243,6 +322,92 @@ test('app:create accepts a JSON file as operations input', async () => {
     hash: 'op-hash-1',
     body: 'query { hello }',
   });
+});
+
+test('app:create accepts an Apollo persisted query manifest', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+        goodbye: String
+      }
+    `,
+  });
+
+  const manifest = {
+    format: 'apollo-persisted-query-manifest',
+    version: 1,
+    operations: [
+      {
+        id: 'sha256:apollo-operation-1',
+        body: 'query GetHello { hello }',
+        name: 'GetHello',
+        type: 'query',
+      },
+      {
+        id: 'apollo-operation-2',
+        body: 'query GetGoodbye { goodbye }',
+        name: 'GetGoodbye',
+        type: 'query',
+      },
+    ],
+  };
+  const operationsFile = join(tmpdir(), `apollo-operations-${Date.now()}.json`);
+  await writeFile(operationsFile, JSON.stringify(manifest), 'utf-8');
+
+  await appCreate([
+    '--registry.accessToken',
+    token.secret,
+    '--name',
+    'apollo-manifest-app',
+    '--version',
+    '1.0.0',
+    operationsFile,
+  ]);
+
+  await appPublish([
+    '--registry.accessToken',
+    token.secret,
+    '--name',
+    'apollo-manifest-app',
+    '--version',
+    '1.0.0',
+  ]);
+
+  const result = await execute({
+    document: CLI_GetAppDeploymentDocuments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      appDeploymentName: 'apollo-manifest-app',
+      appDeploymentVersion: '1.0.0',
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.appDeployment?.status).toBe('active');
+  expect(result.target?.appDeployment?.documents?.edges).toHaveLength(2);
+  expect(result.target?.appDeployment?.documents?.edges.map(edge => edge.node)).toEqual(
+    expect.arrayContaining([
+      {
+        hash: 'sha256:apollo-operation-1',
+        body: 'query GetHello { hello }',
+      },
+      {
+        hash: 'apollo-operation-2',
+        body: 'query GetGoodbye { goodbye }',
+      },
+    ]),
+  );
 });
 
 test('app:create accepts a directory of .graphql files as operations input', async () => {

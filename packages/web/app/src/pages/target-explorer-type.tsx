@@ -1,19 +1,14 @@
-import { useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
+  ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
 import { GraphQLEnumTypeComponent } from '@/components/target/explorer/enum-type';
-import {
-  DateRangeFilter,
-  DescriptionsVisibilityFilter,
-  FieldByNameFilter,
-  MetadataFilter,
-  SchemaVariantFilter,
-  TypeFilter,
-} from '@/components/target/explorer/filter';
+import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
+import { DateRangeFilter } from '@/components/target/explorer/filter';
 import { GraphQLInputObjectTypeComponent } from '@/components/target/explorer/input-object-type';
 import { GraphQLInterfaceTypeComponent } from '@/components/target/explorer/interface-type';
 import { GraphQLObjectTypeComponent } from '@/components/target/explorer/object-type';
@@ -23,15 +18,18 @@ import {
 } from '@/components/target/explorer/provider';
 import { GraphQLScalarTypeComponent } from '@/components/target/explorer/scalar-type';
 import { GraphQLUnionTypeComponent } from '@/components/target/explorer/union-type';
+import { matchesSubgraphFilter } from '@/components/target/explorer/utils';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 
 export const TypeRenderFragment = graphql(`
   fragment TypeRenderFragment on GraphQLNamedType {
     __typename
+    supergraphMetadata {
+      ownedByServiceNames
+    }
     ...GraphQLObjectTypeComponent_TypeFragment
     ...GraphQLInterfaceTypeComponent_TypeFragment
     ...GraphQLUnionTypeComponent_TypeFragment
@@ -49,8 +47,15 @@ export function TypeRenderer(props: {
   targetSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
+  filteredFallback?: ReactNode;
 }) {
   const ttype = useFragment(TypeRenderFragment, props.type);
+  const { subgraphs } = useSchemaExplorerContext();
+
+  if (!matchesSubgraphFilter(ttype.supergraphMetadata?.ownedByServiceNames, subgraphs)) {
+    return props.filteredFallback ?? null;
+  }
+
   switch (ttype.__typename) {
     case 'GraphQLObjectType':
       return (
@@ -149,6 +154,7 @@ const TargetExplorerTypenamePageQuery = graphql(`
         __typename
         id
         explorer(usage: { period: $period }) {
+          subgraphNames
           metadataAttributes {
             name
             values
@@ -213,37 +219,21 @@ function TypeExplorerPageContent(props: {
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between py-6">
-        <div>
-          <Title>Explore</Title>
-          <Subtitle>Insights from the latest version.</Subtitle>
-        </div>
-        <div className="flex flex-row items-center gap-x-4">
-          {latestSchemaVersion && type ? (
-            <>
-              <TypeFilter
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                period={resolvedPeriod}
-                typename={props.typename}
-              />
-              <FieldByNameFilter />
-              <DateRangeFilter />
-              <DescriptionsVisibilityFilter />
-              <SchemaVariantFilter
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                variant="all"
-              />
-              {latestSchemaVersion?.explorer?.metadataAttributes?.length ? (
-                <MetadataFilter options={latestSchemaVersion.explorer.metadataAttributes} />
-              ) : null}
-            </>
-          ) : null}
-        </div>
-      </div>
+      <ExplorerHeader
+        title="Explore"
+        description="Insights from the latest version."
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        period={resolvedPeriod}
+        typename={props.typename}
+        variant="all"
+        includeSchemaDimensions
+        showFilters={!!(latestSchemaVersion && type)}
+        subgraphNames={latestSchemaVersion?.explorer?.subgraphNames}
+        metadataAttributes={latestSchemaVersion?.explorer?.metadataAttributes}
+        dateRangeControl={<DateRangeFilter />}
+      />
       {query.fetching || query.stale ? (
         <GraphQLTypeCardSkeleton>
           <GraphQLFieldsSkeleton count={15} />
@@ -257,6 +247,7 @@ function TypeExplorerPageContent(props: {
           targetSlug={props.targetSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
+          filteredFallback={<ExplorerFilteredEmptyState />}
         />
       ) : type ? (
         <NoSchemaVersion

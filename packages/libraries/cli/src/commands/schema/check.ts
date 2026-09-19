@@ -17,6 +17,10 @@ import {
 } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import {
+  loadSchemaFromGitHistory,
+  parseBaselineGitFileReference,
+} from '../../helpers/git-schema-loader';
+import {
   loadSchema,
   minifySchema,
   renderChanges,
@@ -41,7 +45,7 @@ const approveFailedSchemaCheckMutation = graphql(/* GraphQL */ `
 `);
 
 const schemaCheckMutation = graphql(/* GraphQL */ `
-  mutation schemaCheck($input: SchemaCheckInput!) {
+  mutation CLI_SchemaCheckMutation($input: SchemaCheckInput!) {
     schemaCheck(input: $input) {
       __typename
       ... on SchemaCheckSuccess {
@@ -154,6 +158,12 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
     commit: Flags.string({
       description: 'Associated commit sha',
     }),
+    baseline: Flags.string({
+      description:
+        'File containing the schema before the current change.\n' +
+        'Baseline schema to compare against. Accepts a local file path or a file at a' +
+        'Git revision using `<revision>:<path>`.',
+    }),
     contextId: Flags.string({
       description: 'Context ID for grouping the schema check.',
     }),
@@ -213,7 +223,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         this.logDebug(e);
         throw new MissingEndpointError();
       }
-      const file = args.file;
+      const schemaPointer = args.file;
       try {
         accessToken = this.ensure({
           key: 'registry.accessToken',
@@ -227,29 +237,13 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         throw new MissingRegistryTokenError();
       }
 
-      const rawSdl = await loadSchema('first-federation-then-graphql-introspection', file, {
-        logger: this.logger,
-      }).catch(e => {
-        throw new SchemaFileNotFoundError(file, e);
-      });
       const git = await gitInfo(() => {
         // noop
       });
 
       const commit = flags.commit || git?.commit;
-      const author = flags.author || git?.author;
 
-      if (typeof rawSdl !== 'string' || rawSdl.length === 0) {
-        throw new SchemaFileEmptyError(file);
-      }
-
-      const sdl = minifySchema(rawSdl);
-
-      let github: null | {
-        commit: string;
-        repository: string | null;
-        pullRequestNumber: string | null;
-      } = null;
+      let github: null | GraphQLSchema.GitHubSchemaCheckInput = null;
 
       if (usesGitHubApp) {
         if (!commit) {
@@ -260,7 +254,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         }
         if (!git.pullRequestNumber) {
           this.warn(
-            "Could not resolve pull request number. Are you running this command on a 'pull_request' event?\n" +
+            "Could not resolve pull request number. Are you running this command on a 'pull_request' or 'merge_group' event?\n" +
               'See https://the-guild.dev/graphql/hive/docs/other-integrations/ci-cd#github-workflow-for-ci',
           );
         }
@@ -271,6 +265,67 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           pullRequestNumber: git.pullRequestNumber,
         };
       }
+
+      let minifiedBaselineSdl: string | null = null;
+      let baselineSchemaHash: string | null = null;
+
+      if (flags.baseline) {
+        const baselinePointer = flags.baseline;
+        const gitResult = parseBaselineGitFileReference(baselinePointer);
+        const result =
+          gitResult.status === 'error'
+            ? await loadSchema('first-federation-then-graphql-introspection', baselinePointer, {
+                logger: this.logger,
+              })
+                .catch(() => {
+                  throw new SchemaFileNotFoundError(
+                    baselinePointer,
+                    'Failed to retrieve the baseline schema from ' + baselinePointer,
+                  );
+                })
+                .then(sdl => ({
+                  status: 'ok' as const,
+                  sdl,
+                }))
+            : loadSchemaFromGitHistory(gitResult.filePath, gitResult.commit);
+
+        if (result.status === 'error') {
+          switch (result.error.type) {
+            case 'git':
+              throw new SchemaFileNotFoundError(
+                result.error.path,
+                'Failed to retrieve the baseline schema from the git history.\n' +
+                  result.error.message,
+              );
+            case 'path':
+              throw new SchemaFileNotFoundError(
+                schemaPointer,
+                `When using the '--baseline' flag, the file path must point to a single file containing the schema SDL.`,
+              );
+          }
+        }
+
+        minifiedBaselineSdl = minifySchema(result.sdl);
+        baselineSchemaHash = gitResult.commit ?? git.baselineCommit;
+      }
+
+      const rawSdl = await loadSchema(
+        'first-federation-then-graphql-introspection',
+        schemaPointer,
+        {
+          logger: this.logger,
+        },
+      ).catch(e => {
+        throw new SchemaFileNotFoundError(schemaPointer, e);
+      });
+
+      const author = flags.author || git?.author;
+
+      if (typeof rawSdl !== 'string' || rawSdl.length === 0) {
+        throw new SchemaFileEmptyError(schemaPointer);
+      }
+
+      const sdl = minifySchema(rawSdl);
 
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: schemaCheckMutation,
@@ -290,6 +345,12 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             target,
             url: flags.url,
             schemaProposalId: flags.schemaProposalId,
+            baseline: minifiedBaselineSdl
+              ? {
+                  sdl: minifiedBaselineSdl,
+                  hash: baselineSchemaHash,
+                }
+              : null,
           },
         },
         /** Gateway timeout is 60 seconds. */

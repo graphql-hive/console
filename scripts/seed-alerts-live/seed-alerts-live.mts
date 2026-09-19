@@ -168,7 +168,7 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
 
   // Enable the per-org feature flag so the alerts feature is visible even
   // when the cluster-wide FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED env var
-  // is off (which it is by default in local dev).
+  // is off.
   const flagPool = await createPostgresDatabasePool({
     connectionParameters: getSeedPGConnectionString(),
   });

@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/no-extraneous-dependencies -- required before loading seed helpers
 import 'reflect-metadata';
 import { test as base, expect, type Page } from '@playwright/test';
-import { initSeed } from '../integration-tests/testkit/seed';
+import { initSeed, ProjectType } from '../integration-tests/testkit/seed';
 import { createAppHelper, type AppHelper } from './helpers/app';
 import { createAuthHelper, type AuthHelper } from './helpers/auth';
 import { createLaboratoryHelper, type LaboratoryHelper } from './helpers/laboratory';
@@ -10,7 +10,17 @@ import { createUsageHelper, type UsageHelper } from './helpers/usage';
 
 export type SeedHelper = {
   seedOrg(): Promise<{ slug: string; accessToken: string; refreshToken: string; email: string }>;
-  seedTarget(): Promise<{ slug: string; accessToken: string; refreshToken: string; email: string }>;
+  seedTarget(type: ProjectType): Promise<{
+    slug: string;
+    accessToken: string;
+    refreshToken: string;
+    email: string;
+    resources: {
+      organizationId: string;
+      projectId: string;
+      targetId: string;
+    };
+  }>;
   getEmailConfirmationLink(input: string | { email: string; now: number }): Promise<string>;
   purgeOIDCDomains(): Promise<void>;
   purgeUserByEmail(email: string): Promise<void>;
@@ -50,16 +60,21 @@ async function createSeedHelper(): Promise<SeedHelper> {
         email: owner.ownerEmail,
       };
     },
-    async seedTarget() {
+    async seedTarget(projectType?: ProjectType) {
       const owner = await seed.createOwner();
       const org = await owner.createOrg();
-      const project = await org.createProject();
+      const project = await org.createProject(projectType);
 
       return {
         slug: `${org.organization.slug}/${project.project.slug}/${project.target.slug}`,
         accessToken: owner.ownerToken,
         refreshToken: owner.ownerRefreshToken,
         email: owner.ownerEmail,
+        resources: {
+          organizationId: org.organization.id,
+          projectId: project.project.id,
+          targetId: project.target.id,
+        },
       };
     },
     async getEmailConfirmationLink(input) {

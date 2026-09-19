@@ -1,5 +1,5 @@
 import { CalendarIcon, CheckIcon, XIcon } from '@/components/ui/icon';
-import { TimeAgo } from '@/components/v2';
+import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { ComponentNoneIcon, CubeIcon } from '@radix-ui/react-icons';

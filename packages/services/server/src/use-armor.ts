@@ -1,5 +1,5 @@
-import type { ParseOptions, Source } from 'graphql';
-import type { Plugin } from 'graphql-yoga';
+import type { ParseOptions, Source, ValidationRule } from 'graphql';
+import { createGraphQLError, type Plugin } from 'graphql-yoga';
 import promClient from 'prom-client';
 import { maxAliasesRule } from '@escape.tech/graphql-armor-max-aliases';
 import { maxDepthRule } from '@escape.tech/graphql-armor-max-depth';
@@ -28,6 +28,22 @@ const getHiveClientVersion = (userAgent: string | null) => {
   return match ? match[1] : null;
 };
 
+const reservedTypenameAliases = new Set([
+  '__hive_typename__',
+  '__responseCacheTypeName',
+  '__responseCacheId',
+]);
+
+const DisallowReservedAliasesRule: ValidationRule = context => {
+  return {
+    Field(field) {
+      if (field.alias?.value && reservedTypenameAliases.has(field.alias.value)) {
+        context.reportError(createGraphQLError(`The alias "${field.alias.value}" cannot be used.`));
+      }
+    },
+  };
+};
+
 export function useArmor<
   PluginContext extends Record<string, any> = object,
   TServerContext extends Record<string, any> = object,
@@ -37,12 +53,15 @@ export function useArmor<
     onValidate(ctx) {
       const hiveClientVersion = getHiveClientVersion(ctx.context.request.headers.get('user-agent'));
 
+      ctx.addValidationRule(DisallowReservedAliasesRule);
+
       ctx.addValidationRule(
         maxAliasesRule({
           n: 20,
-          allowList: ['__responseCacheTypeName', '__responseCacheId'],
+          allowList: [],
           onReject: [
-            (_, error) => {
+            (context, error) => {
+              context?.reportError(error);
               rejectedRequests.inc({
                 reason: 'maxAliases',
               });
@@ -59,13 +78,15 @@ export function useArmor<
               }
             },
           ],
+          propagateOnRejection: false,
         }),
       );
       ctx.addValidationRule(
         maxDirectivesRule({
           n: 20,
           onReject: [
-            (_, error) => {
+            (context, error) => {
+              context?.reportError(error);
               rejectedRequests.inc({
                 reason: 'maxDirectives',
               });
@@ -82,6 +103,7 @@ export function useArmor<
               }
             },
           ],
+          propagateOnRejection: false,
         }),
       );
       ctx.addValidationRule(
@@ -90,7 +112,8 @@ export function useArmor<
           flattenFragments: true,
           ignoreIntrospection: true,
           onReject: [
-            (_, error) => {
+            (context, error) => {
+              context?.reportError(error);
               rejectedRequests.inc({
                 reason: 'maxDepth',
               });
@@ -107,16 +130,19 @@ export function useArmor<
               }
             },
           ],
+          propagateOnRejection: false,
         }),
       );
     },
     onParse(ctx) {
       function parseWithTokenLimit(source: string | Source, options: ParseOptions) {
+        let tokenLimitError = null as Error | null;
         const parser = new MaxTokensParserWLexer(source, {
           ...options,
           n: 800,
           onReject: [
             (_, error) => {
+              tokenLimitError = error;
               rejectedRequests.inc({
                 reason: 'maxTokenCount',
               });
@@ -137,7 +163,22 @@ export function useArmor<
             },
           ],
         });
-        return parser.parseDocument();
+
+        try {
+          return parser.parseDocument();
+        } catch (error) {
+          if (tokenLimitError && error === tokenLimitError) {
+            throw createGraphQLError(tokenLimitError.message, {
+              extensions: {
+                http: {
+                  spec: true,
+                  status: 400,
+                },
+              },
+            });
+          }
+          throw error;
+        }
       }
 
       ctx.setParseFn(parseWithTokenLimit);

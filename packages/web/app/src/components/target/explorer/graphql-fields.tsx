@@ -1,8 +1,9 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover } from '@/components/base/floating/popover/popover';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   DeprecationNote,
   Description,
+  ExplorerFilteredEmptyState,
   GraphQLTypeAsLink,
   GraphQLTypeCardListItem,
   LinkToCoordinatePage,
@@ -27,6 +28,7 @@ const GraphQLFields_FieldFragment = graphql(`
       ...GraphQLArguments_ArgumentFragment
     }
     supergraphMetadata {
+      ownedByServiceNames
       ...SupergraphMetadataList_SupergraphMetadataFragment
     }
   }
@@ -49,8 +51,12 @@ export function GraphQLFields(props: {
     fields: fieldsFromFragment,
   });
 
+  if (sortedAndFilteredFields.length === 0) {
+    return <ExplorerFilteredEmptyState />;
+  }
+
   return (
-    <TooltipProvider delayDuration={0}>
+    <>
       <div className="flex flex-col">
         {sortedAndFilteredFields.map((field, i) => {
           const coordinate = `${props.typeName}.${field.name}`;
@@ -68,24 +74,44 @@ export function GraphQLFields(props: {
                       isUsed &&
                       hasArguments &&
                       showsUnusedSchema && (
-                        <Tooltip>
-                          <TooltipContent>
-                            This field is used but the presented arguments are not.
-                          </TooltipContent>
-                          <TooltipTrigger>
-                            <span className="text-accent mr-1 text-sm">*</span>
-                          </TooltipTrigger>
-                        </Tooltip>
+                        <Popover
+                          trigger={
+                            <button
+                              type="button"
+                              aria-label="Unused arguments"
+                              className="text-accent mr-1 text-sm"
+                            >
+                              *
+                            </button>
+                          }
+                          openOnHover
+                          width="auto"
+                          content={
+                            <p className="text-neutral-11 text-sm">
+                              This field is used but the presented arguments are not.
+                            </p>
+                          }
+                        />
                       )}
                     {props.warnAboutDeprecatedArguments && !isDeprecated && (
-                      <Tooltip>
-                        <TooltipContent>
-                          This field is not deprecated but the presented arguments are.
-                        </TooltipContent>
-                        <TooltipTrigger>
-                          <span className="text-accent mr-1 text-sm">*</span>
-                        </TooltipTrigger>
-                      </Tooltip>
+                      <Popover
+                        trigger={
+                          <button
+                            type="button"
+                            aria-label="Deprecated arguments"
+                            className="text-accent mr-1 text-sm"
+                          >
+                            *
+                          </button>
+                        }
+                        openOnHover
+                        width="auto"
+                        content={
+                          <p className="text-neutral-11 text-sm">
+                            This field is not deprecated but the presented arguments are.
+                          </p>
+                        }
+                      />
                     )}
                     <DeprecationNote deprecationReason={field.deprecationReason}>
                       <LinkToCoordinatePage
@@ -144,6 +170,6 @@ export function GraphQLFields(props: {
           );
         })}
       </div>
-    </TooltipProvider>
+    </>
   );
 }

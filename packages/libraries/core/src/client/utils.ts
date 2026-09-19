@@ -1,7 +1,9 @@
+import { DocumentNode, GraphQLError, GraphQLSchema } from 'graphql';
 import { Attributes, Logger } from '@graphql-hive/logger';
 import { crypto, TextEncoder } from '@whatwg-node/fetch';
 import { hiveClientSymbol } from './client.js';
-import type { HiveClient, HivePluginOptions, LegacyLogger } from './types.js';
+import { errorPathToCoordinate } from './subrequests/error-path-to-coordinate.js';
+import type { HiveClient, HivePluginOptions, LegacyLogger, TrackedGraphQLError } from './types.js';
 
 async function digest(algo: 'SHA-256' | 'SHA-1', output: 'hex' | 'base64', data: string) {
   const buffer = await crypto.subtle.digest(algo, new TextEncoder().encode(data));
@@ -268,4 +270,27 @@ function getErrorsFromAttrs(attrs: Attributes | null | undefined): Array<string>
   }
 
   return [`${error.name ?? error.class}: ${error.message}`];
+}
+
+/**
+ * Converts a parse or GraphQL error into a format that can be ingested by the usage collector.
+ */
+export function toTrackedError(
+  err: Error | any | GraphQLError,
+  schema: GraphQLSchema,
+  document: DocumentNode,
+  data: any,
+): TrackedGraphQLError | null {
+  if (Array.isArray(err?.path)) {
+    const coordinate = errorPathToCoordinate(schema, err.path, document, data);
+    const maybeCode = (err as GraphQLError).extensions?.code;
+    const code = typeof maybeCode === 'string' ? maybeCode : undefined;
+    if (typeof coordinate === 'string') {
+      return {
+        coordinate,
+        code,
+      };
+    }
+  }
+  return null;
 }

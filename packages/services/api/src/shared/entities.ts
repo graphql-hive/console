@@ -3,11 +3,10 @@ import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphq
 import { z } from 'zod';
 import type { AvailableRulesResponse, PolicyConfigurationObject } from '@hive/policy';
 import type { CompositionFailureError } from '@hive/schema';
-import type { schema_policy_resource } from '@hive/storage';
+import type { schema_policy_resource, UserType } from '@hive/storage';
 import type {
   AlertChannelType,
   AlertType,
-  AuthProviderType,
   DangerousChangeType,
   OrganizationAccessScope,
   ProjectAccessScope,
@@ -352,18 +351,7 @@ export interface Token {
   scopes: readonly string[];
 }
 
-export interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  displayName: string;
-  providers: AuthProviderType[];
-  superTokensUserId: string | null;
-  isAdmin: boolean;
-  zendeskId: string | null;
-  provisionedByOrganizationId: string | null;
-  deactivatedAt: string | null;
-}
+export type User = UserType;
 
 export interface Member {
   id: string;

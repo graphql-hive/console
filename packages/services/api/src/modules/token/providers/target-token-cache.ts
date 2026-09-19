@@ -8,7 +8,10 @@ import { TaskScheduler } from '@hive/workflows/kit';
 import { PurgeTargetTokensTask } from '@hive/workflows/tasks/purge-target-tokens';
 import type { Token } from '../../../shared/entities';
 import { Logger } from '../../shared/providers/logger';
-import { PrometheusConfig } from '../../shared/providers/prometheus-config';
+import {
+  PROMETHEUS_CACHE_KEY_GROUPS,
+  PrometheusConfig,
+} from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 import { hashTargetToken, TargetTokenStorage } from './target-token-storage';
 
@@ -38,6 +41,7 @@ export class TargetTokenCache {
         ? [
             prometheusPlugin({
               prefix: 'bentocache_target_tokens',
+              keyGroups: PROMETHEUS_CACHE_KEY_GROUPS,
             }),
           ]
         : undefined,

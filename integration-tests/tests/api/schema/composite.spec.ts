@@ -268,7 +268,7 @@ describe('Federation projects support @oneOf directive natively', () => {
 
     const supergraphSdl = details?.supergraph;
     expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
-    expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
+    expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A) @oneOf`);
 
     const publicSdl = details?.sdl;
     expect(publicSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
@@ -322,7 +322,7 @@ describe('Federation projects support @oneOf directive natively', () => {
     const supergraphSdl = details.target.schemaCheck.supergraphSDL;
     assert(supergraphSdl);
     expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
-    expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
+    expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A) @oneOf`);
 
     const publicSdl = details.target.schemaCheck.compositeSchemaSDL;
     assert(publicSdl);
@@ -377,7 +377,7 @@ describe('Federation projects support @oneOf directive natively', () => {
     assert(details);
     const supergraphSdl = details.supergraph;
     expect(supergraphSdl).toContain(`directive @oneOf on INPUT_OBJECT`);
-    expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A)  @oneOf`);
+    expect(supergraphSdl).toContain(`input Input @join__type(graph: SERVICE_A) @oneOf`);
 
     const sdl = details.sdl;
     expect(sdl).toContain(`directive @oneOf on INPUT_OBJECT`);

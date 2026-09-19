@@ -67,7 +67,10 @@ const EnvironmentModel = zod.object({
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
   FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED: emptyString(
-    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+    zod
+      .union([zod.literal('1'), zod.literal('0')])
+      .optional()
+      .default('1'),
   ),
   AWS_REGION: emptyString(zod.string().optional()),
 });

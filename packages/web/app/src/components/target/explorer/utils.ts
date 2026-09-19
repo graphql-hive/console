@@ -7,10 +7,20 @@ import {
 } from '../../../gql/graphql';
 import { useSchemaExplorerContext } from './provider';
 
+export function matchesSubgraphFilter(
+  ownedByServiceNames: readonly string[] | null | undefined,
+  selectedSubgraphs: readonly string[],
+) {
+  return (
+    selectedSubgraphs.length === 0 ||
+    !!ownedByServiceNames?.some(serviceName => selectedSubgraphs.includes(serviceName))
+  );
+}
+
 export function useExplorerFieldFiltering<
   T extends GraphQlFields_FieldFragmentFragment | GraphQlInputFields_InputFieldFragmentFragment,
 >({ fields }: { fields: T[] }) {
-  const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
+  const { hasMetadataFilter, metadata: filterMeta, subgraphs } = useSchemaExplorerContext();
 
   const router = useRouter();
   const searchObj = router.latestLocation.search;
@@ -34,8 +44,12 @@ export function useExplorerFieldFiltering<
             ).metadata?.some(m => hasMetadataFilter(m.name, m.content));
           doesMatchFilter &&= !!doesMatchMeta;
         }
+        doesMatchFilter &&= matchesSubgraphFilter(
+          field.supergraphMetadata?.ownedByServiceNames,
+          subgraphs,
+        );
         return doesMatchFilter;
       })
       .sort((a, b) => b.usage.total - a.usage.total || a.name.localeCompare(b.name));
-  }, [fields, search, filterMeta, hasMetadataFilter]);
+  }, [fields, search, filterMeta, hasMetadataFilter, subgraphs]);
 }

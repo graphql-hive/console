@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { IntrospectionQuery } from 'graphql';
 import {
   type LaboratoryCollection,
@@ -6,6 +6,7 @@ import {
   type LaboratoryCollectionsActions,
   type LaboratoryCollectionsState,
 } from '../../lib/collections';
+import type { LaboratoryDocsActions, LaboratoryDocsState } from '../../lib/docs';
 import { type LaboratoryEndpointActions, type LaboratoryEndpointState } from '../../lib/endpoint';
 import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '../../lib/env';
 import type {
@@ -26,6 +27,7 @@ import {
 import type {
   LaboratoryPreflight,
   LaboratoryPreflightActions,
+  LaboratoryPreflightPromptRequest,
   LaboratoryPreflightState,
 } from '../../lib/preflight';
 import type {
@@ -45,9 +47,12 @@ type LaboratoryContextState = LaboratoryCollectionsState &
   LaboratoryEnvState &
   LaboratorySettingsState &
   LaboratoryPluginsState &
+  LaboratoryDocsState &
   LaboratoryTestState & {
     isFullScreen?: boolean;
     enableFullScreen?: boolean;
+    enableDocs?: boolean;
+    preflightNotice?: ReactNode;
     theme?: 'light' | 'dark';
   };
 type LaboratoryContextActions = LaboratoryCollectionsActions &
@@ -59,15 +64,12 @@ type LaboratoryContextActions = LaboratoryCollectionsActions &
   LaboratoryEnvActions &
   LaboratorySettingsActions &
   LaboratoryPluginsActions &
+  LaboratoryDocsActions &
   LaboratoryTestActions & {
     openAddCollectionDialog?: () => void;
     openUpdateEndpointDialog?: () => void;
     openAddTestDialog?: () => void;
-    openPreflightPromptModal?: (props: {
-      placeholder: string;
-      defaultValue?: string;
-      onSubmit?: (value: string | null) => void;
-    }) => void;
+    openPreflightPromptModal?: (request: LaboratoryPreflightPromptRequest) => void;
     goToFullScreen?: () => void;
     exitFullScreen?: () => void;
     checkPermissions?: (
@@ -136,14 +138,18 @@ export interface LaboratoryApi {
   openAddCollectionDialog?: () => void;
   openUpdateEndpointDialog?: () => void;
   openAddTestDialog?: () => void;
-  openPreflightPromptModal?: (props: {
-    placeholder: string;
-    defaultValue?: string;
-    onSubmit?: (value: string | null) => void;
-  }) => void;
+  openPreflightPromptModal?: (request: LaboratoryPreflightPromptRequest) => void;
   isFullScreen?: boolean;
   /** Show the full screen control. Off for hosts that already fill the viewport. */
   enableFullScreen?: boolean;
+  /**
+   * Show the schema documentation pane. Off unless explicitly enabled. Also decides
+   * whether introspection asks for descriptions, so a host passing
+   * `defaultSchemaIntrospection` must build that with descriptions itself.
+   */
+  enableDocs?: boolean;
+  /** Appended to the preflight warning. For hosts that share scripts between people. */
+  preflightNotice?: ReactNode;
   goToFullScreen?: () => void;
   exitFullScreen?: () => void;
   defaultPreflight?: LaboratoryPreflight | null;

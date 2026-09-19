@@ -28,5 +28,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  /* Previews are browser code (JSX, the @ alias) even though they live under dev/. */
+  "include": ["src", "dev/previews"]
 }

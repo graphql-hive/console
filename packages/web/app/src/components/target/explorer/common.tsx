@@ -1,18 +1,21 @@
 import React, { ReactElement, ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { Popover } from '@/components/base/floating/popover/popover';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { PulseIcon, UsersIcon } from '@/components/ui/icon';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Markdown } from '@/components/v2/markdown';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, toDecimal } from '@/lib/hooks';
 import { capitalize, cn } from '@/lib/utils';
-import { Link as NextLink, useRouter } from '@tanstack/react-router';
+import { Link, useRouter } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 import AvailabilityBar from './availability-bar';
-import { useDescriptionsVisibleToggle } from './provider';
+import { useDescriptionsVisibleToggle, useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
-import { useExplorerFieldFiltering } from './utils';
+import { matchesSubgraphFilter, useExplorerFieldFiltering } from './utils';
 
 export function Description(props: { description: string }) {
   const { isDescriptionsVisible } = useDescriptionsVisibleToggle();
@@ -43,6 +46,10 @@ const SchemaExplorerUsageStats_UsageFragment = graphql(`
   }
 `);
 
+type TopOperation = NonNullable<
+  DocumentType<typeof SchemaExplorerUsageStats_UsageFragment>['topOperations']
+>[number];
+
 export function SchemaExplorerUsageStats(props: {
   usage: FragmentType<typeof SchemaExplorerUsageStats_UsageFragment>;
   totalRequests: number;
@@ -60,173 +67,193 @@ export function SchemaExplorerUsageStats(props: {
 
   const kindLabel = useMemo(() => props.kindLabel ?? 'field', [props.kindLabel]);
 
+  const topOperationColumns: ColumnDef<TopOperation, unknown>[] = [
+    {
+      id: 'name',
+      header: 'Top 5 Operations',
+      meta: { width: 'fill' },
+      cell: ({ row }) => {
+        const operationName = `${row.original.hash.substring(0, 4)}_${row.original.name}`;
+        return (
+          <DataTableCell
+            kind="link"
+            tone="accent"
+            mono
+            truncate
+            label={operationName}
+            link={{
+              to: '/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
+              params: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+                operationName,
+                operationHash: row.original.hash,
+              },
+            }}
+          />
+        );
+      },
+    },
+    {
+      id: 'count',
+      header: 'Reqs',
+      meta: { align: 'right', width: 'xs' },
+      cell: ({ row }) => <DataTableCell kind="number" value={formatNumber(row.original.count)} />,
+    },
+    {
+      id: 'share',
+      header: 'Of total',
+      meta: { align: 'right', width: 'xs' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="number"
+          value={`${toDecimal((row.original.count / props.totalRequests) * 100)}%`}
+        />
+      ),
+    },
+  ];
+
   return (
-    <TooltipProvider delayDuration={0}>
-      <div className="ml-3 flex flex-row items-center gap-2 text-xs">
-        <div className="grow">
-          <div className="min-w-[25px] text-center">{formatNumber(usage.total)}</div>
-        </div>
-        {availability !== null ? (
-          <div className="min-w-[25px]">
-            <Tooltip>
-              <TooltipContent align="end">
-                <div className="z-10 text-left">
-                  <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Stats</div>
-                  {hasFieldLevelMetrics ? (
-                    <div className="max-w-60">
-                      <span className="font-bold">Requests</span> counts how many client requests
-                      asked for a field, whereas <span className="font-bold">Resolutions</span>{' '}
-                      counts the actual number of times your backend executed code to fetch that
-                      field's data (which can multiply within lists or drop to zero if a parent
-                      returned null).
+    <div className="ml-3 flex flex-row items-center gap-2 text-xs">
+      <div className="grow">
+        <div className="min-w-[25px] text-center">{formatNumber(usage.total)}</div>
+      </div>
+      {availability !== null ? (
+        <div className="min-w-[25px]">
+          <Popover
+            trigger={
+              <button type="button" aria-label="Field stats" className="block w-full cursor-help">
+                <AvailabilityBar availability={availability} />
+              </button>
+            }
+            openOnHover
+            align="end"
+            width="auto"
+            content={
+              <div className="text-left">
+                <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Stats</div>
+                {hasFieldLevelMetrics ? (
+                  <div className="max-w-60">
+                    <span className="font-bold">Requests</span> counts how many client requests
+                    asked for a field, whereas <span className="font-bold">Resolutions</span> counts
+                    the actual number of times your backend executed code to fetch that field's data
+                    (which can multiply within lists or drop to zero if a parent returned null).
+                  </div>
+                ) : null}
+                <div className="mt-4 space-y-1 text-left">
+                  <div>
+                    <span className="font-bold">{formatNumber(usage.total)} Requests</span>{' '}
+                    {hasFieldLevelMetrics ? 'with' : null}
+                  </div>
+                  {usage.totalResolutions ? (
+                    <div className="font-bold">
+                      {formatNumber(usage.totalResolutions)} Resolutions
                     </div>
                   ) : null}
-                  <table className="mt-4 table-auto">
-                    <thead>
-                      <tr>
-                        <th className="px-2 pl-0 text-left font-normal">
-                          <span className="font-bold">{formatNumber(usage.total)} Requests</span>{' '}
-                          {hasFieldLevelMetrics ? 'with' : null}
-                        </th>
-                      </tr>
-                      {usage.totalResolutions ? (
-                        <tr>
-                          <th className="pl-0 text-left">
-                            {formatNumber(usage.totalResolutions)} Resolutions
-                          </th>
-                        </tr>
-                      ) : null}
-                      {usage.errorTotal ? (
-                        <tr>
-                          <th className="pl-0 text-left">
-                            {formatNumber(usage.errorTotal)} Errors
-                          </th>
-                        </tr>
-                      ) : null}
-                      <tr>
-                        <td className="pl-0 text-left">
-                          for{' '}
-                          <span className="text-orange-800 dark:text-orange-500">
-                            {availability.toFixed(2)}% Availability
-                          </span>
-                        </td>
-                      </tr>
-                    </thead>
-                  </table>
+                  {usage.errorTotal ? (
+                    <div className="font-bold">{formatNumber(usage.errorTotal)} Errors</div>
+                  ) : null}
+                  <div>
+                    for{' '}
+                    <span className="text-orange-800 dark:text-orange-500">
+                      {availability.toFixed(2)}% Availability
+                    </span>
+                  </div>
                 </div>
-              </TooltipContent>
-              <TooltipTrigger className="block w-full cursor-help">
-                <AvailabilityBar availability={availability} />
-              </TooltipTrigger>
-            </Tooltip>
+              </div>
+            }
+          />
+        </div>
+      ) : null}
+      <Popover
+        trigger={
+          <button type="button" aria-label="Usage" className="cursor-help text-xl">
+            <PulseIcon className="h-6 w-auto" />
+          </button>
+        }
+        openOnHover
+        align="end"
+        // The table inside fills its container, so the popup needs a width of its own.
+        width="lg"
+        content={
+          <div>
+            <div className="mb-1 text-lg font-medium">{capitalize(kindLabel)} Usage</div>
+            {usage.isUsed === false ? (
+              <div>This {kindLabel} is currently not in use.</div>
+            ) : (
+              <div>
+                <ul>
+                  <li>
+                    This {kindLabel} has been queried in{' '}
+                    <span className="text-neutral-12 font-medium">{formatNumber(usage.total)}</span>{' '}
+                    requests.
+                  </li>
+                  <li>
+                    <span className="text-neutral-12 font-medium">{toDecimal(percentage)}%</span> of
+                    all requests use this {kindLabel}.
+                  </li>
+                </ul>
+
+                {Array.isArray(usage.topOperations) && (
+                  <div className="mt-4">
+                    <DataTable
+                      data={usage.topOperations}
+                      columns={topOperationColumns}
+                      getRowId={operation => operation.hash}
+                      pagination={{ kind: 'none' }}
+                      variants={{ onSurface: 'raised', bordered: false, striped: false }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        ) : null}
-        <Tooltip>
-          <TooltipContent align="end">
-            <div className="z-10">
-              <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Usage</div>
-              {usage.isUsed === false ? (
-                <div>This {kindLabel} is currently not in use.</div>
-              ) : (
-                <div>
-                  <ul>
-                    <li>
-                      This {kindLabel} has been queried in{' '}
-                      <strong>{formatNumber(usage.total)}</strong> requests.
+        }
+      />
+
+      <Popover
+        trigger={
+          <button type="button" aria-label="Client usage" className="cursor-help p-1 text-xl">
+            <UsersIcon size={16} className="h-6 w-auto" />
+          </button>
+        }
+        openOnHover
+        align="end"
+        width="auto"
+        content={
+          <>
+            <div className="mb-1 text-lg font-medium">Client Usage</div>
+
+            {Array.isArray(usage.usedByClients) && usage.usedByClients.length > 0 ? (
+              <>
+                <div className="mb-2">This {kindLabel} is used by the following clients:</div>
+                <ul>
+                  {usage.usedByClients.map(clientName => (
+                    <li key={clientName} className="font-bold">
+                      <Link
+                        className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
+                        to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                          targetSlug: props.targetSlug,
+                          name: clientName,
+                        }}
+                      >
+                        {clientName}
+                      </Link>
                     </li>
-                    <li>
-                      <strong>{toDecimal(percentage)}%</strong> of all requests use this {kindLabel}
-                      .
-                    </li>
-                  </ul>
-
-                  {Array.isArray(usage.topOperations) && (
-                    <table className="mt-4 table-auto">
-                      <thead>
-                        <tr>
-                          <th className="p-2 pl-0 text-left">Top 5 Operations</th>
-                          <th className="p-2 text-center">Reqs</th>
-                          <th className="p-2 text-center">Of total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {usage.topOperations.map(op => (
-                          <tr key={op.hash}>
-                            <td className="px-2 pl-0 text-left">
-                              <NextLink
-                                className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
-                                to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                                params={{
-                                  organizationSlug: props.organizationSlug,
-                                  projectSlug: props.projectSlug,
-                                  targetSlug: props.targetSlug,
-                                  operationName: `${op.hash.substring(0, 4)}_${op.name}`,
-                                  operationHash: op.hash,
-                                }}
-                              >
-                                {op.hash.substring(0, 4)}_{op.name}
-                              </NextLink>
-                            </td>
-                            <td className="px-2 text-center font-bold">{formatNumber(op.count)}</td>
-                            <td className="px-2 text-center font-bold">
-                              {toDecimal((op.count / props.totalRequests) * 100)}%
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
-            </div>
-          </TooltipContent>
-          <TooltipTrigger>
-            <div className="cursor-help text-xl">
-              <PulseIcon className="h-6 w-auto" />
-            </div>
-          </TooltipTrigger>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipContent align="end">
-            <>
-              <div className="mb-1 text-lg font-bold">Client Usage</div>
-
-              {Array.isArray(usage.usedByClients) && usage.usedByClients.length > 0 ? (
-                <>
-                  <div className="mb-2">This {kindLabel} is used by the following clients:</div>
-                  <ul>
-                    {usage.usedByClients.map(clientName => (
-                      <li key={clientName} className="font-bold">
-                        <NextLink
-                          className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
-                          to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
-                            name: clientName,
-                          }}
-                        >
-                          {clientName}
-                        </NextLink>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : (
-                <div>This {kindLabel} is not used by any client.</div>
-              )}
-            </>
-          </TooltipContent>
-          <TooltipTrigger>
-            <div className="cursor-help p-1 text-xl">
-              <UsersIcon size={16} className="h-6 w-auto" />
-            </div>
-          </TooltipTrigger>
-        </Tooltip>
-      </div>
-    </TooltipProvider>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <div>This {kindLabel} is not used by any client.</div>
+            )}
+          </>
+        }
+      />
+    </div>
   );
 }
 
@@ -238,6 +265,7 @@ const GraphQLInputFields_InputFieldFragment = graphql(`
     isDeprecated
     deprecationReason
     supergraphMetadata {
+      ownedByServiceNames
       metadata {
         name
         content
@@ -252,6 +280,7 @@ const GraphQLInputFields_InputFieldFragment = graphql(`
 
 const GraphQLTypeCard_SupergraphMetadataFragment = graphql(`
   fragment GraphQLTypeCard_SupergraphMetadataFragment on SupergraphMetadata {
+    ownedByServiceNames
     ...SupergraphMetadataList_SupergraphMetadataFragment
   }
 `);
@@ -265,17 +294,18 @@ export function DeprecationNote(props: {
   }
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <Tooltip>
-        <TooltipTrigger className="line-through hover:line-through">
-          {props.children}
-        </TooltipTrigger>
-        <TooltipContent className="min-w-6 max-w-screen-md" side="right" sideOffset={5}>
+    <Tooltip
+      trigger={<span className="line-through">{props.children}</span>}
+      side="right"
+      sideOffset={5}
+      maxWidth="screen"
+      content={
+        <>
           <div className="mb-2">Deprecation reason</div>
           <Markdown className="text-neutral-10" content={props.deprecationReason} />
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+        </>
+      }
+    />
   );
 }
 
@@ -291,11 +321,16 @@ export function GraphQLTypeCard(props: {
   projectSlug: string;
   organizationSlug: string;
   children: ReactNode;
-}): ReactElement {
+}): ReactElement | null {
   const supergraphMetadata = useFragment(
     GraphQLTypeCard_SupergraphMetadataFragment,
     props.supergraphMetadata,
   );
+  const { subgraphs } = useSchemaExplorerContext();
+
+  if (!matchesSubgraphFilter(supergraphMetadata?.ownedByServiceNames, subgraphs)) {
+    return null;
+  }
 
   return (
     <div className="border-neutral-5 rounded-md border-2">
@@ -374,6 +409,14 @@ export function GraphQLTypeCardListItem(props: {
   );
 }
 
+export function ExplorerFilteredEmptyState() {
+  return (
+    <div className="text-neutral-10 border-neutral-5 rounded-md border border-dashed px-4 py-8 text-center text-sm">
+      No schema coordinates match the active filters.
+    </div>
+  );
+}
+
 export function GraphQLInputFields(props: {
   typeName: string;
   fields: FragmentType<typeof GraphQLInputFields_InputFieldFragment>[];
@@ -387,6 +430,10 @@ export function GraphQLInputFields(props: {
   const sortedAndFilteredFields = useExplorerFieldFiltering({
     fields,
   });
+
+  if (sortedAndFilteredFields.length === 0) {
+    return <ExplorerFilteredEmptyState />;
+  }
 
   return (
     <div className="flex flex-col">
@@ -447,15 +494,22 @@ export function GraphQLTypeAsLink(props: {
   const typename = props.type.replace(/[[\]!]+/g, '');
 
   return (
-    <Popover>
-      <PopoverTrigger className={cn('hover:underline hover:underline-offset-4', props.className)}>
-        {props.type}
-      </PopoverTrigger>
-      <PopoverContent side="right">
+    <Popover
+      trigger={
+        <button
+          type="button"
+          className={cn('hover:underline hover:underline-offset-4', props.className)}
+        >
+          {props.type}
+        </button>
+      }
+      side="right"
+      arrow
+      content={
         <div className="flex flex-col gap-y-2">
           <p>
-            <NextLink
-              className="text-sm font-normal hover:underline hover:underline-offset-2"
+            <Link
+              className="text-xs font-normal hover:underline hover:underline-offset-2"
               to="/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename"
               params={{
                 organizationSlug: props.organizationSlug,
@@ -465,13 +519,13 @@ export function GraphQLTypeAsLink(props: {
               }}
               search={router.latestLocation.search}
             >
-              Visit in <span className="font-bold">Explorer</span>
-            </NextLink>
+              Visit in <span className="font-medium">Explorer</span>
+            </Link>
             <span className="text-neutral-10 text-xs"> - displays a full type</span>
           </p>
           <p>
-            <NextLink
-              className="text-sm font-normal hover:underline hover:underline-offset-2"
+            <Link
+              className="text-xs font-normal hover:underline hover:underline-offset-2"
               to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
               params={{
                 organizationSlug: props.organizationSlug,
@@ -481,14 +535,13 @@ export function GraphQLTypeAsLink(props: {
               }}
               search={router.latestLocation.search}
             >
-              Visit in <span className="font-bold">Insights</span>
-            </NextLink>
+              Visit in <span className="font-medium">Insights</span>
+            </Link>
             <span className="text-neutral-10 text-xs"> - usage insights</span>
           </p>
         </div>
-        <PopoverArrow />
-      </PopoverContent>
-    </Popover>
+      }
+    />
   );
 }
 
@@ -506,7 +559,7 @@ export const LinkToCoordinatePage = React.forwardRef<
   const router = useRouter();
 
   return (
-    <NextLink
+    <Link
       ref={ref}
       className={cn('hover:underline hover:underline-offset-2', props.className)}
       to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
@@ -519,7 +572,7 @@ export const LinkToCoordinatePage = React.forwardRef<
       search={router.latestLocation.search}
     >
       {props.children}
-    </NextLink>
+    </Link>
   );
 });
 

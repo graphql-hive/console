@@ -1,7 +1,18 @@
+import { readFileSync } from 'node:fs';
+import { buildSchema, parse, validate } from 'graphql';
 import { devActiveTabId, devOperations, devTabs } from './operations';
 import { queryPlanFixtures } from './query-plan-fixtures';
 
+/** The same schema the mock endpoint serves, so a seed cannot drift from it. */
+const schema = buildSchema(readFileSync('schema.graphql', 'utf-8'));
+
 describe('dev operations', () => {
+  // Seeds are hand-written against a large schema. An invalid one still parses,
+  // so it loads looking fine and only shows up as red squiggles in the editor.
+  it.each(devOperations)('$name is valid against the schema', operation => {
+    expect(validate(schema, parse(operation.query)).map(error => error.message)).toEqual([]);
+  });
+
   // An operation is only reachable through a tab, so a mismatched id seeds a tab
   // that renders nothing rather than failing loudly.
   it.each(devTabs)('tab $id points at a seeded operation', tab => {

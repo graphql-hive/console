@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/external-composition",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "type": "module",
   "description": "Compose schemas outside Hive Console",
   "repository": {
@@ -63,7 +63,7 @@
     "@apollo/composition": "2.14.0",
     "@types/node": "24.13.3",
     "esbuild": "0.28.1",
-    "fastify": "5.10.0",
+    "fastify": "5.12.3",
     "graphql": "16.9.0"
   },
   "publishConfig": {

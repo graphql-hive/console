@@ -1,10 +1,10 @@
 import type { useNavigate } from '@tanstack/react-router';
-import type { FilterDimension, FilterItem, FilterSelection } from './types';
+import type { FilterItem, FilterSelection, ItemsFilterDimension } from './types';
 
 type NavigateFn = ReturnType<typeof useNavigate>;
 
 /**
- * Build a `FilterDimension` whose state lives in URL search params. Pair with
+ * Build an `ItemsFilterDimension` whose state lives in URL search params. Pair with
  * a TanStack route that has `validateSearch` set up to accept the relevant
  * keys. The returned dimension has `onChange` / `onRemove` /
  * `onExcludeModeChange` callbacks pre-wired to call `navigate`.
@@ -28,7 +28,7 @@ export function urlFilterDimension<TSearch extends Record<string, unknown>>(conf
   decode: (value: unknown) => FilterSelection[];
   /** Optional sub-values label (e.g. "versions"). */
   valuesLabel?: string;
-}): FilterDimension {
+}): ItemsFilterDimension {
   const {
     navigate,
     search,

@@ -2,7 +2,10 @@ import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } f
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { Input } from '@/components/base/input/input';
+import { Textarea } from '@/components/base/textarea/textarea';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
 import {
@@ -20,22 +23,20 @@ import {
 import { schemaTitle } from '@/components/target/proposals/util';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { Modal, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
+import { Modal } from '@/components/v2';
 import { graphql } from '@/gql';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { cn } from '@/lib/utils';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const ProposeChangesMutation = graphql(`
   mutation ProposalsNew_ProposeChanges($input: CreateSchemaProposalInput!) {
@@ -145,11 +146,7 @@ function ProposalsNewHeading(props: Parameters<typeof TargetProposalsNewPage>[0]
               <span className="text-neutral-10 inline-block px-2 italic">/</span> New
             </span>
           }
-          description={
-            <CardDescription>
-              Collaborate on schema changes to reduce friction during development.
-            </CardDescription>
-          }
+          description="Collaborate on schema changes to reduce friction during development."
         />
       </div>
     </div>
@@ -193,6 +190,42 @@ function ConfirmationModal(props: {
   useEffect(() => {
     setConfirmed(props.confirmations.map(_ => false));
   }, [props.confirmations]);
+
+  const rows = props.confirmations.map((confirmation, index) => ({
+    id: String(index),
+    ...confirmation,
+  }));
+  const columns: ColumnDef<(typeof rows)[number], unknown>[] = [
+    {
+      id: 'confirm',
+      header: 'Confirm',
+      meta: { align: 'center', width: 'xs' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="checkbox"
+          checked={confirmed[row.index] ?? false}
+          onCheckedChange={checked =>
+            setConfirmed(prev =>
+              prev.map((value, index) => (index === row.index ? checked : value)),
+            )
+          }
+          label={`Confirm ${row.original.name}`}
+        />
+      ),
+    },
+    {
+      id: 'schema',
+      header: 'Schema',
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.name} mono />,
+    },
+    {
+      id: 'reason',
+      header: 'Change',
+      meta: { width: 'fill' },
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.reason} truncate />,
+    },
+  ];
+
   return (
     <Modal
       open={props.confirmations.length > 0}
@@ -206,39 +239,17 @@ function ConfirmationModal(props: {
       <SubPageLayoutHeader
         subPageTitle="Issues Found"
         description={
-          <CardDescription className="pb-4">
+          <p className="pb-4">
             The proposed changes are invalid but can be automatically corrected.
-          </CardDescription>
+          </p>
         }
       />
-      <Table>
-        <THead>
-          <Th className="px-0 text-center">confirm</Th>
-          <Th colSpan={2}>schema</Th>
-        </THead>
-        <TBody>
-          {props.confirmations.map((c, idx) => {
-            return (
-              <Tr key={idx}>
-                <Td>
-                  <div className="flex justify-center">
-                    <Checkbox
-                      size="sm"
-                      checked={confirmed[idx]}
-                      onClick={_ => {
-                        confirmed[idx] = !confirmed[idx];
-                        setConfirmed([...confirmed]);
-                      }}
-                    />
-                  </div>
-                </Td>
-                <Td className="truncate">{c.name}</Td>
-                <Td className="break-normal">{c.reason}</Td>
-              </Tr>
-            );
-          })}
-        </TBody>
-      </Table>
+      <DataTable
+        data={rows}
+        columns={columns}
+        getRowId={row => row.id}
+        pagination={{ kind: 'none' }}
+      />
       <div className="mt-4 text-right">
         <Button
           disabled={!confirmed.every(c => c)}
@@ -691,31 +702,33 @@ function OverviewTab(props: {
         <Label htmlFor="proposal-title" className="p-1">
           Title <span className="text-neutral-10">(required)</span>
         </Label>
-        <Input
-          aria-label="title"
-          id="proposal-title"
-          name="proposal-title"
-          className="mt-2"
-          value={props.title}
-          onChange={e => props.setTitle(e.currentTarget.value)}
-          maxLength={72}
-        />
+        <div className="mt-2">
+          <Input
+            aria-label="title"
+            id="proposal-title"
+            name="proposal-title"
+            value={props.title}
+            onChange={e => props.setTitle(e.currentTarget.value)}
+            maxLength={72}
+          />
+        </div>
       </div>
       <div className="pb-10">
         <Label className="p-1" htmlFor="proposal-description">
           Description
         </Label>
-        <Textarea
-          aria-label="description"
-          id="proposal-description"
-          name="proposal-description"
-          // @ts-expect-error: because fieldSizing doesnt exist on the current version
-          style={{ fieldSizing: 'content' }}
-          className="mt-2 h-auto min-h-40 resize-none"
-          value={props.description}
-          onChange={e => props.setDescription(e.currentTarget.value)}
-          maxLength={5000}
-        />
+        <div className="mt-2">
+          <Textarea
+            aria-label="description"
+            id="proposal-description"
+            name="proposal-description"
+            autoSize
+            rows={6}
+            value={props.description}
+            onChange={e => props.setDescription(e.currentTarget.value)}
+            maxLength={5000}
+          />
+        </div>
       </div>
     </TabsContent>
   );

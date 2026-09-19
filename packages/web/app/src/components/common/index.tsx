@@ -18,7 +18,6 @@ export function Label({ className, children, ...props }: ComponentProps<'span'>)
 export const Page = ({
   title,
   subtitle = '',
-  scrollable = false,
   actions,
   children,
   noPadding,
@@ -28,7 +27,6 @@ export const Page = ({
   title: string;
   subtitle?: string;
   actions?: ReactElement;
-  scrollable?: boolean;
   noPadding?: boolean;
   className?: string;
 }): ReactElement => {
@@ -41,13 +39,7 @@ export const Page = ({
         </div>
         <div className="flex flex-row items-center space-x-2">{actions}</div>
       </div>
-      {noPadding ? (
-        children
-      ) : (
-        <div className={cn('px-4 pb-4', scrollable ? 'grow overflow-y-auto' : 'h-full')}>
-          {children}
-        </div>
-      )}
+      {noPadding ? children : <div className="h-full px-4 pb-4">{children}</div>}
     </div>
   );
 };
@@ -69,26 +61,3 @@ export const Section = {
     </div>
   ),
 };
-
-export function Scale({
-  value,
-  max,
-  size,
-  className,
-}: {
-  value: number;
-  max: number;
-  size: number;
-  className?: string;
-}): ReactElement {
-  return (
-    <div className={cn('flex grow-0 flex-row space-x-1', className)}>
-      {new Array(size).fill(null).map((_, i) => (
-        <div
-          key={i}
-          className={cn('h-4 w-1', value >= i * (max / size) ? 'bg-emerald-400' : 'bg-neutral-10')}
-        />
-      ))}
-    </div>
-  );
-}

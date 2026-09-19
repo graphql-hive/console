@@ -1,4 +1,4 @@
-import { pollFor } from 'testkit/flow';
+import { pollFor, waitForExpectations } from 'testkit/flow';
 import { clickHouseQuery } from '../../testkit/clickhouse';
 import { graphql } from '../../testkit/gql';
 import { GraphQlOperationType, ResourceAssignmentModeType } from '../../testkit/gql/graphql';
@@ -91,7 +91,7 @@ const TargetTracesWithFiltersQuery = graphql(`
 async function sendTrace(args: {
   otelCollectorAddress: string;
   accessToken: string;
-  targetRef: string;
+  targetRef?: string;
   traceId: string;
   spanId: string;
   spanName: string;
@@ -103,7 +103,7 @@ async function sendTrace(args: {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${args.accessToken}`,
-      'X-Hive-Target-Ref': args.targetRef,
+      ...(args.targetRef ? { 'X-Hive-Target-Ref': args.targetRef } : {}),
     },
     body: JSON.stringify({
       resourceSpans: [
@@ -352,7 +352,7 @@ test('otel-collector accepts traces using slug-based target ref', async () => {
   expect(traceResult.data[0].SpanAttributes['hive.target_id']).toBe(target.id);
 });
 
-test('otel-collector rejects traces without authorization', async () => {
+test('rejects traces with missing authorization header', async () => {
   const otelCollectorAddress = await getServiceHost('otel-collector', 4318);
 
   const traceId = generateTraceId();
@@ -391,6 +391,44 @@ test('otel-collector rejects traces without authorization', async () => {
   });
 
   expect(response.status).toBe(401);
+  expect(await response.json()).toEqual({
+    code: 16,
+    message: 'missing Authorization header',
+  });
+});
+
+test('response gives hint for a missing target reference header', async () => {
+  const otelCollectorAddress = await getServiceHost('otel-collector', 4318);
+
+  const response = await sendTrace({
+    otelCollectorAddress,
+    accessToken: 'invalid-token',
+    traceId: generateTraceId(),
+    spanId: generateSpanId(),
+    spanName: 'test-span',
+  });
+
+  expect(response.status).toBe(401);
+  expect(await response.json()).toEqual({
+    code: 16,
+    message: 'missing X-Hive-Target-Ref header',
+  });
+});
+
+test('response does not expose internal authentication error details', async () => {
+  const otelCollectorAddress = await getServiceHost('otel-collector', 4318);
+
+  const response = await sendTrace({
+    otelCollectorAddress,
+    accessToken: 'invalid-token',
+    targetRef: 'some-org/some-project/some-target',
+    traceId: generateTraceId(),
+    spanId: generateSpanId(),
+    spanName: 'test-span',
+  });
+
+  expect(response.status).toBe(401);
+  expect(await response.json()).toEqual({ code: 16, message: 'unauthorized' });
 });
 
 test('otel-collector rejects traces without traces:report permission', async () => {
@@ -421,6 +459,7 @@ test('otel-collector rejects traces without traces:report permission', async () 
   });
 
   expect(response.status).toBe(401);
+  expect(await response.json()).toEqual({ code: 16, message: 'unauthorized' });
 });
 
 test('traces can be filtered via GraphQL API', async () => {
@@ -501,19 +540,6 @@ test('traces can be filtered via GraphQL API', async () => {
   await waitForTraceInNormalized(trace1Id);
   await waitForTraceInNormalized(trace2Id);
   await waitForTraceInNormalized(trace3Id);
-
-  // Use this function to give our backend (clickhouse) time to insert into the materialized views' tables
-  const waitForExpectations = (expectation: () => Promise<void>) => {
-    return pollFor(async () => {
-      try {
-        await expectation();
-        return true;
-      } catch (e) {
-        console.error(e);
-        return false;
-      }
-    });
-  };
 
   // Test 1: Filter by operation name
   await waitForExpectations(async () => {

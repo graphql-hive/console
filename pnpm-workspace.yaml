@@ -12,6 +12,9 @@ packages:
   - rules
   - load-tests/otel-traces
 
+catalog:
+  react-foundry: 0.0.16
+
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - 'envelop'
@@ -24,3 +27,5 @@ minimumReleaseAgeExclude:
   - '@whatwg-node/*'
   - '@theguild/federation-composition'
   - graphql-modules
+  - 'react-foundry'
+  - 'graphql-scalars'

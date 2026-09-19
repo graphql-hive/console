@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import got, { RequestError } from 'got';
-import { DocumentNode, GraphQLError, parse, print, printSchema } from 'graphql';
+import { ASTNode, DocumentNode, GraphQLError, parse, print, printSchema } from 'graphql';
 import { validateSDL } from 'graphql/validation/validate.js';
 import { z } from 'zod';
 import { composeAndValidate, compositionHasErrors } from '@apollo/federation';
@@ -25,35 +25,51 @@ interface BrokerPayload {
   body: string;
 }
 
+const ExternalCompositionResultSuccessModel = z.object({
+  type: z.literal('success'),
+  result: z.object({
+    supergraph: z.string(),
+    sdl: z.string(),
+  }),
+});
+
+const ExternalCompositionResultFailureModel = z.object({
+  type: z.literal('failure'),
+  result: z.object({
+    supergraph: z.string().nullish(),
+    sdl: z.string().nullish(),
+    errors: z.array(
+      z.object({
+        message: z.string(),
+        source: z.union([z.literal('composition'), z.literal('graphql')]).default('graphql'),
+      }),
+    ),
+  }),
+});
+
 const ExternalCompositionResultModel = z.union([
-  z.object({
-    type: z.literal('success'),
-    result: z.object({
-      supergraph: z.string(),
-      sdl: z.string(),
-    }),
-  }),
-  z.object({
-    type: z.literal('failure'),
-    result: z.object({
-      supergraph: z.string().nullish(),
-      sdl: z.string().nullish(),
-      errors: z.array(
-        z.object({
-          message: z.string(),
-          source: z.union([z.literal('composition'), z.literal('graphql')]).default('graphql'),
-        }),
-      ),
-    }),
-  }),
+  ExternalCompositionResultSuccessModel,
+  ExternalCompositionResultFailureModel,
 ]);
 
-export type ComposerMethodResult = z.TypeOf<typeof ExternalCompositionResultModel> & {
+type ComposerMethodResultSuccess = {
+  type: 'success';
+  result: {
+    sdl: string;
+    supergraph: string;
+    supergraphDocumentNode: DocumentNode;
+    sdlDocumentNode: DocumentNode;
+  };
+};
+
+type ComposerMethodResultError = z.TypeOf<typeof ExternalCompositionResultFailureModel> & {
   /** The result contains a network error */
   includesNetworkError: boolean;
   /** The result contains an internal unexpected exception */
   includesException: boolean;
 };
+
+export type ComposerMethodResult = ComposerMethodResultError | ComposerMethodResultSuccess;
 
 export function composeFederationV1(
   subgraphs: Array<{
@@ -76,14 +92,16 @@ export function composeFederationV1(
     };
   }
 
+  const sdl = printSchema(result.schema);
+
   return {
     type: 'success',
     result: {
+      sdl,
+      sdlDocumentNode: parse(sdl),
       supergraph: result.supergraphSdl,
-      sdl: printSchema(result.schema),
+      supergraphDocumentNode: parse(result.supergraphSdl),
     },
-    includesNetworkError: false,
-    includesException: false,
   };
 }
 
@@ -125,10 +143,10 @@ export function composeFederationV2(
       type: 'success',
       result: {
         supergraph: result.supergraphSdl,
-        sdl: print(transformSupergraphToPublicSchema(parse(result.supergraphSdl))),
+        supergraphDocumentNode: result.supergraphDocumentNode,
+        sdl: result.publicSdl,
+        sdlDocumentNode: result.publicDocumentNode,
       },
-      includesNetworkError: false,
-      includesException: false,
     } as const;
   } catch (error) {
     logger?.error('Unexpected error during composition.');
@@ -159,6 +177,16 @@ export async function composeExternalFederation(args: {
   external: Exclude<ExternalComposition, null>;
   requestTimeoutMs: number;
   requestId: string;
+
+  /**
+   * Configuration option to use the supergraph SDL and transform it to the public
+   * SDL instead of taking the public SDL from the external composition result.
+   *
+   * This is used to support some existing implementations from customers that are
+   * incorrectly returning supergraph directives in their public SDL. This is intended
+   * to be deprecated in the future once all customers have addressed their implementation.
+   */
+  transformToPublicSdl?: boolean;
 }): Promise<ComposerMethodResult> {
   args.logger?.debug(
     'Using external composition service (url=%s, schemas=%s)',
@@ -240,14 +268,30 @@ export async function composeExternalFederation(args: {
 
     await checkExternalCompositionCompatibility(args.logger, parseResult.data.result.sdl);
 
+    const supergraph = parseResult.data.result.supergraph;
+    let sdl = parseResult.data.result.sdl;
+    const supergraphDocumentNode = parse(supergraph);
+
+    let sdlDocumentNode: ASTNode;
+    if (args.transformToPublicSdl) {
+      /**
+       * Ensure the externally composed schema doesn't include supergraph SDL
+       * This is done for us in the native composition library
+       * https://github.com/graphql-hive/federation-composition/blob/77d6b4ece2abacf94164beafb4e7f5961f726755/src/compose.ts#L228
+       */
+      sdlDocumentNode = transformSupergraphToPublicSchema(supergraphDocumentNode);
+      sdl = print(sdlDocumentNode);
+    } else {
+      sdlDocumentNode = parse(sdl);
+    }
     return {
       type: 'success',
       result: {
-        supergraph: parseResult.data.result.supergraph,
-        sdl: print(transformSupergraphToPublicSchema(parse(parseResult.data.result.supergraph))),
+        supergraph,
+        supergraphDocumentNode,
+        sdl,
+        sdlDocumentNode,
       },
-      includesNetworkError: false,
-      includesException: false,
     };
   }
 

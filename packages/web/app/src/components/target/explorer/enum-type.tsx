@@ -4,11 +4,13 @@ import { useRouter } from '@tanstack/react-router';
 import {
   DeprecationNote,
   Description,
+  ExplorerFilteredEmptyState,
   GraphQLTypeCard,
   GraphQLTypeCardListItem,
   LinkToCoordinatePage,
 } from './common';
 import { useSchemaExplorerContext } from './provider';
+import { matchesSubgraphFilter } from './utils';
 
 const GraphQLEnumTypeComponent_TypeFragment = graphql(`
   fragment GraphQLEnumTypeComponent_TypeFragment on GraphQLEnumType {
@@ -23,6 +25,7 @@ const GraphQLEnumTypeComponent_TypeFragment = graphql(`
       isDeprecated
       deprecationReason
       supergraphMetadata {
+        ownedByServiceNames
         metadata {
           name
           content
@@ -54,7 +57,7 @@ export function GraphQLEnumTypeComponent(props: {
       ? searchObj.search.toLowerCase()
       : undefined;
   const ttype = useFragment(GraphQLEnumTypeComponent_TypeFragment, props.type);
-  const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
+  const { hasMetadataFilter, metadata: filterMeta, subgraphs } = useSchemaExplorerContext();
   const values = ttype.values.filter(value => {
     let matchesFilter = true;
     if (search) {
@@ -66,6 +69,10 @@ export function GraphQLEnumTypeComponent(props: {
       );
       matchesFilter &&= !!matchesMeta;
     }
+    matchesFilter &&= matchesSubgraphFilter(
+      value.supergraphMetadata?.ownedByServiceNames,
+      subgraphs,
+    );
     return matchesFilter;
   });
 
@@ -81,33 +88,37 @@ export function GraphQLEnumTypeComponent(props: {
       totalRequests={props.totalRequests}
       usage={ttype.usage}
     >
-      <div className="flex flex-col">
-        {values.map((value, i) => (
-          <GraphQLTypeCardListItem key={value.name} index={i}>
-            <div className="flex flex-col">
-              <DeprecationNote deprecationReason={value.deprecationReason}>
-                <LinkToCoordinatePage
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
+      {values.length === 0 ? (
+        <ExplorerFilteredEmptyState />
+      ) : (
+        <div className="flex flex-col">
+          {values.map((value, i) => (
+            <GraphQLTypeCardListItem key={value.name} index={i}>
+              <div className="flex flex-col">
+                <DeprecationNote deprecationReason={value.deprecationReason}>
+                  <LinkToCoordinatePage
+                    organizationSlug={props.organizationSlug}
+                    projectSlug={props.projectSlug}
+                    targetSlug={props.targetSlug}
+                    coordinate={`${ttype.name}.${value.name}`}
+                  >
+                    {value.name}
+                  </LinkToCoordinatePage>
+                </DeprecationNote>
+                {value.description && <Description description={value.description} />}
+              </div>
+              {value.supergraphMetadata && (
+                <SupergraphMetadataList
                   targetSlug={props.targetSlug}
-                  coordinate={`${ttype.name}.${value.name}`}
-                >
-                  {value.name}
-                </LinkToCoordinatePage>
-              </DeprecationNote>
-              {value.description && <Description description={value.description} />}
-            </div>
-            {value.supergraphMetadata && (
-              <SupergraphMetadataList
-                targetSlug={props.targetSlug}
-                projectSlug={props.projectSlug}
-                organizationSlug={props.organizationSlug}
-                supergraphMetadata={value.supergraphMetadata}
-              />
-            )}
-          </GraphQLTypeCardListItem>
-        ))}
-      </div>
+                  projectSlug={props.projectSlug}
+                  organizationSlug={props.organizationSlug}
+                  supergraphMetadata={value.supergraphMetadata}
+                />
+              )}
+            </GraphQLTypeCardListItem>
+          ))}
+        </div>
+      )}
     </GraphQLTypeCard>
   );
 }

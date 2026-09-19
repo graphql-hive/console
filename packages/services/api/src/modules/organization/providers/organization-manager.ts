@@ -1,5 +1,4 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { OrganizationReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import { z } from 'zod';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { OrganizationInvitationTask } from '@hive/workflows/tasks/organization-invitation';
@@ -23,6 +22,7 @@ import { CreateOrUpdateMemberRoleModel } from '../validation';
 import { reservedOrganizationSlugs } from './organization-config';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers } from './organization-members';
+import { ProvisionedUsersStore } from './provisioned-users-store';
 import { ResourceAssignments } from './resource-assignments';
 
 /**
@@ -48,6 +48,7 @@ export class OrganizationManager {
     private taskScheduler: TaskScheduler,
     private organizationMemberRoles: OrganizationMemberRoles,
     private organizationMembers: OrganizationMembers,
+    private provisionedUsersStore: ProvisionedUsersStore,
     private resourceAssignments: ResourceAssignments,
     private inMemoryRateLimiter: InMemoryRateLimiter,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
@@ -56,7 +57,9 @@ export class OrganizationManager {
     this.logger = logger.child({ source: 'OrganizationManager' });
   }
 
-  async getOrganizationByReference(reference: OrganizationReferenceInput): Promise<Organization> {
+  async getOrganizationByReference(
+    reference: GraphQLSchema.OrganizationReferenceInput,
+  ): Promise<Organization> {
     const selector = await this.idTranslator.resolveOrganizationReference({
       reference,
       onError: () => {
@@ -198,7 +201,7 @@ export class OrganizationManager {
     this.logger.debug('Leaving organization (organization=%s)', organizationId);
     const user = await this.session.getViewer();
 
-    if (user.provisionedByOrganizationId !== null) {
+    if (user.provisioningStatus === 'active') {
       return {
         ok: false,
         message: 'Provisioned users can not leave organizations.',
@@ -322,18 +325,11 @@ export class OrganizationManager {
     return this.storage.getOrganizationOwner(selector);
   }
 
-  async createOrganization(input: {
-    slug: string;
-    user: {
-      id: string;
-      superTokensUserId: string | null;
-      provisionedByOrganizationId: string | null;
-    };
-  }) {
+  async createOrganization(input: { slug: string; user: User }) {
     const { slug, user } = input;
     this.logger.info('Creating an organization (input=%o)', input);
 
-    if (user.provisionedByOrganizationId !== null) {
+    if (user.provisioningStatus === 'active') {
       return {
         ok: false as const,
         message: 'Provisioned users can not create organizations.',
@@ -691,7 +687,7 @@ export class OrganizationManager {
       throw new Error('Only users can join organizations');
     }
 
-    if (actor.user.provisionedByOrganizationId !== null) {
+    if (actor.user.provisioningStatus === 'active') {
       return {
         message: 'Provisioned users can not join any other organization.',
       };
@@ -920,7 +916,7 @@ export class OrganizationManager {
       throw new Error(`Logged user is not a member of the organization`);
     }
 
-    if (member.user.provisionedByOrganizationId !== null) {
+    if (member.user.provisioningStatus === 'active') {
       throw new HiveError('Provisioned users can not be removed from organizations.');
     }
 
@@ -1131,7 +1127,7 @@ export class OrganizationManager {
         },
       };
     }
-    if (user.provisionedByOrganizationId !== null) {
+    if (user.provisioningStatus === 'active') {
       return {
         error: {
           message: 'Provisioned users can not be modified.',
@@ -1196,6 +1192,68 @@ export class OrganizationManager {
 
     return {
       ok: result,
+    };
+  }
+
+  async confirmSCIMManagementForMember(args: {
+    organization: GraphQLSchema.OrganizationReferenceInput;
+    userId: string;
+  }) {
+    const { organizationId } = await this.idTranslator.resolveOrganizationReference({
+      reference: args.organization,
+      onError: () => {
+        this.session.raise('member:modify');
+      },
+    });
+
+    await this.session.assertPerformAction({
+      action: 'member:modify',
+      organizationId,
+      params: { organizationId },
+    });
+
+    const confirmedUser = await this.provisionedUsersStore.confirmSCIMManagementForMember(
+      organizationId,
+      args.userId,
+    );
+
+    if (!confirmedUser) {
+      return {
+        error: {
+          message: 'Pending SCIM provisioning conflict not found.',
+        },
+      };
+    }
+
+    const organization = await this.storage.getOrganization({ organizationId });
+    const confirmedMember = await this.organizationMembers.findOrganizationMembership({
+      organization,
+      userId: confirmedUser.id,
+    });
+
+    if (!confirmedMember) {
+      return {
+        error: {
+          message: 'Pending SCIM provisioning conflict not found.',
+        },
+      };
+    }
+
+    this.session.reset();
+
+    await this.auditLog.record({
+      eventType: 'SCIM_USER_UPDATED',
+      organizationId,
+      metadata: {
+        userId: confirmedUser.id,
+        updatedFields: 'provisioningStatus',
+      },
+    });
+
+    return {
+      ok: {
+        confirmedMember,
+      },
     };
   }
 
@@ -1291,7 +1349,12 @@ export class OrganizationManager {
 
   async getPaginatedOrganizationMembersForOrganization(
     organization: Organization,
-    args: { first: number | null; after: string | null; searchTerm: string | null },
+    args: {
+      first: number | null;
+      after: string | null;
+      searchTerm: string | null;
+      needsSCIMManagementConfirmation: boolean | null;
+    },
   ) {
     await this.session.assertPerformAction({
       action: 'member:describe',
@@ -1305,6 +1368,16 @@ export class OrganizationManager {
       organization,
       args,
     );
+  }
+
+  async getPendingSCIMManagementConfirmationsCount(organizationId: string) {
+    await this.session.assertPerformAction({
+      action: 'member:describe',
+      organizationId,
+      params: { organizationId },
+    });
+
+    return this.organizationMembers.getPendingSCIMManagementConfirmationsCount(organizationId);
   }
 
   async getViewerMemberRole(selector: {

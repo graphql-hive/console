@@ -1,9 +1,13 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Check, Minus } from 'lucide-react';
 import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox';
+import { focusRing } from '../shared-styles';
 
 const checkboxVariants = cva(
-  'inline-flex shrink-0 items-center justify-center rounded-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent data-[disabled]:cursor-not-allowed data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+  [
+    'inline-flex shrink-0 items-center justify-center rounded-sm border transition-colors data-[disabled]:cursor-not-allowed data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+    focusRing,
+  ],
   {
     variants: {
       size: {

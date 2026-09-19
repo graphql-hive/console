@@ -1,5 +1,250 @@
 # hive
 
+## 11.14.0
+
+### Minor Changes
+
+- [#8498](https://github.com/graphql-hive/console/pull/8498)
+  [`995a5de`](https://github.com/graphql-hive/console/commit/995a5de801ad60071102114f457c1894730b88cd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add `schema:publish --fail-on-composition-error` to
+  prevent publishing a federation schema that would cause a composition error.
+
+  Closes https://github.com/graphql-hive/console/issues/7588
+
+- [#8461](https://github.com/graphql-hive/console/pull/8461)
+  [`9422d5a`](https://github.com/graphql-hive/console/commit/9422d5a0bed09a86ca23c6b9bd2c148d6c11d4e0)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add SchemaVersion.origin to public schema. This
+  provides necessary info to determine which subgraph was added or removed, or whether a target was
+  promoted to create the schema version.
+
+- [#8490](https://github.com/graphql-hive/console/pull/8490)
+  [`dbc26a5`](https://github.com/graphql-hive/console/commit/dbc26a5f88369ca83a54d1d0e50e7acac53a95dd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add schema push support. Named schema revisions can
+  now be uploaded without publishing them immediately and published later.
+
+  Adds the `schema:push` permission for organization members, organization access tokens, and target
+  access tokens for felxibly managing access control for the new capabality.
+
+  Use the `hive schema:push` command for pushing a (subgraph) schema to the registry, then reference
+  it when running the `hive schema:publish` command.
+
+  ```sh
+  hive schema:push schema.graphql \
+    --target my-org/my-project/my-target \
+    --revision "$REVISION"
+  
+  hive schema:publish \
+    --target my-org/my-project/my-target \
+    --revision "$REVISION"
+  ```
+
+  Closes https://github.com/graphql-hive/console/issues/8404
+
+## 11.13.0
+
+### Minor Changes
+
+- [#8426](https://github.com/graphql-hive/console/pull/8426)
+  [`48d3000`](https://github.com/graphql-hive/console/commit/48d3000c32cc74d950159c3551332ba9725f3cba)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Metric alert rules are now
+  available to every organization. Create rules on a target's Alerts page to be notified when
+  latency, error rate, or traffic crosses a fixed threshold or changes by a set percentage.
+
+### Patch Changes
+
+- [#8454](https://github.com/graphql-hive/console/pull/8454)
+  [`e6773b5`](https://github.com/graphql-hive/console/commit/e6773b57ad576583da68d6c480144e0f807c7530)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-2v4p-qf9q-27wj](https://github.com/advisories/GHSA-2v4p-qf9q-27wj).
+
+- [#8403](https://github.com/graphql-hive/console/pull/8403)
+  [`31183ae`](https://github.com/graphql-hive/console/commit/31183ae05160829214ad9f6f82cae2b7e3be2fc7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add a subgraph filter to the schema explorer and
+  move the explorer's filters into a single filter menu.
+
+  The explorer can now be narrowed to one or more subgraphs, on the main view as well as the type,
+  unused and deprecated views. Selecting a type, searching for a field, filtering by metadata and
+  toggling descriptions now live in the same filter menu, with active filters shown as chips. The
+  All / Unused / Deprecated tabs moved next to the page title.
+
+- [#8464](https://github.com/graphql-hive/console/pull/8464)
+  [`0d5b665`](https://github.com/graphql-hive/console/commit/0d5b6659c6bb2cd3ed92d6dbeb86f635ccc1dc7f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix federation contract composition attaching
+  `@inaccessible` to `ContextFieldValue`.
+
+- [#8460](https://github.com/graphql-hive/console/pull/8460)
+  [`bba8d96`](https://github.com/graphql-hive/console/commit/bba8d9675e7d7a82276df95b2b35ed95d2654ab3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Preserve types referenced by directive arguments in
+  schema contracts and prevent `federation__ContextFieldValue` from leaking into composed
+  supergraphs.
+
+- [#8459](https://github.com/graphql-hive/console/pull/8459)
+  [`bbb0644`](https://github.com/graphql-hive/console/commit/bbb06443b7041ba992ee6483a4d029d0f9ddb5ff)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - address vulnerabilities
+  [GHSA-2x7j-588g-ccc2](https://github.com/advisories/GHSA-2x7j-588g-ccc2),
+  [GHSA-wmmp-3585-3rmp](https://github.com/advisories/GHSA-wmmp-3585-3rmp),
+  [GHSA-cc9r-2j5m-2m83](https://github.com/advisories/GHSA-cc9r-2j5m-2m83), and
+  [GHSA-8m3c-c648-2xjj](https://github.com/advisories/GHSA-8m3c-c648-2xjj).
+
+## 11.12.2
+
+### Patch Changes
+
+- [#8425](https://github.com/graphql-hive/console/pull/8425)
+  [`49c36fe`](https://github.com/graphql-hive/console/commit/49c36fe2adc8e4590d4029b6860a9ff1113704bf)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-vcc3-ghjq-m6fr](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr).
+
+- [#8438](https://github.com/graphql-hive/console/pull/8438)
+  [`7addc47`](https://github.com/graphql-hive/console/commit/7addc47db196350cdce9459dbe2c42880c653152)
+  Thanks [@jdolle](https://github.com/jdolle)! - Remove content-type header from sso discovery doc
+  request. Since no payload is sent with this request, the header can cause the request to fail.
+  This header is specifically not required by the configuration request
+
+- [#8430](https://github.com/graphql-hive/console/pull/8430)
+  [`ab61aa7`](https://github.com/graphql-hive/console/commit/ab61aa74d9430524f06d1217258e97183781dedd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-vp52-pcj8-j9qc](https://github.com/advisories/GHSA-vp52-pcj8-j9qc).
+
+- [#8443](https://github.com/graphql-hive/console/pull/8443)
+  [`c0654ee`](https://github.com/graphql-hive/console/commit/c0654ee7e597ed4997ca5574f7bb06642243f1fc)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix schema promotion raising an unexpected server
+  error for legacy schema version logs.
+
+- [#8442](https://github.com/graphql-hive/console/pull/8442)
+  [`e7ca358`](https://github.com/graphql-hive/console/commit/e7ca358d10b3ac8e3bd376622004a51cf412e68d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [GHSA-3m5p-2c4r-xxw2](https://github.com/advisories/GHSA-3m5p-2c4r-xxw2),
+  [GHSA-w2qp-rph6-63g4](https://github.com/advisories/GHSA-w2qp-rph6-63g4),
+  [GHSA-jqff-g426-hqxp](https://github.com/advisories/GHSA-jqff-g426-hqxp),
+  [GHSA-f65p-4m7j-42xc](https://github.com/advisories/GHSA-f65p-4m7j-42xc),
+  [GHSA-5jgf-p345-68v8](https://github.com/advisories/GHSA-5jgf-p345-68v8), and
+  [GHSA-fph4-wmhf-6fwf](https://github.com/advisories/GHSA-fph4-wmhf-6fwf).
+
+## 11.12.1
+
+### Patch Changes
+
+- [#8421](https://github.com/graphql-hive/console/pull/8421)
+  [`c970ddb`](https://github.com/graphql-hive/console/commit/c970ddbda4b73557830de2e955c96003418232dd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Updates
+  `@theguild/federation-composition` to `v0.26.0`. Adds support for `@context` and `@fromContext`
+  directives in Federation.
+
+- [#8413](https://github.com/graphql-hive/console/pull/8413)
+  [`0b75e08`](https://github.com/graphql-hive/console/commit/0b75e08958d0d39db510a0aea89c9a4ccb9ba50f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-w67g-5rqw-f597](https://github.com/advisories/GHSA-w67g-5rqw-f597).
+
+- [#8409](https://github.com/graphql-hive/console/pull/8409)
+  [`7448692`](https://github.com/graphql-hive/console/commit/74486928a27b73f2ca8de0536d360f9b6bc72348)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Improve usage-service performance:
+
+  - compression is now done with zstd instead of gzip
+  - report processing is more efficient now, we cache things cross-requests and significantly
+    reduced CPU usage (4x more throughput)
+
+- [#8379](https://github.com/graphql-hive/console/pull/8379)
+  [`a6089c5`](https://github.com/graphql-hive/console/commit/a6089c5e869b1b83edda16d6452432428db3424d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Send correct status code 400 when alias limit,
+  maximum directive count, max depth limit or token limit is exceeded for incoming operation.
+
+- [#8398](https://github.com/graphql-hive/console/pull/8398)
+  [`97071e9`](https://github.com/graphql-hive/console/commit/97071e9b1416f100652cabb95e5e4f4f596f38a3)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add a worker environment option to transform
+  external composed supergraph to public sdl instead of reading the public SDL from the external
+  composer.
+
+## 11.12.0
+
+### Minor Changes
+
+- [#8327](https://github.com/graphql-hive/console/pull/8327)
+  [`6c67f5f`](https://github.com/graphql-hive/console/commit/6c67f5f0751a223bbf4ef05b789d90973cb28075)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support providing a base schema when performaning a
+  schema check.
+
+- [#8373](https://github.com/graphql-hive/console/pull/8373)
+  [`2d39e87`](https://github.com/graphql-hive/console/commit/2d39e87bdb67fdc0a4ad703f2a131d4c6026f0ea)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Allow colon characters (`:`) as part of the
+  persisted documents hash. This allows uploading a persisted document manifest that contains a hash
+  prefixed with the algorithm, e.g. `sha1:c9a2a17494906eeb5fff2c81a1980ae1c0b6650f`.
+
+### Patch Changes
+
+- [#8376](https://github.com/graphql-hive/console/pull/8376)
+  [`b08a92c`](https://github.com/graphql-hive/console/commit/b08a92c7e9df356c329ca6f5b96b3be41abc8646)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix internal server error when promoting a monolith
+  schema to an empty target.
+
+- [#8377](https://github.com/graphql-hive/console/pull/8377)
+  [`d2a20f7`](https://github.com/graphql-hive/console/commit/d2a20f7d64f118d9fd18241c656ddfc1bc52d4c1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Bump `otel-collector` docker image otel collector
+  version from `3.14.10` to `3.22`.
+
+- [#8369](https://github.com/graphql-hive/console/pull/8369)
+  [`dc32e0b`](https://github.com/graphql-hive/console/commit/dc32e0b43081f87cf6f41a820e5e6e76cd4aa687)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-yoga package to patch vulnerability
+
+## 11.11.1
+
+### Patch Changes
+
+- [#8361](https://github.com/graphql-hive/console/pull/8361)
+  [`80172a5`](https://github.com/graphql-hive/console/commit/80172a5d24eaec8c072496e138ca1867f45a5875)
+  Thanks [@jdolle](https://github.com/jdolle)! - Remove pretty print from check diff view. Add
+  integration and e2e tests to verify publishing then checking the same SDL won't cause a difference
+  in the schema check diff viewer
+
+- [#8363](https://github.com/graphql-hive/console/pull/8363)
+  [`1f7c817`](https://github.com/graphql-hive/console/commit/1f7c8177bd945b614ec18bee909b88c374b1f2ed)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-55q2-fjhq-7xh7](https://github.com/advisories/GHSA-55q2-fjhq-7xh7).
+
+- [#8367](https://github.com/graphql-hive/console/pull/8367)
+  [`890f026`](https://github.com/graphql-hive/console/commit/890f026aadc06a5a863f697e215e05bab1113f19)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add schema check composed SDL fields to public API
+
+  ```graphql
+  query CheckComposedSchemas($targetRef: TargetReferenceInput!, $checkId: ID!) {
+    target(reference: $targetRef) {
+      schemaCheck(id: $checkId) {
+        compositeSchemaSDL # newly added
+        supergraphSDL # newly added
+      }
+    }
+  }
+  ```
+
+## 11.11.0
+
+### Minor Changes
+
+- [#8319](https://github.com/graphql-hive/console/pull/8319)
+  [`84b28ff`](https://github.com/graphql-hive/console/commit/84b28fff9b9da65e6c423160cf3771850fad621a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve supergraph artifact formatting by reducing
+  excessive whitespace for federation type definitions
+
+### Patch Changes
+
+- [#8350](https://github.com/graphql-hive/console/pull/8350)
+  [`e0f5255`](https://github.com/graphql-hive/console/commit/e0f5255a013fcb388fb3a783688310a421ec8705)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-5p4m-2wfm-xmqj](https://github.com/advisories/GHSA-5p4m-2wfm-xmqj).
+
+- [#8321](https://github.com/graphql-hive/console/pull/8321)
+  [`6da8b84`](https://github.com/graphql-hive/console/commit/6da8b84dc868ae64b464021191b04e0d1a9af258)
+  Thanks [@jdolle](https://github.com/jdolle)! - Hide resolutions from insights ui for input types
+
+- [#8347](https://github.com/graphql-hive/console/pull/8347)
+  [`6fbdf7f`](https://github.com/graphql-hive/console/commit/6fbdf7f692d7ab93cea0bfd499f5fca9a6c0b5e9)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-55q2-fjhq-7xh7](https://github.com/advisories/GHSA-55q2-fjhq-7xh7)
+
+- [#8328](https://github.com/graphql-hive/console/pull/8328)
+  [`1ca35f6`](https://github.com/graphql-hive/console/commit/1ca35f6baa5f57f44f4382d924425ad897a1f634)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix link to composition compatibility report
+
 ## 11.10.0
 
 ### Minor Changes

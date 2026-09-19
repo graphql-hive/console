@@ -1,14 +1,17 @@
 import {
   DocumentNode,
+  GraphQLError,
   GraphQLSchema,
   Kind,
   OperationDefinitionNode,
+  OperationTypeNode,
   TypeInfo,
   type ExecutionArgs,
 } from 'graphql';
 import { lru } from 'tiny-lru';
 import { normalizeOperation } from '../normalize/operation.js';
 import { version } from '../version.js';
+import { getDefinedRootType } from './add-hive-typenames.js';
 import { createAgent } from './agent.js';
 import { collectSchemaCoordinates } from './collect-schema-coordinates.js';
 import { dynamicSampling, randomSampling } from './sampling.js';
@@ -22,6 +25,7 @@ import type {
   GraphQLResult,
   HiveInternalPluginOptions,
   HiveUsagePluginOptions,
+  TrackedGraphQLError,
 } from './types.js';
 import {
   cache,
@@ -30,6 +34,7 @@ import {
   logIf,
   measureDuration,
   memo,
+  toTrackedError,
 } from './utils.js';
 
 interface UsageCollector {
@@ -43,6 +48,7 @@ interface UsageCollector {
     experimental__persistedDocumentHash?: string;
     /** Optionally send subgraph request information. This provides a deeper level of usage metrics */
     fetches?: CollectedOperationSubRequest[] | null;
+    gatewayErrors?: TrackedGraphQLError[] | null;
   }): void;
   /** collect a long-lived GraphQL request/subscription (subscription operation) */
   collectSubscription(args: {
@@ -59,6 +65,7 @@ function isAbortAction(result: Parameters<CollectUsageCallback>[1]): result is A
 const noopUsageCollector: UsageCollector = {
   collect() {
     return {
+      trackGatewayErrors() {},
       subrequest() {
         return () => {};
       },
@@ -156,7 +163,6 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                 fields: subgraphFields,
               };
             });
-
             reportOperations.push({
               operationMapKey: operation.key,
               timestamp: operation.timestamp,
@@ -165,6 +171,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                 duration: operation.execution.duration,
                 errorsTotal: operation.execution.errorsTotal,
                 fetches,
+                gatewayErrors: operation.execution.gatewayErrors,
               },
               metadata: {
                 client: operation.client ?? undefined,
@@ -258,6 +265,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
           ? excludingValue.test(operationName)
           : operationName === excludingValue,
       );
+      let gatewayErrors = args.gatewayErrors;
       if (
         !isMatch &&
         shouldInclude({
@@ -275,25 +283,49 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
         });
 
         let fetches = args.fetches;
-        if (!fetches?.length && options.fieldLevelMetricsEnabled) {
-          /**
-           * No subgraph requests, so this must be a monolith.
-           * We still want to track the field metrics, so create an artificial
-           * fetch that represents the local lookup.
-           */
+        let errorsTotal = 0;
+        if (options.fieldLevelMetricsEnabled) {
+          if (!fetches?.length) {
+            /**
+             * No subgraph requests, so this must be a monolith.
+             * We still want to track the field metrics, so create an artificial
+             * fetch that represents the local lookup.
+             */
+            const rootPath =
+              getDefinedRootType(
+                args.args.schema,
+                rootOperation.operation ?? OperationTypeNode.QUERY,
+              )?.name ?? 'Query';
 
-          fetches = [
-            {
-              document: args.args.document,
-              duration: args.duration,
-              start: 0,
-              subgraph: '',
-              subgraphSchema: args.args.schema,
-              type: 'ROOT',
-              paths: rootOperation.operation,
-              result, // make sure this isnt taking too much memory to store. Can this be stripped out?
-            },
-          ];
+            fetches = [
+              {
+                document: args.args.document,
+                duration: args.duration,
+                start: 0,
+                subgraph: '',
+                subgraphSchema: args.args.schema,
+                type: 'ROOT',
+                paths: rootPath,
+                result: { data: result.data }, // errors are captured by gateway errors in this instance
+              },
+            ];
+            // Use the result errors in this case since it will be for the entire payload and there are no fetch errors.
+            // Use the gatewayErrors as a fallback since those should also be tracked.
+            gatewayErrors =
+              result.errors
+                ?.map(e => toTrackedError(e, args.args.schema, args.args.document, result.data))
+                .filter(e => !!e) ?? args.gatewayErrors;
+            errorsTotal = result.errors?.length ?? 0;
+          } else {
+            for (const subRequest of fetches) {
+              errorsTotal += subRequest.result?.errors?.length ?? 0;
+            }
+            if (args.gatewayErrors) {
+              errorsTotal += args.gatewayErrors?.length ?? 0;
+            }
+          }
+        } else {
+          errorsTotal = result.errors?.length ?? 0;
         }
 
         agent.capture(
@@ -309,8 +341,9 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
                 execution: {
                   ok: !result.errors?.length,
                   duration: args.duration,
-                  errorsTotal: result.errors?.length ?? 0,
+                  errorsTotal,
                   fetches,
+                  gatewayErrors,
                 },
                 // TODO: operationHash is ready to accept hashes of persisted operations
                 client: args.experimental__persistedDocumentHash
@@ -344,7 +377,14 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
     collect() {
       const sinceStart = measureDuration();
       const subRequests: CollectedOperationSubRequest[] = [];
+      let gatewayErrors: any[] | Error[] | GraphQLError[][] | undefined = undefined;
       return {
+        trackGatewayErrors({ errors }) {
+          if (errors) {
+            gatewayErrors ??= [];
+            gatewayErrors.push(...errors);
+          }
+        },
         subrequest({ subgraph, type, paths }) {
           const start = sinceStart();
           const sinceSubStart = measureDuration();
@@ -371,6 +411,16 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
             duration,
             experimental__persistedDocumentHash,
             fetches: subRequests.length > 0 ? subRequests : null,
+            gatewayErrors: gatewayErrors
+              ?.map(err =>
+                toTrackedError(
+                  err,
+                  args.schema,
+                  args.document,
+                  isAbortAction(result) ? undefined : result.data,
+                ),
+              )
+              .filter(e => !!e),
           });
         },
       };
@@ -576,6 +626,7 @@ interface CollectedOperation {
     duration: number;
     errorsTotal: number;
     fetches?: CollectedOperationSubRequest[] | null;
+    gatewayErrors?: TrackedGraphQLError[] | null;
   };
   persistedDocumentHash?: string;
   client?: ClientInfo | null;
@@ -599,6 +650,7 @@ interface RequestOperation {
     duration: number;
     errorsTotal: number;
     fetches?: OperationSubRequest[] | null;
+    gatewayErrors?: TrackedGraphQLError[] | null;
   };
   persistedDocumentHash?: string;
   metadata?: {

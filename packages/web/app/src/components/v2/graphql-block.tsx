@@ -1,8 +1,6 @@
 import { ReactElement, ReactNode } from 'react';
-import { clsx } from 'clsx';
+import { Card } from '@/components/base/card/card';
 import { SchemaEditor, SchemaEditorProps } from '@/components/schema-editor';
-import { useTheme } from '@/components/theme/theme-provider';
-import { Card } from '@/components/v2/card';
 import { usePrettify } from '@/lib/hooks';
 import { Heading } from '../ui/heading';
 
@@ -13,7 +11,6 @@ export function GraphQLHighlight({
   code: string;
 }): ReactElement {
   const pretty = usePrettify(code);
-  const { resolvedTheme } = useTheme();
 
   return (
     <div
@@ -22,8 +19,6 @@ export function GraphQLHighlight({
       }}
     >
       <SchemaEditor
-        // this outputs either "vs-light" or "vs-dark"
-        theme={`vs-${resolvedTheme}`}
         options={{
           readOnly: true,
           lineNumbers: 'on',
@@ -50,14 +45,16 @@ export function GraphQLBlock({
   className?: string;
 }): ReactElement {
   return (
-    <Card className={clsx(className)}>
-      <Heading className="mb-4">
-        {title ?? 'SDL'}
-        {url && <span className="ml-3 text-sm italic">{url}</span>}
-      </Heading>
-      <div className="pb-2">
-        <GraphQLHighlight {...editorProps} code={sdl} />
-      </div>
-    </Card>
+    <div className={className}>
+      <Card variants={{ onSurface: 'base' }}>
+        <Heading className="mb-4">
+          {title ?? 'SDL'}
+          {url && <span className="ml-3 text-sm italic">{url}</span>}
+        </Heading>
+        <div className="pb-2">
+          <GraphQLHighlight {...editorProps} code={sdl} />
+        </div>
+      </Card>
+    </div>
   );
 }

@@ -11,7 +11,6 @@ export type LaboratorySettings = {
   };
   introspection: {
     method?: 'GET' | 'POST';
-    schemaDescription?: boolean;
     headers?: string;
     includeActiveOperationHeaders?: boolean;
     pollSchema?: boolean;
@@ -24,12 +23,14 @@ export const defaultLaboratorySettings: LaboratorySettings = {
     timeout: 10000,
     useGETForQueries: false,
   },
+  // WS is what most server stacks serve; Apollo has no SSE transport at all. Note
+  // url-loader 9.x maps SSE and GRAPHQL_SSE onto the same HTTP executor, so those two
+  // values behave identically.
   subscriptions: {
     protocol: 'WS',
   },
   introspection: {
     method: 'POST',
-    schemaDescription: false,
     headers: '',
     includeActiveOperationHeaders: false,
     pollSchema: true,
@@ -50,9 +51,6 @@ export const normalizeLaboratorySettings = (
   },
   introspection: {
     method: settings?.introspection?.method ?? defaultLaboratorySettings.introspection.method,
-    schemaDescription:
-      settings?.introspection?.schemaDescription ??
-      defaultLaboratorySettings.introspection.schemaDescription,
     headers: settings?.introspection?.headers ?? defaultLaboratorySettings.introspection.headers,
     includeActiveOperationHeaders:
       settings?.introspection?.includeActiveOperationHeaders ??

@@ -5,6 +5,19 @@ import { helmChart } from './helm';
 import { Values as OpenTelemetryCollectorValues } from './opentelemetry-collector.types';
 import { VectorValues } from './vector.types';
 
+const REVERSE_PROXY_METRICS = [
+  'envoy_server_live',
+  'envoy_server_memory_allocated',
+  'envoy_http_downstream_rq_total',
+  'envoy_http_downstream_rq_xx',
+  'envoy_http_downstream_rq_active',
+  'envoy_http_downstream_rq_time_bucket',
+  'envoy_http_downstream_rq_time_sum',
+  'envoy_http_downstream_rq_time_count',
+  'envoy_cluster_membership_healthy',
+  'contour_httpproxy_invalid',
+] as const;
+
 export type ObservabilityConfig =
   | 'local'
   | {
@@ -211,18 +224,16 @@ export class Observability {
                         span: [
                           // Ignore HEAD/OPTIONS
                           'attributes["component"] == "proxy" and (attributes["http.method"] == "HEAD" or attributes["http.method"] == "OPTIONS")',
-                          //Ignore health checks
+                          // Ignore health checks
                           'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["http.url"] == "/_readiness" or attributes["http.url"] == "/_health" or IsMatch(attributes["http.url"], ".*/_health"))',
-                          //Ignore /usage requests (200 or 429)
-                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or IsMatch(attributes["http.url"], "/usage/.*")) and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
+                          // Ignore /usage requests (200 or 429)
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or IsMatch(attributes["http.url"], "/usage/.*"))',
                           // Ignore metrics scraping
                           'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
                           // Ignore webapp HTTP calls via upstream cluster name
                           'attributes["component"] == "proxy" and (attributes["http.method"] == "POST" or attributes["http.method"] == "GET") and IsMatch(attributes["upstream_cluster.name"], "default_app-.*")',
                           // Hive Tracing is using these endpoints and they don't have any added value for us when monitored
                           'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/otel/v1/traces"',
-                          // Internal /usage calls can also be filtered out
-                          'resource.attributes["service.name"] == "usage" and attributes["http.status_code"] == 200 and IsRootSpan() == true',
                         ],
                       },
                     },
@@ -358,6 +369,12 @@ export class Observability {
                       source_labels: ['__meta_kubernetes_namespace'],
                       target_label: 'namespace',
                     },
+                    // Contour exports its own namespace label, so keep the scrape namespace separate for filtering.
+                    {
+                      action: 'replace',
+                      source_labels: ['__meta_kubernetes_namespace'],
+                      target_label: 'scrape_namespace',
+                    },
                     {
                       action: 'replace',
                       source_labels: ['__meta_kubernetes_service_name'],
@@ -372,6 +389,17 @@ export class Observability {
                       action: 'replace',
                       source_labels: ['__meta_kubernetes_pod_node_name'],
                       target_label: 'kubernetes_node',
+                    },
+                  ],
+                  metric_relabel_configs: [
+                    {
+                      source_labels: ['scrape_namespace', '__name__'],
+                      action: 'keep',
+                      regex: `default;.*|contour;(${REVERSE_PROXY_METRICS.join('|')})`,
+                    },
+                    {
+                      action: 'labeldrop',
+                      regex: 'scrape_namespace',
                     },
                   ],
                 },

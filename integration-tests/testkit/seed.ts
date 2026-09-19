@@ -39,6 +39,7 @@ import {
   fetchSchemaFromCDN,
   fetchSupergraphFromCDN,
   fetchVersions,
+  getLatestSchemaCheck,
   getOrganization,
   getOrganizationMembers,
   getOrganizationProjects,
@@ -59,6 +60,7 @@ import {
   updateTargetDangerousChangeClassification,
   updateTargetFailingDangerousChanges,
   updateTargetValidationSettings,
+  waitForExpectations,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
 import {
@@ -80,6 +82,8 @@ import {
 import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from './schema-policy';
 import { collect, CollectedOperation, legacyCollect } from './usage';
 import { generateUnique, getServiceHost, pollForEmailVerificationLink } from './utils';
+
+export { ProjectType };
 
 function getPGConnectionString() {
   const pg = {
@@ -288,8 +292,14 @@ export function initSeed() {
             r.expectNoGraphQLErrors(),
           );
 
+          if (!orgResult.createOrganization.ok) {
+            throw new Error(
+              `Cannot create organization: ${JSON.stringify(orgResult.createOrganization.error)}`,
+            );
+          }
+
           const organization =
-            orgResult.createOrganization.ok!.createdOrganizationPayload.organization;
+            orgResult.createOrganization.ok.createdOrganizationPayload.organization;
 
           return {
             organization,
@@ -978,6 +988,18 @@ export function initSeed() {
                         accessToken: secret,
                       });
                     },
+                    latestSchemaCheck() {
+                      return getLatestSchemaCheck(
+                        {
+                          bySelector: {
+                            organizationSlug: orgSlug,
+                            projectSlug: project.slug,
+                          },
+                        },
+                        target.slug,
+                        secret,
+                      );
+                    },
                     async checkSchema(
                       sdl: string,
                       service?: string,
@@ -1000,11 +1022,12 @@ export function initSeed() {
                       );
                     },
                     async publishSchema(options: {
-                      sdl: string;
+                      sdl?: string;
                       headerName?: 'x-api-token' | 'authorization';
                       author?: string;
                       force?: boolean;
                       experimental_acceptBreakingChanges?: boolean;
+                      failOnCompositionError?: boolean;
                       commit?: string;
                       service?: string;
                       url?: string;
@@ -1013,6 +1036,7 @@ export function initSeed() {
                        * @deprecated
                        */
                       github?: boolean | null;
+                      revision?: string;
                     }) {
                       return await publishSchema(
                         {
@@ -1025,7 +1049,9 @@ export function initSeed() {
                           metadata: options.metadata,
                           experimental_acceptBreakingChanges:
                             options.experimental_acceptBreakingChanges,
+                          failOnCompositionError: options.failOnCompositionError,
                           github: options.github,
+                          schema: options.revision ? { revision: options.revision } : undefined,
                         },
                         secret,
                         options.headerName || 'authorization',
@@ -1261,7 +1287,7 @@ export function initSeed() {
                 ) {
                   const from = formatISO(_from ?? subHours(Date.now(), 1));
                   const to = formatISO(_to ?? Date.now());
-                  const check = async () => {
+                  await waitForExpectations(async () => {
                     const statsResult = await readOperationsStats(
                       {
                         bySelector: {
@@ -1277,10 +1303,8 @@ export function initSeed() {
                       {},
                       ownerToken,
                     ).then(r => r.expectNoGraphQLErrors());
-                    return statsResult.target?.operationsStats.totalOperations == n;
-                  };
-
-                  return pollFor(check);
+                    expect(statsResult.target?.operationsStats.totalOperations).toBe(n);
+                  });
                 },
                 async waitForRequestsCollected(
                   n: number,
@@ -1292,7 +1316,8 @@ export function initSeed() {
                 ) {
                   const from = formatISO(opts?.from ?? subHours(Date.now(), 1));
                   const to = formatISO(opts?.to ?? Date.now());
-                  const check = async () => {
+
+                  await waitForExpectations(async () => {
                     const statsResult = await readTotalRequests(
                       {
                         bySelector: {
@@ -1307,10 +1332,8 @@ export function initSeed() {
                       },
                       ownerToken,
                     ).then(r => r.expectNoGraphQLErrors());
-                    return statsResult.target?.totalRequests == n;
-                  };
-
-                  return pollFor(check);
+                    expect(statsResult.target?.totalRequests).toBe(n);
+                  });
                 },
                 async readOperationsStats(
                   from: string,

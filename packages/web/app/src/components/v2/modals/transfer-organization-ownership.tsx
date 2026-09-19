@@ -3,10 +3,11 @@ import clsx from 'clsx';
 import { useFormik } from 'formik';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
+import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { ArrowDownIcon, CheckIcon } from '@/components/ui/icon';
-import { Input, Modal } from '@/components/v2';
+import { Modal } from '@/components/v2';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { useNotifications } from '@/lib/hooks';
 import { Combobox as HeadlessCombobox, Transition as HeadlessTransition } from '@headlessui/react';
@@ -251,8 +252,7 @@ export const TransferOrganizationOwnershipModal = ({
           onChange={handleChange}
           onBlur={handleBlur}
           disabled={isSubmitting}
-          isInvalid={touched.confirmation && !!errors.confirmation}
-          className="w-full"
+          invalid={touched.confirmation && !!errors.confirmation}
         />
       </div>
 

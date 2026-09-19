@@ -3,13 +3,13 @@ import { ArrowBigDownDashIcon, CheckIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Input } from '@/components/base/input/input';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -18,10 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { DocsLink } from '@/components/ui/docs-note';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { HiveLogo } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -69,7 +67,7 @@ function GitHubIntegration(props: {
   organizationSlug: string;
   projectSlug: string;
 }): ReactElement | null {
-  const docksLink = getDocsUrl('integrations/ci-cd#github-workflow-for-ci');
+  const href = getDocsUrl('integrations/ci-cd#github-workflow-for-ci');
   const notify = useNotifications();
   const [integrationQuery] = useQuery({
     query: GithubIntegration_GithubIntegrationDetailsQuery,
@@ -97,16 +95,15 @@ function GitHubIntegration(props: {
       <SubPageLayoutHeader
         subPageTitle="Use project's name in GitHub Check"
         description={
-          <CardDescription>
+          <p>
             Prevents GitHub Check name collisions when running{' '}
-            <a href={docksLink}>
-              <span className="mx-1 text-orange-700 hover:underline hover:underline-offset-4">
-                $ hive schema:check --github
-              </span>
-            </a>
-            for more than one project.
-          </CardDescription>
+            <code className="text-xs">$ hive schema:check --github</code> for more than one project.
+          </p>
         }
+        docsLink={{
+          href,
+          text: 'Learn more',
+        }}
       />
       <div>
         <div className="text-neutral-10 text-sm">
@@ -259,19 +256,17 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
           <SubPageLayoutHeader
             subPageTitle="Project Slug"
             description={
-              <CardDescription>
+              <p>
                 This is your project's URL namespace on Hive. Changing it{' '}
-                <span className="font-bold">will</span> invalidate any existing links to your
+                <span className="font-bold">will invalidate</span> any existing links to your
                 project.
                 <br />
-                <DocsLink
-                  className="text-neutral-10 text-sm"
-                  href="/schema-registry/management/projects#change-slug-of-a-project"
-                >
-                  You can read more about it in the documentation
-                </DocsLink>
-              </CardDescription>
+              </p>
             }
+            docsLink={{
+              href: '/schema-registry/management/projects#change-slug-of-a-project',
+              text: 'Read more in the documentation',
+            }}
           />
           <div>
             <FormField
@@ -280,12 +275,12 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="grid max-w-xl grid-cols-1 md:grid-cols-2">
-                      <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 overflow-auto text-nowrap rounded-md border px-3 py-2 text-sm md:rounded-r-none md:border-r-0">
-                        {env.appBaseUrl.replace(/https?:\/\//i, '')}/{props.organizationSlug}/
-                      </div>
-                      <Input placeholder="slug" className="rounded-l-none" {...field} />
-                    </div>
+                    <Input
+                      placeholder="slug"
+                      prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${props.organizationSlug}/`}
+                      width="sm"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -309,21 +304,15 @@ function ProjectDelete(props: { organizationSlug: string; projectSlug: string })
       <SubPageLayoutHeader
         subPageTitle="Delete Project"
         description={
-          <>
-            <CardDescription>
-              Deleting an project will delete all the targets, schemas and data associated with it.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink
-                className="text-neutral-10 text-sm"
-                href="/schema-registry/management/projects#delete-a-project"
-              >
-                <strong>This action is not reversible!</strong> You can find more information about
-                this process in the documentation
-              </DocsLink>
-            </CardDescription>
-          </>
+          <p>
+            Deleting an project will delete all the targets, schemas and data associated with it.{' '}
+            <strong>This action is not reversible!</strong>
+          </p>
         }
+        docsLink={{
+          href: '/schema-registry/management/projects#delete-a-project',
+          text: 'Read more in the documentation',
+        }}
       />
       <Button variant="destructive" onClick={toggleModalOpen}>
         Delete Project
@@ -397,19 +386,11 @@ function ProjectPolicySettings(props: {
     <SubPageLayout>
       <SubPageLayoutHeader
         subPageTitle="Rules"
-        description={
-          <>
-            <CardDescription>
-              At the project level, policies can be defined to affect all targets, and override
-              policy configuration defined at the organization level.
-            </CardDescription>
-            <CardDescription>
-              <DocsLink href="/features/schema-policy" className="text-neutral-10 text-sm">
-                Learn more
-              </DocsLink>
-            </CardDescription>
-          </>
-        }
+        description="At the project level, policies can be defined to affect all targets, and override policy configuration defined at the organization level."
+        docsLink={{
+          href: '/features/schema-policy',
+          text: 'Learn more',
+        }}
       />
       {currentProject.parentSchemaPolicy === null ||
       currentProject.parentSchemaPolicy?.allowOverrides ? (

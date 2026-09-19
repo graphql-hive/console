@@ -1,8 +1,11 @@
-import { useCallback, useState } from 'react';
-import { MailIcon, MailQuestionIcon, MoreHorizontalIcon } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { MailIcon, MailQuestionIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { Input } from '@/components/base/input/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +17,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -24,20 +26,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { ColumnDef } from '@tanstack/react-table';
 import { RoleSelector } from './common';
 import {
   ResourceSelection,
@@ -214,7 +210,12 @@ function MemberInvitationForm(props: {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input placeholder="Enter an email" type="email" {...field} />
+                      <Input
+                        placeholder="Enter an email"
+                        type="email"
+                        onSurface="raised"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -298,12 +299,6 @@ export function MemberInvitationButton(props: {
   );
 }
 
-const DateFormatter = Intl.DateTimeFormat('en', {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-});
-
 const InvitationDeleteButton_DeleteInvitation = graphql(`
   mutation InvitationDeleteButton_DeleteInvitation($input: DeleteOrganizationInvitationInput!) {
     deleteOrganizationInvitation(input: $input) {
@@ -330,8 +325,33 @@ const Members_Invitation = graphql(`
   }
 `);
 
-function Invitation(props: {
-  invitation: FragmentType<typeof Members_Invitation>;
+type InvitationNode = FragmentType<typeof Members_Invitation>;
+
+function InvitationEmailCell(props: { invitation: InvitationNode }) {
+  const invitation = useFragment(Members_Invitation, props.invitation);
+  return (
+    <DataTableCell
+      kind="text"
+      value={<span title={invitation.email}>{invitation.email}</span>}
+      weight="medium"
+      truncate
+    />
+  );
+}
+
+function InvitationRoleCell(props: { invitation: InvitationNode }) {
+  const invitation = useFragment(Members_Invitation, props.invitation);
+  return <DataTableCell kind="text" value={invitation.role.name} />;
+}
+
+function InvitationExpiryCell(props: { invitation: InvitationNode }) {
+  const invitation = useFragment(Members_Invitation, props.invitation);
+  return <DataTableCell kind="time" date={invitation.expiresAt} mode="absolute" tone="muted" />;
+}
+
+/** The row's menu, and the delete confirmation it opens. */
+function InvitationActions(props: {
+  invitation: InvitationNode;
   organizationSlug: string;
   refetchInvitations(): void;
 }) {
@@ -416,31 +436,20 @@ function Invitation(props: {
           </AlertDialogContent>
         ) : null}
       </AlertDialog>
-      <tr>
-        <td className="truncate py-3 text-sm font-medium" title={invitation.email}>
-          {invitation.email}
-        </td>
-        <td className="truncate py-3 text-center text-sm" title={invitation.role.name}>
-          {invitation.role.name}
-        </td>
-        <td className="text-neutral-10 py-3 text-center text-sm">
-          {DateFormatter.format(new Date(invitation.expiresAt))}
-        </td>
-        <td className="py-3 text-right text-sm">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
-                <MoreHorizontalIcon className="size-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[160px]">
-              <DropdownMenuItem onClick={copyLink}>Copy invitation link</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setOpen(true)}>Delete invitation</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </td>
-      </tr>
+      <DataTableCell
+        kind="actions"
+        label={`Actions for ${invitation.email}`}
+        sections={[
+          [
+            { label: 'Copy invitation link', onClick: copyLink },
+            {
+              label: 'Delete invitation',
+              variant: 'destructiveAction',
+              onClick: () => setOpen(true),
+            },
+          ],
+        ]}
+      />
     </>
   );
 }
@@ -470,6 +479,42 @@ export function OrganizationInvitations(props: {
     props.organization,
   );
 
+  type InvitationRow = NonNullable<typeof organization.invitations>['edges'][number]['node'];
+  const columns = useMemo<ColumnDef<InvitationRow, unknown>[]>(
+    () => [
+      {
+        id: 'email',
+        header: 'Email',
+        meta: { width: 'fill' },
+        cell: ({ row }) => <InvitationEmailCell invitation={row.original} />,
+      },
+      {
+        id: 'role',
+        header: 'Assigned role',
+        meta: { align: 'center', width: 'md' },
+        cell: ({ row }) => <InvitationRoleCell invitation={row.original} />,
+      },
+      {
+        id: 'expiresAt',
+        header: 'Expiration date',
+        meta: { align: 'center', width: 'md' },
+        cell: ({ row }) => <InvitationExpiryCell invitation={row.original} />,
+      },
+      {
+        id: 'actions',
+        meta: { width: 'xs' },
+        cell: ({ row }) => (
+          <InvitationActions
+            invitation={row.original}
+            organizationSlug={organization.slug}
+            refetchInvitations={props.refetchInvitations}
+          />
+        ),
+      },
+    ],
+    [organization.slug, props.refetchInvitations],
+  );
+
   if (!organization.invitations) {
     return null;
   }
@@ -479,41 +524,28 @@ export function OrganizationInvitations(props: {
       <SubPageLayoutHeader
         subPageTitle="Member Invitations"
         description={
-          <CardDescription className="pb-4">
-            Send an invite to add a new non-OIDC member to your Organization. Invitations expire
-            after 7 days.
-            <br />
-            <br />
-            To accept, the user must have an account and log in before using the sent link.
-          </CardDescription>
+          <>
+            <p>
+              Send an invite to add a new non-OIDC member to your Organization. Invitations expire
+              after 7 days.
+            </p>
+            <p>To accept, the user must have an account and log in before using the sent link.</p>
+          </>
         }
-      >
-        <MemberInvitationButton
-          refetchInvitations={props.refetchInvitations}
-          organization={organization}
-        />
-      </SubPageLayoutHeader>
+        sideContent={
+          <MemberInvitationButton
+            refetchInvitations={props.refetchInvitations}
+            organization={organization}
+          />
+        }
+      />
       {organization.invitations.edges.length > 0 ? (
-        <table className="divide-neutral-10/20 w-full table-fixed divide-y">
-          <thead>
-            <tr>
-              <th className="w-[100px] py-3 text-left text-sm font-semibold sm:w-auto">Email</th>
-              <th className="w-32 py-3 text-center text-sm font-semibold lg:w-64">Assigned role</th>
-              <th className="w-32 py-3 text-center text-sm font-semibold">Expiration date</th>
-              <th className="w-12 py-3 text-right text-sm font-semibold" />
-            </tr>
-          </thead>
-          <tbody className="divide-neutral-10/20 max-w-full divide-y">
-            {organization.invitations.edges.map(edge => (
-              <Invitation
-                key={edge.node.id}
-                invitation={edge.node}
-                organizationSlug={organization.slug}
-                refetchInvitations={props.refetchInvitations}
-              />
-            ))}
-          </tbody>
-        </table>
+        <DataTable
+          data={organization.invitations.edges.map(edge => edge.node)}
+          columns={columns}
+          getRowId={invitation => invitation.id}
+          pagination={{ kind: 'none' }}
+        />
       ) : (
         <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
           <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">

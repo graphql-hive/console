@@ -80,7 +80,7 @@ export function FormControl({ children }: { children: ReactElement }) {
 export function FormDescription({ description }: { description: ReactElement | string }) {
   const { formDescriptionId } = useFormField();
   return (
-    <p id={formDescriptionId} className="text-neutral-10 text-[13px]">
+    <p id={formDescriptionId} className="text-neutral-10 text-control">
       {description}
     </p>
   );

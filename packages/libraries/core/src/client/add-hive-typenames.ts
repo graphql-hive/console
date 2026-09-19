@@ -1,14 +1,15 @@
 import {
   DefinitionNode,
   getNamedType,
+  GraphQLSchema,
   isAbstractType,
   isCompositeType,
   isObjectType,
+  OperationTypeNode,
   SelectionNode,
   type DocumentNode,
   type FieldNode,
   type GraphQLCompositeType,
-  type GraphQLSchema,
   type InlineFragmentNode,
   type Kind, // in order to support older graphql versions, do not rely on Kind for runtime
   type SelectionSetNode,
@@ -20,6 +21,17 @@ const TYPENAME_FIELD: FieldNode = {
   name: { kind: 'Name' as Kind.NAME, value: '__typename' },
   alias: { kind: 'Name' as Kind.NAME, value: HIVE_INTERNAL_TYPENAME },
 };
+
+export function getDefinedRootType(
+  schema: GraphQLSchema,
+  operationType: OperationTypeNode | undefined,
+) {
+  return !operationType || operationType === 'query'
+    ? schema.getQueryType()
+    : operationType === 'mutation'
+      ? schema.getMutationType()
+      : schema.getSubscriptionType();
+}
 
 /**
  * Recursively adds the typename to every selection set whose parent type is
@@ -42,13 +54,7 @@ export function addHiveTypenames(document: DocumentNode, schema: GraphQLSchema):
     let newDef = def;
 
     if (def.kind === 'OperationDefinition') {
-      const rootType =
-        def.operation === 'query'
-          ? schema.getQueryType()
-          : def.operation === 'mutation'
-            ? schema.getMutationType()
-            : schema.getSubscriptionType();
-
+      const rootType = getDefinedRootType(schema, def.operation);
       if (rootType) {
         const newSelectionSet = walkSelectionSet(def.selectionSet, rootType, false, schema);
         if (newSelectionSet !== def.selectionSet) {

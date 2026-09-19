@@ -4177,6 +4177,81 @@ test.concurrent(
   },
 );
 
+test.concurrent(
+  'Federation publish can be rejected when it would cause a composition error',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const token = await createTargetAccessToken({});
+
+    const validSdl = /* GraphQL */ `
+      type Query {
+        user: User
+      }
+
+      type User @key(fields: "id") {
+        id: ID!
+      }
+    `;
+
+    const validPublish = await token
+      .publishSchema({
+        sdl: validSdl,
+        service: 'users',
+        url: 'http://users.localhost',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(validPublish.schemaPublish).toMatchObject({
+      __typename: 'SchemaPublishSuccess',
+      valid: true,
+    });
+
+    const rejectedPublish = await token
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            user: User
+          }
+
+          type User @key(fields: "missing") {
+            id: ID!
+          }
+        `,
+        service: 'users',
+        url: 'http://users.localhost',
+        failOnCompositionError: true,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(rejectedPublish.schemaPublish).toMatchObject({
+      __typename: 'SchemaPublishError',
+      valid: false,
+      errors: {
+        total: 1,
+      },
+    });
+
+    const unchangedPublish = await token
+      .publishSchema({
+        sdl: validSdl,
+        service: 'users',
+        url: 'http://users.localhost',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(unchangedPublish.schemaPublish).toMatchObject({
+      __typename: 'SchemaPublishSuccess',
+      valid: true,
+      initial: false,
+      changes: {
+        total: 0,
+      },
+    });
+  },
+);
+
 describe.concurrent(
   'schema publish should be ignored due to unchanged input schema and being compared to latest schema version',
   () => {
@@ -4549,6 +4624,8 @@ test.concurrent(
       diffSchemaVersionId: null,
       github: null,
       metadata: null,
+      schemaRevisionId: null,
+      revision: null,
       existingSchemaLogs: [],
       projectId: project.id,
       organizationId: organization.id,
