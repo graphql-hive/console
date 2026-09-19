@@ -443,9 +443,10 @@
     appearance: none;
   }
 
+  /* Scoped to the editor: Base UI's tab indicator is a presentation role too. */
   .monaco-editor,
   .monaco-editor-background,
-  [role='presentation'] {
+  .monaco-editor [role='presentation'] {
     background: transparent !important;
     --vscode-focusBorder: transparent !important;
   }

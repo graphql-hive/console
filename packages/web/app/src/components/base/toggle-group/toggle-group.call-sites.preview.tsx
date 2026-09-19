@@ -33,6 +33,12 @@ const ENTRIES = [
     coveredBy: 'Laboratory endpoint',
   },
   {
+    source: 'pages/target-laboratory.tsx:459 and pages/target-laboratory-new.tsx:799',
+    origin: 'base',
+    what: 'GraphiQL / Hive Laboratory page switch beside the title (was ui/tabs until round 7)',
+    coveredBy: 'Laboratory switch',
+  },
+  {
     source: 'components/policy/rules-configuration/severity-toggle.tsx:47',
     origin: 'base',
     what: 'Policy rule severity: icon-only options with a tooltip each',
@@ -53,12 +59,53 @@ export const Inventory = createPreview({
       component="base/toggle-group"
       summary={
         <>
-          Four groups, all single-select. Two text groups on the laboratory pages, and two in the
-          schema policy form: an icon-only severity picker and a text picker over an enum.
+          Five groups, all single-select. Two endpoint switches and the page switch on the
+          laboratory pages, and two in the schema policy form: an icon-only severity picker and a
+          text picker over an enum.
         </>
       }
       entries={ENTRIES}
     />
+  ),
+});
+
+function LaboratorySwitch() {
+  const [tab, setTab] = useState('graphiql');
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-neutral-12 text-2xl font-semibold">Laboratory</span>
+      <div className="bg-neutral-5 h-4 w-px" />
+      <ToggleGroup
+        aria-label="Laboratory version"
+        value={tab}
+        onValueChange={setTab}
+        options={[
+          { value: 'graphiql', label: 'GraphiQL' },
+          {
+            value: 'hive-laboratory',
+            label: (
+              <>
+                Hive Laboratory
+                <span className="bg-accent ml-1 size-2 rounded-full" />
+              </>
+            ),
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+export const LaboratorySwitchPreview = createPreview({
+  label: 'Laboratory switch',
+  render: () => (
+    <CallSite
+      source="pages/target-laboratory.tsx:459 and pages/target-laboratory-new.tsx:799"
+      origin="base"
+      note="Beside the Laboratory title. Pressing the other option swaps the whole page below, so the router holds the value; the accent dot marks the new laboratory."
+    >
+      <LaboratorySwitch />
+    </CallSite>
   ),
 });
 
