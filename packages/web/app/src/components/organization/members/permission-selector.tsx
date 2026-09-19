@@ -1,14 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import { InfoIcon, TriangleAlert } from 'lucide-react';
+import { Accordion } from '@/components/base/accordion/accordion';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import type { OnSurface } from '@/components/base/shared-styles';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
@@ -96,184 +91,173 @@ export function PermissionSelector(props: PermissionSelectorProps) {
 
   return (
     <Accordion
-      type="multiple"
-      className="w-full"
+      multiple
+      // "View permission" scrolls to a row in another group by its ref, which only exists while
+      // that group's panel is mounted.
+      keepMounted
       value={openAccordions}
-      onValueChange={values => setOpenAccordions(values)}
-    >
-      {groups.map(group => {
-        return (
-          <AccordionItem value={group.title} key={group.title}>
-            <AccordionTrigger
-              className="w-full"
-              key={group.title}
-              aria-label={`${group.title} permission group with ${group.selectedPermissionCount} permissions selected`}
-            >
-              {group.title}{' '}
-              <span className="ml-auto mr-0">
-                {group.selectedPermissionCount > 0 && (
-                  <span className="mr-1 inline-block text-sm">
-                    {group.selectedPermissionCount} selected
-                  </span>
-                )}
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pl-2 pt-1" forceMount>
-              {group.permissions.map(permission => {
-                const needsDependency =
-                  !!permission.dependsOnId &&
-                  !props.selectedPermissionIds.has(permission.dependsOnId);
+      onValueChange={setOpenAccordions}
+      items={groups.map(group => ({
+        value: group.title,
+        label: group.title,
+        trailing:
+          group.selectedPermissionCount > 0 ? (
+            <span>{group.selectedPermissionCount} selected</span>
+          ) : undefined,
+        content: (
+          <div className="pl-2 pt-1">
+            {group.permissions.map(permission => {
+              const needsDependency =
+                !!permission.dependsOnId &&
+                !props.selectedPermissionIds.has(permission.dependsOnId);
 
-                return (
-                  <div className="relative" key={permission.id}>
+              return (
+                <div className="relative" key={permission.id}>
+                  <div
+                    className={cn(
+                      'flex flex-row items-center justify-between space-x-4 pb-2 pr-2 text-sm',
+                    )}
+                    data-permission-id={permission.id}
+                    ref={ref => {
+                      if (ref) {
+                        permissionRefs.current.set(permission.id, ref);
+                      }
+                    }}
+                  >
                     <div
                       className={cn(
-                        'flex flex-row items-center justify-between space-x-4 pb-2 pr-2 text-sm',
+                        (needsDependency || !permission.isAssignableByViewer) && 'opacity-30',
                       )}
-                      data-permission-id={permission.id}
-                      ref={ref => {
-                        if (ref) {
-                          permissionRefs.current.set(permission.id, ref);
-                        }
-                      }}
                     >
-                      <div
-                        className={cn(
-                          (needsDependency || !permission.isAssignableByViewer) && 'opacity-30',
-                        )}
-                      >
-                        <div className="text-neutral-12 font-semibold">{permission.title}</div>
-                        <div className="text-neutral-11 text-xs">{permission.description}</div>
+                      <div className="text-neutral-12 font-semibold">{permission.title}</div>
+                      <div className="text-neutral-11 text-xs">{permission.description}</div>
+                    </div>
+                    {permission.isAssignableByViewer === false ? (
+                      <div className="flex grow justify-end">
+                        <Popover
+                          trigger={
+                            <button type="button" aria-label="Why this cannot be assigned">
+                              <InfoIcon />
+                            </button>
+                          }
+                          openOnHover
+                          content={
+                            <p className="text-neutral-11 text-sm">
+                              Your membership has insufficient authority for assigning this
+                              permission.
+                            </p>
+                          }
+                        />
                       </div>
-                      {permission.isAssignableByViewer === false ? (
+                    ) : permission.warning && props.selectedPermissionIds.has(permission.id) ? (
+                      <div className="flex grow justify-end">
+                        <Popover
+                          trigger={
+                            <button type="button" aria-label="Warning">
+                              <TriangleAlert className="text-yellow-700" />
+                            </button>
+                          }
+                          openOnHover
+                          content={<p className="text-neutral-11 text-sm">{permission.warning}</p>}
+                        />
+                      </div>
+                    ) : (
+                      !!permission.dependsOnId &&
+                      permissionToGroupTitleMapping.has(permission.dependsOnId) && (
                         <div className="flex grow justify-end">
                           <Popover
                             trigger={
-                              <button type="button" aria-label="Why this cannot be assigned">
+                              <button type="button" aria-label="Depends on another permission">
                                 <InfoIcon />
                               </button>
                             }
                             openOnHover
                             content={
                               <p className="text-neutral-11 text-sm">
-                                Your membership has insufficient authority for assigning this
-                                permission.
+                                This permission depends on another permission.{' '}
+                                <Button
+                                  variant="orangeLink"
+                                  onClick={() => {
+                                    const dependencyPermission = permission.dependsOnId;
+                                    if (!dependencyPermission) {
+                                      return;
+                                    }
+                                    const element =
+                                      permissionRefs.current.get(dependencyPermission);
+
+                                    if (!element) {
+                                      return;
+                                    }
+                                    setOpenAccordions(values => {
+                                      const groupName =
+                                        permissionToGroupTitleMapping.get(dependencyPermission);
+
+                                      if (groupName && values.includes(groupName) === false) {
+                                        return [...values, groupName];
+                                      }
+                                      return values;
+                                    });
+                                    setFocusedPermission(dependencyPermission);
+                                    element.scrollIntoView({
+                                      behavior: 'smooth',
+                                      block: 'center',
+                                    });
+                                  }}
+                                >
+                                  View permission.
+                                </Button>
                               </p>
                             }
                           />
                         </div>
-                      ) : permission.warning && props.selectedPermissionIds.has(permission.id) ? (
-                        <div className="flex grow justify-end">
-                          <Popover
-                            trigger={
-                              <button type="button" aria-label="Warning">
-                                <TriangleAlert className="text-yellow-700" />
-                              </button>
-                            }
-                            openOnHover
-                            content={
-                              <p className="text-neutral-11 text-sm">{permission.warning}</p>
-                            }
-                          />
-                        </div>
-                      ) : (
-                        !!permission.dependsOnId &&
-                        permissionToGroupTitleMapping.has(permission.dependsOnId) && (
-                          <div className="flex grow justify-end">
-                            <Popover
-                              trigger={
-                                <button type="button" aria-label="Depends on another permission">
-                                  <InfoIcon />
-                                </button>
-                              }
-                              openOnHover
-                              content={
-                                <p className="text-neutral-11 text-sm">
-                                  This permission depends on another permission.{' '}
-                                  <Button
-                                    variant="orangeLink"
-                                    onClick={() => {
-                                      const dependencyPermission = permission.dependsOnId;
-                                      if (!dependencyPermission) {
-                                        return;
-                                      }
-                                      const element =
-                                        permissionRefs.current.get(dependencyPermission);
-
-                                      if (!element) {
-                                        return;
-                                      }
-                                      setOpenAccordions(values => {
-                                        const groupName =
-                                          permissionToGroupTitleMapping.get(dependencyPermission);
-
-                                        if (groupName && values.includes(groupName) === false) {
-                                          return [...values, groupName];
-                                        }
-                                        return values;
-                                      });
-                                      setFocusedPermission(dependencyPermission);
-                                      element.scrollIntoView({
-                                        behavior: 'smooth',
-                                        block: 'center',
-                                      });
-                                    }}
-                                  >
-                                    View permission.
-                                  </Button>
-                                </p>
-                              }
-                            />
-                          </div>
-                        )
-                      )}
-                      <Select
-                        aria-label={permission.title}
-                        onSurface={props.onSurface}
-                        options={[
-                          { value: 'not-selected', label: 'Not Selected' },
-                          { value: 'allow', label: 'Allow' },
-                        ]}
-                        disabled={
-                          props.isReadOnly ||
-                          permission.isReadOnly ||
-                          needsDependency ||
-                          !permission.isAssignableByViewer
-                        }
-                        value={
-                          permission.isReadOnly || props.selectedPermissionIds.has(permission.id)
-                            ? 'allow'
-                            : 'not-selected'
-                        }
-                        onValueChange={value => {
-                          const dependents = dependencyGraph.get(permission.id) ?? [];
-                          if (value === 'allow') {
-                            props.onSelectedPermissionsChange(
-                              new Set([...props.selectedPermissionIds, permission.id]),
-                            );
-                          } else if (value === 'not-selected') {
-                            const selectedPermissionIds = new Set(props.selectedPermissionIds);
-                            selectedPermissionIds.delete(permission.id);
-                            for (const dependent of dependents) {
-                              selectedPermissionIds.delete(dependent);
-                            }
-                            props.onSelectedPermissionsChange(selectedPermissionIds);
-                          }
-                          setFocusedPermission(null);
-                        }}
-                        width="sm"
-                      />
-                    </div>
-                    {focusedPermission === permission.id && (
-                      <div className="pointer-events-none absolute bottom-[3px] left-[-7px] right-0 top-[-4px] rounded-sm border border-yellow-400" />
+                      )
                     )}
+                    <Select
+                      aria-label={permission.title}
+                      onSurface={props.onSurface}
+                      options={[
+                        { value: 'not-selected', label: 'Not Selected' },
+                        { value: 'allow', label: 'Allow' },
+                      ]}
+                      disabled={
+                        props.isReadOnly ||
+                        permission.isReadOnly ||
+                        needsDependency ||
+                        !permission.isAssignableByViewer
+                      }
+                      value={
+                        permission.isReadOnly || props.selectedPermissionIds.has(permission.id)
+                          ? 'allow'
+                          : 'not-selected'
+                      }
+                      onValueChange={value => {
+                        const dependents = dependencyGraph.get(permission.id) ?? [];
+                        if (value === 'allow') {
+                          props.onSelectedPermissionsChange(
+                            new Set([...props.selectedPermissionIds, permission.id]),
+                          );
+                        } else if (value === 'not-selected') {
+                          const selectedPermissionIds = new Set(props.selectedPermissionIds);
+                          selectedPermissionIds.delete(permission.id);
+                          for (const dependent of dependents) {
+                            selectedPermissionIds.delete(dependent);
+                          }
+                          props.onSelectedPermissionsChange(selectedPermissionIds);
+                        }
+                        setFocusedPermission(null);
+                      }}
+                      width="sm"
+                    />
                   </div>
-                );
-              })}
-            </AccordionContent>
-          </AccordionItem>
-        );
-      })}
-    </Accordion>
+                  {focusedPermission === permission.id && (
+                    <div className="pointer-events-none absolute bottom-[3px] left-[-7px] right-0 top-[-4px] rounded-sm border border-yellow-400" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ),
+      }))}
+    />
   );
 }

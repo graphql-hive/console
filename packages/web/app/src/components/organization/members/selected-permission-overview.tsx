@@ -1,11 +1,6 @@
 import { useMemo } from 'react';
+import { Accordion } from '@/components/base/accordion/accordion';
 import { PermissionTable } from '@/components/organization/permission-table';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { PermissionLevelType } from '@/gql/graphql';
 import { ResultOf } from '@graphql-typed-document-node/core';
@@ -149,43 +144,43 @@ function PermissionLevelGroup(props: {
 
   return (
     <Accordion
-      type="single"
-      defaultValue={totalAllowedCount > 0 && props.isExpanded ? props.title : undefined}
-      collapsible
-    >
-      <AccordionItem value={props.title}>
-        <AccordionTrigger className="w-full">
-          {props.title}
-          <span className="ml-auto mr-2">{totalAllowedCount} allowed</span>
-        </AccordionTrigger>
-        <AccordionContent className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-auto">
-          {filteredGroups.map(group =>
-            props.showOnlyAllowedPermissions && group.totalAllowedCount === 0 ? null : (
-              <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.id}>
-                <PermissionTable
-                  title={group.title}
-                  permissions={group.permissions.flatMap(permission => {
-                    const granted =
-                      props.activePermissionIds.has(permission.id) || permission.isReadOnly;
-                    if (props.showOnlyAllowedPermissions && !granted) {
-                      return [];
-                    }
-                    return [
-                      {
-                        id: permission.id,
-                        title: permission.title,
-                        granted,
-                        warning: permission.warning,
-                      },
-                    ];
-                  })}
-                />
-              </div>
-            ),
-          )}
-          {props.additionalContent}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+      defaultValue={totalAllowedCount > 0 && props.isExpanded ? [props.title] : undefined}
+      items={[
+        {
+          value: props.title,
+          label: props.title,
+          trailing: <span>{totalAllowedCount} allowed</span>,
+          content: (
+            <div className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-auto">
+              {filteredGroups.map(group =>
+                props.showOnlyAllowedPermissions && group.totalAllowedCount === 0 ? null : (
+                  <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.id}>
+                    <PermissionTable
+                      title={group.title}
+                      permissions={group.permissions.flatMap(permission => {
+                        const granted =
+                          props.activePermissionIds.has(permission.id) || permission.isReadOnly;
+                        if (props.showOnlyAllowedPermissions && !granted) {
+                          return [];
+                        }
+                        return [
+                          {
+                            id: permission.id,
+                            title: permission.title,
+                            granted,
+                            warning: permission.warning,
+                          },
+                        ];
+                      })}
+                    />
+                  </div>
+                ),
+              )}
+              {props.additionalContent}
+            </div>
+          ),
+        },
+      ]}
+    />
   );
 }
