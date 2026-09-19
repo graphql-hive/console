@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Accordion } from '@/components/base/accordion/accordion';
 import { Input } from '@/components/base/input/input';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
@@ -10,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { InputCopy } from '@/components/ui/input-copy';
-import { Accordion } from '@/components/v2/accordion';
 import { graphql } from '@/gql';
 import { TargetAccessScope } from '@/gql/graphql';
 import { RegistryAccessScope } from '@/lib/access/common';
@@ -228,31 +228,36 @@ export function GenerateTokenContent(props: {
             </FormItem>
           )}
         />
-        <Accordion defaultValue="Permissions">
-          <Accordion.Item value="Permissions">
-            <Accordion.Header>Registry & Usage</Accordion.Header>
-            <Accordion.Content>
-              <PermissionScopeItem
-                dataCy="registry-access-scope"
-                onSurface="raised"
-                key={props.selectedScope}
-                scope={RegistryAccessScope}
-                canManageScope
-                checkAccess={() => true}
-                onChange={value => {
-                  if (value === 'no-access') {
-                    props.setSelectedScope('no-access');
-                    return;
-                  }
-                  props.setSelectedScope(value);
-                }}
-                possibleScope={Object.values(RegistryAccessScope.mapping)}
-                initialScope={props.selectedScope}
-                selectedScope={props.selectedScope}
-              />
-            </Accordion.Content>
-          </Accordion.Item>
-        </Accordion>
+        <Accordion
+          variant="plain"
+          defaultValue={['Permissions']}
+          items={[
+            {
+              value: 'Permissions',
+              label: 'Registry & Usage',
+              content: (
+                <PermissionScopeItem
+                  dataCy="registry-access-scope"
+                  onSurface="raised"
+                  key={props.selectedScope}
+                  scope={RegistryAccessScope}
+                  canManageScope
+                  checkAccess={() => true}
+                  onChange={value => {
+                    if (value === 'no-access') {
+                      props.setSelectedScope('no-access');
+                      return;
+                    }
+                    props.setSelectedScope(value);
+                  }}
+                  possibleScope={Object.values(RegistryAccessScope.mapping)}
+                  initialScope={props.selectedScope}
+                  selectedScope={props.selectedScope}
+                />
+              ),
+            },
+          ]}
+        />
         <div className="flex justify-end gap-2">
           <Button variant="outline" type="button" onClick={props.toggleModalOpen}>
             Cancel
