@@ -196,6 +196,75 @@ export const Underline = createPreview(() => {
   );
 });
 
+const SERVICES = [
+  'users',
+  'products',
+  'reviews',
+  'inventory',
+  'orders',
+  'billing',
+  'search',
+  'notifications',
+  'analytics',
+  'support',
+  'admin',
+  'legacy-web',
+];
+
+/**
+ * A strip scrolls sideways once its tabs outgrow it, scrollbar hidden: swipe, drag, or walk the
+ * tabs with the arrow keys and the focused one scrolls into view. Both frames below are flex
+ * columns, the layout that used to stretch to fit every tab and push the page sideways, since a
+ * flex item is at least as wide as its content unless told otherwise. The strip now keeps its
+ * tabs out of that measurement, so the column stays the width it was given.
+ */
+export const ManyTabs = createPreview(() => {
+  const [service, setService] = useState(SERVICES[0]);
+  const [view, setView] = useState(SERVICES[0]);
+  return (
+    <div className="flex flex-col gap-10">
+      <Labelled label="proposals/editor.tsx, the service strip, in a two-column layout at 40rem">
+        <div className="border-neutral-5 flex w-[40rem] rounded-md border">
+          <div className="border-neutral-5 text-neutral-10 w-40 shrink-0 border-r p-3 text-xs">
+            Services
+          </div>
+          <div className="flex flex-1 flex-col p-3">
+            <Tabs
+              items={SERVICES.map(name => ({ value: name, label: name }))}
+              value={service}
+              onValueChange={setService}
+            />
+            <Copy>The {service} subgraph's editor.</Copy>
+          </div>
+        </div>
+      </Labelled>
+      <Labelled label="The band, with the picker leading the strip, in a flex column at 32rem">
+        <div className="flex w-[32rem] flex-col">
+          <TabbedView
+            value={view}
+            onValueChange={setView}
+            action={
+              <Select
+                aria-label="Contract"
+                options={[{ value: 'default', label: 'Default Graph' }]}
+                value="default"
+                size="compact"
+                onSurface="raised"
+                width="sm"
+              />
+            }
+            items={SERVICES.slice(0, 8).map(name => ({
+              value: name,
+              label: name,
+              content: <Copy>The {name} view.</Copy>,
+            }))}
+          />
+        </div>
+      </Labelled>
+    </div>
+  );
+});
+
 /** `header`: the strip TabbedView puts in its band. The checks and version pages. */
 export const Header = createPreview(() => {
   const [contract, setContract] = useState('default');
@@ -206,6 +275,7 @@ export const Header = createPreview(() => {
         defaultValue="details"
         action={
           <Select
+            aria-label="Contract"
             options={CONTRACTS}
             value={contract}
             onValueChange={setContract}

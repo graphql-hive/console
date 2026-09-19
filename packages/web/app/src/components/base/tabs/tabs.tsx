@@ -48,6 +48,24 @@ const rootVariants = cva('', {
   },
 });
 
+/**
+ * A horizontal strip scrolls sideways once its tabs outgrow it, with the scrollbar hidden the way
+ * tab strips usually are; the arrow keys still reach every tab. Inline-size containment keeps the
+ * tabs from counting toward the width of the flex columns above, which would otherwise stretch
+ * to fit them and push the page sideways instead. A scroll container clips on both axes, so the
+ * wrapper pads by the focus ring's reach (4px) plus the indicator's pixel below the border, and
+ * pulls the same back with negative margins.
+ */
+const scrollerVariants = cva('', {
+  variants: {
+    orientation: {
+      horizontal:
+        'no-scrollbar -mx-1 -mt-1 -mb-[5px] min-w-0 grow overflow-x-auto px-1 pt-1 pb-[5px] [contain:inline-size]',
+      vertical: '',
+    },
+  },
+});
+
 const listVariants = cva('relative flex', {
   variants: {
     variant: {
@@ -56,7 +74,8 @@ const listVariants = cva('relative flex', {
       header: 'h-10 grow gap-1 px-2',
     },
     orientation: {
-      horizontal: 'items-center',
+      // The list is as wide as its tabs, so its border and indicator scroll with them.
+      horizontal: 'w-max min-w-full items-center',
       vertical: 'flex-col items-stretch',
     },
   },
@@ -71,13 +90,17 @@ const tabVariants = cva(
     'relative z-10 inline-flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap font-medium transition-colors',
     'text-neutral-10 hover:text-neutral-12 data-[active]:text-accent',
     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-    'outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+    // Quieter than the shared focus ring, since a tab is text on the page rather than a control
+    // with an edge: 1px dotted, following the rounded corner. No `outline-none` beside these: in
+    // Tailwind v4 it zeroes the variable the focus outline reads.
+    'rounded-sm focus-visible:outline-1 focus-visible:outline-dotted focus-visible:outline-accent',
   ),
   {
     variants: {
       variant: {
-        underline: '',
-        header: 'h-full',
+        underline: 'focus-visible:outline-offset-2',
+        // The band's frame clips outside its edge, so the ring sits inside the tab instead.
+        header: 'h-full focus-visible:-outline-offset-2',
       },
       // Padding and text size are set per variant and size pair below: cva concatenates, so an
       // element must never carry two utilities for one property.
@@ -147,7 +170,7 @@ export function TabStrip({
   orientation = 'horizontal',
 }: Pick<TabsProps, 'items' | 'variant' | 'size' | 'orientation'>) {
   const icon = variant === 'header' ? iconSize.sm : iconSize[size];
-  return (
+  const list = (
     <BaseTabs.List className={listVariants({ variant, orientation })}>
       {items.map(item => {
         const Icon = item.icon;
@@ -178,6 +201,10 @@ export function TabStrip({
       <BaseTabs.Indicator className={indicatorVariants({ variant, orientation })} />
     </BaseTabs.List>
   );
+  if (orientation === 'vertical') {
+    return list;
+  }
+  return <div className={scrollerVariants({ orientation })}>{list}</div>;
 }
 
 export function Tabs({

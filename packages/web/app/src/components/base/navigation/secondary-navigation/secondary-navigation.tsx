@@ -46,7 +46,7 @@ const listVariants = cva('flex flex-row items-center', {
 const itemVariants = cva(
   [
     'inline-flex shrink-0 items-center gap-2 whitespace-nowrap font-medium transition-colors',
-    'outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
   ],
   {
     variants: {

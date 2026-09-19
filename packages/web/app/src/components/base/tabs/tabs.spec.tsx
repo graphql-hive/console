@@ -14,6 +14,16 @@ const ITEMS = [
 ];
 
 describe('Tabs', () => {
+  it('wraps a horizontal strip in a sideways scroller and leaves a vertical one alone', () => {
+    const { rerender } = render(<Tabs items={ITEMS} defaultValue="details" />);
+    const list = screen.getByRole('tablist');
+    expect(list.className).toContain('w-max');
+    expect(list.parentElement!.className).toContain('overflow-x-auto');
+
+    rerender(<Tabs items={ITEMS} defaultValue="details" orientation="vertical" />);
+    expect(screen.getByRole('tablist').parentElement!.className).not.toContain('overflow-x-auto');
+  });
+
   it('renders a tab per item, shows the active panel, and switches on click', () => {
     const onValueChange = vi.fn();
     render(<Tabs items={ITEMS} defaultValue="details" onValueChange={onValueChange} />);
