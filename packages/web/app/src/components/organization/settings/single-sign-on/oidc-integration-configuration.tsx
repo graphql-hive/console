@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useMemo, useState } from 'react';
 import { AlertOctagonIcon, BugPlayIcon, CheckIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
 import { Card } from '@/components/base/card/card';
@@ -465,44 +465,47 @@ function OIDCDomainConfiguration(props: {
         },
   );
 
-  const columns: ColumnDef<RegisteredDomain, unknown>[] = [
-    {
-      id: 'domain',
-      header: 'Domain',
-      meta: { width: 'fill' },
-      cell: ({ row }) => (
-        <DataTableCell kind="text" value={row.original.domainName} mono weight="medium" />
-      ),
-    },
-    {
-      id: 'status',
-      header: 'Status',
-      cell: ({ row }) =>
-        row.original.verifiedAt ? (
-          <DataTableCell kind="status" label="Verified" icon={CheckIcon} iconTone="success" />
-        ) : (
+  const columns = useMemo<ColumnDef<RegisteredDomain, unknown>[]>(
+    () => [
+      {
+        id: 'domain',
+        header: 'Domain',
+        meta: { width: 'fill' },
+        cell: ({ row }) => (
+          <DataTableCell kind="text" value={row.original.domainName} mono weight="medium" />
+        ),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: ({ row }) =>
+          row.original.verifiedAt ? (
+            <DataTableCell kind="status" label="Verified" icon={CheckIcon} iconTone="success" />
+          ) : (
+            <DataTableCell
+              kind="status"
+              label="Pending"
+              icon={AlertOctagonIcon}
+              iconTone="warning"
+              tooltip="The domain ownership challenge has not been completed."
+            />
+          ),
+      },
+      {
+        id: 'manage',
+        meta: { width: 'xs' },
+        cell: ({ row }) => (
           <DataTableCell
-            kind="status"
-            label="Pending"
-            icon={AlertOctagonIcon}
-            iconTone="warning"
-            tooltip="The domain ownership challenge has not been completed."
+            kind="icon-button"
+            icon={SettingsIcon}
+            label={`Manage ${row.original.domainName}`}
+            onClick={() => setState({ domainId: row.original.id, type: 'manage' })}
           />
         ),
-    },
-    {
-      id: 'manage',
-      meta: { width: 'xs' },
-      cell: ({ row }) => (
-        <DataTableCell
-          kind="icon-button"
-          icon={SettingsIcon}
-          label={`Manage ${row.original.domainName}`}
-          onClick={() => setState({ domainId: row.original.id, type: 'manage' })}
-        />
-      ),
-    },
-  ];
+      },
+    ],
+    [setState],
+  );
 
   return (
     <div className="space-y-4">

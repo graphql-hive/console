@@ -1,5 +1,14 @@
-import { useEffect, useState } from 'react';
-import { SearchIcon, ShieldCheck, TriangleAlert, UsersIcon } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Info,
+  SearchIcon,
+  ShieldCheck,
+  TriangleAlert,
+  UserLock,
+  UserRound,
+  UserRoundX,
+  UsersIcon,
+} from 'lucide-react';
 import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
 import { IconType } from 'react-icons/lib';
 import { useMutation, type UseQueryExecute } from 'urql';
@@ -188,11 +197,36 @@ const OrganizationMemberRow_MemberFragment = graphql(`
 type MemberRow = DocumentType<typeof OrganizationMemberRow_MemberFragment>;
 type MembersOrganization = DocumentType<typeof OrganizationMembers_OrganizationFragment>;
 
+/** Who the account is: a disabled provisioned user, a provisioned user, or a local one. */
+function MemberStatusIcon({ member }: { member: MemberRow }) {
+  const info = member.user.provisionInfo;
+  if (info?.provisioningStatus === GraphQLSchema.ProvisioningStatus.Active && info.isDisabled) {
+    return (
+      <span
+        className="bg-critical_10 text-critical flex size-9 items-center justify-center rounded-full"
+        aria-label="Disabled user"
+      >
+        <UserRoundX className="size-5" />
+      </span>
+    );
+  }
+  const Icon = info ? UserLock : UserRound;
+  return (
+    <span
+      className="bg-neutral-3 flex size-9 items-center justify-center rounded-full"
+      aria-label={info ? 'Provisioned user' : 'User'}
+    >
+      <Icon className="size-5" />
+    </span>
+  );
+}
+
 function MemberNameCell({ member }: { member: MemberRow }) {
   return (
     <DataTableCell
       kind="avatar"
       name={member.user.displayName}
+      strikethrough={!!member.user.provisionInfo?.isDisabled}
       trailing={
         <span className="inline-flex items-center gap-1">
           {member.user.provisionInfo ? (
@@ -262,7 +296,15 @@ function MemberRoleCell(props: {
         weight="medium"
         trailing={
           <Tooltip
-            trigger={<span className="text-neutral-9 inline-flex cursor-help text-xs">?</span>}
+            trigger={
+              <button
+                type="button"
+                aria-label="About the owner role"
+                className="text-neutral-9 hover:text-neutral-11 inline-flex"
+              >
+                <Info className="size-3.5" />
+              </button>
+            }
             content="The organization owner has full access to everything within the organization. The role of the owner can not be changed."
           />
         }
@@ -605,40 +647,50 @@ export function OrganizationMembers(props: {
   );
   const pageInfo = organization.members?.pageInfo;
 
-  const columns: ColumnDef<MemberRow, unknown>[] = [
-    {
-      id: 'member',
-      header: 'Member',
-      meta: { width: 'fill' },
-      cell: ({ row }) => <MemberNameCell member={row.original} />,
-    },
-    {
-      id: 'email',
-      cell: ({ row }) => <DataTableCell kind="text" value={row.original.user.email} tone="muted" />,
-    },
-    {
-      id: 'role',
-      meta: { align: 'right' },
-      cell: ({ row }) => (
-        <MemberRoleCell
-          member={row.original}
-          organization={organization}
-          refetchMembers={props.refetchMembers}
-        />
-      ),
-    },
-    {
-      id: 'actions',
-      meta: { width: 'xs' },
-      cell: ({ row }) => (
-        <MemberActionsCell
-          member={row.original}
-          organization={organization}
-          refetchMembers={props.refetchMembers}
-        />
-      ),
-    },
-  ];
+  const columns = useMemo<ColumnDef<MemberRow, unknown>[]>(
+    () => [
+      {
+        id: 'status',
+        meta: { width: 'xs' },
+        cell: ({ row }) => <MemberStatusIcon member={row.original} />,
+      },
+      {
+        id: 'member',
+        header: 'Member',
+        meta: { width: 'fill' },
+        cell: ({ row }) => <MemberNameCell member={row.original} />,
+      },
+      {
+        id: 'email',
+        cell: ({ row }) => (
+          <DataTableCell kind="text" value={row.original.user.email} tone="muted" />
+        ),
+      },
+      {
+        id: 'role',
+        meta: { align: 'right' },
+        cell: ({ row }) => (
+          <MemberRoleCell
+            member={row.original}
+            organization={organization}
+            refetchMembers={props.refetchMembers}
+          />
+        ),
+      },
+      {
+        id: 'actions',
+        meta: { width: 'xs' },
+        cell: ({ row }) => (
+          <MemberActionsCell
+            member={row.original}
+            organization={organization}
+            refetchMembers={props.refetchMembers}
+          />
+        ),
+      },
+    ],
+    [organization, props.refetchMembers],
+  );
 
   // Reset pagination when search changes
   useEffect(() => {
@@ -712,7 +764,9 @@ export function OrganizationMembers(props: {
           data={[...members]}
           columns={columns}
           getRowId={member => member.id}
-          rowState={member => (member.user.provisionInfo?.isDisabled ? { muted: true } : undefined)}
+          rowState={member =>
+            member.user.provisionInfo?.isDisabled ? { muted: true, critical: true } : undefined
+          }
           emptyMessage={
             search.showPendingSCIMManagementConfirmations ? (
               <span className="flex flex-col items-center gap-2">

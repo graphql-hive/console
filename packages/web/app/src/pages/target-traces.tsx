@@ -254,190 +254,134 @@ const TracesList = memo(function TracesList(
     from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces',
   });
 
-  const columns: ColumnDef<TraceRow, unknown>[] = [
-    {
-      accessorKey: 'id',
-      header: 'Trace ID',
-      cell: ({ row }) => (
-        <DataTableCell
-          kind="link"
-          mono
-          label={row.original.id.substring(0, 8)}
-          link={{
-            to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
-            params: {
-              organizationSlug: targetRef.organizationSlug,
-              projectSlug: targetRef.projectSlug,
-              targetSlug: targetRef.targetSlug,
-              traceId: row.original.id,
-            },
-          }}
-        />
-      ),
-    },
-    {
-      accessorKey: 'timestamp',
-      header: 'Timestamp',
-      meta: { sortable: true },
-      cell: ({ row }) => {
-        const timestamp = row.original.timestamp;
-        return (
+  const rows = useMemo(() => [...data], [data]);
+
+  const columns = useMemo<ColumnDef<TraceRow, unknown>[]>(
+    () => [
+      {
+        accessorKey: 'id',
+        header: 'Trace ID',
+        cell: ({ row }) => (
           <DataTableCell
-            kind="text"
+            kind="link"
             mono
-            value={
-              <Tooltip
-                side="bottom"
-                trigger={
-                  <span className="uppercase">{formatDate(timestamp, 'MMM dd HH:mm:ss')}</span>
-                }
-                content={
-                  <div
-                    className="min-w-[150px] cursor-auto"
-                    onClick={e => {
-                      // Prevent the click event from bubbling up to the row,
-                      // which would trigger the sheet with trace details to open
-                      e.stopPropagation();
-                    }}
-                  >
-                    <DescriptionList
-                      rows={[
-                        {
-                          items: [
-                            {
-                              term: 'Local',
-                              description: formatDate(timestamp, 'MMM dd HH:mm:ss'),
-                              mono: true,
-                            },
-                          ],
-                        },
-                        {
-                          items: [
-                            {
-                              term: 'UTC',
-                              description: formatInTimeZone(timestamp, 'UTC', 'MMM dd HH:mm:ss'),
-                              mono: true,
-                            },
-                          ],
-                        },
-                        { items: [{ term: 'Unix', description: timestamp, mono: true }] },
-                        {
-                          items: [
-                            {
-                              term: 'ISO',
-                              description: formatISO(toZonedTime(timestamp, 'UTC')),
-                              mono: true,
-                            },
-                          ],
-                        },
-                      ]}
-                    />
-                  </div>
-                }
-              />
-            }
+            label={row.original.id.substring(0, 8)}
+            link={{
+              to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+              params: {
+                organizationSlug: targetRef.organizationSlug,
+                projectSlug: targetRef.projectSlug,
+                targetSlug: targetRef.targetSlug,
+                traceId: row.original.id,
+              },
+            }}
           />
-        );
+        ),
       },
-    },
-    {
-      accessorKey: 'operationName',
-      header: 'Operation Name',
-      meta: { width: 'fill' },
-      cell: ({ row }) => (
-        <DataTableCell
-          kind="text"
-          value={
-            <Tooltip
-              side="bottom"
-              disableHoverablePopup
-              maxWidth="md"
-              trigger={
-                <span className="inline-flex items-center gap-2">
-                  <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 text-xs uppercase">
-                    {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
-                  </span>
-                  {row.original.operationName ?? (
-                    <span className="text-neutral-10">{'<unknown>'}</span>
-                  )}
-                </span>
-              }
-              content={
-                <div className="min-w-[150px]">
-                  <DescriptionList
-                    rows={[
-                      {
-                        items: [
-                          { term: 'Name', description: row.original.operationName, mono: true },
-                        ],
-                      },
-                      {
-                        items: [
-                          { term: 'Kind', description: row.original.operationType, mono: true },
-                        ],
-                      },
-                      {
-                        items: [
-                          { term: 'Hash', description: row.original.operationHash, mono: true },
-                        ],
-                      },
-                    ]}
-                  />
-                </div>
+      {
+        accessorKey: 'timestamp',
+        header: 'Timestamp',
+        meta: { sortable: true },
+        cell: ({ row }) => {
+          const timestamp = row.original.timestamp;
+          return (
+            <DataTableCell
+              kind="text"
+              mono
+              value={
+                <Tooltip
+                  side="bottom"
+                  trigger={
+                    <span className="uppercase">{formatDate(timestamp, 'MMM dd HH:mm:ss')}</span>
+                  }
+                  content={
+                    <div
+                      className="min-w-[150px] cursor-auto"
+                      onClick={e => {
+                        // Prevent the click event from bubbling up to the row,
+                        // which would trigger the sheet with trace details to open
+                        e.stopPropagation();
+                      }}
+                    >
+                      <DescriptionList
+                        rows={[
+                          {
+                            items: [
+                              {
+                                term: 'Local',
+                                description: formatDate(timestamp, 'MMM dd HH:mm:ss'),
+                                mono: true,
+                              },
+                            ],
+                          },
+                          {
+                            items: [
+                              {
+                                term: 'UTC',
+                                description: formatInTimeZone(timestamp, 'UTC', 'MMM dd HH:mm:ss'),
+                                mono: true,
+                              },
+                            ],
+                          },
+                          { items: [{ term: 'Unix', description: timestamp, mono: true }] },
+                          {
+                            items: [
+                              {
+                                term: 'ISO',
+                                description: formatISO(toZonedTime(timestamp, 'UTC')),
+                                mono: true,
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                    </div>
+                  }
+                />
               }
             />
-          }
-        />
-      ),
-    },
-    {
-      accessorKey: 'duration',
-      header: 'Duration',
-      meta: { sortable: true, align: 'right' },
-      cell: ({ row }) => (
-        <DataTableCell kind="text" mono value={formatNanoseconds(BigInt(row.original.duration))} />
-      ),
-    },
-    {
-      accessorKey: 'success',
-      header: 'Status',
-      meta: { align: 'center' },
-      cell: ({ row }) => (
-        <DataTableCell
-          kind="badge"
-          items={{
-            content: row.original.success ? 'Ok' : 'Error',
-            variant: row.original.success ? 'success' : 'critical',
-          }}
-        />
-      ),
-    },
-    {
-      accessorKey: 'subgraphs',
-      header: 'Subgraphs',
-      meta: { align: 'center' },
-      cell: ({ row }) => {
-        const subgraphs = row.original.subgraphs ?? [];
-        return (
+          );
+        },
+      },
+      {
+        accessorKey: 'operationName',
+        header: 'Operation Name',
+        meta: { width: 'fill' },
+        cell: ({ row }) => (
           <DataTableCell
             kind="text"
-            mono
             value={
               <Tooltip
                 side="bottom"
                 disableHoverablePopup
-                trigger={<span>{subgraphs.length}</span>}
+                maxWidth="md"
+                trigger={
+                  <span className="inline-flex items-center gap-2">
+                    <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 text-xs uppercase">
+                      {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
+                    </span>
+                    {row.original.operationName ?? (
+                      <span className="text-neutral-10">{'<unknown>'}</span>
+                    )}
+                  </span>
+                }
                 content={
                   <div className="min-w-[150px]">
                     <DescriptionList
                       rows={[
                         {
                           items: [
-                            {
-                              term: 'Subgraphs',
-                              description: subgraphs.length ? subgraphs.join(', ') : '<none>',
-                              mono: true,
-                            },
+                            { term: 'Name', description: row.original.operationName, mono: true },
+                          ],
+                        },
+                        {
+                          items: [
+                            { term: 'Kind', description: row.original.operationType, mono: true },
+                          ],
+                        },
+                        {
+                          items: [
+                            { term: 'Hash', description: row.original.operationHash, mono: true },
                           ],
                         },
                       ]}
@@ -447,26 +391,91 @@ const TracesList = memo(function TracesList(
               />
             }
           />
-        );
+        ),
       },
-    },
-    {
-      accessorKey: 'httpMethod',
-      header: 'HTTP Method',
-      meta: { align: 'center' },
-      cell: ({ row }) => <DataTableCell kind="text" mono value={row.original.httpMethod} />,
-    },
-    {
-      accessorKey: 'httpStatusCode',
-      header: 'HTTP Status',
-      meta: { align: 'center' },
-      cell: ({ row }) => <DataTableCell kind="text" mono value={row.original.httpStatusCode} />,
-    },
-  ];
+      {
+        accessorKey: 'duration',
+        header: 'Duration',
+        meta: { sortable: true, align: 'right' },
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="text"
+            mono
+            value={formatNanoseconds(BigInt(row.original.duration))}
+          />
+        ),
+      },
+      {
+        accessorKey: 'success',
+        header: 'Status',
+        meta: { align: 'center' },
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="badge"
+            items={{
+              content: row.original.success ? 'Ok' : 'Error',
+              variant: row.original.success ? 'success' : 'critical',
+            }}
+          />
+        ),
+      },
+      {
+        accessorKey: 'subgraphs',
+        header: 'Subgraphs',
+        meta: { align: 'center' },
+        cell: ({ row }) => {
+          const subgraphs = row.original.subgraphs ?? [];
+          return (
+            <DataTableCell
+              kind="text"
+              mono
+              value={
+                <Tooltip
+                  side="bottom"
+                  disableHoverablePopup
+                  trigger={<span>{subgraphs.length}</span>}
+                  content={
+                    <div className="min-w-[150px]">
+                      <DescriptionList
+                        rows={[
+                          {
+                            items: [
+                              {
+                                term: 'Subgraphs',
+                                description: subgraphs.length ? subgraphs.join(', ') : '<none>',
+                                mono: true,
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                    </div>
+                  }
+                />
+              }
+            />
+          );
+        },
+      },
+      {
+        accessorKey: 'httpMethod',
+        header: 'HTTP Method',
+        meta: { align: 'center' },
+        cell: ({ row }) => <DataTableCell kind="text" mono value={row.original.httpMethod} />,
+      },
+      {
+        accessorKey: 'httpStatusCode',
+        header: 'HTTP Status',
+        meta: { align: 'center' },
+        cell: ({ row }) => <DataTableCell kind="text" mono value={row.original.httpStatusCode} />,
+      },
+    ],
+    [targetRef.organizationSlug, targetRef.projectSlug, targetRef.targetSlug],
+  );
 
   return (
     <DataTable
-      data={[...data]}
+      data={rows}
       columns={columns}
       getRowId={trace => trace.id}
       loading={props.isFetching && props.traces.length === 0}
