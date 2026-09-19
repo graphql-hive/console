@@ -66,9 +66,9 @@ curl --fail --location \
 unzip hive-cdn-cloudflare-worker.zip
 ```
 
-The extracted `index.mjs` is an ES module Worker. Create a `wrangler.toml` next to it. The
-following is a minimal configuration; the six Analytics Engine bindings are required. Dataset
-names may be changed, but the binding names must remain unchanged.
+The extracted `index.mjs` is an ES module Worker. Create a `wrangler.toml` next to it. The following
+is a minimal configuration; the six Analytics Engine bindings are required. Dataset names may be
+changed, but the binding names must remain unchanged.
 
 The current Worker artifact does not read a Workers KV binding. Hive's Pulumi stack still creates a
 legacy `HIVE_DATA` namespace for historical reasons; you do not need it for a working deployment.
