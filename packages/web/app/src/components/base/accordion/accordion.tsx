@@ -31,7 +31,7 @@ type AccordionProps = {
   onValueChange?: (value: string[]) => void;
   /** More than one item open at once. */
   multiple?: boolean;
-  /** `list` draws a hairline under each item; `boxed` gives each item a card border, spaced apart. */
+  /** `list` draws a hairline between items; `boxed` gives each item a card border, spaced apart. */
   variant?: AccordionVariant;
   size?: AccordionSize;
   /** Where the chevron sits. `start` for a disclosure under a form; `none` when the label carries its own icon. */
@@ -55,7 +55,8 @@ const rootVariants = cva('', {
 const itemVariants = cva('', {
   variants: {
     variant: {
-      list: 'border-neutral-5 border-b',
+      // Hairlines separate items; a lone disclosure has nothing to separate from.
+      list: 'border-neutral-5 border-b last:border-b-0',
       boxed: 'border-neutral-5 rounded-md border',
     },
   },
