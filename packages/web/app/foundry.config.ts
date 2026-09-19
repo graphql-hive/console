@@ -1,6 +1,31 @@
 import { defineConfig } from 'react-foundry';
+import type { Plugin } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
+
+/**
+ * `@/env/frontend` validates `window.__ENV` at import time and throws when it is missing, so
+ * any preview whose component reaches it (PageLead through DocsLink, for one) fails before it
+ * renders. The app sets `__ENV` from a `<script src="/__env.js">` in its index.html; this puts
+ * an equivalent inline script at the top of foundry's, with the schema's required keys and the
+ * same values as `.env.template`. Nothing in a preview calls these endpoints.
+ */
+const previewEnv: Plugin = {
+  name: 'hive-preview-env',
+  transformIndexHtml: () => [
+    {
+      tag: 'script',
+      injectTo: 'head-prepend',
+      children: `window.__ENV = ${JSON.stringify({
+        ENVIRONMENT: 'development',
+        APP_BASE_URL: 'http://localhost:3000',
+        GRAPHQL_PUBLIC_ENDPOINT: 'http://localhost:3001/graphql',
+        GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: 'http://localhost:3001/graphql',
+        GRAPHQL_PUBLIC_ORIGIN: 'http://localhost:3001',
+      })};`,
+    },
+  ],
+};
 
 export default defineConfig({
   // Widened past `base/` so real app components can be previewed too, not just design-system
@@ -26,6 +51,7 @@ export default defineConfig({
             { label: 'Avatar', children: [{ label: 'Component Examples' }] },
             { label: 'Badge', children: [{ label: 'Component Examples' }] },
             { label: 'StatusDot' },
+            { label: 'Spinner' },
             { label: 'Button' },
             { label: 'Card' },
             { label: 'StatCard' },
@@ -65,7 +91,7 @@ export default defineConfig({
           ],
         },
         // Data and layout
-        { label: 'DataTable' },
+        { label: 'DataTable', children: [{ label: 'Component Examples' }] },
         { label: 'DescriptionList' },
       ],
     },
@@ -77,7 +103,6 @@ export default defineConfig({
       label: 'Inventory',
       children: [
         { label: 'Button' },
-        { label: 'DataLayout' },
         { label: 'Form' },
         { label: 'Overlays' },
         { label: 'Presentational' },
@@ -103,6 +128,6 @@ export default defineConfig({
     // Foundry's vite root is inside node_modules and this config is bundled to a cache
     // dir before it runs, so neither location can anchor tsconfig discovery. cwd is the
     // app directory, which is where `foundry dev` is invoked from.
-    plugins: [tsconfigPaths({ root: process.cwd() }), tailwindcss()],
+    plugins: [tsconfigPaths({ root: process.cwd() }), tailwindcss(), previewEnv],
   },
 });

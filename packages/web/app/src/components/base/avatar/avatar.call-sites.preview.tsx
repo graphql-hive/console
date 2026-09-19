@@ -95,9 +95,9 @@ export const UserMenuTrigger = createPreview({
         origin="base"
         note="The header avatar that opens the user menu: outlined, with the viewer's initials."
       >
-        <div className="cursor-pointer" data-cy="user-menu-trigger">
+        <button type="button" className="cursor-pointer" data-cy="user-menu-trigger">
           <Avatar variant="outlined" alt="User" />
-        </div>
+        </button>
       </CallSite>
 
       <CallSite

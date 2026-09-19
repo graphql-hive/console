@@ -113,12 +113,13 @@ export function UserMenu(props: {
           sideOffset={5}
           minWidth="md"
           trigger={
-            <div
+            <button
+              type="button"
               className={cn('cursor-pointer', currentOrganization ? '' : 'animate-pulse')}
               data-cy="user-menu-trigger"
             >
               <Avatar variant="outlined" alt={me?.displayName} />
-            </div>
+            </button>
           }
           sections={
             me && organizations

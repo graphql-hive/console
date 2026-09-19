@@ -387,6 +387,7 @@ export function ConnectSchemaModal(props: {
                     }}
                     placeholder="Select Graph"
                     width="lg"
+                    onSurface="raised"
                   />
                 </div>
                 <div>

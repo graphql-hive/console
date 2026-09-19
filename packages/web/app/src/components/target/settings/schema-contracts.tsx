@@ -1,12 +1,12 @@
 import { ReactElement, useRef, useState } from 'react';
 import { useFormik } from 'formik';
-import { Check, MoreHorizontal, X } from 'lucide-react';
+import { Check, Info, X } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
-import { Badge } from '@/components/base/badge/badge';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Menu } from '@/components/base/floating/menu/menu';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { itemVariants } from '@/components/base/floating/shared-styles';
 import { Input } from '@/components/base/input/input';
@@ -23,18 +23,9 @@ import {
 } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { TimeAgo } from '@/components/ui/time-ago';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { cn } from '@/lib/utils';
-import { InfoCircledIcon } from '@radix-ui/react-icons';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const SchemaContractsQuery = graphql(`
   query SchemaContractsQuery($selector: TargetSelectorInput!, $after: String) {
@@ -131,6 +122,17 @@ function DisableContractDialog(props: { contractId: string; onClose: () => void 
   );
 }
 
+type Contract = NonNullable<
+  DocumentType<typeof SchemaContractsQuery>['target']
+>['contracts']['edges'][number]['node'];
+
+const tagsCell = (tags: readonly string[] | null | undefined) =>
+  tags?.length ? (
+    <DataTableCell kind="badge" items={tags.map(tag => ({ content: tag }))} />
+  ) : (
+    <DataTableCell kind="text" value="None" tone="muted" />
+  );
+
 export function SchemaContracts(props: {
   organizationSlug: string;
   projectSlug: string;
@@ -159,6 +161,85 @@ export function SchemaContracts(props: {
     reexecuteQuery({ requestPolicy: 'network-only' });
   }
 
+  const columns: ColumnDef<Contract, unknown>[] = [
+    {
+      id: 'name',
+      header: 'Contract Name',
+      meta: { width: 'fill' },
+      cell: ({ row }) => (
+        <DataTableCell kind="text" value={row.original.contractName} weight="medium" />
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      cell: ({ row }) =>
+        row.original.isDisabled ? (
+          <DataTableCell
+            kind="status"
+            label="Inactive"
+            icon={Info}
+            iconTone="warning"
+            tooltip="This Contract is no longer active and no more contract versions or contract checks will be published for it. It is not possible to enable a contract again. Please create a new contract instead."
+          />
+        ) : (
+          <DataTableCell
+            kind="status"
+            label="Active"
+            icon={Info}
+            tooltip="This Contract is active. Schema publishes and checks will attempt to also build the contract schema."
+          />
+        ),
+    },
+    {
+      id: 'includeTags',
+      header: 'Included Tags',
+      cell: ({ row }) => tagsCell(row.original.includeTags),
+    },
+    {
+      id: 'excludeTags',
+      header: 'Excluded Tags',
+      cell: ({ row }) => tagsCell(row.original.excludeTags),
+    },
+    {
+      id: 'removeUnreachable',
+      header: 'Remove unreachable API Types',
+      meta: { align: 'center' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="boolean"
+          value={row.original.removeUnreachableTypesFromPublicApiSchema}
+        />
+      ),
+    },
+    {
+      id: 'createdAt',
+      header: 'Created at',
+      meta: { align: 'right' },
+      cell: ({ row }) => <DataTableCell kind="time" date={row.original.createdAt} />,
+    },
+    {
+      id: 'actions',
+      meta: { width: 'xs' },
+      cell: ({ row }) =>
+        row.original.viewerCanDisableContract ? (
+          <DataTableCell
+            kind="actions"
+            label={`Actions for ${row.original.contractName}`}
+            sections={[
+              [
+                {
+                  label: 'Disable',
+                  variant: 'destructiveAction',
+                  onClick: () => onDisable(row.original.id),
+                },
+              ],
+            ]}
+          />
+        ) : null,
+    },
+  ];
+
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
@@ -179,146 +260,15 @@ export function SchemaContracts(props: {
           </DialogContent>
         </Dialog>
       </div>
-      {!!contracts?.length && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Contract Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Included Tags</TableHead>
-              <TableHead>Excluded Tags</TableHead>
-              <TableHead>Remove unreachable API Types</TableHead>
-              <TableHead className="text-right">Created at</TableHead>
-              <TableHead className="text-right" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {contracts.map(({ node }) => (
-              <TableRow key={node.id}>
-                <TableCell className={cn(node.isDisabled && 'opacity-30')}>
-                  {node.contractName}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center">
-                    {node.isDisabled ? (
-                      <>
-                        <span className="text-yellow-500">Inactive</span>
-                        <Popover
-                          trigger={
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              className="ml-2 text-yellow-500"
-                              aria-label="Why inactive"
-                            >
-                              <InfoCircledIcon className="size-4" />
-                            </Button>
-                          }
-                          openOnHover
-                          width="lg"
-                          content={
-                            <div className="text-neutral-11 text-sm font-normal">
-                              <p>
-                                This Contract is no longer active and no more contract versions or
-                                contract checks will be published for it.
-                              </p>
-                              <p className="mt-1">
-                                It is not possible to enable a contract again. Please create a new
-                                contract instead.
-                              </p>
-                            </div>
-                          }
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <span>Active</span>
-                        <Popover
-                          trigger={
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              className="ml-2"
-                              aria-label="About active contracts"
-                            >
-                              <InfoCircledIcon className="size-4" />
-                            </Button>
-                          }
-                          openOnHover
-                          width="lg"
-                          content={
-                            <p className="text-neutral-11 text-sm font-normal">
-                              This Contract is active. Schema publishes and checks will attempt to
-                              also build the contract schema.
-                            </p>
-                          }
-                        />
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className={cn(node.isDisabled && 'opacity-30')}>
-                  {node.includeTags ? (
-                    <span className="inline-flex flex-wrap gap-1">
-                      {node.includeTags.map(tag => (
-                        <Badge key={tag} content={tag} />
-                      ))}
-                    </span>
-                  ) : (
-                    'None'
-                  )}
-                </TableCell>
-                <TableCell className={cn(node.isDisabled && 'opacity-30')}>
-                  {node.excludeTags ? (
-                    <span className="inline-flex flex-wrap gap-1">
-                      {node.excludeTags.map(tag => (
-                        <Badge key={tag} content={tag} />
-                      ))}
-                    </span>
-                  ) : (
-                    'None'
-                  )}
-                </TableCell>
-                <TableCell className={cn('text-center', node.isDisabled && 'opacity-30')}>
-                  {node.removeUnreachableTypesFromPublicApiSchema ? (
-                    <Check className="size-4" />
-                  ) : (
-                    <X className="size-4" />
-                  )}
-                </TableCell>
-                <TableCell className={cn('text-right', node.isDisabled && 'opacity-30')}>
-                  <TimeAgo date={node.createdAt} />
-                </TableCell>
-                <TableCell className="text-end">
-                  {node.viewerCanDisableContract && (
-                    <Menu
-                      align="end"
-                      trigger={
-                        <Button variant="ghost" className="size-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      }
-                      sections={[
-                        {
-                          label: 'Actions',
-                          items: [
-                            {
-                              label: 'Disable',
-                              variant: 'destructiveAction',
-                              onClick: () => onDisable(node.id),
-                            },
-                          ],
-                        },
-                      ]}
-                    />
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+      <DataTable
+        data={contracts?.map(edge => edge.node) ?? []}
+        columns={columns}
+        getRowId={contract => contract.id}
+        pagination={{ kind: 'none' }}
+        loading={schemaContractsQuery.fetching && !schemaContractsQuery.data}
+        emptyMessage="No contracts yet."
+        rowState={contract => (contract.isDisabled ? { disabled: true } : undefined)}
+      />
       {disabledContractId && (
         <DisableContractDialog
           contractId={disabledContractId}

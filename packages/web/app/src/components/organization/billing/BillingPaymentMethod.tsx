@@ -62,9 +62,10 @@ export const ManagePaymentMethod = (props: {
           </Section.Subtitle>
         </div>
         <div>
-          To manage or change your payment method, billing settings, billing email, Tax ID, you can
-          use the Stripe customer dashboard:
-          <br />
+          <p className="pb-4">
+            To manage or change your payment method, billing settings, billing email, Tax ID, you
+            can use the Stripe customer dashboard:
+          </p>
           <Button
             variant="primary"
             disabled={mutation.fetching || loadingDashboard}

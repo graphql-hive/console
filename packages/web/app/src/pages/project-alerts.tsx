@@ -35,7 +35,6 @@ function Channels(props: {
 
   return (
     <Card
-      variants={{ onSurface: 'raised' }}
       title="Channels"
       description={
         <>
@@ -95,7 +94,6 @@ function Alerts(props: {
   return (
     <>
       <Card
-        variants={{ onSurface: 'raised' }}
         title="Alerts and Notifications"
         description={
           <>

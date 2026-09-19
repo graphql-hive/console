@@ -1,7 +1,10 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useMemo, useState } from 'react';
 import { AlertOctagonIcon, BugPlayIcon, CheckIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
 import { Card } from '@/components/base/card/card';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
@@ -19,15 +22,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
-import * as Table from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { DebugOIDCIntegrationModal } from './debug-oidc-integration-modal';
 import { OIDCDefaultResourceSelector } from './oidc-default-resource-selector';
@@ -225,44 +227,43 @@ export function OIDCIntegrationConfiguration(props: {
           />
         </div>
         <p>Endpoints for configuring the OIDC provider.</p>
-        <Table.Table>
-          <Table.TableHeader>
-            <Table.TableRow>
-              <Table.TableHead>Endpoint</Table.TableHead>
-              <Table.TableHead>URL</Table.TableHead>
-            </Table.TableRow>
-          </Table.TableHeader>
-          <Table.TableBody>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Sign-in redirect URI</Table.TableCell>
-              <Table.TableCell>
-                <span
-                  data-oidc-property-sign-in-redirect-uri
-                >{`${env.appBaseUrl}/auth/callback/oidc`}</span>{' '}
-                <CopyIconButton label="Copy" value={`${env.appBaseUrl}/auth/callback/oidc`} />
-              </Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Sign-out redirect URI</Table.TableCell>
-              <Table.TableCell>
-                <span data-oidc-property-sign-out-redirect-uri>{`${env.appBaseUrl}/logout`}</span>{' '}
-                <CopyIconButton label="Copy" value={`${env.appBaseUrl}/logout`} />
-              </Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Sign-in URL</Table.TableCell>
-              <Table.TableCell>
-                <span
-                  data-oidc-property-sign-in-url
-                >{`${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`}</span>{' '}
-                <CopyIconButton
-                  label="Copy"
-                  value={`${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`}
-                />
-              </Table.TableCell>
-            </Table.TableRow>
-          </Table.TableBody>
-        </Table.Table>
+        <DescriptionList
+          rows={[
+            {
+              items: [
+                {
+                  term: 'Sign-in redirect URI',
+                  description: `${env.appBaseUrl}/auth/callback/oidc`,
+                  mono: true,
+                  copyable: true,
+                  attrs: { 'data-oidc-property-sign-in-redirect-uri': '' },
+                },
+              ],
+            },
+            {
+              items: [
+                {
+                  term: 'Sign-out redirect URI',
+                  description: `${env.appBaseUrl}/logout`,
+                  mono: true,
+                  copyable: true,
+                  attrs: { 'data-oidc-property-sign-out-redirect-uri': '' },
+                },
+              ],
+            },
+            {
+              items: [
+                {
+                  term: 'Sign-in URL',
+                  description: `${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`,
+                  mono: true,
+                  copyable: true,
+                  attrs: { 'data-oidc-property-sign-in-url': '' },
+                },
+              ],
+            },
+          ]}
+        />
       </div>
       <div className="space-y-2">
         <div className="flex">
@@ -280,64 +281,65 @@ export function OIDCIntegrationConfiguration(props: {
             content="Update endpoint configuration"
           />
         </div>
-        <Table.Table>
-          <Table.TableHeader>
-            <Table.TableRow>
-              <Table.TableHead>Configuration</Table.TableHead>
-              <Table.TableHead>Value</Table.TableHead>
-            </Table.TableRow>
-          </Table.TableHeader>
-          <Table.TableBody>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Authorization Endpoint</Table.TableCell>
-              <Table.TableCell>{oidcIntegration.authorizationEndpoint}</Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Token Endpoint</Table.TableCell>
-              <Table.TableCell>{oidcIntegration.tokenEndpoint}</Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">User Info Endpoint</Table.TableCell>
-              <Table.TableCell>{oidcIntegration.userinfoEndpoint}</Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Client ID</Table.TableCell>
-              <Table.TableCell className="font-mono">{oidcIntegration.clientId}</Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Client Secret</Table.TableCell>
-              <Table.TableCell className="font-mono">
-                •••••••{oidcIntegration.clientSecretPreview}
-              </Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">
-                <Tooltip
-                  trigger="User ID Claim"
-                  content="The claim that should be used to uniquely identify an user."
-                />
-              </Table.TableCell>
-              <Table.TableCell className="font-mono">
-                {oidcIntegration.userIdClaim ?? <span className="text-neutral-10">none set</span>}
-              </Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">
-                <Tooltip
-                  trigger="Additional Scopes"
-                  content="Additional scopes that are requested from the OIDC provider."
-                />
-              </Table.TableCell>
-              <Table.TableCell>
-                {oidcIntegration.additionalScopes.length ? (
-                  <span className="font-mono">{oidcIntegration.additionalScopes.join(' ')}</span>
-                ) : (
-                  <span className="text-neutral-8">none</span>
-                )}
-              </Table.TableCell>
-            </Table.TableRow>
-          </Table.TableBody>
-        </Table.Table>
+        <DescriptionList
+          rows={[
+            {
+              items: [
+                {
+                  term: 'Authorization Endpoint',
+                  description: oidcIntegration.authorizationEndpoint,
+                  mono: true,
+                },
+              ],
+            },
+            {
+              items: [
+                { term: 'Token Endpoint', description: oidcIntegration.tokenEndpoint, mono: true },
+              ],
+            },
+            {
+              items: [
+                {
+                  term: 'User Info Endpoint',
+                  description: oidcIntegration.userinfoEndpoint,
+                  mono: true,
+                },
+              ],
+            },
+            {
+              items: [
+                { term: 'Client ID', description: oidcIntegration.clientId, mono: true },
+                {
+                  term: 'Client Secret',
+                  description: `•••••••${oidcIntegration.clientSecretPreview}`,
+                  mono: true,
+                },
+              ],
+            },
+            {
+              items: [
+                {
+                  term: 'User ID Claim',
+                  tooltip: 'The claim that should be used to uniquely identify an user.',
+                  description: oidcIntegration.userIdClaim ?? (
+                    <span className="text-neutral-10">none set</span>
+                  ),
+                  mono: true,
+                },
+                {
+                  term: 'Additional Scopes',
+                  tooltip: 'Additional scopes that are requested from the OIDC provider.',
+                  description: oidcIntegration.additionalScopes.length ? (
+                    oidcIntegration.additionalScopes.join(' ')
+                  ) : (
+                    <span className="text-neutral-8">none</span>
+                  ),
+                  mono: true,
+                },
+              ],
+            },
+          ]}
+        />
       </div>
       <OIDCDomainConfiguration
         oidcIntegration={oidcIntegration}
@@ -438,6 +440,10 @@ const OIDCDomainConfiguration_OIDCIntegrationFragment = graphql(`
   }
 `);
 
+type RegisteredDomain = DocumentType<
+  typeof OIDCDomainConfiguration_OIDCIntegrationFragment
+>['registeredDomains'][number];
+
 function OIDCDomainConfiguration(props: {
   oidcIntegration: FragmentType<typeof OIDCDomainConfiguration_OIDCIntegrationFragment>;
   onRestrictionChange: (name: 'oidcForVerifiedDomainsRequired', value: boolean) => void;
@@ -457,6 +463,48 @@ function OIDCDomainConfiguration(props: {
           type: 'manage';
           domainId: string;
         },
+  );
+
+  const columns = useMemo<ColumnDef<RegisteredDomain, unknown>[]>(
+    () => [
+      {
+        id: 'domain',
+        header: 'Domain',
+        meta: { width: 'fill' },
+        cell: ({ row }) => (
+          <DataTableCell kind="text" value={row.original.domainName} mono weight="medium" />
+        ),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: ({ row }) =>
+          row.original.verifiedAt ? (
+            <DataTableCell kind="status" label="Verified" icon={CheckIcon} iconTone="success" />
+          ) : (
+            <DataTableCell
+              kind="status"
+              label="Pending"
+              icon={AlertOctagonIcon}
+              iconTone="warning"
+              tooltip="The domain ownership challenge has not been completed."
+            />
+          ),
+      },
+      {
+        id: 'manage',
+        meta: { width: 'xs' },
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="icon-button"
+            icon={SettingsIcon}
+            label={`Manage ${row.original.domainName}`}
+            onClick={() => setState({ domainId: row.original.id, type: 'manage' })}
+          />
+        ),
+      },
+    ],
+    [setState],
   );
 
   return (
@@ -481,65 +529,13 @@ function OIDCDomainConfiguration(props: {
         <p>
           Verify domain ownership to skip mandatory email confirmation for organization members.
         </p>
-        <Table.Table>
-          <Table.TableHeader>
-            <Table.TableRow>
-              <Table.TableHead>Domain</Table.TableHead>
-              <Table.TableHead>Status</Table.TableHead>
-              <Table.TableHead />
-            </Table.TableRow>
-          </Table.TableHeader>
-          <Table.TableBody>
-            {oidcIntegration.registeredDomains.map(domain => (
-              <Table.TableRow key={domain.id}>
-                <Table.TableCell className="font-mono font-medium">
-                  {domain.domainName}
-                </Table.TableCell>
-                <Table.TableCell>
-                  {domain.verifiedAt ? (
-                    <>
-                      Verified <CheckIcon size="12" className="inline-block" />
-                    </>
-                  ) : (
-                    <Tooltip
-                      trigger={
-                        <span>
-                          Pending <AlertOctagonIcon size="12" className="inline-block" />
-                        </span>
-                      }
-                      content="The domain ownership challenge has not been completed."
-                      disableHoverablePopup
-                    />
-                  )}
-                </Table.TableCell>
-                <Table.TableCell className="text-right">
-                  <Tooltip
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() =>
-                          setState({
-                            domainId: domain.id,
-                            type: 'manage',
-                          })
-                        }
-                        className="ml-auto"
-                      >
-                        <SettingsIcon size="10" />
-                      </Button>
-                    }
-                    content="Manage"
-                    disableHoverablePopup
-                  />
-                </Table.TableCell>
-              </Table.TableRow>
-            ))}
-          </Table.TableBody>
-          {oidcIntegration.registeredDomains.length === 0 && (
-            <Table.TableCaption>No Domains registered</Table.TableCaption>
-          )}
-        </Table.Table>
+        <DataTable
+          data={oidcIntegration.registeredDomains}
+          columns={columns}
+          getRowId={domain => domain.id}
+          pagination={{ kind: 'none' }}
+          emptyMessage="No Domains registered"
+        />
       </div>
       <Card title="Domain Settings" description="Settings for the verified domains.">
         <div className="flex items-center justify-between space-x-4">
