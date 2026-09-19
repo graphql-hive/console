@@ -47,7 +47,7 @@ export default defineConfig({
         {
           label: 'Primitives',
           children: [
-            { label: 'Accordion' },
+            { label: 'Accordion', children: [{ label: 'Component Examples' }] },
             { label: 'Avatar', children: [{ label: 'Component Examples' }] },
             { label: 'Badge', children: [{ label: 'Component Examples' }] },
             { label: 'StatusDot' },
