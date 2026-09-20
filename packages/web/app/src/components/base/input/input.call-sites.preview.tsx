@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { CalendarDays, SearchIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Button } from '@/components/ui/button';
 import { InputCopy } from '@/components/ui/input-copy';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { Button as BaseButton } from '../button/button';

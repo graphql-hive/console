@@ -39,7 +39,9 @@ export function SSOForm(props: {
             <FormLabel
               label="Organization slug"
               icon={CircleHelp}
-              tooltip={`The organization slug is the unique identifier used in your organization's URLs. For instance, in app.graphql-hive.com/acme, "acme" is the slug.`}
+              tooltip={
+                'The organization slug is the unique identifier used in your organization\'s URLs. For instance, in app.graphql-hive.com/acme, "acme" is the slug.'
+              }
             />
             <FormControl>
               <Input placeholder="acme" onSurface="raised" {...form.register('slug')} />

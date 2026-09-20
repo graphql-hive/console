@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { CombinedError, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';

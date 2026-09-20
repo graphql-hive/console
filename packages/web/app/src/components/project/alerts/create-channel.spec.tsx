@@ -24,7 +24,6 @@ function renderModal() {
   return { ...view, element, toggleModalOpen };
 }
 
-const nameInput = () => screen.getByLabelText('Name') as HTMLInputElement;
 const typeTrigger = () => screen.getByRole('combobox', { name: 'Type' });
 const submit = () =>
   act(async () => {
