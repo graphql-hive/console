@@ -1,3 +1,4 @@
+import { PlusIcon } from 'lucide-react';
 import { ReactElement, ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
@@ -23,7 +24,6 @@ import { useRouter } from '@tanstack/react-router';
 import { ProPlanBilling } from '../organization/billing/ProPlanBillingWarm';
 import { RateLimitWarn } from '../organization/billing/RateLimitWarn';
 import { HiveLink } from '../ui/hive-link';
-import { PlusIcon } from '../ui/icon';
 import { QueryError } from '../ui/query-error';
 import { OrganizationSelector } from './organization-selectors';
 

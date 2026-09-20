@@ -1,17 +1,6 @@
 import { Fragment, ReactElement, ReactNode, useCallback, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import {
-  ArrowRight,
-  BadgeCheck,
-  ChevronDown,
-  ChevronUp,
-  CircleQuestionMarkIcon,
-  GitCompareIcon,
-  InfoIcon,
-  Loader2,
-  ShieldAlertIcon,
-  TriangleAlertIcon,
-} from 'lucide-react';
+import { ArrowRight, BadgeCheck, CheckIcon, ChevronDown, ChevronUp, CircleQuestionMarkIcon, FileDiffIcon, GitCompareIcon, InfoIcon, ListIcon, Loader2, ShieldAlertIcon, TriangleAlertIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { FailureCard, formatCount } from '@/components/base/failure-card/failure-card';
@@ -37,7 +26,6 @@ import { File } from '@/components/ui/diffs';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Heading } from '@/components/ui/heading';
-import { AlertTriangleIcon, DiffIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -48,12 +36,6 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
-import {
-  CheckIcon,
-  ExclamationTriangleIcon,
-  InfoCircledIcon,
-  ListBulletIcon,
-} from '@radix-ui/react-icons';
 import { SDLDiffView, SDLView } from './target-history-schema-version';
 
 /** A status icon inside a tab, explained on hover. */
@@ -301,7 +283,7 @@ const BreakingChangesTitle = () => {
             className="ml-1"
             aria-label="About breaking changes"
           >
-            <InfoCircledIcon className="size-3" />
+            <InfoIcon className="size-3" />
           </Button>
         }
         openOnHover
@@ -627,7 +609,7 @@ function DefaultSchemaView(props: {
     {
       value: 'details',
       label: 'Details',
-      icon: ListBulletIcon,
+      icon: ListIcon,
       attrs: { 'data-testid': 'details-view-btn' },
       content: (
         <div className="p-5">
@@ -704,7 +686,7 @@ function DefaultSchemaView(props: {
     items.push({
       value: 'service',
       label: 'Service',
-      icon: DiffIcon,
+      icon: FileDiffIcon,
       attrs: { 'data-testid': 'service-view-btn' },
       content:
         schemaCheck.baseline?.sdl === schemaCheck.schemaSDL ? (
@@ -764,7 +746,7 @@ function DefaultSchemaView(props: {
   items.push({
     value: 'schema',
     label: 'Public Schema',
-    icon: DiffIcon,
+    icon: FileDiffIcon,
     attrs: { 'data-testid': 'schema-view-btn' },
     disabled: !schemaCheck.compositeSchemaSDL,
     tooltip: schemaCheck.compositeSchemaSDL
@@ -809,7 +791,7 @@ function DefaultSchemaView(props: {
     items.push({
       value: 'supergraph',
       label: 'Supergraph',
-      icon: DiffIcon,
+      icon: FileDiffIcon,
       attrs: { 'data-testid': 'supergraph-view-btn' },
       disabled: !schemaCheck.supergraphSDL,
       tooltip: schemaCheck.supergraphSDL
@@ -854,7 +836,7 @@ function DefaultSchemaView(props: {
   items.push({
     value: 'policy',
     label: 'Policy',
-    icon: AlertTriangleIcon,
+    icon: TriangleAlertIcon,
     attrs: { 'data-testid': 'policy-view-btn' },
     disabled:
       !schemaCheck.schemaPolicyWarnings &&
@@ -961,7 +943,7 @@ function ContractCheckView(props: {
     {
       value: 'details',
       label: 'Details',
-      icon: ListBulletIcon,
+      icon: ListIcon,
       content: (
         <div className="p-5">
           {contractCheck.baseline?.compositionErrors?.length ? (
@@ -1013,7 +995,7 @@ function ContractCheckView(props: {
     {
       value: 'schema',
       label: 'Public Schema',
-      icon: DiffIcon,
+      icon: FileDiffIcon,
       disabled: !contractCheck.compositeSchemaSDL,
       tooltip: contractCheck.compositeSchemaSDL
         ? undefined
@@ -1058,7 +1040,7 @@ function ContractCheckView(props: {
     items.push({
       value: 'supergraph',
       label: 'Supergraph',
-      icon: DiffIcon,
+      icon: FileDiffIcon,
       disabled: !contractCheck.supergraphSDL,
       tooltip: contractCheck.supergraphSDL
         ? undefined
@@ -1325,7 +1307,7 @@ function SchemaChecksView(props: {
 }
 
 const CONTRACT_STATUS_LEGEND = [
-  { icon: <ExclamationTriangleIcon className="text-critical size-3.5" />, label: 'Failed' },
+  { icon: <TriangleAlertIcon className="text-critical size-3.5" />, label: 'Failed' },
   { icon: <GitCompareIcon className="size-3.5" />, label: 'Schema changed' },
   { icon: <CheckIcon className="text-success size-3.5" />, label: 'Passed' },
 ];
@@ -1380,19 +1362,19 @@ type CheckStatusFlags = {
 function checkStatus(check: CheckStatusFlags, changedLabel: string) {
   if (check.hasSchemaCompositionErrors) {
     return {
-      icon: <ExclamationTriangleIcon className="text-critical size-3.5" />,
+      icon: <TriangleAlertIcon className="text-critical size-3.5" />,
       label: 'Composition failed.',
     };
   }
   if (check.hasUnapprovedBreakingChanges) {
     return {
-      icon: <ExclamationTriangleIcon className="text-critical size-3.5" />,
+      icon: <TriangleAlertIcon className="text-critical size-3.5" />,
       label: 'Unapproved breaking changes!',
     };
   }
   if (check.baseline?.compositionErrors?.length) {
     return {
-      icon: <ExclamationTriangleIcon className="text-critical size-3.5" />,
+      icon: <TriangleAlertIcon className="text-critical size-3.5" />,
       label: 'Baseline composition failed.',
     };
   }

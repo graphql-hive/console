@@ -1,10 +1,10 @@
+import { HiveLogo } from '@/components/ui/brand-icon';
 import { useCallback } from 'react';
 import { LoaderCircleIcon, LogOutIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import { DottedBackground } from '@/components/ui/dotted-background';
-import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { graphql } from '@/gql';
 import { cn } from '@/lib/utils';

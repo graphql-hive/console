@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
+import { TriangleAlert } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
@@ -35,7 +36,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -645,7 +645,9 @@ function ChangesTab(props: {
           </Subtitle>
         </div>
       )}
-      {props.diffs?.map((changeProps, idx) => <DiffService key={idx} {...changeProps} />)}
+      {props.diffs?.map((changeProps, idx) => (
+        <DiffService key={idx} {...changeProps} />
+      ))}
     </>
   );
 }
@@ -657,7 +659,7 @@ function DiffService(props: { title: string; changes: Change<any>[]; error?: str
       <div className="mb-6">
         {props.error ? (
           <div className="flex items-center text-red-500">
-            <ExclamationTriangleIcon className="mr-2" />
+            <TriangleAlert className="mr-2 size-4" />
             {props.error}
           </div>
         ) : (

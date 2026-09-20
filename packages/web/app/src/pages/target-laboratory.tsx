@@ -1,7 +1,7 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GraphiQL } from 'graphiql';
 import { buildSchema } from 'graphql';
-import { EraserIcon } from 'lucide-react';
+import { EraserIcon, MaximizeIcon, MinimizeIcon, SaveIcon, ShareIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useMutation, useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
@@ -13,7 +13,6 @@ import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-moda
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
 import { Button } from '@/components/ui/button';
 import { DocsLink } from '@/components/ui/docs-note';
-import { SaveIcon, ShareIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -45,7 +44,6 @@ import {
   useEditorContext,
 } from '@graphiql/react';
 import { createGraphiQLFetcher, Fetcher, isAsyncIterable } from '@graphiql/toolkit';
-import { EnterFullScreenIcon, ExitFullScreenIcon } from '@radix-ui/react-icons';
 import { Repeater } from '@repeaterjs/repeater';
 import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
@@ -400,7 +398,7 @@ function LaboratoryPageContent(props: {
     preflight.isEnabled,
   ]);
 
-  const FullScreenIcon = isFullScreen ? ExitFullScreenIcon : EnterFullScreenIcon;
+  const FullScreenIcon = isFullScreen ? MinimizeIcon : MaximizeIcon;
 
   const handleTabChange = useCallback<Exclude<GraphiQLProviderProps['onTabChange'], undefined>>(
     ({ tabs, activeTabIndex }) => {

@@ -1,6 +1,6 @@
 import { useState, type MouseEventHandler } from 'react';
+import { Box, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ChevronDownIcon, CubeIcon } from '@radix-ui/react-icons';
 
 export enum ServiceHeadingType {
   NEW,
@@ -31,7 +31,7 @@ export function ServiceHeading(props: {
       }}
     >
       <div className="flex grow flex-row items-center">
-        <CubeIcon className="mr-2" />
+        <Box className="mr-2 size-4" />
         <span>{props.serviceName}</span>
         {props.type === ServiceHeadingType.NEW ? (
           <span className="ml-2 text-xs text-green-500">*NEW*</span>
@@ -42,7 +42,7 @@ export function ServiceHeading(props: {
       </div>
       {showToggleIcon && (
         <div className="flex">
-          <ChevronDownIcon className={cn('transition', isOpen && '-rotate-180')} />
+          <ChevronDown className={cn('size-4 transition', isOpen && '-rotate-180')} />
         </div>
       )}
     </div>

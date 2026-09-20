@@ -1,8 +1,7 @@
-import { CalendarIcon, CheckIcon, XIcon } from '@/components/ui/icon';
+import { Box, CalendarIcon, CheckIcon, Diamond, XIcon } from 'lucide-react';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
-import { ComponentNoneIcon, CubeIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
 export const ProposalOverview_ChecksFragment = graphql(/* GraphQL */ `
@@ -89,7 +88,7 @@ function CheckItem(props: {
       </div>
       <div className="min-w-[100px] truncate">
         <div className="flex items-center text-base font-semibold">
-          <CubeIcon className="mr-1 h-3" />
+          <Box className="mr-1 size-3" />
           <div className="truncate">{props.serviceName || 'single schema'}</div>
         </div>
       </div>
@@ -125,7 +124,7 @@ function SchemaCheckIcon(props: {
   }
   return (
     <div className="text-neutral-10 flex items-center">
-      <ComponentNoneIcon className="mr-2 h-4" /> NO CHANGE
+      <Diamond className="mr-2 size-4" /> NO CHANGE
     </div>
   );
 }

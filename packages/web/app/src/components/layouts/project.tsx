@@ -1,3 +1,4 @@
+import { PlusIcon } from 'lucide-react';
 import { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
@@ -20,7 +21,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
 import { HiveLink } from '../ui/hive-link';
-import { PlusIcon } from '../ui/icon';
 import { ProjectSelector } from './project-selector';
 
 export enum Page {

@@ -1,8 +1,8 @@
+import { CheckIcon, CopyIcon } from 'lucide-react';
 import { useRef, type ComponentProps, type FC } from 'react';
 import cn from 'clsx';
 import { useHover } from '@/lib/hooks/use-hover';
 import { useTimed } from '@/lib/hooks/use-timed';
-import { CheckIcon, CopyIcon } from './icon';
 
 export const Code: FC<ComponentProps<'code'>> = ({ children, className, ...props }) => {
   const [copied, startCopyTimer] = useTimed(1500);

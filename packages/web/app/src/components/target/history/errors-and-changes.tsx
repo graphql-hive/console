@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
-import { BoxIcon, CheckIcon } from 'lucide-react';
+import { ActivityIcon, BoxIcon, CheckIcon, CircleCheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { Accordion } from '@/components/base/accordion/accordion';
 import { DataTable } from '@/components/base/data-table/data-table';
@@ -13,10 +13,8 @@ import { Label, Label as LegacyLabel } from '@/components/common';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
-import { PulseIcon } from '@/components/ui/icon';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
-import { CheckCircledIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -248,7 +246,7 @@ function ChangeItem(
                   <>
                     {' '}
                     <span className="bg-neutral-5 text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
-                      <PulseIcon className="h-4 stroke-[1px]" />
+                      <ActivityIcon className="size-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}
                         {change.usageStatistics.topAffectedOperations.length > 10 ? '+' : ''}{' '}
@@ -759,7 +757,7 @@ export function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CheckCircledIcon className="h-4 w-auto text-emerald-500" />
+        <CircleCheckIcon className="size-4 text-emerald-500" />
         <h2 className="text-neutral-12 text-base font-medium">No Graph Changes</h2>
       </div>
       <p className="text-neutral-10 text-xs">There are no changes in this graph for this graph.</p>

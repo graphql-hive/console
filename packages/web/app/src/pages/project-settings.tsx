@@ -1,3 +1,4 @@
+import { HiveLogo } from '@/components/ui/brand-icon';
 import { ReactElement, useCallback, useMemo } from 'react';
 import { ArrowBigDownDashIcon, CheckIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -12,7 +13,6 @@ import { PolicySettings } from '@/components/policy/policy-settings';
 import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { Button } from '@/components/ui/button';
-import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,

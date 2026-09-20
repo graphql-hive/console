@@ -1,7 +1,7 @@
+import { CheckIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useMutation, useQuery } from 'urql';
 import { Tabs } from '@/components/base/tabs/tabs';
-import { CheckIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';

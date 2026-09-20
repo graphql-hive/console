@@ -1,16 +1,15 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import { Circle, Settings, TriangleAlertIcon, WandSparkles, XIcon } from 'lucide-react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { Button } from '@/components/ui/button';
-import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
 import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { DotFilledIcon, GearIcon, MagicWandIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import { prettier, schemaTitle } from './util';
 
@@ -289,10 +288,14 @@ export function ProposalEditor(props: {
                 label: (
                   <>
                     {isNewService ? (
-                      <DotFilledIcon className="-ml-2 size-4 text-green-600" />
+                      <Circle
+                        className="-ml-2 size-4 p-1 text-green-600"
+                        fill="currentColor"
+                        strokeWidth={0}
+                      />
                     ) : null}
                     {service.__typename === 'SingleSchema' ? 'single schema' : schemaTitle(service)}
-                    {hasNameConflict ? <AlertTriangleIcon className="size-4 text-red-600" /> : null}
+                    {hasNameConflict ? <TriangleAlertIcon className="size-4 text-red-600" /> : null}
                     {service.__typename === 'CompositeSchema' ? (
                       <span className="ml-2" onClick={() => onRemoveTab(idx)}>
                         <XIcon className={cn('size-4', !isActiveTab && 'hidden')} />
@@ -316,7 +319,7 @@ export function ProposalEditor(props: {
                           editor?.setValue(prettierSource);
                         }}
                       >
-                        <MagicWandIcon className="size-4" />
+                        <WandSparkles className="size-4" />
                       </Link>
                       {service.__typename === 'CompositeSchema' && (
                         <Popover
@@ -327,7 +330,7 @@ export function ProposalEditor(props: {
                               aria-label="Edit schema settings"
                               title="Edit schema settings"
                             >
-                              <GearIcon />
+                              <Settings className="size-4" />
                             </button>
                           }
                           align="end"

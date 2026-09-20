@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { formatISO } from 'date-fns';
+import { Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
@@ -69,7 +70,6 @@ import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckIcon } from '@radix-ui/react-icons';
 import { Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -1746,7 +1746,7 @@ function JustSavedLabel() {
 }
 
 function JustSavedIndicator() {
-  return <CheckIcon className="size-5 text-green-700 dark:text-green-500" />;
+  return <Check className="size-5 text-green-700 dark:text-green-500" />;
 }
 
 function SavedLabel() {
@@ -1759,7 +1759,7 @@ function SavedLabel() {
 }
 
 function SavedIndicator() {
-  return <CheckIcon className="text-neutral-10 size-5" />;
+  return <Check className="text-neutral-10 size-5" />;
 }
 
 function UnsavedChangesLabel() {
