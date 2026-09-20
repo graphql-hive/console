@@ -353,11 +353,20 @@ function QueryBacked(props: { name: string }) {
   );
 }
 
-/** The raised panel a dialog, sheet or card puts the form on. */
-function Raised(props: { children: ReactNode; wide?: boolean }) {
+/** The overlay widths, so a form is seen at the width it ships at. */
+const panelWidth = {
+  card: 'w-[28rem]',
+  dialog: 'w-[520px]',
+  'dialog-lg': 'w-[640px]',
+  'dialog-xl': 'w-[960px]',
+  sheet: 'w-[700px]',
+} as const;
+
+/** The raised panel a dialog, sheet or card puts the form on, at that overlay's width. */
+function Raised(props: { children: ReactNode; width: keyof typeof panelWidth }) {
   return (
     <div
-      className={`bg-neutral-3 border-neutral-5 rounded-md border p-6 ${props.wide ? 'w-[48rem]' : 'w-[28rem]'}`}
+      className={`bg-neutral-3 border-neutral-5 rounded-md border p-6 ${panelWidth[props.width]}`}
     >
       {props.children}
     </div>
@@ -387,7 +396,7 @@ function SignInExample() {
       origin="base"
       note="On the raised auth card. The reset link sits beside the password label; the submit is a slot so the page can wrap it with its last-used marker."
     >
-      <Raised>
+      <Raised width="card">
         <SignInForm
           form={form}
           onSubmit={setSubmitted}
@@ -413,7 +422,7 @@ function SignUpExample() {
   });
   return (
     <CallSite source="pages/auth-sign-up.tsx" origin="base">
-      <Raised>
+      <Raised width="card">
         <SignUpForm form={form} onSubmit={setSubmitted} submit={Submit('Create an account')} />
         <Submitted values={submitted} />
       </Raised>
@@ -441,7 +450,7 @@ function ResetPasswordExample() {
       note="Two steps on the same page: the email that gets the link, then the new password once the link is followed."
     >
       <div className="flex flex-wrap gap-8">
-        <Raised>
+        <Raised width="card">
           <ResetPasswordEmailForm
             form={emailForm}
             onSubmit={setEmail}
@@ -449,7 +458,7 @@ function ResetPasswordExample() {
           />
           <Submitted values={email} />
         </Raised>
-        <Raised>
+        <Raised width="card">
           <NewPasswordForm
             form={passwordForm}
             onSubmit={setPassword}
@@ -475,7 +484,7 @@ function SSOExample() {
       origin="base"
       note="The label carries the explanation of the slug in its tooltip."
     >
-      <Raised>
+      <Raised width="card">
         <SSOForm form={form} onSubmit={setSubmitted} submit={Submit('Sign in')} />
         <Submitted values={submitted} />
       </Raised>
@@ -507,11 +516,15 @@ function CreateOrganizationExample() {
     defaultValues: { slug: '' },
   });
   return (
-    <CallSite source="pages/organization-new.tsx" origin="base" note="On a card.">
-      <Raised>
+    <CallSite
+      source="pages/organization-new.tsx"
+      origin="base"
+      note="Centered on the page, on a card of its own; the form brings its container."
+    >
+      <div className="w-[56rem]">
         <CreateOrganizationForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
-      </Raised>
+      </div>
     </CallSite>
   );
 }
@@ -529,7 +542,7 @@ function CreateProjectExample() {
       origin="base"
       note="In a dialog. The project type is a radio group inside a group item, so its label is the legend."
     >
-      <Raised>
+      <Raised width="dialog-lg">
         <CreateProjectForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </Raised>
@@ -546,7 +559,7 @@ function CreateTargetExample() {
   });
   return (
     <CallSite source="components/layouts/project.tsx" origin="base" note="In a dialog.">
-      <Raised>
+      <Raised width="dialog">
         <CreateTargetForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </Raised>
@@ -567,7 +580,7 @@ function CollectionExample() {
       origin="base"
       note="In a dialog, submitted from the footer by the form's id."
     >
-      <Raised>
+      <Raised width="dialog-lg">
         <CollectionForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </Raised>
@@ -593,7 +606,7 @@ function OperationExample() {
       origin="base"
       note="In a dialog. Creating picks the collection too; editing passes no collections and only renames."
     >
-      <Raised>
+      <Raised width="dialog-lg">
         <OperationForm
           form={form}
           onSubmit={setSubmitted}
@@ -708,7 +721,7 @@ function UserSettingsExample() {
       origin="base"
       note="In a dialog. The page hands the form `values` so the fields fill in once the profile arrives."
     >
-      <Raised>
+      <Raised width="dialog">
         <UserSettingsForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </Raised>
@@ -734,7 +747,7 @@ function TransferOwnershipExample() {
       origin="base"
       note="In a dialog. The confirmation must match the organization slug, which the label's tooltip names."
     >
-      <Raised>
+      <Raised width="dialog-xl">
         <TransferOwnershipForm
           form={form}
           onSubmit={setSubmitted}
@@ -792,7 +805,7 @@ function InvitationExample() {
       origin="base"
       note="In a dialog. The role selector sits outside FormControl, since it is not one input."
     >
-      <Raised>
+      <Raised width="dialog-xl">
         <MemberInvitationForm
           form={form}
           onSubmit={setSubmitted}
@@ -819,7 +832,7 @@ function RoleExample() {
       origin="base"
       note="In a dialog, creating and editing alike. The fields sit beside the permission picker, which scrolls in a fixed height. The creator walks two steps, so its buttons stay plain and submit by hand."
     >
-      <Raised wide>
+      <Raised width="dialog-xl">
         <RoleForm
           form={form}
           onSubmit={setSubmitted}
@@ -871,7 +884,7 @@ function AccessTokenExample() {
       origin="base"
       note="The three sheets share one form over a stepper; the sheet submits from its footer. Both steps at once here."
     >
-      <Raised wide>
+      <Raised width="sheet">
         <Form form={form} onSubmit={() => {}}>
           <AccessTokenGeneralStep form={form} />
           <AccessTokenPermissionsStep form={form}>
@@ -905,7 +918,7 @@ function MetadataUrlExample() {
       origin="base"
       note="Fetches the provider's document and fills the endpoints of the provider form."
     >
-      <Raised>
+      <Raised width="sheet">
         <OIDCMetadataUrlForm form={form} onSubmit={setSubmitted} isPending={false} />
         <Submitted values={submitted} />
       </Raised>
@@ -947,7 +960,7 @@ function ConnectProviderExample(props: { editing: boolean }) {
           : 'The manual tab: the endpoints are typed in.'
       }
     >
-      <Raised>
+      <Raised width="sheet">
         <ConnectProviderForm
           form={form}
           onSubmit={setSubmitted}
@@ -969,7 +982,7 @@ function RegisterDomainExample() {
   });
   return (
     <CallSite source="oidc-registered-domain-sheet.tsx" origin="base">
-      <Raised>
+      <Raised width="sheet">
         <RegisterDomainForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </Raised>
@@ -1037,7 +1050,7 @@ function ChannelExample() {
       origin="base"
       note="In a dialog. Pick a type: Slack asks for a channel, the webhook kinds for an endpoint with a setup guide under it."
     >
-      <Raised>
+      <Raised width="dialog">
         <ChannelForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </Raised>
@@ -1069,7 +1082,7 @@ function AlertExample() {
       origin="base"
       note="In a dialog. The schema is built from the channels and targets the page loaded."
     >
-      <Raised>
+      <Raised width="dialog">
         <AlertForm form={form} onSubmit={setSubmitted} channels={CHANNELS} targets={TARGETS} />
         <Submitted values={submitted} />
       </Raised>
@@ -1236,7 +1249,7 @@ function ContractExample() {
       origin="base"
       note="In a dialog. The tags on the latest schema version are offered under both tag fields."
     >
-      <Raised>
+      <Raised width="dialog">
         <ContractForm
           form={form}
           onSubmit={setSubmitted}
@@ -1260,7 +1273,7 @@ function CdnTokenExample() {
       origin="base"
       note="In a dialog, submitted from the footer by the form's id."
     >
-      <Raised>
+      <Raised width="dialog-lg">
         <CdnTokenForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </Raised>
@@ -1281,7 +1294,7 @@ function RegistryTokenExample() {
       origin="base"
       note="In a dialog. The buttons stay inside the form because the e2e helper scopes the submit through it."
     >
-      <Raised>
+      <Raised width="dialog-lg">
         <RegistryTokenForm
           form={form}
           onSubmit={setSubmitted}
