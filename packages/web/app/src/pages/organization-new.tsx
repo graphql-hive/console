@@ -1,17 +1,17 @@
 import { ReactElement } from 'react';
 import { LogOutIcon } from 'lucide-react';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { z } from 'zod';
-import { Card } from '@/components/base/card/card';
-import { Input } from '@/components/base/input/input';
 import { useToast } from '@/components/base/toast/toast';
+import {
+  CreateOrganizationForm,
+  CreateOrganizationFormSchema,
+  type CreateOrganizationFormValues,
+} from '@/components/organization/create-organization-form';
 import { Button } from '@/components/ui/button';
 import { DottedBackground } from '@/components/ui/dotted-background';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
-import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -37,7 +37,7 @@ export function NewOrgPage(): ReactElement {
           <Link to="/" className="absolute left-6 top-6">
             <HiveLogo className="size-10" />
           </Link>
-          <CreateOrganizationForm />
+          <CreateOrganization />
         </div>
       </DottedBackground>
     </>
@@ -68,30 +68,20 @@ export const CreateOrganizationMutation = graphql(`
   }
 `);
 
-const formSchema = z.object({
-  slug: z
-    .string({
-      required_error: 'Organization slug is required',
-    })
-    .min(1, 'Organization slug is required')
-    .max(50, 'Slug must be less than 50 characters')
-    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers and dashes'),
-});
-
-export const CreateOrganizationForm = (): JSX.Element => {
+function CreateOrganization() {
   const [mutation, mutate] = useMutation(CreateOrganizationMutation);
   const { toast } = useToast();
   const router = useRouter();
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<CreateOrganizationFormValues>({
     mode: 'onChange',
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(CreateOrganizationFormSchema),
     defaultValues: {
       slug: '',
     },
     disabled: mutation.fetching,
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: CreateOrganizationFormValues) {
     const mutation = await mutate({
       input: {
         slug: values.slug,
@@ -126,64 +116,5 @@ export const CreateOrganizationForm = (): JSX.Element => {
       });
     }
   }
-  return <CreateOrganizationFormContent form={form} onSubmit={onSubmit} />;
-};
-
-type CreateOrganizationFormContentProps = {
-  form: UseFormReturn<z.infer<typeof formSchema>>;
-  onSubmit: (values: z.infer<typeof formSchema>) => void | Promise<void>;
-};
-
-export const CreateOrganizationFormContent = ({
-  form,
-  onSubmit,
-}: CreateOrganizationFormContentProps): JSX.Element => {
-  return (
-    <div className="container w-4/5 max-w-[520px] md:w-3/5">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="bg-neutral-1">
-          <Card
-            variants={{ onSurface: 'raised', titleSize: 'large' }}
-            title="Create an organization"
-            description={
-              <>
-                An organization is built on top of <b>Projects</b>. You will become an <b>admin</b>{' '}
-                and don't worry, you can add members later.
-              </>
-            }
-          >
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input placeholder="my-organization" onSurface="raised" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="mt-6 flex items-center">
-              <Button
-                type="submit"
-                className="w-full"
-                variant="default"
-                disabled={!form.formState.isValid}
-              >
-                {form.formState.isSubmitting ? (
-                  <>
-                    <Spinner className="text-neutral-1 size-6" />
-                    <span className="ml-4">Creating...</span>
-                  </>
-                ) : (
-                  'Create Organization'
-                )}
-              </Button>
-            </div>
-          </Card>
-        </form>
-      </Form>
-    </div>
-  );
-};
+  return <CreateOrganizationForm form={form} onSubmit={onSubmit} />;
+}
