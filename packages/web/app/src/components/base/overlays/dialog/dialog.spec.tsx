@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react';
+import { Select } from '../../floating/select/select';
 import { Dialog } from './dialog';
 
 describe('Dialog', () => {
@@ -33,6 +34,24 @@ describe('Dialog', () => {
 
     rerender(<Dialog open onOpenChange={onOpenChange} title="Rename" closeButton={false} />);
     expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+  });
+
+  it('portals popups opened inside it into a mount out of its own flow', () => {
+    render(
+      <Dialog open title="Pick">
+        <Select
+          aria-label="Kind"
+          options={[{ value: 'a', label: 'Alpha' }]}
+          value="a"
+          onValueChange={() => {}}
+        />
+      </Dialog>,
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Kind' }));
+    const mount = screen.getByRole('listbox').closest('[data-overlay-portal-mount]');
+    expect(mount).not.toBeNull();
+    expect(mount!.parentElement).toBe(screen.getByRole('dialog'));
+    expect(mount!.className).toContain('absolute');
   });
 
   it('renders nothing until opened, and opens from its trigger', () => {

@@ -9,6 +9,7 @@ import {
   OverlayCloseButton,
   OverlayFooter,
   OverlayHeader,
+  OverlayPortalMount,
   popupSurfaceClass,
 } from '../overlay-parts';
 
@@ -69,8 +70,8 @@ export function Sheet({
   dismissible = true,
   attrs,
 }: SheetProps) {
-  // See Dialog: base menus and selects inside the sheet render their popups into it.
-  const [popup, setPopup] = useState<HTMLElement | null>(null);
+  // See Dialog: base menus, selects and tooltips inside the sheet render their popups into it.
+  const [portalMount, setPortalMount] = useState<HTMLElement | null>(null);
 
   return (
     <BaseDialog.Root
@@ -83,8 +84,8 @@ export function Sheet({
       {trigger ? <BaseDialog.Trigger render={trigger as ReactElement} /> : null}
       <BaseDialog.Portal>
         <BaseDialog.Backdrop className={backdropClass} />
-        <BaseDialog.Popup ref={setPopup} className={cn(popupClass, widthClass[width])} {...attrs}>
-          <FloatingPortalContainerProvider container={popup}>
+        <BaseDialog.Popup className={cn(popupClass, widthClass[width])} {...attrs}>
+          <FloatingPortalContainerProvider container={portalMount}>
             <OverlayHeader title={title} description={description} clearCloseButton={closeButton} />
             {children != null ? (
               <OverlayBody padding={padding} padBottom={footer == null && padding === 'default'}>
@@ -94,6 +95,7 @@ export function Sheet({
             {footer != null ? <OverlayFooter>{footer}</OverlayFooter> : null}
             {closeButton ? <OverlayCloseButton /> : null}
           </FloatingPortalContainerProvider>
+          <OverlayPortalMount mountRef={setPortalMount} />
         </BaseDialog.Popup>
       </BaseDialog.Portal>
     </BaseDialog.Root>
