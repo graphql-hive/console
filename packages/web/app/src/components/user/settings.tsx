@@ -5,7 +5,7 @@ import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '../ui/button';
+import { Button } from '@/components/base/button/button';
 import {
   USER_SETTINGS_FORM_ID,
   UserSettingsForm,
@@ -103,7 +103,12 @@ export function UserSettingsModal({
       onOpenChangeComplete={onOpenChangeComplete}
       title="Profile settings"
       footer={
-        <Button type="submit" form={USER_SETTINGS_FORM_ID} disabled={form.formState.isSubmitting}>
+        <Button
+          type="submit"
+          form={USER_SETTINGS_FORM_ID}
+          onSurface="raised"
+          disabled={form.formState.isSubmitting}
+        >
           Save Changes
         </Button>
       }

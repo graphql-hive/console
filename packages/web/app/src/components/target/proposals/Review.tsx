@@ -3,7 +3,7 @@ import { Fragment, ReactElement, useContext } from 'react';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
-import { Button } from '../../ui/button';
+import { Button } from '@/components/base/button/button';
 import { AnnotatedContext } from './schema-diff/components';
 
 export const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `
@@ -43,11 +43,11 @@ export function ReviewComments(props: {
       </div>
       {/* @todo check if able to reply */}
       <div className="mb-6 ml-6 mt-3 flex gap-4 font-sans">
-        <Button variant="outline" type="button" className="px-4">
+        <Button variant="outline" type="button">
           <PlusIcon size={16} className="mr-1" />
           Reply
         </Button>
-        <Button variant="outline" type="button" className="px-4">
+        <Button variant="outline" type="button">
           <CheckIcon size={16} className="mr-1" />
           Resolve
         </Button>

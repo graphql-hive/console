@@ -140,7 +140,7 @@ import {
   RegistryTokenFormSchema,
   type RegistryTokenFormValues,
 } from '@/components/target/settings/registry-token-form';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import {
   UserSettingsForm,
   UserSettingsFormSchema,
@@ -374,7 +374,7 @@ function Raised(props: { children: ReactNode; width: keyof typeof panelWidth }) 
 }
 
 const Submit = (label: string) => (
-  <Button type="submit" className="w-full">
+  <Button type="submit" width="full" onSurface="raised">
     {label}
   </Button>
 );
@@ -841,7 +841,9 @@ function RoleExample() {
               <Button type="button" variant="ghost">
                 Cancel
               </Button>
-              <Button type="submit">Confirm selection</Button>
+              <Button type="submit" onSurface="raised">
+                Confirm selection
+              </Button>
             </>
           }
         >

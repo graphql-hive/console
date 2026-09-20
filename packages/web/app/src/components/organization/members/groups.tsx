@@ -11,11 +11,11 @@ import {
 import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/base/button/button';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { graphql, useFragment, type FragmentType } from '@/gql';
@@ -326,8 +326,6 @@ function GroupRow(props: GroupRowProps): ReactNode {
                             confirm={{
                               label: 'Delete',
                               variant: 'destructive',
-                              // Closes first, as the Radix action did, and the toast reports the
-                              // outcome.
                               onClick: async () => {
                                 setSheetNode(null);
                                 try {

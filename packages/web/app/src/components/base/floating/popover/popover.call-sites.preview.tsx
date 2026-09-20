@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Check, ChevronDownIcon, ChevronsUpDown, ChevronUpIcon, X } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
-import { Button as BaseButton } from '@/components/base/button/button';
 import { Input } from '@/components/base/input/input';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { DateRangePicker, presetLast7Days, type Preset } from '@/components/ui/date-range-picker';
 import { cn } from '@/lib/utils';
 import { Menu } from '../menu/menu';
@@ -247,7 +246,7 @@ export const SimpleContent = createPreview({
       >
         <Popover
           trigger={
-            <Button variant="link" className="h-auto p-0">
+            <Button variant="link">
               12 operations
             </Button>
           }
@@ -279,7 +278,7 @@ export const SimpleContent = createPreview({
       >
         <Popover
           trigger={
-            <Button variant="link" className="p-0">
+            <Button variant="link">
               4 more
             </Button>
           }
@@ -326,12 +325,12 @@ export const Changelog = createPreview({
     >
       <Popover
         trigger={
-          <Button variant="outline" className="relative text-sm">
-            Latest changes
-            <div className="absolute right-0 top-0 -mr-1 -mt-1 flex size-2">
-              <div className="bg-accent absolute inline-flex size-full animate-pulse rounded-full" />
-            </div>
-          </Button>
+          <span className="relative inline-flex">
+            <Button variant="outline">Latest changes</Button>
+            <span className="absolute right-0 top-0 -mr-1 -mt-1 flex size-2">
+              <span className="bg-accent absolute inline-flex size-full animate-pulse rounded-full" />
+            </span>
+          </span>
         }
         width="xl"
         padding="none"
@@ -366,8 +365,8 @@ export const Changelog = createPreview({
               </ol>
             </div>
             <div className="flex flex-row items-center justify-center">
-              <Button variant="link" asChild className="text-neutral-11 text-left text-sm">
-                <a href="#">View all updates</a>
+              <Button variant="link" render={<a href="#" />}>
+                View all updates
               </Button>
             </div>
           </>
@@ -392,7 +391,7 @@ function StageFilter() {
   return (
     <Menu
       trigger={
-        <BaseButton
+        <Button
           variant="ghost"
           label={hasSelection ? selectedStages.join(', ') : 'Stage'}
           rightIcon={{ icon: ChevronsUpDown, withSeparator: false }}
@@ -505,7 +504,7 @@ function StageTransitionSelect() {
   return (
     <Menu
       trigger={
-        <BaseButton
+        <Button
           variant="outline"
           label={STAGE_TITLES[stage]}
           rightIcon={{ icon: ChevronsUpDown, withSeparator: false }}
@@ -625,7 +624,7 @@ function TagPicker(props: { label: string }) {
                 }
               }}
             />
-            <Button type="button" onClick={add} disabled={value === ''}>
+            <Button type="button" onSurface="raised" onClick={add} disabled={value === ''}>
               Add
             </Button>
           </div>

@@ -4,7 +4,7 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { CallSite } from '@/components/inventory/shared';
 import { AccessTokenCreatedDialog } from '@/components/organization/settings/access-tokens/access-token-created-dialog';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Callout } from '@/components/ui/callout';
 import { Switch } from '../../switch/switch';
 import { AlertDialog } from './alert-dialog';
@@ -89,7 +89,7 @@ function ScimMatchedExample() {
         open={open}
         onOpenChange={setOpen}
         trigger={
-          <Button type="button" size="xs" variant="orangeLink">
+          <Button type="button" variant="link">
             <TriangleAlert className="mr-1 size-3" />
             SCIM matched this existing account
           </Button>

@@ -3,7 +3,7 @@ import { MoveDownIcon, SearchIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Input } from '@/components/base/input/input';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Select } from '../floating/select/select';
 import { Separator } from './separator';
 
@@ -72,9 +72,7 @@ function ListToolbar() {
       </div>
       <Separator orientation="vertical" />
       <Select options={SORT_OPTIONS} value={sortBy} onValueChange={setSortBy} />
-      <Button className="size-9 shrink-0" variant="outline" size="icon">
-        <MoveDownIcon className="size-4" />
-      </Button>
+      <Button variant="outline" layout="iconOnly" icon={MoveDownIcon} aria-label="Sort ascending" />
     </div>
   );
 }
