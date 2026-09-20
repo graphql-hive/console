@@ -11,7 +11,7 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Label, Label as LegacyLabel } from '@/components/common';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Heading } from '@/components/ui/heading';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
@@ -560,7 +560,7 @@ function AffectedAppDeploymentsPanel(props: {
             value={
               <Popover
                 trigger={
-                  <Button variant="link" className="h-auto p-0">
+                  <Button variant="link">
                     {deployment.totalAffectedOperations}{' '}
                     {deployment.totalAffectedOperations === 1 ? 'operation' : 'operations'}
                   </Button>

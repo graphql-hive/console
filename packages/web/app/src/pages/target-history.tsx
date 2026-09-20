@@ -4,7 +4,7 @@ import { useQuery } from 'urql';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';

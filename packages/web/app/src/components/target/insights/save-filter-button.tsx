@@ -6,7 +6,6 @@ import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { useToast } from '@/components/base/toast/toast';
 import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
-import { Button } from '@/components/ui/button';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { UpdateFilterButton } from './update-filter-button';
@@ -216,14 +215,14 @@ function CreateFilterButton({
               width="full"
             />
           </div>
-          <Button
+          <BaseButton
             variant="primary"
-            className="w-full"
+            width="full"
             onClick={() => void handleSave()}
             disabled={!name.trim() || createResult.fetching}
           >
             Save filter
-          </Button>
+          </BaseButton>
         </div>
       }
     />
