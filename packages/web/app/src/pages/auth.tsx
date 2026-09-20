@@ -1,6 +1,6 @@
-import { GitHubIcon, HiveLogo } from '@/components/ui/brand-icon';
 import { BookIcon } from 'lucide-react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
+import { GitHubIcon, HiveLogo } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { Link, Outlet } from '@tanstack/react-router';
 

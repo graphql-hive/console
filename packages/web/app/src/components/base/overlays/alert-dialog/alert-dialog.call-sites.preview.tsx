@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Button } from '@/components/base/button/button';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { CallSite } from '@/components/inventory/shared';
 import { AccessTokenCreatedDialog } from '@/components/organization/settings/access-tokens/access-token-created-dialog';
-import { Button } from '@/components/base/button/button';
 import { Callout } from '@/components/ui/callout';
 import { Switch } from '../../switch/switch';
 import { AlertDialog } from './alert-dialog';

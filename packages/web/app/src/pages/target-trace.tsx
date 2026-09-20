@@ -22,6 +22,7 @@ import {
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
@@ -29,7 +30,6 @@ import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/base/button/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';

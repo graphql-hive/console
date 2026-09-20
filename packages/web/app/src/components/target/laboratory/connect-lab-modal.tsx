@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/base/button/button';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Callout } from '@/components/ui/callout';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link } from '@/components/ui/link';

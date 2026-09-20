@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { useForm } from 'react-hook-form';
+import { Button } from '@/components/base/button/button';
 import { CallSite } from '@/components/inventory/shared';
 import {
   NEW_TICKET_FORM_ID,
@@ -18,7 +19,6 @@ import {
   NewTicketFormSchema,
   type NewTicketFormValues,
 } from '@/components/organization/new-ticket-form';
-import { Button } from '@/components/base/button/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Heading } from '@/components/ui/heading';
 import { SupportTicketPriority } from '@/gql/graphql';

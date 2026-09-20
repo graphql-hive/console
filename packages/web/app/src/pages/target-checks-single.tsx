@@ -1,7 +1,22 @@
 import { Fragment, ReactElement, ReactNode, useCallback, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { ArrowRight, BadgeCheck, CheckIcon, ChevronDown, ChevronUp, CircleQuestionMarkIcon, FileDiffIcon, GitCompareIcon, InfoIcon, ListIcon, Loader2, ShieldAlertIcon, TriangleAlertIcon } from 'lucide-react';
+import {
+  ArrowRight,
+  BadgeCheck,
+  CheckIcon,
+  ChevronDown,
+  ChevronUp,
+  CircleQuestionMarkIcon,
+  FileDiffIcon,
+  GitCompareIcon,
+  InfoIcon,
+  ListIcon,
+  Loader2,
+  ShieldAlertIcon,
+  TriangleAlertIcon,
+} from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { FailureCard, formatCount } from '@/components/base/failure-card/failure-card';
 import { Popover } from '@/components/base/floating/popover/popover';
@@ -20,7 +35,6 @@ import {
   labelize,
   NoGraphChanges,
 } from '@/components/target/history/errors-and-changes';
-import { Button } from '@/components/base/button/button';
 import { CopyText } from '@/components/ui/copy-text';
 import { File } from '@/components/ui/diffs';
 import { DocsLink } from '@/components/ui/docs-note';
@@ -472,11 +486,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
             ))}
             {' and '}
             <Popover
-              trigger={
-                <Button variant="link">
-                  {excludedTargets.length} more
-                </Button>
-              }
+              trigger={<Button variant="link">{excludedTargets.length} more</Button>}
               content={
                 <div className="p-2">
                   <h4 className="text-neutral-12 mb-2 text-sm font-semibold">All Targets</h4>

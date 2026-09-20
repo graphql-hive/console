@@ -11,13 +11,13 @@ import {
 import debounce from 'lodash.debounce';
 import { CircleXIcon, PlusIcon } from 'lucide-react';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Collapsible } from '@/components/base/collapsible/collapsible';
 import { Input } from '@/components/base/input/input';
 import { Separator } from '@/components/base/separator/separator';
 import { focusRing } from '@/components/base/shared-styles';
 import { Slider } from '@/components/base/slider/slider';
-import { Button } from '@/components/base/button/button';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 

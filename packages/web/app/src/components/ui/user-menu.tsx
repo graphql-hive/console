@@ -1,13 +1,24 @@
-import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { useState } from 'react';
 import cookies from 'js-cookie';
-import { CalendarIcon, FileTextIcon, LayoutGridIcon, LifeBuoyIcon, LogOutIcon, PlusIcon, SettingsIcon, TrendingUpIcon, TriangleAlertIcon, UserRoundMinus } from 'lucide-react';
+import {
+  CalendarIcon,
+  FileTextIcon,
+  LayoutGridIcon,
+  LifeBuoyIcon,
+  LogOutIcon,
+  PlusIcon,
+  SettingsIcon,
+  TrendingUpIcon,
+  TriangleAlertIcon,
+  UserRoundMinus,
+} from 'lucide-react';
 import { useMutation } from 'urql';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { useThemeMenuEntry } from '@/components/theme/theme-switcher';
+import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';

@@ -2,6 +2,7 @@ import { useId, useRef, useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { itemVariants } from '@/components/base/floating/shared-styles';
@@ -15,7 +16,6 @@ import {
 } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
 import { Label } from '@/components/base/label/label';
-import { Button } from '@/components/base/button/button';
 import { cn } from '@/lib/utils';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */

@@ -1,6 +1,6 @@
-import { CheckIcon, CopyIcon } from 'lucide-react';
 import { useRef, type ComponentProps, type FC } from 'react';
 import cn from 'clsx';
+import { CheckIcon, CopyIcon } from 'lucide-react';
 import { useHover } from '@/lib/hooks/use-hover';
 import { useTimed } from '@/lib/hooks/use-timed';
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useClient } from 'urql';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/base/button/button';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { VirtualLogList } from '@/components/ui/virtual-log-list';
 import { DocumentType, graphql } from '@/gql';
 

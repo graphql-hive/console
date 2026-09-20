@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { RefreshCcwIcon } from 'lucide-react';
 import { CombinedError } from 'urql';
-import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/base/button/button';
+import { useToast } from '@/components/base/toast/toast';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
