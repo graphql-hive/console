@@ -1,6 +1,8 @@
 import { forwardRef, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useRender } from '@base-ui/react/use-render';
 import {
   controlOnSurface,
   controlSize,
@@ -40,6 +42,8 @@ export const buttonVariants = cva(
         destructive: [
           'bg-critical_08 border-critical_30 text-critical_80 hover:bg-critical_10 hover:border-critical hover:text-critical',
         ],
+        // Text that acts: accent, underlined on hover, no box. Sits inline with the copy around it.
+        link: 'text-accent underline-offset-4 hover:underline',
       },
       size: {
         compact: controlSize.compact,
@@ -78,6 +82,8 @@ export const buttonVariants = cva(
       // A plain button centres its content when stretched; a segmented one keeps the label at the
       // leading edge and its icon at the trailing edge (the label segment grows to push it there).
       { layout: 'children', width: 'full', class: 'justify-center' },
+      // Last, so it wins over the size and padding above once the classes are merged.
+      { variant: 'link', class: 'h-auto rounded-none border-0 bg-transparent p-0' },
     ],
     defaultVariants: {
       variant: 'default',
@@ -92,7 +98,14 @@ export const buttonVariants = cva(
 // `layout` is a cva variant so padding can key on it, but as a prop it is the discriminant of
 // the union below, so the union defines it rather than cva.
 type CommonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'style'> &
-  Omit<VariantProps<typeof buttonVariants>, 'layout'> & { 'data-cy'?: string };
+  Omit<VariantProps<typeof buttonVariants>, 'layout'> & {
+    'data-cy'?: string;
+    /**
+     * The element to render instead of a `<button>`, for a button that navigates: a router
+     * `<Link>` or an anchor. It gets the button's classes, ref and handlers merged onto its own.
+     */
+    render?: useRender.RenderProp;
+  };
 
 /** Simple button with children content */
 type ChildrenLayout = CommonProps & {
@@ -144,7 +157,7 @@ type ButtonProps = ChildrenLayout | LabelLayout | IconOnlyLayout;
  * which passes a ref to the trigger element.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(props, ref) {
-  const { variant, size, width, onSurface, disabled, ...rest } = props;
+  const { variant, size, width, onSurface, disabled, render, ...rest } = props;
 
   // Remove custom props so they don't get spread onto the DOM element
   const domProps = rest as Record<string, unknown>;
@@ -158,68 +171,70 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   const layout =
     props.layout === 'iconOnly' ? 'iconOnly' : props.label != null ? 'label' : 'children';
 
-  return (
-    <button
-      ref={ref}
-      className={buttonVariants({ variant, size, layout, width, onSurface })}
-      disabled={disabled}
-      style={disabled ? disabledStyle : undefined}
-      {...domProps}
-    >
-      {props.layout === 'iconOnly' ? (
-        <span className="flex items-center p-1.5">
-          <props.icon className="size-4" />
-        </span>
-      ) : props.label != null ? (
-        <>
-          <span className="flex grow items-center self-stretch px-3">{props.label}</span>
+  return useRender({
+    render,
+    ref,
+    defaultTagName: 'button',
+    props: {
+      className: cn(buttonVariants({ variant, size, layout, width, onSurface })),
+      disabled,
+      style: disabled ? disabledStyle : undefined,
+      ...domProps,
+      children:
+        props.layout === 'iconOnly' ? (
+          <span className="flex items-center p-1.5">
+            <props.icon className="size-4" />
+          </span>
+        ) : props.label != null ? (
+          <>
+            <span className="flex grow items-center self-stretch px-3">{props.label}</span>
 
-          {props.accessoryInformation != null && (
-            <span className={`${segmentSeparator} flex items-center self-stretch px-3`}>
-              {props.accessoryInformation}
-            </span>
-          )}
-          {props.rightIcon && (
-            <span
-              role={props.rightIcon.action ? 'button' : undefined}
-              tabIndex={props.rightIcon.action ? 0 : undefined}
-              aria-label={props.rightIcon.label ?? undefined}
-              onPointerDown={
-                props.rightIcon.action
-                  ? e => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }
-                  : undefined
-              }
-              onClick={
-                props.rightIcon.action
-                  ? e => {
-                      e.stopPropagation();
-                      props.rightIcon!.action!();
-                    }
-                  : undefined
-              }
-              onKeyDown={
-                props.rightIcon.action
-                  ? e => {
-                      if (e.key === 'Enter' || e.key === ' ') {
+            {props.accessoryInformation != null && (
+              <span className={`${segmentSeparator} flex items-center self-stretch px-3`}>
+                {props.accessoryInformation}
+              </span>
+            )}
+            {props.rightIcon && (
+              <span
+                role={props.rightIcon.action ? 'button' : undefined}
+                tabIndex={props.rightIcon.action ? 0 : undefined}
+                aria-label={props.rightIcon.label ?? undefined}
+                onPointerDown={
+                  props.rightIcon.action
+                    ? e => {
                         e.stopPropagation();
                         e.preventDefault();
+                      }
+                    : undefined
+                }
+                onClick={
+                  props.rightIcon.action
+                    ? e => {
+                        e.stopPropagation();
                         props.rightIcon!.action!();
                       }
-                    }
-                  : undefined
-              }
-              className={`${props.rightIcon.withSeparator && segmentSeparator} text-neutral-8 ${props.rightIcon.action ? 'hover:text-neutral-11' : 'group-hover:text-neutral-12'} flex items-center self-stretch px-2`}
-            >
-              <props.rightIcon.icon className="size-3" />
-            </span>
-          )}
-        </>
-      ) : (
-        props.children
-      )}
-    </button>
-  );
+                    : undefined
+                }
+                onKeyDown={
+                  props.rightIcon.action
+                    ? e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          props.rightIcon!.action!();
+                        }
+                      }
+                    : undefined
+                }
+                className={`${props.rightIcon.withSeparator && segmentSeparator} text-neutral-8 ${props.rightIcon.action ? 'hover:text-neutral-11' : 'group-hover:text-neutral-12'} flex items-center self-stretch px-2`}
+              >
+                <props.rightIcon.icon className="size-3" />
+              </span>
+            )}
+          </>
+        ) : (
+          props.children
+        ),
+    },
+  });
 });
