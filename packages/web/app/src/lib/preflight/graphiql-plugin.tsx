@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react';
 import { clsx } from 'clsx';
-import { PowerIcon } from 'lucide-react';
+import { InfoIcon, PencilIcon, PlayIcon, PowerIcon, XIcon } from 'lucide-react';
 import type { editor } from 'monaco-editor';
 import { useMutation } from 'urql';
 import { z } from 'zod';
@@ -24,7 +24,6 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLocalStorage, useLocalStorageJson, useToggle } from '@/lib/hooks';
 import { GraphiQLPlugin } from '@graphiql/react';
 import { Editor as MonacoEditor, OnMount, type Monaco } from '@monaco-editor/react';
-import { Cross2Icon, InfoCircledIcon, Pencil1Icon, TriangleRightIcon } from '@radix-ui/react-icons';
 import { captureException } from '@sentry/react';
 import { useParams } from '@tanstack/react-router';
 import { Kit } from '../kit';
@@ -553,7 +552,7 @@ function PreflightContent() {
             onClick={toggleShowModal}
             data-cy="preflight-modal-button"
           >
-            <Pencil1Icon className="shrink-0" />
+            <PencilIcon className="size-4 shrink-0" />
             Edit
           </Button>
         )}
@@ -732,7 +731,7 @@ function PreflightModal({
       footer={
         <>
           <p className="text-neutral-11 me-auto flex items-center gap-2 text-sm">
-            <InfoCircledIcon />
+            <InfoIcon className="size-4 shrink-0" />
             Changes made to this Preflight Script will apply to all users on your team using this
             target.
           </p>
@@ -774,13 +773,13 @@ function PreflightModal({
             >
               {state === PreflightWorkerState.running && (
                 <>
-                  <Cross2Icon className="shrink-0" />
+                  <XIcon className="size-4 shrink-0" />
                   Stop Script
                 </>
               )}
               {state === PreflightWorkerState.ready && (
                 <>
-                  <TriangleRightIcon className="shrink-0" />
+                  <PlayIcon className="size-4 shrink-0" />
                   Run Script
                 </>
               )}
@@ -810,7 +809,7 @@ function PreflightModal({
               onClick={clearLogs}
               disabled={state === PreflightWorkerState.running}
             >
-              <Cross2Icon className="shrink-0" height="12" />
+              <XIcon className="size-3 shrink-0" />
               Clear Output
             </Button>
           </div>

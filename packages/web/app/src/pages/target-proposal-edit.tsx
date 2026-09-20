@@ -1,3 +1,4 @@
+import { SaveIcon } from 'lucide-react';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { ProposalEditor, ServiceTab } from '@/components/target/proposals/editor';
 import {
@@ -5,7 +6,6 @@ import {
   SaveProposalModal,
 } from '@/components/target/proposals/save-proposal-modal';
 import { Button } from '@/components/ui/button';
-import { SaveIcon } from '@/components/ui/icon';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 

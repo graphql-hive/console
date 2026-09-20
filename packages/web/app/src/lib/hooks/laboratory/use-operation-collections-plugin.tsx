@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { FolderIcon, FolderOpenIcon, SquareTerminalIcon } from 'lucide-react';
+import { BookmarkIcon, EllipsisIcon, FolderIcon, FolderOpenIcon, PlusIcon, SquareTerminalIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Accordion } from '@/components/base/accordion/accordion';
 import { Menu } from '@/components/base/floating/menu/menu';
@@ -11,7 +11,6 @@ import { DeleteCollectionModal } from '@/components/target/laboratory/delete-col
 import { DeleteOperationModal } from '@/components/target/laboratory/delete-operation-modal';
 import { EditOperationModal } from '@/components/target/laboratory/edit-operation-modal';
 import { Button } from '@/components/ui/button';
-import { PlusIcon } from '@/components/ui/icon';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
@@ -19,7 +18,6 @@ import { useClipboard, useToggle } from '@/lib/hooks';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { cn } from '@/lib/utils';
 import { GraphiQLPlugin, useEditorContext, usePluginContext } from '@graphiql/react';
-import { BookmarkFilledIcon, BookmarkIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { useParams, useRouter } from '@tanstack/react-router';
 import { useCollections } from './use-collections';
 import { useCurrentOperation } from './use-current-operation';
@@ -100,11 +98,8 @@ export const operationCollectionsPlugin: GraphiQLPlugin = {
   content: Content,
   icon: function Icon() {
     const pluginContext = usePluginContext();
-    const IconToUse =
-      pluginContext?.visiblePlugin === operationCollectionsPlugin
-        ? BookmarkFilledIcon
-        : BookmarkIcon;
-    return <IconToUse />;
+    const active = pluginContext?.visiblePlugin === operationCollectionsPlugin;
+    return <BookmarkIcon fill={active ? 'currentColor' : 'none'} />;
   },
 };
 
@@ -320,7 +315,7 @@ export function Content() {
             className="graphiql-toolbar-button"
             data-cy="collection-menu-trigger"
           >
-            <DotsHorizontalIcon />
+            <EllipsisIcon className="size-4" />
           </button>
         }
         sections={[
@@ -391,7 +386,7 @@ export function Content() {
                     type="button"
                     className="graphiql-toolbar-button text-neutral-12 opacity-0 transition-opacity [div:hover>&]:opacity-100"
                   >
-                    <DotsHorizontalIcon />
+                    <EllipsisIcon className="size-4" />
                   </button>
                 }
                 sections={[
@@ -488,7 +483,7 @@ export function Content() {
       ) : (
         <div className="flex h-fit flex-1 items-center justify-center">
           <div className="flex flex-col items-center">
-            <BookmarkIcon width={30} height={30} />
+            <BookmarkIcon size={30} />
             <div className="mt-2 text-xs">There are no collections available.</div>
             {canEdit && (
               <Button

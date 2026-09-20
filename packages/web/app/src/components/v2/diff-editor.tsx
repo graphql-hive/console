@@ -1,4 +1,5 @@
 import { ReactElement, useLayoutEffect, useRef, useState } from 'react';
+import { ArrowDown, ArrowUp, Download } from 'lucide-react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Label } from '@/components/base/label/label';
@@ -7,7 +8,6 @@ import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
 import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
 import type { Monaco, MonacoDiffEditor as OriginalMonacoDiffEditor } from '@monaco-editor/react';
-import { ArrowDownIcon, ArrowUpIcon, DownloadIcon } from '@radix-ui/react-icons';
 import { Spinner } from '../ui/spinner';
 
 export const DiffEditor = (props: {
@@ -89,7 +89,7 @@ export const DiffEditor = (props: {
                     size="icon-sm"
                     onClick={() => editorRef.current?.goToDiff('previous')}
                   >
-                    <ArrowUpIcon />
+                    <ArrowUp className="size-4" />
                   </Button>
                 }
                 content="Previous change"
@@ -101,7 +101,7 @@ export const DiffEditor = (props: {
                     size="icon-sm"
                     onClick={() => editorRef.current?.goToDiff('next')}
                   >
-                    <ArrowDownIcon />
+                    <ArrowDown className="size-4" />
                   </Button>
                 }
                 content="Next change"
@@ -188,7 +188,7 @@ export function DownloadButton(props: { contents: string; fileName: string }) {
           }}
           className="mr-2 text-xs font-normal"
         >
-          <DownloadIcon className="mr-2" /> Download
+          <Download className="mr-2 size-4" /> Download
         </Button>
       }
       content={`Download ${props.fileName}`}

@@ -1,10 +1,9 @@
-import { LinkIcon, PlusIcon } from 'lucide-react';
+import { GraphQLIcon } from '@/components/ui/brand-icon';
+import { ChartPieIcon, FileDiffIcon, LinkIcon, ListIcon, PencilIcon, PlusIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { SecondaryNavigation as SecondaryNavigationBar } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
-import { DiffIcon, EditIcon, GraphQLIcon } from '@/components/ui/icon';
-import { ListBulletIcon, PieChartIcon } from '@radix-ui/react-icons';
 import { SecondaryNavigation, type SecondaryNavigationItem } from './secondary-navigation';
 
 export const nav: NavPath = 'Base/Navigation/SecondaryNavigation/Component Examples';
@@ -157,11 +156,11 @@ export const Bars = createPreview({
 });
 
 const PROPOSAL_SECTIONS: SecondaryNavigationItem[] = [
-  { value: 'details', label: 'Details', icon: ListBulletIcon },
-  { value: 'schema', label: 'Schema', icon: DiffIcon },
+  { value: 'details', label: 'Details', icon: ListIcon },
+  { value: 'schema', label: 'Schema', icon: FileDiffIcon },
   { value: 'supergraph', label: 'Supergraph Preview', icon: GraphQLIcon },
-  { value: 'checks', label: 'Checks', icon: PieChartIcon },
-  { value: 'edit', label: 'Edit', icon: EditIcon },
+  { value: 'checks', label: 'Checks', icon: ChartPieIcon },
+  { value: 'edit', label: 'Edit', icon: PencilIcon },
 ].map(item => ({ ...item, to: '/$organizationSlug/$projectSlug/$targetSlug', params: TARGET }));
 
 export const ProposalSections = createPreview({

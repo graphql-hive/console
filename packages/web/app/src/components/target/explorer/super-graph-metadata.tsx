@@ -1,11 +1,10 @@
 import { Fragment, useMemo } from 'react';
+import { Layers as MetadataIcon, PackageIcon } from 'lucide-react';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useTheme } from '@/components/theme/theme-provider';
-import { PackageIcon } from '@/components/ui/icon';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { LayersIcon as MetadataIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
 function stringToHue(str: string) {
@@ -31,7 +30,7 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
     <Popover
       trigger={
         <button type="button" aria-label="Supergraph metadata" className="my-[5px]">
-          <MetadataIcon className="text-neutral-12" />
+          <MetadataIcon className="text-neutral-12 size-4" />
         </button>
       }
       openOnHover

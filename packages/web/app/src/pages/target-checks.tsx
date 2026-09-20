@@ -1,4 +1,5 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ExternalLink } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Label } from '@/components/base/label/label';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
@@ -16,7 +17,6 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { ExternalLinkIcon } from '@radix-ui/react-icons';
 import {
   Outlet,
   Link as RouterLink,
@@ -176,7 +176,7 @@ const Navigation = (
               rel="noreferrer"
               href={`https://github.com/${edge.node.githubRepository}/commit/${edge.node.meta.commit}`}
             >
-              <ExternalLinkIcon className="inline" /> associated with Git commit
+              <ExternalLink className="inline size-4" /> associated with Git commit
             </a>
           ) : null}
         </div>

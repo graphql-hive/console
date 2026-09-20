@@ -1,8 +1,8 @@
+import { KeyIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useMutation, useQuery } from 'urql';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
-import { KeyIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { graphql } from '@/gql';

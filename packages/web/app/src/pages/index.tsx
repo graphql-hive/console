@@ -1,6 +1,6 @@
+import { HiveLogo } from '@/components/ui/brand-icon';
 import { useEffect } from 'react';
 import { useQuery } from 'urql';
-import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';

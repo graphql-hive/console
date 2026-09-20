@@ -1,3 +1,4 @@
+import { HiveLogo } from '@/components/ui/brand-icon';
 import { ReactElement } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -10,7 +11,6 @@ import {
 } from '@/components/organization/create-organization-form';
 import { Button } from '@/components/ui/button';
 import { DottedBackground } from '@/components/ui/dotted-background';
-import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';

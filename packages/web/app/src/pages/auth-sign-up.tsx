@@ -1,7 +1,7 @@
+import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
 import { useCallback, useEffect } from 'react';
+import { CircleUserRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { FaRegUserCircle } from 'react-icons/fa';
-import { SiGithub, SiGoogle, SiOkta } from 'react-icons/si';
 import { sendVerificationEmail } from 'supertokens-auth-react/recipe/emailverification';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { emailPasswordSignUp } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
@@ -201,7 +201,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('google')}
                       disabled={isPending}
                     >
-                      <SiGoogle className="mr-4 size-4" /> Sign up with Google
+                      <GoogleIcon className="mr-4 size-4" /> Sign up with Google
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -213,7 +213,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('github')}
                       disabled={isPending}
                     >
-                      <SiGithub className="mr-4 size-4" /> Sign up with Github
+                      <GitHubIcon className="mr-4 size-4" /> Sign up with Github
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -225,7 +225,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('okta')}
                       disabled={isPending}
                     >
-                      <SiOkta className="mr-4 size-4" /> Sign up with Okta
+                      <OktaIcon className="mr-4 size-4" /> Sign up with Okta
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -238,7 +238,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                           redirectToPath: props.redirectToPath,
                         }}
                       >
-                        <FaRegUserCircle className="mr-4 size-4" /> Sign up with SSO
+                        <CircleUserRound className="mr-4 size-4" /> Sign up with SSO
                       </Link>
                     </Button>
                   </SignInButton>

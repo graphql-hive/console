@@ -1,3 +1,4 @@
+import { HiveLogo } from '@/components/ui/brand-icon';
 import { useCallback, useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { SessionAuth, useSessionContext } from 'supertokens-auth-react/recipe/session';
@@ -6,7 +7,6 @@ import { Card } from '@/components/base/card/card';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import { DottedBackground } from '@/components/ui/dotted-background';
-import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Spinner } from '@/components/ui/spinner';
 import { DataWrapper } from '@/components/v2/data-wrapper';

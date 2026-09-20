@@ -1,3 +1,4 @@
+import { GitHubIcon, SlackIcon } from '@/components/ui/brand-icon';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
@@ -19,7 +20,6 @@ import { PersonalAccessTokensSubPage } from '@/components/organization/settings/
 import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
-import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,

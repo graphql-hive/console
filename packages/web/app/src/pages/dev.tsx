@@ -1,6 +1,6 @@
+import { HiveLogo } from '@/components/ui/brand-icon';
 import { GraphiQL } from 'graphiql';
 import { Helmet } from 'react-helmet-async';
-import { HiveLogo } from '@/components/ui/icon';
 import { env } from '@/env/frontend';
 import { createGraphiQLFetcher } from '@graphiql/toolkit';
 import 'graphiql/style.css';

@@ -1,12 +1,11 @@
 import { ReactElement, useState } from 'react';
-import { FileSymlinkIcon, GitCommitVerticalIcon } from 'lucide-react';
+import { FileSymlinkIcon, GitCommitVerticalIcon, PackageIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
-import { PackageIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';

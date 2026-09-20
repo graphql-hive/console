@@ -1,9 +1,9 @@
+import { CopyIcon } from 'lucide-react';
 import { ReactNode, useRef } from 'react';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { useClipboard } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
-import { CopyIcon } from './icon';
 
 export function CopyText(props: { children: ReactNode; copy?: string; className?: string }) {
   const copyToClipboard = useClipboard();

@@ -1,9 +1,9 @@
 import { ReactElement, ReactNode } from 'react';
+import { Check } from 'lucide-react';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Label, Section } from '@/components/common';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
-import { CheckIcon } from '@radix-ui/react-icons';
 
 const planCollection: {
   [key in BillingPlanType]: {
@@ -95,7 +95,7 @@ function Plan(plan: {
           {plan.features.map((feature, i) => (
             <div key={i}>
               <Section.Subtitle className="flex items-center gap-1">
-                <CheckIcon className="text-neutral-10 h-5 w-auto" />
+                <Check className="text-neutral-10 size-5" />
                 {feature}
               </Section.Subtitle>
             </div>
