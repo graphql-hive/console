@@ -1,12 +1,10 @@
 import { ReactElement, useEffect, useState } from 'react';
-import { useFormik } from 'formik';
 import { Trash2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import * as Yup from 'yup';
 import { z } from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { PageLead } from '@/components/base/page-lead';
@@ -16,8 +14,15 @@ import { Callout } from '@/components/ui/callout';
 import { SubPageLayout } from '@/components/ui/page-content-layout';
 import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+import {
+  CDN_TOKEN_FORM_ID,
+  CdnTokenForm,
+  CdnTokenFormSchema,
+  type CdnTokenFormValues,
+} from './cdn-token-form';
 
 const CDNAccessTokenCreateMutation = graphql(`
   mutation CDNAccessTokens_CDNAccessTokenCreateMutation($input: CreateCdnAccessTokenInput!) {
@@ -36,7 +41,7 @@ const CDNAccessTokenCreateMutation = graphql(`
   }
 `);
 
-function CreateCDNAccessTokenModal(props: {
+export function CreateCDNAccessTokenModal(props: {
   open: boolean;
   onOpenChangeComplete: (open: boolean) => void;
   onCreateCDNAccessToken: () => void;
@@ -47,29 +52,28 @@ function CreateCDNAccessTokenModal(props: {
 }): ReactElement {
   const [createCdnAccessToken, mutate] = useMutation(CDNAccessTokenCreateMutation);
 
-  const form = useFormik({
-    enableReinitialize: true,
-    initialValues: {
+  const form = useForm<CdnTokenFormValues>({
+    resolver: zodResolver(CdnTokenFormSchema),
+    defaultValues: {
       alias: '',
     },
-    validationSchema: Yup.object().shape({
-      alias: Yup.string().required('Please enter an alias').min(3).max(100),
-    }),
-    onSubmit: async values => {
-      await mutate({
-        input: {
-          target: {
-            bySelector: {
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-            },
-          },
-          alias: values.alias,
-        },
-      });
-    },
+    disabled: createCdnAccessToken.fetching,
   });
+
+  async function onSubmit(values: CdnTokenFormValues) {
+    await mutate({
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: props.organizationSlug,
+            projectSlug: props.projectSlug,
+            targetSlug: props.targetSlug,
+          },
+        },
+        alias: values.alias,
+      },
+    });
+  }
 
   useEffect(() => {
     if (createCdnAccessToken.data?.createCdnAccessToken.ok?.createdCdnAccessToken.id) {
@@ -128,45 +132,13 @@ function CreateCDNAccessTokenModal(props: {
           <Button variant="outline" onClick={props.onClose}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            form="create-cdn-access-token-form"
-            disabled={createCdnAccessToken.fetching}
-          >
+          <Button type="submit" form={CDN_TOKEN_FORM_ID} disabled={createCdnAccessToken.fetching}>
             Create
           </Button>
         </>
       }
     >
-      <form
-        id="create-cdn-access-token-form"
-        className="flex flex-col gap-4"
-        onSubmit={form.handleSubmit}
-      >
-        <label className="text-sm font-semibold" htmlFor="alias">
-          CDN Access Token Alias
-        </label>
-        <Input
-          id="alias"
-          placeholder="Alias"
-          name="alias"
-          value={form.values.alias}
-          onChange={form.handleChange}
-          onBlur={form.handleBlur}
-          disabled={form.isSubmitting}
-          invalid={form.touched.alias && !!form.errors.alias}
-          onSurface="raised"
-          onKeyPress={ev => {
-            if (ev.key === 'Enter') {
-              ev.preventDefault();
-              form.handleSubmit();
-            }
-          }}
-        />
-        {form.touched.alias && form.errors.alias ? (
-          <span className="text-sm text-red-500">{form.errors.alias}</span>
-        ) : null}
-      </form>
+      <CdnTokenForm form={form} onSubmit={onSubmit} />
     </Dialog>
   );
 }
