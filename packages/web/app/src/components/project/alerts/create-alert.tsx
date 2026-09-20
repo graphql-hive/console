@@ -1,12 +1,12 @@
-import { ReactElement } from 'react';
-import { useFormik } from 'formik';
+import { ReactElement, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import * as Yup from 'yup';
-import { Select } from '@/components/base/floating/select/select';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { AlertType } from '@/gql/graphql';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ALERT_FORM_ID, AlertForm, alertFormSchema, type AlertFormValues } from './alert-form';
 
 export const CreateAlertModal_AddAlertMutation = graphql(`
   mutation CreateAlertModal_AddAlertMutation($input: AddAlertInput!) {
@@ -54,45 +54,39 @@ export const CreateAlertModal = (props: {
   const channels = useFragment(CreateAlertModal_AlertChannelFragment, props.channels);
   const [mutation, mutate] = useMutation(CreateAlertModal_AddAlertMutation);
 
-  const { handleSubmit, values, setFieldValue, setFieldTouched, errors, touched, isSubmitting } =
-    useFormik({
-      initialValues: {
-        type: AlertType.SchemaChangeNotifications,
-        channel: '',
-        target: '',
-      },
-      validationSchema: Yup.object().shape({
-        type: Yup.string()
-          .equals([AlertType.SchemaChangeNotifications])
-          .required('Must select type'),
-        channel: Yup.lazy(() =>
-          Yup.string()
-            .min(1)
-            .equals(channels.map(channel => channel.id))
-            .required('Must select channel'),
-        ),
-        target: Yup.lazy(() =>
-          Yup.string()
-            .min(1)
-            .equals(targets.map(target => target.slug))
-            .required('Must select target'),
-        ),
+  const schema = useMemo(
+    () =>
+      alertFormSchema({
+        channelIds: channels.map(channel => channel.id),
+        targetSlugs: targets.map(target => target.slug),
       }),
-      async onSubmit(values) {
-        const { error, data } = await mutate({
-          input: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: values.target,
-            channelId: values.channel,
-            type: values.type,
-          },
-        });
-        if (!error && data?.addAlert) {
-          toggleModalOpen();
-        }
+    [channels, targets],
+  );
+  const form = useForm<AlertFormValues>({
+    mode: 'onTouched',
+    resolver: zodResolver(schema),
+    defaultValues: {
+      type: AlertType.SchemaChangeNotifications,
+      channel: '',
+      target: '',
+    },
+    disabled: mutation.fetching,
+  });
+
+  async function onSubmit(values: AlertFormValues) {
+    const { error, data } = await mutate({
+      input: {
+        organizationSlug: props.organizationSlug,
+        projectSlug: props.projectSlug,
+        targetSlug: values.target,
+        channelId: values.channel,
+        type: values.type,
       },
     });
+    if (!error && data?.addAlert) {
+      toggleModalOpen();
+    }
+  }
 
   return (
     <Dialog
@@ -105,84 +99,19 @@ export const CreateAlertModal = (props: {
           <Button type="button" variant="outline" onClick={toggleModalOpen}>
             Cancel
           </Button>
-          <Button type="submit" form="create-alert-form" disabled={isSubmitting}>
+          <Button type="submit" form={ALERT_FORM_ID} disabled={form.formState.isSubmitting}>
             Create Alert
           </Button>
         </>
       }
     >
-      <form id="create-alert-form" className="flex flex-col gap-6" onSubmit={handleSubmit}>
-        <div className="flex flex-col gap-4">
-          <label className="text-sm font-semibold" htmlFor="type">
-            Type
-          </label>
-          <Select
-            id="type"
-            name="type"
-            placeholder="Select alert type"
-            options={[
-              {
-                value: AlertType.SchemaChangeNotifications,
-                label: 'Schema Change Notifications',
-              },
-            ]}
-            value={values.type}
-            onValueChange={value => void setFieldValue('type', value)}
-            onBlur={() => void setFieldTouched('type')}
-            width="full"
-            onSurface="raised"
-          />
-          {touched.type && errors.type && <div className="text-sm text-red-500">{errors.type}</div>}
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <label className="text-sm font-semibold" htmlFor="channel">
-            Channel
-          </label>
-          <Select
-            id="channel"
-            name="channel"
-            placeholder="Select channel"
-            options={channels.map(channel => ({
-              value: channel.id,
-              label: channel.name,
-            }))}
-            value={values.channel}
-            onValueChange={value => void setFieldValue('channel', value)}
-            onBlur={() => void setFieldTouched('channel')}
-            width="full"
-            onSurface="raised"
-          />
-          {touched.channel && errors.channel && (
-            <div className="text-sm text-red-500">{errors.channel}</div>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <label className="text-sm font-semibold" htmlFor="target">
-            Target
-          </label>
-          <Select
-            id="target"
-            name="target"
-            placeholder="Select target"
-            options={targets.map(target => ({
-              value: target.slug,
-              label: target.slug,
-            }))}
-            value={values.target}
-            onValueChange={value => void setFieldValue('target', value)}
-            onBlur={() => void setFieldTouched('target')}
-            width="full"
-            onSurface="raised"
-          />
-          {touched.target && errors.target && (
-            <div className="text-sm text-red-500">{errors.target}</div>
-          )}
-        </div>
-
-        {mutation.error && <div className="text-sm text-red-500">{mutation.error.message}</div>}
-      </form>
+      <AlertForm
+        form={form}
+        onSubmit={onSubmit}
+        channels={channels}
+        targets={targets}
+        error={mutation.error?.message}
+      />
     </Dialog>
   );
 };
