@@ -1,13 +1,17 @@
 import { ReactElement } from 'react';
-import { useFormik } from 'formik';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import * as Yup from 'yup';
-import { Select } from '@/components/base/floating/select/select';
-import { Input } from '@/components/base/input/input';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
+import {
+  TRANSFER_OWNERSHIP_FORM_ID,
+  TransferOwnershipForm,
+  transferOwnershipFormSchema,
+  type TransferOwnershipFormValues,
+} from '@/components/organization/settings/transfer-ownership-form';
 import { Button } from '@/components/ui/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const TransferOrganizationOwnership_Request = graphql(`
   mutation TransferOrganizationOwnership_Request($input: RequestOrganizationTransferInput!) {
@@ -45,7 +49,7 @@ const TransferOrganizationOwnership_Members = graphql(`
   }
 `);
 
-const TransferOrganizationOwnershipModal_OrganizationFragment = graphql(`
+export const TransferOrganizationOwnershipModal_OrganizationFragment = graphql(`
   fragment TransferOrganizationOwnershipModal_OrganizationFragment on Organization {
     id
     slug
@@ -78,69 +82,53 @@ export const TransferOrganizationOwnershipModal = ({
     },
   });
 
-  const {
-    handleSubmit,
-    resetForm,
-    values,
-    handleChange,
-    handleBlur,
-    isSubmitting,
-    isValid,
-    errors,
-    touched,
-    setFieldValue,
-    setFieldTouched,
-  } = useFormik({
-    enableReinitialize: true,
-    initialValues: {
+  const form = useForm<TransferOwnershipFormValues>({
+    mode: 'onTouched',
+    resolver: zodResolver(transferOwnershipFormSchema(organization.slug)),
+    defaultValues: {
       newOwner: '',
       confirmation: '',
     },
-    validationSchema: Yup.object().shape({
-      newOwner: Yup.string().min(1).required('New owner is not defined'),
-      confirmation: Yup.string()
-        .min(1)
-        .equals([organization.slug])
-        .required('Type organization name to confirm'),
-    }),
-    onSubmit: async values => {
-      const result = await mutate({
-        input: {
-          organizationSlug: organization.slug,
-          userId: values.newOwner,
-        },
-      });
-
-      if (result.error) {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to transfer ownership',
-          description: result.error.message,
-        });
-      }
-
-      if (result.data?.requestOrganizationTransfer.error?.message) {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to transfer ownership',
-          description: result.data.requestOrganizationTransfer.error.message,
-        });
-      }
-
-      if (result.data?.requestOrganizationTransfer.ok) {
-        toast({
-          title: 'Ownership transfer requested',
-          description: `${result.data.requestOrganizationTransfer.ok.email} has been sent a link to accept it.`,
-        });
-        resetForm();
-        toggleModalOpen();
-      }
-    },
   });
+
+  async function onSubmit(values: TransferOwnershipFormValues) {
+    const result = await mutate({
+      input: {
+        organizationSlug: organization.slug,
+        userId: values.newOwner,
+      },
+    });
+
+    if (result.error) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to transfer ownership',
+        description: result.error.message,
+      });
+    }
+
+    if (result.data?.requestOrganizationTransfer.error?.message) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to transfer ownership',
+        description: result.data.requestOrganizationTransfer.error.message,
+      });
+    }
+
+    if (result.data?.requestOrganizationTransfer.ok) {
+      toast({
+        title: 'Ownership transfer requested',
+        description: `${result.data.requestOrganizationTransfer.ok.email} has been sent a link to accept it.`,
+      });
+      form.reset();
+      toggleModalOpen();
+    }
+  }
 
   const members = (query.data?.organization?.members?.edges ?? [])
     .map(edge => edge.node)
-    .filter(member => !member.isOwner);
+    .filter(member => !member.isOwner)
+    .map(member => member.user);
 
   return (
     <Dialog
@@ -156,8 +144,9 @@ export const TransferOrganizationOwnershipModal = ({
             Cancel
           </Button>
           <Button
-            disabled={isSubmitting || !isValid || !touched.confirmation || !touched.newOwner}
-            onClick={() => handleSubmit()}
+            type="submit"
+            form={TRANSFER_OWNERSHIP_FORM_ID}
+            disabled={form.formState.isSubmitting || !form.formState.isValid}
           >
             Transfer this organization
           </Button>
@@ -165,53 +154,12 @@ export const TransferOrganizationOwnershipModal = ({
       }
     >
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-normal" htmlFor="newOwner">
-            New owner
-          </label>
-          <Select
-            id="newOwner"
-            name="newOwner"
-            placeholder="Select a member"
-            searchable
-            searchPlaceholder="Search by name or email..."
-            options={members.map(member => ({
-              value: member.user.id,
-              label: member.user.displayName,
-              description: member.user.email,
-              keywords: `${member.user.fullName} ${member.user.email}`,
-            }))}
-            value={values.newOwner}
-            // Touched on pick rather than on blur: the popup takes focus when it opens, which
-            // would blur the trigger and show "not defined" before anyone has chosen.
-            onValueChange={value => {
-              void setFieldTouched('newOwner', true, false);
-              void setFieldValue('newOwner', value, true);
-            }}
-            width="full"
-            onSurface="raised"
-          />
-          {touched.newOwner && errors.newOwner && (
-            <span className="text-sm text-red-500">{errors.newOwner}</span>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-normal" htmlFor="confirmation">
-            Type <span className="font-bold">{organization.slug}</span> to confirm.
-          </label>
-
-          <Input
-            id="confirmation"
-            name="confirmation"
-            value={values.confirmation}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            disabled={isSubmitting}
-            invalid={touched.confirmation && !!errors.confirmation}
-            onSurface="raised"
-          />
-        </div>
+        <TransferOwnershipForm
+          form={form}
+          onSubmit={onSubmit}
+          members={members}
+          organizationSlug={organization.slug}
+        />
 
         <div className="border-neutral-5 h-0 w-full border-t" />
 
