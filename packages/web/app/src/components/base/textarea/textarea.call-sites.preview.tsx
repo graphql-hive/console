@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Label } from '@/components/base/label/label';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Textarea } from './textarea';
 

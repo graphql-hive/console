@@ -3,7 +3,7 @@ import { ChartPieIcon, FileDiffIcon, LinkIcon, ListIcon, PencilIcon, PlusIcon } 
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { SecondaryNavigation as SecondaryNavigationBar } from '@/components/navigation/secondary-navigation';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { SecondaryNavigation, type SecondaryNavigationItem } from './secondary-navigation';
 
 export const nav: NavPath = 'Base/Navigation/SecondaryNavigation/Component Examples';
@@ -106,8 +106,10 @@ export const Bars = createPreview({
           links={ORGANIZATION_LINKS}
           actions={
             <Button variant="link">
-              <PlusIcon size={16} className="mr-2" />
-              New project
+              <span className="flex items-center">
+                <PlusIcon size={16} className="mr-2" />
+                New project
+              </span>
             </Button>
           }
         />
@@ -122,8 +124,10 @@ export const Bars = createPreview({
           links={PROJECT_LINKS}
           actions={
             <Button variant="link">
-              <PlusIcon size={16} className="mr-2" />
-              New target
+              <span className="flex items-center">
+                <PlusIcon size={16} className="mr-2" />
+                New target
+              </span>
             </Button>
           }
         />
@@ -137,10 +141,14 @@ export const Bars = createPreview({
           page="checks"
           links={TARGET_LINKS}
           actions={
-            <Button variant="link" className="hidden whitespace-nowrap md:flex">
-              <LinkIcon size={16} className="mr-2" />
-              Connect to CDN
-            </Button>
+            <div className="hidden md:block">
+              <Button variant="link">
+                <span className="flex items-center whitespace-nowrap">
+                  <LinkIcon size={16} className="mr-2" />
+                  Connect to CDN
+                </span>
+              </Button>
+            </div>
           }
         />
       </CallSite>
