@@ -29,6 +29,12 @@ import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigati
 import { SchemaEditor } from '@/components/schema-editor';
 import { CDNAccessTokens } from '@/components/target/settings/cdn-access-tokens';
 import {
+  DangerousChangesForm,
+  DangerousChangesFormSchema,
+  PendingIndicator,
+  type DangerousChangesFormValues,
+} from '@/components/target/settings/dangerous-changes-form';
+import {
   GraphqlEndpointForm,
   GraphqlEndpointFormSchema,
   type GraphqlEndpointFormValues,
@@ -36,7 +42,6 @@ import {
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
 import { SchemaContracts } from '@/components/target/settings/schema-contracts';
 import { Button } from '@/components/ui/button';
-import { XIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -60,7 +65,6 @@ import {
 import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckIcon } from '@radix-ui/react-icons';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -2046,54 +2050,7 @@ export const TargetSettingsPage_UpdateFailingDangerousChangeSettings = graphql(`
   }
 `);
 
-const dangerousChangeList = (
-  [
-    { label: 'INPUT_FIELD_DEFAULT_VALUE_CHANGED', types: ['INPUT_FIELD_DEFAULT_VALUE_CHANGED'] },
-    { label: 'INPUT_FIELD_ADDED', types: ['INPUT_FIELD_ADDED'] },
-    { label: 'OBJECT_TYPE_INTERFACE_ADDED', types: ['OBJECT_TYPE_INTERFACE_ADDED'] },
-    { label: 'UNION_MEMBER_ADDED', types: ['UNION_MEMBER_ADDED'] },
-    { label: 'FIELD_ARGUMENT_ADDED', types: ['FIELD_ARGUMENT_ADDED'] },
-    { label: 'FIELD_ARGUMENT_DEFAULT_CHANGED', types: ['FIELD_ARGUMENT_DEFAULT_CHANGED'] },
-    { label: 'ENUM_VALUE_ADDED', types: ['ENUM_VALUE_ADDED'] },
-    {
-      label: 'DIRECTIVE_USAGE_<KIND>_ADDED',
-      types: [
-        'DIRECTIVE_USAGE_ARGUMENT_ADDED',
-        'DIRECTIVE_USAGE_ARGUMENT_DEFINITION_ADDED',
-        'DIRECTIVE_USAGE_ENUM_ADDED',
-        'DIRECTIVE_USAGE_FIELD_ADDED',
-        'DIRECTIVE_USAGE_FIELD_DEFINITION_ADDED',
-        'DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_ADDED',
-        'DIRECTIVE_USAGE_OBJECT_ADDED',
-        'DIRECTIVE_USAGE_SCALAR_ADDED',
-        'DIRECTIVE_USAGE_SCHEMA_ADDED',
-        'DIRECTIVE_USAGE_UNION_MEMBER_ADDED',
-      ],
-    },
-    {
-      label: 'DIRECTIVE_USAGE_<KIND>_REMOVED',
-      types: [
-        'DIRECTIVE_USAGE_ARGUMENT_REMOVED',
-        'DIRECTIVE_USAGE_ARGUMENT_DEFINITION_REMOVED',
-        'DIRECTIVE_USAGE_ENUM_REMOVED',
-        'DIRECTIVE_USAGE_FIELD_REMOVED',
-        'DIRECTIVE_USAGE_FIELD_DEFINITION_REMOVED',
-        'DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_REMOVED',
-        'DIRECTIVE_USAGE_OBJECT_REMOVED',
-        'DIRECTIVE_USAGE_SCALAR_REMOVED',
-        'DIRECTIVE_USAGE_SCHEMA_REMOVED',
-        'DIRECTIVE_USAGE_UNION_MEMBER_REMOVED',
-      ],
-    },
-    {
-      label: 'DIRECTIVE_ARGUMENT_DEFAULT_VALUE_CHANGED',
-      types: ['DIRECTIVE_ARGUMENT_DEFAULT_VALUE_CHANGED'],
-    },
-    { label: 'DIRECTIVE_REPEATABLE_REMOVED', types: ['DIRECTIVE_REPEATABLE_REMOVED'] },
-  ] as { label: string; types: DangerousChangeType[] }[]
-).sort((a, b) => a.label.localeCompare(b.label));
-
-function DangerousChangeTypeForm({
+export function DangerousChangeTypeForm({
   considerDangerousAsBreaking,
   initialFailingChangeTypes,
   initialFailAllDangerousChanges,
@@ -2110,226 +2067,66 @@ function DangerousChangeTypeForm({
 }) {
   const [_, mutate] = useMutation(TargetSettingsPage_UpdateFailingDangerousChangeSettings);
   const { saveStatus, triggerSaveMessage } = useSaveStatus();
+  const [error, setError] = useState<{ title: string; description?: string }>();
 
-  const formik = useFormik({
-    enableReinitialize: true,
-    initialStatus: {
-      error: undefined,
-    } as {
-      error:
-        | undefined
-        | {
-            title: string;
-            description: string | undefined;
-          };
-    },
-    initialValues: {
+  const form = useForm<DangerousChangesFormValues>({
+    resolver: zodResolver(DangerousChangesFormSchema),
+    // Follows the target, so a save settles the form once the new selection comes back.
+    values: {
       failingChangeTypes: initialFailingChangeTypes,
       failAllDangerousChanges: initialFailAllDangerousChanges,
-    } as { failingChangeTypes: DangerousChangeType[]; failAllDangerousChanges: boolean },
-    validationSchema: Yup.object().shape({
-      failAllDangerousChanges: Yup.bool().label('Fail all'),
-      failingChangeTypes: Yup.array()
-        .of(Yup.string())
-        .when('failAllDangerousChanges', {
-          is: true,
-          then: schema => schema.notRequired(),
-          otherwise: schema => schema.min(1),
-        })
-        .label('Failing types'),
-    }),
-    onSubmit: ({ failingChangeTypes, failAllDangerousChanges }, { setSubmitting, setStatus }) =>
-      mutate({
+    },
+  });
+
+  async function onSubmit({
+    failingChangeTypes,
+    failAllDangerousChanges,
+  }: DangerousChangesFormValues) {
+    const title = 'Dangerous change types were not updated.';
+    try {
+      const result = await mutate({
         selector: {
           organizationSlug,
           projectSlug,
           targetSlug,
         },
-        failingChangeTypes: Array.isArray(failingChangeTypes)
-          ? failingChangeTypes
-          : [failingChangeTypes],
+        failingChangeTypes,
         failAllDangerousChanges,
-      })
-        .then(result => {
-          setSubmitting(false);
-          if (result.data?.updateTargetFailingDangerousChanges.error?.message || result.error) {
-            setStatus({
-              error: {
-                title: 'Dangerous change types were not updated.',
-                description:
-                  result.data?.updateTargetFailingDangerousChanges.error?.message ||
-                  result.error?.message,
-              },
-            });
-          } else {
-            setStatus({ error: undefined });
-            triggerSaveMessage();
-          }
-        })
-        .catch(e => {
-          setSubmitting(false);
-          setStatus({
-            error: {
-              title: 'Dangerous change types were not updated.',
-              description: e instanceof Error ? e.message : String(e),
-            },
-          });
-        }),
-  });
-
-  const setFailAllDangerousChanges = (val: boolean) => {
-    return formik.setFieldValue('failAllDangerousChanges', val);
-  };
-
-  /** Allows adding or removing multiple change types from the list of failing change types */
-  const setFailingChangeTypes = (types: DangerousChangeType[], checked: boolean) => {
-    const set = new Set(formik.values.failingChangeTypes);
-    if (checked) {
-      for (const type of types) {
-        set.add(type);
+      });
+      if (result.data?.updateTargetFailingDangerousChanges.error?.message || result.error) {
+        setError({
+          title,
+          description:
+            result.data?.updateTargetFailingDangerousChanges.error?.message ||
+            result.error?.message,
+        });
+      } else {
+        setError(undefined);
+        triggerSaveMessage();
       }
-    } else {
-      for (const type of types) {
-        set.delete(type);
-      }
+    } catch (e) {
+      setError({ title, description: e instanceof Error ? e.message : String(e) });
     }
-    return formik.setFieldValue('failingChangeTypes', Array.from(set));
-  };
+  }
+
+  const { isDirty } = form.formState;
 
   return (
-    <form
-      onSubmit={formik.handleSubmit}
-      className={cn(
-        'opacity-100 transition-opacity duration-150',
-        !considerDangerousAsBreaking && 'opacity-50',
-      )}
-    >
-      <div className="border-neutral-5 bg-neutral-8/10 text-neutral-10 mb-3 block w-auto max-w-4xl rounded-sm border px-5 py-3">
-        <div className="text-neutral-12 mb-3 mt-1 font-semibold">
-          Select Failing Dangerous Change Types
-        </div>
-        <div className="flex gap-1 whitespace-nowrap border-b">
-          <Checkbox
-            disabled={!considerDangerousAsBreaking}
-            checked={formik.values.failAllDangerousChanges}
-            onCheckedChange={setFailAllDangerousChanges}
-          />
-          <span
-            onClick={async () => {
-              if (considerDangerousAsBreaking) {
-                await setFailAllDangerousChanges(!formik.values.failAllDangerousChanges);
-              }
-            }}
-            className={cn(
-              'mb-3',
-              formik.values.failAllDangerousChanges && considerDangerousAsBreaking
-                ? 'text-neutral-12'
-                : 'text-neutral-10',
-              !considerDangerousAsBreaking
-                ? 'pointer-events-none cursor-not-allowed'
-                : 'hover:text-neutral-12 cursor-default',
-            )}
-          >
-            Fail All Dangerous Changes
-          </span>
-          <span
-            className={cn(
-              'grow pl-4',
-              formik.values.failAllDangerousChanges ===
-                formik.initialValues.failAllDangerousChanges && 'hidden',
-            )}
-          >
-            <PendingIndicator />
-          </span>
-          <span className="text-red-400">{formik.errors.failAllDangerousChanges}</span>
-        </div>
-        <div className="my-3">or fail only:</div>
-        <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-          {dangerousChangeList.map(
-            ({
-              /**
-               * Text label representing one or many dangerous change types that can be added or removed from
-               * the selection.
-               */
-              label,
-              /**
-               * One or many dangerous change types that can be toggled to be included or excluded from the check.
-               */
-              types,
-            }) => {
-              function isTypesIncluded(failingChangeTypes: DangerousChangeType[]) {
-                return types.every(type => failingChangeTypes.includes(type));
-              }
-
-              // @NOTE only check isTypesIncluded and not whether or not this is checked to avoid showing a changed indicator on individual types
-              // when toggling the select all.
-              const isFieldChanged =
-                formik.values.failAllDangerousChanges === false &&
-                isTypesIncluded(formik.values.failingChangeTypes) !==
-                  isTypesIncluded(formik.initialValues.failingChangeTypes);
-
-              const checked =
-                formik.values.failAllDangerousChanges ||
-                isTypesIncluded(formik.values.failingChangeTypes);
-              const disabled =
-                !considerDangerousAsBreaking || formik.values.failAllDangerousChanges;
-              return (
-                <div className="flex gap-x-1" key={label}>
-                  <Checkbox
-                    onCheckedChange={state => setFailingChangeTypes(types, state)}
-                    checked={checked}
-                    disabled={disabled}
-                  />
-                  <span
-                    onClick={() => setFailingChangeTypes(types, !checked)}
-                    className={cn(
-                      'truncate',
-                      checked && !disabled ? 'text-neutral-12' : 'text-neutral-10',
-                      disabled
-                        ? 'pointer-events-none cursor-not-allowed'
-                        : 'hover:text-neutral-12 cursor-default',
-                    )}
-                  >
-                    {label}
-                  </span>
-                  <span className={cn('grow pr-4 text-right', !isFieldChanged && 'hidden')}>
-                    <PendingIndicator />
-                  </span>
-                </div>
-              );
-            },
-          )}
-        </div>
-      </div>
-      <div className="flex flex-row items-center gap-5">
-        <Button
-          type="submit"
-          disabled={formik.isSubmitting || !considerDangerousAsBreaking || !formik.dirty}
-        >
-          Save selections
-        </Button>
-        {formik.dirty && <UnsavedChangesLabel />}
-        {!formik.dirty && saveStatus === SaveStatus.SAVED && <SavedLabel />}
-        {!formik.dirty && saveStatus === SaveStatus.JUST_SAVED && <JustSavedLabel />}
-        <span
-          className={cn(
-            'text-red-600 dark:text-red-400',
-            !formik.errors.failingChangeTypes && 'hidden',
-          )}
-        >
-          {Array.isArray(formik.errors.failingChangeTypes)
-            ? formik.errors.failingChangeTypes.join(', ')
-            : formik.errors.failingChangeTypes}
-        </span>
-      </div>
-      {formik.status?.error ? (
-        <div className="flex flex-row items-center gap-1 p-2 text-red-600 dark:text-red-400">
-          <XIcon className="size-4" />
-          <span className="font-semibold">{formik.status.error.title}</span>
-          <span>{formik.status.error.description}</span>
-        </div>
-      ) : null}
-    </form>
+    <DangerousChangesForm
+      form={form}
+      onSubmit={onSubmit}
+      enabled={considerDangerousAsBreaking}
+      status={
+        isDirty ? (
+          <UnsavedChangesLabel />
+        ) : saveStatus === SaveStatus.SAVED ? (
+          <SavedLabel />
+        ) : saveStatus === SaveStatus.JUST_SAVED ? (
+          <JustSavedLabel />
+        ) : null
+      }
+      error={error}
+    />
   );
 }
 
@@ -2361,15 +2158,11 @@ function SavedIndicator() {
 
 function UnsavedChangesLabel() {
   return (
-    <div className="inline-flex flex-row items-center gap-2 italic text-yellow-600 subpixel-antialiased dark:text-yellow-400">
+    <div className="text-accent inline-flex flex-row items-center gap-2 italic subpixel-antialiased">
       <PendingIndicator />
       <span>Unsaved changes</span>
     </div>
   );
-}
-
-function PendingIndicator() {
-  return <span className="inline-block size-2 rounded-full bg-yellow-600 dark:bg-yellow-400" />;
 }
 
 enum SaveStatus {
