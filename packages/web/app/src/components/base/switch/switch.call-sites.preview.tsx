@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Label } from '@/components/base/label/label';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Label } from '@/components/ui/label';
 import { Switch } from './switch';
 
 export const nav: NavPath = 'Base/FormControls/Switch/Component Examples';
@@ -124,9 +124,7 @@ function FilterToggleRow(props: { id: string; label: string }) {
 
   return (
     <div className="flex h-9 flex-row items-center justify-between">
-      <Label htmlFor={props.id} className="text-neutral-11 text-sm font-normal">
-        {props.label}
-      </Label>
+      <Label variant="inline" htmlFor={props.id} label={props.label} />
       <Switch checked={checked} onCheckedChange={setChecked} id={props.id} />
     </div>
   );
@@ -170,9 +168,7 @@ function ToggleDiffRow() {
 
   return (
     <div className="ml-2 flex items-center space-x-2">
-      <Label htmlFor="toggle-diff-mode" className="text-xs font-normal">
-        Toggle Diff
-      </Label>
+      <Label variant="inline" htmlFor="toggle-diff-mode" label="Toggle Diff" />
       <Switch
         id="toggle-diff-mode"
         checked={showDiff}

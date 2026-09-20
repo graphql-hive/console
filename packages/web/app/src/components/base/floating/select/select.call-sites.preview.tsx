@@ -9,8 +9,8 @@ export const nav: NavPath = 'Base/Floating/Select/Component Examples';
  * Every Select call site in the app, transcribed with its real copy so a change to the component
  * can be judged against what actually ships.
  *
- * The pages themselves cannot be imported: they run GraphQL queries, mount react-hook-form or
- * Formik, and several sit behind permission flags. Each preview reproduces the call site's
+ * The pages themselves cannot be imported: they run GraphQL queries, mount react-hook-form,
+ * and several sit behind permission flags. Each preview reproduces the call site's
  * options and props and holds the selection in local state.
  *
  * History: these were `ui/select` (Radix) and `v2/select` (a native element) until round 3. Three
@@ -116,13 +116,13 @@ const ENTRIES = [
   {
     source: 'components/project/alerts/create-alert.tsx:106, :128, :150',
     origin: 'base',
-    what: 'Alert type / channel / target, Formik',
+    what: 'Alert type / channel / target, in a Form',
     coveredBy: 'Alert forms',
   },
   {
     source: 'components/project/alerts/create-channel.tsx:154',
     origin: 'base',
-    what: 'Channel type, Formik',
+    what: 'Channel type, in a Form',
     coveredBy: 'Alert forms',
   },
 ] as const;
@@ -578,8 +578,8 @@ export const OneOffs = createPreview({
 
 // ---------------------------------------------------------------------------
 // components/project/alerts/create-alert.tsx and create-channel.tsx
-// Formik forms inside v2/modal. Were native <select>s (v2/select) until round 3. Errors show as
-// the line under the field; there is no invalid state on the control itself.
+// Forms inside a Dialog. Were native <select>s (v2/select) until round 3. Errors show as the
+// line under the field; there is no invalid state on the control itself.
 // ---------------------------------------------------------------------------
 
 function ChannelTypeSelect(props: { showError?: boolean }) {
@@ -624,7 +624,7 @@ export const AlertForms = createPreview({
       <CallSite
         source="components/project/alerts/create-channel.tsx:169"
         origin="base"
-        note="The validation state: Formik's error line under an untouched required field after submit."
+        note="The validation state: the error line under an untouched required field after submit."
       >
         <ChannelTypeSelect showError />
       </CallSite>

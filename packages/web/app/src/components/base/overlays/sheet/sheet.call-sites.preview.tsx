@@ -10,18 +10,23 @@ import {
   TreePine,
 } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { useForm } from 'react-hook-form';
 import { CallSite } from '@/components/inventory/shared';
+import {
+  NEW_TICKET_FORM_ID,
+  NewTicketForm,
+  NewTicketFormSchema,
+  type NewTicketFormValues,
+} from '@/components/organization/new-ticket-form';
 import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Heading } from '@/components/ui/heading';
-import { Label } from '@/components/ui/label';
+import { SupportTicketPriority } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Badge } from '../../badge/badge';
 import { Select } from '../../floating/select/select';
-import { Input } from '../../input/input';
-import { RadioGroup } from '../../radio-group/radio-group';
 import { ScrollArea } from '../../scroll-area/scroll-area';
-import { Textarea } from '../../textarea/textarea';
 import { Sheet } from './sheet';
 
 export const nav: NavPath = 'Base/Overlays/Sheet/Component Examples';
@@ -111,27 +116,6 @@ function RoleMappingPickerExample() {
 // A form whose submit lives in the footer
 // ---------------------------------------------------------------------------
 
-const PRIORITY_ITEMS = [
-  {
-    value: 'NORMAL',
-    label: 'Normal',
-    description:
-      'Minor problems or general questions with little to no impact on functionality, often involving small nuisances or easily bypassed errors.',
-  },
-  {
-    value: 'HIGH',
-    label: 'High',
-    description:
-      'Problems that significantly hinder functionality, resulting in severe performance degradation while the platform remains operational.',
-  },
-  {
-    value: 'URGENT',
-    label: 'Urgent',
-    description:
-      'Problems that halt essential functionality, preventing critical business operations with no workarounds available.',
-  },
-];
-
 export const FormInBody = createPreview({
   label: 'Form in the body',
   render: () => <NewTicketExample />,
@@ -139,7 +123,10 @@ export const FormInBody = createPreview({
 
 function NewTicketExample() {
   const [open, setOpen] = useState(false);
-  const [priority, setPriority] = useState('NORMAL');
+  const form = useForm<NewTicketFormValues>({
+    resolver: zodResolver(NewTicketFormSchema),
+    defaultValues: { subject: '', priority: SupportTicketPriority.Normal, description: '' },
+  });
   return (
     <CallSite
       source="pages/organization-support.tsx:134 (stands for the three access token sheets, the alert form sheet, the SSO provider sheet and the registered domain sheet)"
@@ -155,40 +142,12 @@ function NewTicketExample() {
         title="New ticket"
         description="Create a new case for the support team"
         footer={
-          <Button type="submit" form="new-ticket-form">
+          <Button type="submit" form={NEW_TICKET_FORM_ID}>
             Submit
           </Button>
         }
       >
-        <form
-          id="new-ticket-form"
-          className="space-y-6 text-sm"
-          onSubmit={event => {
-            event.preventDefault();
-            setOpen(false);
-          }}
-        >
-          <div className="space-y-3">
-            <Label>Priority level</Label>
-            <RadioGroup
-              variant="as-card"
-              onSurface="raised"
-              orientation="vertical"
-              value={priority}
-              onValueChange={setPriority}
-              items={PRIORITY_ITEMS}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Subject</Label>
-            <Input placeholder="Enter a subject of your issue" onSurface="raised" />
-          </div>
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea placeholder="Enter a short description of your issue" onSurface="raised" />
-            <p className="text-neutral-10 text-xs">Help us understand it better.</p>
-          </div>
-        </form>
+        <NewTicketForm form={form} onSubmit={() => setOpen(false)} />
       </Sheet>
     </CallSite>
   );

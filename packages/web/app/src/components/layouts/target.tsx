@@ -2,6 +2,7 @@ import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Select } from '@/components/base/floating/select/select';
+import { Label } from '@/components/base/label/label';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Header } from '@/components/navigation/header';
@@ -19,7 +20,6 @@ import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { cn } from '@/lib/utils';
 import { Tabs } from '../base/tabs/tabs';
-import { Label } from '../ui/label';
 import { TargetSelector } from './target-selector';
 
 export enum Page {
@@ -361,7 +361,7 @@ export function ConnectSchemaModal(props: {
           <>
             <div className="mb-5 mt-1 flex flex-row justify-start gap-3">
               <div>
-                <Label htmlFor="cdn-graph">Graph Variant</Label>
+                <Label htmlFor="cdn-graph" label="Graph Variant" />
                 <Select
                   id="cdn-graph"
                   options={[
@@ -388,7 +388,7 @@ export function ConnectSchemaModal(props: {
                 />
               </div>
               <div>
-                <Label htmlFor="cdn-artifact">Artifact</Label>
+                <Label htmlFor="cdn-artifact" label="Artifact" />
                 <Select
                   id="cdn-artifact"
                   options={ArtifactToProjectTypeMapping[target.project.type].map(t => ({

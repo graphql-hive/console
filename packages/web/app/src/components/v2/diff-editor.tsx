@@ -1,11 +1,11 @@
 import { ReactElement, useLayoutEffect, useRef, useState } from 'react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Label } from '@/components/base/label/label';
 import { Switch } from '@/components/base/switch/switch';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
 import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import type { Monaco, MonacoDiffEditor as OriginalMonacoDiffEditor } from '@monaco-editor/react';
 import { ArrowDownIcon, ArrowUpIcon, DownloadIcon } from '@radix-ui/react-icons';
 import { Spinner } from '../ui/spinner';
@@ -110,9 +110,7 @@ export const DiffEditor = (props: {
           )}
           {props.editable ? null : (
             <div className="ml-2 flex items-center space-x-2">
-              <Label htmlFor="toggle-diff-mode" className="text-xs font-normal">
-                Toggle Diff
-              </Label>
+              <Label variant="inline" htmlFor="toggle-diff-mode" label="Toggle Diff" />
               <Switch
                 id="toggle-diff-mode"
                 checked={showDiff}
