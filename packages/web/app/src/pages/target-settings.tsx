@@ -28,6 +28,11 @@ import { Page, TargetLayout } from '@/components/layouts/target';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { SchemaEditor } from '@/components/schema-editor';
 import { CDNAccessTokens } from '@/components/target/settings/cdn-access-tokens';
+import {
+  GraphqlEndpointForm,
+  GraphqlEndpointFormSchema,
+  type GraphqlEndpointFormValues,
+} from '@/components/target/settings/graphql-endpoint-form';
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
 import { SchemaContracts } from '@/components/target/settings/schema-contracts';
 import { Button } from '@/components/ui/button';
@@ -1504,7 +1509,7 @@ const TargetSettingsPage_UpdateTargetGraphQLEndpointUrl = graphql(`
   }
 `);
 
-function GraphQLEndpointUrl(props: {
+export function GraphQLEndpointUrl(props: {
   graphqlEndpointUrl: string | null;
   organizationSlug: string;
   projectSlug: string;
@@ -1512,47 +1517,44 @@ function GraphQLEndpointUrl(props: {
 }) {
   const { toast } = useToast();
   const [mutation, mutate] = useMutation(TargetSettingsPage_UpdateTargetGraphQLEndpointUrl);
-  const { handleSubmit, values, handleChange, handleBlur, isSubmitting, errors, touched } =
-    useFormik({
-      enableReinitialize: true,
-      initialValues: {
-        graphqlEndpointUrl: props.graphqlEndpointUrl || '',
-      },
-      validationSchema: Yup.object().shape({
-        graphqlEndpointUrl: Yup.string()
-          .url('Please enter a valid url.')
-          .min(1, 'Please enter a valid url.')
-          .max(300, 'Max 300 chars.'),
-      }),
-      onSubmit: values =>
-        mutate({
-          input: {
-            target: {
-              bySelector: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
-              },
-            },
-            graphqlEndpointUrl: values.graphqlEndpointUrl === '' ? null : values.graphqlEndpointUrl,
+  const form = useForm<GraphqlEndpointFormValues>({
+    mode: 'onTouched',
+    resolver: zodResolver(GraphqlEndpointFormSchema),
+    // Follows the target, so the field shows what is saved.
+    values: {
+      graphqlEndpointUrl: props.graphqlEndpointUrl || '',
+    },
+    disabled: mutation.fetching,
+  });
+
+  async function onSubmit(values: GraphqlEndpointFormValues) {
+    const result = await mutate({
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: props.organizationSlug,
+            projectSlug: props.projectSlug,
+            targetSlug: props.targetSlug,
           },
-        }).then(result => {
-          if (result.data?.updateTargetGraphQLEndpointUrl.error?.message || result.error) {
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description:
-                result.data?.updateTargetGraphQLEndpointUrl.error?.message || result.error?.message,
-            });
-          } else {
-            toast({
-              variant: 'default',
-              title: 'Success',
-              description: 'GraphQL endpoint url updated successfully',
-            });
-          }
-        }),
+        },
+        graphqlEndpointUrl: values.graphqlEndpointUrl === '' ? null : values.graphqlEndpointUrl,
+      },
     });
+    if (result.data?.updateTargetGraphQLEndpointUrl.error?.message || result.error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          result.data?.updateTargetGraphQLEndpointUrl.error?.message || result.error?.message,
+      });
+    } else {
+      toast({
+        variant: 'default',
+        title: 'Success',
+        description: 'GraphQL endpoint url updated successfully',
+      });
+    }
+  }
 
   return (
     <SubPageLayout>
@@ -1575,39 +1577,15 @@ function GraphQLEndpointUrl(props: {
           </>
         }
       />
-      <div>
-        <form onSubmit={handleSubmit}>
-          <div className="flex flex-row items-center gap-x-2">
-            <Input
-              placeholder="Endpoint Url"
-              name="graphqlEndpointUrl"
-              value={values.graphqlEndpointUrl}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              disabled={isSubmitting}
-              invalid={
-                touched.graphqlEndpointUrl && !!(errors.graphqlEndpointUrl || mutation.error)
-              }
-              width="md"
-            />
-            <Button type="submit" disabled={isSubmitting}>
-              Save
-            </Button>
-          </div>
-          {touched.graphqlEndpointUrl && (errors.graphqlEndpointUrl || mutation.error) && (
-            <div className="mt-2 text-red-500">
-              {errors.graphqlEndpointUrl ??
-                mutation.error?.graphQLErrors[0]?.message ??
-                mutation.error?.message}
-            </div>
-          )}
-          {mutation.data?.updateTargetGraphQLEndpointUrl.error && (
-            <div className="mt-2 text-red-500">
-              {mutation.data.updateTargetGraphQLEndpointUrl.error.message}
-            </div>
-          )}
-        </form>
-      </div>
+      <GraphqlEndpointForm
+        form={form}
+        onSubmit={onSubmit}
+        error={
+          mutation.data?.updateTargetGraphQLEndpointUrl.error?.message ??
+          mutation.error?.graphQLErrors[0]?.message ??
+          mutation.error?.message
+        }
+      />
     </SubPageLayout>
   );
 }
