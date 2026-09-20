@@ -2,10 +2,14 @@
 import type { ReactNode } from 'react';
 import type * as Urql from 'urql';
 import { ToastProvider } from '@/components/base/toast/toast';
+import { DangerousChangeType } from '@/gql/graphql';
 import type * as Router from '@tanstack/react-router';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { DangerousChangeType } from '@/gql/graphql';
-import { DangerousChangeTypeForm, GraphQLEndpointUrl } from './target-settings';
+import {
+  AppDeploymentProtection,
+  DangerousChangeTypeForm,
+  GraphQLEndpointUrl,
+} from './target-settings';
 
 /** The stubs the mocked urql hooks read from; each test resets them. */
 const urql = vi.hoisted(() => ({
@@ -224,5 +228,176 @@ describe('DangerousChangeTypeForm', () => {
     expect(failAllBox().getAttribute('aria-disabled')).toBe('true');
     expect(typeBox('ENUM_VALUE_ADDED').getAttribute('aria-disabled')).toBe('true');
     expect(saveButton().disabled).toBe(true);
+  });
+});
+
+describe('AppDeploymentProtection', () => {
+  const configuration = {
+    isEnabled: true,
+    minDaysInactive: 30,
+    minDaysSinceCreation: 3,
+    maxTrafficPercentage: 1,
+    trafficPeriodDays: 30,
+    ruleLogic: 'AND',
+  };
+
+  function renderSection(overrides: Partial<typeof configuration> = {}) {
+    urql.query.data = {
+      target: {
+        id: 't-1',
+        appDeploymentProtectionConfiguration: { ...configuration, ...overrides },
+      },
+      targets: { edges: [] },
+      organization: { id: 'org-1', usageRetentionInDays: 30 },
+    };
+    // A fresh element each time, or React skips the update and never reads the mutation state.
+    const element = () => (
+      <ToastProvider>
+        <AppDeploymentProtection {...selector} />
+      </ToastProvider>
+    );
+    const view = render(element());
+    return { ...view, element };
+  }
+
+  const numberInput = (name: string) =>
+    document.querySelector(`input[name="${name}"]`) as HTMLInputElement;
+  const save = () =>
+    act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    });
+
+  async function setNumber(name: string, value: string) {
+    await act(async () => {
+      fireEvent.change(numberInput(name), { target: { value } });
+      fireEvent.blur(numberInput(name));
+    });
+  }
+
+  /** The rule logic is a native select before the move and a base Select after it. */
+  async function setRuleLogic(value: 'AND' | 'OR') {
+    const native = document.querySelector('select[name="ruleLogic"]');
+    if (native) {
+      await act(async () => {
+        fireEvent.change(native, { target: { value } });
+      });
+      return;
+    }
+    await act(async () => {
+      fireEvent.click(screen.getByRole('combobox', { name: 'Rule logic' }));
+    });
+    const option = screen.getByRole('option', { name: value });
+    await act(async () => {
+      option.focus();
+    });
+    await act(async () => {
+      fireEvent.click(option);
+    });
+  }
+
+  beforeEach(() => {
+    urql.mutation.data = undefined;
+    urql.mutation.error = undefined;
+    urql.mutate.mockReset();
+  });
+
+  it('starts from the saved configuration and rejects values out of range', async () => {
+    renderSection();
+    expect(numberInput('minDaysSinceCreation').value).toBe('3');
+    expect(numberInput('minDaysInactive').value).toBe('30');
+    expect(numberInput('maxTrafficPercentage').value).toBe('1');
+    expect(numberInput('trafficPeriodDays').value).toBe('30');
+
+    await setNumber('minDaysInactive', '-1');
+    expect(screen.getByText('Must be at least 0')).toBeTruthy();
+    await setNumber('maxTrafficPercentage', '150');
+    expect(screen.getByText('Must be at most 100')).toBeTruthy();
+    await setNumber('trafficPeriodDays', '0');
+    expect(screen.getByText('Must be at least 1')).toBeTruthy();
+    await setNumber('minDaysSinceCreation', '1.5');
+    expect(screen.getByText('Must be a whole number')).toBeTruthy();
+    await save();
+    expect(urql.mutate).not.toHaveBeenCalled();
+  });
+
+  it('saves the rules for the target and confirms', async () => {
+    urql.mutate.mockResolvedValue({
+      data: {
+        updateTargetAppDeploymentProtectionConfiguration: {
+          ok: { target: { id: 't-1', appDeploymentProtectionConfiguration: configuration } },
+          error: null,
+        },
+      },
+    });
+    renderSection();
+    await setNumber('minDaysInactive', '14');
+    await setRuleLogic('OR');
+    await save();
+    expect(urql.mutate).toHaveBeenCalledTimes(1);
+    expect(urql.mutate.mock.calls[0][0]).toEqual({
+      input: {
+        target: { bySelector: selector },
+        appDeploymentProtectionConfiguration: {
+          minDaysInactive: 14,
+          minDaysSinceCreation: 3,
+          maxTrafficPercentage: 1,
+          trafficPeriodDays: 30,
+          ruleLogic: 'OR',
+        },
+      },
+    });
+    expect(
+      (await screen.findAllByText('App deployment protection settings updated successfully'))
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('shows what the server rejected under the rules', async () => {
+    const result = {
+      data: {
+        updateTargetAppDeploymentProtectionConfiguration: {
+          ok: null,
+          error: {
+            message: 'Invalid rules',
+            inputErrors: {
+              minDaysInactive: null,
+              minDaysSinceCreation: null,
+              maxTrafficPercentage: 'Too high for this plan',
+              trafficPeriodDays: null,
+            },
+          },
+        },
+      },
+    };
+    urql.mutate.mockResolvedValue(result);
+    const { rerender, element } = renderSection();
+    await setNumber('maxTrafficPercentage', '50');
+    await save();
+    urql.mutation.data = result.data;
+    rerender(element());
+    expect(screen.getByText('Too high for this plan')).toBeTruthy();
+    expect((await screen.findAllByText('Invalid rules')).length).toBeGreaterThan(0);
+  });
+
+  it('switches protection on and off straight away and greys the rules out while off', async () => {
+    urql.mutate.mockResolvedValue({ data: {} });
+    renderSection();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('switch'));
+    });
+    expect(urql.mutate.mock.calls[0][0]).toEqual({
+      input: {
+        target: { bySelector: selector },
+        appDeploymentProtectionConfiguration: { isEnabled: false },
+      },
+    });
+    expect(numberInput('minDaysInactive').closest('.opacity-25')).toBeNull();
+
+    renderSection({ isEnabled: false });
+    expect(
+      (document.querySelectorAll('input[name="minDaysInactive"]')[1] as HTMLElement).closest(
+        '.opacity-25',
+      ),
+    ).not.toBeNull();
   });
 });

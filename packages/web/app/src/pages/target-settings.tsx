@@ -27,6 +27,11 @@ import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/comm
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { SchemaEditor } from '@/components/schema-editor';
+import {
+  AppDeploymentProtectionForm,
+  AppDeploymentProtectionFormSchema,
+  type AppDeploymentProtectionFormValues,
+} from '@/components/target/settings/app-deployment-protection-form';
 import { CDNAccessTokens } from '@/components/target/settings/cdn-access-tokens';
 import {
   DangerousChangesForm,
@@ -1108,7 +1113,7 @@ const BreakingChanges = (props: {
   );
 };
 
-const AppDeploymentProtection = (props: {
+export const AppDeploymentProtection = (props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -1142,79 +1147,67 @@ const AppDeploymentProtection = (props: {
   const isEnabled = configuration?.isEnabled || false;
   const { toast } = useToast();
 
-  const { handleSubmit, isSubmitting, errors, touched, values, handleBlur, handleChange } =
-    useFormik({
-      enableReinitialize: true,
-      initialValues: {
-        minDaysInactive: configuration?.minDaysInactive ?? 30,
-        minDaysSinceCreation: configuration?.minDaysSinceCreation ?? 3,
-        maxTrafficPercentage: configuration?.maxTrafficPercentage ?? 1.0,
-        trafficPeriodDays: configuration?.trafficPeriodDays ?? 30,
-        ruleLogic: configuration?.ruleLogic ?? AppDeploymentProtectionRuleLogicType.And,
-      },
-      validationSchema: Yup.object().shape({
-        minDaysInactive: Yup.number()
-          .min(0, 'Must be at least 0')
-          .integer('Must be a whole number')
-          .required('Required'),
-        minDaysSinceCreation: Yup.number()
-          .min(0, 'Must be at least 0')
-          .integer('Must be a whole number')
-          .required('Required'),
-        maxTrafficPercentage: Yup.number()
-          .min(0, 'Must be at least 0')
-          .max(100, 'Must be at most 100')
-          .required('Required'),
-        trafficPeriodDays: Yup.number()
-          .min(1, 'Must be at least 1')
-          .integer('Must be a whole number')
-          .required('Required'),
-        ruleLogic: Yup.string()
-          .oneOf([
-            AppDeploymentProtectionRuleLogicType.And,
-            AppDeploymentProtectionRuleLogicType.Or,
-          ])
-          .required('Required'),
-      }),
-      onSubmit: values =>
-        updateProtection({
-          input: {
-            target: {
-              bySelector: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
-              },
-            },
-            appDeploymentProtectionConfiguration: {
-              minDaysInactive: values.minDaysInactive,
-              minDaysSinceCreation: values.minDaysSinceCreation,
-              maxTrafficPercentage: values.maxTrafficPercentage,
-              trafficPeriodDays: values.trafficPeriodDays,
-              ruleLogic: values.ruleLogic,
-            },
+  const form = useForm<AppDeploymentProtectionFormValues>({
+    mode: 'onTouched',
+    resolver: zodResolver(AppDeploymentProtectionFormSchema),
+    // Follows the target, so the rules show what is saved.
+    values: {
+      minDaysInactive: configuration?.minDaysInactive ?? 30,
+      minDaysSinceCreation: configuration?.minDaysSinceCreation ?? 3,
+      maxTrafficPercentage: configuration?.maxTrafficPercentage ?? 1.0,
+      trafficPeriodDays: configuration?.trafficPeriodDays ?? 30,
+      ruleLogic: configuration?.ruleLogic ?? AppDeploymentProtectionRuleLogicType.And,
+    },
+  });
+
+  async function onSubmit(values: AppDeploymentProtectionFormValues) {
+    const result = await updateProtection({
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: props.organizationSlug,
+            projectSlug: props.projectSlug,
+            targetSlug: props.targetSlug,
           },
-        }).then(result => {
-          if (result.error || result.data?.updateTargetAppDeploymentProtectionConfiguration.error) {
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description:
-                result.error?.message ||
-                result.data?.updateTargetAppDeploymentProtectionConfiguration.error?.message,
-            });
-          } else {
-            toast({
-              variant: 'default',
-              title: 'Success',
-              description: 'App deployment protection settings updated successfully',
-            });
-          }
-        }),
+        },
+        appDeploymentProtectionConfiguration: {
+          minDaysInactive: values.minDaysInactive,
+          minDaysSinceCreation: values.minDaysSinceCreation,
+          maxTrafficPercentage: values.maxTrafficPercentage,
+          trafficPeriodDays: values.trafficPeriodDays,
+          ruleLogic: values.ruleLogic,
+        },
+      },
     });
+    const error = result.data?.updateTargetAppDeploymentProtectionConfiguration.error;
+    if (result.error || error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: result.error?.message || error?.message,
+      });
+      for (const name of [
+        'minDaysInactive',
+        'minDaysSinceCreation',
+        'maxTrafficPercentage',
+        'trafficPeriodDays',
+      ] as const) {
+        const message = error?.inputErrors[name];
+        if (message) {
+          form.setError(name, { message });
+        }
+      }
+    } else {
+      toast({
+        variant: 'default',
+        title: 'Success',
+        description: 'App deployment protection settings updated successfully',
+      });
+    }
+  }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <>
       <SubPageLayout>
         <SubPageLayoutHeader
           subPageTitle="App Deployment Protection"
@@ -1265,146 +1258,14 @@ const AppDeploymentProtection = (props: {
             )
           }
         />
-        <div className={clsx('text-neutral-10', !isEnabled && 'pointer-events-none opacity-25')}>
-          <div className="space-y-4">
-            <div>
-              <div className="mb-2">An app deployment can only be retired if it</div>
-              <div className="ml-4 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span>was created at least</span>
-                  <Input
-                    name="minDaysSinceCreation"
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    value={values.minDaysSinceCreation}
-                    disabled={isSubmitting}
-                    invalid={touched.minDaysSinceCreation && !!errors.minDaysSinceCreation}
-                    type="number"
-                    min="0"
-                    width="xs"
-                  />
-                  <span>days ago and has not been used for at least</span>
-                  <Input
-                    name="minDaysInactive"
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    value={values.minDaysInactive}
-                    disabled={isSubmitting}
-                    invalid={touched.minDaysInactive && !!errors.minDaysInactive}
-                    type="number"
-                    min="0"
-                    width="xs"
-                  />
-                  <span>days</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <select
-                    name="ruleLogic"
-                    value={values.ruleLogic}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    disabled={isSubmitting}
-                    className="border-neutral-4 bg-neutral-2 h-10 w-20 rounded-md border px-2 text-center text-sm"
-                  >
-                    <option value={AppDeploymentProtectionRuleLogicType.And}>AND</option>
-                    <option value={AppDeploymentProtectionRuleLogicType.Or}>OR</option>
-                  </select>
-                  <span>has less than</span>
-                  <Input
-                    name="maxTrafficPercentage"
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    value={values.maxTrafficPercentage}
-                    disabled={isSubmitting}
-                    invalid={touched.maxTrafficPercentage && !!errors.maxTrafficPercentage}
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    width="xs"
-                  />
-                  <span>percent of traffic over the last</span>
-                  <Input
-                    name="trafficPeriodDays"
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    value={values.trafficPeriodDays}
-                    disabled={isSubmitting}
-                    invalid={touched.trafficPeriodDays && !!errors.trafficPeriodDays}
-                    type="number"
-                    min="1"
-                    width="xs"
-                  />
-                  <span>days</span>
-                </div>
-              </div>
-            </div>
-            <div className="text-neutral-11 text-sm">
-              The creation date check always applies. The inactivity and traffic checks only apply
-              if the app deployment has usage data.
-            </div>
-          </div>
-          <div className="mt-4">
-            {touched.minDaysSinceCreation && errors.minDaysSinceCreation && (
-              <div className="text-red-500">{errors.minDaysSinceCreation}</div>
-            )}
-            {mutation.data?.updateTargetAppDeploymentProtectionConfiguration.error?.inputErrors
-              .minDaysSinceCreation && (
-              <div className="text-red-500">
-                {
-                  mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
-                    .minDaysSinceCreation
-                }
-              </div>
-            )}
-            {touched.minDaysInactive && errors.minDaysInactive && (
-              <div className="text-red-500">{errors.minDaysInactive}</div>
-            )}
-            {mutation.data?.updateTargetAppDeploymentProtectionConfiguration.error?.inputErrors
-              .minDaysInactive && (
-              <div className="text-red-500">
-                {
-                  mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
-                    .minDaysInactive
-                }
-              </div>
-            )}
-            {touched.maxTrafficPercentage && errors.maxTrafficPercentage && (
-              <div className="text-red-500">{errors.maxTrafficPercentage}</div>
-            )}
-            {mutation.data?.updateTargetAppDeploymentProtectionConfiguration.error?.inputErrors
-              .maxTrafficPercentage && (
-              <div className="text-red-500">
-                {
-                  mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
-                    .maxTrafficPercentage
-                }
-              </div>
-            )}
-            {touched.trafficPeriodDays && errors.trafficPeriodDays && (
-              <div className="text-red-500">{errors.trafficPeriodDays}</div>
-            )}
-            {mutation.data?.updateTargetAppDeploymentProtectionConfiguration.error?.inputErrors
-              .trafficPeriodDays && (
-              <div className="text-red-500">
-                {
-                  mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
-                    .trafficPeriodDays
-                }
-              </div>
-            )}
-          </div>
-          <Button type="submit" disabled={isSubmitting} className="mt-4">
-            Save
-          </Button>
-          {mutation.error && (
-            <span className="ml-2 text-red-500">
-              {mutation.error.graphQLErrors[0]?.message ?? mutation.error.message}
-            </span>
-          )}
-        </div>
+        <AppDeploymentProtectionForm
+          form={form}
+          onSubmit={onSubmit}
+          enabled={isEnabled}
+          error={mutation.error?.graphQLErrors[0]?.message ?? mutation.error?.message}
+        />
       </SubPageLayout>
-    </form>
+    </>
   );
 };
 
