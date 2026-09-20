@@ -15,7 +15,7 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { graphql, useFragment, type FragmentType } from '@/gql';
@@ -142,7 +142,7 @@ export function Groups(props: {
       <div className="px-4 py-3">
         <Button
           variant="ghost"
-          className="w-full"
+          width="full"
           onClick={() =>
             !!organization?.groups.pageInfo.hasNextPage &&
             void client.query(Groups_OrganizationGroupQuery, {
@@ -442,16 +442,16 @@ function GroupRoleMappingRow(props: {
       <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         <Tooltip
           trigger={
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickEdit}>
-              <PencilIcon className="h-3 w-3" />
+            <Button variant="ghost" size="icon-sm" onClick={props.onClickEdit}>
+              <PencilIcon className="size-3" />
             </Button>
           }
           content="Edit mapping"
         />
         <Tooltip
           trigger={
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={props.onClickDelete}>
-              <Trash2Icon className="h-3 w-3" />
+            <Button variant="ghost" size="icon-sm" onClick={props.onClickDelete}>
+              <Trash2Icon className="size-3" />
             </Button>
           }
           content="Remove mapping"

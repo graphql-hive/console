@@ -2,7 +2,7 @@ import { ReactNode, useState } from 'react';
 import { useMutation } from 'urql';
 import { Badge } from '@/components/base/badge/badge';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { RoleMappingPickerSheet } from '../../settings/shared/role-mapping-picker-sheet';
@@ -138,6 +138,7 @@ export function ManageGroupMappingSheet(props: ManageGroupMappingSheetProps): Re
               Abort
             </Button>
             <Button
+              onSurface="raised"
               disabled={updateGroupMappingState.fetching}
               onClick={async () => {
                 if (!selectedRoleId) {
@@ -189,6 +190,7 @@ export function ManageGroupMappingSheet(props: ManageGroupMappingSheetProps): Re
               Abort
             </Button>
             <Button
+              onSurface="raised"
               disabled={addGroupMappingToGroupState.fetching}
               onClick={async () => {
                 if (!selectedRoleId) {
