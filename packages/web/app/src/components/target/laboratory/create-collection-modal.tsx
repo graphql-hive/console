@@ -1,21 +1,16 @@
 import { ReactElement, useEffect } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
-import { Input } from '@/components/base/input/input';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
-import { Callout } from '@/components/ui/callout';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  COLLECTION_FORM_ID,
+  CollectionForm,
+  CollectionFormSchema,
+  type CollectionFormValues,
+} from './collection-form';
 
 const CollectionQuery = graphql(`
   query Collection($selector: TargetSelectorInput!, $id: ID!) {
@@ -113,22 +108,6 @@ const UpdateCollectionMutation = graphql(`
   }
 `);
 
-const createCollectionModalFormSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Collection name is required',
-    })
-    .min(2, {
-      message: 'Collection name must be at least 2 characters long',
-    })
-    .max(50, {
-      message: 'Collection name must be at most 50 characters long',
-    }),
-  description: z.string().optional(),
-});
-
-export type CreateCollectionModalFormValues = z.infer<typeof createCollectionModalFormSchema>;
-
 export function CreateCollectionModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
@@ -157,9 +136,9 @@ export function CreateCollectionModal(props: {
   const errorCombined = mutationCreate.error || collectionError || mutationUpdate.error;
   const fetching = loadingCollection;
 
-  const form = useForm<CreateCollectionModalFormValues>({
+  const form = useForm<CollectionFormValues>({
     mode: 'onChange',
-    resolver: zodResolver(createCollectionModalFormSchema),
+    resolver: zodResolver(CollectionFormSchema),
     defaultValues: {
       name: '',
       description: '',
@@ -178,7 +157,7 @@ export function CreateCollectionModal(props: {
     }
   }, [data, collectionId]);
 
-  async function onSubmit(values: CreateCollectionModalFormValues) {
+  async function onSubmit(values: CollectionFormValues) {
     const { error } = collectionId
       ? await mutateUpdate({
           selector: {
@@ -221,8 +200,8 @@ export function CreateCollectionModal(props: {
 export function CreateCollectionModalContent(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
-  onSubmit: (values: CreateCollectionModalFormValues) => void;
-  form: UseFormReturn<CreateCollectionModalFormValues>;
+  onSubmit: (values: CollectionFormValues) => void;
+  form: UseFormReturn<CollectionFormValues>;
   collectionId?: string;
   fetching: boolean;
 }) {
@@ -250,7 +229,7 @@ export function CreateCollectionModalContent(props: {
           </Button>
           <Button
             type="submit"
-            form="create-collection-form"
+            form={COLLECTION_FORM_ID}
             size="lg"
             className="w-full justify-center"
             variant="primary"
@@ -262,51 +241,7 @@ export function CreateCollectionModalContent(props: {
         </>
       }
     >
-      {!props.fetching && (
-        <Form {...props.form}>
-          <form
-            id="create-collection-form"
-            className="space-y-8"
-            onSubmit={props.form.handleSubmit(props.onSubmit)}
-          >
-            <div className="space-y-8">
-              <FormField
-                control={props.form.control}
-                name="name"
-                render={({ field }) => {
-                  return (
-                    <FormItem>
-                      <FormLabel>Collection Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="My Collection" onSurface="raised" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-              <FormField
-                control={props.form.control}
-                name="description"
-                render={({ field }) => {
-                  return (
-                    <FormItem>
-                      <FormLabel>Collection Description</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="My Collection" onSurface="raised" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-            <Callout type="info" className="mt-0">
-              This collection will be available to everyone in the organization
-            </Callout>
-          </form>
-        </Form>
-      )}
+      {!props.fetching && <CollectionForm form={props.form} onSubmit={props.onSubmit} />}
     </Dialog>
   );
 }
