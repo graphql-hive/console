@@ -5,16 +5,6 @@ import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Button';
 
-/**
- * `ui/button` — 335 render sites across 124 files, the largest single component in the app.
- *
- * Far too many to transcribe individually, so this is one preview per distinct shape, with the
- * counts that matter for the API underneath each. The Inventory screen carries the distributions.
- *
- * There is no v2 counterpart: `v2/radix-button.tsx` was dead code reachable only from the equally
- * dead `v2/radix-select.tsx`, and both were deleted in the groundwork commit.
- */
-
 const ENTRIES = [
   {
     source: '120 of 335 sites (106 implicit, 14 explicit)',
