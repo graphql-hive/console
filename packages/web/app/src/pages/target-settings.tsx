@@ -23,6 +23,7 @@ import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialo
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Switch } from '@/components/base/switch/switch';
 import { useToast } from '@/components/base/toast/toast';
+import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { SchemaEditor } from '@/components/schema-editor';
@@ -30,7 +31,6 @@ import { CDNAccessTokens } from '@/components/target/settings/cdn-access-tokens'
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
 import { SchemaContracts } from '@/components/target/settings/schema-contracts';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { XIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import {
@@ -1399,17 +1399,6 @@ const AppDeploymentProtection = (props: {
   );
 };
 
-const SlugFormSchema = z.object({
-  slug: z
-    .string({
-      required_error: 'Target slug is required',
-    })
-    .min(1, 'Target slug is required')
-    .max(50, 'Slug must be less than 50 characters')
-    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers and dashes'),
-});
-type SlugFormValues = z.infer<typeof SlugFormSchema>;
-
 function TargetSlug(props: { organizationSlug: string; projectSlug: string; targetSlug: string }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -1417,7 +1406,7 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
   const [_slugMutation, slugMutate] = useMutation(TargetSettingsPage_UpdateTargetSlugMutation);
   const slugForm = useForm({
     mode: 'all',
-    resolver: zodResolver(SlugFormSchema),
+    resolver: zodResolver(slugFormSchema('Target')),
     defaultValues: {
       slug: props.targetSlug,
     },
@@ -1474,48 +1463,26 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
   );
 
   return (
-    <Form {...slugForm}>
-      <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
-        <SubPageLayout>
-          <SubPageLayoutHeader
-            subPageTitle="Target Slug"
-            description={
-              <p>
-                This is your target's URL namespace on Hive. Changing it{' '}
-                <span className="font-bold">will</span> invalidate any existing links to your
-                target.
-              </p>
-            }
-            docsLink={{
-              href: '/schema-registry/management/targets#change-slug-of-a-target',
-              text: 'Read more in the documentation',
-            }}
-          />
-          <div>
-            <FormField
-              control={slugForm.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      placeholder="slug"
-                      prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${props.organizationSlug}/${props.projectSlug}/`}
-                      width="sm"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button disabled={slugForm.formState.isSubmitting} className="px-10" type="submit">
-              Save
-            </Button>
-          </div>
-        </SubPageLayout>
-      </form>
-    </Form>
+    <SubPageLayout>
+      <SubPageLayoutHeader
+        subPageTitle="Target Slug"
+        description={
+          <p>
+            This is your target's URL namespace on Hive. Changing it{' '}
+            <span className="font-bold">will</span> invalidate any existing links to your target.
+          </p>
+        }
+        docsLink={{
+          href: '/schema-registry/management/targets#change-slug-of-a-target',
+          text: 'Read more in the documentation',
+        }}
+      />
+      <SlugForm
+        form={slugForm}
+        onSubmit={onSlugFormSubmit}
+        prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${props.organizationSlug}/${props.projectSlug}/`}
+      />
+    </SubPageLayout>
   );
 }
 
