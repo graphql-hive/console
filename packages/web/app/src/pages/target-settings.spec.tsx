@@ -7,6 +7,7 @@ import type * as Router from '@tanstack/react-router';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import {
   AppDeploymentProtection,
+  BreakingChanges,
   DangerousChangeTypeForm,
   GraphQLEndpointUrl,
 } from './target-settings';
@@ -398,6 +399,192 @@ describe('AppDeploymentProtection', () => {
       (document.querySelectorAll('input[name="minDaysInactive"]')[1] as HTMLElement).closest(
         '.opacity-25',
       ),
+    ).not.toBeNull();
+  });
+});
+
+describe('BreakingChanges', () => {
+  const configuration = {
+    isEnabled: true,
+    period: 30,
+    percentage: 5,
+    requestCount: 1,
+    breakingChangeFormula: 'PERCENTAGE',
+    targets: [{ id: 't-1', slug: 'production' }],
+    excludedClients: ['legacy-app'],
+    excludedAppDeployments: ['ios@1.0'],
+  };
+
+  /** One query stub serves the settings query and the two exclusion pickers' queries. */
+  function renderSection(overrides: Partial<typeof configuration> = {}) {
+    urql.query.data = {
+      target: {
+        id: 't-1',
+        failDiffOnDangerousChange: true,
+        failAllDangerousChanges: true,
+        failDangerousChangeTypes: [],
+        conditionalBreakingChangeConfiguration: { ...configuration, ...overrides },
+        appDeploymentProtectionConfiguration: null,
+        appDeployments: { edges: [] },
+      },
+      targets: {
+        edges: [
+          { node: { id: 't-1', slug: 'production' } },
+          { node: { id: 't-2', slug: 'staging' } },
+        ],
+      },
+      organization: { id: 'org-1', usageRetentionInDays: 30 },
+      clientStatsByTargets: { edges: [] },
+    };
+    // A fresh element each time, or React skips the update and never reads the mutation state.
+    const element = () => (
+      <ToastProvider>
+        <BreakingChanges {...selector} />
+      </ToastProvider>
+    );
+    const view = render(element());
+    return { ...view, element };
+  }
+
+  const numberInput = (name: string) =>
+    document.querySelector(`input[name="${name}"]`) as HTMLInputElement;
+  const targetBox = (slug: string) =>
+    screen.getByText(slug).closest('div')!.querySelector('[role="checkbox"]') as HTMLElement;
+  const save = () =>
+    act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    });
+
+  async function setNumber(name: string, value: string) {
+    await act(async () => {
+      fireEvent.change(numberInput(name), { target: { value } });
+      fireEvent.blur(numberInput(name));
+    });
+  }
+
+  beforeEach(() => {
+    urql.mutation.data = undefined;
+    urql.mutation.error = undefined;
+    urql.mutate.mockReset();
+  });
+
+  it('starts from the saved configuration', () => {
+    renderSection();
+    expect(
+      screen.getByRole('radio', { name: 'Percent of Traffic' }).getAttribute('aria-checked'),
+    ).toBe('true');
+    expect(numberInput('percentage').value).toBe('5');
+    expect(numberInput('period').value).toBe('30');
+    expect(targetBox('production').getAttribute('aria-checked')).toBe('true');
+    expect(targetBox('staging').getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('needs at least one target and keeps the period within retention', async () => {
+    renderSection();
+    await act(async () => {
+      fireEvent.click(targetBox('production'));
+    });
+    expect(targetBox('production').getAttribute('aria-checked')).toBe('false');
+    await save();
+    // The Formik version blocked this save silently; the message is new with the move.
+    expect(screen.getByText(/at least 1/)).toBeTruthy();
+    expect(urql.mutate).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.click(targetBox('production'));
+    });
+    await setNumber('period', '45');
+    expect(screen.getByText(/(less than or equal to|at most) 30/)).toBeTruthy();
+    await save();
+    expect(urql.mutate).not.toHaveBeenCalled();
+  });
+
+  it('saves the configuration for the target and confirms', async () => {
+    urql.mutate.mockResolvedValue({
+      data: {
+        updateTargetConditionalBreakingChangeConfiguration: {
+          ok: { target: { id: 't-1' } },
+          error: null,
+        },
+      },
+    });
+    renderSection();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('radio', { name: 'Total Operations' }));
+    });
+    await setNumber('requestCount', '250');
+    await setNumber('period', '14');
+    await act(async () => {
+      fireEvent.click(targetBox('staging'));
+    });
+    await save();
+    expect(urql.mutate).toHaveBeenCalledTimes(1);
+    expect(urql.mutate.mock.calls[0][0]).toEqual({
+      input: {
+        target: { bySelector: selector },
+        conditionalBreakingChangeConfiguration: {
+          percentage: 5,
+          requestCount: 250,
+          period: 14,
+          breakingChangeFormula: 'REQUEST_COUNT',
+          targetIds: ['t-1', 't-2'],
+          excludedClients: ['legacy-app'],
+          excludedAppDeployments: ['ios@1.0'],
+        },
+      },
+    });
+    expect(
+      (await screen.findAllByText('Conditional breaking changes settings updated successfully'))
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('shows what the server rejected under the numbers', async () => {
+    const result = {
+      data: {
+        updateTargetConditionalBreakingChangeConfiguration: {
+          ok: null,
+          error: {
+            message: 'Invalid configuration',
+            inputErrors: { percentage: null, period: 'Period too long', requestCount: null },
+          },
+        },
+      },
+    };
+    urql.mutate.mockResolvedValue(result);
+    const { rerender, element } = renderSection();
+    await setNumber('period', '20');
+    await save();
+    urql.mutation.data = result.data;
+    rerender(element());
+    expect(screen.getByText('Period too long')).toBeTruthy();
+    expect((await screen.findAllByText('Invalid configuration')).length).toBeGreaterThan(0);
+  });
+
+  it('flips both switches straight away and greys the rules out while off', async () => {
+    urql.mutate.mockResolvedValue({ data: {} });
+    renderSection();
+    const [dangerousSwitch, conditionalSwitch] = screen.getAllByRole('switch');
+    await act(async () => {
+      fireEvent.click(conditionalSwitch);
+    });
+    expect(urql.mutate.mock.calls[0][0]).toEqual({
+      input: {
+        target: { bySelector: selector },
+        conditionalBreakingChangeConfiguration: { isEnabled: false },
+      },
+    });
+    await act(async () => {
+      fireEvent.click(dangerousSwitch);
+    });
+    expect(urql.mutate.mock.calls[1][0]).toEqual({
+      input: { failDiffOnDangerousChange: false, target: { bySelector: selector } },
+    });
+    expect(numberInput('period').closest('.opacity-25')).toBeNull();
+
+    renderSection({ isEnabled: false });
+    expect(
+      (document.querySelectorAll('input[name="period"]')[1] as HTMLElement).closest('.opacity-25'),
     ).not.toBeNull();
   });
 });
