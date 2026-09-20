@@ -1,23 +1,23 @@
-import { ReactElement, useRef, useState } from 'react';
-import { useFormik } from 'formik';
-import { Check, Info, X } from 'lucide-react';
+import { ReactElement, useState } from 'react';
+import { Info } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import * as Yup from 'yup';
-import { Button as BaseButton } from '@/components/base/button/button';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { itemVariants } from '@/components/base/floating/shared-styles';
-import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
-import { cn } from '@/lib/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
+import {
+  CONTRACT_FORM_ID,
+  ContractForm,
+  ContractFormSchema,
+  type ContractFormValues,
+} from './contract-form';
 
 const SchemaContractsQuery = graphql(`
   query SchemaContractsQuery($selector: TargetSelectorInput!, $after: String) {
@@ -310,7 +310,7 @@ const CreateContractMutation = graphql(`
   }
 `);
 
-const CreateContractDialogContentTargetFragment = graphql(`
+export const CreateContractDialogContentTargetFragment = graphql(`
   fragment CreateContractDialogContentTargetFragment on Target {
     id
     latestSchemaVersion {
@@ -320,45 +320,7 @@ const CreateContractDialogContentTargetFragment = graphql(`
   }
 `);
 
-/**
- * The tag list under an include/exclude field: every tag on the latest schema version, with a
- * check on the ones already picked. Rows toggle without closing, and the popover keeps focus in
- * the field, so the list is a picker beside typing rather than a replacement for it.
- */
-function TagSuggestions(props: {
-  tags: readonly string[];
-  selected: readonly string[];
-  onToggle: (tag: string) => void;
-}) {
-  return (
-    <div className="w-[200px] p-1">
-      <div className="text-neutral-10 px-2 py-1.5 text-xs font-medium">
-        Tags from latest schema version
-      </div>
-      {props.tags.map(value => (
-        <button
-          key={value}
-          type="button"
-          onClick={() => props.onToggle(value)}
-          className={itemVariants({
-            selected: props.selected.includes(value),
-            className: 'hover:bg-neutral-5 hover:text-neutral-12 w-full',
-          })}
-        >
-          <Check
-            className={cn(
-              'mr-2 size-4',
-              props.selected.includes(value) ? 'opacity-100' : 'opacity-0',
-            )}
-          />
-          {value}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function CreateContractDialog(props: {
+export function CreateContractDialog(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpenChangeComplete: (open: boolean) => void;
@@ -368,57 +330,55 @@ function CreateContractDialog(props: {
   const target = useFragment(CreateContractDialogContentTargetFragment, props.target);
   const [mutation, mutate] = useMutation(CreateContractMutation);
   const { toast } = useToast();
-  // The tag lists open from focus in their field and close on outside press or Escape; the field
-  // is the anchor rather than a trigger so the Add button beside it does not toggle them.
-  const includeTagsInputRef = useRef<HTMLInputElement>(null);
-  const [includeTagsOpen, setIncludeTagsOpen] = useState(false);
-  const excludeTagsInputRef = useRef<HTMLInputElement>(null);
-  const [excludeTagsOpen, setExcludeTagsOpen] = useState(false);
 
-  const form = useFormik({
-    enableReinitialize: true,
-    initialValues: {
+  const form = useForm<ContractFormValues>({
+    resolver: zodResolver(ContractFormSchema),
+    defaultValues: {
       contractName: '',
-      includeTags: [] as Array<string>,
-      includeTagsInput: '',
-      excludeTags: [] as Array<string>,
-      excludeTagsInput: '',
+      includeTags: [],
+      excludeTags: [],
       removeUnreachableTypesFromPublicApiSchema: true,
     },
-    validationSchema: Yup.object().shape({
-      contractName: Yup.string().required('Required'),
-      includeTagsInput: Yup.string(),
-      excludeTagsInput: Yup.string(),
-    }),
-    onSubmit: values => {
-      if (!target) {
-        return;
-      }
-
-      return mutate({
-        input: {
-          target: {
-            byId: target.id,
-          },
-          contractName: values.contractName,
-          includeTags: values.includeTags,
-          excludeTags: values.excludeTags,
-          removeUnreachableTypesFromPublicApiSchema:
-            values.removeUnreachableTypesFromPublicApiSchema,
-        },
-      }).then(result => {
-        if (result.data?.createContract.ok) {
-          props.onCreateContract();
-          toast({
-            title: 'Contract created',
-            description:
-              'The first contract version will be published upon the next schema version is published.',
-          });
-          props.onOpenChange(false);
-        }
-      });
-    },
+    disabled: mutation.fetching,
   });
+
+  async function onSubmit(values: ContractFormValues) {
+    if (!target) {
+      return;
+    }
+
+    const result = await mutate({
+      input: {
+        target: {
+          byId: target.id,
+        },
+        contractName: values.contractName,
+        includeTags: values.includeTags,
+        excludeTags: values.excludeTags,
+        removeUnreachableTypesFromPublicApiSchema: values.removeUnreachableTypesFromPublicApiSchema,
+      },
+    });
+    if (result.data?.createContract.ok) {
+      props.onCreateContract();
+      toast({
+        title: 'Contract created',
+        description:
+          'The first contract version will be published upon the next schema version is published.',
+      });
+      props.onOpenChange(false);
+      return;
+    }
+    const details = result.data?.createContract.error?.details;
+    if (details?.contractName) {
+      form.setError('contractName', { message: details.contractName });
+    }
+    if (details?.includeTags) {
+      form.setError('includeTags', { message: details.includeTags });
+    }
+    if (details?.excludeTags) {
+      form.setError('excludeTags', { message: details.excludeTags });
+    }
+  }
 
   const close = () => props.onOpenChange(false);
 
@@ -433,268 +393,17 @@ function CreateContractDialog(props: {
           <Button type="button" variant="outline" onClick={close}>
             Cancel
           </Button>
-          <Button type="submit" form="create-contract-form" disabled={mutation.fetching}>
+          <Button type="submit" form={CONTRACT_FORM_ID} disabled={mutation.fetching}>
             Create Contract
           </Button>
         </>
       }
     >
-      <form id="create-contract-form" onSubmit={form.handleSubmit} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-4">
-          <label className="text-sm font-semibold" htmlFor="contractName">
-            Contract Name
-          </label>
-          <Input
-            placeholder="Contract Name"
-            id="contractName"
-            name="contractName"
-            value={form.values.contractName}
-            onChange={form.handleChange}
-            onBlur={form.handleBlur}
-            disabled={form.isSubmitting}
-            autoComplete="off"
-            onSurface="raised"
-            invalid={
-              !!(
-                mutation.data?.createContract.error?.details?.contractName ??
-                (form.touched.contractName ? form.errors.contractName : null)
-              )
-            }
-          />
-          <span className="text-sm text-red-500 after:invisible after:content-['.']">
-            {mutation.data?.createContract.error?.details?.contractName ??
-              (form.touched.contractName ? form.errors.contractName : null)}
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <label className="text-sm font-semibold" htmlFor="includeTagsInput">
-            Included Tags
-          </label>
-          <div className="flex">
-            <div className="flex-1">
-              <div className="flex w-full max-w-sm items-center space-x-2">
-                <Input
-                  ref={includeTagsInputRef}
-                  id="includeTagsInput"
-                  name="includeTagsInput"
-                  autoComplete="off"
-                  onSurface="raised"
-                  value={form.values.includeTagsInput}
-                  onChange={form.handleChange}
-                  onBlur={form.handleBlur}
-                  onFocus={() => setIncludeTagsOpen(true)}
-                  onClick={() => setIncludeTagsOpen(true)}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      void form.setValues(values => ({
-                        ...values,
-                        includeTagsInput: '',
-                        includeTags: values.includeTags.includes(values.includeTagsInput)
-                          ? values.includeTags
-                          : [...values.includeTags, values.includeTagsInput],
-                      }));
-                    }
-                  }}
-                  placeholder="Add included tag"
-                  disabled={form.isSubmitting}
-                />
-                <Button
-                  type="button"
-                  onClick={() => {
-                    void form.setValues(values => ({
-                      ...values,
-                      includeTagsInput: '',
-                      includeTags: values.includeTags.includes(values.includeTagsInput)
-                        ? values.includeTags
-                        : [...values.includeTags, values.includeTagsInput],
-                    }));
-                  }}
-                  disabled={form.isSubmitting || form.values.includeTagsInput === ''}
-                >
-                  Add
-                </Button>
-              </div>
-              <Popover
-                open={includeTagsOpen}
-                onOpenChange={setIncludeTagsOpen}
-                anchor={includeTagsInputRef}
-                align="start"
-                initialFocus={false}
-                padding="none"
-                width="auto"
-                content={
-                  <TagSuggestions
-                    tags={target?.latestSchemaVersion?.tags ?? []}
-                    selected={form.values.includeTags}
-                    onToggle={currentValue => {
-                      void form.setValues(values => ({
-                        ...values,
-                        includeTags: values.includeTags.includes(currentValue)
-                          ? values.includeTags.filter(value => currentValue !== value)
-                          : [...values.includeTags, currentValue],
-                      }));
-                    }}
-                  />
-                }
-              />
-              <div className="mt-2 text-sm text-red-500 after:invisible after:content-['.']">
-                {mutation.data?.createContract.error?.details?.includeTags ??
-                  form.errors.includeTags}
-              </div>
-            </div>
-            <div className="flex flex-1 flex-wrap gap-1 pl-3">
-              {form.values.includeTags.map(value => (
-                <BaseButton
-                  key={value}
-                  type="button"
-                  size="compact"
-                  onSurface="raised"
-                  aria-label={`Remove ${value}`}
-                  onClick={ev => {
-                    void form.setValues(values => ({
-                      ...values,
-                      includeTags: values.includeTags.filter(tagValue => tagValue !== value),
-                    }));
-                    ev.stopPropagation();
-                  }}
-                >
-                  {value}
-                  <X className="size-3" />
-                </BaseButton>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <label className="text-sm font-semibold" htmlFor="excludeTagsInput">
-            Excluded Tags
-          </label>
-          <div className="flex">
-            <div className="flex-1">
-              <div className="flex w-full max-w-sm items-center space-x-2">
-                <Input
-                  ref={excludeTagsInputRef}
-                  id="excludeTagsInput"
-                  name="excludeTagsInput"
-                  autoComplete="off"
-                  onSurface="raised"
-                  value={form.values.excludeTagsInput}
-                  onChange={form.handleChange}
-                  onBlur={form.handleBlur}
-                  onFocus={() => setExcludeTagsOpen(true)}
-                  onClick={() => setExcludeTagsOpen(true)}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      void form.setValues(values => ({
-                        ...values,
-                        excludeTagsInput: '',
-                        excludeTags: values.excludeTags.includes(values.excludeTagsInput)
-                          ? values.excludeTags
-                          : [...values.excludeTags, values.excludeTagsInput],
-                      }));
-                    }
-                  }}
-                  placeholder="Add excluded tag"
-                  disabled={form.isSubmitting}
-                />
-                <Button
-                  type="button"
-                  onClick={() => {
-                    void form.setValues(values => ({
-                      ...values,
-                      excludeTagsInput: '',
-                      excludeTags: values.excludeTags.includes(values.excludeTagsInput)
-                        ? values.excludeTags
-                        : [...values.excludeTags, values.excludeTagsInput],
-                    }));
-                  }}
-                  disabled={form.isSubmitting || form.values.excludeTagsInput === ''}
-                >
-                  Add
-                </Button>
-              </div>
-              <Popover
-                open={excludeTagsOpen}
-                onOpenChange={setExcludeTagsOpen}
-                anchor={excludeTagsInputRef}
-                align="start"
-                initialFocus={false}
-                padding="none"
-                width="auto"
-                content={
-                  <TagSuggestions
-                    tags={target?.latestSchemaVersion?.tags ?? []}
-                    selected={form.values.excludeTags}
-                    onToggle={currentValue => {
-                      void form.setValues(values => ({
-                        ...values,
-                        excludeTags: values.excludeTags.includes(currentValue)
-                          ? values.excludeTags.filter(value => currentValue !== value)
-                          : [...values.excludeTags, currentValue],
-                      }));
-                    }}
-                  />
-                }
-              />
-              <div className="mt-2 text-sm text-red-500 after:invisible after:content-['.']">
-                {mutation.data?.createContract.error?.details?.excludeTags ??
-                  form.errors.excludeTags}
-              </div>
-            </div>
-            <div className="flex flex-1 flex-wrap gap-1 pl-3">
-              {form.values.excludeTags.map(value => (
-                <BaseButton
-                  key={value}
-                  type="button"
-                  size="compact"
-                  onSurface="raised"
-                  aria-label={`Remove ${value}`}
-                  onClick={ev => {
-                    void form.setValues(values => ({
-                      ...values,
-                      excludeTags: values.excludeTags.filter(tagValue => tagValue !== value),
-                    }));
-                    ev.stopPropagation();
-                  }}
-                >
-                  {value}
-                  <X className="size-3" />
-                </BaseButton>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <label
-            className="text-sm font-semibold"
-            htmlFor="removeUnreachableTypesFromPublicApiSchema"
-          >
-            Remove unreachable Types
-          </label>
-          <div className="flex items-center pl-1 pt-2">
-            <Checkbox
-              id="removeUnreachableTypesFromPublicApiSchema"
-              checked={form.values.removeUnreachableTypesFromPublicApiSchema}
-              value="removeUnreachableTypesFromPublicApiSchema"
-              onCheckedChange={newValue =>
-                form.setFieldValue('removeUnreachableTypesFromPublicApiSchema', newValue)
-              }
-              disabled={form.isSubmitting}
-            />
-            <label
-              htmlFor="removeUnreachableTypesFromPublicApiSchema"
-              className="text-neutral-11 ml-2 inline-block cursor-pointer text-sm"
-            >
-              Remove unreachable types from public API schema
-            </label>
-          </div>
-        </div>
-      </form>
+      <ContractForm
+        form={form}
+        onSubmit={onSubmit}
+        suggestedTags={target?.latestSchemaVersion?.tags ?? []}
+      />
     </Dialog>
   );
 }
