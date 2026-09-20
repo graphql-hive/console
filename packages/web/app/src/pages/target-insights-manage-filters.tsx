@@ -13,7 +13,7 @@ import { useToast } from '@/components/base/toast/toast';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BackLink } from '@/components/navigation/back-link';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -633,11 +633,7 @@ function SavedFilterRowFilters({
           >
             Save changes
           </Button>
-          <Button
-            variant="default"
-            onClick={handleCancel}
-            disabled={updateResult.fetching || !hasChanges}
-          >
+          <Button onClick={handleCancel} disabled={updateResult.fetching || !hasChanges}>
             Cancel
           </Button>
         </div>

@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { FailureCard, formatCount } from '@/components/base/failure-card/failure-card';
@@ -43,7 +44,6 @@ import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
-import { Button } from '@/components/ui/button';
 import { File, MultiFileDiff } from '@/components/ui/diffs';
 import { Link } from '@/components/ui/link';
 import { QueryError } from '@/components/ui/query-error';
@@ -576,7 +576,7 @@ function DownloadButton(props: { contents: string; fileName: string }) {
       trigger={
         <Button
           variant="ghost"
-          size="xs"
+          size="compact"
           onClick={() => {
             const element = document.createElement('a');
             element.setAttribute(
@@ -589,7 +589,6 @@ function DownloadButton(props: { contents: string; fileName: string }) {
 
             document.body.removeChild(element);
           }}
-          className="text-xs font-normal"
         >
           <DownloadIcon className="mr-1 size-3" /> Download
         </Button>
@@ -712,7 +711,6 @@ function SubgraphCard(props: {
           size="icon-sm"
           variant="ghost"
           onClick={() => setIsCollapsed(isCollapsed => !isCollapsed)}
-          className="ml-2"
         >
           {isCollapsed && <ChevronUpIcon />}
           {!isCollapsed && <ChevronDownIcon />}

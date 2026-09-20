@@ -15,7 +15,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { Card } from '@/components/base/card/card';
 import { StatCard } from '@/components/base/stat-card/stat-card';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { OperationStatsFilterInput } from '@/gql/graphql';
 import { createAdaptiveTimeFormatter } from '@/lib/date-time';

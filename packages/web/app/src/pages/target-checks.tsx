@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Switch } from '@/components/base/switch/switch';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -182,7 +182,7 @@ const Navigation = (
         </div>
       ))}
       {props.isLastPage && query.data.target.schemaChecks.pageInfo.hasNextPage && (
-        <Button variant="orangeLink" onClick={onLoadMore}>
+        <Button variant="link" onClick={onLoadMore}>
           Load more
         </Button>
       )}

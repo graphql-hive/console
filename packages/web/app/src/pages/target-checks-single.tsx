@@ -20,7 +20,7 @@ import {
   labelize,
   NoGraphChanges,
 } from '@/components/target/history/errors-and-changes';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { CopyText } from '@/components/ui/copy-text';
 import { File } from '@/components/ui/diffs';
 import { DocsLink } from '@/components/ui/docs-note';
@@ -187,7 +187,9 @@ function ApproveFailedSchemaCheckModal(props: {
         <h4 className="font-medium leading-none">Oops. Something unexpected happened</h4>
         <p className="text-neutral-10 text-sm">{mutation.error.message}</p>
         <div className="text-right">
-          <Button onClick={props.onClose}>Close</Button>
+          <Button onSurface="raised" onClick={props.onClose}>
+            Close
+          </Button>
         </div>
       </div>
     );
@@ -201,7 +203,9 @@ function ApproveFailedSchemaCheckModal(props: {
           {mutation.data.approveFailedSchemaCheck.error.message}
         </p>
         <div className="text-right">
-          <Button onClick={props.onClose}>Close</Button>
+          <Button onSurface="raised" onClick={props.onClose}>
+            Close
+          </Button>
         </div>
       </div>
     );
@@ -214,7 +218,9 @@ function ApproveFailedSchemaCheckModal(props: {
           The schema check has been approved successfully!
         </h4>
         <div className="text-right">
-          <Button onClick={props.onClose}>Close</Button>
+          <Button onSurface="raised" onClick={props.onClose}>
+            Close
+          </Button>
         </div>
       </div>
     );
@@ -277,12 +283,7 @@ const BreakingChangesTitle = () => {
       Breaking Changes
       <Popover
         trigger={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="ml-1"
-            aria-label="About breaking changes"
-          >
+          <Button variant="ghost" size="icon-sm" aria-label="About breaking changes">
             <InfoIcon className="size-3" />
           </Button>
         }
@@ -472,7 +473,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
             {' and '}
             <Popover
               trigger={
-                <Button variant="link" className="p-0">
+                <Button variant="link">
                   {excludedTargets.length} more
                 </Button>
               }

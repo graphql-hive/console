@@ -5,7 +5,7 @@ import { Accordion } from '@/components/base/accordion/accordion';
 import { Card } from '@/components/base/card/card';
 import { Select } from '@/components/base/floating/select/select';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { EmptyList, noSchema, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -277,30 +277,36 @@ function TargetSchemaPage(props: {
           <Subtitle>The latest published schema.</Subtitle>
         </div>
         <div className="flex flex-row items-center gap-x-4">
-          <Button variant="outline" asChild>
-            <Link
-              to="/$organizationSlug/$projectSlug/$targetSlug/explorer/unused"
-              params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
-              }}
-            >
-              Unused schema
-            </Link>
+          <Button
+            variant="outline"
+            render={
+              <Link
+                to="/$organizationSlug/$projectSlug/$targetSlug/explorer/unused"
+                params={{
+                  organizationSlug: props.organizationSlug,
+                  projectSlug: props.projectSlug,
+                  targetSlug: props.targetSlug,
+                }}
+              />
+            }
+          >
+            Unused schema
           </Button>
           <span className="italic">|</span>
-          <Button variant="outline" asChild>
-            <Link
-              to="/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated"
-              params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
-              }}
-            >
-              Deprecated schema
-            </Link>
+          <Button
+            variant="outline"
+            render={
+              <Link
+                to="/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated"
+                params={{
+                  organizationSlug: props.organizationSlug,
+                  projectSlug: props.projectSlug,
+                  targetSlug: props.targetSlug,
+                }}
+              />
+            }
+          >
+            Deprecated schema
           </Button>
         </div>
       </div>
