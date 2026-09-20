@@ -47,6 +47,7 @@ export const PolicyMultiSelect = (props: {
     >
       <Combobox
         name="options"
+        inputId={`${props.rule}_${props.propertyName}`}
         placeholder="Select Options"
         className="w-full"
         onBlur={() => {}}

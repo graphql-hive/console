@@ -487,13 +487,13 @@ function OrganizationPolicySettings(props: {
         }
         currentState={currentOrganization.schemaPolicy}
       >
-        {form => (
+        {({ allowOverrides, setAllowOverrides }) => (
           <div className="flex items-center pl-1 pt-2">
             <Checkbox
               id="allowOverrides"
-              checked={form.values.allowOverrides}
+              checked={allowOverrides}
               value="allowOverrides"
-              onCheckedChange={newValue => form.setFieldValue('allowOverrides', newValue)}
+              onCheckedChange={setAllowOverrides}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
             <label htmlFor="allowOverrides" className="text-neutral-11 ml-2 inline-block text-sm">
