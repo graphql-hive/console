@@ -4,14 +4,13 @@ import { buildSchema } from 'graphql';
 import { EraserIcon, MaximizeIcon, MinimizeIcon, SaveIcon, ShareIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useMutation, useQuery } from 'urql';
-import { Button as BaseButton } from '@/components/base/button/button';
 import { Collapsible } from '@/components/base/collapsible/collapsible';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useToast } from '@/components/base/toast/toast';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -491,12 +490,12 @@ function LaboratoryPageContent(props: {
                 }}
                 search={{ page: 'general' }}
               >
-                <Button variant="outline" className="mr-2" size="sm">
+                <Button variant="outline" size="compact">
                   Connect GraphQL API Endpoint
                 </Button>
               </RouterLink>
             ) : null}
-            <Button onClick={toggleConnectLabModal} variant="ghost" size="sm">
+            <Button onClick={toggleConnectLabModal} variant="ghost" size="compact">
               Mock Data Endpoint
             </Button>
           </div>
@@ -592,13 +591,11 @@ function LaboratoryPageContent(props: {
             readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
           >
             <GraphiQL.Logo>
-              <Button
-                onClick={() => setIsFullScreen(prev => !prev)}
-                variant="orangeLink"
-                className="gap-2 whitespace-nowrap"
-              >
-                <FullScreenIcon className="size-4" />
-                {isFullScreen ? 'Exit' : 'Enter'} Full Screen
+              <Button onClick={() => setIsFullScreen(prev => !prev)} variant="link">
+                <span className="flex items-center gap-2 whitespace-nowrap">
+                  <FullScreenIcon className="size-4" />
+                  {isFullScreen ? 'Exit' : 'Enter'} Full Screen
+                </span>
               </Button>
             </GraphiQL.Logo>
             <GraphiQL.Toolbar>
@@ -712,7 +709,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
         onOpenChange={setIsOpen}
         actions={
           isOpen ? (
-            <BaseButton
+            <Button
               layout="iconOnly"
               icon={EraserIcon}
               aria-label="Clear logs"

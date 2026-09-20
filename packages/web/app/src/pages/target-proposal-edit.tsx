@@ -5,7 +5,7 @@ import {
   SaveProposalContext,
   SaveProposalModal,
 } from '@/components/target/proposals/save-proposal-modal';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 
@@ -127,7 +127,6 @@ export function TargetProposalEditPage(props: {
           <Button
             disabled={isSaving}
             variant="outline"
-            className="w-[160px] justify-center px-3 font-bold"
             onClick={async () => {
               await saveChanges({
                 organizationSlug: props.organizationSlug,

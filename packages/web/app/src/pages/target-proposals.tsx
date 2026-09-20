@@ -4,7 +4,7 @@ import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
 import { stageToColor } from '@/components/target/proposals/util';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -109,7 +109,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
           />
         </div>
         <div className="ml-auto mr-0 flex flex-col justify-center">
-          <Button variant="default" onClick={proposeChange}>
+          <Button onClick={proposeChange}>
             Propose a change
           </Button>
         </div>

@@ -3,7 +3,7 @@ import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { graphql } from '@/gql';
 import {
   DocumentCollectionOperation,
@@ -164,8 +164,8 @@ export function CreateOperationModalContent(props: {
         <>
           <Button
             type="button"
-            size="lg"
-            className="w-full justify-center"
+            variant="outline"
+            width="full"
             onClick={() => {
               props.close();
               props.form.reset();
@@ -176,9 +176,8 @@ export function CreateOperationModalContent(props: {
           <Button
             type="submit"
             form={CREATE_OPERATION_FORM_ID}
-            size="lg"
-            className="w-full justify-center"
-            variant="primary"
+            width="full"
+            onSurface="raised"
             disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
           >
             Add Operation

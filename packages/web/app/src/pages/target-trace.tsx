@@ -29,7 +29,7 @@ import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -1447,22 +1447,26 @@ function SpanSheet(props: SpanSheetProps) {
       footer={
         <>
           {span.parentId && (
-            <Button variant="ghost" size="sm" asChild>
-              <Link
-                to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
-                params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
-                  traceId: props.traceId,
-                }}
-                search={{ activeSpanId: span.parentId }}
-              >
-                <ArrowUp className="mr-2 size-4" /> Show Parent Span
-              </Link>
+            <Button
+              variant="ghost"
+              size="compact"
+              render={
+                <Link
+                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                    targetSlug: props.targetSlug,
+                    traceId: props.traceId,
+                  }}
+                  search={{ activeSpanId: span.parentId }}
+                />
+              }
+            >
+              <ArrowUp className="mr-2 size-4" /> Show Parent Span
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={() => clipboard(window.location.href)}>
+          <Button variant="ghost" size="compact" onClick={() => clipboard(window.location.href)}>
             <LinkLucide className="mr-2 size-4" /> Share Link
           </Button>
         </>
@@ -1655,7 +1659,7 @@ function AttributeRow(props: AttributeRowProps) {
       <CopyIconButton value={props.value} label="Copy attribute value" />
       <Tooltip
         trigger={
-          <Button variant="ghost" size="icon-xs" onClick={() => setIsExpanded(bool => !bool)}>
+          <Button variant="ghost" size="icon-sm" onClick={() => setIsExpanded(bool => !bool)}>
             {isExpanded ? <ChevronUp size="14" /> : <ChevronDown size="14" />}
           </Button>
         }

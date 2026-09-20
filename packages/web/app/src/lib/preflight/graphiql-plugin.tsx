@@ -17,7 +17,7 @@ import { Badge } from '@/components/base/badge/badge';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Subtitle } from '@/components/ui/page';
 import { usePromptManager } from '@/components/ui/prompt';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -545,15 +545,11 @@ function PreflightContent() {
       <div className="graphiql-doc-explorer-title flex items-center justify-between gap-4">
         Preflight Script
         {preflight.viewerCanModifyPreflightScript && (
-          <Button
-            variant="orangeLink"
-            size="icon-sm"
-            className="size-auto gap-1"
-            onClick={toggleShowModal}
-            data-cy="preflight-modal-button"
-          >
-            <PencilIcon className="size-4 shrink-0" />
-            Edit
+          <Button variant="link" onClick={toggleShowModal} data-cy="preflight-modal-button">
+            <span className="flex items-center gap-1">
+              <PencilIcon className="size-4 shrink-0" />
+              Edit
+            </span>
           </Button>
         )}
       </div>
@@ -562,11 +558,10 @@ function PreflightContent() {
         handle authentication.
       </Subtitle>
 
-      <div>
+      <div className="mt-3">
         <Button
-          size="sm"
+          size="compact"
           variant="outline"
-          className="mt-3"
           onClick={() => preflight.setIsEnabled(!preflight.isEnabled)}
           data-cy="toggle-preflight"
         >
@@ -757,9 +752,7 @@ function PreflightModal({
               <Badge content="JavaScript" variants={{ variant: 'outline' }} />
             </EditorTitle>
             <Button
-              variant="orangeLink"
-              size="icon-sm"
-              className="size-auto gap-1"
+              variant="link"
               onClick={e => {
                 e.stopPropagation();
                 if (state === PreflightWorkerState.running) {
@@ -771,18 +764,20 @@ function PreflightModal({
               }}
               data-cy="run-preflight"
             >
-              {state === PreflightWorkerState.running && (
-                <>
-                  <XIcon className="size-4 shrink-0" />
-                  Stop Script
-                </>
-              )}
-              {state === PreflightWorkerState.ready && (
-                <>
-                  <PlayIcon className="size-4 shrink-0" />
-                  Run Script
-                </>
-              )}
+              <span className="flex items-center gap-1">
+                {state === PreflightWorkerState.running && (
+                  <>
+                    <XIcon className="size-4 shrink-0" />
+                    Stop Script
+                  </>
+                )}
+                {state === PreflightWorkerState.ready && (
+                  <>
+                    <PlayIcon className="size-4 shrink-0" />
+                    Run Script
+                  </>
+                )}
+              </span>
             </Button>
           </div>
           <MonacoEditor
@@ -803,14 +798,14 @@ function PreflightModal({
           <div className="flex justify-between p-2">
             <EditorTitle>Console Output</EditorTitle>
             <Button
-              variant="orangeLink"
-              size="icon-sm"
-              className="size-auto gap-1"
+              variant="link"
               onClick={clearLogs}
               disabled={state === PreflightWorkerState.running}
             >
-              <XIcon className="size-3 shrink-0" />
-              Clear Output
+              <span className="flex items-center gap-1">
+                <XIcon className="size-3 shrink-0" />
+                Clear Output
+              </span>
             </Button>
           </div>
           <div className="flex h-1/2 flex-col bg-[#10151f]">

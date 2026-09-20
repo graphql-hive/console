@@ -6,13 +6,12 @@ import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
-import { Button as BaseButton } from '@/components/base/button/button';
 import { DataTable, type DataTablePaginationProp } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import {
   ChartConfig,
   ChartContainer,
@@ -813,20 +812,26 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           <Skeleton className="inline-block h-4 w-[150px]" />
         )}
         {props.traceId ? (
-          <Button asChild variant="outline" size="sm" className="ml-auto">
-            <Link
-              to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
-              params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
-                traceId: props.traceId,
-              }}
+          <div className="ml-auto">
+            <Button
+              variant="outline"
+              size="compact"
+              render={
+                <Link
+                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                    targetSlug: props.targetSlug,
+                    traceId: props.traceId,
+                  }}
+                />
+              }
             >
               <ExternalLinkIcon className="mr-1 size-3" />
               Full Trace
-            </Link>
-          </Button>
+            </Button>
+          </div>
         ) : null}
       </div>
       {trace && (
@@ -1153,7 +1158,7 @@ export function TargetTracesPageContent(
               align="end"
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
             />
-            <BaseButton
+            <Button
               layout="iconOnly"
               icon={RefreshCw}
               aria-label="Refresh"

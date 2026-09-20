@@ -27,7 +27,7 @@ import {
   SaveProposalProvider,
 } from '@/components/target/proposals/save-proposal-modal';
 import { schemaTitle } from '@/components/target/proposals/util';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Callout } from '@/components/ui/callout';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -242,6 +242,7 @@ function ConfirmationModal(props: {
       description="The proposed changes are invalid but can be automatically corrected."
       footer={
         <Button
+          onSurface="raised"
           disabled={!confirmed.every(c => c)}
           onClick={() => {
             const allConfirmed = confirmed.every(c => c);

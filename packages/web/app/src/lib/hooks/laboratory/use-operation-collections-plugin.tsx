@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import clsx from 'clsx';
 import { BookmarkIcon, EllipsisIcon, FolderIcon, FolderOpenIcon, PlusIcon, SquareTerminalIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Accordion } from '@/components/base/accordion/accordion';
@@ -10,7 +9,7 @@ import { CreateCollectionModal } from '@/components/target/laboratory/create-col
 import { DeleteCollectionModal } from '@/components/target/laboratory/delete-collection-modal';
 import { DeleteOperationModal } from '@/components/target/laboratory/delete-operation-modal';
 import { EditOperationModal } from '@/components/target/laboratory/edit-operation-modal';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
@@ -421,13 +420,11 @@ export function Content() {
             </div>
           ))
         ) : (
-          <Button
-            variant="orangeLink"
-            className="mx-auto block"
-            onClick={() => void addOperation(collection.id)}
-          >
-            <PlusIcon className="mr-1 inline size-4" /> Add Operation
-          </Button>
+          <div className="text-center">
+            <Button variant="link" onClick={() => void addOperation(collection.id)}>
+              <PlusIcon className="mr-1 inline size-4" /> Add Operation
+            </Button>
+          </div>
         )}
       </div>
     ),
@@ -443,13 +440,8 @@ export function Content() {
           <Tooltip
             trigger={
               <Button
-                variant="orangeLink"
-                size="icon-sm"
+                variant="link"
                 data-cy="new-collection"
-                className={clsx(
-                  'flex w-auto items-center gap-1',
-                  'min-w-0', // trick to make work truncate
-                )}
                 onClick={() => {
                   if (collectionId) {
                     setCollectionId('');
@@ -457,8 +449,10 @@ export function Content() {
                   toggleCollectionModal();
                 }}
               >
-                <PlusIcon className="size-4 shrink-0" />
-                <span className="truncate">New collection</span>
+                <span className="flex min-w-0 items-center gap-1">
+                  <PlusIcon className="size-4 shrink-0" />
+                  <span className="truncate">New collection</span>
+                </span>
               </Button>
             }
             content="Create a new collection of GraphQL Operations"
@@ -486,18 +480,19 @@ export function Content() {
             <BookmarkIcon size={30} />
             <div className="mt-2 text-xs">There are no collections available.</div>
             {canEdit && (
-              <Button
-                onClick={() => {
-                  if (collectionId) {
-                    setCollectionId('');
-                  }
-                  toggleCollectionModal();
-                }}
-                data-cy="create-collection"
-                className="mt-3"
-              >
-                Create your first Collection.
-              </Button>
+              <div className="mt-3">
+                <Button
+                  onClick={() => {
+                    if (collectionId) {
+                      setCollectionId('');
+                    }
+                    toggleCollectionModal();
+                  }}
+                  data-cy="create-collection"
+                >
+                  Create your first Collection.
+                </Button>
+              </div>
             )}
           </div>
         </div>

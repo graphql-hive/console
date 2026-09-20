@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Callout } from '@/components/ui/callout';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link } from '@/components/ui/link';
@@ -51,7 +51,7 @@ export const ConnectLabModalContent = (props: {
       title="Use GraphQL Schema Externally"
       description="Hive allow you to consume and use the Laboratory schema with your configured mocks while developing."
       footer={
-        <Button variant="default" onClick={() => props.close()}>
+        <Button onSurface="raised" onClick={() => props.close()}>
           Close
         </Button>
       }
