@@ -85,6 +85,38 @@ export const WithIcon = createPreview(() => (
   </Button>
 ));
 
+/** Text that acts, inline with the copy around it: no box, accent, underlined on hover. */
+export const Link = createPreview(() => (
+  <p className="text-neutral-11 max-w-md text-sm">
+    The schema check failed on a breaking change.{' '}
+    <Button variant="link">See the affected deployments</Button> before approving it, or{' '}
+    <Button variant="link" disabled>
+      request a re-run
+    </Button>{' '}
+    once the queue clears.
+  </p>
+));
+
+/**
+ * A button that navigates: `render` takes the router `<Link>` or an anchor and the button's
+ * classes, ref and handlers merge onto it. It replaces the old `asChild`.
+ */
+export const AsLink = createPreview(() => (
+  <div className="flex w-96 flex-col gap-3">
+    <Button width="full" render={<a href="#" />}>
+      Go to your organization
+    </Button>
+    <Button variant="outline" width="full" render={<a href="#" />}>
+      Sign in instead
+    </Button>
+    <div>
+      <Button variant="ghost" size="compact" render={<a href="#" />}>
+        Back to traces
+      </Button>
+    </div>
+  </div>
+));
+
 export const Disabled = createPreview(() => (
   <div className="flex items-center gap-4">
     <Button variant="primary" disabled>
@@ -128,6 +160,7 @@ export const Playground = createPreview({
         'outline',
         'ghost',
         'destructive',
+        'link',
       ],
       default: 'primary',
     },

@@ -1,9 +1,26 @@
 import { CalendarDays, Trash2Icon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Button as BaseButton } from '@/components/base/button/button';
 import { Button } from '@/components/ui/button';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Button';
+
+/** The new rendering under the old, labelled, so the two can be read as a pair. */
+function Pair(props: { old: React.ReactNode; base: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-start gap-3">
+        <span className="text-neutral-10 w-8 pt-2 font-mono text-xs">ui</span>
+        {props.old}
+      </div>
+      <div className="flex items-start gap-3">
+        <span className="text-neutral-10 w-8 pt-2 font-mono text-xs">base</span>
+        {props.base}
+      </div>
+    </div>
+  );
+}
 
 const ENTRIES = [
   {
@@ -125,37 +142,71 @@ export const Variants = createPreview({
       <CallSite
         source="components/ui/button.tsx"
         origin="ui"
-        note="All eight, ordered by how often each is used. default is 120 of 335 - a neutral grey fill that reads as the ordinary button. primary (the accent fill) is used 17 times, so the loudest variant is one of the rarest."
+        note="All eight, ordered by how often each is used. default is 120 of 335 - a neutral grey fill that reads as the ordinary button. primary (the accent fill) is used 17 times, so the loudest variant is one of the rarest. Under each, where it lands on base: the grey default onto base default, the accent primary onto the neutral-12 primary, secondary onto outline, both links onto link."
       >
-        <div className="flex flex-wrap items-center gap-3">
-          <Button>default · 120</Button>
-          <Button variant="outline">outline · 68</Button>
-          <Button variant="ghost">ghost · 50</Button>
-          <Button variant="destructive">destructive · 29</Button>
-          <Button variant="link">link · 23</Button>
-          <Button variant="secondary">secondary · 17</Button>
-          <Button variant="primary">primary · 17</Button>
-          <Button variant="orangeLink">orangeLink · 11</Button>
-        </div>
+        <Pair
+          old={
+            <div className="flex flex-wrap items-center gap-3">
+              <Button>default · 120</Button>
+              <Button variant="outline">outline · 68</Button>
+              <Button variant="ghost">ghost · 50</Button>
+              <Button variant="destructive">destructive · 29</Button>
+              <Button variant="link">link · 23</Button>
+              <Button variant="secondary">secondary · 17</Button>
+              <Button variant="primary">primary · 17</Button>
+              <Button variant="orangeLink">orangeLink · 11</Button>
+            </div>
+          }
+          base={
+            <div className="flex flex-wrap items-center gap-3">
+              <BaseButton>default</BaseButton>
+              <BaseButton variant="outline">outline</BaseButton>
+              <BaseButton variant="ghost">ghost</BaseButton>
+              <BaseButton variant="destructive">destructive</BaseButton>
+              <BaseButton variant="link">link</BaseButton>
+              <BaseButton variant="outline">outline (was secondary)</BaseButton>
+              <BaseButton variant="primary">primary</BaseButton>
+              <BaseButton variant="link">link (was orangeLink)</BaseButton>
+            </div>
+          }
+        />
       </CallSite>
 
       <CallSite
         source="components/ui/button.tsx"
         origin="ui"
-        note="Disabled, which every variant handles differently. default alone adds disabled:ring-1 disabled:ring-neutral-5 and an !important background reset, so it keeps an outline when disabled while the others just fade to 50%."
+        note="Disabled, which every variant handles differently. default alone adds disabled:ring-1 disabled:ring-neutral-5 and an !important background reset, so it keeps an outline when disabled while the others just fade to 50%. Base fades every variant the same way."
       >
-        <div className="flex flex-wrap items-center gap-3">
-          <Button disabled>default</Button>
-          <Button variant="outline" disabled>
-            outline
-          </Button>
-          <Button variant="primary" disabled>
-            primary
-          </Button>
-          <Button variant="destructive" disabled>
-            destructive
-          </Button>
-        </div>
+        <Pair
+          old={
+            <div className="flex flex-wrap items-center gap-3">
+              <Button disabled>default</Button>
+              <Button variant="outline" disabled>
+                outline
+              </Button>
+              <Button variant="primary" disabled>
+                primary
+              </Button>
+              <Button variant="destructive" disabled>
+                destructive
+              </Button>
+            </div>
+          }
+          base={
+            <div className="flex flex-wrap items-center gap-3">
+              <BaseButton disabled>default</BaseButton>
+              <BaseButton variant="outline" disabled>
+                outline
+              </BaseButton>
+              <BaseButton variant="primary" disabled>
+                primary
+              </BaseButton>
+              <BaseButton variant="destructive" disabled>
+                destructive
+              </BaseButton>
+            </div>
+          }
+        />
       </CallSite>
     </div>
   ),
@@ -172,33 +223,61 @@ export const Sizes = createPreview({
       <CallSite
         source="261 default, 23 sm, 18 lg, 2 xs"
         origin="ui"
-        note="The text sizes. 261 of 335 buttons take the h-10 default; xs is used twice in the entire app."
+        note="The text sizes. 261 of 335 buttons take the h-10 default; xs is used twice in the entire app. Base has two rungs: lg, default and sm all land on the 36px default, xs on the 30px compact."
       >
-        <div className="flex flex-wrap items-center gap-3">
-          <Button size="lg">lg · 18</Button>
-          <Button>default · 261</Button>
-          <Button size="sm">sm · 23</Button>
-          <Button size="xs">xs · 2</Button>
-        </div>
+        <Pair
+          old={
+            <div className="flex flex-wrap items-center gap-3">
+              <Button size="lg">lg · 18</Button>
+              <Button>default · 261</Button>
+              <Button size="sm">sm · 23</Button>
+              <Button size="xs">xs · 2</Button>
+            </div>
+          }
+          base={
+            <div className="flex flex-wrap items-center gap-3">
+              <BaseButton>default (was lg)</BaseButton>
+              <BaseButton>default</BaseButton>
+              <BaseButton>default (was sm)</BaseButton>
+              <BaseButton size="compact">compact (was xs)</BaseButton>
+            </div>
+          }
+        />
       </CallSite>
 
       <CallSite
         source="19 icon-sm, 9 icon, 3 icon-xs"
         origin="ui"
-        note="The icon-only squares. icon-xs is size-4, which is smaller than the 16px icon usually put inside it - the icon overflows its own button. Almost all of these are ghost."
+        note="The icon-only squares. icon-xs is size-4, which is smaller than the 16px icon usually put inside it - the icon overflows its own button. Almost all of these are ghost. On base, icon becomes the iconOnly layout at the default rung, and icon-sm and icon-xs both become the 28px icon-sm square."
       >
-        <div className="flex flex-wrap items-center gap-3">
-          <Button variant="ghost" size="icon">
-            <Trash2Icon className="size-4" />
-          </Button>
-          <Button variant="ghost" size="icon-sm">
-            <Trash2Icon className="size-4" />
-          </Button>
-          <Button variant="ghost" size="icon-xs">
-            <Trash2Icon className="size-3" />
-          </Button>
-          <span className="text-neutral-10 text-xs">icon · 9, icon-sm · 19, icon-xs · 3</span>
-        </div>
+        <Pair
+          old={
+            <div className="flex flex-wrap items-center gap-3">
+              <Button variant="ghost" size="icon">
+                <Trash2Icon className="size-4" />
+              </Button>
+              <Button variant="ghost" size="icon-sm">
+                <Trash2Icon className="size-4" />
+              </Button>
+              <Button variant="ghost" size="icon-xs">
+                <Trash2Icon className="size-3" />
+              </Button>
+              <span className="text-neutral-10 text-xs">icon · 9, icon-sm · 19, icon-xs · 3</span>
+            </div>
+          }
+          base={
+            <div className="flex flex-wrap items-center gap-3">
+              <BaseButton variant="ghost" layout="iconOnly" icon={Trash2Icon} aria-label="Delete" />
+              <BaseButton variant="ghost" size="icon-sm">
+                <Trash2Icon className="size-4" />
+              </BaseButton>
+              <BaseButton variant="ghost" size="icon-sm">
+                <Trash2Icon className="size-4" />
+              </BaseButton>
+              <span className="text-neutral-10 text-xs">iconOnly, icon-sm, icon-sm</span>
+            </div>
+          }
+        />
       </CallSite>
     </div>
   ),
@@ -215,16 +294,25 @@ export const TheLinkProblem = createPreview({
       <CallSite
         source="components/ui/button.tsx"
         origin="ui"
-        note="orangeLink is link plus h-auto p-0. Both are text-accent with a hover underline - the name suggests a colour difference that does not exist. Side by side the only difference is that link keeps the h-10 button box, so it sits on a taller line."
+        note="orangeLink is link plus h-auto p-0. Both are text-accent with a hover underline - the name suggests a colour difference that does not exist. Side by side the only difference is that link keeps the h-10 button box, so it sits on a taller line. Base has one link and no box."
       >
-        <div className="flex flex-col items-start gap-2">
-          <div className="border-neutral-5 rounded-md border border-dashed">
-            <Button variant="link">variant=&quot;link&quot; — keeps h-10 py-2 px-4</Button>
-          </div>
-          <div className="border-neutral-5 rounded-md border border-dashed">
-            <Button variant="orangeLink">variant=&quot;orangeLink&quot; — h-auto p-0</Button>
-          </div>
-        </div>
+        <Pair
+          old={
+            <div className="flex flex-col items-start gap-2">
+              <div className="border-neutral-5 rounded-md border border-dashed">
+                <Button variant="link">variant=&quot;link&quot; — keeps h-10 py-2 px-4</Button>
+              </div>
+              <div className="border-neutral-5 rounded-md border border-dashed">
+                <Button variant="orangeLink">variant=&quot;orangeLink&quot; — h-auto p-0</Button>
+              </div>
+            </div>
+          }
+          base={
+            <div className="border-neutral-5 rounded-md border border-dashed">
+              <BaseButton variant="link">variant=&quot;link&quot; — no box</BaseButton>
+            </div>
+          }
+        />
       </CallSite>
 
       <CallSite
@@ -264,22 +352,40 @@ export const WidthAndAlignment = createPreview({
       <CallSite
         source="116 sites carry w-full, 27 of them as the whole className"
         origin="ui"
-        note="Full-width buttons are everywhere: modal footers, auth forms, sheet actions. 12 sites also add justify-center on top, though the base class already centres. This is the clearest missing prop on the component."
+        note="Full-width buttons are everywhere: modal footers, auth forms, sheet actions. 12 sites also add justify-center on top, though the base class already centres. This is the clearest missing prop on the component. Base has width=full, which centres on its own."
       >
-        <div className="flex w-[24rem] flex-col gap-2">
-          <Button className="w-full">w-full · 27 literal</Button>
-          <Button variant="primary" className="w-full justify-center">
-            w-full justify-center · 12
-          </Button>
-          <div className="flex w-full gap-2">
-            <Button size="lg" className="w-full justify-center">
-              Cancel
-            </Button>
-            <Button size="lg" variant="primary" className="w-full justify-center">
-              Create Alert
-            </Button>
-          </div>
-        </div>
+        <Pair
+          old={
+            <div className="flex w-[24rem] flex-col gap-2">
+              <Button className="w-full">w-full · 27 literal</Button>
+              <Button variant="primary" className="w-full justify-center">
+                w-full justify-center · 12
+              </Button>
+              <div className="flex w-full gap-2">
+                <Button size="lg" className="w-full justify-center">
+                  Cancel
+                </Button>
+                <Button size="lg" variant="primary" className="w-full justify-center">
+                  Create Alert
+                </Button>
+              </div>
+            </div>
+          }
+          base={
+            <div className="flex w-[24rem] flex-col gap-2">
+              <BaseButton width="full">width=&quot;full&quot;</BaseButton>
+              <BaseButton variant="primary" width="full">
+                width=&quot;full&quot;
+              </BaseButton>
+              <div className="flex w-full gap-2">
+                <BaseButton width="full">Cancel</BaseButton>
+                <BaseButton variant="primary" width="full">
+                  Create Alert
+                </BaseButton>
+              </div>
+            </div>
+          }
+        />
       </CallSite>
 
       <CallSite
@@ -325,25 +431,44 @@ export const ButtonsThatAreLinks = createPreview({
       <CallSite
         source="30 asChild sites, ~28 wrapping a Link or an anchor"
         origin="ui"
-        note="This is what asChild is actually for in this app: making a button navigate. auth-verify-email.tsx does it three times, auth-sign-in and auth-sign-up once each, and every settings page has one. An anchor stands in for the TanStack Link here since the preview router only resolves app routes."
+        note="This is what asChild is actually for in this app: making a button navigate. auth-verify-email.tsx does it three times, auth-sign-in and auth-sign-up once each, and every settings page has one. An anchor stands in for the TanStack Link here since the preview router only resolves app routes. Base takes the element through render and merges the button onto it."
       >
-        <div className="flex w-[24rem] flex-col gap-2">
-          <Button asChild className="w-full">
-            <a href="#">Go to your organization</a>
-          </Button>
-          <Button asChild variant="outline" className="w-full">
-            <a href="#">Sign in instead</a>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <a href="#">Back to traces</a>
-          </Button>
-        </div>
+        <Pair
+          old={
+            <div className="flex w-[24rem] flex-col gap-2">
+              <Button asChild className="w-full">
+                <a href="#">Go to your organization</a>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
+                <a href="#">Sign in instead</a>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <a href="#">Back to traces</a>
+              </Button>
+            </div>
+          }
+          base={
+            <div className="flex w-[24rem] flex-col gap-2">
+              <BaseButton width="full" render={<a href="#" />}>
+                Go to your organization
+              </BaseButton>
+              <BaseButton variant="outline" width="full" render={<a href="#" />}>
+                Sign in instead
+              </BaseButton>
+              <div>
+                <BaseButton variant="ghost" render={<a href="#" />}>
+                  Back to traces
+                </BaseButton>
+              </div>
+            </div>
+          }
+        />
       </CallSite>
 
       <CallSite
         source="pages/target-alerts.tsx"
         origin="ui"
-        note="The awkward one: a ghost button that is really a nav item, so it needs h-auto justify-start text-left to stop behaving like a button. Three of the component's own defaults undone at once."
+        note="The awkward one: a ghost button that is really a nav item, so it needs h-auto justify-start text-left to stop behaving like a button. Three of the component's own defaults undone at once. Base has no such override, and this is a navigation list rather than a button, so the round moves it onto SecondaryNavigation rather than onto Button."
       >
         <div className="flex w-[16rem] flex-col">
           {['Overview', 'Rules', 'Activity'].map(item => (
