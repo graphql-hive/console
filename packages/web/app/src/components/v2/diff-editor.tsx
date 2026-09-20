@@ -6,7 +6,7 @@ import { Label } from '@/components/base/label/label';
 import { Switch } from '@/components/base/switch/switch';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
 import { useTheme } from '@/components/theme/theme-provider';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import type { Monaco, MonacoDiffEditor as OriginalMonacoDiffEditor } from '@monaco-editor/react';
 import { Spinner } from '../ui/spinner';
 
@@ -173,7 +173,7 @@ export function DownloadButton(props: { contents: string; fileName: string }) {
       trigger={
         <Button
           variant="ghost"
-          size="sm"
+          size="compact"
           onClick={() => {
             const element = document.createElement('a');
             element.setAttribute(
@@ -186,7 +186,6 @@ export function DownloadButton(props: { contents: string; fileName: string }) {
 
             document.body.removeChild(element);
           }}
-          className="mr-2 text-xs font-normal"
         >
           <Download className="mr-2 size-4" /> Download
         </Button>

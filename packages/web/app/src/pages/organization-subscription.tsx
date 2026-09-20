@@ -11,7 +11,7 @@ import { CurrencyFormatter } from '@/components/organization/billing/helpers';
 import { InvoicesList } from '@/components/organization/billing/InvoicesList';
 import { RenderIfStripeAvailable } from '@/components/organization/stripe';
 import { OrganizationUsageEstimationView } from '@/components/organization/Usage';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
@@ -121,13 +121,15 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
           <PageLead title="Your subscription" description="Explore your current plan and usage." />
           {organization.viewerCanModifyBilling && (
             <div>
-              <Button asChild>
-                <Link
-                  to="/$organizationSlug/view/manage-subscription"
-                  params={{ organizationSlug: currentOrganization.slug }}
-                >
-                  Manage subscription
-                </Link>
+              <Button
+                render={
+                  <Link
+                    to="/$organizationSlug/view/manage-subscription"
+                    params={{ organizationSlug: currentOrganization.slug }}
+                  />
+                }
+              >
+                Manage subscription
               </Button>
             </div>
           )}

@@ -8,7 +8,7 @@ import { Input } from '@/components/base/input/input';
 import { Separator } from '@/components/base/separator/separator';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { ProjectCard } from '@/components/organization/project-card';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -239,17 +239,12 @@ function OrganizationPageContent(
                   onValueChange={onRequestsValueChange}
                 />
                 <Button
-                  className="size-9 shrink-0"
                   variant="outline"
-                  size="icon"
+                  layout="iconOnly"
+                  icon={props.sortOrder === 'asc' ? MoveUpIcon : MoveDownIcon}
+                  aria-label={props.sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
                   onClick={onSortClick}
-                >
-                  {props.sortOrder === 'asc' ? (
-                    <MoveUpIcon className="size-4" />
-                  ) : (
-                    <MoveDownIcon className="size-4" />
-                  )}
-                </Button>
+                />
               </div>
             </div>
           </div>

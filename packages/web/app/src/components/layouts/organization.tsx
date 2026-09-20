@@ -12,7 +12,7 @@ import {
   CreateProjectFormSchema,
   type CreateProjectFormValues,
 } from '@/components/project/create-project-form';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -163,8 +163,10 @@ export function OrganizationLayout({
           currentOrganization?.viewerCanCreateProject ? (
             <>
               <Button onClick={toggleModalOpen} variant="link" data-cy="new-project-button">
-                <PlusIcon size={16} className="mr-2" />
-                New project
+                <span className="flex items-center">
+                  <PlusIcon size={16} className="mr-2" />
+                  New project
+                </span>
               </Button>
               <CreateProjectModal
                 organizationSlug={organizationSlug}

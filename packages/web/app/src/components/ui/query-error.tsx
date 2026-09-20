@@ -3,7 +3,7 @@ import cookies from 'js-cookie';
 import { LogOutIcon } from 'lucide-react';
 import { CombinedError } from 'urql';
 import { commonErrorStrings } from '@/components/error';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -37,17 +37,18 @@ export function QueryError({
   return (
     <div className={cn('flex size-full items-center justify-center', className)}>
       {showLogoutButton && (
-        <Button
-          variant="outline"
-          onClick={() =>
-            router.navigate({
-              to: '/logout',
-            })
-          }
-          className="absolute right-6 top-6"
-        >
-          <LogOutIcon className="mr-2 size-4" /> Sign out
-        </Button>
+        <div className="absolute right-6 top-6">
+          <Button
+            variant="outline"
+            onClick={() =>
+              router.navigate({
+                to: '/logout',
+              })
+            }
+          >
+            <LogOutIcon className="mr-2 size-4" /> Sign out
+          </Button>
+        </div>
       )}
       <div className="flex max-w-[960px] flex-col items-center gap-x-6 sm:flex-row">
         <img src="/images/figures/connection.svg" alt="Ghost" className="block size-[200px]" />
@@ -62,14 +63,17 @@ export function QueryError({
                 <p>
                   {commonErrorStrings.track}{' '}
                   {organizationSlug ? (
-                    <Button variant="link" className="h-auto p-0" asChild>
-                      <Link to="/$organizationSlug/view/support" params={{ organizationSlug }}>
-                        {commonErrorStrings.link}
-                      </Link>
+                    <Button
+                      variant="link"
+                      render={
+                        <Link to="/$organizationSlug/view/support" params={{ organizationSlug }} />
+                      }
+                    >
+                      {commonErrorStrings.link}
                     </Button>
                   ) : (
-                    <Button variant="link" className="h-auto p-0" asChild>
-                      <a href="mailto:support@graphql-hive.com">{commonErrorStrings.link}</a>
+                    <Button variant="link" render={<a href="mailto:support@graphql-hive.com" />}>
+                      {commonErrorStrings.link}
                     </Button>
                   )}
                   .

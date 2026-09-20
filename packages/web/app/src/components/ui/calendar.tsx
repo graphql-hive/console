@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { cn } from '@/lib/utils';
-import { buttonVariants } from './button';
+import { focusRing } from '@/components/base/shared-styles';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
@@ -18,8 +18,8 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         caption_label: 'text-sm font-medium',
         nav: 'space-x-1 flex items-center',
         nav_button: cn(
-          buttonVariants({ variant: 'outline' }),
-          'size-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+          'border-neutral-5 inline-flex size-7 items-center justify-center rounded-sm border bg-transparent opacity-50 transition-opacity hover:opacity-100',
+          focusRing,
         ),
         nav_button_previous: 'absolute left-1',
         nav_button_next: 'absolute right-1',
@@ -34,8 +34,8 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
             : '[&:has([aria-selected])]:rounded-md',
         ),
         day: cn(
-          buttonVariants({ variant: 'ghost' }),
-          'size-8 p-0 font-normal aria-selected:opacity-100',
+          'text-neutral-11 hover:text-neutral-12 inline-flex size-8 items-center justify-center rounded-sm text-sm font-normal transition-colors aria-selected:opacity-100',
+          focusRing,
         ),
         day_range_start: 'day-range-start',
         day_range_end: 'day-range-end',

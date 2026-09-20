@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { isChunkLoadError, reloadOnChunkError } from '@/lib/chunk-error';
 import { captureException, flush } from '@sentry/react';
 import { useRouter } from '@tanstack/react-router';
@@ -34,17 +34,18 @@ export function ErrorComponent(props: { error: any; message?: string }) {
   return (
     <div className="flex size-full items-center justify-center">
       {isLoggedIn ? (
-        <Button
-          variant="outline"
-          onClick={() =>
-            router.navigate({
-              to: '/logout',
-            })
-          }
-          className="absolute right-6 top-6"
-        >
-          <LogOutIcon className="mr-2 size-4" /> Sign out
-        </Button>
+        <div className="absolute right-6 top-6">
+          <Button
+            variant="outline"
+            onClick={() =>
+              router.navigate({
+                to: '/logout',
+              })
+            }
+          >
+            <LogOutIcon className="mr-2 size-4" /> Sign out
+          </Button>
+        </div>
       ) : null}
       <div className="flex max-w-[960px] flex-col items-center gap-x-6 sm:flex-row">
         <img src="/images/figures/connection.svg" alt="Ghost" className="block size-[200px]" />
@@ -57,8 +58,8 @@ export function ErrorComponent(props: { error: any; message?: string }) {
               <p>{commonErrorStrings.reported}</p>
               <p>
                 {commonErrorStrings.track}{' '}
-                <Button variant="link" className="h-auto p-0" asChild>
-                  <a href="mailto:support@graphql-hive.com">{commonErrorStrings.link}</a>
+                <Button variant="link" render={<a href="mailto:support@graphql-hive.com" />}>
+                  {commonErrorStrings.link}
                 </Button>
                 .
               </p>
