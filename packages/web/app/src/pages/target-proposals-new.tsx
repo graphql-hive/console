@@ -11,6 +11,7 @@ import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { TriangleAlert } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';
+import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
@@ -27,7 +28,6 @@ import {
   SaveProposalProvider,
 } from '@/components/target/proposals/save-proposal-modal';
 import { schemaTitle } from '@/components/target/proposals/util';
-import { Button } from '@/components/base/button/button';
 import { Callout } from '@/components/ui/callout';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -646,9 +646,7 @@ function ChangesTab(props: {
           </Subtitle>
         </div>
       )}
-      {props.diffs?.map((changeProps, idx) => (
-        <DiffService key={idx} {...changeProps} />
-      ))}
+      {props.diffs?.map((changeProps, idx) => <DiffService key={idx} {...changeProps} />)}
     </>
   );
 }

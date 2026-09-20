@@ -1,12 +1,12 @@
 import { ReactElement, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Download } from 'lucide-react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
+import { Button } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Label } from '@/components/base/label/label';
 import { Switch } from '@/components/base/switch/switch';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
 import { useTheme } from '@/components/theme/theme-provider';
-import { Button } from '@/components/base/button/button';
 import type { Monaco, MonacoDiffEditor as OriginalMonacoDiffEditor } from '@monaco-editor/react';
 import { Spinner } from '../ui/spinner';
 

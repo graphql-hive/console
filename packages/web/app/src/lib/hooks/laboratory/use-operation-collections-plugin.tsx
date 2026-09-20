@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
-import { BookmarkIcon, EllipsisIcon, FolderIcon, FolderOpenIcon, PlusIcon, SquareTerminalIcon } from 'lucide-react';
+import {
+  BookmarkIcon,
+  EllipsisIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  PlusIcon,
+  SquareTerminalIcon,
+} from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Accordion } from '@/components/base/accordion/accordion';
+import { Button } from '@/components/base/button/button';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { useToast } from '@/components/base/toast/toast';
@@ -9,7 +17,6 @@ import { CreateCollectionModal } from '@/components/target/laboratory/create-col
 import { DeleteCollectionModal } from '@/components/target/laboratory/delete-collection-modal';
 import { DeleteOperationModal } from '@/components/target/laboratory/delete-operation-modal';
 import { EditOperationModal } from '@/components/target/laboratory/edit-operation-modal';
-import { Button } from '@/components/base/button/button';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';

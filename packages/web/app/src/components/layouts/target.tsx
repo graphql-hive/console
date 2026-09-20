@@ -1,13 +1,13 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Select } from '@/components/base/floating/select/select';
 import { Label } from '@/components/base/label/label';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
-import { Button } from '@/components/base/button/button';
 import { HiveLink } from '@/components/ui/hive-link';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link as UiLink } from '@/components/ui/link';

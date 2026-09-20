@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
@@ -14,7 +15,6 @@ import {
   type NewTicketFormValues,
 } from '@/components/organization/new-ticket-form';
 import { priorityDescription } from '@/components/organization/support';
-import { Button } from '@/components/base/button/button';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';

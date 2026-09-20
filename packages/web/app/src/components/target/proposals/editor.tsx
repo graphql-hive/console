@@ -1,11 +1,11 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { Circle, Settings, TriangleAlertIcon, WandSparkles, XIcon } from 'lucide-react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
+import { Button } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Tabs } from '@/components/base/tabs/tabs';
-import { Button } from '@/components/base/button/button';
 import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';

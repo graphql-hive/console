@@ -6,12 +6,12 @@ import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { DataTable, type DataTablePaginationProp } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { Button } from '@/components/base/button/button';
 import {
   ChartConfig,
   ChartContainer,

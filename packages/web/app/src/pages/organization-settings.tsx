@@ -1,8 +1,8 @@
-import { GitHubIcon, SlackIcon } from '@/components/ui/brand-icon';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
@@ -19,7 +19,7 @@ import {
 import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
 import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
 import { PolicySettings } from '@/components/policy/policy-settings';
-import { Button } from '@/components/base/button/button';
+import { GitHubIcon, SlackIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -371,9 +371,7 @@ const OrganizationSettingsContent = (props: {
               text: 'Learn more',
             }}
           />
-          <Button onClick={toggleAuditLogsModalOpen}>
-            Export Audit Logs
-          </Button>
+          <Button onClick={toggleAuditLogsModalOpen}>Export Audit Logs</Button>
           <AuditLogsOrganizationModal
             organizationSlug={organization.slug}
             isOpen={isAuditLogsModalOpen}

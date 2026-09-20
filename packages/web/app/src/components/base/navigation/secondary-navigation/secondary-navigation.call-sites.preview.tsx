@@ -1,9 +1,9 @@
-import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { ChartPieIcon, FileDiffIcon, LinkIcon, ListIcon, PencilIcon, PlusIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Button } from '@/components/base/button/button';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { SecondaryNavigation as SecondaryNavigationBar } from '@/components/navigation/secondary-navigation';
-import { Button } from '@/components/base/button/button';
+import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { SecondaryNavigation, type SecondaryNavigationItem } from './secondary-navigation';
 
 export const nav: NavPath = 'Base/Navigation/SecondaryNavigation/Component Examples';

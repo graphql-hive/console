@@ -1,11 +1,11 @@
-import { SaveIcon } from 'lucide-react';
 import { useContext, useEffect, useMemo, useState } from 'react';
+import { SaveIcon } from 'lucide-react';
+import { Button } from '@/components/base/button/button';
 import { ProposalEditor, ServiceTab } from '@/components/target/proposals/editor';
 import {
   SaveProposalContext,
   SaveProposalModal,
 } from '@/components/target/proposals/save-proposal-modal';
-import { Button } from '@/components/base/button/button';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 

@@ -1,4 +1,3 @@
-import { type IconProps } from '@/components/ui/brand-icon';
 import {
   useEffect,
   useState,
@@ -10,6 +9,7 @@ import {
 import { type VariantProps } from 'class-variance-authority';
 import { ArrowRight, Check, ChevronRight } from 'lucide-react';
 import { Switch } from '@/components/base/switch/switch';
+import { type IconProps } from '@/components/ui/brand-icon';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { useFloatingPortalContainer } from '../floating-portal-container';
 import { floatingVariants, itemVariants, type FloatingProps } from '../shared-styles';

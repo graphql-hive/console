@@ -7,9 +7,9 @@ import {
   type FormEvent,
   type ReactNode,
 } from 'react';
+import { Button } from '@/components/base/button/button';
 import { Input } from '@/components/base/input/input';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { Button } from '@/components/base/button/button';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 
 interface PromptProps {

@@ -10,11 +10,11 @@ import {
 } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { SecondaryNavigation } from '@/components/base/navigation/secondary-navigation/secondary-navigation';
 import { focusRingQuiet } from '@/components/base/shared-styles';
 import { Switch } from '@/components/base/switch/switch';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Button } from '@/components/base/button/button';
 import { cn } from '@/lib/utils';
 import { Popover } from '../popover/popover';
 import { Select } from '../select/select';

@@ -1,9 +1,9 @@
-import { CheckIcon, PlusIcon } from 'lucide-react';
 import { Fragment, ReactElement, useContext } from 'react';
+import { CheckIcon, PlusIcon } from 'lucide-react';
+import { Button } from '@/components/base/button/button';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/base/button/button';
 import { AnnotatedContext } from './schema-diff/components';
 
 export const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `

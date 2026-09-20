@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Check, ChevronDownIcon, ChevronsUpDown, ChevronUpIcon, X } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Button } from '@/components/base/button/button';
 import { Input } from '@/components/base/input/input';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Button } from '@/components/base/button/button';
 import { DateRangePicker, presetLast7Days, type Preset } from '@/components/ui/date-range-picker';
 import { cn } from '@/lib/utils';
 import { Menu } from '../menu/menu';
@@ -245,11 +245,7 @@ export const SimpleContent = createPreview({
         note="Width md, a scrolling list capped at max-h-40 with a link underneath. The same block appears again at :628."
       >
         <Popover
-          trigger={
-            <Button variant="link">
-              12 operations
-            </Button>
-          }
+          trigger={<Button variant="link">12 operations</Button>}
           side="left"
           width="md"
           arrow
@@ -277,11 +273,7 @@ export const SimpleContent = createPreview({
         note="Default width and padding; the content supplies its own p-2 and a ScrollArea at height=sm."
       >
         <Popover
-          trigger={
-            <Button variant="link">
-              4 more
-            </Button>
-          }
+          trigger={<Button variant="link">4 more</Button>}
           content={
             <div className="p-2">
               <h4 className="text-neutral-12 mb-2 text-sm font-semibold">All Targets</h4>

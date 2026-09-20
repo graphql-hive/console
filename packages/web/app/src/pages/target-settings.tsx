@@ -12,6 +12,7 @@ import { Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
@@ -45,7 +46,6 @@ import {
 } from '@/components/target/settings/graphql-endpoint-form';
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
 import { SchemaContracts } from '@/components/target/settings/schema-contracts';
-import { Button } from '@/components/base/button/button';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,

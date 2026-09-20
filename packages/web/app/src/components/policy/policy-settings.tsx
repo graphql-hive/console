@@ -1,8 +1,8 @@
 import { ReactElement, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQuery } from 'urql';
-import { Form } from '@/components/base/form/form';
 import { Button } from '@/components/base/button/button';
+import { Form } from '@/components/base/form/form';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   PolicySettings_SchemaPolicyFragmentFragment,

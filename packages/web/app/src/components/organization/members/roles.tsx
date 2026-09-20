@@ -3,6 +3,7 @@ import { LockIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
@@ -12,7 +13,6 @@ import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialo
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/base/button/button';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';

@@ -1,11 +1,11 @@
 import { ReactElement } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/base/button/button';
 import {
   USER_SETTINGS_FORM_ID,
   UserSettingsForm,

@@ -1,12 +1,12 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Label } from '@/components/base/label/label';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Switch } from '@/components/base/switch/switch';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/base/button/button';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';

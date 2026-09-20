@@ -1,7 +1,8 @@
-import { PlusIcon } from 'lucide-react';
 import { ReactElement, ReactNode } from 'react';
+import { PlusIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
@@ -12,7 +13,6 @@ import {
   CreateProjectFormSchema,
   type CreateProjectFormValues,
 } from '@/components/project/create-project-form';
-import { Button } from '@/components/base/button/button';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';

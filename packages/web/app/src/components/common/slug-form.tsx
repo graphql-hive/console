@@ -1,8 +1,8 @@
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/base/button/button';
 
 /** The slug rules shared by the organization, project and target settings pages. */
 export function slugFormSchema(noun: 'Organization' | 'Project' | 'Target') {

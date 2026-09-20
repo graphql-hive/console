@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { ActivityIcon, CheckIcon, EllipsisIcon, FolderIcon, FolderOpenIcon, PlusIcon, TriangleAlertIcon } from 'lucide-react';
+import {
+  ActivityIcon,
+  CheckIcon,
+  EllipsisIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  PlusIcon,
+  TriangleAlertIcon,
+} from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '@/components/base/badge/badge';
 import { Card } from '@/components/base/card/card';

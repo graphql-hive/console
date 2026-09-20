@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { ArrowUp, CalendarDays, Copy, Info, MoveDownIcon, PlusIcon, Trash2Icon } from 'lucide-react';
+import {
+  ArrowUp,
+  CalendarDays,
+  Copy,
+  Info,
+  MoveDownIcon,
+  PlusIcon,
+  Trash2Icon,
+} from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { Input } from '../input/input';
@@ -28,12 +36,14 @@ const ENTRIES = [
     coveredBy: 'On a raised surface',
   },
   {
-    source: 'organization-settings.tsx, target-settings.tsx, project-settings.tsx, subscription pages',
+    source:
+      'organization-settings.tsx, target-settings.tsx, project-settings.tsx, subscription pages',
     what: 'Default, outline and destructive on the page surface',
     coveredBy: 'On the page',
   },
   {
-    source: 'date-range-picker.tsx, target-alerts-create.tsx, insights filter dialogs, preflight editor',
+    source:
+      'date-range-picker.tsx, target-alerts-create.tsx, insights filter dialogs, preflight editor',
     what: 'primary: the one loud action in a form',
     coveredBy: 'On the page',
   },
@@ -48,7 +58,8 @@ const ENTRIES = [
     coveredBy: 'Links',
   },
   {
-    source: 'auth-verify-email.tsx, organization-settings.tsx integrations, subscription pages, target.tsx',
+    source:
+      'auth-verify-email.tsx, organization-settings.tsx integrations, subscription pages, target.tsx',
     what: 'A router Link or an anchor through render',
     coveredBy: 'Buttons that navigate',
   },
@@ -88,9 +99,9 @@ export const Inventory = createPreview({
         <>
           One button over every shape. The surface is a prop: on the page it is <code>base</code>,
           in a dialog, sheet or raised card it is <code>raised</code>. Width is a prop with two
-          values. A button that navigates takes its Link through <code>render</code>. Everything
-          a call site used to override with a class is either a prop now or was never the
-          button's job.
+          values. A button that navigates takes its Link through <code>render</code>. Everything a
+          call site used to override with a class is either a prop now or was never the button's
+          job.
         </>
       }
       entries={ENTRIES}
