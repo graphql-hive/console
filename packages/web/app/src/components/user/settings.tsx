@@ -1,12 +1,17 @@
 import { ReactElement } from 'react';
-import { useFormik } from 'formik';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import * as Yup from 'yup';
-import { Input } from '@/components/base/input/input';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
+import {
+  USER_SETTINGS_FORM_ID,
+  UserSettingsForm,
+  UserSettingsFormSchema,
+  type UserSettingsFormValues,
+} from './user-settings-form';
 
 const UserSettings_MeQuery = graphql(`
   query UserSettings_MeQuery {
@@ -55,36 +60,41 @@ export function UserSettingsModal({
 
   const me = meQuery.data?.me;
 
-  const { handleSubmit, values, handleChange, handleBlur, isSubmitting, errors, touched } =
-    useFormik({
-      enableReinitialize: true,
-      initialValues: {
-        fullName: me?.fullName || '',
-        displayName: me?.displayName || '',
-      },
-      validationSchema: Yup.object().shape({
-        fullName: Yup.string().required('Full name is required'),
-        displayName: Yup.string().required('Display name is required'),
-      }),
-      onSubmit: async values => {
-        const { data } = await mutate({ input: values });
-        if (data?.updateMe.ok) {
-          toggleModalOpen();
-          toast({
-            variant: 'default',
-            title: 'Profile updated',
-            description: 'Your profile has been updated successfully',
-          });
-        }
-        if (data?.updateMe.error) {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: data.updateMe.error.message,
-          });
-        }
-      },
-    });
+  const form = useForm<UserSettingsFormValues>({
+    resolver: zodResolver(UserSettingsFormSchema),
+    // Follows the query, so the fields fill in once the profile arrives.
+    values: {
+      fullName: me?.fullName || '',
+      displayName: me?.displayName || '',
+    },
+    disabled: mutation.fetching,
+  });
+
+  async function onSubmit(values: UserSettingsFormValues) {
+    const { data } = await mutate({ input: values });
+    if (data?.updateMe.ok) {
+      toggleModalOpen();
+      toast({
+        variant: 'default',
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully',
+      });
+    }
+    if (data?.updateMe.error) {
+      const { inputErrors } = data.updateMe.error;
+      if (inputErrors.fullName) {
+        form.setError('fullName', { message: inputErrors.fullName });
+      }
+      if (inputErrors.displayName) {
+        form.setError('displayName', { message: inputErrors.displayName });
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: data.updateMe.error.message,
+      });
+    }
+  }
 
   return (
     <Dialog
@@ -93,67 +103,16 @@ export function UserSettingsModal({
       onOpenChangeComplete={onOpenChangeComplete}
       title="Profile settings"
       footer={
-        <Button type="submit" form="user-settings-form" disabled={isSubmitting}>
+        <Button type="submit" form={USER_SETTINGS_FORM_ID} disabled={form.formState.isSubmitting}>
           Save Changes
         </Button>
       }
     >
-      <form id="user-settings-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-4">
-          <label className="text-sm font-semibold" htmlFor="fullName">
-            Full name
-          </label>
-          <Input
-            id="fullName"
-            placeholder="Full name"
-            name="fullName"
-            value={values.fullName}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            disabled={isSubmitting}
-            invalid={touched.fullName && !!errors.fullName}
-            onSurface="raised"
-          />
-          {touched.fullName && errors.fullName && (
-            <span className="text-sm text-red-500">{errors.fullName}</span>
-          )}
-          {mutation.data?.updateMe.error?.inputErrors.fullName && (
-            <span className="text-sm text-red-500">
-              {mutation.data.updateMe.error.inputErrors.fullName}
-            </span>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <label className="text-sm font-semibold" htmlFor="displayName">
-            Display name
-          </label>
-          <Input
-            id="displayName"
-            placeholder="Display name"
-            name="displayName"
-            value={values.displayName}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            disabled={isSubmitting}
-            invalid={touched.displayName && !!errors.displayName}
-            onSurface="raised"
-          />
-          {touched.displayName && errors.displayName && (
-            <span className="text-sm text-red-500">{errors.displayName}</span>
-          )}
-          {mutation.data?.updateMe.error?.inputErrors.displayName && (
-            <span className="text-sm text-red-500">
-              {mutation.data.updateMe.error.inputErrors.displayName}
-            </span>
-          )}
-        </div>
-
-        {mutation.error && <span className="text-sm text-red-500">{mutation.error.message}</span>}
-        {mutation.data?.updateMe.error?.message && (
-          <span className="text-sm text-red-500">{mutation.data.updateMe.error.message}</span>
-        )}
-      </form>
+      <UserSettingsForm
+        form={form}
+        onSubmit={onSubmit}
+        error={mutation.error?.message ?? mutation.data?.updateMe.error?.message}
+      />
     </Dialog>
   );
 }
