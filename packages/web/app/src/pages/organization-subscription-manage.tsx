@@ -268,7 +268,7 @@ function Inner(props: {
     if (plan === 'ENTERPRISE') {
       return (
         <div className="mt-2">
-          <Button render={<a href="mailto:contact@graphql-hive.com" />}>Contact Us</Button>
+          <Button anchor={{ href: 'mailto:contact@graphql-hive.com' }}>Contact Us</Button>
         </div>
       );
     }

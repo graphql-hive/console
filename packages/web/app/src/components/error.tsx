@@ -58,7 +58,7 @@ export function ErrorComponent(props: { error: any; message?: string }) {
               <p>{commonErrorStrings.reported}</p>
               <p>
                 {commonErrorStrings.track}{' '}
-                <Button variant="link" render={<a href="mailto:support@graphql-hive.com" />}>
+                <Button variant="link" anchor={{ href: 'mailto:support@graphql-hive.com' }}>
                   {commonErrorStrings.link}
                 </Button>
                 .

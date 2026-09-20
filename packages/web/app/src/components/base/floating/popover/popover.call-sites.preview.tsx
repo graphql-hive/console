@@ -357,7 +357,7 @@ export const Changelog = createPreview({
               </ol>
             </div>
             <div className="flex flex-row items-center justify-center">
-              <Button variant="link" render={<a href="#" />}>
+              <Button variant="link" anchor={{ href: '#' }}>
                 View all updates
               </Button>
             </div>

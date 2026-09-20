@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { createRef } from 'react';
+import { createRef, forwardRef } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Button } from './button';
@@ -46,7 +46,7 @@ describe('Button', () => {
         variant="outline"
         width="full"
         onClick={onClick}
-        render={<a href="/orgs" onClick={onLinkClick} />}
+        render={<RouterLink to="/orgs" onClick={onLinkClick} />}
       >
         Go to your organization
       </Button>,
@@ -61,4 +61,44 @@ describe('Button', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(onLinkClick).toHaveBeenCalledTimes(1);
   });
+
+  it('renders an anchor from `anchor`, filling in rel for a new tab and mapping disabled to aria-disabled', () => {
+    const { rerender } = render(
+      <Button anchor={{ href: 'https://the-guild.dev', target: '_blank' }}>Docs</Button>,
+    );
+    const link = screen.getByRole('link', { name: 'Docs' });
+    expect(link.getAttribute('href')).toBe('https://the-guild.dev');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(screen.queryByRole('button')).toBeNull();
+
+    rerender(
+      <Button anchor={{ href: 'https://the-guild.dev', target: '_blank', rel: 'me' }}>Docs</Button>,
+    );
+    expect(screen.getByRole('link', { name: 'Docs' }).getAttribute('rel')).toBe('me');
+
+    rerender(
+      <Button anchor={{ href: 'https://the-guild.dev' }} disabled>
+        Docs
+      </Button>,
+    );
+    const disabledAnchor = screen.getByText('Docs');
+    expect(disabledAnchor.tagName).toBe('A');
+    expect(disabledAnchor.hasAttribute('href')).toBe(false);
+    expect(disabledAnchor.hasAttribute('disabled')).toBe(false);
+    expect(disabledAnchor.getAttribute('aria-disabled')).toBe('true');
+    expect(disabledAnchor.getAttribute('tabindex')).toBe('-1');
+  });
+});
+
+/** Stands in for a router `<Link>`: a component that renders an anchor from a `to` prop. */
+const RouterLink = forwardRef<
+  HTMLAnchorElement,
+  { to: string } & React.AnchorHTMLAttributes<HTMLAnchorElement>
+>(function RouterLink({ to, children, ...rest }, ref) {
+  return (
+    <a ref={ref} href={to} {...rest}>
+      {children}
+    </a>
+  );
 });

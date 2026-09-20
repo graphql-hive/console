@@ -116,13 +116,10 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
           <div className="flex flex-row items-center justify-center">
             <Button
               variant="link"
-              render={
-                <a
-                  rel="noopener noreferrer"
-                  href="https://the-guild.dev/graphql/hive/product-updates"
-                  target="_blank"
-                />
-              }
+              anchor={{
+                href: 'https://the-guild.dev/graphql/hive/product-updates',
+                target: '_blank',
+              }}
             >
               View all updates
             </Button>

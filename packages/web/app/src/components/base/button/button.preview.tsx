@@ -98,19 +98,20 @@ export const Link = createPreview(() => (
 ));
 
 /**
- * A button that navigates: `render` takes the router `<Link>` or an anchor and the button's
- * classes, ref and handlers merge onto it. It replaces the old `asChild`.
+ * A button that navigates. `anchor` renders an `<a>` for links out; `render` takes the router
+ * `<Link>` for links within the app and merges the button's classes, ref and handlers onto it.
+ * Together they replace the old `asChild`. Anchors stand in for the router here.
  */
 export const AsLink = createPreview(() => (
   <div className="flex w-96 flex-col gap-3">
-    <Button width="full" render={<a href="#" />}>
+    <Button width="full" anchor={{ href: '#' }}>
       Go to your organization
     </Button>
-    <Button variant="outline" width="full" render={<a href="#" />}>
+    <Button variant="outline" width="full" anchor={{ href: '#' }}>
       Sign in instead
     </Button>
     <div>
-      <Button variant="ghost" size="compact" render={<a href="#" />}>
+      <Button variant="ghost" size="compact" anchor={{ href: '#' }}>
         Back to traces
       </Button>
     </div>
