@@ -1,4 +1,3 @@
-import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
 import { useCallback, useEffect } from 'react';
 import { CircleUserRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -11,8 +10,9 @@ import {
   SignUpFormSchema,
   type SignUpFormValues,
 } from '@/components/auth/sign-up-form';
+import { Button } from '@/components/base/button/button';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { env } from '@/env/frontend';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
@@ -183,7 +183,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                   form={form}
                   onSubmit={onSubmit}
                   submit={
-                    <Button type="submit" className="w-full" disabled={isPending}>
+                    <Button type="submit" width="full" onSurface="raised" disabled={isPending}>
                       {signUp.isSuccess && signUp.data.status === 'OK' && isVerificationSettled
                         ? 'Redirecting...'
                         : signUp.isPending
@@ -197,7 +197,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                   <SignInButton previousSignIn={lastAuthMethod === 'google'} variant="outline">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('google')}
                       disabled={isPending}
                     >
@@ -209,7 +209,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                   <SignInButton previousSignIn={lastAuthMethod === 'github'} variant="outline">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('github')}
                       disabled={isPending}
                     >
@@ -221,7 +221,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                   <SignInButton previousSignIn={lastAuthMethod === 'okta'} variant="outline">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('okta')}
                       disabled={isPending}
                     >
@@ -231,15 +231,14 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                 ) : null}
                 {isProviderEnabled('oidc') ? (
                   <SignInButton previousSignIn={lastAuthMethod === 'oidc'} variant="outline">
-                    <Button asChild variant="outline" className="w-full" disabled={isPending}>
-                      <Link
-                        to="/auth/sso"
-                        search={{
-                          redirectToPath: props.redirectToPath,
-                        }}
-                      >
-                        <CircleUserRound className="mr-4 size-4" /> Sign up with SSO
-                      </Link>
+                    <Button
+                      variant="outline"
+                      width="full"
+                      render={
+                        <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
+                      }
+                    >
+                      <CircleUserRound className="mr-4 size-4" /> Sign up with SSO
                     </Button>
                   </SignInButton>
                 ) : null}

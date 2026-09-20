@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { AuthCard, AuthCardStack } from '@/components/auth';
 import { SSOForm, SSOFormSchema, type SSOFormValues } from '@/components/auth/sso-form';
+import { Button } from '@/components/base/button/button';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { env } from '@/env/frontend';
 import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
@@ -123,7 +123,7 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
                 form={form}
                 onSubmit={onSubmit}
                 submit={
-                  <Button type="submit" className="w-full" disabled={sso.isPending}>
+                  <Button type="submit" width="full" onSurface="raised" disabled={sso.isPending}>
                     {sso.isSuccess && sso.data.ok
                       ? 'Redirecting...'
                       : sso.isPending

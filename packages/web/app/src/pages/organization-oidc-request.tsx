@@ -1,7 +1,7 @@
 import { Lock } from 'lucide-react';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { OrganizationLayout } from '@/components/layouts/organization';
-import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
 import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
@@ -34,7 +34,7 @@ export function OrganizationOIDCRequestPage(props: {
                 </span>
               </div>
               <Button
-                className="min-w-32"
+                onSurface="raised"
                 onClick={() => {
                   void router.navigate({
                     to: '/auth/oidc',
