@@ -44,7 +44,7 @@ export function SlugForm(props: {
           </FormItem>
         )}
       />
-      <div>
+      <div className="-mt-5">
         <Button disabled={form.formState.isSubmitting} className="px-10" type="submit">
           Save
         </Button>
