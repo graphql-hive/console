@@ -15,6 +15,7 @@ export const buttonVariants = cva(
   [
     'group inline-flex items-center rounded-sm border font-medium transition-colors',
     'disabled:pointer-events-none disabled:opacity-50',
+    'aria-disabled:pointer-events-none aria-disabled:opacity-50',
     focusRing,
   ],
   {
@@ -95,14 +96,28 @@ export const buttonVariants = cva(
   },
 );
 
+type AnchorProps = {
+  href: string;
+  target?: '_blank' | '_self';
+  rel?: string;
+  download?: boolean | string;
+};
+
 // `layout` is a cva variant so padding can key on it, but as a prop it is the discriminant of
 // the union below, so the union defines it rather than cva.
 type CommonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'style'> &
   Omit<VariantProps<typeof buttonVariants>, 'layout'> & {
     'data-cy'?: string;
     /**
-     * The element to render instead of a `<button>`, for a button that navigates: a router
-     * `<Link>` or an anchor. It gets the button's classes, ref and handlers merged onto its own.
+     * Render an `<a>` instead of a `<button>`, for a button that links out: another site, a
+     * mailto, an API redirect. A `_blank` target gets `rel="noopener noreferrer"` unless `rel`
+     * is given, and `disabled` becomes `aria-disabled` with the href dropped. Router links use
+     * `render` with `<Link>` instead.
+     */
+    anchor?: AnchorProps;
+    /**
+     * The element to render instead of a `<button>`, for a button that navigates within the
+     * app: a router `<Link>`. It gets the button's classes, ref and handlers merged onto its own.
      */
     render?: useRender.RenderProp;
   };
@@ -157,7 +172,7 @@ type ButtonProps = ChildrenLayout | LabelLayout | IconOnlyLayout;
  * which passes a ref to the trigger element.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(props, ref) {
-  const { variant, size, width, onSurface, disabled, render, ...rest } = props;
+  const { variant, size, width, onSurface, disabled, anchor, render, ...rest } = props;
 
   // Remove custom props so they don't get spread onto the DOM element
   const domProps = rest as Record<string, unknown>;
@@ -171,13 +186,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   const layout =
     props.layout === 'iconOnly' ? 'iconOnly' : props.label != null ? 'label' : 'children';
 
+  const anchorElement = anchor ? (
+    // eslint-disable-next-line jsx-a11y/anchor-has-content -- the render hook merges the button's children into it
+    <a
+      href={disabled ? undefined : anchor.href}
+      target={anchor.target}
+      rel={anchor.rel ?? (anchor.target === '_blank' ? 'noopener noreferrer' : undefined)}
+      download={anchor.download}
+    />
+  ) : undefined;
+
   return useRender({
-    render,
+    render: anchorElement ?? render,
     ref,
     defaultTagName: 'button',
     props: {
       className: cn(buttonVariants({ variant, size, layout, width, onSurface })),
-      disabled,
+      disabled: anchor ? undefined : disabled,
+      'aria-disabled': anchor && disabled ? true : undefined,
+      tabIndex: anchor && disabled ? -1 : undefined,
       style: disabled ? disabledStyle : undefined,
       ...domProps,
       children:

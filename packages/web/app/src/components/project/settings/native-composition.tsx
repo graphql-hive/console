@@ -370,9 +370,9 @@ export function NativeCompositionSettings(props: {
         <div>
           <Button
             variant="link"
-            render={
-              <a href="https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility" />
-            }
+            anchor={{
+              href: 'https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility',
+            }}
           >
             Learn more about risks and compatibility with other composition libraries
           </Button>

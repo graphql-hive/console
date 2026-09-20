@@ -202,7 +202,7 @@ export const Links = createPreview({
         <p className="text-neutral-11 max-w-md text-sm">
           The check failed on a breaking change that affects{' '}
           <Button variant="link">12 operations</Button>. If this was expected, contact{' '}
-          <Button variant="link" render={<a href="#" />}>
+          <Button variant="link" anchor={{ href: '#' }}>
             support
           </Button>
           .
@@ -234,17 +234,17 @@ export const ButtonsThatNavigate = createPreview({
     <CallSite
       source="pages/auth-verify-email.tsx, organization-settings.tsx integrations, pages/target.tsx"
       origin="base"
-      note="render takes the router Link or an anchor and the button's classes, ref and handlers merge onto it. An anchor stands in for the TanStack Link here."
+      note="Links within the app use render with the router Link; links out use anchor. Anchors stand in for the TanStack Link here."
     >
       <div className="flex w-[24rem] flex-col gap-2">
-        <Button width="full" onSurface="raised" render={<a href="#" />}>
+        <Button width="full" onSurface="raised" anchor={{ href: '#' }}>
           Continue
         </Button>
-        <Button variant="outline" width="full" render={<a href="#" />}>
+        <Button variant="outline" width="full" anchor={{ href: '#' }}>
           Logout
         </Button>
         <div>
-          <Button variant="outline" render={<a href="#" />}>
+          <Button variant="outline" anchor={{ href: '#' }}>
             Unused schema
           </Button>
         </div>

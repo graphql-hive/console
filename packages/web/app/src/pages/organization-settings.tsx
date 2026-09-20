@@ -93,15 +93,12 @@ function GitHubIntegrationSection(props: {
         <GitHubIcon className="mr-2" />
         Disconnect GitHub
       </Button>
-      <Button
-        variant="destructive"
-        render={<a href={`/api/github/connect/${organization.slug}`} />}
-      >
+      <Button variant="destructive" anchor={{ href: `/api/github/connect/${organization.slug}` }}>
         Adjust permissions
       </Button>
     </div>
   ) : (
-    <Button render={<a href={`/api/github/connect/${organization.slug}`} />}>
+    <Button anchor={{ href: `/api/github/connect/${organization.slug}` }}>
       <GitHubIcon className="mr-2" />
       Connect GitHub
     </Button>
@@ -141,7 +138,7 @@ function SlackIntegrationSection(props: {
       Disconnect Slack
     </Button>
   ) : (
-    <Button render={<a href={`/api/slack/connect/${organization.slug}`} />}>
+    <Button anchor={{ href: `/api/slack/connect/${organization.slug}` }}>
       <SlackIcon className="mr-2" />
       Connect Slack
     </Button>

@@ -72,7 +72,7 @@ export function QueryError({
                       {commonErrorStrings.link}
                     </Button>
                   ) : (
-                    <Button variant="link" render={<a href="mailto:support@graphql-hive.com" />}>
+                    <Button variant="link" anchor={{ href: 'mailto:support@graphql-hive.com' }}>
                       {commonErrorStrings.link}
                     </Button>
                   )}
