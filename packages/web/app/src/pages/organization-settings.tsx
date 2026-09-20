@@ -1,21 +1,24 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
+import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
+import {
+  AuditLogsForm,
+  AuditLogsFormSchema,
+  type AuditLogsFormValues,
+} from '@/components/organization/settings/audit-logs-form';
 import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
 import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import {
@@ -184,18 +187,6 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
   }
 `);
 
-const SlugFormSchema = z.object({
-  slug: z
-    .string({
-      required_error: 'Organization slug is required',
-    })
-    .min(1, 'Organization slug is required')
-    .max(50, 'Slug must be less than 50 characters')
-    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers and dashes'),
-});
-
-type SlugFormValues = z.infer<typeof SlugFormSchema>;
-
 const OrganizationSettingsContent = (props: {
   organization: FragmentType<typeof SettingsPageRenderer_OrganizationFragment>;
   organizationSlug: string;
@@ -212,7 +203,7 @@ const OrganizationSettingsContent = (props: {
 
   const slugForm = useForm({
     mode: 'all',
-    resolver: zodResolver(SlugFormSchema),
+    resolver: zodResolver(slugFormSchema('Organization')),
     defaultValues: {
       slug: organization.slug,
     },
@@ -277,30 +268,11 @@ const OrganizationSettingsContent = (props: {
               text: 'Read more in the documentation',
             }}
           />
-          <Form {...slugForm}>
-            <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
-              <FormField
-                control={slugForm.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder="slug"
-                        prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/`}
-                        width="md"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button disabled={slugForm.formState.isSubmitting} className="px-10" type="submit">
-                Save
-              </Button>
-            </form>
-          </Form>
+          <SlugForm
+            form={slugForm}
+            onSubmit={onSlugFormSubmit}
+            prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/`}
+          />
         </>
       )}
 
@@ -792,12 +764,6 @@ const AuditLogsOrganizationSettingsPageMutation = graphql(`
   }
 `);
 
-const AuditLogsSchema = z.object({
-  startDate: z.string(),
-  endDate: z.string(),
-  userId: z.string().optional(),
-});
-
 function AuditLogsOrganizationModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
@@ -812,16 +778,16 @@ function AuditLogsOrganizationModal(props: {
     .toISOString()
     .split('T')[0];
 
-  const form = useForm<z.infer<typeof AuditLogsSchema>>({
+  const form = useForm<AuditLogsFormValues>({
     mode: 'onSubmit',
-    resolver: zodResolver(AuditLogsSchema),
+    resolver: zodResolver(AuditLogsFormSchema),
     defaultValues: {
       startDate: lastYear,
       endDate: today,
     },
   });
 
-  async function onSubmit(data: z.infer<typeof AuditLogsSchema>) {
+  async function onSubmit(data: AuditLogsFormValues) {
     const formattedStartDate = new Date(data.startDate).toISOString();
     const formattedEndDate = new Date(data.endDate).toISOString();
 
@@ -861,46 +827,7 @@ function AuditLogsOrganizationModal(props: {
       title="Audit Logs"
       description="Select a date range to generate an audit logs report."
     >
-      <Form {...form}>
-        <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="flex flex-row justify-evenly gap-x-8">
-            <FormField
-              control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input type="date" onSurface="raised" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="mt-2">
-              <ArrowRightIcon className="text-neutral-10 size-6" />
-            </div>
-            <FormField
-              control={form.control}
-              name="endDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input type="date" onSurface="raised" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <Button
-            className="w-full"
-            type="submit"
-            disabled={!form.formState.isValid || form.formState.isSubmitting}
-          >
-            Generate Report
-          </Button>
-        </form>
-      </Form>
+      <AuditLogsForm form={form} onSubmit={onSubmit} />
     </Dialog>
   );
 }
