@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Label } from '@/components/base/label/label';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { Button } from '@/components/ui/button';
 import { InputCopy } from '@/components/ui/input-copy';
-import { Label } from '@/components/ui/label';
 import { Textarea } from './textarea';
 
 export const nav: NavPath = 'Base/Primitives/Textarea/Component Examples';
@@ -94,8 +94,12 @@ export const FormField = createPreview({
         note="In the new-ticket sheet, so raised. Label, field, description, message."
       >
         <div className="bg-neutral-3 border-neutral-5 flex w-[28rem] flex-col gap-1.5 rounded-md border p-6">
-          <Label className="text-sm font-medium">Description</Label>
-          <Textarea placeholder="Enter a short description of your issue" onSurface="raised" />
+          <Label htmlFor="ticket-description" label="Description" />
+          <Textarea
+            id="ticket-description"
+            placeholder="Enter a short description of your issue"
+            onSurface="raised"
+          />
           <p className="text-neutral-11 text-xs">Help us understand it better.</p>
         </div>
       </CallSite>
@@ -105,8 +109,13 @@ export const FormField = createPreview({
         note="Five copies of the same raised field; the token sheets differ only in placeholder."
       >
         <div className="bg-neutral-3 border-neutral-5 flex w-[28rem] flex-col gap-1.5 rounded-md border p-6">
-          <Label className="text-sm font-medium">Description</Label>
-          <Textarea placeholder="Enter a description" autoComplete="off" onSurface="raised" />
+          <Label htmlFor="role-description" label="Description" />
+          <Textarea
+            id="role-description"
+            placeholder="Enter a description"
+            autoComplete="off"
+            onSurface="raised"
+          />
         </div>
       </CallSite>
       <CallSite
@@ -192,9 +201,7 @@ function GrowingFields() {
         note="Starts at six rows and grows with the text. Where a browser lacks field-sizing it keeps its rows and scrolls."
       >
         <div className="w-[28rem] pb-10">
-          <Label className="p-1" htmlFor="proposal-description">
-            Description
-          </Label>
+          <Label htmlFor="proposal-description" label="Description" />
           <div className="mt-2">
             <Textarea
               aria-label="description"

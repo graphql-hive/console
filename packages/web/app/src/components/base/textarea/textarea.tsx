@@ -34,7 +34,7 @@ type NativeTextareaProps = Omit<
 
 type TextareaProps = NativeTextareaProps &
   VariantProps<typeof textareaVariants> & {
-    /** Error state, for forms that track it by hand (Formik). react-hook-form sets `aria-invalid` itself. */
+    /** Error state for a field outside a Form; FormControl sets `aria-invalid` itself. */
     invalid?: boolean;
     /** Grow with the text instead of scrolling inside a fixed height. */
     autoSize?: boolean;

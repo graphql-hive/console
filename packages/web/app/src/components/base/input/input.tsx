@@ -11,8 +11,8 @@ export const fieldClass = [
   'min-w-0 appearance-none rounded-sm border transition-colors focus:outline-none',
   focusRing,
   'disabled:cursor-not-allowed disabled:opacity-50',
-  // Error state comes from the attribute, so a react-hook-form FormControl and a Formik `invalid`
-  // prop paint the same border.
+  // Error state comes from the attribute, so a FormControl and a hand-set `invalid` prop paint the
+  // same border.
   'aria-invalid:border-critical aria-invalid:hover:border-critical aria-invalid:focus:border-critical',
 ];
 
@@ -77,7 +77,7 @@ type NativeInputProps = Omit<
 
 type InputProps = NativeInputProps &
   VariantProps<typeof inputVariants> & {
-    /** Error state, for forms that track it by hand (Formik). react-hook-form sets `aria-invalid` itself. */
+    /** Error state for a field outside a Form; FormControl sets `aria-invalid` itself. */
     invalid?: boolean;
     /** An icon inside the leading edge, for a search field. */
     leadingIcon?: LucideIcon;
@@ -88,10 +88,7 @@ type InputProps = NativeInputProps &
     'data-cy'?: string;
   };
 
-/**
- * forwardRef is required: react-hook-form's Controller passes a ref to manage focus and
- * validation, and a Formik field may need it for the same reasons.
- */
+/** forwardRef is required: react-hook-form's Controller passes a ref to manage focus and validation. */
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   {
     size,
