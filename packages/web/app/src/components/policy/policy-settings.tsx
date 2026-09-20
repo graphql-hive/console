@@ -2,7 +2,7 @@ import { ReactElement, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQuery } from 'urql';
 import { Form } from '@/components/base/form/form';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   PolicySettings_SchemaPolicyFragmentFragment,
@@ -125,11 +125,7 @@ function PolicySettingsListForm({
         <div className="flex items-center justify-end">
           {isDirty ? <p className="text-neutral-10 pr-2 text-sm">Unsaved changes</p> : null}
 
-          <Button
-            disabled={!isDirty || saving || !isValid || !onSave}
-            type="submit"
-            variant="default"
-          >
+          <Button disabled={!isDirty || saving || !isValid || !onSave} type="submit">
             Update Policy
           </Button>
         </div>

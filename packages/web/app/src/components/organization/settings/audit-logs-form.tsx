@@ -3,7 +3,7 @@ import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 
 export const AuditLogsFormSchema = z.object({
   startDate: z.string(),
@@ -49,13 +49,15 @@ export function AuditLogsForm(props: {
           )}
         />
       </div>
-      <Button
-        className="mt-3 w-full"
-        type="submit"
-        disabled={!form.formState.isValid || form.formState.isSubmitting}
-      >
-        Generate Report
-      </Button>
+      <div className="mt-3">
+        <Button
+          width="full"
+          type="submit"
+          disabled={!form.formState.isValid || form.formState.isSubmitting}
+        >
+          Generate Report
+        </Button>
+      </div>
     </Form>
   );
 }

@@ -5,7 +5,7 @@ import { DescriptionList } from '@/components/base/description-list/description-
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Callout } from '@/components/ui/callout';
 import { defineStepper } from '@/components/ui/stepper';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -258,7 +258,7 @@ export function OIDCRegisteredDomainSheet(props: {
             footer={stepper.switch({
               'step-1-general': () => (
                 <>
-                  <Button variant="secondary" onClick={props.onClose}>
+                  <Button variant="outline" onClick={props.onClose}>
                     Abort
                   </Button>
                   <Button
@@ -282,21 +282,23 @@ export function OIDCRegisteredDomainSheet(props: {
                   >
                     Delete Domain
                   </Button>
-                  <Button variant="secondary" onClick={props.onClose} className="ml-auto">
-                    Close
-                  </Button>
-                  <Button
-                    data-button-next-complete
-                    variant="primary"
-                    onClick={() => onVerifyDomain(() => stepper.goTo('step-3-complete'))}
-                    disabled={
-                      verifyDomainMutationState.fetching ||
-                      deleteDomainMutationState.fetching ||
-                      !domain?.challenge
-                    }
-                  >
-                    Next: Complete
-                  </Button>
+                  <div className="ml-auto flex gap-2">
+                    <Button variant="outline" onClick={props.onClose}>
+                      Close
+                    </Button>
+                    <Button
+                      data-button-next-complete
+                      variant="primary"
+                      onClick={() => onVerifyDomain(() => stepper.goTo('step-3-complete'))}
+                      disabled={
+                        verifyDomainMutationState.fetching ||
+                        deleteDomainMutationState.fetching ||
+                        !domain?.challenge
+                      }
+                    >
+                      Next: Complete
+                    </Button>
+                  </div>
                 </>
               ),
               'step-3-complete': () => (
@@ -308,9 +310,11 @@ export function OIDCRegisteredDomainSheet(props: {
                   >
                     Delete Domain
                   </Button>
-                  <Button variant="primary" onClick={props.onClose} className="ml-auto">
-                    Close
-                  </Button>
+                  <div className="ml-auto">
+                    <Button variant="primary" onClick={props.onClose}>
+                      Close
+                    </Button>
+                  </div>
                 </>
               ),
             })}

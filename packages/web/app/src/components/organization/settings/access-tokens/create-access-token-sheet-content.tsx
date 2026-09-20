@@ -5,7 +5,7 @@ import { Badge } from '@/components/base/badge/badge';
 import { Form } from '@/components/base/form/form';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Heading } from '@/components/ui/heading';
 import { defineStepper } from '@/components/ui/stepper';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -180,7 +180,7 @@ export function CreateAccessTokenSheetContent(
           footer={
             <Stepper.StepperControls>
               <Button
-                variant="secondary"
+                variant="outline"
                 onClick={stepper.prev}
                 disabled={stepper.isFirst || createOrganizationAccessTokenState.fetching}
               >
@@ -188,6 +188,7 @@ export function CreateAccessTokenSheetContent(
               </Button>
               {stepper.isLast ? (
                 <Button
+                  onSurface="raised"
                   onClick={
                     createOrganizationAccessTokenState.fetching ? undefined : createAccessToken
                   }
@@ -198,6 +199,7 @@ export function CreateAccessTokenSheetContent(
                 </Button>
               ) : (
                 <Button
+                  onSurface="raised"
                   onClick={ev => {
                     if (stepper.current.id === 'step-1-general') {
                       void Promise.all([form.trigger('title'), form.trigger('description')]).then(

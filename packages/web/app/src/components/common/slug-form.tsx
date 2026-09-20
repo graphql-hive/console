@@ -2,7 +2,7 @@ import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 
 /** The slug rules shared by the organization, project and target settings pages. */
 export function slugFormSchema(noun: 'Organization' | 'Project' | 'Target') {
@@ -45,7 +45,7 @@ export function SlugForm(props: {
         )}
       />
       <div className="-mt-5">
-        <Button disabled={form.formState.isSubmitting} className="px-10" type="submit">
+        <Button disabled={form.formState.isSubmitting} type="submit">
           Save
         </Button>
       </div>
