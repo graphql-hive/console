@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation as useRQMutation } from '@tanstack/react-query';
 import {
@@ -152,7 +152,7 @@ export function ConnectSingleSignOnProviderSheet(
       }
       footer={
         <>
-          <Button variant="secondary" onClick={props.onClose}>
+          <Button variant="outline" onClick={props.onClose}>
             Abort
           </Button>
           <Button

@@ -2,7 +2,7 @@ import { KeyIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useMutation, useQuery } from 'urql';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { graphql } from '@/gql';
@@ -98,14 +98,15 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
           />
         ) : (
           <>
-            <Button
-              className="mt-5"
-              onClick={() => setModalState(ConnectSingleSignOnProviderState.open)}
-              data-button-connect-open-id-provider
-            >
-              <KeyIcon className="mr-2" />
-              Connect Open ID Connect Provider
-            </Button>
+            <div className="mt-5">
+              <Button
+                onClick={() => setModalState(ConnectSingleSignOnProviderState.open)}
+                data-button-connect-open-id-provider
+              >
+                <KeyIcon className="mr-2" />
+                Connect Open ID Connect Provider
+              </Button>
+            </div>
             <p>Your organization has currently no Open ID Connect provider configured.</p>
             <ConnectSingleSignOnProviderSheet
               key={sheetSession}
