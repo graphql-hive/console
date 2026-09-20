@@ -3,13 +3,13 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Info, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '../floating/tooltip/tooltip';
 
-const labelVariants = cva('inline-block', {
+const labelVariants = cva('', {
   variants: {
     variant: {
-      /** The form label: small caps, as on every field. */
-      caps: 'text-neutral-10 text-[9px] font-medium uppercase tracking-[0.75px]',
+      /** The form label: small caps on its own line above the control, as on every field. */
+      caps: 'block text-neutral-10 text-[9px] font-medium uppercase tracking-[0.75px]',
       /** Sentence case beside a switch or a checkbox, in a row. */
-      inline: 'text-neutral-11 text-xs font-normal',
+      inline: 'inline-block text-neutral-11 text-xs font-normal',
     },
   },
   defaultVariants: {
@@ -64,7 +64,12 @@ export function Label({ htmlFor, variant, tooltip, icon, label }: LabelProps) {
     return element;
   }
   return (
-    <span className="inline-flex items-center gap-1" data-label>
+    <span
+      className={
+        variant === 'inline' ? 'inline-flex items-center gap-1' : 'flex items-center gap-1'
+      }
+      data-label
+    >
       {element}
       <LabelHint tooltip={tooltip} icon={icon} name={label} />
     </span>
