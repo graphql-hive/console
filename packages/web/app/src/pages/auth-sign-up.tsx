@@ -5,19 +5,14 @@ import { SiGithub, SiGoogle, SiOkta } from 'react-icons/si';
 import { sendVerificationEmail } from 'supertokens-auth-react/recipe/emailverification';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { emailPasswordSignUp } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
-import z from 'zod';
 import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
-import { Input } from '@/components/base/input/input';
+import {
+  SignUpForm,
+  SignUpFormSchema,
+  type SignUpFormValues,
+} from '@/components/auth/sign-up-form';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Meta } from '@/components/ui/meta';
 import { env } from '@/env/frontend';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
@@ -28,39 +23,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 import { SignInButton } from './auth-sign-in';
-
-export const PasswordStringModel = z
-  .string({
-    required_error: 'Password is required',
-  })
-  .min(10, { message: 'Password must be at least 10 characters long.' })
-  // Check 2: At least one uppercase letter
-  .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter.' })
-  // Check 3: At least one special character
-  .regex(/[!@#$%^&*(),.?":{}|<>]/, {
-    message: 'Password must contain at least one special character.',
-  })
-  // Check 4: At least one digit
-  .regex(/[0-9]/, { message: 'Password must contain at least one digit.' })
-  // Check 5: At least one lowercase letter
-  .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter.' });
-
-const SignUpFormSchema = z.object({
-  firstName: z.string({
-    required_error: 'First name is required',
-  }),
-  lastName: z.string({
-    required_error: 'Last name is required',
-  }),
-  email: z
-    .string({
-      required_error: 'Email is required',
-    })
-    .email('Invalid email address'),
-  password: PasswordStringModel,
-});
-
-type SignUpFormValues = z.infer<typeof SignUpFormSchema>;
 
 export function AuthSignUpPage(props: { redirectToPath: string }) {
   const [lastAuthMethod] = useLastAuthMethod();
@@ -217,79 +179,10 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
           <>
             <AuthCardStack>
               <>
-                <Form {...form}>
-                  <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="firstName"
-                        render={() => (
-                          <FormItem>
-                            <FormLabel>First name</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Max"
-                                onSurface="raised"
-                                {...form.register('firstName')}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="lastName"
-                        render={() => (
-                          <FormItem>
-                            <FormLabel>Last name</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Robinson"
-                                onSurface="raised"
-                                {...form.register('lastName')}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="m@example.com"
-                              type="email"
-                              onSurface="raised"
-                              {...form.register('email')}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              onSurface="raised"
-                              {...form.register('password')}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <SignUpForm
+                  form={form}
+                  onSubmit={onSubmit}
+                  submit={
                     <Button type="submit" className="w-full" disabled={isPending}>
                       {signUp.isSuccess && signUp.data.status === 'OK' && isVerificationSettled
                         ? 'Redirecting...'
@@ -297,8 +190,8 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                           ? 'Creating account...'
                           : 'Create an account'}
                     </Button>
-                  </form>
-                </Form>
+                  }
+                />
                 {enabledProviders.length ? <AuthOrSeparator /> : null}
                 {isProviderEnabled('google') ? (
                   <SignInButton previousSignIn={lastAuthMethod === 'google'} variant="outline">
