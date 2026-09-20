@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { ExternalLink } from 'lucide-react';
 import { useMutation } from 'urql';
 import { Section } from '@/components/common';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Heading } from '@/components/ui/heading';
 import { Link } from '@/components/ui/link';
 import { FragmentType, graphql, useFragment } from '@/gql';

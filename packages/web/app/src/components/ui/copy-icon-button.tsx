@@ -1,6 +1,6 @@
 import { CopyIcon } from 'lucide-react';
+import { Button } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Button } from '@/components/ui/button';
 import { useClipboard } from '@/lib/hooks';
 
 type CopyIconButtonProps = {
@@ -15,11 +15,11 @@ export function CopyIconButton(props: CopyIconButtonProps) {
       trigger={
         <Button
           variant="ghost"
-          size="icon-xs"
+          size="icon-sm"
+          aria-label={props.label}
           onClick={() => clipboard(props.value)}
-          className="ml-auto"
         >
-          <CopyIcon size="10" />
+          <CopyIcon className="size-3" />
         </Button>
       }
       content={props.label}

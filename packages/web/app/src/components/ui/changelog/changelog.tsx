@@ -2,7 +2,7 @@ import { ReactElement, useCallback, useEffect } from 'react';
 import { format } from 'date-fns/format';
 import { z } from 'zod';
 import { Popover } from '@/components/base/floating/popover/popover';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { useLocalStorageJson, useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
@@ -59,14 +59,14 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
       onOpenChange={toggle}
       trigger={
         props.changes.length > 0 ? (
-          <Button variant="outline" className="relative text-sm">
-            Latest changes
+          <span className="relative inline-flex">
+            <Button variant="outline">Latest changes</Button>
             {displayDot ? (
-              <div className="absolute right-0 top-0 -mr-1 -mt-1 flex size-2">
-                <div className="bg-accent absolute inline-flex size-full animate-pulse rounded-full" />
-              </div>
+              <span className="absolute right-0 top-0 -mr-1 -mt-1 flex size-2">
+                <span className="bg-accent absolute inline-flex size-full animate-pulse rounded-full" />
+              </span>
             ) : null}
-          </Button>
+          </span>
         ) : undefined
       }
       width="xl"
@@ -114,14 +114,17 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
             </ol>
           </div>
           <div className="flex flex-row items-center justify-center">
-            <Button variant="link" asChild className="text-neutral-11 text-left text-sm">
-              <a
-                rel="noopener noreferrer"
-                href="https://the-guild.dev/graphql/hive/product-updates"
-                target="_blank"
-              >
-                View all updates
-              </a>
+            <Button
+              variant="link"
+              render={
+                <a
+                  rel="noopener noreferrer"
+                  href="https://the-guild.dev/graphql/hive/product-updates"
+                  target="_blank"
+                />
+              }
+            >
+              View all updates
             </Button>
           </div>
         </>
