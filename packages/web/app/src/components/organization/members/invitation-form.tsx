@@ -3,7 +3,7 @@ import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { RoleSelector } from './common';
 
 export const MemberInvitationFormSchema = z.object({
@@ -88,7 +88,11 @@ export function MemberInvitationForm(props: {
       </div>
       {props.resources}
       <div className="flex justify-end">
-        <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isValid}>
+        <Button
+          type="submit"
+          onSurface="raised"
+          disabled={form.formState.isSubmitting || !form.formState.isValid}
+        >
           {form.formState.isSubmitting ? 'Sending invitation...' : 'Send invitation'}
         </Button>
       </div>

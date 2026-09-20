@@ -7,7 +7,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
@@ -177,7 +177,7 @@ export function MemberInvitationButton(props: {
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <Button className="ml-4 min-w-[140px]" data-cy="send-invite-trigger">
+        <Button data-cy="send-invite-trigger">
           <MailIcon size={14} className="mr-2" /> Send Invite
         </Button>
       }

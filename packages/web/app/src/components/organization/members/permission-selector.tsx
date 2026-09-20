@@ -4,7 +4,7 @@ import { Accordion } from '@/components/base/accordion/accordion';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import type { OnSurface } from '@/components/base/shared-styles';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { ResultOf } from '@graphql-typed-document-node/core';
@@ -176,7 +176,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                               <p className="text-neutral-11 text-sm">
                                 This permission depends on another permission.{' '}
                                 <Button
-                                  variant="orangeLink"
+                                  variant="link"
                                   onClick={() => {
                                     const dependencyPermission = permission.dependsOnId;
                                     if (!dependencyPermission) {

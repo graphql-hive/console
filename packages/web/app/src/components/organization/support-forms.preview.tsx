@@ -13,7 +13,7 @@ import {
   ReplyTicketFormSchema,
   type ReplyTicketFormValues,
 } from '@/components/organization/reply-ticket-form';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { SupportTicketPriority } from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -53,7 +53,7 @@ export const NewTicket = createPreview(() => {
         title="New ticket"
         description="Create a new case for the support team"
         footer={
-          <Button type="submit" form={NEW_TICKET_FORM_ID}>
+          <Button type="submit" form={NEW_TICKET_FORM_ID} onSurface="raised">
             Submit
           </Button>
         }

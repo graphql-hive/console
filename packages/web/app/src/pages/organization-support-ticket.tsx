@@ -12,7 +12,6 @@ import {
   type ReplyTicketFormValues,
 } from '@/components/organization/reply-ticket-form';
 import { priorityDescription, statusDescription } from '@/components/organization/support';
-import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -168,20 +167,15 @@ function SupportTicket(props: {
         <div className="flex flex-row items-start justify-between gap-x-6">
           <div className="border-neutral-5 flex-1 border-r pr-6">
             <Title className="flex flex-row items-center gap-x-2">
-              <Button
-                variant="link"
-                className="h-auto p-0 text-lg font-semibold tracking-tight"
-                asChild
+              <Link
+                to="/$organizationSlug/view/support"
+                params={{
+                  organizationSlug: organization.slug,
+                }}
+                className="text-accent underline-offset-4 hover:underline"
               >
-                <Link
-                  to="/$organizationSlug/view/support"
-                  params={{
-                    organizationSlug: organization.slug,
-                  }}
-                >
-                  Tickets
-                </Link>
-              </Button>
+                Tickets
+              </Link>
               <span className="text-neutral-10 text-lg font-semibold tracking-tight">
                 <ChevronRightIcon className="size-4" />
               </span>

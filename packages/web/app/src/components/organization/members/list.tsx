@@ -13,6 +13,7 @@ import {
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
@@ -22,7 +23,6 @@ import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { GitHubIcon, GoogleIcon, OpenIdIcon } from '@/components/ui/brand-icon';
-import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
@@ -328,7 +328,7 @@ function MemberRoleCell(props: {
             open={scimOpen}
             onOpenChange={setScimOpen}
             trigger={
-              <Button type="button" size="xs" variant="orangeLink">
+              <Button type="button" variant="link">
                 <TriangleAlert className="mr-1 size-3" />
                 SCIM matched this existing account
               </Button>
