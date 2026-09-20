@@ -1,6 +1,6 @@
-import type { Organization, OIDCIntegration, User } from '../../../shared/entities';
-import { NoopLogger } from '../../shared/providers/logger';
+import type { OIDCIntegration, Organization, User } from '../../../shared/entities';
 import type { OrganizationMembers } from '../../organization/providers/organization-members';
+import { NoopLogger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
 import { SuperTokensCookieBasedSession } from './supertokens-strategy';
 
@@ -58,7 +58,8 @@ describe('SuperTokensCookieBasedSession.loadPolicyStatementsForOrganization', ()
       {
         action: '*:describe',
         effect: 'allow',
-        resource: 'hrn:50b84370-49fc-48d4-87cb-bde5a3c8fd2f:organization/50b84370-49fc-48d4-87cb-bde5a3c8fd2f',
+        resource:
+          'hrn:50b84370-49fc-48d4-87cb-bde5a3c8fd2f:organization/50b84370-49fc-48d4-87cb-bde5a3c8fd2f',
       },
     ]);
   });
