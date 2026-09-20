@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from 'urql';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { Button } from '@/components/ui/button';
@@ -42,10 +42,9 @@ export function PersonalAccessTokensSubPage(
   const [createAccessTokenState, setCreateAccessTokenState] = useState<CreateAccessTokenState>(
     CreateAccessTokenState.closed,
   );
-  // See the organization sub-page: the draft resets after the close transition, and a new key
-  // waits in the ref until then before opening its own dialog.
+  // See the organization sub-page: the draft resets after the close transition, and the key
+  // opens its own dialog as soon as it arrives.
   const [createSession, setCreateSession] = useState(0);
-  const pendingKey = useRef<string | null>(null);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const shownKey = useKeepPreviousData(createdKey ?? undefined, createdKey === null);
 
@@ -99,21 +98,12 @@ export function PersonalAccessTokensSubPage(
                   onOpenChangeComplete={isOpen => {
                     if (!isOpen) {
                       setCreateSession(s => s + 1);
-                      if (pendingKey.current !== null) {
-                        setCreatedKey(pendingKey.current);
-                        pendingKey.current = null;
-                      }
                     }
                   }}
                   organization={query.data.organization}
                   onSuccess={privateAccessKey => {
-                    // Resolved after the draft was discarded: no close is coming to show it, so show it now.
-                    if (createAccessTokenState === CreateAccessTokenState.closed) {
-                      setCreatedKey(privateAccessKey);
-                    } else {
-                      pendingKey.current = privateAccessKey;
-                      setCreateAccessTokenState(CreateAccessTokenState.closed);
-                    }
+                    setCreatedKey(privateAccessKey);
+                    setCreateAccessTokenState(CreateAccessTokenState.closed);
                     refetchQuery();
                   }}
                 />

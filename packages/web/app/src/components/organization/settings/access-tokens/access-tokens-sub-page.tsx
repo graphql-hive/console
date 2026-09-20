@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from 'urql';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { Button } from '@/components/ui/button';
@@ -49,8 +49,8 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
   // Bumped once the sheet has finished closing, so the next draft starts fresh without cutting
   // the exit transition short.
   const [createSession, setCreateSession] = useState(0);
-  // A new token's key waits in the ref until the sheet has closed, then opens its own dialog.
-  const pendingKey = useRef<string | null>(null);
+  // The key can't be fetched again, so it becomes state the moment it arrives rather than waiting
+  // for the sheet's exit; the created dialog opens over the closing sheet.
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const shownKey = useKeepPreviousData(createdKey ?? undefined, createdKey === null);
 
@@ -98,21 +98,12 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
                   onOpenChangeComplete={isOpen => {
                     if (!isOpen) {
                       setCreateSession(s => s + 1);
-                      if (pendingKey.current !== null) {
-                        setCreatedKey(pendingKey.current);
-                        pendingKey.current = null;
-                      }
                     }
                   }}
                   organization={query.data.organization}
                   onSuccess={privateAccessKey => {
-                    // Resolved after the draft was discarded: no close is coming to show it, so show it now.
-                    if (createAccessTokenState === CreateAccessTokenState.closed) {
-                      setCreatedKey(privateAccessKey);
-                    } else {
-                      pendingKey.current = privateAccessKey;
-                      setCreateAccessTokenState(CreateAccessTokenState.closed);
-                    }
+                    setCreatedKey(privateAccessKey);
+                    setCreateAccessTokenState(CreateAccessTokenState.closed);
                     refetchQuery();
                   }}
                 />
