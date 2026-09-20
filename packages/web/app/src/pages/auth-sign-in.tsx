@@ -1,4 +1,3 @@
-import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
 import { useCallback, useEffect } from 'react';
 import { CircleUserRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -10,17 +9,17 @@ import {
   SignInFormSchema,
   type SignInFormValues,
 } from '@/components/auth/sign-in-form';
+import { Button } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { Text } from '@/components/ui/text';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
 import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';
 import { enabledProviders, isProviderEnabled } from '@/lib/supertokens/thirdparty';
-import { cn, exhaustiveGuard } from '@/lib/utils';
+import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Slot } from '@radix-ui/react-slot';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 
@@ -33,14 +32,13 @@ export function SignInButton(props: {
     return (
       <Tooltip
         trigger={
-          <Slot
-            className={cn(
-              'animate-shimmer bg-size-[200%_100%] transition-colors',
-              'bg-[linear-gradient(110deg,transparent,30%,hsl(var(--neutral-6)),70%,transparent)]',
-            )}
-          >
+          <span className="relative inline-flex w-full">
             {props.children}
-          </Slot>
+            <span
+              aria-hidden
+              className="animate-shimmer bg-size-[200%_100%] pointer-events-none absolute inset-0 rounded-sm bg-[linear-gradient(110deg,transparent,30%,hsl(var(--neutral-6)),70%,transparent)]"
+            />
+          </span>
         }
         content="You signed in with it last time."
         side="top"
@@ -199,7 +197,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                   }
                   submit={
                     <SignInButton previousSignIn={lastAuthMethod === 'email'}>
-                      <Button type="submit" className="w-full" disabled={isPending}>
+                      <Button type="submit" width="full" onSurface="raised" disabled={isPending}>
                         {emailPasswordSignIn.data?.status === 'OK'
                           ? 'Redirecting...'
                           : emailPasswordSignIn.isPending
@@ -214,7 +212,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                   <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'google'}>
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('google')}
                       disabled={isPending}
                     >
@@ -226,7 +224,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                   <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'github'}>
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('github')}
                       disabled={isPending}
                     >
@@ -239,7 +237,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                   <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'okta'}>
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('okta')}
                       disabled={isPending}
                     >
@@ -249,15 +247,14 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                 ) : null}
                 {isProviderEnabled('oidc') ? (
                   <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'oidc'}>
-                    <Button asChild variant="outline" className="w-full" disabled={isPending}>
-                      <Link
-                        to="/auth/sso"
-                        search={{
-                          redirectToPath: props.redirectToPath,
-                        }}
-                      >
-                        <CircleUserRound className="mr-4 size-4" /> Login with SSO
-                      </Link>
+                    <Button
+                      variant="outline"
+                      width="full"
+                      render={
+                        <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
+                      }
+                    >
+                      <CircleUserRound className="mr-4 size-4" /> Login with SSO
                     </Button>
                   </SignInButton>
                 ) : null}

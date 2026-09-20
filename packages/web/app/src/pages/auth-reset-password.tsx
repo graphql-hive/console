@@ -14,8 +14,8 @@ import {
   type NewPasswordFormValues,
   type ResetPasswordFormValues,
 } from '@/components/auth/reset-password-forms';
+import { Button } from '@/components/base/button/button';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -142,7 +142,7 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
             form={form}
             onSubmit={onSubmit}
             submit={
-              <Button type="submit" className="w-full" disabled={resetEmail.isPending}>
+              <Button type="submit" width="full" onSurface="raised" disabled={resetEmail.isPending}>
                 {resetEmail.data?.status === 'OK'
                   ? 'Redirecting...'
                   : resetEmail.isPending
@@ -271,7 +271,12 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
             form={form}
             onSubmit={onSubmit}
             submit={
-              <Button type="submit" className="w-full" disabled={changePassword.isPending}>
+              <Button
+                type="submit"
+                width="full"
+                onSurface="raised"
+                disabled={changePassword.isPending}
+              >
                 {changePassword.data?.status === 'OK'
                   ? 'Redirecting...'
                   : changePassword.isPending
