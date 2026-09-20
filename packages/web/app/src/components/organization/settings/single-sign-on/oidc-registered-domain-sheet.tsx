@@ -1,27 +1,17 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import z from 'zod';
 import { DescriptionList } from '@/components/base/description-list/description-list';
-import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { defineStepper } from '@/components/ui/stepper';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { RegisterDomainForm, RegisterDomainFormSchema } from './register-domain-form';
 
 const OIDCRegisteredDomainSheet_RegisteredDomain = graphql(`
   fragment OIDCRegisteredDomainSheet_RegisteredDomain on OIDCIntegrationDomain {
@@ -103,16 +93,6 @@ const OIDCRegisteredDomainSheet_DeleteDomainMutation = graphql(`
     }
   }
 `);
-
-const FQDNModel = z
-  .string()
-  .min(3, 'Must be at least 3 characters long')
-  .max(255, 'Must be at most 255 characters long.')
-  .regex(/^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]+$/, 'Invalid domain provided.');
-
-const RegisterDomainFormSchema = z.object({
-  domainName: FQDNModel,
-});
 
 export function OIDCRegisteredDomainSheet(props: {
   open: boolean;
@@ -345,35 +325,7 @@ export function OIDCRegisteredDomainSheet(props: {
               </Stepper.StepperNavigation>
             )}
             {stepper.switch({
-              'step-1-general': () => (
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onCreateDomain)}>
-                    <FormField
-                      control={form.control}
-                      name="domainName"
-                      render={({ field }) => {
-                        return (
-                          <FormItem>
-                            <FormLabel>Domain Name</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="example.com"
-                                autoComplete="off"
-                                onSurface="raised"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              The domain you want to register with this OIDC provider.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        );
-                      }}
-                    />
-                  </form>
-                </Form>
-              ),
+              'step-1-general': () => <RegisterDomainForm form={form} onSubmit={onCreateDomain} />,
               'step-2-challenge': () => (
                 <>
                   <p>

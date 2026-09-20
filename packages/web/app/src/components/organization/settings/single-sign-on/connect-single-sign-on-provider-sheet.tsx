@@ -1,22 +1,19 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Input } from '@/components/base/input/input';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation as useRQMutation } from '@tanstack/react-query';
+import {
+  ConnectProviderForm,
+  ConnectProviderFormSchema,
+  OIDCMetadataSchema,
+  OIDCMetadataUrlForm,
+  OIDCMetadataUrlFormSchema,
+  type OIDCMetadataUrlFormValues,
+} from './connect-provider-form';
 
 type ConnectSingleSignOnProviderSheetProps = {
   open: boolean;
@@ -130,148 +127,12 @@ export function ConnectSingleSignOnProviderSheet(
   }
 
   const formNode = (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} data-form-oidc>
-        <FormField
-          control={form.control}
-          name="authorization_endpoint"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Authorization Endpoint</FormLabel>
-                <FormControl>
-                  <Input
-                    onSurface="raised"
-                    disabled={state === 'discovery'}
-                    placeholder="https://my.okta.com/oauth2/v1/authorize"
-                    autoComplete="off"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="token_endpoint"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Token Endpoint</FormLabel>
-                <FormControl>
-                  <Input
-                    onSurface="raised"
-                    disabled={state === 'discovery'}
-                    placeholder="https://my.okta.com/oauth2/v1/token"
-                    autoComplete="off"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="userinfo_endpoint"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Userinfo Endpoint</FormLabel>
-                <FormControl>
-                  <Input
-                    onSurface="raised"
-                    disabled={state === 'discovery'}
-                    placeholder="https://my.okta.com/oauth2/v1/userinfo"
-                    autoComplete="off"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="clientId"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Client ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="Client ID" autoComplete="off" onSurface="raised" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="clientSecret"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Client Secret</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={
-                      props.initialValues
-                        ? `Value ending with ${props.initialValues?.clientSecretPreview}`
-                        : 'Client Secret'
-                    }
-                    autoComplete="off"
-                    type="password"
-                    onSurface="raised"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="userIdClaim"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>User ID Claim</FormLabel>
-                <FormControl>
-                  <Input placeholder="sub" autoComplete="off" onSurface="raised" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="additionalScopes"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Additional Scopes</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Separated by spaces"
-                    autoComplete="off"
-                    onSurface="raised"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-      </form>
-    </Form>
+    <ConnectProviderForm
+      form={form}
+      onSubmit={onSubmit}
+      endpointsEditable={state === 'manual'}
+      clientSecretPreview={props.initialValues?.clientSecretPreview}
+    />
   );
 
   return (
@@ -404,12 +265,12 @@ function OIDCMetadataFetcher(props: {
     },
   });
 
-  function onSubmit(data: z.infer<typeof OIDCMetadataFormSchema>) {
+  function onSubmit(data: OIDCMetadataUrlFormValues) {
     fetchMetadata.mutate(data.url);
   }
 
   const form = useForm({
-    resolver: zodResolver(OIDCMetadataFormSchema),
+    resolver: zodResolver(OIDCMetadataUrlFormSchema),
     defaultValues: {
       url: '',
     },
@@ -417,44 +278,9 @@ function OIDCMetadataFetcher(props: {
   });
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <FormField
-          control={form.control}
-          name="url"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <div className="flex flex-row justify-center gap-x-4">
-                  <FormControl>
-                    <Input
-                      onSurface="raised"
-                      disabled={fetchMetadata.isPending}
-                      placeholder="https://my.okta.com/.well-known/openid-configuration"
-                      autoComplete="off"
-                      {...field}
-                    />
-                  </FormControl>
-                  <Button type="submit" className="w-48" disabled={fetchMetadata.isPending}>
-                    {fetchMetadata.isPending ? 'Fetching...' : 'Fetch endpoints'}
-                  </Button>
-                </div>
-                <FormDescription>
-                  Provide the OIDC metadata URL to automatically fill in the fields below.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-      </form>
-    </Form>
+    <OIDCMetadataUrlForm form={form} onSubmit={onSubmit} isPending={fetchMetadata.isPending} />
   );
 }
-
-const OIDCMetadataFormSchema = z.object({
-  url: z.string().url('Must be a valid URL'),
-});
 
 async function fetchOIDCMetadata(url: string) {
   const res = await fetch(url, {
@@ -484,30 +310,3 @@ async function fetchOIDCMetadata(url: string) {
     metadata: await res.json(),
   } as const;
 }
-
-const OIDCMetadataSchema = z.object({
-  token_endpoint: z
-    .string({
-      required_error: 'Token endpoint not found',
-    })
-    .url('Token endpoint must be a valid URL'),
-  userinfo_endpoint: z
-    .string({
-      required_error: 'Userinfo endpoint not found',
-    })
-    .url('Userinfo endpoint must be a valid URL'),
-  authorization_endpoint: z
-    .string({
-      required_error: 'Authorization endpoint not found',
-    })
-    .url('Authorization endpoint must be a valid URL'),
-});
-
-// Only the endpoints are validated client-side; the remaining fields are
-// checked by the server on save and surfaced through form.setError.
-const ConnectProviderFormSchema = OIDCMetadataSchema.extend({
-  clientId: z.string(),
-  clientSecret: z.string(),
-  userIdClaim: z.string(),
-  additionalScopes: z.string(),
-});
