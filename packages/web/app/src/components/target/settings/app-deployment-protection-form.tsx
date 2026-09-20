@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { Select } from '@/components/base/floating/select/select';
 import { Form, FormField } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { AppDeploymentProtectionRuleLogicType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 

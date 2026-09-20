@@ -7,7 +7,7 @@ import { Form, FormField, FormItem, FormMessage } from '@/components/base/form/f
 import { Input } from '@/components/base/input/input';
 import { Label } from '@/components/base/label/label';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { BreakingChangeFormulaType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 

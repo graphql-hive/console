@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Form, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { Label } from '@/components/base/label/label';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { DangerousChangeType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 
