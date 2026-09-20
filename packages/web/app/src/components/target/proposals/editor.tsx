@@ -5,7 +5,7 @@ import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Tabs } from '@/components/base/tabs/tabs';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -367,7 +367,7 @@ export function ProposalEditor(props: {
                               <div>
                                 <Button
                                   variant="destructive"
-                                  size="sm"
+                                  size="compact"
                                   onClick={() => onRemoveTab(idx)}
                                 >
                                   Remove from proposal
@@ -433,8 +433,10 @@ function ServiceSelect(props: {
         disabled={selectableServices.length === 0}
         width="md"
       />
-      <Button variant="orangeLink" className="ml-0 whitespace-nowrap" onClick={props.onSelectNew}>
-        + New<span className="hidden sm:inline-block">&nbsp;Service</span>
+      <Button variant="link" onClick={props.onSelectNew}>
+        <span className="whitespace-nowrap">
+          + New<span className="hidden sm:inline-block">&nbsp;Service</span>
+        </span>
       </Button>
     </div>
   ) : null;

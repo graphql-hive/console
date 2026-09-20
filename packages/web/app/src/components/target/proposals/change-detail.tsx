@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { Diamond, Info, TriangleAlert } from 'lucide-react';
 import { Accordion } from '@/components/base/accordion/accordion';
 import { Popover } from '@/components/base/floating/popover/popover';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { MergeStatus } from '@/pages/target-proposal-details';
 import type { Change } from '@graphql-inspector/core';
 import { labelize } from '../history/errors-and-changes';
@@ -82,12 +82,7 @@ function ChangesBlockTooltip(props: { info: string }) {
   return (
     <Popover
       trigger={
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="text-neutral-10 ml-1"
-          aria-label="More about this change"
-        >
+        <Button variant="ghost" size="icon-sm" aria-label="More about this change">
           <Info className="size-4" />
         </Button>
       }

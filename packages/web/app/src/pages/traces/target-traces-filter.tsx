@@ -17,7 +17,7 @@ import { Input } from '@/components/base/input/input';
 import { Separator } from '@/components/base/separator/separator';
 import { focusRing } from '@/components/base/shared-styles';
 import { Slider } from '@/components/base/slider/slider';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
@@ -89,15 +89,15 @@ export const MultiInputFilter = memo(
             onChange={handleTraceIdChange}
           />
           <Button
-            variant="secondary"
-            className="size-9 p-0"
+            variant="outline"
+            layout="iconOnly"
+            icon={PlusIcon}
+            aria-label="Add trace ID"
             type="submit"
             onClick={() => {
               addTraceId();
             }}
-          >
-            <PlusIcon className="size-4" />
-          </Button>
+          />
         </form>
         {props.selectedValues.map(value => (
           <MultiInputFilterValue
