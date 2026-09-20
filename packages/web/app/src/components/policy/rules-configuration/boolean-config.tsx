@@ -35,7 +35,7 @@ export const PolicyBooleanToggle = (props: {
         <Checkbox
           id={`${props.rule}_${props.propertyName}`}
           value={props.rule}
-          checked={currentValue}
+          checked={currentValue ?? props.defaultValue}
           onCheckedChange={newValue => setConfig(props.propertyName, newValue)}
         />
       </div>

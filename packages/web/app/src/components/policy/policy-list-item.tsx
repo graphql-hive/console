@@ -49,7 +49,7 @@ export function PolicyListItem(props: {
 
   return (
     <>
-      <div className="px-1 py-4">
+      <div className="px-1 py-4" data-rule={ruleInfo.id}>
         <div className="flex gap-x-4">
           <div className="pt-[2px]">
             <Checkbox
