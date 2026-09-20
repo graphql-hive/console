@@ -2,22 +2,23 @@ import { useCallback, useMemo, useState } from 'react';
 import { MailIcon, MailQuestionIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { z } from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
-import { RoleSelector } from './common';
+import {
+  MemberInvitationForm,
+  MemberInvitationFormSchema,
+  type MemberInvitationFormValues,
+} from './invitation-form';
 import {
   ResourceSelection,
   ResourceSelector,
@@ -63,23 +64,7 @@ const MemberInvitationForm_OrganizationFragment = graphql(`
   }
 `);
 
-const memberInvitationFormSchema = z.object({
-  email: z
-    .string({
-      required_error: 'Please enter email address',
-    })
-    .max(128, 'Email address is too long')
-    .email('Please enter valid email address'),
-  role: z
-    .string({
-      required_error: 'Please select a role',
-    })
-    .min(1, 'Please select a role'),
-});
-
-type MemberInvitationFormValues = z.infer<typeof memberInvitationFormSchema>;
-
-function MemberInvitationForm(props: {
+function SendInvitation(props: {
   organization: FragmentType<typeof MemberInvitationForm_OrganizationFragment>;
   close(): void;
   refetchInvitations(): void;
@@ -97,7 +82,7 @@ function MemberInvitationForm(props: {
   }));
 
   const form = useForm<MemberInvitationFormValues>({
-    resolver: zodResolver(memberInvitationFormSchema),
+    resolver: zodResolver(MemberInvitationFormSchema),
     mode: 'onChange',
     defaultValues: {
       email: '',
@@ -164,85 +149,20 @@ function MemberInvitationForm(props: {
     }
   }
 
-  if (!viewerRole) {
-    console.error('Viewer role not found in organization member roles');
-    return (
-      <>
-        <div className="text-red-500">Viewer role not found in organization member roles</div>
-        <div className="text-neutral-10">Please contact support.</div>
-      </>
-    );
-  }
-
   return (
-    <Form {...form}>
-      <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="flex flex-row items-start space-x-6">
-          <div className="grow">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter an email"
-                      type="email"
-                      onSurface="raised"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div>
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <RoleSelector
-                      onSurface="raised"
-                      roles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
-                      defaultRole={
-                        organization.memberRoles?.edges.find(edge => edge.node.id === field.value)
-                          ?.node ?? viewerRole
-                      }
-                      isRoleActive={role => ({
-                        active: role.canInvite,
-                        reason: role.canInvite ? undefined : 'Not enough permissions',
-                      })}
-                      onSelect={role => {
-                        field.onChange(role.id);
-                        field.onBlur();
-                      }}
-                      onBlur={field.onBlur}
-                      disabled={field.disabled}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-        <div>
-          <ResourceSelector
-            selection={selection}
-            onSelectionChange={setSelection}
-            organization={organization}
-          />
-        </div>
-        <div className="flex justify-end">
-          <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isValid}>
-            {form.formState.isSubmitting ? 'Sending invitation...' : 'Send invitation'}
-          </Button>
-        </div>
-      </form>
-    </Form>
+    <MemberInvitationForm
+      form={form}
+      onSubmit={onSubmit}
+      roles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
+      defaultRole={viewerRole}
+      resources={
+        <ResourceSelector
+          selection={selection}
+          onSelectionChange={setSelection}
+          organization={organization}
+        />
+      }
+    />
   );
 }
 
@@ -265,7 +185,7 @@ export function MemberInvitationButton(props: {
       title="Membership Invitation"
       description="Enter the email address of the person you want to invite and select their role within the organization. Invitation expires after 7 days."
     >
-      <MemberInvitationForm
+      <SendInvitation
         refetchInvitations={props.refetchInvitations}
         organization={props.organization}
         close={() => setOpen(false)}
