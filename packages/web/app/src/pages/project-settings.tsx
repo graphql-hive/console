@@ -3,16 +3,15 @@ import { ArrowBigDownDashIcon, CheckIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
-import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
+import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import {
@@ -172,18 +171,6 @@ const ProjectSettingsPage_UpdateProjectSlugMutation = graphql(`
   }
 `);
 
-const SlugFormSchema = z.object({
-  slug: z
-    .string({
-      required_error: 'Project slug is required',
-    })
-    .min(1, 'Project slug is required')
-    .max(50, 'Slug must be less than 50 characters')
-    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers and dashes'),
-});
-
-type SlugFormValues = z.infer<typeof SlugFormSchema>;
-
 function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; projectSlug: string }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -191,7 +178,7 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
 
   const slugForm = useForm({
     mode: 'all',
-    resolver: zodResolver(SlugFormSchema),
+    resolver: zodResolver(slugFormSchema('Project')),
     defaultValues: {
       slug: props.projectSlug,
     },
@@ -243,49 +230,27 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
   );
 
   return (
-    <Form {...slugForm}>
-      <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
-        <SubPageLayout>
-          <SubPageLayoutHeader
-            subPageTitle="Project Slug"
-            description={
-              <p>
-                This is your project's URL namespace on Hive. Changing it{' '}
-                <span className="font-bold">will invalidate</span> any existing links to your
-                project.
-                <br />
-              </p>
-            }
-            docsLink={{
-              href: '/schema-registry/management/projects#change-slug-of-a-project',
-              text: 'Read more in the documentation',
-            }}
-          />
-          <div>
-            <FormField
-              control={slugForm.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      placeholder="slug"
-                      prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${props.organizationSlug}/`}
-                      width="sm"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button disabled={slugForm.formState.isSubmitting} className="px-10" type="submit">
-              Save
-            </Button>
-          </div>
-        </SubPageLayout>
-      </form>
-    </Form>
+    <SubPageLayout>
+      <SubPageLayoutHeader
+        subPageTitle="Project Slug"
+        description={
+          <p>
+            This is your project's URL namespace on Hive. Changing it{' '}
+            <span className="font-bold">will invalidate</span> any existing links to your project.
+            <br />
+          </p>
+        }
+        docsLink={{
+          href: '/schema-registry/management/projects#change-slug-of-a-project',
+          text: 'Read more in the documentation',
+        }}
+      />
+      <SlugForm
+        form={slugForm}
+        onSubmit={onSlugFormSubmit}
+        prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${props.organizationSlug}/`}
+      />
+    </SubPageLayout>
   );
 }
 
