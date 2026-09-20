@@ -1,20 +1,21 @@
 import { useState } from 'react';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { z } from 'zod';
-import { Accordion } from '@/components/base/accordion/accordion';
-import { Input } from '@/components/base/input/input';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { PermissionScopeItem } from '@/components/organization/Permissions';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { InputCopy } from '@/components/ui/input-copy';
 import { graphql } from '@/gql';
 import { TargetAccessScope } from '@/gql/graphql';
 import { RegistryAccessScope } from '@/lib/access/common';
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  RegistryTokenForm,
+  RegistryTokenFormSchema,
+  type RegistryTokenFormValues,
+} from './registry-token-form';
 
 export const CreateAccessToken_CreateTokenMutation = graphql(`
   mutation CreateAccessToken_CreateToken($input: CreateTokenInput!) {
@@ -79,23 +80,6 @@ function getFinalTargetAccessScopes(
   return [TargetAccessScope.RegistryRead];
 }
 
-const createRegistryTokenFormSchema = z.object({
-  tokenDescription: z
-    .string({
-      required_error: 'Token description is required',
-    })
-    .min(2, {
-      message: 'Token description must be at least 2 characters long',
-    })
-    .max(50, {
-      message: 'Token description must be at most 50 characters long',
-    })
-    .regex(
-      /^([a-z]|[0-9]|\s|\.|,|_|-|\/|&)+$/i,
-      'Token description restricted to alphanumerical characters, spaces and . , _ - / &',
-    ),
-});
-
 export function ModalContent(props: {
   open: boolean;
   onOpenChangeComplete?: (open: boolean) => void;
@@ -107,9 +91,9 @@ export function ModalContent(props: {
   const { toast } = useToast();
   const [selectedScope, setSelectedScope] = useState<'no-access' | TargetAccessScope>('no-access');
 
-  const form = useForm<z.infer<typeof createRegistryTokenFormSchema>>({
+  const form = useForm<RegistryTokenFormValues>({
     mode: 'onChange',
-    resolver: zodResolver(createRegistryTokenFormSchema),
+    resolver: zodResolver(RegistryTokenFormSchema),
     defaultValues: {
       tokenDescription: '',
     },
@@ -117,7 +101,7 @@ export function ModalContent(props: {
 
   const [mutation, mutate] = useMutation(CreateAccessToken_CreateTokenMutation);
 
-  async function onSubmit(values: z.infer<typeof createRegistryTokenFormSchema>) {
+  async function onSubmit(values: RegistryTokenFormValues) {
     const { error } = await mutate({
       input: {
         organizationSlug: props.organizationSlug,
@@ -170,13 +154,31 @@ export function ModalContent(props: {
       title="Create an access token"
       description="To access Hive Console, your application or tool needs an active API key."
     >
-      <GenerateTokenContent
+      <RegistryTokenForm
         form={form}
-        noPermissionsSelected={noPermissionsSelected}
         onSubmit={onSubmit}
-        selectedScope={selectedScope}
-        setSelectedScope={setSelectedScope}
-        toggleModalOpen={props.toggleModalOpen}
+        noPermissionsSelected={noPermissionsSelected}
+        onCancel={props.toggleModalOpen}
+        permissions={
+          <PermissionScopeItem
+            dataCy="registry-access-scope"
+            onSurface="raised"
+            key={selectedScope}
+            scope={RegistryAccessScope}
+            canManageScope
+            checkAccess={() => true}
+            onChange={value => {
+              if (value === 'no-access') {
+                setSelectedScope('no-access');
+                return;
+              }
+              setSelectedScope(value);
+            }}
+            possibleScope={Object.values(RegistryAccessScope.mapping)}
+            initialScope={selectedScope}
+            selectedScope={selectedScope}
+          />
+        }
       />
     </Dialog>
   );
@@ -191,90 +193,5 @@ export function CreatedTokenContent(props: { secret: string }) {
         to create a new one.
       </Callout>
     </div>
-  );
-}
-
-export function GenerateTokenContent(props: {
-  form: UseFormReturn<z.infer<typeof createRegistryTokenFormSchema>>;
-  onSubmit: (values: z.infer<typeof createRegistryTokenFormSchema>) => void;
-  setSelectedScope: (scope: 'no-access' | TargetAccessScope) => void;
-  selectedScope: 'no-access' | TargetAccessScope;
-  toggleModalOpen: () => void;
-  noPermissionsSelected: boolean;
-}) {
-  return (
-    <Form {...props.form}>
-      {/* The buttons stay inside the form: the e2e helper selects the submit through it. */}
-      <form
-        className="flex flex-col gap-5"
-        data-cy="create-registry-token-form"
-        onSubmit={props.form.handleSubmit(props.onSubmit)}
-      >
-        <FormField
-          control={props.form.control}
-          name="tokenDescription"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input
-                  placeholder="Token description"
-                  data-cy="description"
-                  autoComplete="off"
-                  onSurface="raised"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Accordion
-          variant="plain"
-          defaultValue={['Permissions']}
-          items={[
-            {
-              value: 'Permissions',
-              label: 'Registry & Usage',
-              content: (
-                <PermissionScopeItem
-                  dataCy="registry-access-scope"
-                  onSurface="raised"
-                  key={props.selectedScope}
-                  scope={RegistryAccessScope}
-                  canManageScope
-                  checkAccess={() => true}
-                  onChange={value => {
-                    if (value === 'no-access') {
-                      props.setSelectedScope('no-access');
-                      return;
-                    }
-                    props.setSelectedScope(value);
-                  }}
-                  possibleScope={Object.values(RegistryAccessScope.mapping)}
-                  initialScope={props.selectedScope}
-                  selectedScope={props.selectedScope}
-                />
-              ),
-            },
-          ]}
-        />
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" type="button" onClick={props.toggleModalOpen}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            data-cy="submit"
-            disabled={
-              !props.form.formState.isValid ||
-              props.noPermissionsSelected ||
-              props.form.formState.isSubmitting
-            }
-          >
-            Generate Token
-          </Button>
-        </div>
-      </form>
-    </Form>
   );
 }
