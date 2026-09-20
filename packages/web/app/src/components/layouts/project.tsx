@@ -1,15 +1,17 @@
 import { ReactNode } from 'react';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
-import { Input } from '@/components/base/input/input';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
+import {
+  CreateTargetForm,
+  CreateTargetFormSchema,
+  type CreateTargetFormValues,
+} from '@/components/target/create-target-form';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { useToggle } from '@/lib/hooks';
@@ -196,19 +198,6 @@ export const CreateTarget_CreateTargetMutation = graphql(`
   }
 `);
 
-const createTargetFormSchema = z.object({
-  targetSlug: z
-    .string({
-      required_error: 'Target slug is required',
-    })
-    .min(2, {
-      message: 'Target slug must be at least 2 characters long',
-    })
-    .max(50, {
-      message: 'Target slug must be at most 50 characters long',
-    }),
-});
-
 function CreateTargetModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
@@ -220,15 +209,15 @@ function CreateTargetModal(props: {
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof createTargetFormSchema>>({
+  const form = useForm<CreateTargetFormValues>({
     mode: 'onChange',
-    resolver: zodResolver(createTargetFormSchema),
+    resolver: zodResolver(CreateTargetFormSchema),
     defaultValues: {
       targetSlug: '',
     },
   });
 
-  async function onSubmit(values: z.infer<typeof createTargetFormSchema>) {
+  async function onSubmit(values: CreateTargetFormValues) {
     const { data, error } = await mutate({
       input: {
         project: {
@@ -270,22 +259,6 @@ function CreateTargetModal(props: {
   }
 
   return (
-    <CreateTargetModalContent
-      form={form}
-      isOpen={props.isOpen}
-      onSubmit={onSubmit}
-      toggleModalOpen={props.toggleModalOpen}
-    />
-  );
-}
-
-export function CreateTargetModalContent(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  onSubmit: (values: z.infer<typeof createTargetFormSchema>) => void | Promise<void>;
-  form: UseFormReturn<z.infer<typeof createTargetFormSchema>>;
-}) {
-  return (
     <Dialog
       open={props.isOpen}
       onOpenChange={props.toggleModalOpen}
@@ -296,38 +269,7 @@ export function CreateTargetModalContent(props: {
         </>
       }
     >
-      <Form {...props.form}>
-        <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
-          <div className="space-y-8">
-            <FormField
-              control={props.form.control}
-              name="targetSlug"
-              render={({ field }) => {
-                return (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder="my-target"
-                        autoComplete="off"
-                        onSurface="raised"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-          </div>
-          <Button
-            className="w-full"
-            type="submit"
-            disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
-          >
-            {props.form.formState.isSubmitting ? 'Submitting...' : 'Create Target'}
-          </Button>
-        </form>
-      </Form>
+      <CreateTargetForm form={form} onSubmit={onSubmit} />
     </Dialog>
   );
 }
