@@ -137,6 +137,7 @@ export default defineConfig({
         { label: 'PageLead' },
         { label: 'NotFound' },
         { label: 'FailureCard' },
+        { label: 'SupportForms' },
         { label: 'TabbedView', children: [{ label: 'Component Examples' }] },
       ],
     },
