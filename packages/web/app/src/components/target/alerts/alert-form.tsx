@@ -633,13 +633,14 @@ export function AlertForm(props: AlertFormProps) {
           >
             <div className="space-y-4">
               {fields.map((field, index) => (
-                <div key={field.id} className="flex items-end gap-3">
-                  <FormField
-                    control={form.control}
-                    name={`channels.${index}.channelId`}
-                    render={({ field: channelField }) => (
-                      <FormItem>
-                        {index === 0 && <FormLabel label="Channel" />}
+                <FormField
+                  key={field.id}
+                  control={form.control}
+                  name={`channels.${index}.channelId`}
+                  render={({ field: channelField }) => (
+                    <FormItem>
+                      {index === 0 && <FormLabel label="Channel" />}
+                      <div className="flex items-center gap-3">
                         <FormControl>
                           <Select
                             // Only the first row has the visible label.
@@ -651,19 +652,20 @@ export function AlertForm(props: AlertFormProps) {
                             onSurface="raised"
                           />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => remove(index)}
-                  >
-                    <X className="size-4" />
-                  </Button>
-                </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Remove channel ${index + 1}`}
+                          onClick={() => remove(index)}
+                        >
+                          <X className="size-4" />
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               ))}
               <Button type="button" variant="outline" onClick={() => append({ channelId: '' })}>
                 <Plus className="mr-1 size-3.5" />
