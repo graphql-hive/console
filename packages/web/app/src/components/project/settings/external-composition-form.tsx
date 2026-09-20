@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 
 export const ExternalCompositionFormSchema = z.object({
   endpoint: z

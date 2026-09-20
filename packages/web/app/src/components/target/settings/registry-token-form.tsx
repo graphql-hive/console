@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { Accordion } from '@/components/base/accordion/accordion';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 
 export const RegistryTokenFormSchema = z.object({
   tokenDescription: z
@@ -78,6 +78,7 @@ export function RegistryTokenForm(props: {
         <Button
           type="submit"
           data-cy="submit"
+          onSurface="raised"
           disabled={
             !form.formState.isValid || props.noPermissionsSelected || form.formState.isSubmitting
           }

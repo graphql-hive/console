@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from 'urql';
 import { PageLead } from '@/components/base/page-lead';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { SubPageLayout } from '@/components/ui/page-content-layout';
 import { graphql } from '@/gql';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';

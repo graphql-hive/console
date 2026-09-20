@@ -45,7 +45,7 @@ import {
 } from '@/components/target/settings/graphql-endpoint-form';
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
 import { SchemaContracts } from '@/components/target/settings/schema-contracts';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -298,7 +298,6 @@ const ExtendBaseSchema = (props: {
       )}
       <div className="flex items-center gap-x-3">
         <Button
-          className="px-5"
           disabled={mutation.fetching}
           onClick={async () => {
             await mutate({
@@ -328,11 +327,7 @@ const ExtendBaseSchema = (props: {
         >
           Save
         </Button>
-        <Button
-          variant="secondary"
-          className="px-5"
-          onClick={() => setBaseSchema(props.baseSchema)}
-        >
+        <Button variant="outline" onClick={() => setBaseSchema(props.baseSchema)}>
           Reset
         </Button>
         {isUnsaved && <span className="text-sm text-green-500">Unsaved changes!</span>}

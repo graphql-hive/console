@@ -2,7 +2,7 @@ import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 
 export const CreateTargetFormSchema = z.object({
   targetSlug: z
@@ -42,13 +42,16 @@ export function CreateTargetForm(props: {
           </FormItem>
         )}
       />
-      <Button
-        className="mt-3 w-full"
-        type="submit"
-        disabled={form.formState.isSubmitting || !form.formState.isValid}
-      >
-        {form.formState.isSubmitting ? 'Submitting...' : 'Create Target'}
-      </Button>
+      <div className="mt-3">
+        <Button
+          width="full"
+          onSurface="raised"
+          type="submit"
+          disabled={form.formState.isSubmitting || !form.formState.isValid}
+        >
+          {form.formState.isSubmitting ? 'Submitting...' : 'Create Target'}
+        </Button>
+      </div>
     </Form>
   );
 }

@@ -9,7 +9,7 @@ import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialo
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { PageLead } from '@/components/base/page-lead';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Callout } from '@/components/ui/callout';
 import { SubPageLayout } from '@/components/ui/page-content-layout';
 import { InlineCode } from '@/components/v2/inline-code';
@@ -92,7 +92,11 @@ export function CreateCDNAccessTokenModal(props: {
         width="lg"
         title="Create CDN Access Token"
         description="The CDN Access Token was successfully created."
-        footer={<Button onClick={props.onClose}>Close</Button>}
+        footer={
+          <Button onSurface="raised" onClick={props.onClose}>
+            Close
+          </Button>
+        }
       >
         <div className="flex flex-col gap-4">
           <Callout type="warning">
@@ -113,7 +117,11 @@ export function CreateCDNAccessTokenModal(props: {
         width="lg"
         title="Create CDN Access Token"
         description="Something went wrong."
-        footer={<Button onClick={props.onClose}>Close</Button>}
+        footer={
+          <Button onSurface="raised" onClick={props.onClose}>
+            Close
+          </Button>
+        }
       >
         <Callout type="warning">{result.error.message}</Callout>
       </Dialog>
@@ -132,7 +140,12 @@ export function CreateCDNAccessTokenModal(props: {
           <Button variant="outline" onClick={props.onClose}>
             Cancel
           </Button>
-          <Button type="submit" form={CDN_TOKEN_FORM_ID} disabled={createCdnAccessToken.fetching}>
+          <Button
+            type="submit"
+            form={CDN_TOKEN_FORM_ID}
+            onSurface="raised"
+            disabled={createCdnAccessToken.fetching}
+          >
             Create
           </Button>
         </>
@@ -316,15 +329,8 @@ export function CDNAccessTokens(props: {
       />
 
       <div className="my-3.5 flex justify-between">
-        <Button asChild>
-          <Link
-            search={{
-              page: 'cdn',
-              cdn: 'create',
-            }}
-          >
-            Create new CDN token
-          </Link>
+        <Button render={<Link search={{ page: 'cdn', cdn: 'create' }} />}>
+          Create new CDN token
         </Button>
       </div>
       <DataTable

@@ -12,7 +12,7 @@ import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigati
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
 import { CompositionSettings } from '@/components/project/settings/composition';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
