@@ -24,10 +24,11 @@ export const focusRing =
 
 /**
  * The quiet ring for text on the page rather than a control with an edge: tabs and navigation
- * links. 1px dotted on a small radius.
+ * links. 1px dotted. The outline follows the element's own radius, which stays with the element:
+ * a radius here would also round a border the element draws, like a nav link's underline.
  */
 export const focusRingQuiet =
-  'rounded-sm focus-visible:outline-1 focus-visible:outline-dotted focus-visible:outline-accent';
+  'focus-visible:outline-1 focus-visible:outline-dotted focus-visible:outline-accent';
 
 /**
  * Vertical scroll container with a thin, muted scrollbar. Use anywhere content can overflow

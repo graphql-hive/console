@@ -81,6 +81,7 @@ const headerRowVariants = cva('flex items-center', {
 const triggerVariants = cva(
   cn(
     'group flex w-full items-center gap-2 text-left font-medium transition-colors',
+    'rounded-sm',
     focusRingQuiet,
     'focus-visible:-outline-offset-2',
     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
