@@ -57,7 +57,7 @@ import {
 import { SDLDiffView, SDLView } from './target-history-schema-version';
 
 /** A status icon inside a tab, explained on hover. */
-function StatusTooltip(props: { icon: React.ReactNode; label: string }) {
+function StatusTooltip(props: { icon: ReactNode; label: string }) {
   return (
     <Tooltip trigger={<span className="inline-flex">{props.icon}</span>} content={props.label} />
   );
