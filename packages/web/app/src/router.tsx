@@ -1,7 +1,7 @@
 import { lazy, useCallback, useEffect, useMemo } from 'react';
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import { HelmetProvider } from 'react-helmet-async';
-import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
+import { SuperTokensWrapper } from 'supertokens-auth-react';
 import Session from 'supertokens-auth-react/recipe/session';
 import { Provider as UrqlProvider } from 'urql';
 import { z } from 'zod';
@@ -12,11 +12,9 @@ import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { Meta } from '@/components/ui/meta';
-import { frontendConfig } from '@/config/supertokens/frontend';
-import { env } from '@/env/frontend';
 import { useLocalStorage } from '@/lib/hooks';
 import { urqlClient } from '@/lib/urql';
-import { captureMessage, getCurrentScope, init } from '@sentry/react';
+import { captureMessage, getCurrentScope } from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   createRootRoute,
@@ -103,39 +101,6 @@ import {
   TargetTracesPageContent,
   TargetTracesSort,
 } from './pages/target-traces';
-
-SuperTokens.init(frontendConfig());
-if (env.sentry) {
-  init({
-    dsn: env.sentry.dsn,
-    enabled: true,
-    dist: 'webapp',
-    release: env.release,
-    environment: env.environment,
-    ignoreErrors: [
-      // Suppress specific monaco editor internal errors
-      "Failed to execute 'setStart' on 'Range'",
-      "Failed to execute 'setEnd' on 'Range'",
-      /TextModel got disposed/,
-      // Stale chunk errors after deployments — handled by auto-reload in main.tsx
-      /Failed to fetch dynamically imported module/,
-      /Importing a module script failed/,
-    ],
-    beforeSend(event) {
-      const isMonacoError = event.exception?.values?.some(exception =>
-        exception.stacktrace?.frames?.some(frame => frame.filename?.includes('monaco-editor')),
-      );
-
-      if (isMonacoError) {
-        for (const exception of event.exception?.values ?? []) {
-          exception.value &&= `[Monaco] ${exception.value}`;
-        }
-      }
-
-      return event;
-    },
-  });
-}
 
 const queryClient = new QueryClient();
 
@@ -1359,3 +1324,4 @@ export const router = createRouter({
     return JSON.stringify(search);
   }),
 });
+
