@@ -59,14 +59,11 @@ const ProjectLayoutQuery = graphql(`
 
 export function ProjectLayout({
   children,
-  className,
   organizationSlug,
   projectSlug,
 }: {
-  page: Page;
   organizationSlug: string;
   projectSlug: string;
-  className?: string;
   children: ReactNode;
 }) {
   const params = { organizationSlug, projectSlug };
@@ -163,12 +160,12 @@ export function ProjectLayout({
               ) : null
             }
           />
-          <div className="min-h-(--content-height) container pb-7">
-            {currentProject ? (
+          {currentProject ? (
+            <div className="container">
               <LegacyCompositionWarn organizationSlug={organizationSlug} project={currentProject} />
-            ) : null}
-            <div className={className}>{children}</div>
-          </div>
+            </div>
+          ) : null}
+          {children}
         </>
       )}
     </>

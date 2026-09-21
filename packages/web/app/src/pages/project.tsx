@@ -8,7 +8,7 @@ import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Separator } from '@/components/base/separator/separator';
 import { ResourceCard } from '@/components/common/resource-card';
-import { Page, ProjectLayout } from '@/components/layouts/project';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -345,12 +345,7 @@ export function ProjectPage(
   return (
     <>
       <Meta title="Targets" />
-      <ProjectLayout
-        page={Page.Targets}
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        className="flex justify-between gap-12"
-      >
+      <LayoutContent className="flex justify-between gap-12">
         <ProjectsPageContent
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
@@ -358,7 +353,7 @@ export function ProjectPage(
           sortBy={props.sortBy}
           sortOrder={props.sortOrder}
         />
-      </ProjectLayout>
+      </LayoutContent>
     </>
   );
 }

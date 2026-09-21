@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
-import { Page, ProjectLayout } from '@/components/layouts/project';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { AlertsTable, AlertsTable_AlertFragment } from '@/components/project/alerts/alerts-table';
 import {
   ChannelsTable,
@@ -248,17 +248,12 @@ export function ProjectAlertsPage(props: { organizationSlug: string; projectSlug
   return (
     <>
       <Meta title="Alerts" />
-      <ProjectLayout
-        projectSlug={props.projectSlug}
-        organizationSlug={props.organizationSlug}
-        page={Page.Alerts}
-        className="flex flex-col gap-y-10"
-      >
+      <LayoutContent className="flex flex-col gap-y-10">
         <AlertsPageContent
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
         />
-      </ProjectLayout>
+      </LayoutContent>
     </>
   );
 }

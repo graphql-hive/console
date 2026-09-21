@@ -7,7 +7,7 @@ import { Button } from '@/components/base/button/button';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
-import { Page, ProjectLayout } from '@/components/layouts/project';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
@@ -602,18 +602,13 @@ export function ProjectSettingsPage(props: {
   return (
     <>
       <Meta title="Project settings" />
-      <ProjectLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        page={Page.Settings}
-        className="flex flex-col gap-y-10"
-      >
+      <LayoutContent className="flex flex-col gap-y-10">
         <ProjectSettingsContent
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
           page={props.page}
         />
-      </ProjectLayout>
+      </LayoutContent>
     </>
   );
 }

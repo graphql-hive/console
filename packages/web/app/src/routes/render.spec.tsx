@@ -79,11 +79,26 @@ describe('chrome at every page', () => {
   it('keeps the organization layout mounted across its pages', { timeout: 30_000 }, async () => {
     const { router } = renderAtUrl(ORGANIZATION);
     const header = await screen.findByRole('banner');
-    await router.navigate({ to: '/$organizationSlug/view/members', params: SLUGS });
+    await router.navigate({
+      to: '/$organizationSlug/view/members',
+      params: { organizationSlug: SLUGS.organizationSlug },
+      search: { page: 'list' },
+    });
     await waitFor(() =>
       expect(router.state.location.pathname).toBe(`${ORGANIZATION}/view/members`),
     );
     await screen.findByRole('link', { name: 'Members', current: 'page' });
+    expect(screen.getByRole('banner')).toBe(header);
+  });
+
+  it('keeps the project layout mounted across its pages', { timeout: 30_000 }, async () => {
+    const { router } = renderAtUrl(PROJECT);
+    const header = await screen.findByRole('banner');
+    await router.navigate({
+      to: '/$organizationSlug/$projectSlug/view/alerts',
+      params: { organizationSlug: SLUGS.organizationSlug, projectSlug: SLUGS.projectSlug },
+    });
+    await screen.findByRole('link', { name: 'Alerts', current: 'page' });
     expect(screen.getByRole('banner')).toBe(header);
   });
 
