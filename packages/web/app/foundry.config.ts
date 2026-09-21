@@ -90,6 +90,14 @@ export default defineConfig({
             { label: 'PortalContainer' },
           ],
         },
+        {
+          label: 'Overlays',
+          children: [
+            { label: 'Dialog', children: [{ label: 'Component Examples' }] },
+            { label: 'Sheet', children: [{ label: 'Component Examples' }] },
+            { label: 'AlertDialog', children: [{ label: 'Component Examples' }] },
+          ],
+        },
         // Data and layout
         { label: 'DataTable', children: [{ label: 'Component Examples' }] },
         { label: 'DescriptionList' },
@@ -104,7 +112,6 @@ export default defineConfig({
       children: [
         { label: 'Button' },
         { label: 'Form' },
-        { label: 'Overlays' },
         { label: 'Presentational' },
         { label: 'Toast' },
         { label: 'V2Leftovers' },

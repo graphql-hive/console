@@ -1,3 +1,4 @@
+import type { OnSurface } from '@/components/base/shared-styles';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RoleSelector } from './common';
 
@@ -27,6 +28,7 @@ export function MemberRoleSelector(props: {
   selectedRoleId: string | null;
   onSelectRoleId: (roleId: string) => void;
   currentRoleId: string | null;
+  onSurface?: OnSurface;
 }) {
   const organization = useFragment(MemberRoleSelector_OrganizationFragment, props.organization);
   const canAssignRole = organization.viewerCanAssignUserRoles;
@@ -43,6 +45,7 @@ export function MemberRoleSelector(props: {
       }}
       defaultRole={memberRole}
       disabled={!canAssignRole}
+      onSurface={props.onSurface}
       isRoleActive={role => {
         const isCurrentRole = role.id === props.currentRoleId;
         if (isCurrentRole) {

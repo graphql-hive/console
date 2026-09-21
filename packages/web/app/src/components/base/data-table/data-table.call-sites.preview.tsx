@@ -1200,6 +1200,7 @@ function ProposalConfirmations() {
       columns={columns}
       getRowId={row => row.id}
       pagination={{ kind: 'none' }}
+      variants={{ onSurface: 'raised' }}
     />
   );
 }
@@ -1240,9 +1241,9 @@ export const HeaderedLists = createPreview({
       <CallSite
         source="pages/target-proposals-new.tsx:209 (save-proposal-modal.tsx:176 is two columns with a status icon)"
         origin="base"
-        note="Inside a Modal at neutral-1, so the base surface. The colSpan header over two cells becomes two headers."
+        note="Inside a Dialog at neutral-3, so the raised surface. The colSpan header over two cells becomes two headers."
       >
-        <div className="w-[44rem]">
+        <div className="bg-neutral-3 border-neutral-5 w-[44rem] rounded-lg border p-6">
           <ProposalConfirmations />
         </div>
       </CallSite>

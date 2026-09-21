@@ -5,18 +5,11 @@ import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Input } from '@/components/base/input/input';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -186,8 +179,6 @@ export function OrganizationLayout({
                 organizationSlug={organizationSlug}
                 isOpen={isModalOpen}
                 toggleModalOpen={toggleModalOpen}
-                // reset the form every time it is closed
-                key={String(isModalOpen)}
               />
             </>
           ) : null
@@ -334,6 +325,13 @@ function CreateProjectModal(props: {
     <CreateProjectModalContent
       isOpen={props.isOpen}
       toggleModalOpen={props.toggleModalOpen}
+      // The form clears once the close transition has finished, rather than on toggle, which
+      // would blank it mid-fade, or by remounting, which would skip the transitions.
+      onOpenChangeComplete={open => {
+        if (!open) {
+          form.reset();
+        }
+      }}
       form={form}
       onSubmit={onSubmit}
     />
@@ -343,92 +341,96 @@ function CreateProjectModal(props: {
 export function CreateProjectModalContent(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
+  onOpenChangeComplete?: (open: boolean) => void;
   form: UseFormReturn<z.infer<typeof createProjectFormSchema>>;
   onSubmit: (values: z.infer<typeof createProjectFormSchema>) => void | Promise<void>;
 }) {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[600px] md:w-3/5">
-        <Form {...props.form}>
-          <form onSubmit={props.form.handleSubmit(props.onSubmit)} data-cy="create-project-form">
-            <DialogHeader className="mb-8">
-              <DialogTitle>Create a project</DialogTitle>
-              <DialogDescription>
-                A Hive <b>project</b> represents a <b>GraphQL API</b> running a GraphQL schema.
-              </DialogDescription>
-            </DialogHeader>
-            <div>
-              <FormField
-                control={props.form.control}
-                name="projectSlug"
-                render={({ field }) => {
-                  return (
-                    <FormItem className="mt-0">
-                      <FormLabel>Slug of your project</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="my-project"
-                          data-cy="slug"
-                          autoComplete="off"
-                          onSurface="raised"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-              <FormField
-                control={props.form.control}
-                name="projectType"
-                render={({ field }) => {
-                  return (
-                    <FormItem className="mt-2">
-                      <FormLabel>Project Type</FormLabel>
-                      <RadioGroup
-                        variant="as-card"
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      width="lg"
+      title="Create a project"
+      description={
+        <>
+          A Hive <span className="text-neutral-12 font-medium">project</span> represents a{' '}
+          <span className="text-neutral-12 font-medium">GraphQL API</span> running a GraphQL schema.
+        </>
+      }
+    >
+      <Form {...props.form}>
+        {/* The submit stays inside the form: the e2e helper selects it through the form. */}
+        <form onSubmit={props.form.handleSubmit(props.onSubmit)} data-cy="create-project-form">
+          <div>
+            <FormField
+              control={props.form.control}
+              name="projectSlug"
+              render={({ field }) => {
+                return (
+                  <FormItem className="mt-0">
+                    <FormLabel>Slug of your project</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="my-project"
+                        data-cy="slug"
+                        autoComplete="off"
                         onSurface="raised"
-                        orientation="vertical"
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        items={PROJECT_TYPES.map(({ type, title, description, Icon }) => ({
-                          value: type,
-                          content: (
-                            <>
-                              <Icon
-                                className={cn(
-                                  'size-8 shrink-0',
-                                  field.value === type ? 'text-neutral-12' : 'text-neutral-9',
-                                )}
-                              />
-                              <div>
-                                <span className="text-neutral-12 text-sm font-medium">{title}</span>
-                                <p className="text-neutral-11 text-sm">{description}</p>
-                              </div>
-                            </>
-                          ),
-                        }))}
+                        {...field}
                       />
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-            <DialogFooter className="mt-8">
-              <Button
-                className="w-full"
-                type="submit"
-                data-cy="submit"
-                disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
-              >
-                {props.form.formState.isSubmitting ? 'Submitting...' : 'Create Project'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+            <FormField
+              control={props.form.control}
+              name="projectType"
+              render={({ field }) => {
+                return (
+                  <FormItem className="mt-2">
+                    <FormLabel>Project Type</FormLabel>
+                    <RadioGroup
+                      variant="as-card"
+                      onSurface="raised"
+                      orientation="vertical"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      items={PROJECT_TYPES.map(({ type, title, description, Icon }) => ({
+                        value: type,
+                        content: (
+                          <>
+                            <Icon
+                              className={cn(
+                                'size-8 shrink-0',
+                                field.value === type ? 'text-neutral-12' : 'text-neutral-9',
+                              )}
+                            />
+                            <div>
+                              <span className="text-neutral-12 text-sm font-medium">{title}</span>
+                              <p className="text-neutral-11 text-sm">{description}</p>
+                            </div>
+                          </>
+                        ),
+                      }))}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+          </div>
+          <Button
+            className="mt-8 w-full"
+            type="submit"
+            data-cy="submit"
+            disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
+          >
+            {props.form.formState.isSubmitting ? 'Submitting...' : 'Create Project'}
+          </Button>
+        </form>
+      </Form>
     </Dialog>
   );
 }

@@ -4,17 +4,10 @@ import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Input } from '@/components/base/input/input';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
@@ -293,49 +286,48 @@ export function CreateTargetModalContent(props: {
   form: UseFormReturn<z.infer<typeof createTargetFormSchema>>;
 }) {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
-        <Form {...props.form}>
-          <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
-            <DialogHeader>
-              <DialogTitle>Create a new target</DialogTitle>
-              <DialogDescription>
-                A project is built on top of <b>Targets</b>, which are just your environments.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-8">
-              <FormField
-                control={props.form.control}
-                name="targetSlug"
-                render={({ field }) => {
-                  return (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          placeholder="my-target"
-                          autoComplete="off"
-                          onSurface="raised"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                className="w-full"
-                type="submit"
-                disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
-              >
-                {props.form.formState.isSubmitting ? 'Submitting...' : 'Create Target'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      title="Create a new target"
+      description={
+        <>
+          A project is built on top of <b>Targets</b>, which are just your environments.
+        </>
+      }
+    >
+      <Form {...props.form}>
+        <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
+          <div className="space-y-8">
+            <FormField
+              control={props.form.control}
+              name="targetSlug"
+              render={({ field }) => {
+                return (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        placeholder="my-target"
+                        autoComplete="off"
+                        onSurface="raised"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+          </div>
+          <Button
+            className="w-full"
+            type="submit"
+            disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
+          >
+            {props.form.formState.isSubmitting ? 'Submitting...' : 'Create Target'}
+          </Button>
+        </form>
+      </Form>
     </Dialog>
   );
 }

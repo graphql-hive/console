@@ -4,7 +4,8 @@ import { useMutation } from 'urql';
 import z from 'zod';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Input } from '@/components/base/input/input';
-import * as AlertDialog from '@/components/ui/alert-dialog';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import {
@@ -16,7 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -115,7 +115,10 @@ const RegisterDomainFormSchema = z.object({
 });
 
 export function OIDCRegisteredDomainSheet(props: {
+  open: boolean;
   onClose: () => void;
+  /** Fires once the close transition has finished; the parent remounts the sheet on it. */
+  onOpenChangeComplete: (open: boolean) => void;
   onRegisterDomainSuccess: (domainId: string) => void;
   domain: null | FragmentType<typeof OIDCRegisteredDomainSheet_RegisteredDomain>;
   oidcIntegrationId: string;
@@ -225,8 +228,15 @@ export function OIDCRegisteredDomainSheet(props: {
       variant: 'default',
       title: `Domain '${domain.domainName}' was removed.`,
     });
+    setShowDeleteDomainConfirmation(false);
     props.onClose();
   }
+
+  const challengeError =
+    deleteDomainMutationState.error?.message ??
+    deleteDomainMutationState.data?.deleteOIDCDomain.error?.message ??
+    verifyDomainMutationState.error?.message ??
+    verifyDomainMutationState.data?.verifyOIDCDomainChallenge.error?.message;
 
   // eslint-disable-next-line react/hook-use-state
   const [Stepper] = useState(() =>
@@ -248,237 +258,221 @@ export function OIDCRegisteredDomainSheet(props: {
 
   return (
     <>
-      <Sheet.Sheet open onOpenChange={props.onClose}>
-        <Sheet.SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
-          <Stepper.StepperProvider
-            variant="horizontal"
-            initialStep={
-              domain
-                ? domain.verifiedAt
-                  ? 'step-3-complete'
-                  : 'step-2-challenge'
-                : 'step-1-general'
-            }
-          >
-            {({ stepper }) => (
+      <Stepper.StepperProvider
+        variant="horizontal"
+        initialStep={
+          domain ? (domain.verifiedAt ? 'step-3-complete' : 'step-2-challenge') : 'step-1-general'
+        }
+      >
+        {({ stepper }) => (
+          <Sheet
+            open={props.open}
+            onOpenChange={props.onClose}
+            onOpenChangeComplete={props.onOpenChangeComplete}
+            title={
               <>
-                <Sheet.SheetHeader>
-                  <Sheet.SheetTitle>
-                    {isInStepperProcess ? stepper.current.title : 'Domain Settings'}{' '}
-                    {domain?.domainName && (
-                      <span className="ml-3 font-mono">{domain?.domainName}</span>
-                    )}
-                  </Sheet.SheetTitle>
-                </Sheet.SheetHeader>
-                {isInStepperProcess && (
-                  <Stepper.StepperNavigation className="pb-4">
-                    {stepper.all.map(step => (
-                      <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>
-                        <Stepper.StepperTitle>{step.title}</Stepper.StepperTitle>
-                      </Stepper.StepperStep>
-                    ))}
-                  </Stepper.StepperNavigation>
-                )}
-                {stepper.switch({
-                  'step-1-general': () => (
-                    <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onCreateDomain)}>
-                        <FormField
-                          control={form.control}
-                          name="domainName"
-                          render={({ field }) => {
-                            return (
-                              <FormItem>
-                                <FormLabel>Domain Name</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    placeholder="example.com"
-                                    autoComplete="off"
-                                    onSurface="raised"
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormDescription>
-                                  The domain you want to register with this OIDC provider.
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            );
-                          }}
-                        />
-                      </form>
-                    </Form>
-                  ),
-                  'step-2-challenge': () => (
-                    <>
-                      <p>
-                        In order to prove the ownership of the domain we have to perform a DNS
-                        challenge.
-                      </p>
-                      <p>Within your hosted zone create the following DNS record.</p>
-                      <div className={cn(!domain?.challenge && 'opacity-33 pointer-events-none')}>
-                        <DescriptionList
-                          rows={[
-                            {
-                              items: [
-                                {
-                                  term: 'Type',
-                                  description: domain?.challenge?.recordType ?? '',
-                                  mono: true,
-                                  copyable: true,
-                                },
-                                {
-                                  term: 'Name',
-                                  description: domain?.challenge?.recordName ?? '',
-                                  mono: true,
-                                  copyable: true,
-                                },
-                                {
-                                  term: 'Value',
-                                  description: domain?.challenge?.recordValue ?? '',
-                                  mono: true,
-                                  copyable: true,
-                                },
-                              ],
-                            },
-                          ]}
-                        />
-                      </div>
-                      {domain && !domain.challenge && (
-                        <>
-                          <Callout type="warning">This challenge has expired.</Callout>
-                          <div className="text-red-500">
-                            {requestDomainChallengeMutationState.error?.message ??
-                              requestDomainChallengeMutationState.data?.requestOIDCDomainChallenge
-                                .error?.message}
-                          </div>
-                          <Button
-                            onClick={() =>
-                              requestDomainChallengeMutation({
-                                input: {
-                                  oidcDomainId: domain.id,
-                                },
-                              })
-                            }
-                            variant="primary"
-                            disabled={requestDomainChallengeMutationState.fetching}
-                          >
-                            Request new challenge
-                          </Button>
-                        </>
-                      )}
-                    </>
-                  ),
-                  'step-3-complete': () => (
-                    <>
-                      <p>
-                        This domain was successfully verified. Users logging in with that email do
-                        not need to confirm their email.
-                      </p>
-                    </>
-                  ),
-                })}
-                <Sheet.SheetFooter className="mb-0 mt-auto flex-wrap">
-                  {stepper.switch({
-                    'step-1-general': () => (
-                      <>
-                        <Button variant="secondary" onClick={props.onClose}>
-                          Abort
-                        </Button>
-                        <Button
-                          variant="primary"
-                          onClick={form.handleSubmit(onCreateDomain)}
-                          disabled={registerDomainMutationState.fetching}
-                          data-button-next-verify-domain-ownership
-                        >
-                          Next: Verify Domain Ownership
-                        </Button>
-                      </>
-                    ),
-                    'step-2-challenge': () => (
-                      <>
-                        <div className="mb-10 basis-full text-red-500">
-                          {deleteDomainMutationState.error?.message ??
-                            deleteDomainMutationState.data?.deleteOIDCDomain.error?.message ??
-                            verifyDomainMutationState.error?.message ??
-                            verifyDomainMutationState.data?.verifyOIDCDomainChallenge.error
-                              ?.message}
-                        </div>
-                        <Button
-                          variant="destructive"
-                          onClick={() => setShowDeleteDomainConfirmation(true)}
-                          disabled={
-                            deleteDomainMutationState.fetching || verifyDomainMutationState.fetching
-                          }
-                        >
-                          Delete Domain
-                        </Button>
-                        <Button variant="secondary" onClick={props.onClose} className="ml-auto">
-                          Close
-                        </Button>
-                        <Button
-                          data-button-next-complete
-                          variant="primary"
-                          onClick={() => onVerifyDomain(() => stepper.goTo('step-3-complete'))}
-                          disabled={
-                            verifyDomainMutationState.fetching ||
-                            deleteDomainMutationState.fetching ||
-                            !domain?.challenge
-                          }
-                        >
-                          Next: Complete
-                        </Button>
-                      </>
-                    ),
-                    'step-3-complete': () => (
-                      <>
-                        <Button
-                          variant="destructive"
-                          onClick={() => setShowDeleteDomainConfirmation(true)}
-                          disabled={deleteDomainMutationState.fetching}
-                        >
-                          Delete Domain
-                        </Button>
-                        <Button variant="primary" onClick={props.onClose} className="ml-auto">
-                          Close
-                        </Button>
-                      </>
-                    ),
-                  })}
-                </Sheet.SheetFooter>
+                {isInStepperProcess ? stepper.current.title : 'Domain Settings'}{' '}
+                {domain?.domainName && <span className="ml-3 font-mono">{domain?.domainName}</span>}
               </>
+            }
+            footer={stepper.switch({
+              'step-1-general': () => (
+                <>
+                  <Button variant="secondary" onClick={props.onClose}>
+                    Abort
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={form.handleSubmit(onCreateDomain)}
+                    disabled={registerDomainMutationState.fetching}
+                    data-button-next-verify-domain-ownership
+                  >
+                    Next: Verify Domain Ownership
+                  </Button>
+                </>
+              ),
+              'step-2-challenge': () => (
+                <>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteDomainConfirmation(true)}
+                    disabled={
+                      deleteDomainMutationState.fetching || verifyDomainMutationState.fetching
+                    }
+                  >
+                    Delete Domain
+                  </Button>
+                  <Button variant="secondary" onClick={props.onClose} className="ml-auto">
+                    Close
+                  </Button>
+                  <Button
+                    data-button-next-complete
+                    variant="primary"
+                    onClick={() => onVerifyDomain(() => stepper.goTo('step-3-complete'))}
+                    disabled={
+                      verifyDomainMutationState.fetching ||
+                      deleteDomainMutationState.fetching ||
+                      !domain?.challenge
+                    }
+                  >
+                    Next: Complete
+                  </Button>
+                </>
+              ),
+              'step-3-complete': () => (
+                <>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteDomainConfirmation(true)}
+                    disabled={deleteDomainMutationState.fetching}
+                  >
+                    Delete Domain
+                  </Button>
+                  <Button variant="primary" onClick={props.onClose} className="ml-auto">
+                    Close
+                  </Button>
+                </>
+              ),
+            })}
+          >
+            {isInStepperProcess && (
+              <Stepper.StepperNavigation className="pb-4">
+                {stepper.all.map(step => (
+                  <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>
+                    <Stepper.StepperTitle>{step.title}</Stepper.StepperTitle>
+                  </Stepper.StepperStep>
+                ))}
+              </Stepper.StepperNavigation>
             )}
-          </Stepper.StepperProvider>
-        </Sheet.SheetContent>
-      </Sheet.Sheet>
-      {showDeleteDomainConfirmation && (
-        <DeleteDomainConfirmationDialogue
-          onClose={() => setShowDeleteDomainConfirmation(false)}
-          onConfirm={onDeleteDomain}
-        />
-      )}
+            {stepper.switch({
+              'step-1-general': () => (
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onCreateDomain)}>
+                    <FormField
+                      control={form.control}
+                      name="domainName"
+                      render={({ field }) => {
+                        return (
+                          <FormItem>
+                            <FormLabel>Domain Name</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="example.com"
+                                autoComplete="off"
+                                onSurface="raised"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              The domain you want to register with this OIDC provider.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  </form>
+                </Form>
+              ),
+              'step-2-challenge': () => (
+                <>
+                  <p>
+                    In order to prove the ownership of the domain we have to perform a DNS
+                    challenge.
+                  </p>
+                  <p>Within your hosted zone create the following DNS record.</p>
+                  <div className={cn(!domain?.challenge && 'opacity-33 pointer-events-none')}>
+                    <DescriptionList
+                      rows={[
+                        {
+                          items: [
+                            {
+                              term: 'Type',
+                              description: domain?.challenge?.recordType ?? '',
+                              mono: true,
+                              copyable: true,
+                            },
+                            {
+                              term: 'Name',
+                              description: domain?.challenge?.recordName ?? '',
+                              mono: true,
+                              copyable: true,
+                            },
+                            {
+                              term: 'Value',
+                              description: domain?.challenge?.recordValue ?? '',
+                              mono: true,
+                              copyable: true,
+                            },
+                          ],
+                        },
+                      ]}
+                    />
+                  </div>
+                  {domain && !domain.challenge && (
+                    <>
+                      <Callout type="warning">This challenge has expired.</Callout>
+                      <div className="text-red-500">
+                        {requestDomainChallengeMutationState.error?.message ??
+                          requestDomainChallengeMutationState.data?.requestOIDCDomainChallenge.error
+                            ?.message}
+                      </div>
+                      <Button
+                        onClick={() =>
+                          requestDomainChallengeMutation({
+                            input: {
+                              oidcDomainId: domain.id,
+                            },
+                          })
+                        }
+                        variant="primary"
+                        disabled={requestDomainChallengeMutationState.fetching}
+                      >
+                        Request new challenge
+                      </Button>
+                    </>
+                  )}
+                </>
+              ),
+              'step-3-complete': () => (
+                <>
+                  <p>
+                    This domain was successfully verified. Users logging in with that email do not
+                    need to confirm their email.
+                  </p>
+                </>
+              ),
+            })}
+            {stepper.current.id === 'step-2-challenge' && challengeError ? (
+              <p className="mt-4 text-red-500">{challengeError}</p>
+            ) : null}
+          </Sheet>
+        )}
+      </Stepper.StepperProvider>
+      <DeleteDomainConfirmationDialog
+        open={showDeleteDomainConfirmation}
+        onClose={() => setShowDeleteDomainConfirmation(false)}
+        onConfirm={onDeleteDomain}
+      />
     </>
   );
 }
 
-function DeleteDomainConfirmationDialogue(props: { onClose: () => void; onConfirm: () => void }) {
+function DeleteDomainConfirmationDialog(props: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
   return (
-    <AlertDialog.AlertDialog open>
-      <AlertDialog.AlertDialogContent>
-        <AlertDialog.AlertDialogHeader>
-          <AlertDialog.AlertDialogTitle>
-            Do you want to delete this domain?
-          </AlertDialog.AlertDialogTitle>
-        </AlertDialog.AlertDialogHeader>
-        <AlertDialog.AlertDialogFooter>
-          <AlertDialog.AlertDialogCancel onClick={props.onClose}>
-            Cancel
-          </AlertDialog.AlertDialogCancel>
-          <AlertDialog.AlertDialogAction onClick={props.onConfirm}>
-            Delete Domain
-          </AlertDialog.AlertDialogAction>
-        </AlertDialog.AlertDialogFooter>
-      </AlertDialog.AlertDialogContent>
-    </AlertDialog.AlertDialog>
+    <AlertDialog
+      open={props.open}
+      onOpenChange={next => {
+        if (!next) {
+          props.onClose();
+        }
+      }}
+      title="Do you want to delete this domain?"
+      confirm={{ label: 'Delete Domain', variant: 'destructive', onClick: props.onConfirm }}
+    />
   );
 }

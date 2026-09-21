@@ -11,6 +11,7 @@ import { DataTable, type DataTablePaginationProp } from '@/components/base/data-
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { Button } from '@/components/ui/button';
 import {
   ChartConfig,
@@ -22,17 +23,11 @@ import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DateRangePicker, Preset, presetLast7Days } from '@/components/ui/date-range-picker';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { usePagedConnection } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -726,10 +721,13 @@ function Filters(
 }
 
 type SelectedTraceSheetProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  traceId: string;
+  /** Null until a trace has been selected. */
+  traceId: string | null;
 };
 
 const SelectedTraceSheetQuery = graphql(`
@@ -757,30 +755,33 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
         projectSlug: props.projectSlug,
         targetSlug: props.targetSlug,
       },
-      traceId: props.traceId,
+      traceId: props.traceId ?? '',
     },
+    pause: !props.traceId,
   });
 
   const trace = queryResult.data?.target?.trace;
 
   return (
-    <SheetContent className="border-neutral-5 text-neutral-12 bg-neutral-1 flex flex-col gap-0 border-l p-0 md:max-w-[50%]">
-      <SheetHeader className="border-neutral-5 relative border-b p-4">
-        <div className="flex items-center justify-between">
-          <SheetTitle className="text-neutral-12 text-lg font-medium">
-            {trace ? (
-              <>
-                {trace.operationName ?? <span className="text-neutral-10">{'<unknown>'}</span>}
-                <span className="text-neutral-10 ml-2 font-mono font-normal">
-                  {trace.id.substring(0, 4)}
-                </span>
-              </>
-            ) : (
-              <Skeleton className="inline-block h-5 w-[260px]" />
-            )}
-          </SheetTitle>
-        </div>
-        <SheetDescription className="text-neutral-10 mt-1 text-xs">
+    <Sheet
+      open={props.open}
+      onOpenChange={props.onOpenChange}
+      width="half"
+      padding="none"
+      title={
+        trace ? (
+          <>
+            {trace.operationName ?? <span className="text-neutral-10">{'<unknown>'}</span>}
+            <span className="text-neutral-10 ml-2 font-mono font-normal">
+              {trace.id.substring(0, 4)}
+            </span>
+          </>
+        ) : (
+          <Skeleton className="inline-block h-5 w-[260px]" />
+        )
+      }
+      description={
+        <>
           Trace ID:{' '}
           {trace?.id ? (
             <>
@@ -790,26 +791,29 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           ) : (
             <Skeleton className="inline-block h-4 w-[200px]" />
           )}
-        </SheetDescription>
-        <div className="mt-2 flex items-center gap-3 text-xs">
-          {trace ? (
-            <>
-              <div className="flex items-center gap-1">
-                <Clock className="text-neutral-10 size-3" />
-                <span className="text-neutral-11">{formatNanoseconds(BigInt(trace.duration))}</span>
-              </div>
-              <Badge
-                content={trace.success ? 'Ok' : 'Error'}
-                variants={{ variant: trace.success ? 'success' : 'critical' }}
-              />
-              <span className="text-neutral-11 font-mono uppercase">
-                {trace ? formatDate(trace.timestamp, 'MMM dd HH:mm:ss') : null}
-              </span>
-            </>
-          ) : (
-            <Skeleton className="inline-block h-4 w-[150px]" />
-          )}
-          <Button asChild variant="outline" size="sm">
+        </>
+      }
+    >
+      <div className="border-neutral-5 flex items-center gap-3 border-b px-6 pb-4 text-xs">
+        {trace ? (
+          <>
+            <div className="flex items-center gap-1">
+              <Clock className="text-neutral-10 size-3" />
+              <span className="text-neutral-11">{formatNanoseconds(BigInt(trace.duration))}</span>
+            </div>
+            <Badge
+              content={trace.success ? 'Ok' : 'Error'}
+              variants={{ variant: trace.success ? 'success' : 'critical' }}
+            />
+            <span className="text-neutral-11 font-mono uppercase">
+              {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
+            </span>
+          </>
+        ) : (
+          <Skeleton className="inline-block h-4 w-[150px]" />
+        )}
+        {props.traceId ? (
+          <Button asChild variant="outline" size="sm" className="ml-auto">
             <Link
               to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
               params={{
@@ -818,14 +822,13 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
                 targetSlug: props.targetSlug,
                 traceId: props.traceId,
               }}
-              className="absolute bottom-4 right-4"
             >
               <ExternalLinkIcon className="mr-1 size-3" />
               Full Trace
             </Link>
           </Button>
-        </div>
-      </SheetHeader>
+        ) : null}
+      </div>
       {trace && (
         <ImportedTraceSheet
           activeSpanId={null}
@@ -836,7 +839,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           trace={trace}
         />
       )}
-    </SheetContent>
+    </Sheet>
   );
 }
 
@@ -1036,6 +1039,9 @@ export function TargetTracesPageContent(
   });
 
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
+  // The last trace stays up through the sheet's close transition.
+  const sheetTraceId =
+    useKeepPreviousData(selectedTraceId ?? undefined, selectedTraceId === null) ?? null;
 
   const filterOptions = useMemo(() => {
     const options = query.data?.target?.tracesFilterOptions;
@@ -1179,23 +1185,18 @@ export function TargetTracesPageContent(
           </div>
         </main>
       </div>
-      <Sheet
+      <SelectedTraceSheet
         open={selectedTraceId !== null}
         onOpenChange={isOpen => {
           if (!isOpen) {
             setSelectedTraceId(null);
           }
         }}
-      >
-        {selectedTraceId && (
-          <SelectedTraceSheet
-            organizationSlug={targetRef.organizationSlug}
-            projectSlug={targetRef.projectSlug}
-            targetSlug={targetRef.targetSlug}
-            traceId={selectedTraceId}
-          />
-        )}
-      </Sheet>
+        organizationSlug={targetRef.organizationSlug}
+        projectSlug={targetRef.projectSlug}
+        targetSlug={targetRef.targetSlug}
+        traceId={sheetTraceId}
+      />
     </div>
   );
 }

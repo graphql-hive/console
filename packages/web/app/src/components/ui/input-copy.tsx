@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import { Input } from '@/components/base/input/input';
+import type { OnSurface } from '@/components/base/shared-styles';
 import { Textarea } from '@/components/base/textarea/textarea';
 import { Button } from '@/components/ui/button';
 import { useClipboard } from '@/lib/hooks';
 
-export function InputCopy(props: { value: string; multiline?: boolean; prefixText?: string }) {
+export function InputCopy(props: {
+  value: string;
+  multiline?: boolean;
+  prefixText?: string;
+  /** `raised` inside a dialog, a sheet or a raised card, like any other field there. */
+  onSurface?: OnSurface;
+}) {
   const [isCopied, setIsCopied] = useState(false);
   const copyToClipboard = useClipboard();
 
@@ -28,7 +35,14 @@ export function InputCopy(props: { value: string; multiline?: boolean; prefixTex
   return (
     <div className="flex w-full max-w-2xl items-center space-x-2">
       {props.multiline ? (
-        <Textarea value={props.value} readOnly autoSize mono onFocus={ev => ev.target.select()} />
+        <Textarea
+          value={props.value}
+          readOnly
+          autoSize
+          mono
+          onSurface={props.onSurface}
+          onFocus={ev => ev.target.select()}
+        />
       ) : (
         <div className="grow">
           <Input
@@ -36,6 +50,7 @@ export function InputCopy(props: { value: string; multiline?: boolean; prefixTex
             value={props.value}
             readOnly
             mono
+            onSurface={props.onSurface}
             prefixText={props.prefixText}
             onFocus={ev => ev.target.select()}
           />

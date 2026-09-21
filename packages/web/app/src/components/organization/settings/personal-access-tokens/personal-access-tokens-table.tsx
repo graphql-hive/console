@@ -5,7 +5,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';
 import { usePagedConnection } from '@/lib/hooks';
 import type { ColumnDef } from '@tanstack/react-table';
-import { DeleteAccessTokenConfirmationDialogue } from '../access-tokens/delete-access-token-confirmation-dialogue';
+import { DeleteAccessTokenConfirmationDialog } from '../access-tokens/delete-access-token-confirmation-dialog';
 import { TokenExpiration } from '../access-tokens/token-expiration';
 import { PersonalAccessTokenDetailViewSheet } from './personal-access-token-detail-view-sheet';
 
@@ -155,23 +155,21 @@ export function PersonalAccessTokensTable(props: AccessTokensTable) {
         pagination={pagination}
         emptyMessage="No personal access tokens yet."
       />
-      {deleteAccessTokenId && (
-        <DeleteAccessTokenConfirmationDialogue
-          accessTokenId={deleteAccessTokenId}
-          onCancel={() => setDeleteAccessTokenId(null)}
-          onConfirm={() => {
-            setDeleteAccessTokenId(null);
-            props.refetch();
-          }}
-        />
-      )}
-      {detailViewId && (
-        <PersonalAccessTokenDetailViewSheet
-          organizationSlug={props.organizationSlug}
-          accessTokenId={detailViewId}
-          onClose={() => setDetailViewId(null)}
-        />
-      )}
+      <DeleteAccessTokenConfirmationDialog
+        open={deleteAccessTokenId !== null}
+        accessTokenId={deleteAccessTokenId}
+        onCancel={() => setDeleteAccessTokenId(null)}
+        onConfirm={() => {
+          setDeleteAccessTokenId(null);
+          props.refetch();
+        }}
+      />
+      <PersonalAccessTokenDetailViewSheet
+        open={detailViewId !== null}
+        organizationSlug={props.organizationSlug}
+        accessTokenId={detailViewId}
+        onClose={() => setDetailViewId(null)}
+      />
     </>
   );
 }

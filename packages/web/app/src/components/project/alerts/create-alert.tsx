@@ -3,9 +3,8 @@ import { useFormik } from 'formik';
 import { useMutation } from 'urql';
 import * as Yup from 'yup';
 import { Select } from '@/components/base/floating/select/select';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Button } from '@/components/ui/button';
-import { Heading } from '@/components/ui/heading';
-import { Modal } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { AlertType } from '@/gql/graphql';
 
@@ -44,6 +43,7 @@ export const CreateAlertModal_AlertChannelFragment = graphql(`
 export const CreateAlertModal = (props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
+  onOpenChangeComplete?: (open: boolean) => void;
   targets: FragmentType<typeof CreateAlertModal_TargetFragment>[];
   channels: FragmentType<typeof CreateAlertModal_AlertChannelFragment>[];
   organizationSlug: string;
@@ -95,10 +95,23 @@ export const CreateAlertModal = (props: {
     });
 
   return (
-    <Modal open={isOpen} onOpenChange={toggleModalOpen}>
-      <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
-        <Heading className="text-center">Create an alert</Heading>
-
+    <Dialog
+      open={isOpen}
+      onOpenChange={toggleModalOpen}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      title="Create an alert"
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={toggleModalOpen}>
+            Cancel
+          </Button>
+          <Button type="submit" form="create-alert-form" disabled={isSubmitting}>
+            Create Alert
+          </Button>
+        </>
+      }
+    >
+      <form id="create-alert-form" className="flex flex-col gap-6" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-4">
           <label className="text-sm font-semibold" htmlFor="type">
             Type
@@ -117,6 +130,7 @@ export const CreateAlertModal = (props: {
             onValueChange={value => void setFieldValue('type', value)}
             onBlur={() => void setFieldTouched('type')}
             width="full"
+            onSurface="raised"
           />
           {touched.type && errors.type && <div className="text-sm text-red-500">{errors.type}</div>}
         </div>
@@ -137,6 +151,7 @@ export const CreateAlertModal = (props: {
             onValueChange={value => void setFieldValue('channel', value)}
             onBlur={() => void setFieldTouched('channel')}
             width="full"
+            onSurface="raised"
           />
           {touched.channel && errors.channel && (
             <div className="text-sm text-red-500">{errors.channel}</div>
@@ -159,6 +174,7 @@ export const CreateAlertModal = (props: {
             onValueChange={value => void setFieldValue('target', value)}
             onBlur={() => void setFieldTouched('target')}
             width="full"
+            onSurface="raised"
           />
           {touched.target && errors.target && (
             <div className="text-sm text-red-500">{errors.target}</div>
@@ -166,27 +182,7 @@ export const CreateAlertModal = (props: {
         </div>
 
         {mutation.error && <div className="text-sm text-red-500">{mutation.error.message}</div>}
-
-        <div className="flex w-full gap-2">
-          <Button
-            type="button"
-            size="lg"
-            className="w-full justify-center"
-            onClick={toggleModalOpen}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full justify-center"
-            variant="primary"
-            disabled={isSubmitting}
-          >
-            Create Alert
-          </Button>
-        </div>
       </form>
-    </Modal>
+    </Dialog>
   );
 };
