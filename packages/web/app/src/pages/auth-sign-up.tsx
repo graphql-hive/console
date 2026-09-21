@@ -8,6 +8,7 @@ import { emailPasswordSignUp } from 'supertokens-auth-react/recipe/thirdpartyema
 import z from 'zod';
 import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
 import { Input } from '@/components/base/input/input';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -18,7 +19,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Meta } from '@/components/ui/meta';
-import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
 import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';

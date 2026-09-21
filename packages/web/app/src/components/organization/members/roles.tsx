@@ -14,6 +14,7 @@ import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialo
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Textarea } from '@/components/base/textarea/textarea';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -24,7 +25,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { zodResolver } from '@hookform/resolvers/zod';

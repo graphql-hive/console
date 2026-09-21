@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 import { LoaderCircleIcon, LogOutIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import { DottedBackground } from '@/components/ui/dotted-background';
 import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { graphql } from '@/gql';
-import { useNotifications } from '@/lib/hooks/use-notifications';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 
@@ -49,7 +49,7 @@ const OrganizationTransferPage_AnswerRequest = graphql(`
 
 export function OrganizationTransferPage(props: { organizationSlug: string; code: string }) {
   const router = useRouter();
-  const notify = useNotifications();
+  const { toast } = useToast();
   const code = props.code;
   const [query] = useQuery({
     query: OrganizationTransferPage_GetRequest,
@@ -73,7 +73,7 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
       if (result.data?.answerOrganizationTransferRequest) {
         if (result.data.answerOrganizationTransferRequest.ok) {
           if (accept) {
-            notify('The organization is now yours!', 'success');
+            toast({ title: 'The organization is now yours!' });
           }
           void router.navigate({
             to: '/$organizationSlug',
@@ -82,15 +82,18 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
             },
           });
         } else {
-          notify(result.data.answerOrganizationTransferRequest.error!.message, 'error');
+          toast({
+            variant: 'destructive',
+            title: result.data.answerOrganizationTransferRequest.error!.message,
+          });
         }
       }
 
       if (result.error) {
-        notify('Failed to answer', 'error');
+        toast({ variant: 'destructive', title: 'Failed to answer' });
       }
     },
-    [mutate, props.organizationSlug, code, router, notify],
+    [mutate, props.organizationSlug, code, router, toast],
   );
 
   const accept = useCallback(() => answer(true), [answer]);

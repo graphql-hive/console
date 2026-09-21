@@ -4,6 +4,7 @@ import { CombinedError, useQuery } from 'urql';
 import { z } from 'zod';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Input } from '@/components/base/input/input';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import {
@@ -17,7 +18,6 @@ import {
 } from '@/components/ui/form';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
-import { useNotifications } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckIcon, Cross2Icon, ReloadIcon, UpdateIcon } from '@radix-ui/react-icons';
 
@@ -228,7 +228,7 @@ export const ExternalCompositionSettings = (props: {
     ExternalCompositionSettings_OrganizationFragment,
     props.organization,
   );
-  const notify = useNotifications();
+  const { toast } = useToast();
   const [error, setError] = useState<string>();
   const [isMutating, setIsMutating] = useState(false);
 
@@ -263,7 +263,7 @@ export const ExternalCompositionSettings = (props: {
       .then(result => {
         setIsMutating(false);
         if (result instanceof CombinedError) {
-          notify(result.message, 'error');
+          toast({ variant: 'destructive', title: result.message });
           setError(result.message);
         } else {
           // actually not a hook
@@ -275,7 +275,7 @@ export const ExternalCompositionSettings = (props: {
           if (updateResult.ok) {
             const endpoint = updateResult.ok.updatedProject.externalSchemaComposition?.endpoint;
 
-            notify('External composition enabled.', 'success');
+            toast({ title: 'External composition enabled.' });
 
             if (endpoint) {
               form.reset(
@@ -290,7 +290,7 @@ export const ExternalCompositionSettings = (props: {
               );
             }
           } else if (updateResult.error) {
-            notify(updateResult.error.message, 'error');
+            toast({ variant: 'destructive', title: updateResult.error.message });
             setError(updateResult.error.message);
 
             if (updateResult.error.__typename === 'UpdateSchemaCompositionExternalError') {

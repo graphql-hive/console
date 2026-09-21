@@ -7,6 +7,7 @@ import { useMutation, useQuery } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { Collapsible } from '@/components/base/collapsible/collapsible';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { useToast } from '@/components/base/toast/toast';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
@@ -17,7 +18,7 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
-import { useClipboard, useNotifications, useToggle } from '@/lib/hooks';
+import { useClipboard, useToggle } from '@/lib/hooks';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
 import { useCurrentOperation } from '@/lib/hooks/laboratory/use-current-operation';
 import {
@@ -117,7 +118,7 @@ function Save(props: {
     projectSlug: props.projectSlug,
     targetSlug: props.targetSlug,
   });
-  const notify = useNotifications();
+  const { toast } = useToast();
   const currentOperation = useCurrentOperation({
     organizationSlug: props.organizationSlug,
     projectSlug: props.projectSlug,
@@ -218,10 +219,10 @@ function Save(props: {
                 });
                 if (data) {
                   clearOperation();
-                  notify('Updated!', 'success');
+                  toast({ title: 'Updated!' });
                 }
                 if (error) {
-                  notify(error.message, 'error');
+                  toast({ variant: 'destructive', title: error.message });
                 }
               },
             },
@@ -229,7 +230,7 @@ function Save(props: {
               label: 'Save as',
               onClick: () => {
                 if (!collections.length) {
-                  notify('Please create a collection first.', 'error');
+                  toast({ variant: 'destructive', title: 'Please create a collection first.' });
                   return;
                 }
                 toggleOperationModal();

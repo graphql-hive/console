@@ -24,7 +24,7 @@ import {
 } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
 import {
   MetricAlertRuleDirection,

@@ -6,6 +6,7 @@ import { DescriptionList } from '@/components/base/description-list/description-
 import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import {
@@ -18,7 +19,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { defineStepper } from '@/components/ui/stepper';
-import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';

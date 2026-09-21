@@ -4,12 +4,12 @@ import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Input } from '@/components/base/input/input';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { PermissionScopeItem } from '@/components/organization/Permissions';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { InputCopy } from '@/components/ui/input-copy';
-import { useToast } from '@/components/ui/use-toast';
 import { Accordion } from '@/components/v2/accordion';
 import { graphql } from '@/gql';
 import { TargetAccessScope } from '@/gql/graphql';
@@ -134,11 +134,6 @@ export function ModalContent(props: {
         variant: 'destructive',
         title: 'Failed to create token',
         description: error.message,
-      });
-    } else {
-      toast({
-        title: 'Token created',
-        description: 'The token has been successfully created.',
       });
     }
   }

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/base/toast/toast';
 
 export function useClipboard() {
   const { toast } = useToast();

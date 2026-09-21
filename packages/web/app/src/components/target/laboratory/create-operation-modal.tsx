@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -14,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import {
   DocumentCollectionOperation,

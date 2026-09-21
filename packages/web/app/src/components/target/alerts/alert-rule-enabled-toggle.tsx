@@ -1,6 +1,6 @@
 import { useMutation } from 'urql';
 import { Switch } from '@/components/base/switch/switch';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
 
 const AlertRuleEnabledToggle_Mutation = graphql(`
