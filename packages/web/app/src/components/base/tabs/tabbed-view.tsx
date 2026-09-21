@@ -48,7 +48,7 @@ export function TabbedView({
     >
       <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 flex items-center border-b">
         {action != null ? <div className="flex items-center pl-2">{action}</div> : null}
-        <TabStrip items={items} variant="header" />
+        <TabStrip items={items} variant="header" activeValue={value} />
       </div>
       {items.map(item => (
         <BaseTabs.Panel

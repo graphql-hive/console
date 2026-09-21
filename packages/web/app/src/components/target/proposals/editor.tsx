@@ -277,6 +277,12 @@ export function ProposalEditor(props: {
                 props.existingServices.some(
                   s => s.__typename === 'CompositeSchema' && s.service === service.service,
                 );
+              const hasEmptyName = isNewService && !service.service?.trim();
+              const nameError = hasNameConflict
+                ? 'New service name cannot match an existing service name'
+                : hasEmptyName
+                  ? 'New service needs a name'
+                  : undefined;
               const existing = props.existingServices.find(
                 s =>
                   (s.__typename === 'CompositeSchema' &&
@@ -291,8 +297,15 @@ export function ProposalEditor(props: {
                     {isNewService ? (
                       <DotFilledIcon className="-ml-2 size-4 text-green-600" />
                     ) : null}
-                    {service.__typename === 'SingleSchema' ? 'single schema' : schemaTitle(service)}
-                    {hasNameConflict ? <AlertTriangleIcon className="size-4 text-red-600" /> : null}
+                    {service.__typename === 'SingleSchema' ? (
+                      'single schema'
+                    ) : hasEmptyName ? (
+                      // The tab keeps its width and a name while the field is empty.
+                      <span className="italic">unnamed service</span>
+                    ) : (
+                      schemaTitle(service)
+                    )}
+                    {nameError ? <AlertTriangleIcon className="size-4 text-red-600" /> : null}
                     {service.__typename === 'CompositeSchema' ? (
                       <span className="ml-2" onClick={() => onRemoveTab(idx)}>
                         <XIcon className={cn('size-4', !isActiveTab && 'hidden')} />
@@ -300,9 +313,7 @@ export function ProposalEditor(props: {
                     ) : null}
                   </>
                 ),
-                tooltip: hasNameConflict
-                  ? 'New service name cannot match an existing service name'
-                  : undefined,
+                tooltip: nameError,
                 content: (
                   <div className="rounded-sm border">
                     <div className="flex items-center justify-end border-b px-2 py-1">
@@ -343,12 +354,10 @@ export function ProposalEditor(props: {
                                     onSurface="raised"
                                     value={service.service ?? ''}
                                     onChange={ev => setActiveTabName(ev.target.value)}
-                                    invalid={hasNameConflict}
+                                    invalid={nameError != null}
                                   />
-                                  {hasNameConflict && (
-                                    <p className="text-critical mt-1 text-xs">
-                                      New service name cannot match an existing service name
-                                    </p>
+                                  {nameError && (
+                                    <p className="text-critical mt-1 text-xs">{nameError}</p>
                                   )}
                                 </div>
                               )}

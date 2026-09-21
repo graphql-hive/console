@@ -278,7 +278,15 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
   }, [schemaVersion, contractVersionNode]);
 
   const contractVersions = schemaVersion.contractVersions?.edges ?? [];
-  const contractPicker = contractVersions.length ? (
+  // Without contracts there is nothing to pick, but the default graph keeps its status glyph.
+  const contractPicker = !contractVersions.length ? (
+    schemaVersion.contractVersions?.edges ? (
+      <span className="text-neutral-11 inline-flex items-center gap-1.5 px-2 text-xs">
+        {versionStatusIcon(schemaVersion, DEFAULT_GRAPH_LABELS)}
+        Default Graph
+      </span>
+    ) : undefined
+  ) : (
     <Select
       aria-label="Contract version"
       value={selectedItem}
@@ -309,7 +317,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
       onSurface="raised"
       width="md"
     />
-  ) : undefined;
+  );
 
   // The picker opens on the default graph, so a contract version that failed is named here first.
   const failures = contractVersions.flatMap(edge =>
@@ -408,7 +416,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
       {/* A monolithic schema has no subgraphs, so its summary sits on the page without tabs. */}
       {schemaVersion.subgraphDiffs ? (
         <div className="mt-3 flex flex-col gap-3">
-          {contractPicker ? (
+          {contractVersions.length ? (
             <div className="flex justify-end">
               <Legend items={CONTRACT_STATUS_LEGEND} />
             </div>
