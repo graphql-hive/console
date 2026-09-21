@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor } from '@testing-library/react';
-import { RouterAt } from '../../../../../foundry.router';
+import { RouterAt } from '../../../../foundry.router';
 import { Navigation, type NavigationItem } from './navigation';
 
 const TARGET = { organizationSlug: 'a', projectSlug: 'b', targetSlug: 'c' };

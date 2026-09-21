@@ -1,7 +1,7 @@
 import { ChartPieIcon, FileDiffIcon, ListIcon, PencilIcon } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
-import { RouterAt } from '../../../../../foundry.router';
-import { Button } from '../../button/button';
+import { RouterAt } from '../../../../foundry.router';
+import { Button } from '../button/button';
 import { Navigation, type NavigationItem } from './navigation';
 
 export const nav: NavPath = 'Base/Navigation/Navigation';

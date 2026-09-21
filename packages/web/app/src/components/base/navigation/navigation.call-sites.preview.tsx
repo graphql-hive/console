@@ -5,7 +5,7 @@ import { Button } from '@/components/base/button/button';
 import { CallSite, CallSiteGroup, InventoryList } from '@/components/inventory/shared';
 import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
-import { RouterAt } from '../../../../../foundry.router';
+import { RouterAt } from '../../../../foundry.router';
 import { Navigation, type NavigationItem } from './navigation';
 
 export const nav: NavPath = 'Base/Navigation/Navigation/Component Examples';

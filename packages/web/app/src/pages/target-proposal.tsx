@@ -6,7 +6,7 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import {
   Navigation,
   type NavigationItem,
-} from '@/components/base/navigation/navigation/navigation';
+} from '@/components/base/navigation/navigation';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {

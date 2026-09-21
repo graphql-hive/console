@@ -11,7 +11,7 @@ import {
 import { createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '@/components/base/badge/badge';
 import { Button } from '@/components/base/button/button';
-import { SecondaryNavigation } from '@/components/base/navigation/secondary-navigation/secondary-navigation';
+import { Navigation } from '@/components/base/navigation/navigation';
 import { focusRingQuiet } from '@/components/base/shared-styles';
 import { Switch } from '@/components/base/switch/switch';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
@@ -374,23 +374,22 @@ export const RichContent = createPreview({
       <CallSite
         source="components/target/explorer/filter.tsx:64"
         origin="base"
-        note="Hints on the explorer's type filter: a pill SecondaryNavigation whose items each carry a tooltip."
+        note="Hints on the explorer's type filter: a pill Navigation whose items each carry a tooltip."
       >
-        <SecondaryNavigation
+        <Navigation
           aria-label="Type filter"
           variant="pill"
           size="sm"
-          value="all"
           items={[
             ['all', 'All', 'Shows all types, including unused and deprecated ones'],
             ['unused', 'Unused', 'Shows only types that are not used in any operation'],
             ['deprecated', 'Deprecated', 'Shows only types that are marked as deprecated'],
-          ].map(([value, label, tooltip]) => ({
-            value,
+          ].map(([id, label, tooltip]) => ({
+            id,
             label,
             tooltip,
             to: '/$organizationSlug/$projectSlug/$targetSlug',
-            params: { organizationSlug: 'the-guild', projectSlug: 'gateway', targetSlug: value },
+            params: { organizationSlug: 'the-guild', projectSlug: 'gateway', targetSlug: id },
           }))}
         />
       </CallSite>

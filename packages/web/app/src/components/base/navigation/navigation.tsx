@@ -1,8 +1,8 @@
 import { type ComponentType, type ReactNode } from 'react';
 import { cva } from 'class-variance-authority';
 import { Link, type LinkOptions } from '@tanstack/react-router';
-import { Tooltip } from '../../floating/tooltip/tooltip';
-import { focusRingQuiet } from '../../shared-styles';
+import { Tooltip } from '../floating/tooltip/tooltip';
+import { focusRingQuiet } from '../shared-styles';
 
 export type NavigationVariant = 'underline' | 'pill' | 'list';
 export type NavigationSize = 'default' | 'sm';
