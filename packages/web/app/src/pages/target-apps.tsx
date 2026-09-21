@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { PageLead } from '@/components/base/page-lead';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
@@ -355,19 +355,14 @@ export function TargetAppsPage(props: {
   return (
     <>
       <Meta title="App Deployments" />
-      <TargetLayout
-        targetSlug={props.targetSlug}
-        projectSlug={props.projectSlug}
-        organizationSlug={props.organizationSlug}
-        page={Page.Apps}
-      >
+      <LayoutContent>
         <TargetAppsView
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
           targetSlug={props.targetSlug}
           sorting={props.sorting}
         />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

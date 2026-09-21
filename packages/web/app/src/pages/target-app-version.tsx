@@ -7,7 +7,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { PageLead } from '@/components/base/page-lead';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { BackLink } from '@/components/navigation/back-link';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import { EmptyList } from '@/components/ui/empty-list';
@@ -488,15 +488,9 @@ export function TargetAppVersionPage(props: {
 }) {
   return (
     <>
-      <TargetLayout
-        targetSlug={props.targetSlug}
-        projectSlug={props.projectSlug}
-        organizationSlug={props.organizationSlug}
-        page={Page.Apps}
-        className="min-h-(--min-h-content)"
-      >
+      <LayoutContent className="min-h-(--min-h-content)">
         <TargetAppVersionContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

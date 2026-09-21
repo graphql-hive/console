@@ -8,7 +8,7 @@ import { Button } from '@/components/base/button/button';
 import { Collapsible } from '@/components/base/collapsible/collapsible';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useToast } from '@/components/base/toast/toast';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
 import { DocsLink } from '@/components/ui/docs-note';
@@ -647,18 +647,12 @@ export function TargetLaboratoryPage(props: {
   return (
     <>
       <Meta title="Schema laboratory" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Laboratory}
-        className="h-(--content-height) flex flex-col pb-0"
-      >
+      <LayoutContent className="h-(--content-height) flex flex-col pb-0">
         <PromptProvider>
           <LaboratoryPageContent {...props} />
           <PromptManager />
         </PromptProvider>
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

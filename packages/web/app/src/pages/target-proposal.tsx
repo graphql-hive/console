@@ -3,11 +3,8 @@ import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { ChartPie, CheckIcon, FileDiffIcon, List, PencilIcon, XIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import {
-  Navigation,
-  type NavigationItem,
-} from '@/components/base/navigation/navigation';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
   Proposal_ChangeFragment,
@@ -166,15 +163,9 @@ export function TargetProposalsSinglePage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Proposals}
-        className="h-(--content-height) flex min-h-[300px] flex-col pb-0"
-      >
+      <LayoutContent className="h-(--content-height) flex min-h-[300px] flex-col pb-0">
         <ProposalsContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

@@ -3,7 +3,7 @@ import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { focusRingQuiet } from '@/components/base/shared-styles';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
@@ -489,14 +489,9 @@ export function TargetExplorerUnusedPage(props: {
     <>
       <Meta title="Unused Schema Explorer" />
       <SchemaExplorerProvider>
-        <TargetLayout
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          page={Page.Explorer}
-        >
+        <LayoutContent>
           <ExplorerUnusedSchemaPageContent {...props} />
-        </TargetLayout>
+        </LayoutContent>
       </SchemaExplorerProvider>
     </>
   );

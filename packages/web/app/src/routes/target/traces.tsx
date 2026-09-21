@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { z } from 'zod';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { Meta } from '@/components/ui/meta';
 import { TargetTracePage } from '@/pages/target-trace';
 import {
@@ -25,7 +25,6 @@ export const targetTracesRoute = createRoute({
   path: 'traces',
   validateSearch: zodValidator(TargetTracesRouteSearch),
   component: function TargetTracesRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetTracesRoute.useParams();
     const {
       filter = {
         'graphql.client': [],
@@ -55,14 +54,9 @@ export const targetTracesRoute = createRoute({
     return (
       <>
         <Meta title="Traces" />
-        <TargetLayout
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
-          page={Page.Traces}
-        >
+        <LayoutContent>
           <TargetTracesPageContent sorting={sort} filter={filter} range={range} />
-        </TargetLayout>
+        </LayoutContent>
       </>
     );
   },

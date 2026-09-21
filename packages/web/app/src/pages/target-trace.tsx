@@ -29,7 +29,7 @@ import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -1104,13 +1104,7 @@ export function TargetTracePage(props: {
 }) {
   return (
     <>
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Traces}
-        className="flex flex-col"
-      >
+      <LayoutContent className="flex flex-col">
         <div className="flex flex-1 flex-col">
           <AutoSizer disableWidth>
             {size => (
@@ -1120,7 +1114,7 @@ export function TargetTracePage(props: {
             )}
           </AutoSizer>
         </div>
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

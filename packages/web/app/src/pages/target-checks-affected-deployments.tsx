@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useQuery } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -351,14 +351,8 @@ export function TargetChecksAffectedDeploymentsPage(props: {
   coordinate?: string;
 }) {
   return (
-    <TargetLayout
-      targetSlug={props.targetSlug}
-      projectSlug={props.projectSlug}
-      organizationSlug={props.organizationSlug}
-      page={Page.Checks}
-      className="min-h-(--min-h-content)"
-    >
+    <LayoutContent className="min-h-(--min-h-content)">
       <TargetChecksAffectedDeploymentsContent {...props} />
-    </TargetLayout>
+    </LayoutContent>
   );
 }

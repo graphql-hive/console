@@ -19,7 +19,7 @@ import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialo
 import { Switch } from '@/components/base/switch/switch';
 import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { SchemaEditor } from '@/components/schema-editor';
 import {
@@ -1528,19 +1528,14 @@ export function TargetSettingsPage(props: {
   return (
     <>
       <Meta title="Settings" />
-      <TargetLayout
-        targetSlug={props.targetSlug}
-        projectSlug={props.projectSlug}
-        organizationSlug={props.organizationSlug}
-        page={Page.Settings}
-      >
+      <LayoutContent>
         <TargetSettingsContent
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
           targetSlug={props.targetSlug}
           page={props.page}
         />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

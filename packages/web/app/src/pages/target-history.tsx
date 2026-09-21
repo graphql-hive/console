@@ -4,7 +4,7 @@ import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -340,15 +340,9 @@ export function TargetHistoryPage(props: {
   return (
     <>
       <Meta title="History" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.History}
-        className="flex flex-row gap-x-6"
-      >
+      <LayoutContent className="flex flex-row gap-x-6">
         <HistoryPageContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

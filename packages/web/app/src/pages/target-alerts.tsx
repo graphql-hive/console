@@ -1,4 +1,5 @@
 import { useQuery } from 'urql';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { subPageNavigationLinkClasses } from '@/components/navigation/sub-page-navigation-link';
 import { Meta } from '@/components/ui/meta';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
@@ -75,15 +76,15 @@ export function TargetAlertsPage(props: {
 
   if (isDetailRoute) {
     return (
-      <>
+      <LayoutContent>
         <Meta title="Alerts" />
         <Outlet />
-      </>
+      </LayoutContent>
     );
   }
 
   return (
-    <>
+    <LayoutContent>
       <Meta title="Alerts" />
       <PageLayout>
         <NavLayout>
@@ -104,6 +105,6 @@ export function TargetAlertsPage(props: {
           <Outlet />
         </PageLayoutContent>
       </PageLayout>
-    </>
+    </LayoutContent>
   );
 }

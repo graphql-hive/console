@@ -4,7 +4,7 @@ import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { OperationsStats } from '@/components/target/insights/stats';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DateRangePicker, presetLast1Day } from '@/components/ui/date-range-picker';
@@ -233,14 +233,9 @@ export function TargetInsightsOperationPage(props: {
   return (
     <>
       <Meta title={`Operation ${props.operationName}`} />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Insights}
-      >
+      <LayoutContent>
         <OperationInsightsContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

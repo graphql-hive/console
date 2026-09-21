@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { useQuery } from 'urql';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
@@ -271,14 +271,9 @@ export function TargetExplorerTypePage(props: {
     <>
       <Meta title={`Type ${props.typename}`} />
       <SchemaExplorerProvider>
-        <TargetLayout
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          page={Page.Explorer}
-        >
+        <LayoutContent>
           <TypeExplorerPageContent {...props} />
-        </TargetLayout>
+        </LayoutContent>
       </SchemaExplorerProvider>
     </>
   );

@@ -65,13 +65,36 @@ const pages: Array<{ url: string; current: string }> = [
   { url: `${TARGET}/explorer/unused`, current: 'Explorer' },
   { url: `${TARGET}/insights`, current: 'Insights' },
   { url: `${TARGET}/apps`, current: 'Apps' },
+  { url: `${TARGET}/history/version-42`, current: 'History' },
+  { url: `${TARGET}/insights/manage-filters`, current: 'Insights' },
+  { url: `${TARGET}/insights/schema-coordinate/Query.me`, current: 'Insights' },
+  { url: `${TARGET}/insights/client/web`, current: 'Insights' },
+  { url: `${TARGET}/insights/GetUser/abc123`, current: 'Insights' },
+  { url: `${TARGET}/traces`, current: 'Traces' },
+  { url: `${TARGET}/explorer`, current: 'Explorer' },
+  { url: `${TARGET}/explorer/deprecated`, current: 'Explorer' },
+  { url: `${TARGET}/explorer/User`, current: 'Explorer' },
+  { url: `${TARGET}/checks/check-1/affected-deployments`, current: 'Checks' },
+  { url: `${TARGET}/apps/app/1.0.0`, current: 'Apps' },
+  { url: `${TARGET}/laboratory`, current: 'Laboratory' },
+  { url: `${TARGET}/proposals`, current: 'Proposals' },
+  { url: `${TARGET}/proposals/new`, current: 'Proposals' },
+  { url: `${TARGET}/proposals/proposal-1`, current: 'Proposals' },
+  { url: `${TARGET}/alerts`, current: 'Alerts' },
   { url: `${TARGET}/alerts/rules`, current: 'Alerts' },
+  { url: `${TARGET}/alerts/activity`, current: 'Alerts' },
+  { url: `${TARGET}/alerts/create`, current: 'Alerts' },
+  { url: `${TARGET}/alerts/rule-1`, current: 'Alerts' },
   { url: `${TARGET}/settings`, current: 'Settings' },
+  // Traces detail lives at /trace/$traceId, outside the Traces item's path, and the History item
+  // links to the latest version only; both are URL changes in a later commit.
 ];
 
 describe('chrome at every page', () => {
   beforeEach(() => {
     client.current = createTestClient(layoutFixtures());
+    // The laboratory greets a first visit with a modal, which hides the chrome from role queries.
+    localStorage.setItem('hive:laboratory:welcome-dialog-shown', 'true');
   });
 
   // The header is owned by the layout route, so moving between sibling pages keeps the same DOM
@@ -88,6 +111,18 @@ describe('chrome at every page', () => {
       expect(router.state.location.pathname).toBe(`${ORGANIZATION}/view/members`),
     );
     await screen.findByRole('link', { name: 'Members', current: 'page' });
+    expect(screen.getByRole('banner')).toBe(header);
+  });
+
+  it('keeps the target layout mounted across its pages', { timeout: 30_000 }, async () => {
+    const { router } = renderAtUrl(`${TARGET}/checks`);
+    const header = await screen.findByRole('banner');
+    await router.navigate({
+      to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
+      params: SLUGS,
+      search: {},
+    });
+    await screen.findByRole('link', { name: 'Insights', current: 'page' });
     expect(screen.getByRole('banner')).toBe(header);
   });
 

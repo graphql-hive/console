@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AlertCircleIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
@@ -269,14 +269,9 @@ export function TargetExplorerPage(props: {
     <>
       <Meta title="Schema Explorer" />
       <SchemaExplorerProvider>
-        <TargetLayout
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          page={Page.Explorer}
-        >
+        <LayoutContent>
           <ExplorerPageContent {...props} />
-        </TargetLayout>
+        </LayoutContent>
       </SchemaExplorerProvider>
     </>
   );

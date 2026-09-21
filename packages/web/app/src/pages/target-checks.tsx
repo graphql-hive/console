@@ -6,7 +6,7 @@ import { Label } from '@/components/base/label/label';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Switch } from '@/components/base/switch/switch';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -312,7 +312,7 @@ function ChecksPageContent(props: {
         {hasSchemaChecks && (
           <SchemaChecksSideNav
             organizationSlug={props.organizationSlug}
-            projectSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
             targetSlug={props.targetSlug}
           >
             {hasFilteredSchemaChecks ? (
@@ -455,15 +455,9 @@ export function TargetChecksPage(props: {
   return (
     <>
       <Meta title="Schema Checks" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Checks}
-        className="flex flex-row gap-x-6"
-      >
+      <LayoutContent className="flex flex-row gap-x-6">
         <ChecksPageContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

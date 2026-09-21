@@ -15,7 +15,7 @@ import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
@@ -771,14 +771,9 @@ export function TargetInsightsCoordinatePage(props: {
   return (
     <>
       <Meta title={`${props.coordinate} - schema coordinate`} />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Insights}
-      >
+      <LayoutContent>
         <TargetSchemaCoordinatePageContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

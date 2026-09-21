@@ -11,7 +11,7 @@ import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { useToast } from '@/components/base/toast/toast';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { BackLink } from '@/components/navigation/back-link';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
@@ -831,12 +831,7 @@ export function TargetInsightsManageFiltersPage({
   return (
     <>
       <Meta title="Manage saved filters" />
-      <TargetLayout
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        page={Page.Insights}
-      >
+      <LayoutContent>
         <div className="pb-3 pt-6">
           <BackLink
             copy="Back to Insights"
@@ -857,7 +852,7 @@ export function TargetInsightsManageFiltersPage({
           projectSlug={projectSlug}
           targetSlug={targetSlug}
         />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

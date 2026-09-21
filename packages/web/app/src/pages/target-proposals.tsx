@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
 import { stageToColor } from '@/components/target/proposals/util';
 import { Link } from '@/components/ui/link';
@@ -78,15 +78,9 @@ export function TargetProposalsPage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Proposals}
-        className="flex min-h-[300px] flex-col"
-      >
+      <LayoutContent className="flex min-h-[300px] flex-col">
         <ProposalsContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

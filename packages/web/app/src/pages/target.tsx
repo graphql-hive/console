@@ -5,7 +5,7 @@ import { Accordion } from '@/components/base/accordion/accordion';
 import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { Select } from '@/components/base/floating/select/select';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList, noSchema, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -268,12 +268,7 @@ function TargetSchemaPage(props: {
   const target = currentProject?.target;
 
   return (
-    <TargetLayout
-      targetSlug={props.targetSlug}
-      projectSlug={props.projectSlug}
-      organizationSlug={props.organizationSlug}
-      page={Page.Schema}
-    >
+    <LayoutContent>
       <div className="flex flex-row items-center justify-between py-6">
         <div>
           <Title>Schema</Title>
@@ -318,7 +313,7 @@ function TargetSchemaPage(props: {
           <SchemaView project={currentProject} target={target} />
         ) : null}
       </div>
-    </TargetLayout>
+    </LayoutContent>
   );
 }
 

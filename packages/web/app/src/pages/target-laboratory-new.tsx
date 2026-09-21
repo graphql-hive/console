@@ -6,7 +6,7 @@ import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { useTheme } from '@/components/theme/theme-provider';
 import { DocsLink } from '@/components/ui/docs-note';
@@ -934,15 +934,9 @@ export function TargetLaboratoryPage(props: {
           the top left cornder.
         </p>
       </Dialog>
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Laboratory}
-        className="h-(--content-height) flex flex-col pb-0"
-      >
+      <LayoutContent className="h-(--content-height) flex flex-col pb-0">
         <LaboratoryPageContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

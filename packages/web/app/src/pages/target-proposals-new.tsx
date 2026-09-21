@@ -19,7 +19,7 @@ import { Label } from '@/components/base/label/label';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { Textarea } from '@/components/base/textarea/textarea';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
 import { ProposalEditor, ServiceTab } from '@/components/target/proposals/editor';
 import {
@@ -110,17 +110,11 @@ export function TargetProposalsNewPage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Proposals}
-        className="h-(--content-height) flex min-h-[300px] flex-col pb-0"
-      >
+      <LayoutContent className="h-(--content-height) flex min-h-[300px] flex-col pb-0">
         <SaveProposalProvider>
           <ProposalsNewContent {...props} />
         </SaveProposalProvider>
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

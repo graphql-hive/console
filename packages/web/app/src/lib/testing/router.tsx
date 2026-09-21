@@ -17,6 +17,15 @@ if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
     }) as MediaQueryList;
 }
 
+// Charts measure their container; jsdom has no ResizeObserver.
+if (typeof window !== 'undefined' && typeof window.ResizeObserver !== 'function') {
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 /**
  * Renders the real app at `url`: the real route tree, root providers and layouts, in a memory
  * history. Pair it with the module mocks a spec needs for jsdom (`@/env/frontend`, the laboratory

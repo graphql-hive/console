@@ -18,7 +18,6 @@ import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
-import { cn } from '@/lib/utils';
 import { Tabs } from '../base/tabs/tabs';
 import { TargetSelector } from './target-selector';
 
@@ -74,16 +73,13 @@ const TargetLayoutQuery = graphql(`
 
 export const TargetLayout = ({
   children,
-  className,
   organizationSlug,
   projectSlug,
   targetSlug,
 }: {
-  page: Page;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  className?: string;
   children: ReactNode;
 }): ReactElement | null => {
   const params = {
@@ -247,7 +243,7 @@ export const TargetLayout = ({
               ) : null
             }
           />
-          <div className={cn('min-h-(--content-height) container pb-7', className)}>{children}</div>
+          {children}
         </>
       )}
     </>

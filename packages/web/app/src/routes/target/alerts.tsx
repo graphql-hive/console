@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { Page, TargetLayout } from '@/components/layouts/target';
 import { AlertActivitySearch } from '@/components/target/alerts/search-schemas';
 import { TargetAlertsPage } from '@/pages/target-alerts';
 import { TargetAlertsActivityPage } from '@/pages/target-alerts-activity';
@@ -17,18 +16,11 @@ export const targetAlertsRoute = createRoute({
   component: function TargetAlertsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetAlertsRoute.useParams();
     return (
-      <TargetLayout
-        page={Page.Alerts}
+      <TargetAlertsPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
-      >
-        <TargetAlertsPage
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
-        />
-      </TargetLayout>
+      />
     );
   },
 });

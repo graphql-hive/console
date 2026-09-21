@@ -4,7 +4,7 @@ import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Filters } from '@/components/base/floating/filter-menu/filters';
 import type { FilterItem } from '@/components/base/floating/filter-menu/types';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
@@ -466,14 +466,9 @@ export function TargetInsightsPage(props: {
   return (
     <>
       <Meta title="Insights" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Insights}
-      >
+      <LayoutContent>
         <TargetOperationsPageContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

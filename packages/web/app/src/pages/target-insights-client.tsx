@@ -8,7 +8,7 @@ import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -413,14 +413,9 @@ export function TargetInsightsClientPage(props: {
   return (
     <>
       <Meta title={`${props.name} - client`} />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Insights}
-      >
+      <LayoutContent>
         <ClientInsightsPageContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }
