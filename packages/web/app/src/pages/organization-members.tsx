@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, UseQueryExecute } from 'urql';
 import { Spinner } from '@/components/base/spinner/spinner';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { Groups } from '@/components/organization/members/groups';
 import { OrganizationInvitations } from '@/components/organization/members/invitations';
@@ -185,11 +185,7 @@ function OrganizationMembersPageContent(props: {
   }
 
   return (
-    <OrganizationLayout
-      organizationSlug={props.organizationSlug}
-      page={Page.Members}
-      className="flex flex-col gap-y-10"
-    >
+    <LayoutContent className="flex flex-col gap-y-10">
       {data?.organization ? (
         <PageContent
           organization={data.organization}
@@ -204,7 +200,7 @@ function OrganizationMembersPageContent(props: {
           <Spinner variants={{ size: 'lg' }} />
         </div>
       ) : null}
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 

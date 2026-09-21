@@ -8,7 +8,7 @@ import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialo
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
 import {
@@ -605,11 +605,7 @@ function SettingsPageContent(props: {
   }
 
   return (
-    <OrganizationLayout
-      page={Page.Settings}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
+    <LayoutContent className="flex flex-col gap-y-10">
       <PageLayout>
         <NavLayout>
           {subPages.map(subPage => {
@@ -653,7 +649,7 @@ function SettingsPageContent(props: {
           </div>
         </PageLayoutContent>
       </PageLayout>
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 

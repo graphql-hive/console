@@ -7,7 +7,7 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { useToast } from '@/components/base/toast/toast';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   NEW_TICKET_FORM_ID,
   NewTicketForm,
@@ -300,15 +300,11 @@ function SupportPageContent(props: { organizationSlug: string }) {
   const currentOrganization = query.data?.organization;
 
   return (
-    <OrganizationLayout
-      page={Page.Support}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
+    <LayoutContent className="flex flex-col gap-y-10">
       {currentOrganization ? (
         <Support organization={currentOrganization} refetch={refetch} />
       ) : null}
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 

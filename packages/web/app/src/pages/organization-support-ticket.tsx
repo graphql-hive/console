@@ -5,7 +5,7 @@ import { useMutation, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { useToast } from '@/components/base/toast/toast';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ReplyTicketForm,
   ReplyTicketFormSchema,
@@ -271,11 +271,7 @@ function SupportTicketPageContent(props: { ticketId: string; organizationSlug: s
   const ticket = currentOrganization?.supportTicket;
 
   return (
-    <OrganizationLayout
-      page={Page.Support}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
+    <LayoutContent className="flex flex-col gap-y-10">
       {currentOrganization ? (
         ticket ? (
           <SupportTicket organization={currentOrganization} ticket={ticket} refetch={refetch} />
@@ -288,7 +284,7 @@ function SupportTicketPageContent(props: { ticketId: string; organizationSlug: s
           </div>
         )
       ) : null}
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 

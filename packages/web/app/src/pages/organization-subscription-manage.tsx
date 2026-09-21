@@ -5,7 +5,7 @@ import { Card } from '@/components/base/card/card';
 import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
 import { Slider } from '@/components/base/slider/slider';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   BillingPaymentMethodForm,
   ManagePaymentMethod,
@@ -548,11 +548,7 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
   }
 
   return (
-    <OrganizationLayout
-      page={Page.Subscription}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
+    <LayoutContent className="flex flex-col gap-y-10">
       <div className="grow">
         <div className="flex flex-row items-center justify-between py-6">
           <PageLead
@@ -581,7 +577,7 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
           ) : null}
         </div>
       </div>
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 

@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { z } from 'zod';
+import { OrganizationLayout } from '@/components/layouts/organization';
 import { OrganizationIndexRouteSearch, OrganizationPage } from '@/pages/organization';
 import { OrganizationMembersPage } from '@/pages/organization-members';
-import { OrganizationOIDCRequestPage } from '@/pages/organization-oidc-request';
 import {
   OrganizationSettingsPage,
   OrganizationSettingsPageEnum,
@@ -11,33 +11,18 @@ import { OrganizationSubscriptionPage } from '@/pages/organization-subscription'
 import { OrganizationSubscriptionManagePage } from '@/pages/organization-subscription-manage';
 import { OrganizationSupportPage } from '@/pages/organization-support';
 import { OrganizationSupportTicketPage } from '@/pages/organization-support-ticket';
-import { createRoute, Navigate, useNavigate } from '@tanstack/react-router';
+import { createRoute, Navigate, Outlet, useNavigate } from '@tanstack/react-router';
 import { authenticatedRoute } from './authenticated';
 
 export const organizationRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '$organizationSlug',
-});
-
-const OrganizationOIDCRequestRouteSearch = z.object({
-  id: z.string({ required_error: 'OIDC ID is required' }),
-  redirectToPath: z.string().optional().default('/'),
-});
-export const organizationOIDCRequestRoute = createRoute({
-  getParentRoute: () => organizationRoute,
-  path: 'oidc-request',
-  validateSearch(search) {
-    return OrganizationOIDCRequestRouteSearch.parse(search);
-  },
-  component: function OrganizationOIDCRequestRoute() {
+  component: function OrganizationRoute() {
     const { organizationSlug } = organizationRoute.useParams();
-    const { id, redirectToPath } = organizationOIDCRequestRoute.useSearch();
     return (
-      <OrganizationOIDCRequestPage
-        organizationSlug={organizationSlug}
-        oidcId={id}
-        redirectToPath={redirectToPath}
-      />
+      <OrganizationLayout organizationSlug={organizationSlug}>
+        <Outlet />
+      </OrganizationLayout>
     );
   },
 });

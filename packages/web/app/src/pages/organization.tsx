@@ -7,7 +7,7 @@ import { Button } from '@/components/base/button/button';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Separator } from '@/components/base/separator/separator';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { ProjectCard } from '@/components/organization/project-card';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -199,11 +199,7 @@ function OrganizationPageContent(
   }
 
   return (
-    <OrganizationLayout
-      page={Page.Overview}
-      organizationSlug={props.organizationSlug}
-      className="flex justify-between gap-12"
-    >
+    <LayoutContent className="flex justify-between gap-12">
       <>
         <div className="grow">
           <div className="flex flex-row items-center justify-between py-6">
@@ -290,7 +286,7 @@ function OrganizationPageContent(
           )}
         </div>
       </>
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 

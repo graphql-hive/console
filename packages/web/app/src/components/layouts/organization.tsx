@@ -6,6 +6,7 @@ import { Button } from '@/components/base/button/button';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import {
@@ -64,12 +65,9 @@ const OrganizationLayoutQuery = graphql(`
 
 export function OrganizationLayout({
   children,
-  className,
   organizationSlug,
   minimal,
 }: {
-  page?: Page;
-  className?: string;
   minimal?: boolean;
   organizationSlug: string;
   children: ReactNode;
@@ -175,24 +173,24 @@ export function OrganizationLayout({
           ) : null
         }
       />
-      <div className="min-h-(--content-height) container pb-7">
-        {currentOrganization ? (
-          <>
-            <ProPlanBilling organization={currentOrganization} />
-            <RateLimitWarn organization={currentOrganization} />
-          </>
-        ) : null}
+      {currentOrganization ? (
+        <div className="container">
+          <ProPlanBilling organization={currentOrganization} />
+          <RateLimitWarn organization={currentOrganization} />
+        </div>
+      ) : null}
 
-        {shouldShowNoOrg ? (
+      {shouldShowNoOrg ? (
+        <LayoutContent>
           <NotFound
             title="Organization not found"
             description="Use the empty dropdown in the header to select an organization to which you have access."
             showBackButton={false}
           />
-        ) : (
-          <div className={className}>{children}</div>
-        )}
-      </div>
+        </LayoutContent>
+      ) : (
+        children
+      )}
     </>
   );
 }

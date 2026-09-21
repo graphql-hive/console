@@ -1,9 +1,11 @@
+import { z } from 'zod';
 import { authenticated } from '@/components/authenticated-container';
 import { DevPage } from '@/pages/dev';
 import { IndexPage } from '@/pages/index';
 import { ManagePage } from '@/pages/manage';
 import { NativeCompositionDiff } from '@/pages/native-composition-diff';
 import { NewOrgPage } from '@/pages/organization-new';
+import { OrganizationOIDCRequestPage } from '@/pages/organization-oidc-request';
 import { OrganizationTransferPage } from '@/pages/organization-transfer';
 import { createRoute, Outlet } from '@tanstack/react-router';
 import { root } from './root';
@@ -55,5 +57,29 @@ export const transferOrganizationRoute = createRoute({
   component: function TransferOrganizationRoute() {
     const { organizationSlug, code } = transferOrganizationRoute.useParams();
     return <OrganizationTransferPage organizationSlug={organizationSlug} code={code} />;
+  },
+});
+
+const OrganizationOIDCRequestRouteSearch = z.object({
+  id: z.string({ required_error: 'OIDC ID is required' }),
+  redirectToPath: z.string().optional().default('/'),
+});
+export const organizationOIDCRequestRoute = createRoute({
+  // An auth interstitial, not an organization page: it renders its own minimal chrome.
+  getParentRoute: () => authenticatedRoute,
+  path: '$organizationSlug/oidc-request',
+  validateSearch(search) {
+    return OrganizationOIDCRequestRouteSearch.parse(search);
+  },
+  component: function OrganizationOIDCRequestRoute() {
+    const { organizationSlug } = organizationOIDCRequestRoute.useParams();
+    const { id, redirectToPath } = organizationOIDCRequestRoute.useSearch();
+    return (
+      <OrganizationOIDCRequestPage
+        organizationSlug={organizationSlug}
+        oidcId={id}
+        redirectToPath={redirectToPath}
+      />
+    );
   },
 });

@@ -17,12 +17,12 @@ import {
   manageRoute,
   nativeCompositionDiffRoute,
   newOrgPage,
+  organizationOIDCRequestRoute,
   transferOrganizationRoute,
 } from './authenticated';
 import {
   organizationIndexRoute,
   organizationMembersRoute,
-  organizationOIDCRequestRoute,
   organizationRoute,
   organizationSettingsRoute,
   organizationSubscriptionManageLegacyRoute,
@@ -101,9 +101,9 @@ export const routeTree = root.addChildren([
     newOrgPage,
     manageRoute,
     transferOrganizationRoute,
+    organizationOIDCRequestRoute,
     organizationRoute.addChildren([
       organizationIndexRoute,
-      organizationOIDCRequestRoute,
       organizationSupportRoute,
       organizationSupportTicketRoute,
       organizationSubscriptionRoute,

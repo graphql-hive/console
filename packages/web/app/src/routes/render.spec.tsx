@@ -51,8 +51,10 @@ const pages: Array<{ url: string; current: string }> = [
   { url: ORGANIZATION, current: 'Overview' },
   { url: `${ORGANIZATION}?search=gate&sortBy=name`, current: 'Overview' },
   { url: `${ORGANIZATION}/view/members`, current: 'Members' },
-  // Organization settings renders its layout only once its own query resolves
-  // (organization-settings.tsx:604); it joins this table with the organization layout route.
+  { url: `${ORGANIZATION}/view/settings`, current: 'Settings' },
+  { url: `${ORGANIZATION}/view/support`, current: 'Support' },
+  { url: `${ORGANIZATION}/view/support/ticket/ticket-1`, current: 'Support' },
+  // The subscription pages redirect to the overview while Stripe is disabled, as it is here.
   { url: PROJECT, current: 'Targets' },
   { url: `${PROJECT}/view/alerts`, current: 'Alerts' },
   { url: `${PROJECT}/view/settings`, current: 'Settings' },
@@ -70,6 +72,19 @@ const pages: Array<{ url: string; current: string }> = [
 describe('chrome at every page', () => {
   beforeEach(() => {
     client.current = createTestClient(layoutFixtures());
+  });
+
+  // The header is owned by the layout route, so moving between sibling pages keeps the same DOM
+  // node; a remount would create a new one.
+  it('keeps the organization layout mounted across its pages', { timeout: 30_000 }, async () => {
+    const { router } = renderAtUrl(ORGANIZATION);
+    const header = await screen.findByRole('banner');
+    await router.navigate({ to: '/$organizationSlug/view/members', params: SLUGS });
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe(`${ORGANIZATION}/view/members`),
+    );
+    await screen.findByRole('link', { name: 'Members', current: 'page' });
+    expect(screen.getByRole('banner')).toBe(header);
   });
 
   for (const page of pages) {

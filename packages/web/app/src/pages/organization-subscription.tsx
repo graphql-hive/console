@@ -6,7 +6,7 @@ import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { PageLead } from '@/components/base/page-lead';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { BillingView } from '@/components/organization/billing/Billing';
 import { CurrencyFormatter } from '@/components/organization/billing/helpers';
 import { InvoicesList } from '@/components/organization/billing/InvoicesList';
@@ -111,11 +111,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
   const end = endOfMonth(today);
 
   return (
-    <OrganizationLayout
-      page={Page.Subscription}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
+    <LayoutContent className="flex flex-col gap-y-10">
       <div className="grow">
         <div className="flex flex-row items-center justify-between py-6">
           <PageLead title="Your subscription" description="Explore your current plan and usage." />
@@ -252,7 +248,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
           ) : null}
         </div>
       </div>
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 
