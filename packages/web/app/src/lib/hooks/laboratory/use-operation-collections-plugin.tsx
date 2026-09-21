@@ -24,12 +24,14 @@ import { useClipboard, useToggle } from '@/lib/hooks';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { cn } from '@/lib/utils';
 import { GraphiQLPlugin, useEditorContext, usePluginContext } from '@graphiql/react';
-import { useParams, useRouter } from '@tanstack/react-router';
+import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { useCollections } from './use-collections';
 import { useCurrentOperation } from './use-current-operation';
 import { useSyncOperationState } from './use-sync-operation-state';
 
 // The accordion hands out no ref, so the operation opened from the URL is found by id instead.
+const targetRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug');
+
 const COLLECTIONS_ID = 'laboratory-collections';
 
 const CreateOperationMutation = graphql(`
@@ -110,9 +112,7 @@ export const operationCollectionsPlugin: GraphiQLPlugin = {
 };
 
 export function Content() {
-  const { organizationSlug, projectSlug, targetSlug } = useParams({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug',
-  });
+  const { organizationSlug, projectSlug, targetSlug } = targetRoute.useParams();
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
     variables: {

@@ -29,11 +29,12 @@ import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
+
+const membersRoute = getRouteApi('/authenticated/$organizationSlug/view/members');
 
 const MemberGroups_GroupFragment = graphql(`
   fragment MemberGroups_GroupFragment on Group {
@@ -620,7 +621,7 @@ export function OrganizationMembers(props: {
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null]);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const search = organizationMembersRoute.useSearch();
+  const search = membersRoute.useSearch();
 
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
   const members = useFragment(

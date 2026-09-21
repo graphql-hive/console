@@ -28,11 +28,13 @@ import { usePagedConnection } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
-import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
 import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
+
+const tracesRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces');
 
 const chartConfig = {
   ok: {
@@ -244,9 +246,7 @@ const TracesList = memo(function TracesList(
   const router = useRouter();
   const data = useFragment(TracesList_Trace, props.traces);
 
-  const targetRef = useParams({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces',
-  });
+  const targetRef = tracesRoute.useParams();
 
   const rows = useMemo(() => [...data], [data]);
 
@@ -953,9 +953,7 @@ export function TargetTracesPageContent(
       range: Preset['range'] | null;
     },
 ) {
-  const targetRef = useParams({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces',
-  });
+  const targetRef = tracesRoute.useParams();
 
   const dateRangeController = useDateRangeController({
     // TODO: ressolve retention from account

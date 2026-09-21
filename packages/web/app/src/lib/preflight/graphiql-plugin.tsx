@@ -25,7 +25,7 @@ import { useLocalStorage, useLocalStorageJson, useToggle } from '@/lib/hooks';
 import { GraphiQLPlugin } from '@graphiql/react';
 import { Editor as MonacoEditor, OnMount, type Monaco } from '@monaco-editor/react';
 import { captureException } from '@sentry/react';
-import { useParams } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 import { Kit } from '../kit';
 import { cn } from '../utils';
 import labApiDefinitionRaw from './lab-api-declaration?raw';
@@ -51,6 +51,8 @@ export const preflightPlugin: GraphiQLPlugin = {
   title: 'Preflight Script',
   content: PreflightContent,
 };
+
+const targetRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug');
 
 const classes = {
   monaco: clsx('*:bg-[#10151f]'),
@@ -482,9 +484,7 @@ function PreflightContent() {
 
   const [showModal, toggleShowModal] = useToggle();
   const [modalSession, setModalSession] = useState(0);
-  const params = useParams({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug',
-  });
+  const params = targetRoute.useParams();
 
   const [, mutate] = useMutation(UpdatePreflightScriptMutation);
 

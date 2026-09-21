@@ -15,7 +15,7 @@ import { MetricAlertRuleSeverity, MetricAlertRuleType } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useRollingNow } from '@/lib/hooks/use-rolling-now';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { getRouteApi, useNavigate } from '@tanstack/react-router';
 
 const TargetAlertsActivityPage_RetentionQuery = graphql(`
   query TargetAlertsActivityPage_RetentionQuery(
@@ -107,7 +107,9 @@ const presetLast1Hour: Preset = {
   range: { from: 'now-1h', to: 'now' },
 };
 
-const ACTIVITY_ROUTE = '/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/activity';
+const activityRoute = getRouteApi(
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/activity',
+);
 
 export function TargetAlertsActivityPage(props: {
   organizationSlug: string;
@@ -146,7 +148,7 @@ function ActivityView(props: {
   retentionInDays: number;
 }) {
   const { organizationSlug, projectSlug, targetSlug, retentionInDays } = props;
-  const search = useSearch({ from: ACTIVITY_ROUTE });
+  const search = activityRoute.useSearch();
   const navigate = useNavigate();
 
   // Populate URL with the default range on first load so refresh and shared

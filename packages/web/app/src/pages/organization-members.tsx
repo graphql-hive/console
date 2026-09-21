@@ -13,7 +13,9 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import { organizationMembersRoute } from '../router';
+import { getRouteApi } from '@tanstack/react-router';
+
+const membersRoute = getRouteApi('/authenticated/$organizationSlug/view/members');
 
 const OrganizationMembersPage_OrganizationFragment = graphql(`
   fragment OrganizationMembersPage_OrganizationFragment on Organization {
@@ -133,7 +135,7 @@ function OrganizationMembersPageContent(props: {
   page: SubPage;
   onPageChange(page: SubPage): void;
 }) {
-  const search = organizationMembersRoute.useSearch();
+  const search = membersRoute.useSearch();
   const [after, setAfter] = useState<string | null>(null);
 
   // Reset cursor when search changes

@@ -23,7 +23,11 @@ import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { getRouteApi, useNavigate } from '@tanstack/react-router';
+
+const insightsRoute = getRouteApi(
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/insights',
+);
 
 function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
   return {
@@ -117,9 +121,7 @@ function OperationsView({
   targetSlug: string;
   dataRetentionInDays: number;
 }): ReactElement {
-  const search = useSearch({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/insights',
-  });
+  const search = insightsRoute.useSearch();
   const navigate = useNavigate();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays,

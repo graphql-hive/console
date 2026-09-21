@@ -18,12 +18,14 @@ import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import {
+  getRouteApi,
   Outlet,
   Link as RouterLink,
   useNavigate,
   useParams,
-  useSearch,
 } from '@tanstack/react-router';
+
+const checksRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/checks');
 
 const SchemaChecks_NavigationQuery = graphql(`
   query SchemaChecks_NavigationQuery(
@@ -236,9 +238,7 @@ function useTargetCheckUrlParams() {
   const { schemaCheckId } = useParams({
     strict: false /* allows to read the $schemaCheckId param of its child route */,
   }) as { schemaCheckId?: string };
-  const search = useSearch({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/checks',
-  }) as {
+  const search = checksRoute.useSearch() as {
     filter_changed?: boolean;
     filter_failed?: boolean;
   };
