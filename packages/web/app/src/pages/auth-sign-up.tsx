@@ -234,6 +234,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                     <Button
                       variant="outline"
                       width="full"
+                      disabled={isPending}
                       render={
                         <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
                       }

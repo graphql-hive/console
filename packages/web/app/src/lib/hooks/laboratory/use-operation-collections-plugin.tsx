@@ -444,26 +444,30 @@ export function Content() {
       <div className="mb-5 flex items-center justify-between gap-1">
         <div className="graphiql-doc-explorer-title">Operations</div>
         {target?.viewerCanModifyLaboratory && (
-          <Tooltip
-            trigger={
-              <Button
-                variant="link"
-                data-cy="new-collection"
-                onClick={() => {
-                  if (collectionId) {
-                    setCollectionId('');
-                  }
-                  toggleCollectionModal();
-                }}
-              >
-                <span className="flex min-w-0 items-center gap-1">
-                  <PlusIcon className="size-4 shrink-0" />
-                  <span className="truncate">New collection</span>
-                </span>
-              </Button>
-            }
-            content="Create a new collection of GraphQL Operations"
-          />
+          // The flex item needs min-w-0 for the label inside to truncate; the button fills it.
+          <span className="flex min-w-0">
+            <Tooltip
+              trigger={
+                <Button
+                  variant="link"
+                  width="full"
+                  data-cy="new-collection"
+                  onClick={() => {
+                    if (collectionId) {
+                      setCollectionId('');
+                    }
+                    toggleCollectionModal();
+                  }}
+                >
+                  <span className="flex min-w-0 items-center gap-1">
+                    <PlusIcon className="size-4 shrink-0" />
+                    <span className="truncate">New collection</span>
+                  </span>
+                </Button>
+              }
+              content="Create a new collection of GraphQL Operations"
+            />
+          </span>
         )}
       </div>
       {loading ? (

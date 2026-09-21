@@ -172,7 +172,7 @@ function SupportTicket(props: {
                 params={{
                   organizationSlug: organization.slug,
                 }}
-                className="text-accent underline-offset-4 hover:underline"
+                className="text-accent text-lg font-semibold tracking-tight underline-offset-4 hover:underline"
               >
                 Tickets
               </Link>
