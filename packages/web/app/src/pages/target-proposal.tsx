@@ -4,9 +4,9 @@ import { ChartPie, CheckIcon, FileDiffIcon, List, PencilIcon, XIcon } from 'luci
 import { useMutation, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import {
-  SecondaryNavigation,
-  type SecondaryNavigationItem,
-} from '@/components/base/navigation/secondary-navigation/secondary-navigation';
+  Navigation,
+  type NavigationItem,
+} from '@/components/base/navigation/navigation/navigation';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -524,24 +524,26 @@ function TabbedContent(props: {
     },
   } as const;
   const versionSearch = props.version ? { version: props.version } : {};
-  const sections: SecondaryNavigationItem[] = [
+  const sections: NavigationItem[] = [
     {
       ...proposalLink,
-      value: Tab.DETAILS,
+      id: Tab.DETAILS,
       label: 'Details',
       icon: List,
-      search: { page: 'details', ...versionSearch },
+      // The default section has no marker in the URL.
+      search: { page: undefined, ...versionSearch },
+      explicitUndefined: true,
     },
     {
       ...proposalLink,
-      value: Tab.SCHEMA,
+      id: Tab.SCHEMA,
       label: 'Schema',
       icon: FileDiffIcon,
       search: { page: 'schema', ...versionSearch },
     },
     {
       ...proposalLink,
-      value: Tab.SUPERGRAPH,
+      id: Tab.SUPERGRAPH,
       label: 'Supergraph Preview',
       icon: GraphQLIcon,
       visible: props.isDistributedGraph,
@@ -549,19 +551,19 @@ function TabbedContent(props: {
     },
     {
       ...proposalLink,
-      value: Tab.CHECKS,
+      id: Tab.CHECKS,
       label: 'Checks',
       icon: ChartPie,
       search: { page: 'checks', ...versionSearch },
     },
     // Edit always refers to the latest version, so it carries no version.
-    { ...proposalLink, value: Tab.EDIT, label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
+    { ...proposalLink, id: Tab.EDIT, label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
   ];
 
   return (
     <div className="w-full">
       <div className="border-neutral-5 border-b">
-        <SecondaryNavigation aria-label="Proposal" value={page} items={sections} size="sm" />
+        <Navigation aria-label="Proposal" items={sections} size="sm" />
       </div>
       <div className="flex grow flex-row pt-4">
         {page === Tab.DETAILS && <TargetProposalDetailsPage {...props} />}

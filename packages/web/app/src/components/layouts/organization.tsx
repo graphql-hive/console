@@ -64,7 +64,6 @@ const OrganizationLayoutQuery = graphql(`
 
 export function OrganizationLayout({
   children,
-  page,
   className,
   organizationSlug,
   minimal,
@@ -113,27 +112,26 @@ export function OrganizationLayout({
         />
       </Header>
       <SecondaryNavigation
-        page={page}
         loading={!currentOrganization}
         links={
           currentOrganization
             ? [
                 {
-                  value: Page.Overview,
+                  id: Page.Overview,
                   label: 'Overview',
                   to: '/$organizationSlug',
                   params: { organizationSlug: currentOrganization.slug },
+                  exact: true,
                 },
                 {
-                  value: Page.Members,
+                  id: Page.Members,
                   label: 'Members',
                   visible: currentOrganization.viewerCanSeeMembers,
                   to: '/$organizationSlug/view/members',
                   params: { organizationSlug: currentOrganization.slug },
-                  search: { page: 'list' },
                 },
                 {
-                  value: Page.Settings,
+                  id: Page.Settings,
                   label: 'Settings',
                   visible:
                     currentOrganization.viewerCanAccessSettings ||
@@ -143,14 +141,14 @@ export function OrganizationLayout({
                   params: { organizationSlug: currentOrganization.slug },
                 },
                 {
-                  value: Page.Support,
+                  id: Page.Support,
                   label: 'Support',
                   visible: currentOrganization.viewerCanManageSupportTickets,
                   to: '/$organizationSlug/view/support',
                   params: { organizationSlug: currentOrganization.slug },
                 },
                 {
-                  value: Page.Subscription,
+                  id: Page.Subscription,
                   label: 'Subscription',
                   visible: getIsStripeEnabled() && currentOrganization.viewerCanDescribeBilling,
                   to: '/$organizationSlug/view/subscription',

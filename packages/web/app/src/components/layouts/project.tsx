@@ -59,7 +59,6 @@ const ProjectLayoutQuery = graphql(`
 
 export function ProjectLayout({
   children,
-  page,
   className,
   organizationSlug,
   projectSlug,
@@ -115,26 +114,26 @@ export function ProjectLayout({
       ) : (
         <>
           <SecondaryNavigation
-            page={page}
             loading={!currentOrganization || !currentProject}
             links={
               currentOrganization && currentProject
                 ? [
                     {
-                      value: Page.Targets,
+                      id: Page.Targets,
                       label: 'Targets',
                       to: '/$organizationSlug/$projectSlug',
                       params,
+                      exact: true,
                     },
                     {
-                      value: Page.Alerts,
+                      id: Page.Alerts,
                       label: 'Alerts',
                       visible: currentProject.viewerCanModifyAlerts,
                       to: '/$organizationSlug/$projectSlug/view/alerts',
                       params,
                     },
                     {
-                      value: Page.Settings,
+                      id: Page.Settings,
                       label: 'Settings',
                       visible:
                         currentProject.viewerCanModifySettings ||

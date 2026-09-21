@@ -74,7 +74,6 @@ const TargetLayoutQuery = graphql(`
 
 export const TargetLayout = ({
   children,
-  page,
   className,
   organizationSlug,
   projectSlug,
@@ -142,31 +141,31 @@ export const TargetLayout = ({
       ) : (
         <>
           <SecondaryNavigation
-            page={page}
             loading={!currentOrganization || !currentProject || !currentTarget}
             links={
               currentOrganization && currentProject && currentTarget
                 ? [
                     {
-                      value: Page.Schema,
+                      id: Page.Schema,
                       label: 'Schema',
                       to: '/$organizationSlug/$projectSlug/$targetSlug',
                       params,
+                      exact: true,
                     },
                     {
-                      value: Page.Checks,
+                      id: Page.Checks,
                       label: 'Checks',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
                       params,
                     },
                     {
-                      value: Page.Explorer,
+                      id: Page.Explorer,
                       label: 'Explorer',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
                       params,
                     },
                     {
-                      value: Page.History,
+                      id: Page.History,
                       label: 'History',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
                       params: {
@@ -175,49 +174,49 @@ export const TargetLayout = ({
                       },
                     },
                     {
-                      value: Page.Insights,
+                      id: Page.Insights,
                       label: 'Insights',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
                       params,
                       search: {},
                     },
                     {
-                      value: Page.Traces,
+                      id: Page.Traces,
                       label: 'Traces',
                       visible: currentTarget.viewerCanAccessTraces,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
                       params,
                     },
                     {
-                      value: Page.Apps,
+                      id: Page.Apps,
                       label: 'Apps',
                       visible: currentTarget.viewerCanViewAppDeployments,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
                       params,
                     },
                     {
-                      value: Page.Laboratory,
+                      id: Page.Laboratory,
                       label: 'Laboratory',
                       visible: currentTarget.viewerCanViewLaboratory,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/laboratory',
                       params,
                     },
                     {
-                      value: Page.Proposals,
+                      id: Page.Proposals,
                       label: 'Proposals',
                       visible: currentTarget.viewerCanViewSchemaProposals,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
                       params,
                     },
                     {
-                      value: Page.Alerts,
+                      id: Page.Alerts,
                       label: 'Alerts',
                       visible: currentTarget.viewerCanUseMetricAlertRules,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
                       params,
                     },
                     {
-                      value: Page.Settings,
+                      id: Page.Settings,
                       label: 'Settings',
                       visible: currentTarget.viewerCanAccessSettings,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/settings',

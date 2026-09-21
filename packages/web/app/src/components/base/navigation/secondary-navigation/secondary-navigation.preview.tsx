@@ -1,7 +1,5 @@
 import { GitCompare, Layers, List, Pencil, PieChart } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
-import { SecondaryNavigation as SecondaryNavigationBar } from '@/components/navigation/secondary-navigation';
-import { Button } from '../../button/button';
 import { SecondaryNavigation, type SecondaryNavigationItem } from './secondary-navigation';
 
 export const nav: NavPath = 'Base/Navigation/SecondaryNavigation';
@@ -10,7 +8,8 @@ export const nav: NavPath = 'Base/Navigation/SecondaryNavigation';
  * Links between the pages of one area. A `<nav>` of router links with `aria-current` on the
  * current one; each item is a `Link`'s props plus a value and label. Mounted by the
  * sub-navigation bar (through the app composite in `navigation/secondary-navigation`), the
- * proposal page sections and the explorer filter. The foundry router resolves the app's routes,
+ * proposal page sections and the explorer filter, all of which now mount `Navigation`; kept for
+ * comparison until it is deleted. The foundry router resolves the app's routes,
  * so the links here are real.
  */
 
@@ -48,17 +47,6 @@ const PROPOSAL_ITEMS: SecondaryNavigationItem[] = [
   { value: 'checks', label: 'Checks', icon: PieChart },
   { value: 'edit', label: 'Edit', icon: Pencil },
 ].map(item => ({ ...item, to: '/$organizationSlug/$projectSlug/$targetSlug', params: TARGET }));
-
-/** The bar under every org, project and target header: the app composite, with the layout's action at its edge. */
-export const Bar = createPreview(() => (
-  <div className="-mx-6">
-    <SecondaryNavigationBar
-      page="checks"
-      links={TARGET_ITEMS}
-      actions={<Button variant="ghost">Connect to CDN</Button>}
-    />
-  </div>
-));
 
 /** While the layout still loads the org, project and target, placeholders hold the height. */
 export const Loading = createPreview(() => <SecondaryNavigation items={TARGET_ITEMS} loading />);

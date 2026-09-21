@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import {
-  SecondaryNavigation,
-  type SecondaryNavigationItem,
-} from '@/components/base/navigation/secondary-navigation/secondary-navigation';
+  Navigation,
+  type NavigationItem,
+} from '@/components/base/navigation/navigation/navigation';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useLocation } from '@tanstack/react-router';
 import { usePeriodSelector } from './provider';
@@ -32,7 +32,7 @@ export function DateRangeFilter() {
 const variants: Array<{
   value: 'all' | 'unused' | 'deprecated';
   label: string;
-  pathname: NonNullable<SecondaryNavigationItem['to']>;
+  pathname: NonNullable<NavigationItem['to']>;
   tooltip: string;
 }> = [
   {
@@ -63,16 +63,17 @@ export function SchemaVariantFilter(props: {
 }) {
   const { search } = useLocation();
   return (
-    <SecondaryNavigation
+    <Navigation
       aria-label="Type filter"
       variant="pill"
       size="sm"
-      value={props.variant}
       items={variants.map(variant => ({
-        value: variant.value,
+        id: variant.value,
         label: variant.label,
         tooltip: variant.tooltip,
         to: variant.pathname,
+        // All is the parent path of the other two.
+        exact: variant.value === 'all',
         params: {
           organizationSlug: props.organizationSlug,
           projectSlug: props.projectSlug,
