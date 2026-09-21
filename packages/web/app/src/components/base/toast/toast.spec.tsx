@@ -35,7 +35,7 @@ describe('Toast', () => {
     expect(screen.queryByRole('alertdialog', { hidden: true })).toBeNull();
   });
 
-  it('lets a default toast go on its own', () => {
+  it('hides after 5 seconds if not interacted with', () => {
     vi.useFakeTimers();
     render(
       <ToastProvider>
@@ -47,7 +47,7 @@ describe('Toast', () => {
     });
     expect(screen.getByRole('dialog', { hidden: true })).toBeTruthy();
     act(() => {
-      vi.advanceTimersByTime(5500);
+      vi.advanceTimersByTime(5001);
     });
     expect(screen.queryByRole('dialog', { hidden: true })).toBeNull();
     vi.useRealTimers();
