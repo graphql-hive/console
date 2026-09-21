@@ -1,9 +1,11 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import {
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
+  RouterProvider,
+  type AnyRouter,
 } from '@tanstack/react-router';
 
 /**
@@ -50,3 +52,26 @@ export const previewRouter = createRouter({
   routeTree,
   history: createMemoryHistory({ initialEntries: ['/'] }),
 });
+
+/** A stand-in router positioned at `path`, for components whose rendering depends on the URL. */
+export function createPreviewRouter(path: string) {
+  return createRouter({
+    routeTree,
+    history: createMemoryHistory({ initialEntries: [path] }),
+  });
+}
+
+/**
+ * Renders `children` inside their own stand-in router at `path`, nested in whatever router the
+ * preview or spec already has: `Link` reads the nearest one, so a story can show what a nav looks
+ * like on a given page. The cast steps around the app's registered router type, which the
+ * stand-in does not share.
+ */
+export function RouterAt(props: { path: string; children: ReactNode }) {
+  const [router] = useState(() => createPreviewRouter(props.path));
+  return (
+    <PreviewSlotProvider value={props.children}>
+      <RouterProvider router={router as AnyRouter} />
+    </PreviewSlotProvider>
+  );
+}
