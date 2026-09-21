@@ -18,7 +18,7 @@ import { createRootRoute, createRoute, Outlet, useRouter } from '@tanstack/react
 const queryClient = new QueryClient();
 
 const LazyTanStackRouterDevtools = lazy(() =>
-  import('@tanstack/router-devtools').then(({ TanStackRouterDevtools }) => ({
+  import('@tanstack/react-router-devtools').then(({ TanStackRouterDevtools }) => ({
     default: TanStackRouterDevtools,
   })),
 );

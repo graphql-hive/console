@@ -15,6 +15,7 @@ export const StageFilter = ({ selectedStages }: { selectedStages: string[] }) =>
 
   const setStages = (updated: string[] | undefined) =>
     void router.navigate({
+      to: '.',
       search: { ...search, stage: updated },
     });
 

@@ -36,7 +36,9 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from '@tanstack/react-router';
+import { getRouteApi, useRouter } from '@tanstack/react-router';
+
+const settingsRoute = getRouteApi('/authenticated/$organizationSlug/view/settings');
 
 const DeleteSlackIntegrationMutation = graphql(`
   mutation Integrations_DeleteSlackIntegration($input: OrganizationSelectorInput!) {
@@ -527,6 +529,7 @@ function SettingsPageContent(props: {
   page?: OrganizationSettingsSubPage;
 }) {
   const router = useRouter();
+  const navigate = settingsRoute.useNavigate();
   const [query] = useQuery({
     query: OrganizationSettingsPageQuery,
     variables: {
@@ -616,7 +619,7 @@ function SettingsPageContent(props: {
                 key={subPage.key}
                 isActive={resolvedPage.key === subPage.key}
                 onClick={() => {
-                  void router.navigate({
+                  void navigate({
                     search: {
                       page: subPage.key,
                     },

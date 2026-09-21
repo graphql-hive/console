@@ -102,7 +102,7 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
     [isSelecting],
   );
 
-  const navigate = useNavigate();
+  const navigate = tracesRoute.useNavigate();
 
   // Handle mouse up event to end selection
   const handleMouseUp = useCallback(() => {
@@ -244,6 +244,7 @@ const TracesList = memo(function TracesList(
   },
 ) {
   const router = useRouter();
+  const navigate = tracesRoute.useNavigate();
   const data = useFragment(TracesList_Trace, props.traces);
 
   const targetRef = tracesRoute.useParams();
@@ -482,7 +483,7 @@ const TracesList = memo(function TracesList(
           if (!next) {
             return;
           }
-          void router.navigate({
+          void navigate({
             search(params) {
               return { ...params, sort: next as SortState };
             },
@@ -549,12 +550,13 @@ function Filters(
 
   // Stores the update handlers in a ref to prevent unnecessary re-renders
   const router = useRouter();
+  const navigate = tracesRoute.useNavigate();
   const updateHandlersRef = useRef(new Map<FilterKeys, (value: any) => void>());
   const updateFilter = useCallback(
     <$Key extends FilterKeys>(key: $Key): ((value: FilterState[$Key]) => void) => {
       if (!updateHandlersRef.current.has(key)) {
         const handler = (value: FilterState[$Key]) => {
-          void router.navigate({
+          void navigate({
             search(params) {
               return {
                 ...params,
@@ -574,7 +576,7 @@ function Filters(
   );
 
   const resetFilters = () => {
-    void router.navigate({
+    void navigate({
       search(params) {
         return {
           ...params,

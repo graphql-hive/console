@@ -112,7 +112,9 @@ export function UpdateFilterButton({
       align="start"
       title="Update saved filter"
       description={`This will overwrite the current configuration of "${activeView.name}" with your current filter selections.`}
-      trigger={<BaseButton label={`Update "${activeView.name}"`} variant="muted-action" />}
+      trigger={
+        <BaseButton label={`Update "${activeView.name}"`} variant="muted-action" size="compact" />
+      }
       content={
         <div className="flex gap-2">
           <BaseButton

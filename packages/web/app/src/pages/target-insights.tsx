@@ -122,7 +122,7 @@ function OperationsView({
   dataRetentionInDays: number;
 }): ReactElement {
   const search = insightsRoute.useSearch();
-  const navigate = useNavigate();
+  const navigate = insightsRoute.useNavigate();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays,
     defaultPreset: presetLast7Days,

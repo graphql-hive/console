@@ -5,6 +5,9 @@ import { targetRoute } from './route';
 
 const TargetSettingRouteSearch = z.object({
   page: TargetSettingsPageEnum.default('general').optional(),
+  // The CDN tokens section drives its create/delete modals from the URL.
+  cdn: z.enum(['create', 'delete']).optional(),
+  id: z.string().optional(),
 });
 
 export const targetSettingsRoute = createRoute({

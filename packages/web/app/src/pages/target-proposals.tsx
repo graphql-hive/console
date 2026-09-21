@@ -15,7 +15,11 @@ import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { cn } from '@/lib/utils';
-import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
+import { getRouteApi, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
+
+const proposalsRoute = getRouteApi(
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/proposals',
+);
 
 const TargetProposalsQuery = graphql(`
   query TargetProposalsQuery(
@@ -141,8 +145,9 @@ const ProposalsQuery = graphql(`
 function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
   const [pageVariables, setPageVariables] = useState([{ first: 20, after: null as string | null }]);
   const router = useRouter();
+  const navigate = proposalsRoute.useNavigate();
   const reset = () => {
-    void router.navigate({
+    void navigate({
       search: { stage: undefined, user: undefined },
     });
   };

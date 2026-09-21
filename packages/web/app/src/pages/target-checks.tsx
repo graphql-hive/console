@@ -389,7 +389,7 @@ function SchemaChecksSideNav(props: {
   targetSlug: string;
   children: ReactNode;
 }) {
-  const navigate = useNavigate();
+  const navigate = checksRoute.useNavigate();
   const { showOnlyChanged, showOnlyFailed, rawSearch } = useTargetCheckUrlParams();
 
   const handleShowOnlyFilterChange = () => {

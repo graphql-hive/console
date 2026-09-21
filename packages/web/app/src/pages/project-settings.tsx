@@ -30,7 +30,9 @@ import { useRedirect } from '@/lib/access/common';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from '@tanstack/react-router';
+import { getRouteApi, useRouter } from '@tanstack/react-router';
+
+const settingsRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/view/settings');
 
 const GithubIntegration_GithubIntegrationDetailsQuery = graphql(`
   query getGitHubIntegrationDetails($organizationSlug: String!) {
@@ -440,6 +442,7 @@ function ProjectSettingsContent(props: {
   page?: ProjectSettingsSubPage;
 }) {
   const router = useRouter();
+  const navigate = settingsRoute.useNavigate();
   const [query] = useQuery({
     query: ProjectSettingsPageQuery,
     variables: {
@@ -532,7 +535,7 @@ function ProjectSettingsContent(props: {
             key={subPage.key}
             isActive={resolvedPage.key === subPage.key}
             onClick={() => {
-              void router.navigate({
+              void navigate({
                 search: {
                   page: subPage.key,
                 },

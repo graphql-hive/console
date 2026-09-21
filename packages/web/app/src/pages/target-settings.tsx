@@ -70,8 +70,12 @@ import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+
+const settingsRoute = getRouteApi(
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings',
+);
 
 /**
  * We previously used a different character for token masking.
@@ -1298,6 +1302,7 @@ function TargetSettingsContent(props: {
   page?: TargetSettingsSubPage;
 }) {
   const router = useRouter();
+  const navigate = settingsRoute.useNavigate();
   const [query] = useQuery({
     query: TargetSettingsPageQuery,
     variables: {
@@ -1416,7 +1421,7 @@ function TargetSettingsContent(props: {
               dataCy={`target-settings-${subPage.key}-link`}
               isActive={resolvedPage.key === subPage.key}
               onClick={() => {
-                void router.navigate({
+                void navigate({
                   search: {
                     page: subPage.key,
                   },

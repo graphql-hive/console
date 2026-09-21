@@ -13,7 +13,9 @@ import { QueryError } from '@/components/ui/query-error';
 import { GraphQLBlock, GraphQLHighlight } from '@/components/v2/graphql-block';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
-import { Link, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
+
+const schemaRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/');
 
 type CompositeSchema = Extract<
   DocumentType<typeof SchemaView_SchemaFragment>,
@@ -151,6 +153,7 @@ function SchemaView(props: {
   const project = useFragment(SchemaView_ProjectFragment, props.project);
   const target = useFragment(SchemaView_TargetFragment, props.target);
   const router = useRouter();
+  const navigate = schemaRoute.useNavigate();
   const selectedServiceName =
     'service' in router.latestLocation.search &&
     typeof router.latestLocation.search.service === 'string'
@@ -158,7 +161,7 @@ function SchemaView(props: {
       : null;
 
   const reset = () => {
-    void router.navigate({
+    void navigate({
       search: {},
     });
   };
@@ -203,7 +206,7 @@ function SchemaView(props: {
                 }))}
                 value={selectedServiceName ?? undefined}
                 onValueChange={serviceName => {
-                  void router.navigate({
+                  void navigate({
                     search: { service: serviceName },
                   });
                 }}

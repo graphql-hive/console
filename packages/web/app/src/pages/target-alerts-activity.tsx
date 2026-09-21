@@ -149,7 +149,7 @@ function ActivityView(props: {
 }) {
   const { organizationSlug, projectSlug, targetSlug, retentionInDays } = props;
   const search = activityRoute.useSearch();
-  const navigate = useNavigate();
+  const navigate = activityRoute.useNavigate();
 
   // Populate URL with the default range on first load so refresh and shared
   // links stay in sync. Skipped when from/to are already present.

@@ -15,7 +15,7 @@ import { SubPageLayout } from '@/components/ui/page-content-layout';
 import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   CDN_TOKEN_FORM_ID,
@@ -23,6 +23,10 @@ import {
   CdnTokenFormSchema,
   type CdnTokenFormValues,
 } from './cdn-token-form';
+
+const settingsRoute = getRouteApi(
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings',
+);
 
 const CDNAccessTokenCreateMutation = graphql(`
   mutation CDNAccessTokens_CDNAccessTokenCreateMutation($input: CreateCdnAccessTokenInput!) {
@@ -280,6 +284,7 @@ export function CDNAccessTokens(props: {
 }): React.ReactElement {
   const [endCursors, setEndCursors] = useState<Array<string>>([]);
   const router = useRouter();
+  const navigate = settingsRoute.useNavigate();
   const searchParamsResult = CDNSearchParams.safeParse(router.latestLocation.search);
 
   if (!searchParamsResult.success) {
@@ -289,7 +294,7 @@ export function CDNAccessTokens(props: {
   const searchParams = searchParamsResult.data ?? { cdn: undefined };
 
   const closeModal = () => {
-    void router.navigate({
+    void navigate({
       search: {
         page: 'cdn',
       },
@@ -329,7 +334,14 @@ export function CDNAccessTokens(props: {
       />
 
       <div className="my-3.5 flex justify-between">
-        <Button render={<Link search={{ page: 'cdn', cdn: 'create' }} />}>
+        <Button
+          render={
+            <Link
+              from="/$organizationSlug/$projectSlug/$targetSlug/settings"
+              search={{ page: 'cdn', cdn: 'create' }}
+            />
+          }
+        >
           Create new CDN token
         </Button>
       </div>
@@ -418,6 +430,7 @@ function CdnTokenCreatedCell(props: { token: CdnTokenNode }) {
 function CdnTokenDeleteCell(props: { token: CdnTokenNode }) {
   const node = useFragment(CDNAccessTokenRowFragment, props.token);
   const router = useRouter();
+  const navigate = settingsRoute.useNavigate();
   return (
     <DataTableCell
       kind="icon-button"
@@ -425,7 +438,7 @@ function CdnTokenDeleteCell(props: { token: CdnTokenNode }) {
       label={`Delete ${node.alias}`}
       destructive
       onClick={() => {
-        void router.navigate({
+        void navigate({
           search: {
             page: 'cdn',
             cdn: 'delete',

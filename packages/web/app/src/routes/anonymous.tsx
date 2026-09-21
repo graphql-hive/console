@@ -122,7 +122,13 @@ export const authCallbackRoute = createRoute({
 export const authSignUpRoute = createRoute({
   getParentRoute: () => authRoute,
   path: 'sign-up',
-  component: AuthSignUpPage,
+  validateSearch(search) {
+    return AuthSharedSearch.parse(search);
+  },
+  component: () => {
+    const { redirectToPath } = authSignUpRoute.useSearch();
+    return <AuthSignUpPage redirectToPath={redirectToPath} />;
+  },
 });
 
 const AuthVerifyEmailSearch = z.union([

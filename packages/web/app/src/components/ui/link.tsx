@@ -37,7 +37,6 @@ export const Link = <TTo extends string = '.'>({
   }
 
   return (
-    // @ts-expect-error It's a legacy component and I don't want to spend time fixing a type error
     <RouterLink href="" className={cn(linkVariants({ variant, className }))} {...props}>
       {children}
     </RouterLink>

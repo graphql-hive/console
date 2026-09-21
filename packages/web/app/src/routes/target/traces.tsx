@@ -10,6 +10,7 @@ import {
   TargetTracesSort,
 } from '@/pages/target-traces';
 import { createRoute } from '@tanstack/react-router';
+import { zodValidator } from '@tanstack/zod-adapter';
 import { targetRoute } from './route';
 
 const TargetTracesRouteSearch = z.object({
@@ -22,7 +23,7 @@ const TargetTracesRouteSearch = z.object({
 export const targetTracesRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'traces',
-  validateSearch: TargetTracesRouteSearch.parse,
+  validateSearch: zodValidator(TargetTracesRouteSearch),
   component: function TargetTracesRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetTracesRoute.useParams();
     const {

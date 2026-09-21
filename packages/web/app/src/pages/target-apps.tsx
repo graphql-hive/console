@@ -13,8 +13,10 @@ import { graphql, useFragment, type DocumentType } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { usePagedConnection } from '@/lib/hooks';
-import { useNavigate } from '@tanstack/react-router';
+import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+
+const appsRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/apps');
 
 export const TargetAppsSortSchema = z.object({
   field: z.enum(['CREATED_AT', 'ACTIVATED_AT', 'LAST_USED']),
@@ -127,7 +129,7 @@ function TargetAppsView(props: {
   targetSlug: string;
   sorting: SortState;
 }) {
-  const navigate = useNavigate();
+  const navigate = appsRoute.useNavigate();
   const sortVariable = {
     field: props.sorting.field as AppDeploymentsSortField,
     direction: props.sorting.direction as SortDirectionType,

@@ -179,6 +179,7 @@ export function useExplorerFilterDimensions({
           placeholder: 'Find field',
           onChange: value => {
             void router.navigate({
+              to: '.',
               search: { ...searchParams, search: value === '' ? undefined : value },
               replace: true,
             });

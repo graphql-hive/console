@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { TargetPage } from '@/pages/target';
 import { createRoute } from '@tanstack/react-router';
 import { authenticatedRoute } from '../authenticated';
@@ -10,6 +11,9 @@ export const targetRoute = createRoute({
 export const targetIndexRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: '/',
+  validateSearch: z.object({
+    service: z.string().optional(),
+  }),
   component: function TargetRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetIndexRoute.useParams();
     return (

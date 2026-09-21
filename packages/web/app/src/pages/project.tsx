@@ -17,7 +17,9 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { subDays } from '@/lib/date-time';
 import { cn } from '@/lib/utils';
 import { UTCDate } from '@date-fns/utc';
-import { Link, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
+
+const projectIndexRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/');
 
 const TargetCard_TargetFragment = graphql(`
   fragment TargetCard_TargetFragment on Target {
@@ -102,6 +104,7 @@ const ProjectsPageContent = (
         : // if the sort order is not set, sort in descending order by default
           1;
   const router = useRouter();
+  const navigate = projectIndexRoute.useNavigate();
 
   const [query] = useQuery({
     query: ProjectOverviewPageQuery,
@@ -166,7 +169,7 @@ const ProjectsPageContent = (
 
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      void router.navigate({
+      void navigate({
         search(params) {
           return {
             ...params,
@@ -181,11 +184,11 @@ const ProjectsPageContent = (
 
   const onRequestsValueChange = useCallback(
     (value: string) => {
-      void router.navigate({
+      void navigate({
         search(params) {
           return {
             ...params,
-            sortBy: value,
+            sortBy: value as RouteSearchProps['sortBy'],
           };
         },
       });
@@ -194,7 +197,7 @@ const ProjectsPageContent = (
   );
 
   const onSortClick = useCallback(() => {
-    void router.navigate({
+    void navigate({
       search(params) {
         return {
           ...params,

@@ -16,7 +16,9 @@ import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { subDays } from '@/lib/date-time';
 import { UTCDate } from '@date-fns/utc';
-import { useRouter } from '@tanstack/react-router';
+import { getRouteApi, useRouter } from '@tanstack/react-router';
+
+const organizationIndexRoute = getRouteApi('/authenticated/$organizationSlug/');
 
 export const OrganizationIndexRouteSearch = z.object({
   search: z.string().optional(),
@@ -86,6 +88,7 @@ function OrganizationPageContent(
   }
 
   const router = useRouter();
+  const navigate = organizationIndexRoute.useNavigate();
 
   const [query] = useQuery({
     query: OrganizationProjectsPageQuery,
@@ -153,7 +156,7 @@ function OrganizationPageContent(
 
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      void router.navigate({
+      void navigate({
         search(params) {
           return {
             ...params,
@@ -168,11 +171,11 @@ function OrganizationPageContent(
 
   const onRequestsValueChange = useCallback(
     (value: string) => {
-      void router.navigate({
+      void navigate({
         search(params) {
           return {
             ...params,
-            sortBy: value,
+            sortBy: value as RouteSearchProps['sortBy'],
           };
         },
       });
@@ -181,7 +184,7 @@ function OrganizationPageContent(
   );
 
   const onSortClick = useCallback(() => {
-    void router.navigate({
+    void navigate({
       search(params) {
         return {
           ...params,

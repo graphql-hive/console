@@ -1,8 +1,7 @@
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { Heading } from '@/components/ui/heading';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { ReactNode } from '@tanstack/react-router';
 import { MemberRoleSelector } from '../../members/member-role-selector';
 import { ResourceSelection, ResourceSelector } from '../../members/resource-selector';
 import { SelectedPermissionOverview } from '../../members/selected-permission-overview';

@@ -9,8 +9,8 @@ import { targetRoute } from './route';
 export const targetChecksRoute = createRoute({
   validateSearch: zodValidator(
     z.object({
-      filter_changed: z.boolean().default(false).catch(false),
-      filter_failed: z.boolean().default(false).catch(false),
+      filter_changed: z.boolean().optional().catch(undefined),
+      filter_failed: z.boolean().optional().catch(undefined),
     }),
   ),
   getParentRoute: () => targetRoute,
