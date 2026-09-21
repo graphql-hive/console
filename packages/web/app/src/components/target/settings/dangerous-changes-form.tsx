@@ -113,7 +113,10 @@ export function DangerousChangesForm(props: {
         set.delete(type);
       }
     }
-    form.setValue('failingChangeTypes', Array.from(set), { shouldDirty: true });
+    form.setValue('failingChangeTypes', Array.from(set), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   }
 
   return (
@@ -132,7 +135,10 @@ export function DangerousChangesForm(props: {
                   id={`${id}-all`}
                   disabled={!props.enabled}
                   checked={field.value}
-                  onCheckedChange={checked => field.onChange(!!checked)}
+                  onCheckedChange={checked => {
+                    field.onChange(!!checked);
+                    void form.trigger('failingChangeTypes');
+                  }}
                 />
                 <Label htmlFor={`${id}-all`} variant="inline" label="Fail All Dangerous Changes" />
                 <span

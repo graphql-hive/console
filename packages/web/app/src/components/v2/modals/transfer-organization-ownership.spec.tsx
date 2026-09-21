@@ -106,6 +106,18 @@ describe('TransferOrganizationOwnershipModal', () => {
     expect(screen.queryByRole('option', { name: /Grace Hopper/ })).toBeNull();
   });
 
+  it('does not flag the owner as missing while the list is open', async () => {
+    renderModal();
+    await act(async () => {
+      fireEvent.click(ownerTrigger());
+    });
+    // Base UI moves focus into the popup as it opens, which blurs the trigger.
+    await act(async () => {
+      fireEvent.blur(ownerTrigger(), { relatedTarget: screen.getByRole('listbox') });
+    });
+    expect(screen.queryByText('New owner is not defined')).toBeNull();
+  });
+
   it('only accepts the organization slug as confirmation', async () => {
     renderModal();
     await pickOwner('Ada Lovelace');

@@ -190,7 +190,7 @@ describe('DangerousChangeTypeForm', () => {
     expect(saveButton().disabled).toBe(true);
   });
 
-  it('refuses an empty selection unless every dangerous change fails', async () => {
+  it('refuses an empty selection until a type or Fail All is picked', async () => {
     urql.mutate.mockResolvedValue({
       data: { updateTargetFailingDangerousChanges: { ok: { target: { id: 't-1' } }, error: null } },
     });
@@ -200,7 +200,13 @@ describe('DangerousChangeTypeForm', () => {
     expect(screen.getByText(/at least 1/)).toBeTruthy();
     expect(urql.mutate).not.toHaveBeenCalled();
 
+    await click(typeBox('ENUM_VALUE_ADDED'));
+    expect(screen.queryByText(/at least 1/)).toBeNull();
+    await click(typeBox('ENUM_VALUE_ADDED'));
+    expect(screen.getByText(/at least 1/)).toBeTruthy();
+
     await click(failAllBox());
+    expect(screen.queryByText(/at least 1/)).toBeNull();
     expect(typeBox('ENUM_VALUE_ADDED').getAttribute('aria-disabled')).toBe('true');
     await click(saveButton());
     expect(urql.mutate).toHaveBeenCalledTimes(1);
@@ -302,7 +308,7 @@ describe('AppDeploymentProtection', () => {
     urql.mutate.mockReset();
   });
 
-  it('starts from the saved configuration and rejects values out of range', async () => {
+  it('starts from the saved configuration and rejects bad or cleared values', async () => {
     renderSection();
     expect(numberInput('minDaysSinceCreation').value).toBe('3');
     expect(numberInput('minDaysInactive').value).toBe('30');
@@ -317,6 +323,8 @@ describe('AppDeploymentProtection', () => {
     expect(screen.getByText('Must be at least 1')).toBeTruthy();
     await setNumber('minDaysSinceCreation', '1.5');
     expect(screen.getByText('Must be a whole number')).toBeTruthy();
+    await setNumber('maxTrafficPercentage', '');
+    expect(screen.getByText('Required')).toBeTruthy();
     await save();
     expect(urql.mutate).not.toHaveBeenCalled();
   });
@@ -479,7 +487,7 @@ describe('BreakingChanges', () => {
     expect(targetBox('staging').getAttribute('aria-checked')).toBe('false');
   });
 
-  it('needs at least one target and keeps the period within retention', async () => {
+  it('needs a target and a percentage, and keeps the period within retention', async () => {
     renderSection();
     await act(async () => {
       fireEvent.click(targetBox('production'));
@@ -493,13 +501,15 @@ describe('BreakingChanges', () => {
     await act(async () => {
       fireEvent.click(targetBox('production'));
     });
+    await setNumber('percentage', '');
+    expect(screen.getByText('Required')).toBeTruthy();
     await setNumber('period', '45');
     expect(screen.getByText(/(less than or equal to|at most) 30/)).toBeTruthy();
     await save();
     expect(urql.mutate).not.toHaveBeenCalled();
   });
 
-  it('saves the configuration for the target and confirms', async () => {
+  it('takes only whole request counts, then saves the configuration and confirms', async () => {
     urql.mutate.mockResolvedValue({
       data: {
         updateTargetConditionalBreakingChangeConfiguration: {
@@ -512,7 +522,10 @@ describe('BreakingChanges', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('radio', { name: 'Total Operations' }));
     });
+    await setNumber('requestCount', '2.5');
+    expect(screen.getByText('Must be a whole number')).toBeTruthy();
     await setNumber('requestCount', '250');
+    expect(screen.queryByText('Must be a whole number')).toBeNull();
     await setNumber('period', '14');
     await act(async () => {
       fireEvent.click(targetBox('staging'));

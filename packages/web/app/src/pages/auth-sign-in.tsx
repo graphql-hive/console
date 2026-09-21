@@ -184,19 +184,19 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                 <SignInForm
                   form={form}
                   onSubmit={onSubmit}
-                  forgotPasswordLink={
+                  forgotPasswordLink={email => (
                     <Link
                       tabIndex={-1}
                       to="/auth/reset-password"
                       search={{
-                        email: form.getValues().email || undefined,
+                        email: email || undefined,
                         redirectToPath: props.redirectToPath,
                       }}
                       className="ml-auto inline-block text-sm underline"
                     >
                       Forgot your password?
                     </Link>
-                  }
+                  )}
                   submit={
                     <SignInButton previousSignIn={lastAuthMethod === 'email'}>
                       <Button type="submit" className="w-full" disabled={isPending}>

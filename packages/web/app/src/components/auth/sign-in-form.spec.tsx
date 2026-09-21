@@ -20,12 +20,22 @@ function Harness(props: { onSubmit: (values: SignInFormValues) => void; isPendin
           Sign in
         </button>
       }
-      forgotPasswordLink={<a href="#">Forgot your password?</a>}
+      forgotPasswordLink={email => <a href={`#reset:${email}`}>Forgot your password?</a>}
     />
   );
 }
 
 describe('SignInForm', () => {
+  it('hands the email typed so far to the reset link', async () => {
+    render(<Harness onSubmit={() => {}} />);
+    const link = () => screen.getByText('Forgot your password?');
+    expect(link().getAttribute('href')).toBe('#reset:');
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.com' } });
+    });
+    expect(link().getAttribute('href')).toBe('#reset:ada@example.com');
+  });
+
   it('rejects a bad email before calling out, then submits both fields', async () => {
     const onSubmit = vi.fn();
     render(<Harness onSubmit={onSubmit} />);

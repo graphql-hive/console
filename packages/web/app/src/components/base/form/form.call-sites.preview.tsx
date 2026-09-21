@@ -401,11 +401,11 @@ function SignInExample() {
           form={form}
           onSubmit={setSubmitted}
           submit={Submit('Sign in')}
-          forgotPasswordLink={
+          forgotPasswordLink={() => (
             <a href="#" tabIndex={-1} className="ml-auto inline-block text-sm underline">
               Forgot your password?
             </a>
-          }
+          )}
         />
         <Submitted values={submitted} />
       </Raised>

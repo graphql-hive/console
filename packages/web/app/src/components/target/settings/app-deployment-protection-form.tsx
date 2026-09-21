@@ -3,21 +3,26 @@ import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import { Select } from '@/components/base/floating/select/select';
 import { Form, FormField } from '@/components/base/form/form';
+import { numberInput } from '@/components/base/form/number-input';
 import { Input } from '@/components/base/input/input';
 import { Button } from '@/components/ui/button';
 import { AppDeploymentProtectionRuleLogicType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 
 const wholeDays = (min: number, minMessage: string) =>
-  z.coerce.number().int('Must be a whole number').min(min, minMessage);
+  numberInput(
+    z.number({ required_error: 'Required' }).int('Must be a whole number').min(min, minMessage),
+  );
 
 export const AppDeploymentProtectionFormSchema = z.object({
   minDaysSinceCreation: wholeDays(0, 'Must be at least 0'),
   minDaysInactive: wholeDays(0, 'Must be at least 0'),
-  maxTrafficPercentage: z.coerce
-    .number()
-    .min(0, 'Must be at least 0')
-    .max(100, 'Must be at most 100'),
+  maxTrafficPercentage: numberInput(
+    z
+      .number({ required_error: 'Required' })
+      .min(0, 'Must be at least 0')
+      .max(100, 'Must be at most 100'),
+  ),
   trafficPeriodDays: wholeDays(1, 'Must be at least 1'),
   ruleLogic: z.nativeEnum(AppDeploymentProtectionRuleLogicType),
 });
@@ -69,9 +74,10 @@ export function AppDeploymentProtectionForm(props: {
     );
   }
 
-  const messages = NUMBER_FIELDS.map(name => errors[name]?.message).filter(
-    (message): message is string => typeof message === 'string',
-  );
+  const messages = NUMBER_FIELDS.flatMap(name => {
+    const message = errors[name]?.message;
+    return typeof message === 'string' ? [{ name, message }] : [];
+  });
 
   return (
     <div className={cn('text-neutral-10', !props.enabled && 'pointer-events-none opacity-25')}>
@@ -125,8 +131,8 @@ export function AppDeploymentProtectionForm(props: {
         </div>
         {messages.length ? (
           <div className="text-critical space-y-1">
-            {messages.map(message => (
-              <div key={message}>{message}</div>
+            {messages.map(({ name, message }) => (
+              <div key={name}>{message}</div>
             ))}
           </div>
         ) : null}
