@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Form, FormField, FormItem, FormMessage } from '@/components/base/form/form';
+import { numberInput } from '@/components/base/form/number-input';
 import { Input } from '@/components/base/input/input';
 import { Label } from '@/components/base/label/label';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
@@ -11,38 +12,45 @@ import { Button } from '@/components/ui/button';
 import { BreakingChangeFormulaType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 
-/** The period is capped by the organization's usage retention, so the schema is built per page. */
+/**
+ * The period is capped by the organization's usage retention, so the schema is built per page.
+ * The percentage and the request count are each required only under their own formula.
+ */
 export function breakingChangesFormSchema(maxPeriod: number) {
   return z
     .object({
-      percentage: z.coerce.number(),
-      requestCount: z.coerce.number(),
-      period: z.coerce
-        .number()
-        .min(1, 'Must be at least 1 day')
-        .max(maxPeriod, `Must be at most ${maxPeriod} days`)
-        .refine(value => Number(value.toFixed(2)) === value, 'Invalid precision'),
+      percentage: numberInput(z.number().optional()),
+      requestCount: numberInput(z.number().int('Must be a whole number').optional()),
+      period: numberInput(
+        z
+          .number({ required_error: 'Required' })
+          .min(1, 'Must be at least 1 day')
+          .max(maxPeriod, `Must be at most ${maxPeriod} days`)
+          .refine(value => Number(value.toFixed(2)) === value, 'Invalid precision'),
+      ),
       breakingChangeFormula: z.nativeEnum(BreakingChangeFormulaType),
       targetIds: z.array(z.string()).min(1, 'Pick at least 1 target'),
       excludedClients: z.array(z.string()),
       excludedAppDeployments: z.array(z.string()),
     })
     .superRefine((values, ctx) => {
-      if (
-        values.breakingChangeFormula === BreakingChangeFormulaType.Percentage &&
-        (values.percentage < 0 || values.percentage > 100)
-      ) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['percentage'],
-          message: 'Must be between 0 and 100',
-        });
+      if (values.breakingChangeFormula === BreakingChangeFormulaType.Percentage) {
+        if (values.percentage === undefined) {
+          ctx.addIssue({ code: 'custom', path: ['percentage'], message: 'Required' });
+        } else if (values.percentage < 0 || values.percentage > 100) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['percentage'],
+            message: 'Must be between 0 and 100',
+          });
+        }
       }
-      if (
-        values.breakingChangeFormula === BreakingChangeFormulaType.RequestCount &&
-        values.requestCount < 1
-      ) {
-        ctx.addIssue({ code: 'custom', path: ['requestCount'], message: 'Must be at least 1' });
+      if (values.breakingChangeFormula === BreakingChangeFormulaType.RequestCount) {
+        if (values.requestCount === undefined) {
+          ctx.addIssue({ code: 'custom', path: ['requestCount'], message: 'Required' });
+        } else if (values.requestCount < 1) {
+          ctx.addIssue({ code: 'custom', path: ['requestCount'], message: 'Must be at least 1' });
+        }
       }
     });
 }
@@ -81,9 +89,10 @@ export function BreakingChangesForm(props: {
   const id = useId();
   const targetIds = useWatch({ control: form.control, name: 'targetIds' });
   const { errors } = form.formState;
-  const messages = NUMBER_FIELDS.map(name => errors[name]?.message).filter(
-    (message): message is string => typeof message === 'string',
-  );
+  const messages = NUMBER_FIELDS.flatMap(name => {
+    const message = errors[name]?.message;
+    return typeof message === 'string' ? [{ name, message }] : [];
+  });
 
   function number(
     name: 'percentage' | 'requestCount' | 'period',
@@ -165,8 +174,8 @@ export function BreakingChangesForm(props: {
           </div>
           {messages.length ? (
             <div className="text-critical mt-3 space-y-1">
-              {messages.map(message => (
-                <div key={message}>{message}</div>
+              {messages.map(({ name, message }) => (
+                <div key={name}>{message}</div>
               ))}
             </div>
           ) : null}

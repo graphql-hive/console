@@ -63,7 +63,8 @@ export function TransferOwnershipForm(props: {
                 }))}
                 value={field.value}
                 onValueChange={field.onChange}
-                onBlur={field.onBlur}
+                // No onBlur: the popup takes focus as it opens, which would blur the trigger and
+                // flag the field before anyone has chosen.
                 width="full"
                 onSurface="raised"
               />

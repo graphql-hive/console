@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { type UseFormReturn } from 'react-hook-form';
+import { useWatch, type UseFormReturn } from 'react-hook-form';
 import z from 'zod';
 import {
   Form,
@@ -31,10 +31,11 @@ export function SignInForm(props: {
   onSubmit: (values: SignInFormValues) => void;
   /** The submit control, which the page wraps with its last-used marker. */
   submit: ReactNode;
-  /** The reset link beside the password label. */
-  forgotPasswordLink: ReactNode;
+  /** The reset link beside the password label, handed the email typed so far. */
+  forgotPasswordLink: (email: string) => ReactNode;
 }) {
   const { form } = props;
+  const email = useWatch({ control: form.control, name: 'email' });
   return (
     <Form form={form} onSubmit={props.onSubmit}>
       <FormField
@@ -62,7 +63,7 @@ export function SignInForm(props: {
           <FormItem>
             <div className="flex items-center">
               <FormLabel label="Password" />
-              {props.forgotPasswordLink}
+              {props.forgotPasswordLink(email)}
             </div>
             <FormControl>
               <Input type="password" onSurface="raised" {...form.register('password')} />
