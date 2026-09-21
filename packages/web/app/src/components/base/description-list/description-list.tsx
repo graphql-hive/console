@@ -99,7 +99,11 @@ function DescriptionListItem({
         ) : null}
       </div>
       {/* An identifier has no spaces to wrap at, so it breaks anywhere rather than overflowing. */}
-      <div className={cn('text-neutral-12 text-control', mono && 'break-all font-mono')}>
+      <div
+        className={cn('text-neutral-12 text-control', mono && 'break-all font-mono')}
+        // A value that gets clipped by a narrow column can still be read on hover.
+        title={typeof description === 'string' ? description : undefined}
+      >
         {value}
       </div>
     </>

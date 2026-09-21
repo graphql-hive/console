@@ -1,4 +1,4 @@
-import { type ComponentType, type ReactNode } from 'react';
+import { useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
@@ -166,8 +166,28 @@ export function TabStrip({
   variant = 'underline',
   size = 'default',
   orientation = 'horizontal',
-}: Pick<TabsProps, 'items' | 'variant' | 'size' | 'orientation'>) {
+  activeValue,
+}: Pick<TabsProps, 'items' | 'variant' | 'size' | 'orientation'> & {
+  /** The controlled value, so a tab picked from outside the strip is scrolled into view. */
+  activeValue?: string;
+}) {
   const icon = variant === 'header' ? iconSize.sm : iconSize[size];
+  const scrollerRef = useRef<HTMLDivElement>(null);
+
+  // A tab activated from outside the strip, like a service just added to a proposal, can sit
+  // past the scroller's edge. Clicks and arrow keys scroll on their own, since focus does.
+  // Only the scroller moves: scrollIntoView could drag the page to the strip as well.
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    const tab = scroller?.querySelector<HTMLElement>('[role="tab"][data-active]');
+    if (!scroller || !tab) {
+      return;
+    }
+    const overflow = tab.getBoundingClientRect().right - scroller.getBoundingClientRect().right;
+    const underflow = scroller.getBoundingClientRect().left - tab.getBoundingClientRect().left;
+    scroller.scrollLeft += overflow > 0 ? overflow : underflow > 0 ? -underflow : 0;
+  }, [activeValue]);
+
   const list = (
     <BaseTabs.List className={listVariants({ variant, orientation })}>
       {items.map(item => {
@@ -202,7 +222,11 @@ export function TabStrip({
   if (orientation === 'vertical') {
     return list;
   }
-  return <div className={scrollerVariants({ orientation })}>{list}</div>;
+  return (
+    <div ref={scrollerRef} className={scrollerVariants({ orientation })}>
+      {list}
+    </div>
+  );
 }
 
 export function Tabs({
@@ -224,7 +248,13 @@ export function Tabs({
       className={rootVariants({ variant, orientation })}
       {...attrs}
     >
-      <TabStrip items={items} variant={variant} size={size} orientation={orientation} />
+      <TabStrip
+        items={items}
+        variant={variant}
+        size={size}
+        orientation={orientation}
+        activeValue={value}
+      />
       {items.map(item =>
         item.content != null ? (
           <BaseTabs.Panel

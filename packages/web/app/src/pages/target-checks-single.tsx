@@ -612,15 +612,25 @@ const DefaultSchemaView_SchemaCheckFragment = graphql(`
   }
 `);
 
-function DefaultSchemaView(props: {
+/** The tabs of one view under the contract picker, and which of them is open. */
+type CheckView = {
+  items: TabbedViewItem[];
+  value: string;
+  onValueChange: (value: string) => void;
+};
+
+/**
+ * The default graph's tabs. A hook rather than a component so the page renders one TabbedView
+ * whichever graph is picked: switching the picker between the default graph and a contract
+ * then swaps the tabs, not the band the picker sits in, and the picker keeps focus.
+ */
+function useDefaultSchemaView(props: {
   schemaCheck: FragmentType<typeof DefaultSchemaView_SchemaCheckFragment>;
   projectType: ProjectType;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  /** The contract picker, leading the tab strip. */
-  action?: ReactNode;
-}) {
+}): CheckView {
   const schemaCheck = useFragment(DefaultSchemaView_SchemaCheckFragment, props.schemaCheck);
   const [selectedView, setSelectedView] = useState<string>('details');
   const [scrollToLine, setScrollToLine] = useState<number | undefined>();
@@ -879,18 +889,14 @@ function DefaultSchemaView(props: {
     ),
   });
 
-  return (
-    <TabbedView
-      items={items}
-      value={selectedView}
-      onValueChange={value => {
-        setScrollToLine(undefined);
-        setSelectedView(value);
-      }}
-      action={props.action}
-      bodyPadding="none"
-    />
-  );
+  return {
+    items,
+    value: selectedView,
+    onValueChange: value => {
+      setScrollToLine(undefined);
+      setSelectedView(value);
+    },
+  };
 }
 
 const ContractCheckView_ContractCheckFragment = graphql(`
@@ -944,20 +950,27 @@ const ContractCheckView_SchemaCheckFragment = graphql(`
   }
 `);
 
-function ContractCheckView(props: {
-  contractCheck: FragmentType<typeof ContractCheckView_ContractCheckFragment>;
+/** The picked contract's tabs, or null while the default graph is picked. See useDefaultSchemaView. */
+function useContractCheckView(props: {
+  contractCheck: FragmentType<typeof ContractCheckView_ContractCheckFragment> | null;
   schemaCheck: FragmentType<typeof ContractCheckView_SchemaCheckFragment>;
   projectType: ProjectType;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  /** The contract picker, leading the tab strip. */
-  action?: ReactNode;
-}) {
+}): CheckView | null {
   const contractCheck = useFragment(ContractCheckView_ContractCheckFragment, props.contractCheck);
   const schemaCheck = useFragment(ContractCheckView_SchemaCheckFragment, props.schemaCheck);
 
-  const [selectedView, setSelectedView] = useState<string>('details');
+  // Another contract starts on Details again, since a view can be disabled on one and not the other.
+  const [selectedView, setSelectedView] = useResetState<string>(
+    () => 'details',
+    [contractCheck?.id],
+  );
+
+  if (!contractCheck) {
+    return null;
+  }
 
   const items: TabbedViewItem[] = [
     {
@@ -1101,15 +1114,7 @@ function ContractCheckView(props: {
     });
   }
 
-  return (
-    <TabbedView
-      items={items}
-      value={selectedView}
-      onValueChange={setSelectedView}
-      action={props.action}
-      bodyPadding="none"
-    />
-  );
+  return { items, value: selectedView, onValueChange: setSelectedView };
 }
 
 const SchemaPolicyEditor_PolicyWarningsFragment = graphql(`
@@ -1235,7 +1240,13 @@ function SchemaChecksView(props: {
   );
 
   const contractChecks = schemaCheck.contractChecks?.edges ?? [];
-  const contractPicker = contractChecks.length ? (
+  // Without contracts there is nothing to pick, but the default graph keeps its status glyph.
+  const contractPicker = !contractChecks.length ? (
+    <span className="text-neutral-11 inline-flex items-center gap-1.5 px-2 text-xs">
+      {checkStatusIcon(schemaCheck, 'Schema changed')}
+      Default Graph
+    </span>
+  ) : (
     <Select
       aria-label="Contract"
       value={selectedItem}
@@ -1264,7 +1275,7 @@ function SchemaChecksView(props: {
       onSurface="raised"
       width="md"
     />
-  ) : undefined;
+  );
 
   const failures = contractChecks.flatMap(edge => {
     const failure = contractFailure(edge.node);
@@ -1280,29 +1291,33 @@ function SchemaChecksView(props: {
       : [];
   });
 
-  const view = selectedContractCheckNode ? (
-    <ContractCheckView
-      key={selectedContractCheckNode.id}
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      contractCheck={selectedContractCheckNode}
-      schemaCheck={schemaCheck}
-      projectType={props.projectType}
+  const defaultView = useDefaultSchemaView({
+    organizationSlug: props.organizationSlug,
+    projectSlug: props.projectSlug,
+    targetSlug: props.targetSlug,
+    schemaCheck,
+    projectType: props.projectType,
+  });
+  const contractView = useContractCheckView({
+    organizationSlug: props.organizationSlug,
+    projectSlug: props.projectSlug,
+    targetSlug: props.targetSlug,
+    contractCheck: selectedContractCheckNode,
+    schemaCheck,
+    projectType: props.projectType,
+  });
+  const active = contractView ?? defaultView;
+  const view = (
+    <TabbedView
+      items={active.items}
+      value={active.value}
+      onValueChange={active.onValueChange}
       action={contractPicker}
-    />
-  ) : (
-    <DefaultSchemaView
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      schemaCheck={schemaCheck}
-      projectType={props.projectType}
-      action={contractPicker}
+      bodyPadding="none"
     />
   );
 
-  if (!contractPicker) {
+  if (!contractChecks.length) {
     return view;
   }
 
@@ -1574,7 +1589,13 @@ const ActiveSchemaCheck = (props: {
                       ? [
                           {
                             term: 'Commit',
-                            description: <CopyText>{schemaCheck.meta.commit}</CopyText>,
+                            description: (
+                              <CopyText>
+                                <span title={schemaCheck.meta.commit}>
+                                  {schemaCheck.meta.commit}
+                                </span>
+                              </CopyText>
+                            ),
                           },
                         ]
                       : []),
