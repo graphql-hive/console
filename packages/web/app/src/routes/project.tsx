@@ -1,17 +1,13 @@
 import { z } from 'zod';
-import { ErrorComponent } from '@/components/error';
 import { ProjectIndexRouteSearch, ProjectPage } from '@/pages/project';
 import { ProjectAlertsPage } from '@/pages/project-alerts';
 import { ProjectSettingsPage, ProjectSettingsPageEnum } from '@/pages/project-settings';
 import { createRoute } from '@tanstack/react-router';
 import { authenticatedRoute } from './authenticated';
-import { RouteNotFound } from './root';
 
 export const projectRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '$organizationSlug/$projectSlug',
-  notFoundComponent: RouteNotFound,
-  errorComponent: ErrorComponent,
 });
 
 export const projectIndexRoute = createRoute({

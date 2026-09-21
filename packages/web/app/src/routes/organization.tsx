@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { z } from 'zod';
-import { ErrorComponent } from '@/components/error';
 import { OrganizationIndexRouteSearch, OrganizationPage } from '@/pages/organization';
 import { OrganizationMembersPage } from '@/pages/organization-members';
 import { OrganizationOIDCRequestPage } from '@/pages/organization-oidc-request';
@@ -14,13 +13,10 @@ import { OrganizationSupportPage } from '@/pages/organization-support';
 import { OrganizationSupportTicketPage } from '@/pages/organization-support-ticket';
 import { createRoute, Navigate, useNavigate } from '@tanstack/react-router';
 import { authenticatedRoute } from './authenticated';
-import { RouteNotFound } from './root';
 
 export const organizationRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '$organizationSlug',
-  notFoundComponent: RouteNotFound,
-  errorComponent: ErrorComponent,
 });
 
 const OrganizationOIDCRequestRouteSearch = z.object({
@@ -62,8 +58,6 @@ export const organizationIndexRoute = createRoute({
       />
     );
   },
-  notFoundComponent: RouteNotFound,
-  errorComponent: ErrorComponent,
 });
 
 export const organizationSupportRoute = createRoute({

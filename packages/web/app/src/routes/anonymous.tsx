@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { authenticated } from '@/components/authenticated-container';
-import { ErrorComponent } from '@/components/error';
 import { AuthPage } from '@/pages/auth';
 import { AuthCallbackPage } from '@/pages/auth-callback';
 import { AuthOIDCPage } from '@/pages/auth-oidc';
@@ -10,7 +9,7 @@ import { AuthSignUpPage } from '@/pages/auth-sign-up';
 import { AuthSSOPage } from '@/pages/auth-sso';
 import { AuthVerifyEmailPage } from '@/pages/auth-verify-email';
 import { createRoute, Navigate } from '@tanstack/react-router';
-import { root, RouteNotFound } from './root';
+import { root } from './root';
 
 export const anonymousRoute = createRoute({
   getParentRoute: () => root,
@@ -21,8 +20,6 @@ export const authRoute = createRoute({
   getParentRoute: () => anonymousRoute,
   path: 'auth',
   component: AuthPage,
-  notFoundComponent: RouteNotFound,
-  errorComponent: ErrorComponent,
 });
 
 const AuthSharedSearch = z.object({

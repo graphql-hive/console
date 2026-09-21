@@ -1,5 +1,4 @@
 import { authenticated } from '@/components/authenticated-container';
-import { ErrorComponent } from '@/components/error';
 import { DevPage } from '@/pages/dev';
 import { IndexPage } from '@/pages/index';
 import { ManagePage } from '@/pages/manage';
@@ -7,7 +6,7 @@ import { NativeCompositionDiff } from '@/pages/native-composition-diff';
 import { NewOrgPage } from '@/pages/organization-new';
 import { OrganizationTransferPage } from '@/pages/organization-transfer';
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { root, RouteNotFound } from './root';
+import { root } from './root';
 
 export const authenticatedRoute = createRoute({
   getParentRoute: () => root,
@@ -15,8 +14,6 @@ export const authenticatedRoute = createRoute({
   component: authenticated(function AuthenticatedRoute() {
     return <Outlet />;
   }),
-  notFoundComponent: RouteNotFound,
-  errorComponent: ErrorComponent,
 });
 
 export const indexRoute = createRoute({

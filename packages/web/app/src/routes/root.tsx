@@ -77,7 +77,6 @@ export function RouteNotFound() {
 
 export const root = createRootRoute({
   component: RootComponent,
-  notFoundComponent: RouteNotFound,
 });
 
 // Routes that sit outside both the anonymous and the authenticated gates.
