@@ -8,6 +8,7 @@ const ALL_ROUTES = [
   P,
   `${P}/`, // index route
   `${P}/history`,
+  `${P}/history/`,
   `${P}/history/$versionId`,
   `${P}/explorer`,
   `${P}/explorer/$typename`,
@@ -61,6 +62,10 @@ describe('resolveTargetSwitchTo', () => {
 
   it('strips the trailing slash of the target index route', () => {
     expect(resolve(P, `${P}/`)).toBe(P);
+  });
+
+  it('strips the trailing slash of a section index route', () => {
+    expect(resolve(P, `${P}/history`, `${P}/history/`)).toBe(`${P}/history`);
   });
 
   it('returns the target home when nothing under the target matches', () => {

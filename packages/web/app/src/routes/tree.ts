@@ -58,7 +58,11 @@ import {
   targetExplorerTypeRoute,
   targetExplorerUnusedRoute,
 } from './target/explorer';
-import { targetHistoryRoute, targetHistoryVersionRoute } from './target/history';
+import {
+  targetHistoryIndexRoute,
+  targetHistoryRoute,
+  targetHistoryVersionRoute,
+} from './target/history';
 import {
   targetInsightsClientRoute,
   targetInsightsCoordinateRoute,
@@ -117,7 +121,7 @@ export const routeTree = root.addChildren([
       targetIndexRoute,
       targetSettingsRoute,
       targetLaboratoryRoute,
-      targetHistoryRoute.addChildren([targetHistoryVersionRoute]),
+      targetHistoryRoute.addChildren([targetHistoryIndexRoute, targetHistoryVersionRoute]),
       targetInsightsRoute,
       targetInsightsManageFiltersRoute,
       targetTraceRoute,

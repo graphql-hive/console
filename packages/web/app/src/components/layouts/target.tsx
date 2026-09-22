@@ -61,6 +61,7 @@ const TargetLayoutQuery = graphql(`
           viewerCanAccessTraces
           viewerCanViewSchemaProposals
           viewerCanUseMetricAlertRules
+          # Warms the cache for the /history index redirect (routes/target/history.tsx).
           latestSchemaVersion {
             id
           }
@@ -99,7 +100,6 @@ export const TargetLayout = ({
   const currentOrganization = query.data?.organization;
   const currentProject = query.data?.organization?.project;
   const currentTarget = query.data?.organization?.project?.target;
-  const latestSchemaVersion = query.data?.organization?.project?.target?.latestSchemaVersion?.id;
 
   const isCDNEnabled = query.data?.isCDNEnabled === true;
 
@@ -163,11 +163,8 @@ export const TargetLayout = ({
                     {
                       id: Page.History,
                       label: 'History',
-                      to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
-                      params: {
-                        ...params,
-                        versionId: latestSchemaVersion ?? '',
-                      },
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/history',
+                      params,
                     },
                     {
                       id: Page.Insights,

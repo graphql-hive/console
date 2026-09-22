@@ -1,6 +1,6 @@
 import { DiffsWorkerPoolProvider } from '@/components/theme/diffs-worker-pool-provider';
 import { urqlClient } from '@/lib/urql';
-import { TargetHistoryPage, TargetHistoryPageQuery } from '@/pages/target-history';
+import { TargetHistoryLatestVersionQuery, TargetHistoryPage } from '@/pages/target-history';
 import { TargetHistorySchemaVersionPage } from '@/pages/target-history-schema-version';
 import { createRoute, redirect } from '@tanstack/react-router';
 import { targetRoute } from './route';
@@ -8,22 +8,6 @@ import { targetRoute } from './route';
 export const targetHistoryRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'history',
-  // On the bare history route redirect to the target's latest version. Done here rather than in a
-  // render effect so it runs once, deterministically, and can't loop.
-  beforeLoad: async ({ params, location }) => {
-    if (!/\/history\/?$/.test(location.pathname)) {
-      return;
-    }
-    const result = await urqlClient.query(TargetHistoryPageQuery, params).toPromise();
-    const versionId = result.data?.target?.latestSchemaVersion?.id;
-    if (versionId) {
-      throw redirect({
-        to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
-        params: { ...params, versionId },
-        replace: true,
-      });
-    }
-  },
   component: function TargetHistoryRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetHistoryRoute.useParams();
     return (
@@ -33,6 +17,23 @@ export const targetHistoryRoute = createRoute({
         targetSlug={targetSlug}
       />
     );
+  },
+});
+
+// The bare URL is the latest version. A target without versions stays here and the list renders
+// its empty state.
+export const targetHistoryIndexRoute = createRoute({
+  getParentRoute: () => targetHistoryRoute,
+  path: '/',
+  beforeLoad: async ({ params }) => {
+    const result = await urqlClient.query(TargetHistoryLatestVersionQuery, params).toPromise();
+    const versionId = result.data?.organization?.project?.target?.latestSchemaVersion?.id;
+    if (versionId) {
+      throw redirect({
+        to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
+        params: { ...params, versionId },
+      });
+    }
   },
 });
 

@@ -65,6 +65,7 @@ const pages: Array<{ url: string; current: string }> = [
   { url: `${TARGET}/explorer/unused`, current: 'Explorer' },
   { url: `${TARGET}/insights`, current: 'Insights' },
   { url: `${TARGET}/apps`, current: 'Apps' },
+  { url: `${TARGET}/history`, current: 'History' },
   { url: `${TARGET}/history/version-42`, current: 'History' },
   { url: `${TARGET}/insights/manage-filters`, current: 'Insights' },
   { url: `${TARGET}/insights/schema-coordinate/Query.me`, current: 'Insights' },
@@ -87,7 +88,6 @@ const pages: Array<{ url: string; current: string }> = [
   { url: `${TARGET}/alerts/create`, current: 'Alerts' },
   { url: `${TARGET}/alerts/rule-1`, current: 'Alerts' },
   { url: `${TARGET}/settings`, current: 'Settings' },
-  // The History item links to the latest version only; that URL changes in a later commit.
 ];
 
 describe('chrome at every page', () => {
@@ -124,6 +124,23 @@ describe('chrome at every page', () => {
     });
     await screen.findByRole('link', { name: 'Insights', current: 'page' });
     expect(screen.getByRole('banner')).toBe(header);
+  });
+
+  it('sends the bare history URL to the latest version', { timeout: 30_000 }, async () => {
+    client.current!.fixtures.set('TargetHistoryLatestVersionQuery', {
+      organization: {
+        id: 'org-1',
+        project: {
+          id: 'project-1',
+          target: { id: 'target-1', latestSchemaVersion: { id: 'version-42' } },
+        },
+      },
+    });
+    const { router } = renderAtUrl(`${TARGET}/history`);
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe(`${TARGET}/history/version-42`),
+    );
+    expect(router.history.length).toBe(1);
   });
 
   it('keeps the project layout mounted across its pages', { timeout: 30_000 }, async () => {

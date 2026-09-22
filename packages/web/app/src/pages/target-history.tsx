@@ -221,7 +221,32 @@ function ListPage(props: {
   );
 }
 
-export const TargetHistoryPageQuery = graphql(`
+/**
+ * Selected along the same path as the target layout's query, so once the layout has loaded,
+ * graphcache answers this without a request and the bare /history URL redirects at once.
+ */
+export const TargetHistoryLatestVersionQuery = graphql(`
+  query TargetHistoryLatestVersionQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+  ) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      project: projectBySlug(projectSlug: $projectSlug) {
+        id
+        target: targetBySlug(targetSlug: $targetSlug) {
+          id
+          latestSchemaVersion {
+            id
+          }
+        }
+      }
+    }
+  }
+`);
+
+const TargetHistoryPageQuery = graphql(`
   query TargetHistoryPageQuery(
     $organizationSlug: String!
     $projectSlug: String!
