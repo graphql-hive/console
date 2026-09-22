@@ -2,6 +2,7 @@
 import { type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
+import { targetSettings } from '@/lib/testing/fixtures/target-settings';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
 import { screen, waitFor, within } from '@testing-library/react';
@@ -13,6 +14,11 @@ vi.mock(
   '@/lib/laboratory-history-storage',
   () => import('@/lib/testing/mocks/laboratory-history-storage'),
 );
+// The lazily loaded schema editor resolves to Monaco, which has no DOM to mount into here.
+vi.mock('@/components/schema-editor', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/components/schema-editor')>()),
+  SchemaEditor: () => null,
+}));
 
 // A signed-in session without SuperTokens: the wrappers pass through and the session exists.
 vi.mock('supertokens-auth-react', async importOriginal => ({
@@ -172,4 +178,101 @@ describe('chrome at every page', () => {
       expect(screen.queryByText('Page Not Found')).toBeNull();
     });
   }
+});
+
+describe('target settings sections', () => {
+  const SETTINGS = `${TARGET}/settings`;
+
+  function renderSettings(url: string, fixture = targetSettings()) {
+    client.current = createTestClient(layoutFixtures());
+    client.current.fixtures.set('TargetSettingsPageQuery', fixture);
+    return renderAtUrl(url);
+  }
+
+  async function sectionNav() {
+    const nav = await screen.findByRole('navigation', { name: 'Settings' });
+    const links = within(nav).getAllByRole('link');
+    return {
+      labels: links.map(link => link.textContent),
+      current: links.filter(link => link.getAttribute('aria-current') === 'page')[0]?.textContent,
+    };
+  }
+
+  it(
+    'renders General at the bare URL, with only General current',
+    { timeout: 30_000 },
+    async () => {
+      renderSettings(SETTINGS);
+      expect(await sectionNav()).toEqual({
+        labels: [
+          'General',
+          'Breaking Changes',
+          'Schema Contracts',
+          'Registry Tokens',
+          'CDN Tokens',
+        ],
+        current: 'General',
+      });
+      expect(await screen.findByText('Target ID')).toBeTruthy();
+    },
+  );
+
+  it('renders a section at its path and keeps the data-cy hooks', { timeout: 30_000 }, async () => {
+    renderSettings(`${SETTINGS}/cdn`);
+    expect((await sectionNav()).current).toBe('CDN Tokens');
+    expect(await screen.findByText('CDN Access Token')).toBeTruthy();
+    expect(document.querySelector('[data-cy="target-settings-registry-token-link"]')).toBeTruthy();
+  });
+
+  it(
+    'offers Base Schema instead of Schema Contracts outside federation',
+    { timeout: 30_000 },
+    async () => {
+      renderSettings(`${SETTINGS}/base-schema`, targetSettings({ projectType: 'SINGLE' }));
+      expect(await sectionNav()).toEqual({
+        labels: ['General', 'Base Schema', 'Breaking Changes', 'Registry Tokens', 'CDN Tokens'],
+        current: 'Base Schema',
+      });
+    },
+  );
+
+  it('hides sections the viewer may not open', { timeout: 30_000 }, async () => {
+    renderSettings(
+      `${SETTINGS}/registry-token`,
+      targetSettings({ viewerCanModifyCDNAccessToken: false }),
+    );
+    expect((await sectionNav()).labels).toEqual([
+      'General',
+      'Breaking Changes',
+      'Schema Contracts',
+      'Registry Tokens',
+    ]);
+  });
+
+  it(
+    'sends a viewer who may not open General to their first section',
+    { timeout: 30_000 },
+    async () => {
+      const { router } = renderSettings(
+        SETTINGS,
+        targetSettings({ viewerCanModifySettings: false }),
+      );
+      await waitFor(() =>
+        expect(router.state.location.pathname).toBe(`${SETTINGS}/registry-token`),
+      );
+      expect((await sectionNav()).current).toBe('Registry Tokens');
+    },
+  );
+
+  it('sends a viewer with no section at all back to the target', { timeout: 30_000 }, async () => {
+    const { router } = renderSettings(
+      `${SETTINGS}/cdn`,
+      targetSettings({
+        viewerCanModifySettings: false,
+        viewerCanModifyCDNAccessToken: false,
+        viewerCanModifyTargetAccessToken: false,
+      }),
+    );
+    await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
+  });
 });

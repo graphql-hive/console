@@ -2,7 +2,6 @@ import { ReactElement, useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
 import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
@@ -15,7 +14,7 @@ import { SubPageLayout } from '@/components/ui/page-content-layout';
 import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   CDN_TOKEN_FORM_ID,
@@ -24,8 +23,8 @@ import {
   type CdnTokenFormValues,
 } from './cdn-token-form';
 
-const settingsRoute = getRouteApi(
-  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings',
+const cdnRoute = getRouteApi(
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
 );
 
 const CDNAccessTokenCreateMutation = graphql(`
@@ -267,38 +266,17 @@ const CDNAccessTokensQuery = graphql(`
   }
 `);
 
-const CDNSearchParams = z.discriminatedUnion('cdn', [
-  z.object({
-    cdn: z.literal('create').optional(),
-  }),
-  z.object({
-    cdn: z.literal('delete'),
-    id: z.string(),
-  }),
-]);
-
 export function CDNAccessTokens(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 }): React.ReactElement {
   const [endCursors, setEndCursors] = useState<Array<string>>([]);
-  const router = useRouter();
-  const navigate = settingsRoute.useNavigate();
-  const searchParamsResult = CDNSearchParams.safeParse(router.latestLocation.search);
-
-  if (!searchParamsResult.success) {
-    console.error('Invalid search params', searchParamsResult.error);
-  }
-
-  const searchParams = searchParamsResult.data ?? { cdn: undefined };
+  const navigate = cdnRoute.useNavigate();
+  const { cdn, id } = cdnRoute.useSearch();
 
   const closeModal = () => {
-    void navigate({
-      search: {
-        page: 'cdn',
-      },
-    });
+    void navigate({ search: {} });
   };
 
   const [overlaySession, setOverlaySession] = useState(0);
@@ -337,8 +315,8 @@ export function CDNAccessTokens(props: {
         <Button
           render={
             <Link
-              from="/$organizationSlug/$projectSlug/$targetSlug/settings"
-              search={{ page: 'cdn', cdn: 'create' }}
+              from="/$organizationSlug/$projectSlug/$targetSlug/settings/cdn"
+              search={{ cdn: 'create' }}
             />
           }
         >
@@ -369,7 +347,7 @@ export function CDNAccessTokens(props: {
 
       <CreateCDNAccessTokenModal
         key={overlaySession}
-        open={searchParams.cdn === 'create'}
+        open={cdn === 'create'}
         onOpenChangeComplete={resetOnClose}
         onCreateCDNAccessToken={() => {
           reexecuteQuery({ requestPolicy: 'network-only' });
@@ -380,8 +358,8 @@ export function CDNAccessTokens(props: {
         targetSlug={props.targetSlug}
       />
       <DeleteCDNAccessTokenModal
-        open={searchParams.cdn === 'delete'}
-        cdnAccessTokenId={searchParams.cdn === 'delete' ? searchParams.id : null}
+        open={cdn === 'delete'}
+        cdnAccessTokenId={cdn === 'delete' ? (id ?? null) : null}
         onDeletedAccessTokenId={() => {
           reexecuteQuery({ requestPolicy: 'network-only' });
         }}
@@ -429,8 +407,7 @@ function CdnTokenCreatedCell(props: { token: CdnTokenNode }) {
 
 function CdnTokenDeleteCell(props: { token: CdnTokenNode }) {
   const node = useFragment(CDNAccessTokenRowFragment, props.token);
-  const router = useRouter();
-  const navigate = settingsRoute.useNavigate();
+  const navigate = cdnRoute.useNavigate();
   return (
     <DataTableCell
       kind="icon-button"
@@ -438,13 +415,7 @@ function CdnTokenDeleteCell(props: { token: CdnTokenNode }) {
       label={`Delete ${node.alias}`}
       destructive
       onClick={() => {
-        void navigate({
-          search: {
-            page: 'cdn',
-            cdn: 'delete',
-            id: node.id,
-          },
-        });
+        void navigate({ search: { cdn: 'delete', id: node.id } });
       }}
     />
   );

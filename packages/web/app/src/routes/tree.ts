@@ -77,7 +77,15 @@ import {
   targetProposalsSingleRoute,
 } from './target/proposals';
 import { targetIndexRoute, targetRoute } from './target/route';
-import { targetSettingsRoute } from './target/settings';
+import {
+  targetSettingsBaseSchemaRoute,
+  targetSettingsBreakingChangesRoute,
+  targetSettingsCdnRoute,
+  targetSettingsIndexRoute,
+  targetSettingsRegistryTokenRoute,
+  targetSettingsRoute,
+  targetSettingsSchemaContractsRoute,
+} from './target/settings';
 import { targetTraceRoute, targetTracesRoute } from './target/traces';
 
 // Every route sits under the parent its `getParentRoute` names. The router derives paths and
@@ -119,7 +127,14 @@ export const routeTree = root.addChildren([
     projectRoute.addChildren([projectIndexRoute, projectSettingsRoute, projectAlertsRoute]),
     targetRoute.addChildren([
       targetIndexRoute,
-      targetSettingsRoute,
+      targetSettingsRoute.addChildren([
+        targetSettingsIndexRoute,
+        targetSettingsCdnRoute,
+        targetSettingsRegistryTokenRoute,
+        targetSettingsBreakingChangesRoute,
+        targetSettingsBaseSchemaRoute,
+        targetSettingsSchemaContractsRoute,
+      ]),
       targetLaboratoryRoute,
       targetHistoryRoute.addChildren([targetHistoryIndexRoute, targetHistoryVersionRoute]),
       targetInsightsRoute,

@@ -418,11 +418,8 @@ export function ConnectSchemaModal(props: {
                   To authenticate,{' '}
                   <UiLink
                     as="a"
-                    search={{
-                      page: 'cdn',
-                    }}
                     variant="primary"
-                    to="/$organizationSlug/$projectSlug/$targetSlug/settings"
+                    to="/$organizationSlug/$projectSlug/$targetSlug/settings/cdn"
                     params={{
                       organizationSlug: props.organizationSlug,
                       projectSlug: props.projectSlug,
@@ -458,11 +455,8 @@ function FederationModalContent(props: {
     <p>
       Replace "{'<hive_cdn_access_key>'}" with a{' '}
       <UiLink
-        search={{
-          page: 'cdn',
-        }}
         variant="primary"
-        to="/$organizationSlug/$projectSlug/$targetSlug/settings"
+        to="/$organizationSlug/$projectSlug/$targetSlug/settings/cdn"
         params={{
           organizationSlug: props.organizationSlug,
           projectSlug: props.projectSlug,

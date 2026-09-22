@@ -19,11 +19,16 @@ async function loadAt(url: string) {
 
 describe('legacy URLs', () => {
   it('has an entry for every old URL shape', { timeout: 30_000 }, async () => {
-    const { legacyPaths } = await import('./legacy');
+    const { legacyPaths, legacySearch } = await import('./legacy');
     expect(legacyPaths.map(entry => entry.path)).toMatchInlineSnapshot(`
       [
         trace/$traceId,
         view/manage-subscription,
+      ]
+    `);
+    expect(Object.keys(legacySearch)).toMatchInlineSnapshot(`
+      [
+        targetSettings,
       ]
     `);
   });
@@ -37,6 +42,20 @@ describe('legacy URLs', () => {
         to: example.to,
       });
       expect(router.history.length).toBe(1);
+    }
+  });
+
+  it('lands each old search form on its section path', { timeout: 30_000 }, async () => {
+    const { legacySearch } = await import('./legacy');
+    for (const entry of Object.values(legacySearch)) {
+      for (const example of entry.examples) {
+        const router = await loadAt(example.from);
+        expect({ from: example.from, to: router.state.location.href }).toEqual({
+          from: example.from,
+          to: example.to,
+        });
+        expect(router.history.length).toBe(1);
+      }
     }
   });
 

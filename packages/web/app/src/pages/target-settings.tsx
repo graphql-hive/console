@@ -15,12 +15,12 @@ import { z } from 'zod';
 import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { Navigation } from '@/components/base/navigation/navigation';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Switch } from '@/components/base/switch/switch';
 import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { LayoutContent } from '@/components/layouts/layout-content';
-import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { SchemaEditor } from '@/components/schema-editor';
 import {
   AppDeploymentProtectionForm,
@@ -32,7 +32,6 @@ import {
   breakingChangesFormSchema,
   type BreakingChangesFormValues,
 } from '@/components/target/settings/breaking-changes-form';
-import { CDNAccessTokens } from '@/components/target/settings/cdn-access-tokens';
 import {
   DangerousChangesForm,
   DangerousChangesFormSchema,
@@ -45,10 +44,8 @@ import {
   type GraphqlEndpointFormValues,
 } from '@/components/target/settings/graphql-endpoint-form';
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
-import { SchemaContracts } from '@/components/target/settings/schema-contracts';
 import { Meta } from '@/components/ui/meta';
 import {
-  NavLayout,
   PageLayout,
   PageLayoutContent,
   SubPageLayout,
@@ -70,12 +67,15 @@ import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
+import {
+  Link,
+  Outlet,
+  useChildMatches,
+  useRouter,
+  type RegisteredRouter,
+  type RouteIds,
+} from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-
-const settingsRoute = getRouteApi(
-  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings',
-);
 
 /**
  * We previously used a different character for token masking.
@@ -1057,9 +1057,6 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
               projectSlug: props.projectSlug,
               targetSlug: result.data.updateTargetSlug.ok.target.slug,
             },
-            search: {
-              page: 'general',
-            },
           });
         } else if (error) {
           slugForm.setError('slug', error);
@@ -1295,23 +1292,76 @@ function TargetInfo(props: { targetId: string }) {
   );
 }
 
-function TargetSettingsContent(props: {
+type SectionProps = {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  page?: TargetSettingsSubPage;
-}) {
-  const router = useRouter();
-  const navigate = settingsRoute.useNavigate();
-  const [query] = useQuery({
-    query: TargetSettingsPageQuery,
-    variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
-    },
-  });
+};
 
+const SETTINGS = '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings';
+
+type SectionId =
+  | 'general'
+  | 'base-schema'
+  | 'breaking-changes'
+  | 'schema-contracts'
+  | 'registry-token'
+  | 'cdn';
+
+type Section = {
+  id: SectionId;
+  label: string;
+  routeId: RouteIds<RegisteredRouter['routeTree']>;
+  to: `/$organizationSlug/$projectSlug/$targetSlug/settings${'' | `/${Exclude<SectionId, 'general'>}`}`;
+  exact?: boolean;
+};
+
+/**
+ * The sections in nav order, with the route each renders under; the permission gate compares the
+ * matched child route against the items the viewer may see. The bare URL is General.
+ */
+const sections: readonly Section[] = [
+  {
+    id: 'general',
+    label: 'General',
+    routeId: `${SETTINGS}/`,
+    to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
+    exact: true,
+  },
+  {
+    id: 'base-schema',
+    label: 'Base Schema',
+    routeId: `${SETTINGS}/base-schema`,
+    to: '/$organizationSlug/$projectSlug/$targetSlug/settings/base-schema',
+  },
+  {
+    id: 'breaking-changes',
+    label: 'Breaking Changes',
+    routeId: `${SETTINGS}/breaking-changes`,
+    to: '/$organizationSlug/$projectSlug/$targetSlug/settings/breaking-changes',
+  },
+  {
+    id: 'schema-contracts',
+    label: 'Schema Contracts',
+    routeId: `${SETTINGS}/schema-contracts`,
+    to: '/$organizationSlug/$projectSlug/$targetSlug/settings/schema-contracts',
+  },
+  {
+    id: 'registry-token',
+    label: 'Registry Tokens',
+    routeId: `${SETTINGS}/registry-token`,
+    to: '/$organizationSlug/$projectSlug/$targetSlug/settings/registry-token',
+  },
+  {
+    id: 'cdn',
+    label: 'CDN Tokens',
+    routeId: `${SETTINGS}/cdn`,
+    to: '/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
+  },
+];
+
+export function TargetSettingsPage(props: SectionProps) {
+  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: props });
   const currentOrganization = query.data?.organization;
   const currentProject = currentOrganization?.project;
   const currentTarget = currentProject?.target;
@@ -1320,224 +1370,137 @@ function TargetSettingsContent(props: {
     canAccess: currentTarget?.viewerCanAccessSettings === true,
     entity: currentTarget,
     redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
-        },
-      });
+      void router.navigate({ to: '/$organizationSlug/$projectSlug/$targetSlug', params: props });
     },
   });
 
-  const subPages = useMemo(() => {
-    const pages: Array<{
-      key: TargetSettingsSubPage;
-      title: string;
-    }> = [];
-
+  const visible = useMemo(() => {
+    const ids = new Set<SectionId>();
     if (currentTarget?.viewerCanModifySettings) {
-      pages.push({
-        key: 'general',
-        title: 'General',
-      });
-
-      if (currentProject?.type !== ProjectType.Federation) {
-        pages.push({
-          key: 'base-schema',
-          title: 'Base Schema',
-        });
-      }
-
-      pages.push({
-        key: 'breaking-changes',
-        title: 'Breaking Changes',
-      });
-
-      if (currentProject?.type === ProjectType.Federation) {
-        pages.push({
-          key: 'schema-contracts',
-          title: 'Schema Contracts',
-        });
-      }
+      ids.add('general');
+      ids.add(currentProject?.type === ProjectType.Federation ? 'schema-contracts' : 'base-schema');
+      ids.add('breaking-changes');
     }
-
     if (currentTarget?.viewerCanModifyTargetAccessToken) {
-      pages.push({
-        key: 'registry-token',
-        title: 'Registry Tokens',
-      });
+      ids.add('registry-token');
     }
-
     if (currentTarget?.viewerCanModifyCDNAccessToken) {
-      pages.push({
-        key: 'cdn',
-        title: 'CDN Tokens',
-      });
+      ids.add('cdn');
     }
-
-    return pages;
+    return sections.filter(section => ids.has(section.id));
   }, [currentTarget, currentProject]);
 
-  const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
+  const sectionRouteId = useChildMatches({ select: matches => matches.at(-1)?.routeId });
+  const allowed = visible.some(section => section.routeId === sectionRouteId);
 
+  // A section the viewer may not open falls back to the first one they may, else the target.
   useRedirect({
-    canAccess: resolvedPage !== undefined,
+    canAccess: allowed,
     entity: currentTarget,
     redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
-        },
-      });
+      const fallback = visible.at(0);
+      void router.navigate(
+        fallback
+          ? { to: fallback.to, params: props, replace: true }
+          : { to: '/$organizationSlug/$projectSlug/$targetSlug', params: props, replace: true },
+      );
     },
   });
 
   if (query.error) {
     return (
-      <QueryError
-        organizationSlug={props.organizationSlug}
-        error={query.error}
-        showLogoutButton={false}
-      />
+      <LayoutContent>
+        <QueryError
+          organizationSlug={props.organizationSlug}
+          error={query.error}
+          showLogoutButton={false}
+        />
+      </LayoutContent>
     );
   }
 
-  if (!resolvedPage || !currentOrganization || !currentProject || !currentTarget) {
-    return null;
-  }
-
-  return (
-    <PageLayout>
-      <NavLayout>
-        {subPages.map(subPage => {
-          return (
-            <SubPageNavigationLink
-              key={subPage.key}
-              dataCy={`target-settings-${subPage.key}-link`}
-              isActive={resolvedPage.key === subPage.key}
-              onClick={() => {
-                void navigate({
-                  search: {
-                    page: subPage.key,
-                  },
-                });
-              }}
-              title={subPage.title}
-            />
-          );
-        })}
-      </NavLayout>
-      <PageLayoutContent>
-        <div className="space-y-12">
-          {resolvedPage.key === 'general' ? (
-            <>
-              <TargetInfo targetId={currentTarget.id} />
-              <TargetSlug
-                targetSlug={props.targetSlug}
-                projectSlug={props.projectSlug}
-                organizationSlug={props.organizationSlug}
-              />
-              <GraphQLEndpointUrl
-                targetSlug={currentTarget.slug}
-                projectSlug={currentProject.slug}
-                organizationSlug={currentOrganization.slug}
-                graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null}
-              />
-              {currentTarget?.viewerCanDelete && (
-                <TargetDelete
-                  targetSlug={currentTarget.slug}
-                  projectSlug={currentProject.slug}
-                  organizationSlug={currentOrganization.slug}
-                />
-              )}
-            </>
-          ) : null}
-          {resolvedPage.key === 'cdn' ? (
-            <CDNAccessTokens
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
-            />
-          ) : null}
-          {resolvedPage.key === 'registry-token' ? (
-            <RegistryAccessTokens
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
-            />
-          ) : null}
-          {resolvedPage.key === 'breaking-changes' ? (
-            <>
-              <BreakingChanges
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-              {currentOrganization?.isAppDeploymentsEnabled ? (
-                <AppDeploymentProtection
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                />
-              ) : null}
-            </>
-          ) : null}
-          {resolvedPage.key === 'base-schema' ? (
-            <ExtendBaseSchema
-              baseSchema={currentTarget?.baseSchema ?? ''}
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
-            />
-          ) : null}
-          {resolvedPage.key === 'schema-contracts' ? (
-            <SchemaContracts
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
-            />
-          ) : null}
-        </div>
-      </PageLayoutContent>
-    </PageLayout>
-  );
-}
-
-export const TargetSettingsPageEnum = z.enum([
-  'general',
-  'cdn',
-  'registry-token',
-  'breaking-changes',
-  'base-schema',
-  'schema-contracts',
-]);
-
-export type TargetSettingsSubPage = z.TypeOf<typeof TargetSettingsPageEnum>;
-
-export function TargetSettingsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  page?: TargetSettingsSubPage;
-}) {
   return (
     <>
       <Meta title="Settings" />
       <LayoutContent>
-        <TargetSettingsContent
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          page={props.page}
-        />
+        {allowed && currentOrganization && currentProject && currentTarget ? (
+          <PageLayout>
+            <Navigation
+              aria-label="Settings"
+              variant="list"
+              items={visible.map(section => ({
+                id: section.id,
+                label: section.label,
+                to: section.to,
+                params: props,
+                exact: section.exact,
+                attrs: { 'data-cy': `target-settings-${section.id}-link` },
+              }))}
+            />
+            <PageLayoutContent>
+              <div className="space-y-12">
+                <Outlet />
+              </div>
+            </PageLayoutContent>
+          </PageLayout>
+        ) : null}
       </LayoutContent>
     </>
   );
+}
+
+export function TargetSettingsGeneralSection(props: SectionProps) {
+  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: props });
+  const currentOrganization = query.data?.organization;
+  const currentProject = currentOrganization?.project;
+  const currentTarget = currentProject?.target;
+  if (!currentOrganization || !currentProject || !currentTarget) {
+    return null;
+  }
+  return (
+    <>
+      <TargetInfo targetId={currentTarget.id} />
+      <TargetSlug {...props} />
+      <GraphQLEndpointUrl
+        targetSlug={currentTarget.slug}
+        projectSlug={currentProject.slug}
+        organizationSlug={currentOrganization.slug}
+        graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null}
+      />
+      {currentTarget.viewerCanDelete && (
+        <TargetDelete
+          targetSlug={currentTarget.slug}
+          projectSlug={currentProject.slug}
+          organizationSlug={currentOrganization.slug}
+        />
+      )}
+    </>
+  );
+}
+
+export function TargetSettingsRegistryTokensSection(props: SectionProps) {
+  return <RegistryAccessTokens {...props} />;
+}
+
+export function TargetSettingsBreakingChangesSection(props: SectionProps) {
+  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: props });
+  return (
+    <>
+      <BreakingChanges {...props} />
+      {query.data?.organization?.isAppDeploymentsEnabled ? (
+        <AppDeploymentProtection {...props} />
+      ) : null}
+    </>
+  );
+}
+
+export function TargetSettingsBaseSchemaSection(props: SectionProps) {
+  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: props });
+  const currentTarget = query.data?.organization?.project?.target;
+  if (!currentTarget) {
+    return null;
+  }
+  return <ExtendBaseSchema baseSchema={currentTarget.baseSchema ?? ''} {...props} />;
 }
 
 export const DeleteTargetMutation = graphql(`
