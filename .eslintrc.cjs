@@ -3,6 +3,10 @@
 const guildConfig = require('@theguild/eslint-config/base');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { REACT_RESTRICTED_SYNTAX, RESTRICTED_SYNTAX } = require('@theguild/eslint-config/constants');
+// An override replaces the rule's options, so the react entries come along explicitly.
+const [, ...GUILD_REACT_RESTRICTED_IMPORTS] =
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require('@theguild/eslint-config/react-base').rules['@typescript-eslint/no-restricted-imports'];
 const path = require('path');
 
 const SCHEMA_PATH = './packages/services/api/src/modules/*/module.graphql.ts';
@@ -265,6 +269,40 @@ module.exports = {
               'no-scrollbar',
               // Tailwind v4 CSS variable syntax with parentheses
               '.*-\\(--.*\\)',
+            ],
+          },
+        ],
+      },
+    },
+    {
+      // The routing patterns, see packages/web/app/docs/ROUTER.md: a route renders its layout
+      // around an outlet and pages render inside it, and the router instance belongs to main.tsx.
+      files: ['packages/web/app/src/**/*.{ts,tsx}'],
+      excludedFiles: [
+        'packages/web/app/src/routes/**',
+        'packages/web/app/src/main.tsx',
+        'packages/web/app/src/lib/testing/**',
+        'packages/web/app/src/**/*.spec.{ts,tsx}',
+        // Renders the minimal organization chrome itself; a follow-up PR moves that onto its route.
+        'packages/web/app/src/pages/organization-oidc-request.tsx',
+      ],
+      rules: {
+        '@typescript-eslint/no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              ...GUILD_REACT_RESTRICTED_IMPORTS,
+              ...['organization', 'project', 'target'].map(layout => ({
+                name: `@/components/layouts/${layout}`,
+                message:
+                  'The route in src/routes renders this layout around its <Outlet/>; a page renders <LayoutContent> inside it.',
+                allowTypeImports: true,
+              })),
+              {
+                name: '@/router',
+                message:
+                  "Only main.tsx mounts the router. Read route state with getRouteApi(<route id>) and navigate with a route API's useNavigate.",
+              },
             ],
           },
         ],
