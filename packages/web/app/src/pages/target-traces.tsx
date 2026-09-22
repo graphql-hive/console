@@ -12,6 +12,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ChartConfig,
   ChartContainer,
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/chart';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DateRangePicker, Preset, presetLast7Days } from '@/components/ui/date-range-picker';
+import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -948,7 +950,23 @@ const TargetTracesFetchMoreTracesQuery = graphql(`
   }
 `);
 
-export function TargetTracesPageContent(
+export function TargetTracesPage(
+  props: SortProps &
+    FilterProps & {
+      range: Preset['range'] | null;
+    },
+) {
+  return (
+    <>
+      <Meta title="Traces" />
+      <LayoutContent>
+        <TargetTracesPageContent {...props} />
+      </LayoutContent>
+    </>
+  );
+}
+
+function TargetTracesPageContent(
   props: SortProps &
     FilterProps & {
       range: Preset['range'] | null;

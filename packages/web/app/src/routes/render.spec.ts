@@ -162,6 +162,14 @@ describe('chrome at every page', () => {
     expect(screen.getByRole('banner')).toBe(header);
   });
 
+  it('renders a missing page inside the chrome, not over it', { timeout: 30_000 }, async () => {
+    renderAtUrl(`${TARGET}/nope`);
+    const heading = await screen.findByText('Page Not Found');
+    expect(screen.getByRole('navigation', { name: 'Secondary' })).toBeTruthy();
+    // `h-screen` here would push the 404 a header's height past the bottom of the window.
+    expect(heading.closest('.h-screen')).toBeNull();
+  });
+
   for (const page of pages) {
     it(`${page.url}: one secondary nav, ${page.current} current`, { timeout: 30_000 }, async () => {
       renderAtUrl(page.url);

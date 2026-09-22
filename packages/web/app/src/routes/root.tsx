@@ -60,7 +60,7 @@ function RootComponent() {
   );
 }
 
-export function RouteNotFound() {
+function NotFoundPage(props: { fullScreen: boolean }) {
   const router = useRouter();
 
   captureMessage('404 Not Found', {
@@ -72,7 +72,17 @@ export function RouteNotFound() {
     },
   });
 
-  return <NotFound bigHeading="404" title="Page Not Found" variants={{ fullScreen: true }} />;
+  return (
+    <NotFound bigHeading="404" title="Page Not Found" variants={{ fullScreen: props.fullScreen }} />
+  );
+}
+
+/**
+ * The router's `defaultNotFoundComponent`, so it renders where the missing page would have: inside
+ * the chrome of whichever layout matched. Only the standalone `/404` fills the viewport.
+ */
+export function RouteNotFound() {
+  return <NotFoundPage fullScreen={false} />;
 }
 
 export const root = createRootRoute({
@@ -84,7 +94,9 @@ export const root = createRootRoute({
 export const notFoundRoute = createRoute({
   getParentRoute: () => root,
   path: '404',
-  component: RouteNotFound,
+  component: function NotFoundRoute() {
+    return <NotFoundPage fullScreen />;
+  },
 });
 
 export const logoutRoute = createRoute({

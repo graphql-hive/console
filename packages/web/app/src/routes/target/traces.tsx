@@ -1,12 +1,10 @@
 import { useMemo } from 'react';
 import { z } from 'zod';
-import { LayoutContent } from '@/components/layouts/layout-content';
-import { Meta } from '@/components/ui/meta';
 import { TargetTracePage } from '@/pages/target-trace';
 import {
   FilterState,
   TargetTracesFilterState,
-  TargetTracesPageContent,
+  TargetTracesPage,
   TargetTracesSort,
 } from '@/pages/target-traces';
 import { createRoute } from '@tanstack/react-router';
@@ -51,14 +49,7 @@ export const targetTracesRoute = createRoute({
 
     const range = useMemo(() => (from && to ? { from, to } : null), [from, to]);
 
-    return (
-      <>
-        <Meta title="Traces" />
-        <LayoutContent>
-          <TargetTracesPageContent sorting={sort} filter={filter} range={range} />
-        </LayoutContent>
-      </>
-    );
+    return <TargetTracesPage sorting={sort} filter={filter} range={range} />;
   },
 });
 

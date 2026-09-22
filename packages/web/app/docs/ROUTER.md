@@ -36,8 +36,8 @@ open, uses the `useRedirect` hook inside the layout until data loading moves int
 ## Where things live
 
 ```
-src/main.tsx                 mounts the router; the only importer of src/router.tsx
-src/router.tsx               createAppRouter(): the tree plus search serialization and default boundaries
+src/main.tsx                 mounts the router; the only importer of src/router.ts
+src/router.ts                createAppRouter(): the tree plus search serialization and default boundaries
 src/routes/
   tree.ts                    root.addChildren([...]) mirroring every route's getParentRoute
   root.tsx                   root route, 404, logout, join
@@ -57,7 +57,7 @@ src/components/layouts/      the three layouts (org/project/target) and LayoutCo
 src/lib/testing/             renderAtUrl, the fixture-checking test urql client, fixtures, jsdom mocks
 ```
 
-Route modules import pages, components and their parent route module, never `src/router.tsx`. Pages
+Route modules import pages, components and their parent route module, never `src/router.ts`. Pages
 and components never import a layout; the route renders it. Both are enforced by
 `@typescript-eslint/no-restricted-imports` in the root `.eslintrc.cjs`.
 
@@ -86,7 +86,7 @@ and components never import a layout; the route renders it. Both are enforced by
 - A param that must never fail validation (a legacy `?page=`) takes `.optional().catch(undefined)`,
   because a validation failure renders the error boundary before `beforeLoad` can redirect.
 - `/insights`, `/traces` and `/proposals` serialize search with jsurl2 (arrays and objects); every
-  other route uses JSON. See `src/router.tsx`.
+  other route uses JSON. See `src/router.ts`.
 
 ## Recipes
 
@@ -100,7 +100,7 @@ and components never import a layout; the route renders it. Both are enforced by
 3. Add the item to the target layout's nav (`src/components/layouts/target.tsx`):
    `{ id: 'thing', label: 'Thing', to: '/$organizationSlug/$projectSlug/$targetSlug/thing', params }`.
    Gate it with `visible` if it needs a permission.
-4. Tests: `tree.spec.ts` needs the new id in its snapshot and an example URL; `render.spec.tsx`'s
+4. Tests: `tree.spec.ts` needs the new id in its snapshot and an example URL; `render.spec.ts`'s
    `pages` table gets `{ url, current: 'Thing' }`.
 
 Put a detail page under the tab's path (`thing/$id`) so the item stays current on it.
@@ -113,7 +113,7 @@ Put a detail page under the tab's path (`thing/$id`) so the item stays current o
    section is open, for the permission fallback.
 3. If the section replaces an old `?page=thing`, add the value to the matching `legacySearch`
    entry's `values` and an example.
-4. Tests: `tree.spec.ts` id + example; a `render.spec.tsx` case in that screen's block.
+4. Tests: `tree.spec.ts` id + example; a `render.spec.ts` case in that screen's block.
 
 ### Give a page sub-pages where one of them has no nav
 
@@ -146,7 +146,7 @@ Run from the repo root: `pnpm vitest run packages/web/app/src/routes`.
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `routes/tree.spec.ts`      | The exact set of route ids (inline snapshot) and one example URL per id; a route without an example fails the suite.                                         |
 | `routes/legacy.spec.ts`    | Every catalog entry's example lands on its new URL with a single history entry; the config-dependent redirects.                                              |
-| `routes/render.spec.tsx`   | The real tree rendered at every page URL: one secondary nav, the expected item current, no error boundary; per-screen blocks for each tertiary nav and gate. |
+| `routes/render.spec.ts`    | The real tree rendered at every page URL: one secondary nav, the expected item current, no error boundary; per-screen blocks for each tertiary nav and gate. |
 | `router.spec.ts`           | `createAppRouter` has no side effects and owns the default error/not-found boundaries.                                                                       |
 | `lib/testing/urql.spec.ts` | The test client answers by operation name and fails a fixture that no longer covers its document.                                                            |
 

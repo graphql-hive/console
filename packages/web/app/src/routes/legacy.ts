@@ -35,8 +35,13 @@ export const legacyPaths: LegacyPath[] = [
   {
     parent: () => targetRoute,
     path: 'trace/$traceId',
-    redirect: () => redirect({ to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId' }),
-    example: { from: '/acme/shop/prod/trace/t1', to: '/acme/shop/prod/traces/t1' },
+    redirect: () =>
+      // `search: true` keeps a shared link's selected span.
+      redirect({ to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId', search: true }),
+    example: {
+      from: '/acme/shop/prod/trace/t1?activeSpanId=s1',
+      to: '/acme/shop/prod/traces/t1?activeSpanId=s1',
+    },
     since: '2026-09',
     why: 'Trace detail moved under /traces so the Traces nav item infers its active state from the URL.',
   },
@@ -83,15 +88,20 @@ export const legacySearch = {
       'base-schema',
       'schema-contracts',
     ]),
-    redirect: page =>
+    // The rest of the search carries over: the CDN section drives its modals from it.
+    redirect: (page, { page: _page, ...search }) =>
       page === 'general'
         ? redirect({ to: '/$organizationSlug/$projectSlug/$targetSlug/settings', search: {} })
         : redirect({
             to: `/$organizationSlug/$projectSlug/$targetSlug/settings/${page}`,
-            search: {},
+            search,
           }),
     examples: [
       { from: '/acme/shop/prod/settings?page=cdn', to: '/acme/shop/prod/settings/cdn' },
+      {
+        from: '/acme/shop/prod/settings?page=cdn&cdn=create',
+        to: '/acme/shop/prod/settings/cdn?cdn=create',
+      },
       { from: '/acme/shop/prod/settings?page=general', to: '/acme/shop/prod/settings' },
     ],
     since: '2026-09',
