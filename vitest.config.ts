@@ -7,6 +7,12 @@ export default defineConfig({
     alias: {
       '@graphql-hive/core': new URL('./packages/libraries/core/src/index.ts', import.meta.url)
         .pathname,
+      // Both packages publish from `dist`, which tests do not build; resolve them from source so a
+      // spec that pulls one in (directly or through the app's route tree) needs no build step.
+      '@graphql-hive/laboratory': new URL(
+        './packages/libraries/laboratory/src/index.tsx',
+        import.meta.url,
+      ).pathname,
     },
     globals: true,
     exclude: [
