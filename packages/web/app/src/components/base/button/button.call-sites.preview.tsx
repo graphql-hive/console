@@ -79,7 +79,7 @@ const ENTRIES = [
     coveredBy: 'Compact',
   },
   {
-    source: 'target-alerts.tsx, sub-page-navigation-link.tsx',
+    source: 'base/navigation/navigation.tsx (list variant)',
     what: 'Nav items: their own classes, not Button',
     coveredBy: 'Not buttons',
   },
@@ -375,7 +375,7 @@ export const NotButtons = createPreview({
   label: 'Not buttons',
   render: () => (
     <CallSite
-      source="components/navigation/sub-page-navigation-link.tsx, pages/target-alerts.tsx, ui/stepper.tsx, ui/calendar.tsx, the explorer letter strips"
+      source="base/navigation/navigation.tsx (list variant), ui/stepper.tsx, ui/calendar.tsx, the explorer letter strips"
       origin="base"
       note="These rendered the old Button with most of its defaults undone. They are plain elements with their own classes now: a vertical nav item, a step circle, a calendar cell, a letter tab. Their previews live with their components."
     >
