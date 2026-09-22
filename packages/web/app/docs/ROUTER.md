@@ -29,9 +29,9 @@ item stays current on it.
 **3. Redirects run in `beforeLoad` and throw `redirect()`.** The router follows them before
 rendering and commits with `replace`, so the old URL never enters history. Every redirect that
 exists because a URL moved is an entry in `src/routes/legacy.ts` (see below). Redirects that depend
-on config live on their route (`/auth` → sign-in, `/history` → latest version); the one that depends
-on query data, a viewer landing on a section they may not open, uses the `useRedirect` hook inside
-the layout until data loading moves into the router.
+on config live on their route (`/auth` → sign-in, `/history` → latest version, `/oidc-request` when
+the provider is off); the one that depends on query data, a viewer landing on a section they may not
+open, uses the `useRedirect` hook inside the layout until data loading moves into the router.
 
 ## Where things live
 

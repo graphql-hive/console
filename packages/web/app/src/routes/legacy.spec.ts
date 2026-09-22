@@ -68,4 +68,10 @@ describe('legacy URLs', () => {
     expect(router.state.location.pathname).toBe('/auth/sign-in');
     expect(router.state.location.search).toEqual({ redirectToPath: '/acme' });
   });
+
+  // The env mock enables no auth provider.
+  it('skips the OIDC interstitial when the provider is off', { timeout: 30_000 }, async () => {
+    const router = await loadAt('/acme/oidc-request?id=oidc-1&redirectToPath=%2Facme%2Fshop');
+    expect(router.state.location.pathname).toBe('/acme/shop');
+  });
 });

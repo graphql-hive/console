@@ -283,8 +283,6 @@ module.exports = {
         'packages/web/app/src/main.tsx',
         'packages/web/app/src/lib/testing/**',
         'packages/web/app/src/**/*.spec.{ts,tsx}',
-        // Renders the minimal organization chrome itself; a follow-up PR moves that onto its route.
-        'packages/web/app/src/pages/organization-oidc-request.tsx',
       ],
       rules: {
         '@typescript-eslint/no-restricted-imports': [

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { authenticated } from '@/components/authenticated-container';
+import { OrganizationLayout } from '@/components/layouts/organization';
+import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
 import { DevPage } from '@/pages/dev';
 import { IndexPage } from '@/pages/index';
 import { ManagePage } from '@/pages/manage';
@@ -7,7 +9,7 @@ import { NativeCompositionDiff } from '@/pages/native-composition-diff';
 import { NewOrgPage } from '@/pages/organization-new';
 import { OrganizationOIDCRequestPage } from '@/pages/organization-oidc-request';
 import { OrganizationTransferPage } from '@/pages/organization-transfer';
-import { createRoute, Outlet } from '@tanstack/react-router';
+import { createRoute, Outlet, redirect } from '@tanstack/react-router';
 import { root } from './root';
 
 export const authenticatedRoute = createRoute({
@@ -65,21 +67,26 @@ const OrganizationOIDCRequestRouteSearch = z.object({
   redirectToPath: z.string().optional().default('/'),
 });
 export const organizationOIDCRequestRoute = createRoute({
-  // An auth interstitial, not an organization page: it renders its own minimal chrome.
+  // An auth interstitial, not an organization page: it sits outside the organization route and
+  // renders the minimal chrome itself.
   getParentRoute: () => authenticatedRoute,
   path: '$organizationSlug/oidc-request',
   validateSearch(search) {
     return OrganizationOIDCRequestRouteSearch.parse(search);
   },
+  // Without an OIDC provider there is nothing to ask; carry on to where the viewer was headed.
+  beforeLoad: ({ search }) => {
+    if (!isProviderEnabled('oidc')) {
+      throw redirect({ to: search.redirectToPath });
+    }
+  },
   component: function OrganizationOIDCRequestRoute() {
     const { organizationSlug } = organizationOIDCRequestRoute.useParams();
     const { id, redirectToPath } = organizationOIDCRequestRoute.useSearch();
     return (
-      <OrganizationOIDCRequestPage
-        organizationSlug={organizationSlug}
-        oidcId={id}
-        redirectToPath={redirectToPath}
-      />
+      <OrganizationLayout organizationSlug={organizationSlug} minimal>
+        <OrganizationOIDCRequestPage oidcId={id} redirectToPath={redirectToPath} />
+      </OrganizationLayout>
     );
   },
 });
