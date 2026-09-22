@@ -1,5 +1,16 @@
 # @graphql-hive/cli
 
+## 0.64.1
+
+### Patch Changes
+
+- [#8530](https://github.com/graphql-hive/console/pull/8530)
+  [`d427046`](https://github.com/graphql-hive/console/commit/d427046ca6f7a2d4ad5b3dee3c8bb4678b4da35f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update
+  `@theguild/federation-composition` to `0.26.3`. Unresolvable `@requires`, `@key`, `@provides` and
+  `@fromContext` selections are now reported as composition errors instead of throwing, so
+  composition fails with a proper error message instead of crashing.
+
 ## 0.64.0
 
 ### Minor Changes
