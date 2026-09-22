@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest';
 
 // The route tree imports every page. These stand in for the modules that cannot load under jsdom
 // or that read the frontend env at import time.

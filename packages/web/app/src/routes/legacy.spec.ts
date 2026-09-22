@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory } from '@tanstack/react-router';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.

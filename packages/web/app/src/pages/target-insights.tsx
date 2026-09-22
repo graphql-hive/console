@@ -23,7 +23,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 
 const insightsRoute = getRouteApi(
   '/authenticated/$organizationSlug/$projectSlug/$targetSlug/insights',

@@ -55,9 +55,9 @@ export function missingSelections(
         | undefined;
       const condition =
         argument?.kind === Kind.VARIABLE
-          ? Boolean(variables[argument.name!.value])
+          ? !!variables[argument.name!.value]
           : argument?.kind === Kind.BOOLEAN
-            ? Boolean(argument.value)
+            ? !!argument.value
             : undefined;
       if (directive.name.value === 'skip' && condition === true) return true;
       if (directive.name.value === 'include' && condition === false) return true;
@@ -70,7 +70,9 @@ export function missingSelections(
       return;
     }
     if (Array.isArray(value)) {
-      value.forEach((item, index) => walk(selectionSet, item, `${path}[${index}]`));
+      for (const [index, item] of value.entries()) {
+        walk(selectionSet, item, `${path}[${index}]`);
+      }
       return;
     }
     if (typeof value !== 'object') {

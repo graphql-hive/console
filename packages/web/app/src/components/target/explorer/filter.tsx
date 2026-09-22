@@ -1,8 +1,5 @@
 import { useCallback } from 'react';
-import {
-  Navigation,
-  type NavigationItem,
-} from '@/components/base/navigation/navigation';
+import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useLocation } from '@tanstack/react-router';
 import { usePeriodSelector } from './provider';

@@ -17,13 +17,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import {
-  getRouteApi,
-  Outlet,
-  Link as RouterLink,
-  useNavigate,
-  useParams,
-} from '@tanstack/react-router';
+import { getRouteApi, Outlet, Link as RouterLink, useParams } from '@tanstack/react-router';
 
 const checksRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/checks');
 

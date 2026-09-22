@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { type ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { organizationMembers } from '@/lib/testing/fixtures/organization-members';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
@@ -189,7 +188,7 @@ async function sectionNav(name = 'Settings') {
   const links = within(nav).getAllByRole('link');
   return {
     labels: links.map(link => link.textContent),
-    current: links.filter(link => link.getAttribute('aria-current') === 'page')[0]?.textContent,
+    current: links.find(link => link.getAttribute('aria-current') === 'page')?.textContent,
   };
 }
 

@@ -28,7 +28,7 @@ import { usePagedConnection } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
-import { getRouteApi, Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
@@ -243,7 +243,6 @@ const TracesList = memo(function TracesList(
     pagination: DataTablePaginationProp;
   },
 ) {
-  const router = useRouter();
   const navigate = tracesRoute.useNavigate();
   const data = useFragment(TracesList_Trace, props.traces);
 

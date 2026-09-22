@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import {
   createMemoryHistory,
   createRootRoute,
@@ -68,7 +68,7 @@ export function createPreviewRouter(path: string) {
  * stand-in does not share.
  */
 export function RouterAt(props: { path: string; children: ReactNode }) {
-  const [router] = useState(() => createPreviewRouter(props.path));
+  const router = useMemo(() => createPreviewRouter(props.path), [props.path]);
   return (
     <PreviewSlotProvider value={props.children}>
       <RouterProvider router={router as AnyRouter} />

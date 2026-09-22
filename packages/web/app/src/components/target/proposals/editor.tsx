@@ -10,7 +10,6 @@ import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
 import { prettier, schemaTitle } from './util';
 
 export type Service =

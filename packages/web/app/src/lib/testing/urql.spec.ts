@@ -1,5 +1,4 @@
 import { parse } from 'graphql';
-import { describe, expect, it } from 'vitest';
 import { createTestClient, missingSelections, type Fixtures } from './urql';
 
 const OrganizationQuery = parse(`
@@ -13,7 +12,7 @@ const OrganizationQuery = parse(`
   fragment Viewer on User { email }
 `);
 
-const ProjectQuery = parse(`query ProjectQuery { project { id name } }`);
+const ProjectQuery = parse('query ProjectQuery { project { id name } }');
 
 describe('missingSelections', () => {
   it('accepts data that covers every selected field, through fragments and lists', () => {
@@ -56,7 +55,7 @@ describe('createTestClient', () => {
       .query(OrganizationQuery, { organizationSlug: 'o', minimal: false })
       .toPromise();
     const project = await client.query(ProjectQuery, { n: 1 }).toPromise();
-    const unknown = await client.query(parse(`query Unknown { me { id } }`), {}).toPromise();
+    const unknown = await client.query(parse('query Unknown { me { id } }'), {}).toPromise();
 
     expect(organization.data).toEqual({ me: null, organization: null });
     expect(project.data).toEqual({ project: { id: 'p', name: '1' } });

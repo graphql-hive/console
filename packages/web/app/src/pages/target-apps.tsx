@@ -13,7 +13,7 @@ import { graphql, useFragment, type DocumentType } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { usePagedConnection } from '@/lib/hooks';
-import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
 const appsRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/apps');
