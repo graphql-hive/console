@@ -118,7 +118,10 @@ async function main() {
     // Never serve the SPA shell for a missing asset. Browsers require JavaScript
     // module requests to receive JavaScript, not an HTML fallback.
     if (req.url.startsWith('/assets/')) {
-      return reply.code(404).send({ error: 'Asset not found' });
+      return reply
+        .code(404)
+        .header('cache-control', 'public, max-age=10, s-maxage=10, must-revalidate')
+        .send({ error: 'Asset not found' });
     }
 
     if (isDev) {
