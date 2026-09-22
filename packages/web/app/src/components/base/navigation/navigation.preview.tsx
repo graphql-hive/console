@@ -160,8 +160,9 @@ const ALERTS_ITEMS: NavigationItem[] = [
   {
     id: 'activity',
     label: 'Alert activity',
-    to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/activity',
+    to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
     params: TARGET,
+    exact: true,
   },
   {
     id: 'rules',

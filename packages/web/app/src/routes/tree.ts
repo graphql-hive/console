@@ -54,12 +54,12 @@ import {
 } from './project/settings';
 import { joinOrganizationRoute, logoutRoute, notFoundRoute, root } from './root';
 import {
-  targetAlertsActivityRoute,
   targetAlertsCreateRoute,
   targetAlertsDetailRoute,
   targetAlertsIndexRoute,
   targetAlertsRoute,
   targetAlertsRulesRoute,
+  targetAlertsWithNavRoute,
 } from './target/alerts';
 import { targetAppsRoute, targetAppVersionRoute } from './target/apps';
 import {
@@ -191,11 +191,13 @@ export const routeTree = root.addChildren([
       targetProposalsNewRoute,
       targetProposalsSingleRoute,
       targetAlertsRoute.addChildren([
-        targetAlertsIndexRoute,
-        targetAlertsRulesRoute,
-        targetAlertsActivityRoute,
-        targetAlertsCreateRoute,
+        targetAlertsWithNavRoute.addChildren([
+          targetAlertsIndexRoute,
+          targetAlertsRulesRoute,
+          targetAlertsCreateRoute,
+        ]),
         targetAlertsDetailRoute,
+        ...legacyRoutesUnder(targetAlertsRoute),
       ]),
       ...legacyRoutesUnder(targetRoute),
     ]),

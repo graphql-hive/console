@@ -24,6 +24,7 @@ describe('legacy URLs', () => {
       [
         trace/$traceId,
         view/manage-subscription,
+        activity,
       ]
     `);
     expect(Object.keys(legacySearch)).toMatchInlineSnapshot(`

@@ -443,3 +443,43 @@ describe('members sections', () => {
     },
   );
 });
+
+describe('alerts sections', () => {
+  const ALERTS = `${TARGET}/alerts`;
+
+  function renderAlerts(url: string, viewerCanUseMetricAlertRules = true) {
+    client.current = createTestClient(layoutFixtures());
+    client.current.fixtures.set('TargetAlertsPageQuery', {
+      target: { __typename: 'Target', id: 'target-1', viewerCanUseMetricAlertRules },
+    });
+    return renderAtUrl(url);
+  }
+
+  it(
+    'renders Activity at the bare URL, with only Activity current',
+    { timeout: 30_000 },
+    async () => {
+      renderAlerts(ALERTS);
+      expect(await sectionNav('Alerts')).toEqual({
+        labels: ['Alert activity', 'Alert rules', 'Create a new alert'],
+        current: 'Alert activity',
+      });
+    },
+  );
+
+  it('renders a section at its path', { timeout: 30_000 }, async () => {
+    renderAlerts(`${ALERTS}/rules`);
+    expect((await sectionNav('Alerts')).current).toBe('Alert rules');
+  });
+
+  it('renders the rule detail without the alerts nav', { timeout: 30_000 }, async () => {
+    renderAlerts(`${ALERTS}/rule-1`);
+    await screen.findByRole('link', { name: 'Alerts', current: 'page' });
+    expect(screen.queryByRole('navigation', { name: 'Alerts' })).toBeNull();
+  });
+
+  it('sends a viewer without alert rules back to the target', { timeout: 30_000 }, async () => {
+    const { router } = renderAlerts(`${ALERTS}/rules`, false);
+    await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
+  });
+});

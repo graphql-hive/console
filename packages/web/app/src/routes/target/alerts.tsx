@@ -1,69 +1,48 @@
 import { z } from 'zod';
 import { AlertActivitySearch } from '@/components/target/alerts/search-schemas';
-import { TargetAlertsPage } from '@/pages/target-alerts';
+import { TargetAlertsPage, TargetAlertsWithNav } from '@/pages/target-alerts';
 import { TargetAlertsActivityPage } from '@/pages/target-alerts-activity';
 import { TargetAlertsCreatePage } from '@/pages/target-alerts-create';
 import { TargetAlertsDetailPage } from '@/pages/target-alerts-detail';
 import { TargetAlertsRulesPage } from '@/pages/target-alerts-rules';
-import { createRoute, Navigate } from '@tanstack/react-router';
+import { createRoute } from '@tanstack/react-router';
 import { targetRoute } from './route';
-
-// --- Alerts (nested routes with Outlet) ---
 
 export const targetAlertsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'alerts',
   component: function TargetAlertsRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetAlertsRoute.useParams();
-    return (
-      <TargetAlertsPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
-    );
+    const params = targetAlertsRoute.useParams();
+    return <TargetAlertsPage {...params} />;
+  },
+});
+
+// Activity, rules and create sit beside the alerts nav; the rule detail below renders without it.
+export const targetAlertsWithNavRoute = createRoute({
+  getParentRoute: () => targetAlertsRoute,
+  id: 'with-nav',
+  component: function TargetAlertsWithNavRoute() {
+    const params = targetAlertsWithNavRoute.useParams();
+    return <TargetAlertsWithNav {...params} />;
   },
 });
 
 export const targetAlertsIndexRoute = createRoute({
-  getParentRoute: () => targetAlertsRoute,
+  getParentRoute: () => targetAlertsWithNavRoute,
   path: '/',
+  validateSearch: AlertActivitySearch.parse,
   component: function TargetAlertsIndexRoute() {
     const params = targetAlertsIndexRoute.useParams();
-    return (
-      <Navigate to="/$organizationSlug/$projectSlug/$targetSlug/alerts/activity" params={params} />
-    );
+    return <TargetAlertsActivityPage {...params} />;
   },
 });
 
 export const targetAlertsRulesRoute = createRoute({
-  getParentRoute: () => targetAlertsRoute,
+  getParentRoute: () => targetAlertsWithNavRoute,
   path: 'rules',
   component: function TargetAlertsRulesRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetAlertsRulesRoute.useParams();
-    return (
-      <TargetAlertsRulesPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
-    );
-  },
-});
-
-export const targetAlertsActivityRoute = createRoute({
-  getParentRoute: () => targetAlertsRoute,
-  path: 'activity',
-  validateSearch: AlertActivitySearch.parse,
-  component: function TargetAlertsActivityRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetAlertsActivityRoute.useParams();
-    return (
-      <TargetAlertsActivityPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
-    );
+    const params = targetAlertsRulesRoute.useParams();
+    return <TargetAlertsRulesPage {...params} />;
   },
 });
 
@@ -72,20 +51,13 @@ const TargetAlertsCreateSearch = z.object({
 });
 
 export const targetAlertsCreateRoute = createRoute({
-  getParentRoute: () => targetAlertsRoute,
+  getParentRoute: () => targetAlertsWithNavRoute,
   path: 'create',
   validateSearch: TargetAlertsCreateSearch.parse,
   component: function TargetAlertsCreateRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetAlertsCreateRoute.useParams();
+    const params = targetAlertsCreateRoute.useParams();
     const { savedFilterId } = targetAlertsCreateRoute.useSearch();
-    return (
-      <TargetAlertsCreatePage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        savedFilterId={savedFilterId}
-      />
-    );
+    return <TargetAlertsCreatePage {...params} savedFilterId={savedFilterId} />;
   },
 });
 
@@ -93,15 +65,7 @@ export const targetAlertsDetailRoute = createRoute({
   getParentRoute: () => targetAlertsRoute,
   path: '$ruleId',
   component: function TargetAlertsDetailRoute() {
-    const { organizationSlug, projectSlug, targetSlug, ruleId } =
-      targetAlertsDetailRoute.useParams();
-    return (
-      <TargetAlertsDetailPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        ruleId={ruleId}
-      />
-    );
+    const params = targetAlertsDetailRoute.useParams();
+    return <TargetAlertsDetailPage {...params} />;
   },
 });

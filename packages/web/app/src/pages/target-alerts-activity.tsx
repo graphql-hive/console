@@ -108,7 +108,7 @@ const presetLast1Hour: Preset = {
 };
 
 const activityRoute = getRouteApi(
-  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/activity',
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/with-nav/',
 );
 
 export function TargetAlertsActivityPage(props: {

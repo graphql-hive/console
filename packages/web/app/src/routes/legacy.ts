@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createRoute, redirect, type AnyRoute } from '@tanstack/react-router';
 import { organizationRoute } from './organization/route';
+import { targetAlertsRoute } from './target/alerts';
 import { targetRoute } from './target/route';
 
 /**
@@ -46,6 +47,15 @@ export const legacyPaths: LegacyPath[] = [
     example: { from: '/acme/view/manage-subscription', to: '/acme/view/subscription/manage' },
     since: '2026-09',
     why: 'Nested under /view/subscription so the Subscription nav item infers its active state; the flat URL was a Next-to-Vite migration artifact.',
+  },
+  {
+    parent: () => targetAlertsRoute,
+    path: 'activity',
+    redirect: () =>
+      redirect({ to: '/$organizationSlug/$projectSlug/$targetSlug/alerts', search: true }),
+    example: { from: '/acme/shop/prod/alerts/activity', to: '/acme/shop/prod/alerts' },
+    since: '2026-09',
+    why: 'Activity is the alerts index; the bare URL renders the default section. Its filter and range params carry over.',
   },
 ];
 

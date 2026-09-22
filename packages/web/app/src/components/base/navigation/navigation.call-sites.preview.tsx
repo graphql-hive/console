@@ -434,9 +434,9 @@ export const AlertsSections = createPreview({
   label: 'Alerts sections',
   render: () => (
     <CallSite
-      source="pages/target-alerts.tsx:90"
+      source="pages/target-alerts.tsx"
       origin="raw"
-      note="On /alerts/rules. Today these are router links carrying subPageNavigationLinkClasses through activeProps/inactiveProps inside NavLayout; the list variant is those classes."
+      note="On /alerts/rules. Activity is the bare alerts URL, so it is exact."
     >
       <SectionsPage
         label="Alerts"
@@ -445,8 +445,9 @@ export const AlertsSections = createPreview({
           {
             id: 'activity',
             label: 'Alert activity',
-            to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/activity',
+            to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
             params: TARGET,
+            exact: true,
           },
           {
             id: 'rules',
