@@ -563,19 +563,19 @@ const PROJECT_SETTINGS: NavigationItem[] = [
   {
     id: 'policy',
     label: 'Policy',
-    to: futureRoute('/$organizationSlug/$projectSlug/view/settings/policy'),
+    to: '/$organizationSlug/$projectSlug/view/settings/policy',
     params: PROJECT,
   },
   {
     id: 'composition',
     label: 'Composition',
-    to: futureRoute('/$organizationSlug/$projectSlug/view/settings/composition'),
+    to: '/$organizationSlug/$projectSlug/view/settings/composition',
     params: PROJECT,
   },
   {
     id: 'access-tokens',
     label: 'Access Tokens',
-    to: futureRoute('/$organizationSlug/$projectSlug/view/settings/access-tokens'),
+    to: '/$organizationSlug/$projectSlug/view/settings/access-tokens',
     params: PROJECT,
   },
 ];

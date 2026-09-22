@@ -38,12 +38,14 @@ import {
   organizationSettingsRoute,
   organizationSettingsSsoRoute,
 } from './organization/settings';
+import { projectAlertsRoute, projectIndexRoute, projectRoute } from './project/route';
 import {
-  projectAlertsRoute,
-  projectIndexRoute,
-  projectRoute,
+  projectSettingsAccessTokensRoute,
+  projectSettingsCompositionRoute,
+  projectSettingsIndexRoute,
+  projectSettingsPolicyRoute,
   projectSettingsRoute,
-} from './project';
+} from './project/settings';
 import { joinOrganizationRoute, logoutRoute, notFoundRoute, root } from './root';
 import {
   targetAlertsActivityRoute,
@@ -137,7 +139,16 @@ export const routeTree = root.addChildren([
       ]),
       ...legacyRoutesUnder(organizationRoute),
     ]),
-    projectRoute.addChildren([projectIndexRoute, projectSettingsRoute, projectAlertsRoute]),
+    projectRoute.addChildren([
+      projectIndexRoute,
+      projectSettingsRoute.addChildren([
+        projectSettingsIndexRoute,
+        projectSettingsPolicyRoute,
+        projectSettingsCompositionRoute,
+        projectSettingsAccessTokensRoute,
+      ]),
+      projectAlertsRoute,
+    ]),
     targetRoute.addChildren([
       targetIndexRoute,
       targetSettingsRoute.addChildren([

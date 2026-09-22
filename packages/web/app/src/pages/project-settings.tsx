@@ -2,20 +2,17 @@ import { ReactElement, useCallback, useMemo } from 'react';
 import { ArrowBigDownDashIcon, CheckIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
 import { Button } from '@/components/base/button/button';
+import { Navigation } from '@/components/base/navigation/navigation';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { LayoutContent } from '@/components/layouts/layout-content';
-import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { PolicySettings } from '@/components/policy/policy-settings';
-import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { HiveLogo } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import {
-  NavLayout,
   PageLayout,
   PageLayoutContent,
   SubPageLayout,
@@ -30,9 +27,13 @@ import { useRedirect } from '@/lib/access/common';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getRouteApi, useRouter } from '@tanstack/react-router';
-
-const settingsRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/view/settings');
+import {
+  Outlet,
+  useChildMatches,
+  useRouter,
+  type RegisteredRouter,
+  type RouteIds,
+} from '@tanstack/react-router';
 
 const GithubIntegration_GithubIntegrationDetailsQuery = graphql(`
   query getGitHubIntegrationDetails($organizationSlug: String!) {
@@ -436,181 +437,185 @@ const ProjectSettingsPageQuery = graphql(`
   }
 `);
 
-function ProjectSettingsContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  page?: ProjectSettingsSubPage;
-}) {
-  const router = useRouter();
-  const navigate = settingsRoute.useNavigate();
-  const [query] = useQuery({
-    query: ProjectSettingsPageQuery,
-    variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-    },
-    requestPolicy: 'cache-and-network',
-  });
+type SectionProps = { organizationSlug: string; projectSlug: string };
 
-  const currentOrganization = query.data?.organization;
-  const currentProject = currentOrganization?.project;
+const SETTINGS = '/authenticated/$organizationSlug/$projectSlug/view/settings';
 
-  const organization = useFragment(ProjectSettingsPage_OrganizationFragment, currentOrganization);
-  const project = useFragment(ProjectSettingsPage_ProjectFragment, currentProject);
+type SectionId = 'general' | 'policy' | 'composition' | 'access-tokens';
 
-  // Verify wether user is allowed to access the settings
-  // Otherwise redirect to the project overview.
+type Section = {
+  id: SectionId;
+  label: string;
+  routeId: RouteIds<RegisteredRouter['routeTree']>;
+  to: `/$organizationSlug/$projectSlug/view/settings${'' | `/${Exclude<SectionId, 'general'>}`}`;
+  exact?: boolean;
+};
+
+/**
+ * The sections in nav order, with the route each renders under; the permission gate compares the
+ * matched child route against the items the viewer may see. The bare URL is General.
+ */
+const sections: readonly Section[] = [
+  {
+    id: 'general',
+    label: 'General',
+    routeId: `${SETTINGS}/`,
+    to: '/$organizationSlug/$projectSlug/view/settings',
+    exact: true,
+  },
+  {
+    id: 'policy',
+    label: 'Policy',
+    routeId: `${SETTINGS}/policy`,
+    to: '/$organizationSlug/$projectSlug/view/settings/policy',
+  },
+  {
+    id: 'composition',
+    label: 'Composition',
+    routeId: `${SETTINGS}/composition`,
+    to: '/$organizationSlug/$projectSlug/view/settings/composition',
+  },
+  {
+    id: 'access-tokens',
+    label: 'Access Tokens',
+    routeId: `${SETTINGS}/access-tokens`,
+    to: '/$organizationSlug/$projectSlug/view/settings/access-tokens',
+  },
+];
+
+function useProjectSettings(props: SectionProps, requestPolicy?: 'cache-and-network') {
+  const [query] = useQuery({ query: ProjectSettingsPageQuery, variables: props, requestPolicy });
+  const organization = useFragment(
+    ProjectSettingsPage_OrganizationFragment,
+    query.data?.organization,
+  );
+  const project = useFragment(
+    ProjectSettingsPage_ProjectFragment,
+    query.data?.organization?.project,
+  );
+  return { query, organization, project };
+}
+
+export function ProjectSettingsPage(props: SectionProps) {
+  // Fresh on entry; the sections read the same document from the cache.
+  const { query, project } = useProjectSettings(props, 'cache-and-network');
+
   useRedirect({
     canAccess:
       project?.viewerCanModifySettings === true ||
       project?.viewerCanManageProjectAccessTokens === true,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug',
-        params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-        },
-      });
-    },
     entity: project,
+    redirectTo: router => {
+      void router.navigate({ to: '/$organizationSlug/$projectSlug', params: props });
+    },
   });
 
-  const subPages = useMemo(() => {
-    const pages: Array<{
-      key: ProjectSettingsSubPage;
-      title: string;
-    }> = [];
-
+  const visible = useMemo(() => {
+    const ids = new Set<SectionId>(['policy']);
     if (project?.viewerCanModifySettings) {
-      pages.push({
-        key: 'general',
-        title: 'General',
-      });
+      ids.add('general');
     }
-
-    pages.push({
-      key: 'policy',
-      title: 'Policy',
-    });
-
     if (project?.type === ProjectType.Federation) {
-      pages.push({
-        key: 'composition',
-        title: 'Composition',
-      });
+      ids.add('composition');
     }
-
     if (project?.viewerCanManageProjectAccessTokens) {
-      pages.push({
-        key: 'access-tokens',
-        title: 'Access Tokens',
-      });
+      ids.add('access-tokens');
     }
-
-    return pages;
+    return sections.filter(section => ids.has(section.id));
   }, [project]);
 
-  const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
+  const sectionRouteId = useChildMatches({ select: matches => matches.at(-1)?.routeId });
+  const allowed = visible.some(section => section.routeId === sectionRouteId);
 
-  if (!resolvedPage || !organization || !project) {
-    return null;
-  }
+  // A section the viewer may not open falls back to the first one they may, else the project.
+  useRedirect({
+    canAccess: allowed,
+    entity: project,
+    redirectTo: router => {
+      const fallback = visible.at(0);
+      void router.navigate(
+        fallback
+          ? { to: fallback.to, params: props, replace: true }
+          : { to: '/$organizationSlug/$projectSlug', params: props, replace: true },
+      );
+    },
+  });
 
   if (query.error) {
     return (
-      <QueryError
-        organizationSlug={props.organizationSlug}
-        error={query.error}
-        showLogoutButton={false}
-      />
+      <LayoutContent>
+        <QueryError
+          organizationSlug={props.organizationSlug}
+          error={query.error}
+          showLogoutButton={false}
+        />
+      </LayoutContent>
     );
   }
 
   return (
-    <PageLayout>
-      <NavLayout>
-        {subPages.map(subPage => (
-          <SubPageNavigationLink
-            key={subPage.key}
-            isActive={resolvedPage.key === subPage.key}
-            onClick={() => {
-              void navigate({
-                search: {
-                  page: subPage.key,
-                },
-              });
-            }}
-            title={subPage.title}
-          />
-        ))}
-      </NavLayout>
-      <PageLayoutContent>
-        <div className="space-y-12">
-          {resolvedPage.key === 'general' ? (
-            <>
-              <ResourceDetails id={project.id} label="Project ID" />
-              <ProjectSettingsPage_SlugForm
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-              />
-              {query.data?.isGitHubIntegrationFeatureEnabled &&
-              !project.isProjectNameInGitHubCheckEnabled ? (
-                <GitHubIntegration
-                  organizationSlug={organization.slug}
-                  projectSlug={project.slug}
-                />
-              ) : null}
-
-              {project.viewerCanDelete ? (
-                <ProjectDelete projectSlug={project.slug} organizationSlug={organization.slug} />
-              ) : null}
-            </>
-          ) : null}
-          {resolvedPage.key === 'policy' ? (
-            <ProjectPolicySettings organizationSlug={organization.slug} project={project} />
-          ) : null}
-          {resolvedPage.key === 'composition' ? (
-            <CompositionSettings project={project} organization={organization} />
-          ) : null}
-          {resolvedPage.key === 'access-tokens' ? (
-            <ProjectAccessTokensSubPage
-              organizationSlug={organization.slug}
-              projectSlug={project.slug}
-            />
-          ) : null}
-        </div>
-      </PageLayoutContent>
-    </PageLayout>
-  );
-}
-
-export const ProjectSettingsPageEnum = z.enum([
-  'general',
-  'policy',
-  'composition',
-  'access-tokens',
-]);
-
-export type ProjectSettingsSubPage = z.TypeOf<typeof ProjectSettingsPageEnum>;
-
-export function ProjectSettingsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  page?: ProjectSettingsSubPage;
-}) {
-  return (
     <>
       <Meta title="Project settings" />
       <LayoutContent className="flex flex-col gap-y-10">
-        <ProjectSettingsContent
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          page={props.page}
-        />
+        {allowed && project ? (
+          <PageLayout>
+            <Navigation
+              aria-label="Settings"
+              variant="list"
+              items={visible.map(section => ({
+                id: section.id,
+                label: section.label,
+                to: section.to,
+                params: props,
+                exact: section.exact,
+              }))}
+            />
+            <PageLayoutContent>
+              <div className="space-y-12">
+                <Outlet />
+              </div>
+            </PageLayoutContent>
+          </PageLayout>
+        ) : null}
       </LayoutContent>
     </>
   );
+}
+
+export function ProjectSettingsGeneralSection(props: SectionProps) {
+  const { query, organization, project } = useProjectSettings(props);
+  if (!organization || !project) {
+    return null;
+  }
+  return (
+    <>
+      <ResourceDetails id={project.id} label="Project ID" />
+      <ProjectSettingsPage_SlugForm {...props} />
+      {query.data?.isGitHubIntegrationFeatureEnabled &&
+      !project.isProjectNameInGitHubCheckEnabled ? (
+        <GitHubIntegration organizationSlug={organization.slug} projectSlug={project.slug} />
+      ) : null}
+      {project.viewerCanDelete ? (
+        <ProjectDelete projectSlug={project.slug} organizationSlug={organization.slug} />
+      ) : null}
+    </>
+  );
+}
+
+export function ProjectSettingsPolicySection(props: SectionProps) {
+  const { organization, project } = useProjectSettings(props);
+  if (!organization || !project) {
+    return null;
+  }
+  return <ProjectPolicySettings organizationSlug={organization.slug} project={project} />;
+}
+
+export function ProjectSettingsCompositionSection(props: SectionProps) {
+  const { organization, project } = useProjectSettings(props);
+  if (!organization || !project) {
+    return null;
+  }
+  return <CompositionSettings project={project} organization={organization} />;
 }
 
 export const DeleteProjectMutation = graphql(`

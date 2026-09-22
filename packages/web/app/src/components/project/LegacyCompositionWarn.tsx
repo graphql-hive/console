@@ -43,12 +43,11 @@ export function LegacyCompositionWarn(props: {
       <br />
       Migrate to Native Federation v2 for the recommended composition experience.{' '}
       <Link
-        to="/$organizationSlug/$projectSlug/view/settings"
+        to="/$organizationSlug/$projectSlug/view/settings/composition"
         params={{
           organizationSlug: props.organizationSlug,
           projectSlug: project.slug,
         }}
-        search={{ page: 'composition' }}
         className="text-blue-500"
       >
         Open Composition settings

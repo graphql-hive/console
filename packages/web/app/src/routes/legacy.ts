@@ -100,6 +100,23 @@ export const legacySearch = {
     since: '2026-09',
     why: 'Organization settings sections became child routes; the bare URL is General.',
   }),
+  projectSettings: legacySearchEntry({
+    param: 'page',
+    values: z.enum(['general', 'policy', 'composition', 'access-tokens']),
+    redirect: page =>
+      page === 'general'
+        ? redirect({ to: '/$organizationSlug/$projectSlug/view/settings', search: {} })
+        : redirect({ to: `/$organizationSlug/$projectSlug/view/settings/${page}`, search: {} }),
+    examples: [
+      {
+        from: '/acme/shop/view/settings?page=composition',
+        to: '/acme/shop/view/settings/composition',
+      },
+      { from: '/acme/shop/view/settings?page=general', to: '/acme/shop/view/settings' },
+    ],
+    since: '2026-09',
+    why: 'Project settings sections became child routes; the bare URL is General.',
+  }),
 };
 
 /** For the `beforeLoad` of the route that owns a legacy search param: redirects when it is set. */

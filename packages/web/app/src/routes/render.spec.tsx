@@ -3,6 +3,7 @@ import { type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
+import { projectSettings } from '@/lib/testing/fixtures/project-settings';
 import { targetSettings } from '@/lib/testing/fixtures/target-settings';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
@@ -327,4 +328,62 @@ describe('organization settings sections', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));
     expect((await sectionNav()).current).toBe('Policy');
   });
+});
+
+describe('project settings sections', () => {
+  const SETTINGS = `${PROJECT}/view/settings`;
+
+  function renderSettings(url: string, fixture = projectSettings()) {
+    client.current = createTestClient(layoutFixtures());
+    client.current.fixtures.set('ProjectSettingsPageQuery', fixture);
+    return renderAtUrl(url);
+  }
+
+  it(
+    'renders General at the bare URL, with only General current',
+    { timeout: 30_000 },
+    async () => {
+      renderSettings(SETTINGS);
+      expect(await sectionNav()).toEqual({
+        labels: ['General', 'Policy', 'Composition', 'Access Tokens'],
+        current: 'General',
+      });
+      expect(await screen.findByText('Project ID')).toBeTruthy();
+    },
+  );
+
+  it('renders a section at its path', { timeout: 30_000 }, async () => {
+    renderSettings(`${SETTINGS}/policy`);
+    expect((await sectionNav()).current).toBe('Policy');
+    expect(await screen.findByText('Rules')).toBeTruthy();
+  });
+
+  it('offers Composition only to federation projects', { timeout: 30_000 }, async () => {
+    renderSettings(SETTINGS, projectSettings({ projectType: 'SINGLE' }));
+    expect((await sectionNav()).labels).toEqual(['General', 'Policy', 'Access Tokens']);
+  });
+
+  it('sends a viewer who may not open General to Policy', { timeout: 30_000 }, async () => {
+    const { router } = renderSettings(
+      SETTINGS,
+      projectSettings({ viewerCanModifySettings: false }),
+    );
+    await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));
+    expect((await sectionNav()).current).toBe('Policy');
+  });
+
+  it(
+    'sends a viewer without settings access back to the project',
+    { timeout: 30_000 },
+    async () => {
+      const { router } = renderSettings(
+        `${SETTINGS}/policy`,
+        projectSettings({
+          viewerCanModifySettings: false,
+          viewerCanManageProjectAccessTokens: false,
+        }),
+      );
+      await waitFor(() => expect(router.state.location.pathname).toBe(PROJECT));
+    },
+  );
 });

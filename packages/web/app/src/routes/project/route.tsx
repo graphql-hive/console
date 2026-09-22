@@ -1,10 +1,8 @@
-import { z } from 'zod';
 import { ProjectLayout } from '@/components/layouts/project';
 import { ProjectIndexRouteSearch, ProjectPage } from '@/pages/project';
 import { ProjectAlertsPage } from '@/pages/project-alerts';
-import { ProjectSettingsPage, ProjectSettingsPageEnum } from '@/pages/project-settings';
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { authenticatedRoute } from './authenticated';
+import { authenticatedRoute } from '../authenticated';
 
 export const projectRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -33,30 +31,6 @@ export const projectIndexRoute = createRoute({
         search={search}
         sortBy={sortBy}
         sortOrder={sortOrder}
-      />
-    );
-  },
-});
-
-const ProjectSettingsRouteSearch = z.object({
-  page: ProjectSettingsPageEnum.default('general').optional(),
-});
-
-export const projectSettingsRoute = createRoute({
-  getParentRoute: () => projectRoute,
-  path: 'view/settings',
-  validateSearch(search) {
-    return ProjectSettingsRouteSearch.parse(search);
-  },
-  component: function ProjectSettingsRoute() {
-    const { organizationSlug, projectSlug } = projectSettingsRoute.useParams();
-    const { page } = projectSettingsRoute.useSearch();
-
-    return (
-      <ProjectSettingsPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        page={page}
       />
     );
   },
