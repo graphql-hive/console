@@ -215,7 +215,7 @@ export function SchemaExplorerUsageStats(props: {
       <Popover
         trigger={
           <button type="button" aria-label="Client usage" className="cursor-help p-1 text-xl">
-            <UsersIcon size={16} className="h-6 w-auto" />
+            <UsersIcon className="size-4" />
           </button>
         }
         openOnHover

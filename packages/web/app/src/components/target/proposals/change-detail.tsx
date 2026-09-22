@@ -59,7 +59,7 @@ export function ChangeBlock(props: {
             } else if (mergeStatus === MergeStatus.IGNORED) {
               icon = (
                 <span className="text-neutral-10 flex items-center justify-end pl-4">
-                  <Diamond className="mr-2 size-4" /> NO CHANGE
+                  <Diamond className="mr-2 size-4" strokeDasharray="2 2" /> NO CHANGE
                 </span>
               );
             }

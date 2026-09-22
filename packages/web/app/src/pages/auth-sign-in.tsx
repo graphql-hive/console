@@ -24,29 +24,23 @@ import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 
 export function SignInButton(props: {
-  children: React.ReactNode;
+  children: React.ReactElement;
   previousSignIn: boolean;
   variant?: 'outline' | 'default';
 }) {
   if (props.previousSignIn) {
     return (
-      <Tooltip
-        trigger={
-          <span className="relative inline-flex w-full">
-            {props.children}
-            <span
-              aria-hidden
-              className="animate-shimmer bg-size-[200%_100%] pointer-events-none absolute inset-0 rounded-sm bg-[linear-gradient(110deg,transparent,30%,hsl(var(--neutral-6)),70%,transparent)]"
-            />
-          </span>
-        }
-        content="You signed in with it last time."
-        side="top"
-      />
+      <span className="relative inline-flex w-full">
+        <Tooltip trigger={props.children} content="You signed in with it last time." side="top" />
+        <span
+          aria-hidden
+          className="animate-shimmer bg-size-[200%_100%] pointer-events-none absolute inset-0 rounded-sm bg-[linear-gradient(110deg,transparent,30%,hsl(var(--neutral-6)/0.35),70%,transparent)]"
+        />
+      </span>
     );
   }
 
-  return <>{props.children}</>;
+  return props.children;
 }
 
 export function AuthSignInPage(props: { redirectToPath: string }) {
@@ -250,6 +244,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                     <Button
                       variant="outline"
                       width="full"
+                      disabled={isPending}
                       render={
                         <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
                       }
