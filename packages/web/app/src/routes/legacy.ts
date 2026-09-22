@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createRoute, redirect, type AnyRoute } from '@tanstack/react-router';
-import { organizationRoute } from './organization';
+import { organizationRoute } from './organization/route';
 import { targetRoute } from './target/route';
 
 /**
@@ -12,7 +12,8 @@ import { targetRoute } from './target/route';
  *
  * `legacyPaths` are old paths, mounted as routes by `legacyRoutesUnder`. `legacySearch` are old
  * `?param=` forms of a path that still exists; the route that owns that path calls
- * `legacySearchRedirect` from its `beforeLoad`.
+ * `legacySearchRedirect` from its `beforeLoad`, so a route module that names a parent here (an
+ * `xRoute` module) must not itself import this module, or the two evaluate in a cycle.
  *
  * Redirects that depend on data or config are not legacy and live on their routes:
  * - `/auth` -> `/auth/sign-in`, carrying `redirectToPath` (routes/anonymous.tsx)
@@ -84,6 +85,20 @@ export const legacySearch = {
     ],
     since: '2026-09',
     why: 'Target settings sections became child routes; the bare URL is General.',
+  }),
+  organizationSettings: legacySearchEntry({
+    param: 'page',
+    values: z.enum(['general', 'sso', 'policy', 'access-tokens', 'personal-access-tokens']),
+    redirect: page =>
+      page === 'general'
+        ? redirect({ to: '/$organizationSlug/view/settings', search: {} })
+        : redirect({ to: `/$organizationSlug/view/settings/${page}`, search: {} }),
+    examples: [
+      { from: '/acme/view/settings?page=sso', to: '/acme/view/settings/sso' },
+      { from: '/acme/view/settings?page=general', to: '/acme/view/settings' },
+    ],
+    since: '2026-09',
+    why: 'Organization settings sections became child routes; the bare URL is General.',
   }),
 };
 

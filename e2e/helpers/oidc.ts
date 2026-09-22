@@ -32,7 +32,7 @@ export function createOIDCHelper(page: Page, seed: SeedHelper, auth: AuthHelper)
         throw new Error(`Failed to resolve organization slug from URL: ${page.url()}`);
       }
 
-      await page.goto(`/${organizationSlug}/view/settings?page=sso`, {
+      await page.goto(`/${organizationSlug}/view/settings/sso`, {
         waitUntil: 'domcontentloaded',
       });
       await page.locator('button[data-button-connect-open-id-provider]').click();

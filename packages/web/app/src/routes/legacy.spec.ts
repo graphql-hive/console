@@ -29,6 +29,7 @@ describe('legacy URLs', () => {
     expect(Object.keys(legacySearch)).toMatchInlineSnapshot(`
       [
         targetSettings,
+        organizationSettings,
       ]
     `);
   });

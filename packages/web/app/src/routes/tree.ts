@@ -25,12 +25,19 @@ import {
   organizationIndexRoute,
   organizationMembersRoute,
   organizationRoute,
-  organizationSettingsRoute,
   organizationSubscriptionManageRoute,
   organizationSubscriptionRoute,
   organizationSupportRoute,
   organizationSupportTicketRoute,
-} from './organization';
+} from './organization/route';
+import {
+  organizationSettingsAccessTokensRoute,
+  organizationSettingsIndexRoute,
+  organizationSettingsPersonalAccessTokensRoute,
+  organizationSettingsPolicyRoute,
+  organizationSettingsRoute,
+  organizationSettingsSsoRoute,
+} from './organization/settings';
 import {
   projectAlertsRoute,
   projectIndexRoute,
@@ -121,7 +128,13 @@ export const routeTree = root.addChildren([
       organizationSubscriptionRoute,
       organizationSubscriptionManageRoute,
       organizationMembersRoute,
-      organizationSettingsRoute,
+      organizationSettingsRoute.addChildren([
+        organizationSettingsIndexRoute,
+        organizationSettingsSsoRoute,
+        organizationSettingsPolicyRoute,
+        organizationSettingsAccessTokensRoute,
+        organizationSettingsPersonalAccessTokensRoute,
+      ]),
       ...legacyRoutesUnder(organizationRoute),
     ]),
     projectRoute.addChildren([projectIndexRoute, projectSettingsRoute, projectAlertsRoute]),

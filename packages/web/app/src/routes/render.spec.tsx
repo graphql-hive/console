@@ -2,6 +2,7 @@
 import { type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
+import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
 import { targetSettings } from '@/lib/testing/fixtures/target-settings';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
@@ -180,6 +181,16 @@ describe('chrome at every page', () => {
   }
 });
 
+/** The labels of a tertiary nav's links and the one that is current, once it has rendered. */
+async function sectionNav(name = 'Settings') {
+  const nav = await screen.findByRole('navigation', { name });
+  const links = within(nav).getAllByRole('link');
+  return {
+    labels: links.map(link => link.textContent),
+    current: links.filter(link => link.getAttribute('aria-current') === 'page')[0]?.textContent,
+  };
+}
+
 describe('target settings sections', () => {
   const SETTINGS = `${TARGET}/settings`;
 
@@ -187,15 +198,6 @@ describe('target settings sections', () => {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('TargetSettingsPageQuery', fixture);
     return renderAtUrl(url);
-  }
-
-  async function sectionNav() {
-    const nav = await screen.findByRole('navigation', { name: 'Settings' });
-    const links = within(nav).getAllByRole('link');
-    return {
-      labels: links.map(link => link.textContent),
-      current: links.filter(link => link.getAttribute('aria-current') === 'page')[0]?.textContent,
-    };
   }
 
   it(
@@ -274,5 +276,55 @@ describe('target settings sections', () => {
       }),
     );
     await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
+  });
+});
+
+describe('organization settings sections', () => {
+  const SETTINGS = `${ORGANIZATION}/view/settings`;
+
+  function renderSettings(url: string, fixture = organizationSettings()) {
+    client.current = createTestClient(layoutFixtures());
+    client.current.fixtures.set('OrganizationSettingsPageQuery', fixture);
+    return renderAtUrl(url);
+  }
+
+  it(
+    'renders General at the bare URL, with only General current',
+    { timeout: 30_000 },
+    async () => {
+      renderSettings(SETTINGS);
+      expect(await sectionNav()).toEqual({
+        labels: ['General', 'Policy', 'SSO / SCIM', 'Access Tokens', 'Personal Access Tokens'],
+        current: 'General',
+      });
+      expect(await screen.findByText('Organization ID')).toBeTruthy();
+    },
+  );
+
+  it('renders a section at its path and keeps the data-cy hooks', { timeout: 30_000 }, async () => {
+    renderSettings(`${SETTINGS}/policy`);
+    expect((await sectionNav()).current).toBe('Policy');
+    expect(await screen.findByText('Rules')).toBeTruthy();
+    expect(document.querySelector('[data-cy="link-sso"]')).toBeTruthy();
+  });
+
+  it('hides sections the viewer may not open', { timeout: 30_000 }, async () => {
+    renderSettings(
+      SETTINGS,
+      organizationSettings({
+        viewerCanManageOIDCIntegration: false,
+        viewerCanManagePersonalAccessTokens: false,
+      }),
+    );
+    expect((await sectionNav()).labels).toEqual(['General', 'Policy', 'Access Tokens']);
+  });
+
+  it('sends a viewer who may not open General to Policy', { timeout: 30_000 }, async () => {
+    const { router } = renderSettings(
+      SETTINGS,
+      organizationSettings({ viewerCanAccessSettings: false }),
+    );
+    await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));
+    expect((await sectionNav()).current).toBe('Policy');
   });
 });

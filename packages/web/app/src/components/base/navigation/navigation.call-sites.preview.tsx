@@ -529,25 +529,25 @@ const ORGANIZATION_SETTINGS: NavigationItem[] = [
   {
     id: 'policy',
     label: 'Policy',
-    to: futureRoute('/$organizationSlug/view/settings/policy'),
+    to: '/$organizationSlug/view/settings/policy',
     params: ORGANIZATION,
   },
   {
     id: 'sso',
     label: 'SSO / SCIM',
-    to: futureRoute('/$organizationSlug/view/settings/sso'),
+    to: '/$organizationSlug/view/settings/sso',
     params: ORGANIZATION,
   },
   {
     id: 'access-tokens',
     label: 'Access Tokens',
-    to: futureRoute('/$organizationSlug/view/settings/access-tokens'),
+    to: '/$organizationSlug/view/settings/access-tokens',
     params: ORGANIZATION,
   },
   {
     id: 'personal-access-tokens',
     label: 'Personal Access Tokens',
-    to: futureRoute('/$organizationSlug/view/settings/personal-access-tokens'),
+    to: '/$organizationSlug/view/settings/personal-access-tokens',
     params: ORGANIZATION,
   },
 ];

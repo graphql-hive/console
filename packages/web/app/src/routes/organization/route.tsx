@@ -3,16 +3,12 @@ import { z } from 'zod';
 import { OrganizationLayout } from '@/components/layouts/organization';
 import { OrganizationIndexRouteSearch, OrganizationPage } from '@/pages/organization';
 import { OrganizationMembersPage } from '@/pages/organization-members';
-import {
-  OrganizationSettingsPage,
-  OrganizationSettingsPageEnum,
-} from '@/pages/organization-settings';
 import { OrganizationSubscriptionPage } from '@/pages/organization-subscription';
 import { OrganizationSubscriptionManagePage } from '@/pages/organization-subscription-manage';
 import { OrganizationSupportPage } from '@/pages/organization-support';
 import { OrganizationSupportTicketPage } from '@/pages/organization-support-ticket';
 import { createRoute, Outlet, useNavigate } from '@tanstack/react-router';
-import { authenticatedRoute } from './authenticated';
+import { authenticatedRoute } from '../authenticated';
 
 export const organizationRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -80,23 +76,6 @@ export const organizationSubscriptionManageRoute = createRoute({
   component: function OrganizationSubscriptionManageRoute() {
     const { organizationSlug } = organizationSubscriptionManageRoute.useParams();
     return <OrganizationSubscriptionManagePage organizationSlug={organizationSlug} />;
-  },
-});
-
-const OrganizationSettingRouteSearch = z.object({
-  page: OrganizationSettingsPageEnum.default('general').optional(),
-});
-
-export const organizationSettingsRoute = createRoute({
-  getParentRoute: () => organizationRoute,
-  validateSearch(search) {
-    return OrganizationSettingRouteSearch.parse(search);
-  },
-  path: 'view/settings',
-  component: function OrganizationSettingsRoute() {
-    const { organizationSlug } = organizationSettingsRoute.useParams();
-    const { page } = organizationSettingsRoute.useSearch();
-    return <OrganizationSettingsPage organizationSlug={organizationSlug} page={page} />;
   },
 });
 
