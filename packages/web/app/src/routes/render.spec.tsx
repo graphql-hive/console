@@ -71,6 +71,7 @@ const pages: Array<{ url: string; current: string }> = [
   { url: `${TARGET}/insights/client/web`, current: 'Insights' },
   { url: `${TARGET}/insights/GetUser/abc123`, current: 'Insights' },
   { url: `${TARGET}/traces`, current: 'Traces' },
+  { url: `${TARGET}/traces/trace-1`, current: 'Traces' },
   { url: `${TARGET}/explorer`, current: 'Explorer' },
   { url: `${TARGET}/explorer/deprecated`, current: 'Explorer' },
   { url: `${TARGET}/explorer/User`, current: 'Explorer' },
@@ -86,8 +87,7 @@ const pages: Array<{ url: string; current: string }> = [
   { url: `${TARGET}/alerts/create`, current: 'Alerts' },
   { url: `${TARGET}/alerts/rule-1`, current: 'Alerts' },
   { url: `${TARGET}/settings`, current: 'Settings' },
-  // Traces detail lives at /trace/$traceId, outside the Traces item's path, and the History item
-  // links to the latest version only; both are URL changes in a later commit.
+  // The History item links to the latest version only; that URL changes in a later commit.
 ];
 
 describe('chrome at every page', () => {

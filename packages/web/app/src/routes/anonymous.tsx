@@ -8,7 +8,7 @@ import { AuthSignInPage } from '@/pages/auth-sign-in';
 import { AuthSignUpPage } from '@/pages/auth-sign-up';
 import { AuthSSOPage } from '@/pages/auth-sso';
 import { AuthVerifyEmailPage } from '@/pages/auth-verify-email';
-import { createRoute, Navigate } from '@tanstack/react-router';
+import { createRoute, redirect } from '@tanstack/react-router';
 import { root } from './root';
 
 export const anonymousRoute = createRoute({
@@ -32,9 +32,8 @@ export const authIndexRoute = createRoute({
   validateSearch(search) {
     return AuthSharedSearch.parse(search);
   },
-  component: () => {
-    const { redirectToPath } = authIndexRoute.useSearch();
-    return <Navigate to="/auth/sign-in" search={{ redirectToPath }} />;
+  beforeLoad: ({ search }) => {
+    throw redirect({ to: '/auth/sign-in', search: { redirectToPath: search.redirectToPath } });
   },
 });
 

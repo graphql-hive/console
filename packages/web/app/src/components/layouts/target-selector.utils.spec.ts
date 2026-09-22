@@ -15,7 +15,7 @@ const ALL_ROUTES = [
   `${P}/insights/manage-filters`,
   `${P}/insights/$operationName/$operationHash`,
   `${P}/traces`,
-  `${P}/trace/$traceId`,
+  `${P}/traces/$traceId`,
   `${P}/apps`,
   `${P}/apps/$appName/$appVersion`,
   `${P}/alerts`,
@@ -51,8 +51,12 @@ describe('resolveTargetSwitchTo', () => {
     expect(resolve(P, `${P}/insights/$operationName/$operationHash`)).toBe(`${P}/insights`);
   });
 
-  it('falls back to target home when the flat section is not a known route (trace)', () => {
-    expect(resolve(P, `${P}/trace/$traceId`)).toBe(P);
+  it('recovers the section for a flat detail route (trace)', () => {
+    expect(resolve(P, `${P}/traces/$traceId`)).toBe(`${P}/traces`);
+  });
+
+  it('falls back to target home when the flat section is not a known route', () => {
+    expect(resolve(P, `${P}/nowhere/$id`)).toBe(P);
   });
 
   it('strips the trailing slash of the target index route', () => {

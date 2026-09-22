@@ -120,7 +120,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
               <Button
                 render={
                   <Link
-                    to="/$organizationSlug/view/manage-subscription"
+                    to="/$organizationSlug/view/subscription/manage"
                     params={{ organizationSlug: currentOrganization.slug }}
                   />
                 }

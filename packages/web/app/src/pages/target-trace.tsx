@@ -529,7 +529,7 @@ function SpanNode(props: SpanNodeProps) {
                     'relative flex h-full grow cursor-pointer items-center overflow-hidden',
                     isDimmed ? 'opacity-25' : '',
                   )}
-                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                   params={{
                     organizationSlug: props.organizationSlug,
                     projectSlug: props.projectSlug,
@@ -629,7 +629,7 @@ function SpanNode(props: SpanNodeProps) {
                         'absolute inset-y-0 z-50 translate-x-[-50%] cursor-pointer px-1',
                       )}
                       style={{ left: `${leftPercentage}%` }}
-                      to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                      to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                       params={{
                         organizationSlug: props.organizationSlug,
                         projectSlug: props.projectSlug,
@@ -780,7 +780,7 @@ export function TraceSheet(props: TraceSheetProps) {
   );
 
   const navigate = useNavigate({
-    from: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+    from: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
   });
 
   return (
@@ -886,7 +886,7 @@ export function TraceSheet(props: TraceSheetProps) {
                         ) : (
                           events.map(event => (
                             <Link
-                              to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                              to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                               params={{
                                 organizationSlug: props.organizationSlug,
                                 projectSlug: props.projectSlug,
@@ -950,7 +950,7 @@ export function TraceSheet(props: TraceSheetProps) {
         }
         onClose={() =>
           navigate({
-            to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+            to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
             search: {},
           })
         }
@@ -1446,7 +1446,7 @@ function SpanSheet(props: SpanSheetProps) {
               size="compact"
               render={
                 <Link
-                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                   params={{
                     organizationSlug: props.organizationSlug,
                     projectSlug: props.projectSlug,

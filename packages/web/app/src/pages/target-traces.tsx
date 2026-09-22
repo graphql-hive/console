@@ -262,7 +262,7 @@ const TracesList = memo(function TracesList(
             mono
             label={row.original.id.substring(0, 8)}
             link={{
-              to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+              to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
               params: {
                 organizationSlug: targetRef.organizationSlug,
                 projectSlug: targetRef.projectSlug,
@@ -820,7 +820,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
               size="compact"
               render={
                 <Link
-                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                   params={{
                     organizationSlug: props.organizationSlug,
                     projectSlug: props.projectSlug,

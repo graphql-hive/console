@@ -20,12 +20,12 @@ import {
   organizationOIDCRequestRoute,
   transferOrganizationRoute,
 } from './authenticated';
+import { legacyRoutesUnder } from './legacy';
 import {
   organizationIndexRoute,
   organizationMembersRoute,
   organizationRoute,
   organizationSettingsRoute,
-  organizationSubscriptionManageLegacyRoute,
   organizationSubscriptionManageRoute,
   organizationSubscriptionRoute,
   organizationSupportRoute,
@@ -108,9 +108,9 @@ export const routeTree = root.addChildren([
       organizationSupportTicketRoute,
       organizationSubscriptionRoute,
       organizationSubscriptionManageRoute,
-      organizationSubscriptionManageLegacyRoute,
       organizationMembersRoute,
       organizationSettingsRoute,
+      ...legacyRoutesUnder(organizationRoute),
     ]),
     projectRoute.addChildren([projectIndexRoute, projectSettingsRoute, projectAlertsRoute]),
     targetRoute.addChildren([
@@ -143,6 +143,7 @@ export const routeTree = root.addChildren([
         targetAlertsCreateRoute,
         targetAlertsDetailRoute,
       ]),
+      ...legacyRoutesUnder(targetRoute),
     ]),
   ]),
 ]);

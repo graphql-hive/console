@@ -72,7 +72,7 @@ export const targetTraceRoute = createRoute({
   validateSearch(search) {
     return TargetTraceRouteSearchModel.parse(search);
   },
-  path: 'trace/$traceId',
+  path: 'traces/$traceId',
   component: function TargetTraceRoute() {
     const { organizationSlug, projectSlug, targetSlug, traceId } = targetTraceRoute.useParams();
     const { activeSpanId, activeSpanTab } = targetTraceRoute.useSearch();

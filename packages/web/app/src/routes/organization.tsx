@@ -11,7 +11,7 @@ import { OrganizationSubscriptionPage } from '@/pages/organization-subscription'
 import { OrganizationSubscriptionManagePage } from '@/pages/organization-subscription-manage';
 import { OrganizationSupportPage } from '@/pages/organization-support';
 import { OrganizationSupportTicketPage } from '@/pages/organization-support-ticket';
-import { createRoute, Navigate, Outlet, useNavigate } from '@tanstack/react-router';
+import { createRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import { authenticatedRoute } from './authenticated';
 
 export const organizationRoute = createRoute({
@@ -74,20 +74,9 @@ export const organizationSubscriptionRoute = createRoute({
   },
 });
 
-export const organizationSubscriptionManageLegacyRoute = createRoute({
-  getParentRoute: () => organizationRoute,
-  path: 'view/subscription/manage',
-  component: function OrganizationSubscriptionManageLegacyRoute() {
-    const { organizationSlug } = organizationSubscriptionManageLegacyRoute.useParams();
-    return (
-      <Navigate to="/$organizationSlug/view/manage-subscription" params={{ organizationSlug }} />
-    );
-  },
-});
-
 export const organizationSubscriptionManageRoute = createRoute({
   getParentRoute: () => organizationRoute,
-  path: 'view/manage-subscription',
+  path: 'view/subscription/manage',
   component: function OrganizationSubscriptionManageRoute() {
     const { organizationSlug } = organizationSubscriptionManageRoute.useParams();
     return <OrganizationSubscriptionManagePage organizationSlug={organizationSlug} />;
