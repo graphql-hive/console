@@ -22,8 +22,14 @@ import {
 } from './authenticated';
 import { legacyRoutesUnder } from './legacy';
 import {
-  organizationIndexRoute,
+  organizationMembersGroupsRoute,
+  organizationMembersIndexRoute,
+  organizationMembersInvitationsRoute,
+  organizationMembersRolesRoute,
   organizationMembersRoute,
+} from './organization/members';
+import {
+  organizationIndexRoute,
   organizationRoute,
   organizationSubscriptionManageRoute,
   organizationSubscriptionRoute,
@@ -129,7 +135,12 @@ export const routeTree = root.addChildren([
       organizationSupportTicketRoute,
       organizationSubscriptionRoute,
       organizationSubscriptionManageRoute,
-      organizationMembersRoute,
+      organizationMembersRoute.addChildren([
+        organizationMembersIndexRoute,
+        organizationMembersRolesRoute,
+        organizationMembersGroupsRoute,
+        organizationMembersInvitationsRoute,
+      ]),
       organizationSettingsRoute.addChildren([
         organizationSettingsIndexRoute,
         organizationSettingsSsoRoute,

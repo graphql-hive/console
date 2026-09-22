@@ -53,7 +53,8 @@ export type LegacySearch<Value extends string> = {
   param: string;
   /** The old values; the owning route's `validateSearch` accepts them and nothing else. */
   values: z.ZodEnum<[Value, ...Value[]]>;
-  redirect: (value: Value) => ReturnType<typeof redirect>;
+  /** `search` is the rest of the old URL's params, for an entry that carries some of them over. */
+  redirect: (value: Value, search: Record<string, unknown>) => ReturnType<typeof redirect>;
   examples: Array<{ from: string; to: string }>;
   since: string;
   why: string;
@@ -117,15 +118,31 @@ export const legacySearch = {
     since: '2026-09',
     why: 'Project settings sections became child routes; the bare URL is General.',
   }),
+  organizationMembers: legacySearchEntry({
+    param: 'page',
+    values: z.enum(['list', 'roles', 'invitations', 'groups']),
+    redirect: (page, { page: _page, ...search }) =>
+      page === 'list'
+        ? redirect({ to: '/$organizationSlug/view/members', search })
+        : redirect({ to: `/$organizationSlug/view/members/${page}`, search: {} }),
+    examples: [
+      { from: '/acme/view/members?page=invitations', to: '/acme/view/members/invitations' },
+      { from: '/acme/view/members?page=list&search=jo', to: '/acme/view/members?search=jo' },
+    ],
+    since: '2026-09',
+    why: 'Members sections became child routes; the bare URL is the list, which keeps its search and SCIM filter params.',
+  }),
 };
 
 /** For the `beforeLoad` of the route that owns a legacy search param: redirects when it is set. */
 export function legacySearchRedirect<Value extends string>(
   entry: LegacySearch<Value>,
-  value: Value | undefined,
+  search: Record<string, unknown>,
 ) {
+  // The owning route validated the param against `entry.values` already.
+  const value = search[entry.param] as Value | undefined;
   if (value !== undefined) {
-    throw entry.redirect(value);
+    throw entry.redirect(value, search);
   }
 }
 

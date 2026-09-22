@@ -91,12 +91,6 @@ const PROJECT = { ...ORGANIZATION, projectSlug: 'gateway' };
 const TARGET = { ...PROJECT, targetSlug: 'production' };
 const TARGET_PATH = '/the-guild/gateway/production';
 
-/**
- * The settings and members sections become child routes in a later commit of this PR; until then
- * the registered router does not know these paths, so the previews name them through this.
- */
-const futureRoute = (path: string) => path as unknown as NavigationItem['to'];
-
 /** The chrome from components/navigation/secondary-navigation.tsx, which mounts the base nav. */
 function ChromeBar(props: { children: ReactNode }) {
   return (
@@ -645,19 +639,19 @@ export const MembersSections = createPreview({
           {
             id: 'roles',
             label: 'Roles',
-            to: futureRoute('/$organizationSlug/view/members/roles'),
+            to: '/$organizationSlug/view/members/roles',
             params: ORGANIZATION,
           },
           {
             id: 'groups',
             label: 'Groups',
-            to: futureRoute('/$organizationSlug/view/members/groups'),
+            to: '/$organizationSlug/view/members/groups',
             params: ORGANIZATION,
           },
           {
             id: 'invitations',
             label: 'Invitations',
-            to: futureRoute('/$organizationSlug/view/members/invitations'),
+            to: '/$organizationSlug/view/members/invitations',
             params: ORGANIZATION,
           },
         ]}

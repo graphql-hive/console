@@ -29,7 +29,7 @@ export const targetSettingsIndexRoute = createRoute({
   validateSearch: zodValidator(
     z.object({ page: legacySearch.targetSettings.values.optional().catch(undefined) }),
   ),
-  beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.targetSettings, search.page),
+  beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.targetSettings, search),
   component: function TargetSettingsIndexRoute() {
     const params = targetSettingsIndexRoute.useParams();
     return <TargetSettingsGeneralSection {...params} />;

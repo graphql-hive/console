@@ -31,6 +31,7 @@ describe('legacy URLs', () => {
         targetSettings,
         organizationSettings,
         projectSettings,
+        organizationMembers,
       ]
     `);
   });

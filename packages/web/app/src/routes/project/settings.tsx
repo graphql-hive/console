@@ -27,7 +27,7 @@ export const projectSettingsIndexRoute = createRoute({
   validateSearch: zodValidator(
     z.object({ page: legacySearch.projectSettings.values.optional().catch(undefined) }),
   ),
-  beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.projectSettings, search.page),
+  beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.projectSettings, search),
   component: function ProjectSettingsIndexRoute() {
     const params = projectSettingsIndexRoute.useParams();
     return <ProjectSettingsGeneralSection {...params} />;

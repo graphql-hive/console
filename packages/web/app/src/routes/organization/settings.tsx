@@ -28,7 +28,7 @@ export const organizationSettingsIndexRoute = createRoute({
   validateSearch: zodValidator(
     z.object({ page: legacySearch.organizationSettings.values.optional().catch(undefined) }),
   ),
-  beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.organizationSettings, search.page),
+  beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.organizationSettings, search),
   component: function OrganizationSettingsIndexRoute() {
     const params = organizationSettingsIndexRoute.useParams();
     return <OrganizationSettingsGeneralSection {...params} />;

@@ -2,6 +2,7 @@
 import { type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
+import { organizationMembers } from '@/lib/testing/fixtures/organization-members';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
 import { projectSettings } from '@/lib/testing/fixtures/project-settings';
 import { targetSettings } from '@/lib/testing/fixtures/target-settings';
@@ -384,6 +385,61 @@ describe('project settings sections', () => {
         }),
       );
       await waitFor(() => expect(router.state.location.pathname).toBe(PROJECT));
+    },
+  );
+});
+
+describe('members sections', () => {
+  const MEMBERS = `${ORGANIZATION}/view/members`;
+
+  function renderMembers(url: string, fixture = organizationMembers()) {
+    client.current = createTestClient(layoutFixtures());
+    client.current.fixtures.set('OrganizationMembersPageQuery', fixture);
+    return renderAtUrl(url);
+  }
+
+  it(
+    'renders the list at the bare URL, keeping its search param',
+    { timeout: 30_000 },
+    async () => {
+      const { router } = renderMembers(`${MEMBERS}?search=jo`);
+      expect(await sectionNav('Members')).toEqual({
+        labels: ['Members', 'Roles', 'Groups', 'Invitations'],
+        current: 'Members',
+      });
+      expect(await screen.findByText('List of organization members')).toBeTruthy();
+      expect(router.state.location.search).toEqual({ search: 'jo' });
+    },
+  );
+
+  it('renders a section at its path', { timeout: 30_000 }, async () => {
+    renderMembers(`${MEMBERS}/roles`);
+    expect((await sectionNav('Members')).current).toBe('Roles');
+    expect(await screen.findByText('List of roles')).toBeTruthy();
+  });
+
+  it(
+    'hides sections the viewer may not open and sends them to the list',
+    { timeout: 30_000 },
+    async () => {
+      const { router } = renderMembers(
+        `${MEMBERS}/invitations`,
+        organizationMembers({ viewerCanManageInvitations: false, viewerCanManageRoles: false }),
+      );
+      await waitFor(() => expect(router.state.location.pathname).toBe(MEMBERS));
+      expect((await sectionNav('Members')).labels).toEqual(['Members', 'Groups']);
+    },
+  );
+
+  it(
+    'sends a viewer who may not see members back to the organization',
+    { timeout: 30_000 },
+    async () => {
+      const { router } = renderMembers(
+        MEMBERS,
+        organizationMembers({ viewerCanSeeMembers: false }),
+      );
+      await waitFor(() => expect(router.state.location.pathname).toBe(ORGANIZATION));
     },
   );
 });

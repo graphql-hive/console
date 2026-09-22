@@ -1,13 +1,10 @@
-import { useCallback } from 'react';
-import { z } from 'zod';
 import { OrganizationLayout } from '@/components/layouts/organization';
 import { OrganizationIndexRouteSearch, OrganizationPage } from '@/pages/organization';
-import { OrganizationMembersPage } from '@/pages/organization-members';
 import { OrganizationSubscriptionPage } from '@/pages/organization-subscription';
 import { OrganizationSubscriptionManagePage } from '@/pages/organization-subscription-manage';
 import { OrganizationSupportPage } from '@/pages/organization-support';
 import { OrganizationSupportTicketPage } from '@/pages/organization-support-ticket';
-import { createRoute, Outlet, useNavigate } from '@tanstack/react-router';
+import { createRoute, Outlet } from '@tanstack/react-router';
 import { authenticatedRoute } from '../authenticated';
 
 export const organizationRoute = createRoute({
@@ -76,38 +73,5 @@ export const organizationSubscriptionManageRoute = createRoute({
   component: function OrganizationSubscriptionManageRoute() {
     const { organizationSlug } = organizationSubscriptionManageRoute.useParams();
     return <OrganizationSubscriptionManagePage organizationSlug={organizationSlug} />;
-  },
-});
-
-const OrganizationMembersRouteSearch = z.object({
-  page: z.enum(['list', 'roles', 'invitations', 'groups']).catch('list').default('list'),
-  search: z.string().optional(),
-  showPendingSCIMManagementConfirmations: z.boolean().optional(),
-});
-
-export const organizationMembersRoute = createRoute({
-  getParentRoute: () => organizationRoute,
-  path: 'view/members',
-  validateSearch(search) {
-    return OrganizationMembersRouteSearch.parse(search);
-  },
-  component: function OrganizationMembersRoute() {
-    const { organizationSlug } = organizationMembersRoute.useParams();
-    const { page } = organizationMembersRoute.useSearch();
-    const navigate = useNavigate({ from: organizationMembersRoute.fullPath });
-    const onPageChange = useCallback(
-      (newPage: z.infer<typeof OrganizationMembersRouteSearch>['page']) => {
-        void navigate({ search: { page: newPage, search: undefined } });
-      },
-      [navigate],
-    );
-
-    return (
-      <OrganizationMembersPage
-        organizationSlug={organizationSlug}
-        page={page}
-        onPageChange={onPageChange}
-      />
-    );
   },
 });
