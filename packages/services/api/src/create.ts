@@ -22,6 +22,7 @@ import {
   CommerceConfig,
   provideCommerceConfig,
 } from './modules/commerce/providers/commerce-client';
+import { graphModule } from './modules/graph';
 import { integrationsModule } from './modules/integrations';
 import {
   GITHUB_APP_CONFIG,
@@ -96,6 +97,7 @@ const modules = [
   auditLogsModule,
   proposalsModule,
   supportModule,
+  graphModule,
 ];
 
 export function createRegistry({
