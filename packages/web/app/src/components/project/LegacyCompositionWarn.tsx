@@ -4,6 +4,7 @@ import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import { Link } from '@/components/ui/link';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 
 const LegacyCompositionWarn_ProjectFragment = graphql(`
   fragment LegacyCompositionWarn_ProjectFragment on Project {
@@ -18,9 +19,9 @@ const LegacyCompositionWarn_ProjectFragment = graphql(`
 `);
 
 export function LegacyCompositionWarn(props: {
-  organizationSlug: string;
   project: FragmentType<typeof LegacyCompositionWarn_ProjectFragment>;
 }): ReactElement | null {
+  const { organizationSlug } = useSlugs('project');
   const project = useFragment(LegacyCompositionWarn_ProjectFragment, props.project);
 
   if (project.type !== ProjectType.Federation) {
@@ -45,7 +46,7 @@ export function LegacyCompositionWarn(props: {
       <Link
         to="/$organizationSlug/$projectSlug/view/settings/composition"
         params={{
-          organizationSlug: props.organizationSlug,
+          organizationSlug,
           projectSlug: project.slug,
         }}
         className="text-blue-500"

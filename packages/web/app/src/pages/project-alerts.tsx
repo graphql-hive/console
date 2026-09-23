@@ -22,13 +22,9 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle } from '@/lib/hooks';
 
-function Channels(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  channels: FragmentType<typeof ChannelsTable_AlertChannelFragment>[];
-}) {
+function Channels(props: { channels: FragmentType<typeof ChannelsTable_AlertChannelFragment>[] }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [modalSession, setModalSession] = useState(0);
@@ -58,8 +54,6 @@ function Channels(props: {
         <Button onClick={toggleModalOpen}>Add channel</Button>
         {channels.length > 0 && (
           <DeleteChannelsButton
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
             selected={selected}
             onSuccess={() => {
               setSelected([]);
@@ -69,8 +63,6 @@ function Channels(props: {
       </div>
       <CreateChannelModal
         key={modalSession}
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
         isOpen={isModalOpen}
         toggleModalOpen={toggleModalOpen}
         onOpenChangeComplete={open => {
@@ -87,8 +79,6 @@ function Alerts(props: {
   alerts: FragmentType<typeof AlertsTable_AlertFragment>[];
   channels: FragmentType<typeof CreateAlertModal_AlertChannelFragment>[];
   targets: FragmentType<typeof CreateAlertModal_TargetFragment>[];
-  organizationSlug: string;
-  projectSlug: string;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [isModalOpen, toggleModalOpen] = useToggle();
@@ -122,8 +112,6 @@ function Alerts(props: {
         <div className="mt-4 flex items-center gap-x-2">
           <Button onClick={toggleModalOpen}>Create alert</Button>
           <DeleteAlertsButton
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
             selected={selected}
             onSuccess={() => {
               setSelected([]);
@@ -133,8 +121,6 @@ function Alerts(props: {
       </Card>
       <CreateAlertModal
         key={modalSession}
-        projectSlug={props.projectSlug}
-        organizationSlug={props.organizationSlug}
         targets={props.targets}
         channels={props.channels}
         isOpen={isModalOpen}
@@ -174,12 +160,13 @@ const ProjectAlertsPageQuery = graphql(`
   }
 `);
 
-function AlertsPageContent(props: { organizationSlug: string; projectSlug: string }) {
+function AlertsPageContent() {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const [query] = useQuery({
     query: ProjectAlertsPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
+      organizationSlug,
+      projectSlug,
     },
     requestPolicy: 'cache-and-network',
   });
@@ -192,8 +179,8 @@ function AlertsPageContent(props: { organizationSlug: string; projectSlug: strin
       void router.navigate({
         to: '/$organizationSlug/$projectSlug',
         params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
+          organizationSlug,
+          projectSlug,
         },
       });
     },
@@ -207,7 +194,7 @@ function AlertsPageContent(props: { organizationSlug: string; projectSlug: strin
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -226,33 +213,20 @@ function AlertsPageContent(props: { organizationSlug: string; projectSlug: strin
       </div>
       {currentProject ? (
         <div className="flex flex-col gap-y-4">
-          <Channels
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            channels={channels}
-          />
-          <Alerts
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            alerts={alerts}
-            channels={channels}
-            targets={targets}
-          />
+          <Channels channels={channels} />
+          <Alerts alerts={alerts} channels={channels} targets={targets} />
         </div>
       ) : null}
     </div>
   );
 }
 
-export function ProjectAlertsPage(props: { organizationSlug: string; projectSlug: string }) {
+export function ProjectAlertsPage() {
   return (
     <>
       <Meta title="Alerts" />
       <LayoutContent className="flex flex-col gap-y-10">
-        <AlertsPageContent
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-        />
+        <AlertsPageContent />
       </LayoutContent>
     </>
   );

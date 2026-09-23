@@ -8,9 +8,8 @@ export const projectRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '$organizationSlug/$projectSlug',
   component: function ProjectRoute() {
-    const { organizationSlug, projectSlug } = projectRoute.useParams();
     return (
-      <ProjectLayout organizationSlug={organizationSlug} projectSlug={projectSlug}>
+      <ProjectLayout>
         <Outlet />
       </ProjectLayout>
     );
@@ -22,25 +21,13 @@ export const projectIndexRoute = createRoute({
   path: '/',
   validateSearch: ProjectIndexRouteSearch.parse,
   component: function ProjectRoute() {
-    const { organizationSlug, projectSlug } = projectIndexRoute.useParams();
     const { search, sortBy, sortOrder } = projectIndexRoute.useSearch();
-    return (
-      <ProjectPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        search={search}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-      />
-    );
+    return <ProjectPage search={search} sortBy={sortBy} sortOrder={sortOrder} />;
   },
 });
 
 export const projectAlertsRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: 'view/alerts',
-  component: function ProjectAlertsRoute() {
-    const { organizationSlug, projectSlug } = projectAlertsRoute.useParams();
-    return <ProjectAlertsPage organizationSlug={organizationSlug} projectSlug={projectSlug} />;
-  },
+  component: ProjectAlertsPage,
 });
