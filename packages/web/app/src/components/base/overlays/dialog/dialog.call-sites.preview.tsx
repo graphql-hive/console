@@ -1,10 +1,17 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { useForm } from 'react-hook-form';
 import { CallSite } from '@/components/inventory/shared';
+import {
+  OperationForm,
+  OperationFormSchema,
+  type OperationFormValues,
+} from '@/components/target/laboratory/operation-form';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { InputCopy } from '@/components/ui/input-copy';
-import { Label } from '@/components/ui/label';
+import type { DocumentCollectionOperation } from '@/lib/hooks/laboratory/use-collections';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Select } from '../../floating/select/select';
 import { Input } from '../../input/input';
 import { Dialog } from './dialog';
@@ -19,9 +26,9 @@ export const nav: NavPath = 'Base/Overlays/Dialog/Component Examples';
  */
 
 const COLLECTIONS = [
-  { value: 'c1', label: 'Checkout', description: 'Cart and payment operations' },
-  { value: 'c2', label: 'Smoke tests', description: 'Run after every deploy' },
-];
+  { id: 'c1', name: 'Checkout', description: 'Cart and payment operations' },
+  { id: 'c2', name: 'Smoke tests', description: 'Run after every deploy' },
+] as unknown as DocumentCollectionOperation[];
 
 // ---------------------------------------------------------------------------
 // A form in the body, its submit in the footer
@@ -34,7 +41,10 @@ export const FormInBody = createPreview({
 
 function CreateOperationExample() {
   const [open, setOpen] = useState(false);
-  const [collection, setCollection] = useState('');
+  const form = useForm<OperationFormValues>({
+    resolver: zodResolver(OperationFormSchema),
+    defaultValues: { name: '', collectionId: '' },
+  });
   return (
     <CallSite
       source="target/laboratory/create-operation-modal.tsx:179 (stands for the edit operation, create collection, create project, create target, create alert, create channel, CDN token, profile settings and schema contract forms)"
@@ -73,33 +83,12 @@ function CreateOperationExample() {
           </>
         }
       >
-        <form
+        <OperationForm
+          form={form}
           id="create-operation-form"
-          className="space-y-8"
-          onSubmit={event => {
-            event.preventDefault();
-            setOpen(false);
-          }}
-        >
-          <div className="space-y-8">
-            <div className="flex flex-col gap-2">
-              <Label>Operation Name</Label>
-              <Input autoComplete="off" placeholder="Your Operation Name" onSurface="raised" />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label>Which collection would you like to save this operation to?</Label>
-              <Select
-                options={COLLECTIONS}
-                value={collection}
-                onValueChange={setCollection}
-                placeholder="Select a Collection"
-                matchTriggerWidth
-                width="full"
-                onSurface="raised"
-              />
-            </div>
-          </div>
-        </form>
+          collections={COLLECTIONS}
+          onSubmit={() => setOpen(false)}
+        />
       </Dialog>
     </CallSite>
   );

@@ -5,35 +5,22 @@ import {
   sendPasswordResetEmail,
   submitNewPassword,
 } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
-import z from 'zod';
 import { AuthCard, AuthCardStack } from '@/components/auth';
-import { Input } from '@/components/base/input/input';
+import {
+  NewPasswordForm,
+  NewPasswordFormSchema,
+  ResetPasswordEmailForm,
+  ResetPasswordFormSchema,
+  type NewPasswordFormValues,
+  type ResetPasswordFormValues,
+} from '@/components/auth/reset-password-forms';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Meta } from '@/components/ui/meta';
 import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate } from '@tanstack/react-router';
-import { PasswordStringModel } from './auth-sign-up';
-
-const ResetPasswordFormSchema = z.object({
-  email: z
-    .string({
-      required_error: 'Email is required',
-    })
-    .email('Invalid email address'),
-});
-
-type ResetPasswordFormValues = z.infer<typeof ResetPasswordFormSchema>;
 
 function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: string }) {
   const initialEmail = props.email ?? '';
@@ -151,26 +138,10 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
       description="We will send you an email to reset your password"
       content={
         <>
-          <Form {...form}>
-            <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="m@example.com"
-                        type="email"
-                        onSurface="raised"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <ResetPasswordEmailForm
+            form={form}
+            onSubmit={onSubmit}
+            submit={
               <Button type="submit" className="w-full" disabled={resetEmail.isPending}>
                 {resetEmail.data?.status === 'OK'
                   ? 'Redirecting...'
@@ -178,8 +149,8 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
                     ? '...'
                     : 'Email me'}
               </Button>
-            </form>
-          </Form>
+            }
+          />
 
           <div className="mt-4 text-center text-sm">
             <Link
@@ -198,12 +169,6 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
     />
   );
 }
-
-const NewPasswordFormSchema = z.object({
-  newPassword: PasswordStringModel,
-});
-
-type NewPasswordFormValues = z.infer<typeof NewPasswordFormSchema>;
 
 function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
   const changePassword = useMutation({
@@ -270,7 +235,6 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
 
   const onSubmit = useCallback(
     (data: NewPasswordFormValues) => {
-      console.log('onSubmit');
       changePassword.reset();
       changePassword.mutate({
         formFields: [
@@ -303,21 +267,10 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
       description="Enter your new password"
       content={
         <>
-          <Form {...form}>
-            <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-              <FormField
-                control={form.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New password</FormLabel>
-                    <FormControl>
-                      <Input type="password" onSurface="raised" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <NewPasswordForm
+            form={form}
+            onSubmit={onSubmit}
+            submit={
               <Button type="submit" className="w-full" disabled={changePassword.isPending}>
                 {changePassword.data?.status === 'OK'
                   ? 'Redirecting...'
@@ -325,8 +278,8 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
                     ? '...'
                     : 'Change password'}
               </Button>
-            </form>
-          </Form>
+            }
+          />
 
           <div className="mt-4 text-center text-sm">
             <Link

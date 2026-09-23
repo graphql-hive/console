@@ -20,6 +20,16 @@ export const backdropClass =
 export const popupSurfaceClass =
   'bg-neutral-3 border-neutral-5 text-neutral-12 z-50 flex flex-col gap-4 border shadow-lg outline-none';
 
+/**
+ * Where menus, selects and tooltips opened inside the overlay portal to. Base UI appends a plain
+ * wrapper div into the container for each popup; as a flex item of the popup that wrapper would
+ * take a gap, shifting a centred dialog by half of it every time a tooltip opens and closes. The
+ * mount keeps the popup's width, since a popup wraps its text to its containing block's width.
+ */
+export function OverlayPortalMount({ mountRef }: { mountRef: (node: HTMLElement | null) => void }) {
+  return <div ref={mountRef} className="absolute inset-x-0 top-0 h-0" data-overlay-portal-mount />;
+}
+
 export function OverlayHeader({
   title,
   description,

@@ -11,7 +11,7 @@ export const nav: NavPath = 'Base/FormControls/RadioGroup/Component Examples';
  * Every RadioGroup call site in the app, transcribed with its real copy so a change to the
  * component can be judged against what actually ships.
  *
- * The pages themselves cannot be imported: they mount react-hook-form or Formik, run GraphQL
+ * The pages themselves cannot be imported: they mount react-hook-form, run GraphQL
  * queries, and several sit behind permission flags. Each preview reproduces the call site's
  * `items` and variant props and holds the selection in local state.
  */

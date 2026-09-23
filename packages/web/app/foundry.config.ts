@@ -76,7 +76,8 @@ export default defineConfig({
             { label: 'Switch', children: [{ label: 'Component Examples' }] },
             { label: 'Slider', children: [{ label: 'Component Examples' }] },
             { label: 'ToggleGroup', children: [{ label: 'Component Examples' }] },
-            { label: 'Form' },
+            { label: 'Form', children: [{ label: 'Component Examples' }] },
+            { label: 'Label' },
           ],
         },
         {
@@ -119,12 +120,7 @@ export default defineConfig({
     // coverage checklist to migrate through. Entries are deleted as their component lands.
     {
       label: 'Inventory',
-      children: [
-        { label: 'Button' },
-        { label: 'Form' },
-        { label: 'Presentational' },
-        { label: 'V2Leftovers' },
-      ],
+      children: [{ label: 'Button' }, { label: 'Presentational' }, { label: 'V2Leftovers' }],
     },
     // App components, as opposed to the design-system primitives above. Each preview
     // reproduces a real call site so a base-component change can be judged against the
@@ -136,6 +132,7 @@ export default defineConfig({
         { label: 'PageLead' },
         { label: 'NotFound' },
         { label: 'FailureCard' },
+        { label: 'SupportForms' },
         { label: 'TabbedView', children: [{ label: 'Component Examples' }] },
       ],
     },

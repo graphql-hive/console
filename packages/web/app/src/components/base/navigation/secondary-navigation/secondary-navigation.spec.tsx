@@ -41,6 +41,8 @@ describe('SecondaryNavigation', () => {
     // The accent underline must be the only border color on the current link.
     expect(checks.classList.contains('border-accent')).toBe(true);
     expect(checks.classList.contains('border-transparent')).toBe(false);
+    // The underline is the link's own border, so any radius on the link would round its ends.
+    expect([...checks.classList].some(name => /^rounded/.test(name))).toBe(false);
     const schema = screen.getByRole('link', { name: 'Schema' });
     expect(schema.getAttribute('aria-current')).toBeNull();
     expect(schema.classList.contains('border-transparent')).toBe(true);

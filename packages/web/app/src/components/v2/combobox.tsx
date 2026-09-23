@@ -12,6 +12,7 @@ interface Option {
 export function Combobox(
   props: React.PropsWithoutRef<{
     name: string;
+    inputId?: string;
     placeholder: string;
     options: readonly Option[];
     value?: readonly Option[];
@@ -28,6 +29,7 @@ export function Combobox(
   return (
     <Comp
       name={props.name}
+      inputId={props.inputId}
       className={props.className}
       components={{
         ClearIndicator: compProps => (

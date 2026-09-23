@@ -1,6 +1,7 @@
-import { ReactElement, useMemo, useRef } from 'react';
-import { Formik, FormikHelpers, FormikProps } from 'formik';
+import { ReactElement, useMemo } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { useQuery } from 'urql';
+import { Form } from '@/components/base/form/form';
 import { Button } from '@/components/ui/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
@@ -9,10 +10,11 @@ import {
   SchemaPolicyInput,
 } from '@/gql/graphql';
 import type { ResultOf } from '@graphql-typed-document-node/core';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Callout } from '../ui/callout';
 import { DataWrapper } from '../v2';
 import { PolicyListItem } from './policy-list-item';
-import { buildValidationSchema, PolicyFormValues } from './rules-configuration';
+import { PolicyFormSchema, type PolicyFormValues } from './rules-configuration';
 
 const PolicySettingsAvailableRulesQuery = graphql(`
   query PolicySettingsAvailableRulesQuery {
@@ -24,7 +26,7 @@ const PolicySettingsAvailableRulesQuery = graphql(`
   }
 `);
 
-const PolicySettings_SchemaPolicyFragment = graphql(`
+export const PolicySettings_SchemaPolicyFragment = graphql(`
   fragment PolicySettings_SchemaPolicyFragment on SchemaPolicy {
     id
     allowOverrides
@@ -42,6 +44,12 @@ export type AvailableRulesList = ResultOf<
   typeof PolicySettingsAvailableRulesQuery
 >['schemaPolicyRules'];
 
+/** What the page can render above the rules, next to the form's own state. */
+export type PolicyFormControls = {
+  allowOverrides: boolean;
+  setAllowOverrides: (value: boolean) => void;
+};
+
 function PolicySettingsListForm({
   rulesInParent,
   saving,
@@ -57,28 +65,9 @@ function PolicySettingsListForm({
   onSave: null | ((values: SchemaPolicyInput, allowOverrides: boolean) => Promise<void>);
   availableRules: AvailableRulesList;
   currentState?: PolicySettings_SchemaPolicyFragmentFragment | null;
-  children?: (form: FormikProps<PolicyFormValues>) => ReactElement;
+  children?: (controls: PolicyFormControls) => ReactElement;
 }): ReactElement {
-  const onSubmit = useRef(
-    (values: PolicyFormValues, formikHelpers: FormikHelpers<PolicyFormValues>) => {
-      const asInput: SchemaPolicyInput = {
-        rules: Object.entries(values.rules)
-          .filter(([, ruleConfig]) => ruleConfig.enabled)
-          .map(([ruleId, ruleConfig]) => ({
-            ruleId,
-            severity: ruleConfig.severity,
-            configuration:
-              ruleConfig.enabled && ruleConfig.severity !== RuleInstanceSeverityLevel.Off
-                ? ruleConfig.config
-                : null,
-          })),
-      };
-
-      void onSave?.(asInput, values.allowOverrides).then(() => formikHelpers.resetForm());
-    },
-  );
-  const validationSchema = useMemo(() => buildValidationSchema(availableRules), [availableRules]);
-  const initialState = useMemo(() => {
+  const initialState = useMemo<PolicyFormValues>(() => {
     return {
       allowOverrides: currentState?.allowOverrides ?? true,
       rules:
@@ -97,49 +86,72 @@ function PolicySettingsListForm({
         ) ?? {},
     };
   }, [currentState]);
+  const form = useForm<PolicyFormValues>({
+    resolver: zodResolver(PolicyFormSchema),
+    values: initialState,
+    mode: 'onChange',
+  });
+  const allowOverrides = useWatch({ control: form.control, name: 'allowOverrides' });
+  const { isDirty, isValid } = form.formState;
+
+  async function onSubmit(values: PolicyFormValues) {
+    const asInput: SchemaPolicyInput = {
+      rules: Object.entries(values.rules)
+        .filter(([, ruleConfig]) => ruleConfig.enabled)
+        .map(([ruleId, ruleConfig]) => ({
+          ruleId,
+          severity: ruleConfig.severity,
+          configuration:
+            ruleConfig.enabled && ruleConfig.severity !== RuleInstanceSeverityLevel.Off
+              ? ruleConfig.config
+              : null,
+        })),
+    };
+
+    await onSave?.(asInput, values.allowOverrides);
+    form.reset();
+  }
 
   return (
-    <Formik<PolicyFormValues>
-      initialValues={initialState}
-      validationSchema={validationSchema}
-      onSubmit={onSubmit.current}
-      enableReinitialize
-    >
-      {props => (
-        <>
-          {children ? children(props) : null}
-          <div className="flex items-center justify-end">
-            {props.dirty ? <p className="text-neutral-10 pr-2 text-sm">Unsaved changes</p> : null}
+    <Form form={form} onSubmit={onSubmit}>
+      <div>
+        {children
+          ? children({
+              allowOverrides,
+              setAllowOverrides: value =>
+                form.setValue('allowOverrides', value, { shouldDirty: true, shouldValidate: true }),
+            })
+          : null}
+        <div className="flex items-center justify-end">
+          {isDirty ? <p className="text-neutral-10 pr-2 text-sm">Unsaved changes</p> : null}
 
-            <Button
-              disabled={!props.dirty || saving || !props.isValid || !onSave}
-              type="submit"
-              variant="default"
-              onClick={() => props.submitForm()}
-            >
-              Update Policy
-            </Button>
-          </div>
-          {error ? (
-            <Callout type="error" className="mx-auto w-2/3">
-              <b>Oops, something went wrong.</b>
-              <br />
-              {error}
-            </Callout>
-          ) : null}
-          <div className="divide-neutral-5 grid grid-cols-1 divide-y">
-            {availableRules.map(availableRule => (
-              <PolicyListItem
-                disabled={!onSave}
-                overridingParentRule={rulesInParent?.includes(availableRule.id) ?? false}
-                key={availableRule.id}
-                ruleInfo={availableRule}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </Formik>
+          <Button
+            disabled={!isDirty || saving || !isValid || !onSave}
+            type="submit"
+            variant="default"
+          >
+            Update Policy
+          </Button>
+        </div>
+        {error ? (
+          <Callout type="error" className="mx-auto w-2/3">
+            <b>Oops, something went wrong.</b>
+            <br />
+            {error}
+          </Callout>
+        ) : null}
+      </div>
+      <div className="divide-neutral-5 grid grid-cols-1 divide-y">
+        {availableRules.map(availableRule => (
+          <PolicyListItem
+            disabled={!onSave}
+            overridingParentRule={rulesInParent?.includes(availableRule.id) ?? false}
+            key={availableRule.id}
+            ruleInfo={availableRule}
+          />
+        ))}
+      </div>
+    </Form>
   );
 }
 
@@ -156,7 +168,7 @@ export function PolicySettings({
   currentState?: null | FragmentType<typeof PolicySettings_SchemaPolicyFragment>;
   onSave: null | ((values: SchemaPolicyInput, allowOverrides: boolean) => Promise<void>);
   error?: string;
-  children?: (form: FormikProps<PolicyFormValues>) => ReactElement;
+  children?: (controls: PolicyFormControls) => ReactElement;
 }): ReactElement {
   const [availableRules] = useQuery({
     query: PolicySettingsAvailableRulesQuery,

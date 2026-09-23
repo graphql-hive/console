@@ -13,6 +13,7 @@ import z from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
+import { Label } from '@/components/base/label/label';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { Textarea } from '@/components/base/textarea/textarea';
@@ -27,7 +28,6 @@ import {
 import { schemaTitle } from '@/components/target/proposals/util';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -682,9 +682,7 @@ function OverviewTab(props: {
     <div className="max-w-[600px]">
       {props.error}
       <div className="pb-10">
-        <Label htmlFor="proposal-title" className="p-1">
-          Title <span className="text-neutral-10">(required)</span>
-        </Label>
+        <Label htmlFor="proposal-title" label="Title (required)" />
         <div className="mt-2">
           <Input
             aria-label="title"
@@ -697,9 +695,7 @@ function OverviewTab(props: {
         </div>
       </div>
       <div className="pb-10">
-        <Label className="p-1" htmlFor="proposal-description">
-          Description
-        </Label>
+        <Label htmlFor="proposal-description" label="Description" />
         <div className="mt-2">
           <Textarea
             aria-label="description"

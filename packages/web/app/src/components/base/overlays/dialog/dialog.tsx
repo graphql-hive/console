@@ -9,6 +9,7 @@ import {
   OverlayCloseButton,
   OverlayFooter,
   OverlayHeader,
+  OverlayPortalMount,
   popupSurfaceClass,
 } from '../overlay-parts';
 
@@ -70,9 +71,9 @@ export function Dialog({
   dismissible = true,
   attrs,
 }: DialogProps) {
-  // Handed to the portal-container context, so base menus and selects inside the dialog render
-  // their popups into it rather than into `<body>`, which a modal dialog makes inert.
-  const [popup, setPopup] = useState<HTMLElement | null>(null);
+  // Handed to the portal-container context, so base menus, selects and tooltips inside the dialog
+  // render their popups into it rather than into `<body>`, which a modal dialog makes inert.
+  const [portalMount, setPortalMount] = useState<HTMLElement | null>(null);
 
   return (
     <BaseDialog.Root
@@ -85,8 +86,8 @@ export function Dialog({
       {trigger ? <BaseDialog.Trigger render={trigger as ReactElement} /> : null}
       <BaseDialog.Portal>
         <BaseDialog.Backdrop className={backdropClass} />
-        <BaseDialog.Popup ref={setPopup} className={cn(popupClass, widthClass[width])} {...attrs}>
-          <FloatingPortalContainerProvider container={popup}>
+        <BaseDialog.Popup className={cn(popupClass, widthClass[width])} {...attrs}>
+          <FloatingPortalContainerProvider container={portalMount}>
             <OverlayHeader title={title} description={description} clearCloseButton={closeButton} />
             {children != null ? (
               <OverlayBody padding="default" padBottom={footer == null}>
@@ -96,6 +97,7 @@ export function Dialog({
             {footer != null ? <OverlayFooter>{footer}</OverlayFooter> : null}
             {closeButton ? <OverlayCloseButton /> : null}
           </FloatingPortalContainerProvider>
+          <OverlayPortalMount mountRef={setPortalMount} />
         </BaseDialog.Popup>
       </BaseDialog.Portal>
     </BaseDialog.Root>

@@ -11,7 +11,6 @@ import { Select } from '@/components/base/floating/select/select';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -610,11 +609,8 @@ export function AlertForm(props: AlertFormProps) {
         : 'Save changes';
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className={showPreview ? 'flex gap-8' : undefined}
-      >
+    <Form form={form} onSubmit={onSubmit}>
+      <div className={showPreview ? 'flex gap-8' : undefined}>
         <div
           className={showPreview ? 'min-w-0 max-w-[700px] space-y-6' : 'min-w-0 flex-1 space-y-6'}
         >
@@ -637,13 +633,14 @@ export function AlertForm(props: AlertFormProps) {
           >
             <div className="space-y-4">
               {fields.map((field, index) => (
-                <div key={field.id} className="flex items-end gap-3">
-                  <FormField
-                    control={form.control}
-                    name={`channels.${index}.channelId`}
-                    render={({ field: channelField }) => (
-                      <FormItem>
-                        {index === 0 && <FormLabel label="Channel" />}
+                <FormField
+                  key={field.id}
+                  control={form.control}
+                  name={`channels.${index}.channelId`}
+                  render={({ field: channelField }) => (
+                    <FormItem>
+                      {index === 0 && <FormLabel label="Channel" />}
+                      <div className="flex items-center gap-3">
                         <FormControl>
                           <Select
                             // Only the first row has the visible label.
@@ -655,19 +652,20 @@ export function AlertForm(props: AlertFormProps) {
                             onSurface="raised"
                           />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => remove(index)}
-                  >
-                    <X className="size-4" />
-                  </Button>
-                </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Remove channel ${index + 1}`}
+                          onClick={() => remove(index)}
+                        >
+                          <X className="size-4" />
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               ))}
               <Button type="button" variant="outline" onClick={() => append({ channelId: '' })}>
                 <Plus className="mr-1 size-3.5" />
@@ -899,7 +897,10 @@ export function AlertForm(props: AlertFormProps) {
 
                             return (
                               <FormItem>
-                                <FormLabel label="On filter" />
+                                <FormLabel
+                                  label="On filter"
+                                  tooltip="Only shared filters can be attached to alerts."
+                                />
                                 <FormControl>
                                   <Select
                                     options={savedFilterOptions}
@@ -910,7 +911,6 @@ export function AlertForm(props: AlertFormProps) {
                                     onSurface="raised"
                                   />
                                 </FormControl>
-                                <FormDescription description="Only shared filters can be attached to alerts." />
                               </FormItem>
                             );
                           }}
@@ -920,12 +920,9 @@ export function AlertForm(props: AlertFormProps) {
                           name="confirmationMinutes"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel label="Hold minutes" />
-                              <FormControl>
-                                <Input type="number" min={0} onSurface="raised" {...field} />
-                              </FormControl>
-                              <FormDescription
-                                description={
+                              <FormLabel
+                                label="Hold minutes"
+                                tooltip={
                                   <>
                                     Wait for the condition to exist for{' '}
                                     <span className="text-neutral-12 font-medium">
@@ -938,6 +935,9 @@ export function AlertForm(props: AlertFormProps) {
                                   </>
                                 }
                               />
+                              <FormControl>
+                                <Input type="number" min={0} onSurface="raised" {...field} />
+                              </FormControl>
                             </FormItem>
                           )}
                         />
@@ -978,7 +978,7 @@ export function AlertForm(props: AlertFormProps) {
             />
           </div>
         ) : null}
-      </form>
+      </div>
     </Form>
   );
 }

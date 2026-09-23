@@ -1,5 +1,6 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from 'urql';
+import { Label } from '@/components/base/label/label';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Switch } from '@/components/base/switch/switch';
@@ -7,7 +8,6 @@ import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
-import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -419,11 +419,10 @@ function SchemaChecksSideNav(props: {
       <div>
         <div className="flex h-9 flex-row items-center justify-between">
           <Label
+            variant="inline"
             htmlFor="filter-toggle-has-changes"
-            className="text-neutral-11 text-sm font-normal"
-          >
-            Show only changed schemas
-          </Label>
+            label="Show only changed schemas"
+          />
           <Switch
             checked={showOnlyChanged}
             onCheckedChange={handleShowOnlyFilterChange}
@@ -432,11 +431,10 @@ function SchemaChecksSideNav(props: {
         </div>
         <div className="flex h-9 flex-row items-center justify-between">
           <Label
+            variant="inline"
             htmlFor="filter-toggle-status-failed"
-            className="text-neutral-11 text-sm font-normal"
-          >
-            Show only failed checks
-          </Label>
+            label="Show only failed checks"
+          />
           <Switch
             checked={showOnlyFailed}
             onCheckedChange={handleShowOnlyFilterFailed}

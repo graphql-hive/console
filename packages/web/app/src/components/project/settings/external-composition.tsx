@@ -1,25 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { CombinedError, useQuery } from 'urql';
-import { z } from 'zod';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Input } from '@/components/base/input/input';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckIcon, Cross2Icon, ReloadIcon, UpdateIcon } from '@radix-ui/react-icons';
+import {
+  ExternalCompositionForm,
+  ExternalCompositionFormSchema,
+  type ExternalCompositionFormValues,
+} from './external-composition-form';
 
 const ExternalCompositionStatus_TestQuery = graphql(`
   query ExternalCompositionStatus_TestQuery($selector: TestExternalSchemaCompositionInput!) {
@@ -195,24 +188,6 @@ const ExternalCompositionStatus = ({
   );
 };
 
-const formSchema = z.object({
-  endpoint: z
-    .string({
-      required_error: 'Please provide an endpoint',
-    })
-    .url({
-      message: 'Invalid URL',
-    }),
-  secret: z
-    .string({
-      required_error: 'Please provide a secret',
-    })
-    .min(2, 'Too short')
-    .max(256, 'Max 256 characters long'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 export const ExternalCompositionSettings = (props: {
   project: FragmentType<typeof ExternalCompositionSettings_ProjectFragment>;
   organization: FragmentType<typeof ExternalCompositionSettings_OrganizationFragment>;
@@ -232,8 +207,8 @@ export const ExternalCompositionSettings = (props: {
   const [error, setError] = useState<string>();
   const [isMutating, setIsMutating] = useState(false);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<ExternalCompositionFormValues>({
+    resolver: zodResolver(ExternalCompositionFormSchema),
     mode: 'onChange',
     defaultValues: {
       endpoint: project.externalSchemaComposition?.endpoint ?? '',
@@ -242,7 +217,7 @@ export const ExternalCompositionSettings = (props: {
     disabled: isMutating,
   });
 
-  function onSubmit(values: FormValues) {
+  function onSubmit(values: ExternalCompositionFormValues) {
     setError(undefined);
     setIsMutating(true);
     void props
@@ -326,70 +301,24 @@ export const ExternalCompositionSettings = (props: {
         />
       </div>
       <div className="flex justify-between">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex flex-wrap gap-x-24 gap-y-4">
-              <FormField
-                control={form.control}
-                name="endpoint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>HTTP Endpoint</FormLabel>
-                    <FormDescription>A POST request will be sent to that endpoint</FormDescription>
-                    <div className="flex w-full items-center space-x-2">
-                      <FormControl>
-                        <Input
-                          width="md"
-                          placeholder="Endpoint"
-                          type="text"
-                          autoComplete="off"
-                          {...field}
-                        />
-                      </FormControl>
-                      {!form.formState.isDirty && project.externalSchemaComposition?.endpoint ? (
-                        <ExternalCompositionStatus
-                          projectSlug={project.slug}
-                          organizationSlug={organization.slug}
-                        />
-                      ) : null}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
+        <ExternalCompositionForm
+          form={form}
+          onSubmit={onSubmit}
+          endpointStatus={
+            project.externalSchemaComposition?.endpoint ? (
+              <ExternalCompositionStatus
+                projectSlug={project.slug}
+                organizationSlug={organization.slug}
               />
-              <FormField
-                control={form.control}
-                name="secret"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Secret</FormLabel>
-                    <FormDescription>
-                      The secret is needed to sign and verify the request.
-                    </FormDescription>
-                    <FormControl>
-                      <Input
-                        width="md"
-                        placeholder="Secret"
-                        type="password"
-                        autoComplete="off"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            {error && <div className="mt-2 text-xs text-red-500">{error}</div>}
-            <div className="flex flex-row items-center gap-x-8">
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {props.activeCompositionMode === 'external'
-                  ? 'Save Configuration'
-                  : 'Use External Composition'}
-              </Button>
-            </div>
-          </form>
-        </Form>
+            ) : null
+          }
+          error={error}
+          submitLabel={
+            props.activeCompositionMode === 'external'
+              ? 'Save Configuration'
+              : 'Use External Composition'
+          }
+        />
       </div>
     </div>
   );

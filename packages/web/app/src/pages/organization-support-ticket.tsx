@@ -2,15 +2,17 @@ import { useCallback, useMemo } from 'react';
 import { ChevronRightIcon, UserIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
-import { Textarea } from '@/components/base/textarea/textarea';
 import { useToast } from '@/components/base/toast/toast';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import {
+  ReplyTicketForm,
+  ReplyTicketFormSchema,
+  type ReplyTicketFormValues,
+} from '@/components/organization/reply-ticket-form';
 import { priorityDescription, statusDescription } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -19,14 +21,6 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
-
-const replyTicketFormSchema = z.object({
-  body: z.string().min(2, {
-    message: 'Comment must be at least 2 characters.',
-  }),
-});
-
-type ReplyTicketFormValues = z.infer<typeof replyTicketFormSchema>;
 
 const ReplyTicketForm_SupportTicketReplyMutation = graphql(`
   mutation ReplyTicketForm_SupportTicketReplyMutation($input: SupportTicketReplyInput!) {
@@ -41,14 +35,10 @@ const ReplyTicketForm_SupportTicketReplyMutation = graphql(`
   }
 `);
 
-function ReplyTicketForm(props: {
-  organizationSlug: string;
-  ticketId: string;
-  onSubmit: () => void;
-}) {
+function ReplyTicket(props: { organizationSlug: string; ticketId: string; onSubmit: () => void }) {
   const { toast } = useToast();
   const form = useForm<ReplyTicketFormValues>({
-    resolver: zodResolver(replyTicketFormSchema),
+    resolver: zodResolver(ReplyTicketFormSchema),
     defaultValues: {
       body: '',
     },
@@ -90,30 +80,7 @@ function ReplyTicketForm(props: {
     }
   }
 
-  return (
-    <Form {...form}>
-      <form className="flex flex-col gap-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-        <FormField
-          control={form.control}
-          name="body"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Textarea placeholder="Type your comment here." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="flex flex-row gap-x-4">
-          <Button type="submit">Reply</Button>
-          <Button variant="link" type="reset" onClick={() => form.reset({ body: '' })}>
-            Reset
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
+  return <ReplyTicketForm form={form} onSubmit={onSubmit} />;
 }
 
 const Comment_SupportTicketComment = graphql(`
@@ -227,7 +194,7 @@ function SupportTicket(props: {
               ))}
 
               <div className="mt-6">
-                <ReplyTicketForm
+                <ReplyTicket
                   organizationSlug={organization.slug}
                   ticketId={ticket.id}
                   onSubmit={props.refetch}

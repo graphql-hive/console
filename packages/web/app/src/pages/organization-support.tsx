@@ -2,26 +2,19 @@ import { useCallback } from 'react';
 import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Input } from '@/components/base/input/input';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { Textarea } from '@/components/base/textarea/textarea';
 import { useToast } from '@/components/base/toast/toast';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import {
+  NEW_TICKET_FORM_ID,
+  NewTicketForm,
+  NewTicketFormSchema,
+  type NewTicketFormValues,
+} from '@/components/organization/new-ticket-form';
 import { priorityDescription } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -30,30 +23,6 @@ import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
 import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
-
-const PRIORITY_ITEMS = [
-  SupportTicketPriority.Normal,
-  SupportTicketPriority.High,
-  SupportTicketPriority.Urgent,
-].map(priority => ({
-  value: priority,
-  label: priority.charAt(0) + priority.slice(1).toLowerCase(),
-  description: priorityDescription[priority],
-}));
-
-const newTicketFormSchema = z.object({
-  subject: z.string().min(2, {
-    message: 'Subject must be at least 2 characters.',
-  }),
-  priority: z.nativeEnum(SupportTicketPriority, {
-    required_error: 'A priority is required.',
-  }),
-  description: z.string().min(5, {
-    message: 'Description must be at least 5 characters.',
-  }),
-});
-
-type NewTicketFormValues = z.infer<typeof newTicketFormSchema>;
 
 const NewTicketForm_SupportTicketCreateMutation = graphql(`
   mutation NewTicketForm_SupportTicketCreateMutation($input: SupportTicketCreateInput!) {
@@ -68,7 +37,7 @@ const NewTicketForm_SupportTicketCreateMutation = graphql(`
   }
 `);
 
-function NewTicketForm(props: {
+function NewTicketSheet(props: {
   organizationSlug: string;
   isOpen: boolean;
   onClose: () => void;
@@ -76,7 +45,7 @@ function NewTicketForm(props: {
 }) {
   const { toast } = useToast();
   const form = useForm<NewTicketFormValues>({
-    resolver: zodResolver(newTicketFormSchema),
+    resolver: zodResolver(NewTicketFormSchema),
     defaultValues: {
       subject: '',
       priority: SupportTicketPriority.Normal,
@@ -132,72 +101,12 @@ function NewTicketForm(props: {
       title="New ticket"
       description="Create a new case for the support team"
       footer={
-        <Button type="submit" form="new-ticket-form">
+        <Button type="submit" form={NEW_TICKET_FORM_ID}>
           Submit
         </Button>
       }
     >
-      <Form {...form}>
-        <form
-          id="new-ticket-form"
-          className="space-y-6 text-sm"
-          onSubmit={form.handleSubmit(onSubmit)}
-        >
-          <FormField
-            control={form.control}
-            name="priority"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>Priority level</FormLabel>
-                <RadioGroup
-                  variant="as-card"
-                  onSurface="raised"
-                  orientation="vertical"
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  items={PRIORITY_ITEMS}
-                />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="subject"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Subject</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Enter a subject of your issue"
-                    onSurface="raised"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Enter a short description of your issue"
-                    onSurface="raised"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>Help us understand it better.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </form>
-      </Form>
+      <NewTicketForm form={form} onSubmit={onSubmit} />
     </Sheet>
   );
 }
@@ -338,7 +247,7 @@ function Support(props: {
               <PencilIcon className="mr-2 size-4" />
               New ticket
             </Button>
-            <NewTicketForm
+            <NewTicketSheet
               isOpen={isOpen}
               onClose={toggle}
               organizationSlug={organization.slug}

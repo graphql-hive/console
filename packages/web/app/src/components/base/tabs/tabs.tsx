@@ -91,6 +91,7 @@ const tabVariants = cva(
     'relative z-10 inline-flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap font-medium transition-colors',
     'text-neutral-10 hover:text-neutral-12 data-[active]:text-accent',
     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+    'rounded-sm',
     focusRingQuiet,
   ),
   {

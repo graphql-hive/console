@@ -12,7 +12,7 @@ export const nav: NavPath = 'Base/FormControls/ToggleGroup/Component Examples';
 
 /**
  * Every ToggleGroup in the app, transcribed with its real surroundings. The laboratory pages run
- * GraphiQL and the policy pages a Formik form, so none can be imported.
+ * GraphiQL and the policy pages a form over GraphQL, so none can be imported.
  *
  * History: all four were `v2/toggle-group` (Radix) until round 4. The component shipped no pressed
  * state, so each site painted its own with a className, and every group carried a copy-pasted

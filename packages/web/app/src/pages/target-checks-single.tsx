@@ -18,6 +18,7 @@ import { FailureCard, formatCount } from '@/components/base/failure-card/failure
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Label } from '@/components/base/label/label';
 import { Legend } from '@/components/base/legend/legend';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Switch } from '@/components/base/switch/switch';
@@ -37,7 +38,6 @@ import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Heading } from '@/components/ui/heading';
 import { AlertTriangleIcon, DiffIcon } from '@/components/ui/icon';
-import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -147,9 +147,7 @@ function SDLSingleDiffToggleView(props: {
           )}
 
           <div className="ml-2 flex items-center space-x-2">
-            <Label htmlFor="toggle-diff-mode" className="text-xs font-normal">
-              Toggle Diff
-            </Label>
+            <Label variant="inline" htmlFor="toggle-diff-mode" label="Toggle Diff" />
             <Switch
               id="toggle-diff-mode"
               checked={showDiff}

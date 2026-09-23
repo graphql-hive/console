@@ -1,15 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
-import { Select } from '@/components/base/floating/select/select';
-import { Input } from '@/components/base/input/input';
+import { Form } from '@/components/base/form/form';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { Textarea } from '@/components/base/textarea/textarea';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
-import * as Form from '@/components/ui/form';
 import { Heading } from '@/components/ui/heading';
 import { defineStepper } from '@/components/ui/stepper';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -23,28 +19,15 @@ import {
 } from '../../../organization/members/resource-selector';
 import { SelectedPermissionOverview } from '../../../organization/members/selected-permission-overview';
 import {
-  DescriptionInputModel,
-  TitleInputModel,
-} from '../../../organization/settings/access-tokens/create-access-token-sheet-content';
+  AccessTokenFormSchema,
+  AccessTokenGeneralStep,
+  AccessTokenPermissionsStep,
+  type AccessTokenFormValues,
+} from '../../../organization/settings/access-tokens/access-token-form';
 import {
-  expirationPeriods,
   permissionLevelToResourceName,
   resolveResources,
 } from '../../../organization/settings/access-tokens/shared-helpers';
-
-const CreateAccessTokenFormModel = z.object({
-  title: TitleInputModel,
-  description: DescriptionInputModel,
-  permissions: z.array(z.string()).min(1, 'Please select at least one permission.'),
-  expirationPeriod: z.enum([
-    GraphQLSchema.TokenExpirationPeriod.Never,
-    GraphQLSchema.TokenExpirationPeriod.OneMonth,
-    GraphQLSchema.TokenExpirationPeriod.OneWeek,
-    GraphQLSchema.TokenExpirationPeriod.OneYear,
-    GraphQLSchema.TokenExpirationPeriod.SixMonths,
-    GraphQLSchema.TokenExpirationPeriod.TwoWeeks,
-  ]),
-});
 
 const CreateProjectAccessTokenSheetContent_OrganizationFragment = graphql(`
   fragment CreateProjectAccessTokenSheetContent_OrganizationFragment on Organization {
@@ -140,9 +123,9 @@ export function CreateProjectAccessTokenSheetContent(
     ],
   }));
 
-  const form = useForm<z.TypeOf<typeof CreateAccessTokenFormModel>>({
+  const form = useForm<AccessTokenFormValues>({
     mode: 'onChange',
-    resolver: zodResolver(CreateAccessTokenFormModel),
+    resolver: zodResolver(AccessTokenFormSchema),
     defaultValues: {
       title: '',
       description: '',
@@ -282,201 +265,96 @@ export function CreateProjectAccessTokenSheetContent(
             </Stepper.StepperControls>
           }
         >
-          <Form.Form {...form}>
-            <form onSubmit={form.handleSubmit(() => {})}>
-              <>
-                <Stepper.StepperNavigation className="pb-4">
-                  {stepper.all.map(step => (
-                    <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>
-                      <Stepper.StepperTitle>{step.title}</Stepper.StepperTitle>
-                    </Stepper.StepperStep>
-                  ))}
-                </Stepper.StepperNavigation>
-                {stepper.switch({
-                  'step-1-general': () => (
-                    <>
-                      <Heading>General</Heading>
-                      <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Form.FormField
-                          control={form.control}
-                          name="title"
-                          render={({ field }) => (
-                            <Form.FormItem>
-                              <Form.FormLabel>Name</Form.FormLabel>
-                              <Form.FormControl>
-                                <Input
-                                  type="text"
-                                  placeholder="My access token"
-                                  onSurface="raised"
-                                  {...field}
-                                />
-                              </Form.FormControl>
-                              <Form.FormDescription>Name of the access token.</Form.FormDescription>
-                              <Form.FormMessage />
-                            </Form.FormItem>
+          <Form form={form} onSubmit={() => {}}>
+            <Stepper.StepperNavigation>
+              {stepper.all.map(step => (
+                <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>
+                  <Stepper.StepperTitle>{step.title}</Stepper.StepperTitle>
+                </Stepper.StepperStep>
+              ))}
+            </Stepper.StepperNavigation>
+            {stepper.switch({
+              'step-1-general': () => <AccessTokenGeneralStep form={form} />,
+              'step-2-permissions': () => (
+                <AccessTokenPermissionsStep form={form}>
+                  <PermissionSelector
+                    onSurface="raised"
+                    permissionGroups={project.availableProjectAccessTokenPermissionGroups}
+                    selectedPermissionIds={new Set(form.getValues()['permissions'])}
+                    onSelectedPermissionsChange={selectedPermissionIds => {
+                      form.setValue('permissions', Array.from(selectedPermissionIds), {
+                        shouldValidate: true,
+                        shouldTouch: true,
+                        shouldDirty: true,
+                      });
+                    }}
+                  />
+                </AccessTokenPermissionsStep>
+              ),
+              'step-3-resources': () => (
+                <>
+                  <Heading>Resource Access</Heading>
+                  <ResourceSelector
+                    organization={organization}
+                    selection={resourceSelection}
+                    onSelectionChange={setResourceSelection}
+                    forProjectId={project.id}
+                    intent={GraphQLSchema.ResourceSelectorIntentType.User}
+                  />
+                </>
+              ),
+              'step-4-confirmation': () => (
+                <>
+                  <Heading>Confirm and create Access Token</Heading>
+                  <p className="text-neutral-10 text-sm">
+                    Please please review the selected permissions and resources to ensure they align
+                    with your intended access needs.
+                  </p>
+                  {form.getValues().permissions.length === 0 ? (
+                    <p className="mt-3">No permissions are selected.</p>
+                  ) : (
+                    <SelectedPermissionOverview
+                      activePermissionIds={form.getValues().permissions}
+                      permissionsGroups={project.availableProjectAccessTokenPermissionGroups}
+                      showOnlyAllowedPermissions
+                      isExpanded
+                      additionalGroupContent={group => (
+                        <div className="w-full space-y-1">
+                          {resolvedResources === null ? (
+                            <>Granted on all {permissionLevelToResourceName(group.level)}</>
+                          ) : (
+                            <>
+                              <p className="text-neutral-10">
+                                Granted on {permissionLevelToResourceName(group.level)}:
+                              </p>
+                              <ul className="flex list-none flex-wrap gap-1">
+                                {!resolvedResources[group.level]?.length && (
+                                  <li>
+                                    <Badge
+                                      content={`No ${group.level} selected.`}
+                                      variants={{ variant: 'critical', mono: true }}
+                                    />
+                                  </li>
+                                )}
+                                {resolvedResources[group.level].map(id => (
+                                  <li key={id}>
+                                    <Badge
+                                      content={id}
+                                      variants={{ variant: 'outline', mono: true }}
+                                    />
+                                  </li>
+                                ))}
+                              </ul>
+                            </>
                           )}
-                        />
-                      </div>
-
-                      <div className="mt-6 grid w-full max-w-sm items-center gap-1.5">
-                        <Form.FormField
-                          control={form.control}
-                          name="description"
-                          render={({ field }) => (
-                            <Form.FormItem>
-                              <Form.FormLabel>Description</Form.FormLabel>
-                              <Form.FormControl>
-                                <Textarea
-                                  placeholder="Short description"
-                                  onSurface="raised"
-                                  {...field}
-                                />
-                              </Form.FormControl>
-                              <Form.FormDescription>
-                                Description of the access token.
-                              </Form.FormDescription>
-                              <Form.FormMessage />
-                            </Form.FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Form.FormField
-                          control={form.control}
-                          name="expirationPeriod"
-                          render={({ field, fieldState }) => (
-                            <Form.FormItem aria-invalid={fieldState.invalid}>
-                              <Form.FormLabel>Expiration</Form.FormLabel>
-                              <Form.FormControl>
-                                <Select
-                                  options={expirationPeriods.map(c => ({
-                                    value: c.value,
-                                    label: c.name,
-                                  }))}
-                                  value={field.value}
-                                  onValueChange={field.onChange}
-                                  onBlur={field.onBlur}
-                                  name={field.name}
-                                  width="full"
-                                  onSurface="raised"
-                                />
-                              </Form.FormControl>
-                              <Form.FormDescription>
-                                Expire the token automatically after a period of time.
-                              </Form.FormDescription>
-                              <Form.FormMessage />
-                            </Form.FormItem>
-                          )}
-                        />
-                      </div>
-                    </>
-                  ),
-                  'step-2-permissions': () => (
-                    <Form.FormField
-                      control={form.control}
-                      name="permissions"
-                      render={() => (
-                        <div className="grid w-full items-center gap-1.5">
-                          <Form.FormItem>
-                            <Form.FormLabel>
-                              <Heading>Permissions</Heading>
-                            </Form.FormLabel>
-                            <Form.FormControl>
-                              <PermissionSelector
-                                onSurface="raised"
-                                permissionGroups={
-                                  project.availableProjectAccessTokenPermissionGroups
-                                }
-                                selectedPermissionIds={new Set(form.getValues()['permissions'])}
-                                onSelectedPermissionsChange={selectedPermissionIds => {
-                                  form.setValue('permissions', Array.from(selectedPermissionIds), {
-                                    shouldValidate: true,
-                                    shouldTouch: true,
-                                    shouldDirty: true,
-                                  });
-                                }}
-                              />
-                            </Form.FormControl>
-                            <Form.FormMessage />
-                          </Form.FormItem>
                         </div>
                       )}
                     />
-                  ),
-                  'step-3-resources': () => (
-                    <>
-                      <div className="grid w-full items-center gap-1.5">
-                        <Form.FormItem>
-                          <Form.FormLabel>Resource Access</Form.FormLabel>
-                          <Form.FormControl>
-                            <ResourceSelector
-                              organization={organization}
-                              selection={resourceSelection}
-                              onSelectionChange={setResourceSelection}
-                              forProjectId={project.id}
-                              intent={GraphQLSchema.ResourceSelectorIntentType.User}
-                            />
-                          </Form.FormControl>
-                          <Form.FormMessage />
-                        </Form.FormItem>
-                      </div>
-                    </>
-                  ),
-                  'step-4-confirmation': () => (
-                    <>
-                      <Heading>Confirm and create Access Token</Heading>
-                      <p className="text-neutral-10 text-sm">
-                        Please please review the selected permissions and resources to ensure they
-                        align with your intended access needs.
-                      </p>
-                      {form.getValues().permissions.length === 0 ? (
-                        <p className="mt-3">No permissions are selected.</p>
-                      ) : (
-                        <SelectedPermissionOverview
-                          activePermissionIds={form.getValues().permissions}
-                          permissionsGroups={project.availableProjectAccessTokenPermissionGroups}
-                          showOnlyAllowedPermissions
-                          isExpanded
-                          additionalGroupContent={group => (
-                            <div className="w-full space-y-1">
-                              {resolvedResources === null ? (
-                                <>Granted on all {permissionLevelToResourceName(group.level)}</>
-                              ) : (
-                                <>
-                                  <p className="text-neutral-10">
-                                    Granted on {permissionLevelToResourceName(group.level)}:
-                                  </p>
-                                  <ul className="flex list-none flex-wrap gap-1">
-                                    {!resolvedResources[group.level]?.length && (
-                                      <li>
-                                        <Badge
-                                          content={`No ${group.level} selected.`}
-                                          variants={{ variant: 'critical', mono: true }}
-                                        />
-                                      </li>
-                                    )}
-                                    {resolvedResources[group.level].map(id => (
-                                      <li key={id}>
-                                        <Badge
-                                          content={id}
-                                          variants={{ variant: 'outline', mono: true }}
-                                        />
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        />
-                      )}
-                    </>
-                  ),
-                })}
-              </>
-            </form>
-          </Form.Form>
+                  )}
+                </>
+              ),
+            })}
+          </Form>
         </Sheet>
       )}
     </Stepper.StepperProvider>

@@ -1,36 +1,38 @@
-import { useFormikContext } from 'formik';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
 import type { PolicyFormValues } from './rules-configuration';
 
+/** A rule's config is untyped, so paths into it are built by hand. */
+function configPath(id: string, property: string) {
+  const path: string = `rules.${id}.config${property === '' ? '' : `.${property}`}`;
+  return path as `rules.${string}.config`;
+}
+
+const write = { shouldDirty: true, shouldValidate: true } as const;
+
 export function useConfigurationHelper() {
-  const formik = useFormikContext<PolicyFormValues>();
+  const form = useFormContext<PolicyFormValues>();
+  const rules = useWatch({ control: form.control, name: 'rules' });
 
   return {
     ruleConfig(id: string) {
-      return {
-        enabled: formik.values.rules[id]?.enabled ?? false,
-        severity: formik.values.rules[id]?.severity,
-        config: formik.values.rules[id]?.config,
-        getConfigAsString() {
-          return JSON.stringify(formik.values.rules[id]?.config, null, 2);
-        },
-        setConfig(property: string, value: any) {
-          const actualProp = property === '' ? '' : `.${property}`;
+      const rule = rules?.[id];
 
-          if (value && Array.isArray(value) && value.length === 0) {
-            void formik.setFieldValue(`rules.${id}.config${actualProp}`, undefined, true);
-          } else {
-            void formik.setFieldValue(`rules.${id}.config${actualProp}`, value, true);
-          }
+      return {
+        enabled: rule?.enabled ?? false,
+        severity: rule?.severity,
+        config: rule?.config,
+        setConfig(property: string, value: unknown) {
+          const empty = Array.isArray(value) && value.length === 0;
+          form.setValue(configPath(id, property), empty ? undefined : value, write);
         },
-        setConfigAsInvalid(property: string, errorMessage: string) {
-          const actualProp = property === '' ? '' : `.${property}`;
-          formik.setFieldError(`rules.${id}.config${actualProp}`, errorMessage);
+        setConfigAsInvalid(property: string, message: string) {
+          form.setError(configPath(id, property), { type: 'manual', message });
         },
         getConfigValue<T>(property: string): T | undefined {
           const levels = property.split('.');
           let propName: string | undefined;
-          let obj = formik.values.rules[id]?.config;
+          let obj = rule?.config;
 
           do {
             propName = levels.shift();
@@ -43,27 +45,27 @@ export function useConfigurationHelper() {
           return obj as any as T;
         },
         setSeverity(severity: RuleInstanceSeverityLevel) {
-          void formik.setFieldValue(`rules.${id}.severity`, severity, true);
+          form.setValue(`rules.${id}.severity`, severity, write);
         },
-        toggleRuleState(newValue: boolean) {
-          void formik.setFieldValue(`rules.${id}.enabled`, newValue, true);
-
-          if (newValue && !formik.values.rules[id]?.severity) {
-            void formik.setFieldValue(
-              `rules.${id}.severity`,
-              RuleInstanceSeverityLevel.Warning,
-              true,
-            );
-          }
+        toggleRuleState(enabled: boolean) {
+          form.setValue(
+            `rules.${id}`,
+            {
+              enabled,
+              severity: rule?.severity ?? RuleInstanceSeverityLevel.Warning,
+              config: rule?.config,
+            },
+            write,
+          );
         },
         getValidationStatus(property: string) {
-          const actualProp = property === '' ? '' : `.${property}`;
-          const { error } = formik.getFieldMeta(`rules.${id}.config${actualProp}`);
+          const message = form.getFieldState(configPath(id, property), form.formState).error
+            ?.message;
 
-          return error
+          return message
             ? {
                 status: 'error' as const,
-                message: error,
+                message,
               }
             : {
                 status: 'success' as const,

@@ -1,31 +1,23 @@
 import { ReactElement, ReactNode } from 'react';
-import { BlocksIcon, BoxIcon, FoldVerticalIcon } from 'lucide-react';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
-import { Input } from '@/components/base/input/input';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { useToast } from '@/components/base/toast/toast';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
-import { Button } from '@/components/ui/button';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+  CreateProjectForm,
+  CreateProjectFormSchema,
+  type CreateProjectFormValues,
+} from '@/components/project/create-project-form';
+import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { ProPlanBilling } from '../organization/billing/ProPlanBillingWarm';
@@ -231,43 +223,6 @@ export const CreateProjectMutation = graphql(`
   }
 `);
 
-const createProjectFormSchema = z.object({
-  projectSlug: z
-    .string({
-      required_error: 'Project slug is required',
-    })
-    .min(2, {
-      message: 'Project slug must be at least 2 characters long',
-    })
-    .max(50, {
-      message: 'Project slug must be at most 50 characters long',
-    }),
-  projectType: z.nativeEnum(ProjectType, {
-    required_error: 'Project type is required',
-  }),
-});
-
-const PROJECT_TYPES = [
-  {
-    type: ProjectType.Single,
-    title: 'Monolith',
-    description: 'Single GraphQL schema developed as a monolith',
-    Icon: BoxIcon,
-  },
-  {
-    type: ProjectType.Federation,
-    title: 'Federation',
-    description: 'Project developed according to Apollo Federation specification',
-    Icon: BlocksIcon,
-  },
-  {
-    type: ProjectType.Stitching,
-    title: 'Stitching',
-    description: 'Project that stitches together multiple GraphQL APIs',
-    Icon: FoldVerticalIcon,
-  },
-];
-
 function CreateProjectModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
@@ -277,16 +232,16 @@ function CreateProjectModal(props: {
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof createProjectFormSchema>>({
+  const form = useForm<CreateProjectFormValues>({
     mode: 'onChange',
-    resolver: zodResolver(createProjectFormSchema),
+    resolver: zodResolver(CreateProjectFormSchema),
     defaultValues: {
       projectSlug: '',
       projectType: ProjectType.Single,
     },
   });
 
-  async function onSubmit(values: z.infer<typeof createProjectFormSchema>) {
+  async function onSubmit(values: CreateProjectFormValues) {
     const { data, error } = await mutate({
       input: {
         organization: {
@@ -321,9 +276,9 @@ function CreateProjectModal(props: {
   }
 
   return (
-    <CreateProjectModalContent
-      isOpen={props.isOpen}
-      toggleModalOpen={props.toggleModalOpen}
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
       // The form clears once the close transition has finished, rather than on toggle, which
       // would blank it mid-fade, or by remounting, which would skip the transitions.
       onOpenChangeComplete={open => {
@@ -331,24 +286,6 @@ function CreateProjectModal(props: {
           form.reset();
         }
       }}
-      form={form}
-      onSubmit={onSubmit}
-    />
-  );
-}
-
-export function CreateProjectModalContent(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  onOpenChangeComplete?: (open: boolean) => void;
-  form: UseFormReturn<z.infer<typeof createProjectFormSchema>>;
-  onSubmit: (values: z.infer<typeof createProjectFormSchema>) => void | Promise<void>;
-}) {
-  return (
-    <Dialog
-      open={props.isOpen}
-      onOpenChange={props.toggleModalOpen}
-      onOpenChangeComplete={props.onOpenChangeComplete}
       width="lg"
       title="Create a project"
       description={
@@ -358,78 +295,7 @@ export function CreateProjectModalContent(props: {
         </>
       }
     >
-      <Form {...props.form}>
-        {/* The submit stays inside the form: the e2e helper selects it through the form. */}
-        <form onSubmit={props.form.handleSubmit(props.onSubmit)} data-cy="create-project-form">
-          <div>
-            <FormField
-              control={props.form.control}
-              name="projectSlug"
-              render={({ field }) => {
-                return (
-                  <FormItem className="mt-0">
-                    <FormLabel>Slug of your project</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="my-project"
-                        data-cy="slug"
-                        autoComplete="off"
-                        onSurface="raised"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-            <FormField
-              control={props.form.control}
-              name="projectType"
-              render={({ field }) => {
-                return (
-                  <FormItem className="mt-2">
-                    <FormLabel>Project Type</FormLabel>
-                    <RadioGroup
-                      variant="as-card"
-                      onSurface="raised"
-                      orientation="vertical"
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      items={PROJECT_TYPES.map(({ type, title, description, Icon }) => ({
-                        value: type,
-                        content: (
-                          <>
-                            <Icon
-                              className={cn(
-                                'size-8 shrink-0',
-                                field.value === type ? 'text-neutral-12' : 'text-neutral-9',
-                              )}
-                            />
-                            <div>
-                              <span className="text-neutral-12 text-sm font-medium">{title}</span>
-                              <p className="text-neutral-11 text-sm">{description}</p>
-                            </div>
-                          </>
-                        ),
-                      }))}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-          </div>
-          <Button
-            className="mt-8 w-full"
-            type="submit"
-            data-cy="submit"
-            disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
-          >
-            {props.form.formState.isSubmitting ? 'Submitting...' : 'Create Project'}
-          </Button>
-        </form>
-      </Form>
+      <CreateProjectForm form={form} onSubmit={onSubmit} />
     </Dialog>
   );
 }

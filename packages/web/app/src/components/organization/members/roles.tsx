@@ -2,28 +2,17 @@ import { useCallback, useMemo, useState } from 'react';
 import { LockIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { Textarea } from '@/components/base/textarea/textarea';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -31,32 +20,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { PermissionSelector } from './permission-selector';
+import { RoleFields, RoleForm, RoleFormSchema, type RoleFormValues } from './role-form';
 import { SelectedPermissionOverview } from './selected-permission-overview';
-
-export const roleFormSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Required',
-    })
-    .trim()
-    .min(2, 'Too short')
-    .max(64, 'Max 64 characters long')
-    .refine(
-      val => typeof val === 'string' && val.length > 0 && val[0] === val[0].toUpperCase(),
-      'Must start with a capital letter',
-    )
-    .refine(val => val !== 'Viewer' && val !== 'Admin', 'Viewer and Admin are reserved'),
-  description: z
-    .string({
-      required_error: 'Please enter role description',
-    })
-    .trim()
-    .min(2, 'Too short')
-    .max(256, 'Description is too long'),
-  selectedPermissions: z.array(z.string()),
-});
-
-type RoleFormValues = z.infer<typeof roleFormSchema>;
 
 const OrganizationMemberRoleEditor_UpdateMemberRoleMutation = graphql(`
   mutation OrganizationMemberRoleEditor_UpdateMemberRoleMutation($input: UpdateMemberRoleInput!) {
@@ -104,7 +69,7 @@ function OrganizationMemberRoleEditor(props: {
   const { toast } = useToast();
   const isDisabled = updateMemberRoleState.fetching;
   const form = useForm<RoleFormValues>({
-    resolver: zodResolver(roleFormSchema),
+    resolver: zodResolver(RoleFormSchema),
     mode: 'onChange',
     defaultValues: {
       name: role.name,
@@ -180,72 +145,32 @@ function OrganizationMemberRoleEditor(props: {
   }
 
   return (
-    <Form {...form}>
-      <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="flex flex-row space-x-6">
-          <div className="w-72 shrink-0 space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter a name"
-                      type="text"
-                      autoComplete="off"
-                      onSurface="raised"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter a description"
-                      autoComplete="off"
-                      onSurface="raised"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="grow">
-            <div className="flex h-[400px] flex-col space-y-2">
-              <FormLabel>Permissions</FormLabel>
-              <ScrollArea fill>
-                <PermissionSelector
-                  onSurface="raised"
-                  onSelectedPermissionsChange={onChangeSelectedPermissions}
-                  permissionGroups={organization.availableMemberPermissionGroups}
-                  selectedPermissionIds={selectedPermissions}
-                />
-              </ScrollArea>
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-end gap-2">
+    <RoleForm
+      form={form}
+      onSubmit={onSubmit}
+      footer={
+        <>
           <Button type="button" variant="ghost" onClick={props.close}>
             Cancel
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting || form.formState.disabled}>
             {form.formState.isSubmitting ? 'Creating...' : 'Confirm selection'}
           </Button>
-        </div>
-      </form>
-    </Form>
+        </>
+      }
+    >
+      <RoleFields
+        form={form}
+        permissions={
+          <PermissionSelector
+            onSurface="raised"
+            onSelectedPermissionsChange={onChangeSelectedPermissions}
+            permissionGroups={organization.availableMemberPermissionGroups}
+            selectedPermissionIds={selectedPermissions}
+          />
+        }
+      />
+    </RoleForm>
   );
 }
 
@@ -357,7 +282,7 @@ function OrganizationMemberRoleCreator(props: {
   );
   const { toast } = useToast();
   const form = useForm<RoleFormValues>({
-    resolver: zodResolver(roleFormSchema),
+    resolver: zodResolver(RoleFormSchema),
     mode: 'onChange',
     defaultValues: {
       name: '',
@@ -431,128 +356,83 @@ function OrganizationMemberRoleCreator(props: {
     }
   }
 
+  const goToConfirm = () => setState('confirm');
+
   return (
-    <Form {...form}>
-      {/* The buttons drive the two steps themselves, so a native submit must not fire. */}
-      <form className="flex flex-col gap-4" onSubmit={event => event.preventDefault()}>
-        {state === 'select' ? (
-          <div className="flex flex-row space-x-6">
-            <div className="w-72 shrink-0 space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter a name"
-                        type="text"
-                        autoComplete="off"
-                        onSurface="raised"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        autoComplete="off"
-                        placeholder="Enter a description"
-                        onSurface="raised"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grow">
-              <div className="flex h-[400px] flex-col space-y-2">
-                <FormLabel>Permissions</FormLabel>
-                <ScrollArea fill>
-                  <PermissionSelector
-                    onSurface="raised"
-                    onSelectedPermissionsChange={onChangeSelectedPermissions}
-                    permissionGroups={organization.availableMemberPermissionGroups}
-                    selectedPermissionIds={selectedPermissions}
-                  />
-                </ScrollArea>
-              </div>
-            </div>
-          </div>
+    // The step buttons are not submit buttons: React reuses a footer button's element across
+    // steps, and a click that turns it into a submit button submits the form.
+    <RoleForm
+      form={form}
+      onSubmit={state === 'select' ? goToConfirm : onSubmit}
+      footer={
+        state === 'select' ? (
+          <>
+            <Button type="button" variant="ghost" onClick={props.close}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={form.handleSubmit(goToConfirm)}
+              disabled={form.formState.isSubmitting || form.formState.disabled}
+            >
+              Confirm selection
+            </Button>
+          </>
         ) : (
-          <div className="flex h-[400px] flex-col">
-            <ScrollArea fill>
-              <SelectedPermissionOverview
-                activePermissionIds={Array.from(selectedPermissions)}
-                permissionsGroups={organization.availableMemberPermissionGroups}
-                showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+          <>
+            <div className="mr-2 flex items-center space-x-2">
+              <Checkbox
+                id="show-only-granted-permissions"
+                checked={showOnlyGrantedPermissions}
+                onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
               />
-            </ScrollArea>
-          </div>
-        )}
-        <div className="flex items-center justify-end gap-2">
-          {state === 'select' ? (
-            <>
-              <Button type="button" variant="ghost" onClick={props.close}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={async () => {
-                  const isValid = await form.trigger();
-                  if (!isValid) {
-                    return;
-                  }
-                  setState('confirm');
-                }}
-                disabled={form.formState.isSubmitting || form.formState.disabled}
+              <label
+                htmlFor="show-only-granted-permissions"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Confirm selection
-              </Button>
-            </>
-          ) : (
-            <>
-              <div className="mr-2 flex items-center space-x-2">
-                <Checkbox
-                  id="show-only-granted-permissions"
-                  checked={showOnlyGrantedPermissions}
-                  onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
-                />
-                <label
-                  htmlFor="show-only-granted-permissions"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Show only granted permissions
-                </label>
-              </div>
-              <Button type="button" variant="ghost" onClick={() => setState('select')}>
-                Go back
-              </Button>
-              <Button
-                type="button"
-                onClick={form.handleSubmit(onSubmit)}
-                disabled={form.formState.isSubmitting || form.formState.disabled}
-              >
-                {form.formState.isSubmitting
-                  ? 'Creating...'
-                  : `Create role "${form.getValues().name}"`}
-              </Button>
-            </>
-          )}
+                Show only granted permissions
+              </label>
+            </div>
+            <Button type="button" variant="ghost" onClick={() => setState('select')}>
+              Go back
+            </Button>
+            <Button
+              type="button"
+              onClick={form.handleSubmit(onSubmit)}
+              disabled={form.formState.isSubmitting || form.formState.disabled}
+            >
+              {form.formState.isSubmitting
+                ? 'Creating...'
+                : `Create role "${form.getValues().name}"`}
+            </Button>
+          </>
+        )
+      }
+    >
+      {state === 'select' ? (
+        <RoleFields
+          form={form}
+          permissions={
+            <PermissionSelector
+              onSurface="raised"
+              onSelectedPermissionsChange={onChangeSelectedPermissions}
+              permissionGroups={organization.availableMemberPermissionGroups}
+              selectedPermissionIds={selectedPermissions}
+            />
+          }
+        />
+      ) : (
+        <div className="flex h-[400px] flex-col">
+          <ScrollArea fill>
+            <SelectedPermissionOverview
+              activePermissionIds={Array.from(selectedPermissions)}
+              permissionsGroups={organization.availableMemberPermissionGroups}
+              showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+            />
+          </ScrollArea>
         </div>
-      </form>
-    </Form>
+      )}
+    </RoleForm>
   );
 }
 

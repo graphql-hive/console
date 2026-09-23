@@ -4,20 +4,15 @@ import { FaRegUserCircle } from 'react-icons/fa';
 import { SiGithub, SiGoogle, SiOkta } from 'react-icons/si';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { emailPasswordSignIn as superEmailPasswordSignIn } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
-import z from 'zod';
 import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
+import {
+  SignInForm,
+  SignInFormSchema,
+  type SignInFormValues,
+} from '@/components/auth/sign-in-form';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Input } from '@/components/base/input/input';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Meta } from '@/components/ui/meta';
 import { Text } from '@/components/ui/text';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
@@ -55,17 +50,6 @@ export function SignInButton(props: {
 
   return <>{props.children}</>;
 }
-
-const SignInFormSchema = z.object({
-  email: z
-    .string({
-      required_error: 'Email is required',
-    })
-    .email('Invalid email address'),
-  password: z.string(),
-});
-
-type SignInFormValues = z.infer<typeof SignInFormSchema>;
 
 export function AuthSignInPage(props: { redirectToPath: string }) {
   const session = useSessionContext();
@@ -197,56 +181,23 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
           <>
             <AuthCardStack>
               <>
-                <Form {...form}>
-                  <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="m@example.com"
-                              type="email"
-                              onSurface="raised"
-                              {...form.register('email')}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={() => (
-                        <FormItem>
-                          <div className="flex items-center">
-                            <FormLabel>Password</FormLabel>
-                            <Link
-                              tabIndex={-1}
-                              to="/auth/reset-password"
-                              search={{
-                                email: form.getValues().email || undefined,
-                                redirectToPath: props.redirectToPath,
-                              }}
-                              className="ml-auto inline-block text-sm underline"
-                            >
-                              Forgot your password?
-                            </Link>
-                          </div>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              onSurface="raised"
-                              {...form.register('password')}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <SignInForm
+                  form={form}
+                  onSubmit={onSubmit}
+                  forgotPasswordLink={email => (
+                    <Link
+                      tabIndex={-1}
+                      to="/auth/reset-password"
+                      search={{
+                        email: email || undefined,
+                        redirectToPath: props.redirectToPath,
+                      }}
+                      className="ml-auto inline-block text-sm underline"
+                    >
+                      Forgot your password?
+                    </Link>
+                  )}
+                  submit={
                     <SignInButton previousSignIn={lastAuthMethod === 'email'}>
                       <Button type="submit" className="w-full" disabled={isPending}>
                         {emailPasswordSignIn.data?.status === 'OK'
@@ -256,8 +207,8 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                             : 'Sign in'}
                       </Button>
                     </SignInButton>
-                  </form>
-                </Form>
+                  }
+                />
                 {enabledProviders.length ? <AuthOrSeparator /> : null}
                 {isProviderEnabled('google') ? (
                   <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'google'}>
