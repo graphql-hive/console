@@ -179,9 +179,21 @@ test('should skip empty chunks when numOfChunks exceeds the number of entries un
       op1: { key: 'op1', operation: 'test-operation-1', fields: [] },
     },
     operations: [
-      { operationMapKey: 'op1', timestamp: now, execution: { ok: true, errorsTotal: 0, duration: 1 } },
-      { operationMapKey: 'op1', timestamp: now, execution: { ok: true, errorsTotal: 0, duration: 1 } },
-      { operationMapKey: 'op1', timestamp: now, execution: { ok: true, errorsTotal: 0, duration: 1 } },
+      {
+        operationMapKey: 'op1',
+        timestamp: now,
+        execution: { ok: true, errorsTotal: 0, duration: 1 },
+      },
+      {
+        operationMapKey: 'op1',
+        timestamp: now,
+        execution: { ok: true, errorsTotal: 0, duration: 1 },
+      },
+      {
+        operationMapKey: 'op1',
+        timestamp: now,
+        execution: { ok: true, errorsTotal: 0, duration: 1 },
+      },
     ],
   };
 
