@@ -1,13 +1,7 @@
 import { ReactNode } from 'react';
+import { Accordion } from '@/components/base/accordion/accordion';
 import { Popover } from '@/components/base/floating/popover/popover';
-import {
-  AccordionContent,
-  AccordionHeader,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Accordion } from '@/components/v2';
 import { MergeStatus } from '@/pages/target-proposal-details';
 import type { Change } from '@graphql-inspector/core';
 import { ComponentNoneIcon, ExclamationTriangleIcon, InfoCircledIcon } from '@radix-ui/react-icons';
@@ -19,21 +13,20 @@ export function ProposalChangeDetail(props: {
   icon?: ReactNode;
 }) {
   return (
-    <Accordion type="single">
-      <AccordionItem value="item-1">
-        <AccordionHeader className="flex">
-          <AccordionTrigger className="text-neutral-8 py-3 hover:no-underline">
-            <div className="flex w-full flex-row items-center text-left">
+    <Accordion
+      items={[
+        {
+          value: 'item-1',
+          label: (
+            <div className="text-neutral-8 flex w-full flex-row items-center">
               <div>{labelize(props.change.message)}</div>
               <div className="min-w-fit grow pr-2 md:flex-none">{props.icon}</div>
             </div>
-          </AccordionTrigger>
-        </AccordionHeader>
-        <AccordionContent>
-          {props.error?.message ?? <>No details available for this change.</>}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+          ),
+          content: props.error?.message ?? 'No details available for this change.',
+        },
+      ]}
+    />
   );
 }
 
