@@ -25,6 +25,7 @@ export default {
       , "name" text NOT NULL
       , "config" jsonb NOT NULL
       , "source_graph_id" uuid REFERENCES "graphs"("id") ON DELETE CASCADE
+      , "is_backfilled" boolean NOT NULL DEFAULT false
       , "created_at" timestamptz NOT NULL DEFAULT now()
       , PRIMARY KEY ("id")
       , CONSTRAINT "graphs_target_id_name_key" UNIQUE ("target_id", "name")

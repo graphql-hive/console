@@ -21,6 +21,7 @@ const GraphModel = z.object({
   name: z.string(),
   config: GraphConfigModel.nullable(),
   sourceGraphId: z.string().nullable(),
+  isBackfilled: z.boolean(),
   createdAt: z.string(),
 });
 
@@ -141,5 +142,6 @@ const graphFields = psql`
   , "type"
   , "config"
   , "source_graph_id" AS "sourceGraphId"
+  , "is_backfilled" AS "isBackfilled"
   , to_json("created_at") AS "createdAt"
 `;
