@@ -23,6 +23,13 @@ export const focusRing =
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
 
 /**
+ * The quiet ring for text on the page rather than a control with an edge: tabs and navigation
+ * links. 1px dotted on a small radius.
+ */
+export const focusRingQuiet =
+  'rounded-sm focus-visible:outline-1 focus-visible:outline-dotted focus-visible:outline-accent';
+
+/**
  * Vertical scroll container with a thin, muted scrollbar. Use anywhere content can overflow
  * (sheets, dialogs, floating lists). `thin-scrollbar` is a utility in `index.css` rather than
  * arbitrary Tailwind properties, because older Chromium and Safari need `::-webkit-scrollbar`

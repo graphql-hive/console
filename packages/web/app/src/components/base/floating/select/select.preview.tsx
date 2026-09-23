@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AlertTriangle, Check, GitCompare } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../../button/button';
 import { Select, type SelectOption } from './select';
@@ -210,6 +211,35 @@ export const WithTooltips = createPreview(() => {
  * (36px) is what a select in a form gets; `compact` (30px) is for a select that sits in a filter
  * row beside chips and a date picker, which are 30px.
  */
+/**
+ * `trailing` sits at the row's far end, clear of the selection check in the leading slot: a
+ * status, a count, a shortcut. The contract pickers on the check and version pages put each
+ * contract's composition status there.
+ */
+export const WithTrailing = createPreview(() => {
+  const [value, setValue] = useState('default');
+  return (
+    <Select
+      options={[
+        {
+          value: 'default',
+          label: 'Default Graph',
+          trailing: <AlertTriangle className="text-warning size-3.5" />,
+        },
+        { value: 'public-api', label: 'public-api', trailing: <GitCompare className="size-3.5" /> },
+        {
+          value: 'partner-api',
+          label: 'partner-api',
+          trailing: <Check className="text-success size-3.5" />,
+        },
+      ]}
+      value={value}
+      onValueChange={setValue}
+      width="md"
+    />
+  );
+});
+
 export const Sizes = createPreview(() => (
   <div className="flex flex-col gap-4">
     <div className="flex items-center gap-4">

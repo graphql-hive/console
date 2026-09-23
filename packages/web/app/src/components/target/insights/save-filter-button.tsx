@@ -202,6 +202,7 @@ function CreateFilterButton({
           </div>
           <div>
             <Select
+              aria-label="Save location"
               options={[
                 { value: SavedFilterVisibilityType.Private, label: 'My views' },
                 ...(viewerCanShare

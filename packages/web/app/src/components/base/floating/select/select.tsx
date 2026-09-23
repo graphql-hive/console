@@ -1,4 +1,4 @@
-import { useState, type FocusEvent, type ReactNode } from 'react';
+import { cloneElement, useId, useState, type FocusEvent, type ReactNode } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { Select as BaseSelect } from '@base-ui/react/select';
 import { Button } from '../../button/button';
@@ -32,6 +32,11 @@ export type SelectOption = {
   tooltip?: ReactNode;
   /** Extra text the search field matches besides the label: an email, a full name, an alias. */
   keywords?: string;
+  /**
+   * Sits at the row's far end: a status, a count, a shortcut. The leading slot belongs to the
+   * selection check, so metadata that would collide with it goes here.
+   */
+  trailing?: ReactNode;
   'data-cy'?: string;
 };
 
@@ -74,6 +79,14 @@ type SelectProps = Partial<
    * make the panel wider than the control it belongs to.
    */
   matchTriggerWidth?: boolean;
+  /**
+   * What the select chooses, for assistive tech: "Contract", "Sort by". The trigger is a combobox,
+   * a role that takes no name from its text, so without this or a `<label htmlFor>` on `id` the
+   * control is announced as nothing at all. Rendered as a hidden label that the trigger is
+   * labelled by together with its own text, so the name keeps the current value: "Sort by,
+   * Requests" rather than "Sort by" alone.
+   */
+  'aria-label'?: string;
   /** Lands on the trigger, so a `<label htmlFor>` can point at it. */
   id?: string;
   /** Form field name, for a select inside a native form. */
@@ -104,6 +117,7 @@ export function Select({
   size,
   width = 'auto',
   matchTriggerWidth,
+  'aria-label': ariaLabel,
   id,
   name,
   onBlur,
@@ -111,6 +125,9 @@ export function Select({
   popupDataCy,
 }: SelectProps) {
   const selectedLabel = options.find(o => o.value === value)?.label;
+  const generatedId = useId();
+  const triggerId = id ?? generatedId;
+  const labelId = `${triggerId}-label`;
   const [search, setSearch] = useState('');
   const portalContainer = useFloatingPortalContainer();
 
@@ -132,6 +149,11 @@ export function Select({
 
   return (
     <div className={widthClass[width]}>
+      {ariaLabel ? (
+        <span id={labelId} className="sr-only">
+          {ariaLabel}
+        </span>
+      ) : null}
       <BaseSelect.Root
         value={value}
         onValueChange={val => {
@@ -145,9 +167,16 @@ export function Select({
         name={name}
       >
         <BaseSelect.Trigger
+          // Named on the Trigger so a custom `trigger` gets it too; the id has to sit on the
+          // rendered element itself, since the Trigger does not pass one through.
+          aria-labelledby={ariaLabel ? `${labelId} ${triggerId}` : undefined}
           render={
-            trigger ??
-            ((
+            typeof trigger === 'function' ? (
+              (props: unknown, state: unknown) =>
+                trigger({ ...(props as object), id: triggerId }, state)
+            ) : trigger ? (
+              cloneElement(trigger, { id: triggerId })
+            ) : (
               <Button
                 label={label ?? selectedLabel ?? placeholder}
                 rightIcon={{ icon: ChevronDown, withSeparator: true }}
@@ -155,11 +184,11 @@ export function Select({
                 onSurface={onSurface}
                 size={size}
                 width={width === 'auto' ? 'auto' : 'full'}
-                id={id}
+                id={triggerId}
                 onBlur={onBlur}
                 data-cy={dataCy}
               />
-            ) as React.ReactElement)
+            )
           }
         />
 
@@ -223,6 +252,11 @@ export function Select({
                             </span>
                           ) : null}
                         </BaseSelect.ItemText>
+                        {option.trailing ? (
+                          <span className="ml-auto inline-flex shrink-0 items-center pl-2">
+                            {option.trailing}
+                          </span>
+                        ) : null}
                       </BaseSelect.Item>
                     );
                     // Same wrap as a Menu row: a disabled item has pointer-events-none, so the

@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from 'urql';
+import { Tabs } from '@/components/base/tabs/tabs';
 import { CheckIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
 import { ExternalCompositionSettings } from './external-composition';
 import { LegacyCompositionSettings } from './legacy-composition';
 import { NativeCompositionSettings } from './native-composition';
@@ -101,53 +100,63 @@ export const CompositionSettings = (props: {
         {projectQuery.fetching ? (
           <Spinner />
         ) : (
-          <Tabs value={selectedMode ?? activeMode} onValueChange={setSelectedMode}>
-            <TabsList variant="content">
-              <TabsTrigger variant="content" value="native">
-                Native Federation v2
-                {activeMode === 'native' && <CheckIcon size={16} className="ml-2 inline-block" />}
-              </TabsTrigger>
-              <TabsTrigger variant="content" value="external">
-                External
-                {activeMode === 'external' && <CheckIcon size={16} className="ml-2 inline-block" />}
-              </TabsTrigger>
-              <TabsTrigger
-                variant="content"
-                value="legacy"
-                className={cn(
-                  'hover:opacity-100 data-[state=active]:opacity-100',
-                  activeMode === 'legacy' ? 'opacity-100' : 'opacity-40',
-                )}
-              >
-                Legacy Federation v1
-                {activeMode === 'legacy' && <CheckIcon size={16} className="ml-2 inline-block" />}
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent variant="content" value="native">
-              <NativeCompositionSettings
-                project={project}
-                organization={organization}
-                activeCompositionMode={activeMode}
-                onMutate={onMutate}
-              />
-            </TabsContent>
-            <TabsContent variant="content" value="external">
-              <ExternalCompositionSettings
-                project={project}
-                organization={organization}
-                activeCompositionMode={activeMode}
-                onMutate={onMutate}
-              />
-            </TabsContent>
-            <TabsContent variant="content" value="legacy">
-              <LegacyCompositionSettings
-                project={project}
-                organization={organization}
-                activeCompositionMode={activeMode}
-                onMutate={onMutate}
-              />
-            </TabsContent>
-          </Tabs>
+          <Tabs
+            value={selectedMode ?? activeMode}
+            onValueChange={setSelectedMode}
+            items={[
+              {
+                value: 'native',
+                label: (
+                  <>
+                    Native Federation v2
+                    {activeMode === 'native' && <CheckIcon size={16} />}
+                  </>
+                ),
+                content: (
+                  <NativeCompositionSettings
+                    project={project}
+                    organization={organization}
+                    activeCompositionMode={activeMode}
+                    onMutate={onMutate}
+                  />
+                ),
+              },
+              {
+                value: 'external',
+                label: (
+                  <>
+                    External
+                    {activeMode === 'external' && <CheckIcon size={16} />}
+                  </>
+                ),
+                content: (
+                  <ExternalCompositionSettings
+                    project={project}
+                    organization={organization}
+                    activeCompositionMode={activeMode}
+                    onMutate={onMutate}
+                  />
+                ),
+              },
+              {
+                value: 'legacy',
+                label: (
+                  <>
+                    Legacy Federation v1
+                    {activeMode === 'legacy' && <CheckIcon size={16} />}
+                  </>
+                ),
+                content: (
+                  <LegacyCompositionSettings
+                    project={project}
+                    organization={organization}
+                    activeCompositionMode={activeMode}
+                    onMutate={onMutate}
+                  />
+                ),
+              },
+            ]}
+          />
         )}
       </div>
     </SubPageLayout>

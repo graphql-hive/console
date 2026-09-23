@@ -238,7 +238,7 @@ function ChangeItem(
               className={clsx(
                 'text-left',
                 (change.approval && 'text-accent') ||
-                  (severityLevelMapping[change.severityLevel] ?? 'text-red-400'),
+                  (severityLevelMapping[change.severityLevel] ?? 'text-critical'),
               )}
             >
               <div>
@@ -252,7 +252,7 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="bg-neutral-5 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold text-red-400">
+                    <span className="bg-neutral-5 text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
                       <PulseIcon className="h-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}

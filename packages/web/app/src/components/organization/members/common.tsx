@@ -32,6 +32,7 @@ export function RoleSelector<T>(props: {
 
   return (
     <Select
+      aria-label="Role"
       options={props.roles.map(role => {
         const isRoleActiveResult = props.isRoleActive(role);
         const isActive =

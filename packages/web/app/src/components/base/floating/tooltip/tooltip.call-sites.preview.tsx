@@ -11,11 +11,12 @@ import {
 import { createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '@/components/base/badge/badge';
 import { Button as BaseButton } from '@/components/base/button/button';
+import { SecondaryNavigation } from '@/components/base/navigation/secondary-navigation/secondary-navigation';
 import { Switch } from '@/components/base/switch/switch';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover } from '../popover/popover';
+import { Select } from '../select/select';
 import { Tooltip } from './tooltip';
 
 export const nav: NavPath = 'Base/Floating/Tooltip/Component Examples';
@@ -262,26 +263,9 @@ export const OnStatus = createPreview({
       <CallSite
         source="pages/target-history-schema-version.tsx:59"
         origin="base"
-        note="Tabs carry a composition-status icon; the same StatusTooltip helper lives in both the history and checks pages."
+        note="The contract picker's options carry a composition-status icon; the same StatusTooltip helper lives in both the history and checks pages. Open the select and hover an icon."
       >
-        <Tabs defaultValue="default">
-          <TabsList>
-            <TabsTrigger value="default">
-              <span className="font-mono text-xs">Default Graph</span>
-              <StatusTooltip
-                icon={<GitCompareIcon className="size-4 pl-1" />}
-                label="Main graph schema changed"
-              />
-            </TabsTrigger>
-            <TabsTrigger value="contract">
-              <span className="font-mono text-xs">public@1a2b3c4d</span>
-              <StatusTooltip
-                icon={<CheckIcon className="size-4 pl-1" />}
-                label="Contract composition succeeded."
-              />
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <ContractPicker />
       </CallSite>
     </div>
   ),
@@ -290,6 +274,42 @@ export const OnStatus = createPreview({
 // ---------------------------------------------------------------------------
 // Rich content and other triggers.
 // ---------------------------------------------------------------------------
+
+function ContractPicker() {
+  const [contract, setContract] = useState('default');
+  return (
+    <Select
+      aria-label="Contract"
+      value={contract}
+      onValueChange={setContract}
+      options={[
+        {
+          value: 'default',
+          label: 'Default Graph',
+          trailing: (
+            <StatusTooltip
+              icon={<GitCompareIcon className="size-3.5" />}
+              label="Main graph schema changed"
+            />
+          ),
+        },
+        {
+          value: 'contract',
+          label: 'public@1a2b3c4d',
+          trailing: (
+            <StatusTooltip
+              icon={<CheckIcon className="text-success size-3.5" />}
+              label="Contract composition succeeded."
+            />
+          ),
+        },
+      ]}
+      size="compact"
+      onSurface="raised"
+      width="md"
+    />
+  );
+}
 
 function TimestampCell() {
   const rows = [
@@ -350,26 +370,27 @@ export const RichContent = createPreview({
         <TimestampCell />
       </CallSite>
       <CallSite
-        source="components/target/explorer/filter.tsx:85"
+        source="components/target/explorer/filter.tsx:64"
         origin="base"
-        note="Hints on tabs, side bottom."
+        note="Hints on the explorer's type filter: a pill SecondaryNavigation whose items each carry a tooltip."
       >
-        <Tabs defaultValue="all">
-          <TabsList>
-            {[
-              ['all', 'All', 'Every type and field in the schema.'],
-              ['unused', 'Unused', 'Types and fields with no usage in the selected period.'],
-              ['deprecated', 'Deprecated', 'Types and fields marked @deprecated.'],
-            ].map(([value, label, hint]) => (
-              <Tooltip
-                key={value}
-                trigger={<TabsTrigger value={value}>{label}</TabsTrigger>}
-                content={hint}
-                side="bottom"
-              />
-            ))}
-          </TabsList>
-        </Tabs>
+        <SecondaryNavigation
+          aria-label="Type filter"
+          variant="pill"
+          size="sm"
+          value="all"
+          items={[
+            ['all', 'All', 'Shows all types, including unused and deprecated ones'],
+            ['unused', 'Unused', 'Shows only types that are not used in any operation'],
+            ['deprecated', 'Deprecated', 'Shows only types that are marked as deprecated'],
+          ].map(([value, label, tooltip]) => ({
+            value,
+            label,
+            tooltip,
+            to: '/$organizationSlug/$projectSlug/$targetSlug',
+            params: { organizationSlug: 'the-guild', projectSlug: 'gateway', targetSlug: value },
+          }))}
+        />
       </CallSite>
       <CallSite
         source="components/project/settings/native-composition.tsx:58"

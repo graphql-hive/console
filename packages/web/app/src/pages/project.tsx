@@ -234,6 +234,7 @@ const ProjectsPageContent = (
             </div>
             <Separator orientation="vertical" />
             <Select
+              aria-label="Sort targets by"
               options={[
                 {
                   value: 'requests',

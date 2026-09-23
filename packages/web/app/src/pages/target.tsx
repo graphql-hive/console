@@ -189,6 +189,7 @@ function SchemaView(props: {
           {isDistributed && schemas && schemas.length > 1 && (
             <>
               <Select
+                aria-label="Service"
                 options={compositeSchemas.map(schema => ({
                   value: schema.service as string,
                   label: schema.service as string,

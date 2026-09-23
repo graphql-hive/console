@@ -313,7 +313,8 @@
     --chart-6: 330 81% 60%;
     --chart-grid: 0 0% 35%;
 
-    --ring: 216 58% 49%;
+    /* The legacy ui/ focus ring, kept on the accent so it matches base until ui/button goes. */
+    --ring: var(--accent);
   }
 
   .dark {
@@ -443,9 +444,10 @@
     appearance: none;
   }
 
+  /* Scoped to the editor: Base UI's tab indicator is a presentation role too. */
   .monaco-editor,
   .monaco-editor-background,
-  [role='presentation'] {
+  .monaco-editor [role='presentation'] {
     background: transparent !important;
     --vscode-focusBorder: transparent !important;
   }

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Input } from '@/components/base/input/input';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { Tabs } from '@/components/base/tabs/tabs';
 import { useToast } from '@/components/base/toast/toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation as useRQMutation } from '@tanstack/react-query';
 
@@ -305,45 +305,41 @@ export function ConnectSingleSignOnProviderSheet(
         </>
       }
     >
-      <Tabs value={state}>
-        <TabsList variant="content" className="mt-1">
-          <TabsTrigger
-            variant="content"
-            value="discovery"
-            onClick={() => setState('discovery')}
-            data-button-oidc-discovery
-          >
-            Discovery Document
-          </TabsTrigger>
-          <TabsTrigger
-            variant="content"
-            value="manual"
-            onClick={() => setState('manual')}
-            data-button-oidc-manual
-          >
-            Manual
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="discovery" variant="content">
-          <OIDCMetadataFetcher
-            onEndpointChange={args => {
-              form.setValue('authorization_endpoint', args.authorization, {
-                shouldValidate: true,
-              });
-              form.setValue('token_endpoint', args.token, {
-                shouldValidate: true,
-              });
-              form.setValue('userinfo_endpoint', args.userinfo, {
-                shouldValidate: true,
-              });
-            }}
-          />
-          {formNode}
-        </TabsContent>
-        <TabsContent value="manual" variant="content">
-          {formNode}
-        </TabsContent>
-      </Tabs>
+      <Tabs
+        value={state}
+        onValueChange={value => setState(value === 'manual' ? 'manual' : 'discovery')}
+        items={[
+          {
+            value: 'discovery',
+            label: 'Discovery Document',
+            attrs: { 'data-button-oidc-discovery': '' },
+            content: (
+              <div className="space-y-2">
+                <OIDCMetadataFetcher
+                  onEndpointChange={args => {
+                    form.setValue('authorization_endpoint', args.authorization, {
+                      shouldValidate: true,
+                    });
+                    form.setValue('token_endpoint', args.token, {
+                      shouldValidate: true,
+                    });
+                    form.setValue('userinfo_endpoint', args.userinfo, {
+                      shouldValidate: true,
+                    });
+                  }}
+                />
+                {formNode}
+              </div>
+            ),
+          },
+          {
+            value: 'manual',
+            label: 'Manual',
+            attrs: { 'data-button-oidc-manual': '' },
+            content: formNode,
+          },
+        ]}
+      />
     </Sheet>
   );
 }

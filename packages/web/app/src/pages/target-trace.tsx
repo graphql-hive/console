@@ -26,6 +26,7 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Tabs } from '@/components/base/tabs/tabs';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
@@ -230,17 +231,12 @@ function TreeIcon(props: {
   );
 }
 
-function TabButton(props: { isActive: boolean; onClick(): void; children: ReactNode }) {
+function CountedLabel(props: { label: string; count: number }) {
   return (
-    <button
-      className={cn(
-        'border-b-2 p-2',
-        props.isActive ? 'border-[#2662d8]' : 'hover:border-neutral-5 border-transparent',
-      )}
-      onClick={props.onClick}
-    >
-      {props.children}
-    </button>
+    <>
+      {props.label}
+      <Badge content={String(props.count)} variants={{ variant: 'secondary', size: 'sm' }} />
+    </>
   );
 }
 
@@ -811,59 +807,32 @@ export function TraceSheet(props: TraceSheetProps) {
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={30} minSize={10} maxSize={80}>
             <div className="flex h-full flex-col">
-              <div className="border-neutral-5 sticky top-0 z-10 border-b">
-                <div className="flex w-full gap-x-4 px-2 text-xs font-medium">
-                  <TabButton
-                    isActive={activeView === 'span-attributes'}
-                    onClick={() => setActiveView('span-attributes')}
-                  >
-                    <div className="flex items-center gap-x-2">
-                      <div>Attributes</div>
-                      <div>
-                        <Badge
-                          content={String(spanAttributes.length)}
-                          variants={{ variant: 'secondary', size: 'sm' }}
+              <div className="sticky top-0 z-10">
+                <Tabs
+                  size="sm"
+                  value={activeView}
+                  onValueChange={value => setActiveView(value as typeof activeView)}
+                  items={[
+                    {
+                      value: 'span-attributes',
+                      label: <CountedLabel label="Attributes" count={spanAttributes.length} />,
+                    },
+                    {
+                      value: 'resource-attributes',
+                      label: (
+                        <CountedLabel
+                          label="Resource Attributes"
+                          count={resourceAttributes.length}
                         />
-                      </div>
-                    </div>
-                  </TabButton>
-                  <TabButton
-                    isActive={activeView === 'resource-attributes'}
-                    onClick={() => setActiveView('resource-attributes')}
-                  >
-                    <div className="flex items-center gap-x-2">
-                      <div>Resource Attributes</div>
-                      <div>
-                        <Badge
-                          content={String(resourceAttributes.length)}
-                          variants={{ variant: 'secondary', size: 'sm' }}
-                        />
-                      </div>
-                    </div>
-                  </TabButton>
-                  <TabButton
-                    isActive={activeView === 'events'}
-                    onClick={() => setActiveView('events')}
-                  >
-                    <div className="flex items-center gap-x-2">
-                      <div>Events</div>
-                      <div>
-                        <Badge
-                          content={String(events.length)}
-                          variants={{ variant: 'secondary', size: 'sm' }}
-                        />
-                      </div>
-                    </div>
-                  </TabButton>
-                  <TabButton
-                    isActive={activeView === 'operation'}
-                    onClick={() => setActiveView('operation')}
-                  >
-                    <div className="flex items-center gap-x-2">
-                      <div>GraphQL Operation</div>
-                    </div>
-                  </TabButton>
-                </div>
+                      ),
+                    },
+                    {
+                      value: 'events',
+                      label: <CountedLabel label="Events" count={events.length} />,
+                    },
+                    { value: 'operation', label: 'GraphQL Operation' },
+                  ]}
+                />
               </div>
               <ScrollArea fill>
                 <div className="h-full">
@@ -1554,58 +1523,36 @@ function SpanSheet(props: SpanSheetProps) {
         </div>
       )}
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="border-neutral-5 border-y">
-          <div className="flex w-full gap-x-4 px-4 text-xs font-medium">
-            <TabButton
-              isActive={activeView === 'span-attributes'}
-              onClick={() => setActiveView('span-attributes')}
-            >
-              <div className="flex items-center gap-x-2">
-                <div>Span Attributes</div>
-                <div>
-                  <Badge
-                    content={String(Object.keys(span.spanAttributes).length)}
-                    variants={{ variant: 'secondary', size: 'sm' }}
+        <div className="border-neutral-5 border-t">
+          <Tabs
+            size="sm"
+            value={activeView}
+            onValueChange={value => setActiveView(value as typeof activeView)}
+            items={[
+              {
+                value: 'span-attributes',
+                label: (
+                  <CountedLabel
+                    label="Span Attributes"
+                    count={Object.keys(span.spanAttributes).length}
                   />
-                </div>
-              </div>
-            </TabButton>
-            <TabButton
-              isActive={activeView === 'resource-attributes'}
-              onClick={() => setActiveView('resource-attributes')}
-            >
-              <div className="flex items-center gap-x-2">
-                <div>Resource Attributes</div>
-                <div>
-                  <Badge
-                    content={String(resourceAttributes.length)}
-                    variants={{ variant: 'secondary', size: 'sm' }}
-                  />
-                </div>
-              </div>
-            </TabButton>
-            <TabButton isActive={activeView === 'events'} onClick={() => setActiveView('events')}>
-              <div className="flex items-center gap-x-2">
-                <div>Events</div>
-                <div>
-                  <Badge
-                    content={String(span.events.length)}
-                    variants={{ variant: 'secondary', size: 'sm' }}
-                  />
-                </div>
-              </div>
-            </TabButton>
-            {(span.spanAttributes['graphql.document'] as string) && (
-              <TabButton
-                isActive={activeView === 'operation'}
-                onClick={() => setActiveView('operation')}
-              >
-                <div className="flex items-center gap-x-2">
-                  <div>GraphQL Operation</div>
-                </div>
-              </TabButton>
-            )}
-          </div>
+                ),
+              },
+              {
+                value: 'resource-attributes',
+                label: (
+                  <CountedLabel label="Resource Attributes" count={resourceAttributes.length} />
+                ),
+              },
+              {
+                value: 'events',
+                label: <CountedLabel label="Events" count={span.events.length} />,
+              },
+              ...((span.spanAttributes['graphql.document'] as string)
+                ? [{ value: 'operation', label: 'GraphQL Operation' }]
+                : []),
+            ]}
+          />
         </div>
         <ScrollArea fill>
           {activeView === 'span-attributes' && (

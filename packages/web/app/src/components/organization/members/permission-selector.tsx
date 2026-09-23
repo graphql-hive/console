@@ -228,6 +228,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         )
                       )}
                       <Select
+                        aria-label={permission.title}
                         onSurface={props.onSurface}
                         options={[
                           { value: 'not-selected', label: 'Not Selected' },

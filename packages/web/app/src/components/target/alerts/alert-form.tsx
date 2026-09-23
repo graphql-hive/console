@@ -651,6 +651,8 @@ export function AlertForm(props: AlertFormProps) {
                         {index === 0 && <FormLabel label="Channel" />}
                         <FormControl>
                           <Select
+                            // Only the first row has the visible label.
+                            aria-label={index === 0 ? undefined : `Channel ${index + 1}`}
                             options={channelOptions}
                             value={channelField.value}
                             onValueChange={channelField.onChange}

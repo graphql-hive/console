@@ -18,8 +18,8 @@ import { useToggle } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { cn } from '@/lib/utils';
+import { Tabs } from '../base/tabs/tabs';
 import { Label } from '../ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { TargetSelector } from './target-selector';
 
 export enum Page {
@@ -144,7 +144,6 @@ export const TargetLayout = ({
           <SecondaryNavigation
             page={page}
             loading={!currentOrganization || !currentProject || !currentTarget}
-            className="flex h-full grow flex-col"
             links={
               currentOrganization && currentProject && currentTarget
                 ? [
@@ -362,8 +361,9 @@ export function ConnectSchemaModal(props: {
           <>
             <div className="mb-5 mt-1 flex flex-row justify-start gap-3">
               <div>
-                <Label>Graph Variant</Label>
+                <Label htmlFor="cdn-graph">Graph Variant</Label>
                 <Select
+                  id="cdn-graph"
                   options={[
                     { value: 'DEFAULT_GRAPH', label: 'Default Graph' },
                     ...target.activeContracts.edges.map(({ node }) => ({
@@ -388,8 +388,9 @@ export function ConnectSchemaModal(props: {
                 />
               </div>
               <div>
-                <Label>Artifact</Label>
+                <Label htmlFor="cdn-artifact">Artifact</Label>
                 <Select
+                  id="cdn-artifact"
                   options={ArtifactToProjectTypeMapping[target.project.type].map(t => ({
                     value: t,
                     label: ArtifactTypeToDisplayName[t],
@@ -484,163 +485,183 @@ function FederationModalContent(props: {
     </p>
   );
   return (
-    <Tabs className="mt-2 flex min-h-[300px] grow flex-col text-sm" defaultValue="hive-gateway">
-      <TabsList variant="content">
-        <TabsTrigger value="hive-gateway" variant="content">
-          Hive Gateway
-        </TabsTrigger>
-        <TabsTrigger value="hive-router" variant="content">
-          Hive Router
-        </TabsTrigger>
-        <TabsTrigger value="apollo-router" variant="content">
-          Apollo Router
-        </TabsTrigger>
-        <TabsTrigger value="grafbase-gateway" variant="content">
-          Grafbase Gateway
-        </TabsTrigger>
-        <TabsTrigger value="cdn" variant="content">
-          Custom / HTTP
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="hive-gateway" variant="content">
-        <p>
-          Start up a Hive Gateway instance polling the supergraph from the Hive CDN using the
-          following command.
-        </p>
-        {authenticateSection}
-        <div className="mt-2">
-          <InputCopy
-            onSurface="raised"
-            multiline
-            value={`docker run --name hive-gateway --rm -p 4000:4000 \\
+    <div className="mt-2 flex min-h-[300px] grow flex-col text-sm">
+      <Tabs
+        defaultValue="hive-gateway"
+        items={[
+          {
+            value: 'hive-gateway',
+            label: 'Hive Gateway',
+            content: (
+              <div className="space-y-2">
+                <p>
+                  Start up a Hive Gateway instance polling the supergraph from the Hive CDN using
+                  the following command.
+                </p>
+                {authenticateSection}
+                <div className="mt-2">
+                  <InputCopy
+                    onSurface="raised"
+                    multiline
+                    value={`docker run --name hive-gateway --rm -p 4000:4000 \\
   ghcr.io/graphql-hive/gateway supergraph \\
   "${dockerCdnUrl}" \\
   --hive-cdn-key '<hive_cdn_access_key>'`}
-          />
-        </div>
-        <p>
-          For more information please refer to our{' '}
-          <UiLink
-            variant="primary"
-            target="_blank"
-            rel="noreferrer"
-            to={getDocsUrl('/gateway/usage-reporting')}
-          >
-            Hive Gateway documentation
-          </UiLink>
-          .
-        </p>
-      </TabsContent>
-      <TabsContent value="hive-router" variant="content">
-        <p>
-          Start up a Hive Router instance polling the supergraph from the Hive CDN using the
-          following command.
-        </p>
-        {authenticateSection}
-        <InputCopy
-          onSurface="raised"
-          multiline
-          value={`docker run --name hive-router --rm -p 4000:4000 \\
+                  />
+                </div>
+                <p>
+                  For more information please refer to our{' '}
+                  <UiLink
+                    variant="primary"
+                    target="_blank"
+                    rel="noreferrer"
+                    to={getDocsUrl('/gateway/usage-reporting')}
+                  >
+                    Hive Gateway documentation
+                  </UiLink>
+                  .
+                </p>
+              </div>
+            ),
+          },
+          {
+            value: 'hive-router',
+            label: 'Hive Router',
+            content: (
+              <div className="space-y-2">
+                <p>
+                  Start up a Hive Router instance polling the supergraph from the Hive CDN using the
+                  following command.
+                </p>
+                {authenticateSection}
+                <InputCopy
+                  onSurface="raised"
+                  multiline
+                  value={`docker run --name hive-router --rm -p 4000:4000 \\
   --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>" \\
   ghcr.io/graphql-hive/router`}
-        />
-        <p>
-          For more information please refer to our{' '}
-          <UiLink
-            variant="primary"
-            target="_blank"
-            rel="noreferrer"
-            to={getDocsUrl('/router/observability/usage_reporting')}
-          >
-            Hive Router documentation
-          </UiLink>
-          .
-        </p>
-      </TabsContent>
-      <TabsContent value="apollo-router" variant="content">
-        <p>
-          Start up a Apollo Router instance polling the supergraph from the Hive CDN using the
-          following command.
-        </p>
-        {authenticateSection}
-        <InputCopy
-          onSurface="raised"
-          multiline
-          value={`docker run --name apollo-router -p 4000:4000 --rm \\
+                />
+                <p>
+                  For more information please refer to our{' '}
+                  <UiLink
+                    variant="primary"
+                    target="_blank"
+                    rel="noreferrer"
+                    to={getDocsUrl('/router/observability/usage_reporting')}
+                  >
+                    Hive Router documentation
+                  </UiLink>
+                  .
+                </p>
+              </div>
+            ),
+          },
+          {
+            value: 'apollo-router',
+            label: 'Apollo Router',
+            content: (
+              <div className="space-y-2">
+                <p>
+                  Start up a Apollo Router instance polling the supergraph from the Hive CDN using
+                  the following command.
+                </p>
+                {authenticateSection}
+                <InputCopy
+                  onSurface="raised"
+                  multiline
+                  value={`docker run --name apollo-router -p 4000:4000 --rm \\
   --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
   ghcr.io/graphql-hive/apollo-router`}
-        />
-        <p>
-          For more information please refer to our{' '}
-          <UiLink
-            variant="primary"
-            target="_blank"
-            rel="noreferrer"
-            to={getDocsUrl('/other-integrations/apollo-router')}
-          >
-            Apollo Router documentation
-          </UiLink>
-          .
-        </p>
-      </TabsContent>
-      <TabsContent value="grafbase-gateway" variant="content">
-        <p>
-          Start up a Grafbase Gateway instance polling the supergraph from the Hive CDN using the
-          following command.
-        </p>
-        {authenticateSection}
-        <InputCopy
-          onSurface="raised"
-          multiline
-          value={`docker run --name grafbase-gateway -p 5000:5000 --rm \\
+                />
+                <p>
+                  For more information please refer to our{' '}
+                  <UiLink
+                    variant="primary"
+                    target="_blank"
+                    rel="noreferrer"
+                    to={getDocsUrl('/other-integrations/apollo-router')}
+                  >
+                    Apollo Router documentation
+                  </UiLink>
+                  .
+                </p>
+              </div>
+            ),
+          },
+          {
+            value: 'grafbase-gateway',
+            label: 'Grafbase Gateway',
+            content: (
+              <div className="space-y-2">
+                <p>
+                  Start up a Grafbase Gateway instance polling the supergraph from the Hive CDN
+                  using the following command.
+                </p>
+                {authenticateSection}
+                <InputCopy
+                  onSurface="raised"
+                  multiline
+                  value={`docker run --name grafbase-gateway -p 5000:5000 --rm \\
   --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
   ghcr.io/grafbase/gateway`}
-        />
-        <p>
-          For more information please refer to our{' '}
-          <UiLink
-            variant="primary"
-            target="_blank"
-            rel="noreferrer"
-            to={getDocsUrl('/other-integrations/grafbase-gateway')}
-          >
-            Grafbase Gateway documentation
-          </UiLink>
-          .
-        </p>
-      </TabsContent>
-      <TabsContent value="cdn" variant="content">
-        <p>For other tooling you can access the raw supergraph by sending a HTTP request.</p>
-        <p>To access your schema from Hive's CDN, use the following endpoint:</p>
-        <div>
-          <InputCopy onSurface="raised" multiline value={`${props.cdnUrl}/supergraph`} />
-        </div>
-        <p>Here is an example calling the endpoint using curl.</p>
-        {authenticateSection}
-        <div className="mt-2">
-          <InputCopy
-            onSurface="raised"
-            multiline
-            value={`curl -H 'X-Hive-CDN-Key: <hive_cdn_access_key>' \\
+                />
+                <p>
+                  For more information please refer to our{' '}
+                  <UiLink
+                    variant="primary"
+                    target="_blank"
+                    rel="noreferrer"
+                    to={getDocsUrl('/other-integrations/grafbase-gateway')}
+                  >
+                    Grafbase Gateway documentation
+                  </UiLink>
+                  .
+                </p>
+              </div>
+            ),
+          },
+          {
+            value: 'cdn',
+            label: 'Custom / HTTP',
+            content: (
+              <div className="space-y-2">
+                <p>
+                  For other tooling you can access the raw supergraph by sending a HTTP request.
+                </p>
+                <p>To access your schema from Hive's CDN, use the following endpoint:</p>
+                <div>
+                  <InputCopy onSurface="raised" multiline value={`${props.cdnUrl}/supergraph`} />
+                </div>
+                <p>Here is an example calling the endpoint using curl.</p>
+                {authenticateSection}
+                <div className="mt-2">
+                  <InputCopy
+                    onSurface="raised"
+                    multiline
+                    value={`curl -H 'X-Hive-CDN-Key: <hive_cdn_access_key>' \\
   ${props.cdnUrl}/supergraph`}
-          />
-        </div>
-        <p>
-          For more information please refer to our{' '}
-          <UiLink
-            variant="primary"
-            target="_blank"
-            rel="noreferrer"
-            to={getDocsUrl('/high-availability-cdn')}
-          >
-            CDN documentation
-          </UiLink>
-          .
-        </p>
-      </TabsContent>
-    </Tabs>
+                  />
+                </div>
+                <p>
+                  For more information please refer to our{' '}
+                  <UiLink
+                    variant="primary"
+                    target="_blank"
+                    rel="noreferrer"
+                    to={getDocsUrl('/high-availability-cdn')}
+                  >
+                    CDN documentation
+                  </UiLink>
+                  .
+                </p>
+              </div>
+            ),
+          },
+        ]}
+      />
+    </div>
   );
 }
