@@ -636,13 +636,7 @@ function FilterableSchemaChangeBlock(props: {
         <div className="px-5">
           {filteredChanges?.length ? (
             <div className="pb-8 pt-2">
-              <ChangesBlock
-                changes={filteredChanges}
-                projectSlug=""
-                organizationSlug=""
-                schemaCheckId=""
-                targetSlug=""
-              />
+              <ChangesBlock changes={filteredChanges} />
             </div>
           ) : selectedChangeType !== null ? (
             <div className="py-3 text-xs">No changes of this change type.</div>
@@ -905,13 +899,7 @@ function GraphVersionSubgraphChangesView(props: {
                 <div className="px-5">
                   {edges?.length ? (
                     <div className="mb-8 pt-2">
-                      <ChangesBlock
-                        changes={edges?.map(edge => edge.node) ?? []}
-                        projectSlug=""
-                        organizationSlug=""
-                        schemaCheckId=""
-                        targetSlug=""
-                      />
+                      <ChangesBlock changes={edges?.map(edge => edge.node) ?? []} />
                     </div>
                   ) : selectedChangeType === null ? (
                     <div className="py-5 text-xs">No changes available.</div>

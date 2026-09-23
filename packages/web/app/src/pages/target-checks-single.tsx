@@ -48,6 +48,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { DownloadButton } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import { SDLDiffView, SDLView } from './target-history-schema-version';
@@ -179,14 +180,12 @@ const ApproveFailedSchemaCheckMutation = graphql(`
 `);
 
 function ApproveFailedSchemaCheckModal(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   schemaCheckId: string;
   contextId: string | null | undefined;
   onClose(): void;
 }) {
   const [mutation, approve] = useMutation(ApproveFailedSchemaCheckMutation);
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [approvalComment, setApprovalComment] = useState<string>('');
   const onApprovalCommentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -266,9 +265,9 @@ function ApproveFailedSchemaCheckModal(props: {
               e.preventDefault();
               await approve({
                 input: {
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                  organizationSlug,
+                  projectSlug,
+                  targetSlug,
                   schemaCheckId: props.schemaCheckId,
                   comment: approvalComment,
                 },
@@ -618,9 +617,6 @@ type CheckView = {
 function useDefaultSchemaView(props: {
   schemaCheck: FragmentType<typeof DefaultSchemaView_SchemaCheckFragment>;
   projectType: ProjectType;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }): CheckView {
   const schemaCheck = useFragment(DefaultSchemaView_SchemaCheckFragment, props.schemaCheck);
   const [selectedView, setSelectedView] = useState<string>('details');
@@ -653,9 +649,6 @@ function useDefaultSchemaView(props: {
           {schemaCheck.breakingSchemaChanges?.edges.length ? (
             <div className="mb-5">
               <ChangesBlock
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
                 schemaCheckId={schemaCheck.id}
                 title={<BreakingChangesTitle />}
                 changesWithUsage={schemaCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
@@ -666,9 +659,6 @@ function useDefaultSchemaView(props: {
           {schemaCheck.safeSchemaChanges ? (
             <div className="mb-5">
               <ChangesBlock
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
                 schemaCheckId={schemaCheck.id}
                 title="Safe Changes"
                 changes={schemaCheck.safeSchemaChanges.edges.map(edge => edge.node)}
@@ -946,9 +936,6 @@ function useContractCheckView(props: {
   contractCheck: FragmentType<typeof ContractCheckView_ContractCheckFragment> | null;
   schemaCheck: FragmentType<typeof ContractCheckView_SchemaCheckFragment>;
   projectType: ProjectType;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }): CheckView | null {
   const contractCheck = useFragment(ContractCheckView_ContractCheckFragment, props.contractCheck);
   const schemaCheck = useFragment(ContractCheckView_SchemaCheckFragment, props.schemaCheck);
@@ -983,9 +970,6 @@ function useContractCheckView(props: {
           {contractCheck.breakingSchemaChanges?.edges.length && (
             <div className="mb-2">
               <ChangesBlock
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
                 schemaCheckId={schemaCheck.id}
                 title={<BreakingChangesTitle />}
                 changesWithUsage={contractCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
@@ -996,9 +980,6 @@ function useContractCheckView(props: {
           {contractCheck.safeSchemaChanges && (
             <div className="mb-2">
               <ChangesBlock
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
                 schemaCheckId={schemaCheck.id}
                 title="Safe Changes"
                 changes={contractCheck.safeSchemaChanges.edges.map(edge => edge.node)}
@@ -1217,9 +1198,6 @@ const SchemaChecksView_SchemaCheckFragment = graphql(`
 function SchemaChecksView(props: {
   schemaCheck: FragmentType<typeof SchemaChecksView_SchemaCheckFragment>;
   projectType: ProjectType;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
   const schemaCheck = useFragment(SchemaChecksView_SchemaCheckFragment, props.schemaCheck);
 
@@ -1283,16 +1261,10 @@ function SchemaChecksView(props: {
   });
 
   const defaultView = useDefaultSchemaView({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
     schemaCheck,
     projectType: props.projectType,
   });
   const contractView = useContractCheckView({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
     contractCheck: selectedContractCheckNode,
     schemaCheck,
     projectType: props.projectType,
@@ -1481,19 +1453,15 @@ const ActiveSchemaCheckQuery = graphql(`
   }
 `);
 
-const ActiveSchemaCheck = (props: {
-  schemaCheckId: string | null;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}): React.ReactElement | null => {
+const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.ReactElement | null => {
   const { schemaCheckId } = props;
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ActiveSchemaCheckQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       schemaCheckId: schemaCheckId ?? '',
     },
     pause: !schemaCheckId,
@@ -1523,7 +1491,7 @@ const ActiveSchemaCheck = (props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -1617,9 +1585,6 @@ const ActiveSchemaCheck = (props: {
                   content={
                     <ApproveFailedSchemaCheckModal
                       onClose={() => setApprovalOpen(false)}
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      targetSlug={props.targetSlug}
                       schemaCheckId={schemaCheck.id}
                       contextId={schemaCheck.contextId}
                     />
@@ -1677,32 +1642,16 @@ const ActiveSchemaCheck = (props: {
           </div>
         ) : null}
       </div>
-      <SchemaChecksView
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        schemaCheck={schemaCheck}
-        projectType={query.data.project.type}
-      />
+      <SchemaChecksView schemaCheck={schemaCheck} projectType={query.data.project.type} />
     </div>
   );
 };
 
-export function TargetChecksSinglePage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  schemaCheckId: string;
-}) {
+export function TargetChecksSinglePage(props: { schemaCheckId: string }) {
   return (
     <>
       <Meta title={`Schema check ${props.schemaCheckId}`} />
-      <ActiveSchemaCheck
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        schemaCheckId={props.schemaCheckId}
-      />
+      <ActiveSchemaCheck schemaCheckId={props.schemaCheckId} />
     </>
   );
 }

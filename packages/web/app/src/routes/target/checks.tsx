@@ -22,16 +22,8 @@ export const targetChecksSingleRoute = createRoute({
   getParentRoute: () => targetChecksRoute,
   path: '$schemaCheckId',
   component: function TargetChecksSingleRoute() {
-    const { organizationSlug, projectSlug, targetSlug, schemaCheckId } =
-      targetChecksSingleRoute.useParams();
-    return (
-      <TargetChecksSinglePage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        schemaCheckId={schemaCheckId}
-      />
-    );
+    const { schemaCheckId } = targetChecksSingleRoute.useParams();
+    return <TargetChecksSinglePage schemaCheckId={schemaCheckId} />;
   },
 });
 
@@ -40,17 +32,10 @@ export const targetChecksAffectedDeploymentsRoute = createRoute({
   path: 'checks/$schemaCheckId/affected-deployments',
   validateSearch: () => ({}) as { coordinate?: string },
   component: function TargetChecksAffectedDeploymentsRoute() {
-    const { organizationSlug, projectSlug, targetSlug, schemaCheckId } =
-      targetChecksAffectedDeploymentsRoute.useParams();
+    const { schemaCheckId } = targetChecksAffectedDeploymentsRoute.useParams();
     const { coordinate } = targetChecksAffectedDeploymentsRoute.useSearch();
     return (
-      <TargetChecksAffectedDeploymentsPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        schemaCheckId={schemaCheckId}
-        coordinate={coordinate}
-      />
+      <TargetChecksAffectedDeploymentsPage schemaCheckId={schemaCheckId} coordinate={coordinate} />
     );
   },
 });
