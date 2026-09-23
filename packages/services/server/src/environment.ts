@@ -101,7 +101,10 @@ const ZendeskSupportModel = zod.union([
     ZENDESK_SUPPORT: zod.literal('1'),
     ZENDESK_USERNAME: zod.string(),
     ZENDESK_PASSWORD: zod.string(),
-    ZENDESK_BASE_URL: zod.string(),
+    ZENDESK_BASE_URL: zod
+      .string()
+      .url()
+      .transform(url => url.replace(/\/+$/, '')),
   }),
 ]);
 

@@ -182,23 +182,27 @@ The dev stack includes an opt-in `zendesk` profile that runs a MockServer instan
 Zendesk API. This is configured in
 [docker/configs/zendesk-mock/expectations.json](../docker/configs/zendesk-mock/expectations.json).
 
-Use this to test the support-ticket flow locally without a real Zendesk account. Starting this
-instance uses a separate command since it's not frequently needed:
+Use this to test the support-ticket flow locally without a real Zendesk account.
 
-```bash
-pnpm dev:zendesk-mock
-```
+1. Set these variables in `packages/services/server/.env` (restart the server afterwards so it picks
+   them up):
 
-Tear it down with `pnpm dev:zendesk-mock:down`.
+   ```
+   ZENDESK_SUPPORT=1
+   ZENDESK_USERNAME=mock
+   ZENDESK_PASSWORD=mock
+   ZENDESK_BASE_URL=http://localhost:3043/local
+   ```
 
-First set these variables in your `.env`:
+   The `/local` path suffix is optional; the mock matches any path ending in `/api/v2/...`.
 
-```
-ZENDESK_SUPPORT=1
-ZENDESK_USERNAME=mock
-ZENDESK_PASSWORD=mock
-ZENDESK_BASE_URL=http://localhost:3043/local
-```
+2. Start the mock. It uses a separate command since it's not frequently needed:
+
+   ```bash
+   pnpm dev:zendesk-mock
+   ```
+
+   Tear it down with `pnpm dev:zendesk-mock:down`.
 
 After submitting a ticket, confirm the request reached the mock by querying its recorded requests:
 

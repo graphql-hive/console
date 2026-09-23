@@ -1,6 +1,6 @@
 [
   {
-    "httpRequest": { "method": "POST", "path": "/.*/api/v2/organizations" },
+    "httpRequest": { "method": "POST", "path": ".*/api/v2/organizations" },
     "httpResponse": {
       "statusCode": 201,
       "headers": { "Content-Type": ["application/json"] },
@@ -8,7 +8,7 @@
     }
   },
   {
-    "httpRequest": { "method": "GET", "path": "/.*/api/v2/users/search" },
+    "httpRequest": { "method": "GET", "path": ".*/api/v2/users/search" },
     "httpResponse": {
       "statusCode": 200,
       "headers": { "Content-Type": ["application/json"] },
@@ -16,7 +16,7 @@
     }
   },
   {
-    "httpRequest": { "method": "POST", "path": "/.*/api/v2/users" },
+    "httpRequest": { "method": "POST", "path": ".*/api/v2/users" },
     "httpResponse": {
       "statusCode": 201,
       "headers": { "Content-Type": ["application/json"] },
@@ -24,7 +24,7 @@
     }
   },
   {
-    "httpRequest": { "method": "POST", "path": "/.*/api/v2/organization_memberships" },
+    "httpRequest": { "method": "POST", "path": ".*/api/v2/organization_memberships" },
     "httpResponse": {
       "statusCode": 201,
       "headers": { "Content-Type": ["application/json"] },
@@ -32,7 +32,7 @@
     }
   },
   {
-    "httpRequest": { "method": "POST", "path": "/.*/api/v2/tickets" },
+    "httpRequest": { "method": "POST", "path": ".*/api/v2/tickets" },
     "httpResponse": {
       "statusCode": 201,
       "headers": { "Content-Type": ["application/json"] },
@@ -40,7 +40,7 @@
     }
   },
   {
-    "httpRequest": { "method": "PUT", "path": "/.*/api/v2/tickets/.*" },
+    "httpRequest": { "method": "PUT", "path": ".*/api/v2/tickets/.*" },
     "httpResponse": {
       "statusCode": 200,
       "headers": { "Content-Type": ["application/json"] },
@@ -48,7 +48,7 @@
     }
   },
   {
-    "httpRequest": { "method": "GET", "path": "/.*/api/v2/tickets/[^/]+$" },
+    "httpRequest": { "method": "GET", "path": ".*/api/v2/tickets/[^/]+$" },
     "httpResponse": {
       "statusCode": 200,
       "headers": { "Content-Type": ["application/json"] },
@@ -67,7 +67,7 @@
     }
   },
   {
-    "httpRequest": { "method": "GET", "path": "/.*/api/v2/tickets/.*/comments" },
+    "httpRequest": { "method": "GET", "path": ".*/api/v2/tickets/.*/comments" },
     "httpResponse": {
       "statusCode": 200,
       "headers": { "Content-Type": ["application/json"] },
@@ -87,7 +87,7 @@
     }
   },
   {
-    "httpRequest": { "method": "GET", "path": "/.*/api/v2/organizations/.*/tickets" },
+    "httpRequest": { "method": "GET", "path": ".*/api/v2/organizations/.*/tickets" },
     "httpResponse": {
       "statusCode": 200,
       "headers": { "Content-Type": ["application/json"] },
@@ -119,7 +119,7 @@
     }
   },
   {
-    "httpRequest": { "method": "GET", "path": "/.*/api/v2/users/show_many" },
+    "httpRequest": { "method": "GET", "path": ".*/api/v2/users/show_many" },
     "httpResponse": {
       "statusCode": 200,
       "headers": { "Content-Type": ["application/json"] },
