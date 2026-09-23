@@ -1607,7 +1607,7 @@ export class SchemaPublisher {
           signal,
         },
         async () => {
-          const [organization, project, target, defaultGraph] = await Promise.all([
+          const [organization, project, target, graph] = await Promise.all([
             this.storage.getOrganization({
               organizationId: selector.organizationId,
             }),
@@ -1622,6 +1622,18 @@ export class SchemaPublisher {
             }),
             this.graphStore.findGraphForTargetIdByName(selector.targetId, 'default'),
           ]);
+
+          if (!graph) {
+            return {
+              __typename: 'SchemaDeleteError',
+              valid: false,
+              errors: [
+                {
+                  message: "Graph 'default' not found.",
+                },
+              ],
+            } as const;
+          }
 
           schemaDeleteCount.inc({ model: 'modern', projectType: project.type });
 
@@ -1733,7 +1745,7 @@ export class SchemaPublisher {
                   name: affectedService.service_name,
                   versionId: affectedService.id,
                 },
-                graph: defaultGraph,
+                graph,
                 composable: deleteResult.state.composable,
                 diffSchemaVersionId: latestComposableVersion?.version.id ?? null,
                 changes: deleteResult.state.changes,
@@ -1928,6 +1940,19 @@ export class SchemaPublisher {
       }),
       this.graphStore.findGraphForTargetIdByName(targetId, 'default'),
     ]);
+
+    if (!defaultGraph) {
+      return {
+        __typename: 'SchemaPublishError' as const,
+        valid: false,
+        changes: [],
+        errors: [
+          {
+            message: "Graph 'default' not found.",
+          },
+        ],
+      };
+    }
 
     const [latestVersion, latestComposable] = await Promise.all([
       this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
@@ -3225,6 +3250,20 @@ export class SchemaPublisher {
         },
       }),
     ]);
+
+    if (!targetDefaultGraph) {
+      return {
+        type: 'error' as const,
+        message: "Graph 'default' not found.",
+      };
+    }
+
+    if (!originDefaultGraph) {
+      return {
+        type: 'error' as const,
+        message: "Graph 'default' not found.",
+      };
+    }
 
     const targetLogEdges = await (targetLatestSchemaVersion
       ? this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(targetLatestSchemaVersion)
