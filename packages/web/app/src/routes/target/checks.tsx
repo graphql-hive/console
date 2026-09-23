@@ -15,16 +15,7 @@ export const targetChecksRoute = createRoute({
   ),
   getParentRoute: () => targetRoute,
   path: 'checks',
-  component: function TargetChecksRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetChecksRoute.useParams();
-    return (
-      <TargetChecksPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
-    );
-  },
+  component: TargetChecksPage,
 });
 
 export const targetChecksSingleRoute = createRoute({

@@ -16,8 +16,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-import { getRouteApi, Outlet, Link as RouterLink, useParams } from '@tanstack/react-router';
+import { getRouteApi, Link, Outlet, useParams } from '@tanstack/react-router';
 
 const checksRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/checks');
 
@@ -73,12 +74,10 @@ const Navigation = (
     after: string | null;
     isLastPage: boolean;
     onLoadMore: (cursor: string) => void;
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
     schemaCheckId?: string;
   } & SchemaCheckFilters,
 ) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const search = useMemo(() => {
     return {
       filter_changed: props.showOnlyChanged,
@@ -88,9 +87,9 @@ const Navigation = (
   const [query] = useQuery({
     query: SchemaChecks_NavigationQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       after: props.after,
       filters: {
         changed: props.showOnlyChanged,
@@ -125,15 +124,10 @@ const Navigation = (
             edge.node.id === props.schemaCheckId ? 'bg-neutral-5/40' : null,
           )}
         >
-          <RouterLink
+          <Link
             key={edge.node.id}
             to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-              schemaCheckId: edge.node.id,
-            }}
+            params={{ organizationSlug, projectSlug, targetSlug, schemaCheckId: edge.node.id }}
             search={search}
           >
             <h3 className="truncate text-sm font-semibold">
@@ -164,7 +158,7 @@ const Navigation = (
                 </div>
               ) : null}
             </div>
-          </RouterLink>
+          </Link>
           {edge.node.githubRepository && edge.node.meta ? (
             <a
               className="text-neutral-10 hover:text-neutral-10 -ml-px text-xs font-medium"
@@ -244,19 +238,16 @@ function useTargetCheckUrlParams() {
   };
 }
 
-function ChecksPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function ChecksPageContent() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { showOnlyChanged, showOnlyFailed, schemaCheckId } = useTargetCheckUrlParams();
 
   const [query] = useQuery({
     query: ChecksPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       filters: {
         changed: showOnlyChanged,
         failed: showOnlyFailed,
@@ -288,7 +279,7 @@ function ChecksPageContent(props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -304,20 +295,13 @@ function ChecksPageContent(props: {
         </div>
         {/* if done loading and there are schema checks found associated w this target */}
         {hasSchemaChecks && (
-          <SchemaChecksSideNav
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-          >
+          <SchemaChecksSideNav>
             {hasFilteredSchemaChecks ? (
               <div className="border-neutral-5/50 flex min-h-0 w-[300px] grow flex-col rounded-md border">
                 <ScrollArea fill>
                   <div className="flex flex-col gap-2.5 p-2.5">
                     {paginationVariables.map((cursor, index) => (
                       <Navigation
-                        organizationSlug={props.organizationSlug}
-                        projectSlug={props.projectSlug}
-                        targetSlug={props.targetSlug}
                         schemaCheckId={schemaCheckId}
                         after={cursor}
                         isLastPage={index + 1 === paginationVariables.length}
@@ -377,12 +361,7 @@ function NoSchemaChecks(props: { projectType: ProjectType | null }) {
 /**
  * Renders the section of the checks page for when there are checks existing in the backend
  */
-function SchemaChecksSideNav(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  children: ReactNode;
-}) {
+function SchemaChecksSideNav(props: { children: ReactNode }) {
   const navigate = checksRoute.useNavigate();
   const { showOnlyChanged, showOnlyFailed, rawSearch } = useTargetCheckUrlParams();
 
@@ -441,16 +420,12 @@ function SchemaChecksSideNav(props: {
   );
 }
 
-export function TargetChecksPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function TargetChecksPage() {
   return (
     <>
       <Meta title="Schema Checks" />
       <LayoutContent className="flex flex-row gap-x-6">
-        <ChecksPageContent {...props} />
+        <ChecksPageContent />
       </LayoutContent>
     </>
   );
