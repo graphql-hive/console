@@ -9,10 +9,6 @@ import { createService } from './service-deployment';
 const REDIS_PORT = 6379;
 const METRICS_PORT = 9121;
 const REDIS_EXPORTER_IMAGE = 'oliver006/redis_exporter:v1.91.1-alpine';
-// AKS labels every node of a `System` mode node pool with this key/value.
-// System pools are not shrunk by the cluster autoscaler when application load drops,
-// which makes them the right home for stuff like Redis
-const AKS_SYSTEM_NODE_POOL_SELECTOR = { 'kubernetes.azure.com/mode': 'system' };
 
 export class Redis {
   constructor(
@@ -106,8 +102,6 @@ export class Redis {
 
     const pb = new PodBuilder({
       restartPolicy: 'Always',
-      nodeSelector: AKS_SYSTEM_NODE_POOL_SELECTOR,
-      tolerations: [{ key: 'CriticalAddonsOnly', operator: 'Exists', effect: 'NoSchedule' }],
       priorityClassName: priorityClass.metadata.name,
       containers: [
         {
