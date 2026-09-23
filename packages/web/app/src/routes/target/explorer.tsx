@@ -8,61 +8,26 @@ import { targetRoute } from './route';
 export const targetExplorerRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'explorer',
-  component: function TargetExplorerRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetExplorerRoute.useParams();
-    return (
-      <TargetExplorerPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
-    );
-  },
+  component: TargetExplorerPage,
 });
 
 export const targetExplorerTypeRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'explorer/$typename',
   component: function TargetExplorerTypeRoute() {
-    const { organizationSlug, projectSlug, targetSlug, typename } =
-      targetExplorerTypeRoute.useParams();
-    return (
-      <TargetExplorerTypePage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        typename={typename}
-      />
-    );
+    const { typename } = targetExplorerTypeRoute.useParams();
+    return <TargetExplorerTypePage typename={typename} />;
   },
 });
 
 export const targetExplorerDeprecatedRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'explorer/deprecated',
-  component: function TargetExplorerDeprecatedRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetExplorerDeprecatedRoute.useParams();
-    return (
-      <TargetExplorerDeprecatedPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
-    );
-  },
+  component: TargetExplorerDeprecatedPage,
 });
 
 export const targetExplorerUnusedRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'explorer/unused',
-  component: function TargetExplorerUnusedRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetExplorerUnusedRoute.useParams();
-    return (
-      <TargetExplorerUnusedPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
-    );
-  },
+  component: TargetExplorerUnusedPage,
 });

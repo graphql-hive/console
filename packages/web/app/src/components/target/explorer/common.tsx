@@ -8,7 +8,7 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
-import { formatNumber, toDecimal } from '@/lib/hooks';
+import { formatNumber, toDecimal, useSlugs } from '@/lib/hooks';
 import { capitalize, cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -53,11 +53,9 @@ type TopOperation = NonNullable<
 export function SchemaExplorerUsageStats(props: {
   usage: FragmentType<typeof SchemaExplorerUsageStats_UsageFragment>;
   totalRequests: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   kindLabel?: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const usage = useFragment(SchemaExplorerUsageStats_UsageFragment, props.usage);
   const percentage = props.totalRequests ? (usage.total / props.totalRequests) * 100 : 0;
   const hasFieldLevelMetrics = !!(usage.errorTotal != null || usage.totalResolutions);
@@ -84,9 +82,9 @@ export function SchemaExplorerUsageStats(props: {
             link={{
               to: '/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
               params: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 operationName,
                 operationHash: row.original.hash,
               },
@@ -235,9 +233,9 @@ export function SchemaExplorerUsageStats(props: {
                         className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                         params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
+                          organizationSlug,
+                          projectSlug,
+                          targetSlug,
                           name: clientName,
                         }}
                       >
@@ -317,9 +315,6 @@ export function GraphQLTypeCard(props: {
   totalRequests?: number;
   usage?: FragmentType<typeof SchemaExplorerUsageStats_UsageFragment>;
   supergraphMetadata?: FragmentType<typeof GraphQLTypeCard_SupergraphMetadataFragment> | null;
-  targetSlug: string;
-  projectSlug: string;
-  organizationSlug: string;
   children: ReactNode;
 }): ReactElement | null {
   const supergraphMetadata = useFragment(
@@ -339,12 +334,7 @@ export function GraphQLTypeCard(props: {
           <div className="flex flex-row items-center gap-2">
             <div className="text-neutral-10 font-normal">{props.kind}</div>
             <div className="font-semibold">
-              <GraphQLTypeAsLink
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                type={props.name}
-              />
+              <GraphQLTypeAsLink type={props.name} />
             </div>
           </div>
           {props.description && <Description description={props.description} />}
@@ -354,13 +344,7 @@ export function GraphQLTypeCard(props: {
             <div className="mx-2">implements</div>
             <div className="flex flex-row gap-2">
               {props.implements.map(t => (
-                <GraphQLTypeAsLink
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  key={t}
-                  type={t}
-                />
+                <GraphQLTypeAsLink key={t} type={t} />
               ))}
             </div>
           </div>
@@ -370,19 +354,9 @@ export function GraphQLTypeCard(props: {
             kindLabel={props.kind}
             totalRequests={props.totalRequests}
             usage={props.usage}
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
           />
         )}
-        {supergraphMetadata && (
-          <SupergraphMetadataList
-            targetSlug={props.targetSlug}
-            projectSlug={props.projectSlug}
-            organizationSlug={props.organizationSlug}
-            supergraphMetadata={supergraphMetadata}
-          />
-        )}
+        {supergraphMetadata && <SupergraphMetadataList supergraphMetadata={supergraphMetadata} />}
       </div>
       <div>{props.children}</div>
     </div>
@@ -421,9 +395,6 @@ export function GraphQLInputFields(props: {
   typeName: string;
   fields: FragmentType<typeof GraphQLInputFields_InputFieldFragment>[];
   totalRequests?: number;
-  targetSlug: string;
-  projectSlug: string;
-  organizationSlug: string;
 }): ReactElement {
   const fields = useFragment(GraphQLInputFields_InputFieldFragment, props.fields);
 
@@ -446,9 +417,6 @@ export function GraphQLInputFields(props: {
                 <div className="text-neutral-10">
                   <DeprecationNote deprecationReason={field.deprecationReason}>
                     <LinkToCoordinatePage
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      targetSlug={props.targetSlug}
                       coordinate={coordinate}
                       className="text-neutral-12 font-semibold"
                     >
@@ -456,21 +424,12 @@ export function GraphQLInputFields(props: {
                     </LinkToCoordinatePage>
                   </DeprecationNote>
                   <span className="mr-1">:</span>
-                  <GraphQLTypeAsLink
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                    className="font-semibold"
-                    type={field.type}
-                  />
+                  <GraphQLTypeAsLink className="font-semibold" type={field.type} />
                 </div>
                 {typeof props.totalRequests === 'number' && (
                   <SchemaExplorerUsageStats
                     totalRequests={props.totalRequests}
                     usage={field.usage}
-                    targetSlug={props.targetSlug}
-                    projectSlug={props.projectSlug}
-                    organizationSlug={props.organizationSlug}
                   />
                 )}
               </div>
@@ -483,13 +442,8 @@ export function GraphQLInputFields(props: {
   );
 }
 
-export function GraphQLTypeAsLink(props: {
-  type: string;
-  className?: string;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}): ReactElement {
+export function GraphQLTypeAsLink(props: { type: string; className?: string }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const router = useRouter();
   const typename = props.type.replace(/[[\]!]+/g, '');
 
@@ -512,9 +466,9 @@ export function GraphQLTypeAsLink(props: {
               className="text-xs font-normal hover:underline hover:underline-offset-2"
               to="/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename"
               params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 typename,
               }}
               search={router.latestLocation.search}
@@ -528,9 +482,9 @@ export function GraphQLTypeAsLink(props: {
               className="text-xs font-normal hover:underline hover:underline-offset-2"
               to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
               params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 coordinate: typename,
               }}
               search={router.latestLocation.search}
@@ -550,12 +504,10 @@ export const LinkToCoordinatePage = React.forwardRef<
   {
     coordinate: string;
     children: ReactNode;
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
     className?: string;
   }
 >((props, ref) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const router = useRouter();
 
   return (
@@ -564,9 +516,9 @@ export const LinkToCoordinatePage = React.forwardRef<
       className={cn('hover:underline hover:underline-offset-2', props.className)}
       to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
       params={{
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
         coordinate: props.coordinate,
       }}
       search={router.latestLocation.search}

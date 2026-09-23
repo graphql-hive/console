@@ -22,9 +22,6 @@ const GraphQLObjectTypeComponent_TypeFragment = graphql(`
 export function GraphQLObjectTypeComponent(props: {
   type: FragmentType<typeof GraphQLObjectTypeComponent_TypeFragment>;
   totalRequests?: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
 }) {
@@ -37,17 +34,11 @@ export function GraphQLObjectTypeComponent(props: {
       description={ttype.description}
       implements={ttype.interfaces}
       supergraphMetadata={ttype.supergraphMetadata}
-      targetSlug={props.targetSlug}
-      projectSlug={props.projectSlug}
-      organizationSlug={props.organizationSlug}
     >
       <GraphQLFields
         typeName={ttype.name}
         fields={ttype.fields}
         totalRequests={props.totalRequests}
-        targetSlug={props.targetSlug}
-        projectSlug={props.projectSlug}
-        organizationSlug={props.organizationSlug}
         warnAboutDeprecatedArguments={props.warnAboutDeprecatedArguments}
         warnAboutUnusedArguments={props.warnAboutUnusedArguments}
       />

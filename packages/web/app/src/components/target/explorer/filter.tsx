@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { useSlugs } from '@/lib/hooks';
 import { useLocation } from '@tanstack/react-router';
 import { usePeriodSelector } from './provider';
 
@@ -52,12 +53,8 @@ const variants: Array<{
   },
 ];
 
-export function SchemaVariantFilter(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  variant: 'all' | 'unused' | 'deprecated';
-}) {
+export function SchemaVariantFilter() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { search } = useLocation();
   return (
     <Navigation
@@ -72,9 +69,9 @@ export function SchemaVariantFilter(props: {
         // All is the parent path of the other two.
         exact: variant.value === 'all',
         params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
         search,
       }))}

@@ -15,9 +15,6 @@ export const GraphQLArguments_ArgumentFragment = graphql(`
 export function GraphQLArguments(props: {
   parentCoordinate: string;
   args: FragmentType<typeof GraphQLArguments_ArgumentFragment>[];
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
   const args = useFragment(GraphQLArguments_ArgumentFragment, props.args);
 
@@ -32,23 +29,10 @@ export function GraphQLArguments(props: {
           return (
             <div key={arg.name}>
               <DeprecationNote deprecationReason={arg.deprecationReason}>
-                <LinkToCoordinatePage
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  coordinate={coordinate}
-                >
-                  {arg.name}
-                </LinkToCoordinatePage>
+                <LinkToCoordinatePage coordinate={coordinate}>{arg.name}</LinkToCoordinatePage>
               </DeprecationNote>
               {': '}
-              <GraphQLTypeAsLink
-                className="font-medium"
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                type={arg.type}
-              />
+              <GraphQLTypeAsLink className="font-medium" type={arg.type} />
               {arg.description && isDescriptionsVisible && (
                 <Description description={arg.description} />
               )}

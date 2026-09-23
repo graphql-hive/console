@@ -210,9 +210,6 @@ function SchemaCoordinateView(props: {
             <Title className="pr-8">{title}</Title>
             {supergraphMetadata ? (
               <SupergraphMetadataList
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
                 supergraphMetadata={supergraphMetadata}
                 previewThreshold={5}
               />

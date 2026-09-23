@@ -19,6 +19,7 @@ import { NoSchemaVersion, noValidSchemaVersion } from '@/components/ui/empty-lis
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { Link } from '@tanstack/react-router';
 
 const ExplorerPage_SchemaExplorerFragment = graphql(`
@@ -38,9 +39,6 @@ const ExplorerPage_SchemaExplorerFragment = graphql(`
 function SchemaView(props: {
   explorer: FragmentType<typeof ExplorerPage_SchemaExplorerFragment>;
   totalRequests: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
   const { query, mutation, subscription } = useFragment(
     ExplorerPage_SchemaExplorerFragment,
@@ -54,9 +52,6 @@ function SchemaView(props: {
         <GraphQLObjectTypeComponent
           type={query}
           totalRequests={totalRequests}
-          targetSlug={props.targetSlug}
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
         />
@@ -65,9 +60,6 @@ function SchemaView(props: {
         <GraphQLObjectTypeComponent
           type={mutation}
           totalRequests={totalRequests}
-          targetSlug={props.targetSlug}
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
         />
@@ -76,9 +68,6 @@ function SchemaView(props: {
         <GraphQLObjectTypeComponent
           type={subscription}
           totalRequests={totalRequests}
-          targetSlug={props.targetSlug}
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
         />
@@ -136,19 +125,16 @@ const TargetExplorerPageQuery = graphql(`
   }
 `);
 
-function ExplorerPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function ExplorerPageContent() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { resolvedPeriod, dataRetentionInDays, setDataRetentionInDays } =
     useSchemaExplorerContext();
   const [query] = useQuery({
     query: TargetExplorerPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       period: resolvedPeriod,
     },
   });
@@ -180,7 +166,7 @@ function ExplorerPageContent(props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -192,11 +178,7 @@ function ExplorerPageContent(props: {
       <ExplorerHeader
         title="Explore Schema"
         description="Insights from the latest version."
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
         period={resolvedPeriod}
-        variant="all"
         includeSchemaDimensions
         showFilters={isFilterVisible.current}
         subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
@@ -223,9 +205,9 @@ function ExplorerPageContent(props: {
                     <Link
                       to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
                       params={{
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
+                        organizationSlug,
+                        projectSlug,
+                        targetSlug,
                         versionId: latestSchemaVersion.id,
                       }}
                     >
@@ -237,9 +219,6 @@ function ExplorerPageContent(props: {
               <SchemaView
                 totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.explorer}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
               />
             </>
           ) : latestSchemaVersion ? (
@@ -260,17 +239,13 @@ function ExplorerPageContent(props: {
   );
 }
 
-export function TargetExplorerPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function TargetExplorerPage() {
   return (
     <>
       <Meta title="Schema Explorer" />
       <SchemaExplorerProvider>
         <LayoutContent>
-          <ExplorerPageContent {...props} />
+          <ExplorerPageContent />
         </LayoutContent>
       </SchemaExplorerProvider>
     </>
