@@ -37,7 +37,7 @@ export default {
     ALTER TABLE "schema_versions"
       ADD COLUMN "graph_id" uuid REFERENCES "graphs"("id") ON DELETE SET NULL
       , ADD COLUMN "graph_metadata" jsonb
-      , ADD COLUMN "source_schema_version_id" uuid REFERENCES "schema_versions"."id"
+      , ADD COLUMN "source_schema_version_id" uuid REFERENCES "schema_versions"("id") ON DELETE CASCADE
     ;
   `,
 } satisfies MigrationExecutor;
