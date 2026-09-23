@@ -27,6 +27,7 @@ import { SchemaVersionStore } from '../../schema/providers/schema-version-store'
 import { Logger } from '../../shared/providers/logger';
 import { S3Writer } from '../../shared/providers/s3-writer';
 import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 import { APP_DEPLOYMENTS_ENABLED } from './app-deployments-enabled-token';
 import { PersistedDocumentScheduler } from './persisted-document-scheduler';
 
@@ -59,6 +60,7 @@ export class AppDeployments {
     private s3: S3Writer,
     private clickhouse: ClickHouse,
     private storage: Storage,
+    private targetStore: TargetStore,
     private schemaVersionHelper: SchemaVersionHelper,
     private persistedDocumentScheduler: PersistedDocumentScheduler,
     private schemaVersions: SchemaVersionStore,
@@ -642,7 +644,7 @@ export class AppDeployments {
 
     // Check protection settings if force flag is not set
     if (args.force !== true) {
-      const targetSettings = await this.storage.getTargetSettings({
+      const targetSettings = await this.targetStore.getTargetSettings({
         organizationId: args.organizationId,
         targetId: args.targetId,
         projectId: args.projectId,

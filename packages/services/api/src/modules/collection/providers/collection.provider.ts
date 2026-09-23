@@ -7,6 +7,7 @@ import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 
 @Injectable({
   global: true,
@@ -18,6 +19,7 @@ export class CollectionProvider {
   constructor(
     logger: Logger,
     private storage: Storage,
+    private targetStore: TargetStore,
     private session: Session,
     private idTranslator: IdTranslator,
     private auditLog: AuditLogRecorder,
@@ -136,7 +138,7 @@ export class CollectionProvider {
       },
     });
 
-    const target = await this.storage.getTarget({
+    const target = await this.targetStore.getTarget({
       organizationId,
       projectId,
       targetId,
@@ -209,7 +211,7 @@ export class CollectionProvider {
       return null;
     }
 
-    const target = await this.storage.getTarget({
+    const target = await this.targetStore.getTarget({
       organizationId,
       projectId,
       targetId,
@@ -260,7 +262,7 @@ export class CollectionProvider {
       },
     });
 
-    const target = await this.storage.getTarget({
+    const target = await this.targetStore.getTarget({
       organizationId,
       projectId,
       targetId,
@@ -336,7 +338,7 @@ export class CollectionProvider {
       id: args.collectionId,
     });
 
-    const target = await this.storage.getTarget({
+    const target = await this.targetStore.getTarget({
       organizationId,
       projectId,
       targetId,
@@ -431,7 +433,7 @@ export class CollectionProvider {
       };
     }
 
-    const target = await this.storage.getTarget({
+    const target = await this.targetStore.getTarget({
       organizationId,
       projectId,
       targetId,
@@ -576,7 +578,7 @@ export class CollectionProvider {
       };
     }
 
-    const target = await this.storage.getTarget({
+    const target = await this.targetStore.getTarget({
       organizationId,
       projectId,
       targetId,

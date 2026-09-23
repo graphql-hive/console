@@ -11,6 +11,7 @@ import { Logger } from '../../shared/providers/logger';
 import { ProjectSelector, Storage, TargetSelector } from '../../shared/providers/storage';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { PercentageModel, TargetSlugModel } from '../validation';
+import { TargetStore } from './target-store';
 import { TargetsByIdCache } from './targets-by-id-cache';
 
 const reservedSlugs = ['view', 'new'];
@@ -29,6 +30,7 @@ export class TargetManager {
   constructor(
     logger: Logger,
     private storage: Storage,
+    private targetStore: TargetStore,
     private tokenStorage: TokenStorage,
     private session: Session,
     private idTranslator: IdTranslator,
@@ -97,7 +99,7 @@ export class TargetManager {
     }
 
     // create target
-    const result = await this.storage.createTarget({
+    const result = await this.targetStore.createTarget({
       slug: args.slug,
       projectId: selector.projectId,
       organizationId: selector.organizationId,
@@ -160,7 +162,7 @@ export class TargetManager {
       },
     });
 
-    const deletedTarget = await this.storage.deleteTarget({
+    const deletedTarget = await this.targetStore.deleteTarget({
       targetId: selector.targetId,
       projectId: selector.projectId,
       organizationId: selector.organizationId,
@@ -209,7 +211,7 @@ export class TargetManager {
       },
     });
 
-    return this.storage.getTargets(selector);
+    return this.targetStore.getTargets(selector);
   }
 
   async getTarget(selector: TargetSelector): Promise<Target> {
@@ -222,7 +224,7 @@ export class TargetManager {
         projectId: selector.projectId,
       },
     });
-    return this.storage.getTarget(selector);
+    return this.targetStore.getTarget(selector);
   }
 
   async getTargetByReferenceInput(reference: GraphQLSchema.TargetReferenceInput) {
@@ -235,7 +237,7 @@ export class TargetManager {
   }
 
   async getTargetBySlugForProject(project: Project, targetSlug: string) {
-    return await this.storage.getTargetBySlug({
+    return await this.targetStore.getTargetBySlug({
       slug: targetSlug,
       organizationId: project.orgId,
       projectId: project.id,
@@ -248,7 +250,7 @@ export class TargetManager {
       token: selector.token,
     });
 
-    return this.storage.getTarget({
+    return this.targetStore.getTarget({
       organizationId: organization,
       projectId: project,
       targetId: target,
@@ -267,7 +269,7 @@ export class TargetManager {
       },
     });
 
-    return this.storage.getTargetSettings(selector);
+    return this.targetStore.getTargetSettings(selector);
   }
 
   async updateTargetDangerousChangeClassification(args: {
@@ -291,7 +293,7 @@ export class TargetManager {
       },
     });
 
-    await this.storage.updateTargetDangerousChangeClassification({
+    await this.targetStore.updateTargetDangerousChangeClassification({
       ...selector,
       failDiffOnDangerousChange: args.failDiffOnDangerousChange,
     });
@@ -321,7 +323,7 @@ export class TargetManager {
       },
     });
 
-    await this.storage.updateTargetFailingDangerousChanges({
+    await this.targetStore.updateTargetFailingDangerousChanges({
       ...selector,
       all: args.all,
       failingTypes: args.failingTypes,
@@ -406,7 +408,7 @@ export class TargetManager {
       });
     }
 
-    await this.storage.updateTargetValidationSettings({
+    await this.targetStore.updateTargetValidationSettings({
       organizationId: selector.organizationId,
       projectId: selector.projectId,
       targetId: selector.targetId,
@@ -471,7 +473,7 @@ export class TargetManager {
       };
     }
 
-    const result = await this.storage.updateTargetSlug({
+    const result = await this.targetStore.updateTargetSlug({
       slug: slugParseResult.data,
       organizationId: selector.organizationId,
       projectId: selector.projectId,
@@ -540,7 +542,7 @@ export class TargetManager {
       } as const;
     }
 
-    const target = await this.storage.updateTargetGraphQLEndpointUrl({
+    const target = await this.targetStore.updateTargetGraphQLEndpointUrl({
       organizationId: selector.organizationId,
       targetId: selector.targetId,
       graphqlEndpointUrl: graphqlEndpointUrl.data,
@@ -571,7 +573,7 @@ export class TargetManager {
 
   @cache((args: { targetId: string }) => args.targetId)
   async getTargetById(args: { targetId: string }): Promise<Target> {
-    const target = await this.storage.getTargetById(args.targetId);
+    const target = await this.targetStore.getTargetById(args.targetId);
     if (!target) {
       throw new Error(`Target not found (targetId=${args.targetId})`);
     }
@@ -604,7 +606,7 @@ export class TargetManager {
       args.nativeComposition,
     );
 
-    const target = await this.storage.updateTargetSchemaComposition({
+    const target = await this.targetStore.updateTargetSchemaComposition({
       organizationId: args.organizationId,
       projectId: args.projectId,
       targetId: args.targetId,
@@ -687,7 +689,7 @@ export class TargetManager {
       };
     }
 
-    await this.storage.updateTargetAppDeploymentProtectionSettings({
+    await this.targetStore.updateTargetAppDeploymentProtectionSettings({
       projectId: selector.projectId,
       targetId: selector.targetId,
       isEnabled: args.configuration.isEnabled ?? undefined,
