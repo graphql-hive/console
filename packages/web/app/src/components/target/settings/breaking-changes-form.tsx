@@ -225,10 +225,9 @@ export function BreakingChangesForm(props: {
                 <div className="space-y-1">
                   <div className="font-semibold">Check usage in these targets:</div>
                   <div className="text-neutral-10 text-xs">
-                    Traffic from the checked targets is what the threshold Conditional Breaking
-                    Change threshold is measured against. A change is flagged as breaking only when
-                    clients of these targets use the affected field or type. Some common
-                    configurations are:
+                    Traffic from the checked targets is what the Conditional Breaking Change
+                    threshold is measured against. A change is flagged as breaking only when clients
+                    of these targets use the affected field or type. Some common configurations are:
                   </div>
                   <ul className="text-neutral-10 list-disc space-y-1 pl-4 text-xs">
                     <li>
