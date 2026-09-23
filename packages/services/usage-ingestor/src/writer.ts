@@ -181,6 +181,10 @@ async function writeCsv(
         wait_for_async_insert: config.wait_for_async_insert,
         async_insert_busy_timeout_ms: config.async_insert_busy_timeout_ms,
         async_insert_max_data_size: config.async_insert_max_data_size,
+        // The adaptive busy timeout ClickHouse enables by default starts at 50ms and only grows when
+        // inserts arrive within 50ms of each other; at this insert rate the configured timeout
+        // would never apply and every INSERT would become its own part.
+        async_insert_use_adaptive_busy_timeout: 0,
       },
       username: config.username,
       password: config.password,
