@@ -1,8 +1,8 @@
 import { ReactElement } from 'react';
 import clsx from 'clsx';
+import { CircleMinus, CircleX, TriangleAlert } from 'lucide-react';
 import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
-import { CrossCircledIcon, ExclamationTriangleIcon, MinusCircledIcon } from '@radix-ui/react-icons';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 
@@ -13,8 +13,12 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       value: RuleInstanceSeverityLevel.Warning,
       label: 'Warning',
       icon: (active: boolean) => (
-        <ExclamationTriangleIcon
-          className={clsx(active ? 'text-orange-500' : 'text-neutral-8', 'hover:text-orange-500')}
+        <TriangleAlert
+          className={clsx(
+            'size-4',
+            active ? 'text-orange-500' : 'text-neutral-8',
+            'hover:text-orange-500',
+          )}
         />
       ),
     },
@@ -22,8 +26,12 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       value: RuleInstanceSeverityLevel.Error,
       label: 'Error',
       icon: (active: boolean) => (
-        <CrossCircledIcon
-          className={clsx(active ? 'text-red-600' : 'text-neutral-8', 'hover:text-red-600')}
+        <CircleX
+          className={clsx(
+            'size-4',
+            active ? 'text-red-600' : 'text-neutral-8',
+            'hover:text-red-600',
+          )}
         />
       ),
     },
@@ -34,8 +42,12 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       value: RuleInstanceSeverityLevel.Off,
       label: 'Disables a rule defined at the organization level',
       icon: (active: boolean) => (
-        <MinusCircledIcon
-          className={clsx(active ? 'text-neutral-12' : 'text-neutral-8', 'hover:text-neutral-12')}
+        <CircleMinus
+          className={clsx(
+            'size-4',
+            active ? 'text-neutral-12' : 'text-neutral-8',
+            'hover:text-neutral-12',
+          )}
         />
       ),
     });

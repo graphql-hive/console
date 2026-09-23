@@ -8,8 +8,10 @@ import {
   useState,
 } from 'react';
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
+import { TriangleAlert } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';
+import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
@@ -26,7 +28,6 @@ import {
   SaveProposalProvider,
 } from '@/components/target/proposals/save-proposal-modal';
 import { schemaTitle } from '@/components/target/proposals/util';
-import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -35,7 +36,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -242,6 +242,7 @@ function ConfirmationModal(props: {
       description="The proposed changes are invalid but can be automatically corrected."
       footer={
         <Button
+          onSurface="raised"
           disabled={!confirmed.every(c => c)}
           onClick={() => {
             const allConfirmed = confirmed.every(c => c);
@@ -657,7 +658,7 @@ function DiffService(props: { title: string; changes: Change<any>[]; error?: str
       <div className="mb-6">
         {props.error ? (
           <div className="flex items-center text-red-500">
-            <ExclamationTriangleIcon className="mr-2" />
+            <TriangleAlert className="mr-2 size-4" />
             {props.error}
           </div>
         ) : (

@@ -1,10 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Circle, TriangleAlertIcon, XIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { DotFilledIcon } from '@radix-ui/react-icons';
 import { Badge } from '../badge/badge';
 import { Tabs, type TabItem } from './tabs';
 
@@ -358,10 +356,14 @@ function ServiceTabs() {
           label: (
             <>
               {service.unpublished ? (
-                <DotFilledIcon className="-ml-2 size-4 text-green-600" />
+                <Circle
+                  className="-ml-2 size-4 p-1 text-green-600"
+                  fill="currentColor"
+                  strokeWidth={0}
+                />
               ) : null}
               {service.name}
-              {service.conflict ? <AlertTriangleIcon className="size-4 text-red-600" /> : null}
+              {service.conflict ? <TriangleAlertIcon className="size-4 text-red-600" /> : null}
               <span className="ml-2">
                 <XIcon className={cn('size-4', active !== value && 'hidden')} />
               </span>

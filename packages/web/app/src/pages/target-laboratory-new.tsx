@@ -3,12 +3,12 @@ import { buildSchema, introspectionFromSchema, Kind, parse, print } from 'graphq
 import { throttle } from 'lodash';
 import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { useTheme } from '@/components/theme/theme-provider';
-import { Button } from '@/components/ui/button';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -835,12 +835,12 @@ function LaboratoryPageContent(props: {
                   }}
                   search={{ page: 'general' }}
                 >
-                  <Button variant="outline" className="mr-2" size="sm">
+                  <Button variant="outline" size="compact">
                     Connect GraphQL API Endpoint
                   </Button>
                 </RouterLink>
               ) : null}
-              <Button onClick={toggleConnectLabModal} variant="ghost" size="sm">
+              <Button onClick={toggleConnectLabModal} variant="ghost" size="compact">
                 Mock Data Endpoint
               </Button>
             </div>
@@ -923,7 +923,11 @@ export function TargetLaboratoryPage(props: {
         width="sm"
         title="Welcome to new Hive Laboratory"
         description="Hive Laboratory is a new way to explore your GraphQL schema and run queries against your GraphQL API."
-        footer={<Button onClick={() => setWelcomeOpen(false)}>Get started</Button>}
+        footer={
+          <Button onSurface="raised" onClick={() => setWelcomeOpen(false)}>
+            Get started
+          </Button>
+        }
       >
         <p className="text-neutral-11 text-sm">
           You always can switch to the old GraphiQL based Laboratory by using the tab switcher in

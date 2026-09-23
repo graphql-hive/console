@@ -2,12 +2,12 @@ import { ReactElement, useState } from 'react';
 import { Info } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -393,7 +393,12 @@ export function CreateContractDialog(props: {
           <Button type="button" variant="outline" onClick={close}>
             Cancel
           </Button>
-          <Button type="submit" form={CONTRACT_FORM_ID} disabled={mutation.fetching}>
+          <Button
+            type="submit"
+            form={CONTRACT_FORM_ID}
+            onSurface="raised"
+            disabled={mutation.fetching}
+          >
             Create Contract
           </Button>
         </>

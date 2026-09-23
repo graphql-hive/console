@@ -1,6 +1,8 @@
 import { ReactElement, ReactNode } from 'react';
+import { PlusIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
@@ -11,7 +13,6 @@ import {
   CreateProjectFormSchema,
   type CreateProjectFormValues,
 } from '@/components/project/create-project-form';
-import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -23,7 +24,6 @@ import { useRouter } from '@tanstack/react-router';
 import { ProPlanBilling } from '../organization/billing/ProPlanBillingWarm';
 import { RateLimitWarn } from '../organization/billing/RateLimitWarn';
 import { HiveLink } from '../ui/hive-link';
-import { PlusIcon } from '../ui/icon';
 import { QueryError } from '../ui/query-error';
 import { OrganizationSelector } from './organization-selectors';
 
@@ -163,8 +163,10 @@ export function OrganizationLayout({
           currentOrganization?.viewerCanCreateProject ? (
             <>
               <Button onClick={toggleModalOpen} variant="link" data-cy="new-project-button">
-                <PlusIcon size={16} className="mr-2" />
-                New project
+                <span className="flex items-center">
+                  <PlusIcon size={16} className="mr-2" />
+                  New project
+                </span>
               </Button>
               <CreateProjectModal
                 organizationSlug={organizationSlug}

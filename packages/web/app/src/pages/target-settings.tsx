@@ -8,9 +8,11 @@ import {
   useState,
 } from 'react';
 import { formatISO } from 'date-fns';
+import { Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
@@ -44,7 +46,6 @@ import {
 } from '@/components/target/settings/graphql-endpoint-form';
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
 import { SchemaContracts } from '@/components/target/settings/schema-contracts';
-import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -69,7 +70,6 @@ import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckIcon } from '@radix-ui/react-icons';
 import { Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -298,7 +298,6 @@ const ExtendBaseSchema = (props: {
       )}
       <div className="flex items-center gap-x-3">
         <Button
-          className="px-5"
           disabled={mutation.fetching}
           onClick={async () => {
             await mutate({
@@ -328,11 +327,7 @@ const ExtendBaseSchema = (props: {
         >
           Save
         </Button>
-        <Button
-          variant="secondary"
-          className="px-5"
-          onClick={() => setBaseSchema(props.baseSchema)}
-        >
+        <Button variant="outline" onClick={() => setBaseSchema(props.baseSchema)}>
           Reset
         </Button>
         {isUnsaved && <span className="text-sm text-green-500">Unsaved changes!</span>}
@@ -1746,7 +1741,7 @@ function JustSavedLabel() {
 }
 
 function JustSavedIndicator() {
-  return <CheckIcon className="size-5 text-green-700 dark:text-green-500" />;
+  return <Check className="size-5 text-green-700 dark:text-green-500" />;
 }
 
 function SavedLabel() {
@@ -1759,7 +1754,7 @@ function SavedLabel() {
 }
 
 function SavedIndicator() {
-  return <CheckIcon className="text-neutral-10 size-5" />;
+  return <Check className="text-neutral-10 size-5" />;
 }
 
 function UnsavedChangesLabel() {

@@ -1,10 +1,10 @@
 import { ReactNode } from 'react';
+import { Diamond, Info, TriangleAlert } from 'lucide-react';
 import { Accordion } from '@/components/base/accordion/accordion';
+import { Button } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
-import { Button } from '@/components/ui/button';
 import { MergeStatus } from '@/pages/target-proposal-details';
 import type { Change } from '@graphql-inspector/core';
-import { ComponentNoneIcon, ExclamationTriangleIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { labelize } from '../history/errors-and-changes';
 
 export function ProposalChangeDetail(props: {
@@ -52,14 +52,14 @@ export function ChangeBlock(props: {
             if (mergeStatus === MergeStatus.CONFLICT) {
               icon = (
                 <span className="flex items-center justify-end pl-4 text-red-400">
-                  <ExclamationTriangleIcon className="mr-2" />
+                  <TriangleAlert className="mr-2 size-4" />
                   CONFLICT
                 </span>
               );
             } else if (mergeStatus === MergeStatus.IGNORED) {
               icon = (
                 <span className="text-neutral-10 flex items-center justify-end pl-4">
-                  <ComponentNoneIcon className="mr-2" /> NO CHANGE
+                  <Diamond className="mr-2 size-4" strokeDasharray="2 2" /> NO CHANGE
                 </span>
               );
             }
@@ -82,13 +82,8 @@ function ChangesBlockTooltip(props: { info: string }) {
   return (
     <Popover
       trigger={
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="text-neutral-10 ml-1"
-          aria-label="More about this change"
-        >
-          <InfoCircledIcon className="size-4" />
+        <Button variant="ghost" size="icon-sm" aria-label="More about this change">
+          <Info className="size-4" />
         </Button>
       }
       openOnHover

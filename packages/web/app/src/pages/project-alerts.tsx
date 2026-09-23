@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { AlertsTable, AlertsTable_AlertFragment } from '@/components/project/alerts/alerts-table';
@@ -15,7 +16,6 @@ import {
 import { CreateChannelModal } from '@/components/project/alerts/create-channel';
 import { DeleteAlertsButton } from '@/components/project/alerts/delete-alerts-button';
 import { DeleteChannelsButton } from '@/components/project/alerts/delete-channels-button';
-import { Button } from '@/components/ui/button';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -55,9 +55,7 @@ function Channels(props: {
         }}
       />
       <div className="mt-4 flex items-center gap-x-2">
-        <Button variant="default" onClick={toggleModalOpen}>
-          Add channel
-        </Button>
+        <Button onClick={toggleModalOpen}>Add channel</Button>
         {channels.length > 0 && (
           <DeleteChannelsButton
             organizationSlug={props.organizationSlug}
@@ -122,9 +120,7 @@ function Alerts(props: {
           }}
         />
         <div className="mt-4 flex items-center gap-x-2">
-          <Button variant="default" onClick={toggleModalOpen}>
-            Create alert
-          </Button>
+          <Button onClick={toggleModalOpen}>Create alert</Button>
           <DeleteAlertsButton
             organizationSlug={props.organizationSlug}
             projectSlug={props.projectSlug}

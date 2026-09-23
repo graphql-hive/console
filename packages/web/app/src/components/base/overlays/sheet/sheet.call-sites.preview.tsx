@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { useForm } from 'react-hook-form';
+import { Button } from '@/components/base/button/button';
 import { CallSite } from '@/components/inventory/shared';
 import {
   NEW_TICKET_FORM_ID,
@@ -18,7 +19,6 @@ import {
   NewTicketFormSchema,
   type NewTicketFormValues,
 } from '@/components/organization/new-ticket-form';
-import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Heading } from '@/components/ui/heading';
 import { SupportTicketPriority } from '@/gql/graphql';
@@ -77,7 +77,7 @@ function RoleMappingPickerExample() {
             <Button onClick={() => setOpen(false)} variant="ghost">
               Abort
             </Button>
-            <Button disabled={!roleId} onClick={() => setOpen(false)}>
+            <Button onSurface="raised" disabled={!roleId} onClick={() => setOpen(false)}>
               Create Role Assignment
             </Button>
           </>
@@ -142,7 +142,7 @@ function NewTicketExample() {
         title="New ticket"
         description="Create a new case for the support team"
         footer={
-          <Button type="submit" form={NEW_TICKET_FORM_ID}>
+          <Button type="submit" form={NEW_TICKET_FORM_ID} onSurface="raised">
             Submit
           </Button>
         }
@@ -295,10 +295,10 @@ function SpanDetailsExample() {
         }
         footer={
           <>
-            <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
+            <Button variant="ghost" size="compact" onClick={() => setOpen(false)}>
               <ArrowUp className="mr-2 size-4" /> Show Parent Span
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="compact">
               <LinkLucide className="mr-2 size-4" /> Share Link
             </Button>
           </>

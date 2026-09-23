@@ -1,13 +1,13 @@
 import { ReactElement, useState } from 'react';
 import clsx from 'clsx';
+import { ExternalLink } from 'lucide-react';
 import { useMutation } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Section } from '@/components/common';
-import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { Link } from '@/components/ui/link';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
-import { ExternalLinkIcon } from '@radix-ui/react-icons';
 import { CardElement } from '@stripe/react-stripe-js';
 
 const GenerateStripeLinkMutation = graphql(`
@@ -90,7 +90,7 @@ export const ManagePaymentMethod = (props: {
               'Loading...'
             ) : (
               <div className="flex items-center">
-                <ExternalLinkIcon className="mr-1" /> Stripe Billing Dashboard
+                <ExternalLink className="mr-1 size-4" /> Stripe Billing Dashboard
               </div>
             )}
           </Button>

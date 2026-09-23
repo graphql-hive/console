@@ -1,6 +1,7 @@
 import { ReactElement, useMemo, useState } from 'react';
 import { AlertOctagonIcon, BugPlayIcon, CheckIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
@@ -12,7 +13,6 @@ import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Switch } from '@/components/base/switch/switch';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
 import { env } from '@/env/frontend';
@@ -209,15 +209,11 @@ export function OIDCIntegrationConfiguration(props: {
   return (
     <div className="space-y-10">
       <div className="space-y-2">
-        <div className="flex">
+        <div className="flex justify-between">
           <Heading size="lg">Overview</Heading>
           <Tooltip
             trigger={
-              <Button
-                size="icon-sm"
-                className="ml-auto"
-                onClick={() => setModalState(ModalState.openDebugLogs)}
-              >
+              <Button size="icon-sm" onClick={() => setModalState(ModalState.openDebugLogs)}>
                 <BugPlayIcon size="12" />{' '}
               </Button>
             }
@@ -264,15 +260,11 @@ export function OIDCIntegrationConfiguration(props: {
         />
       </div>
       <div className="space-y-2">
-        <div className="flex">
+        <div className="flex justify-between">
           <Heading size="lg">OIDC Configuration</Heading>
           <Tooltip
             trigger={
-              <Button
-                size="icon-sm"
-                className="ml-auto"
-                onClick={() => setModalState(ModalState.openSettings)}
-              >
+              <Button size="icon-sm" onClick={() => setModalState(ModalState.openSettings)}>
                 <SettingsIcon size="12" />{' '}
               </Button>
             }
@@ -516,14 +508,13 @@ function OIDCDomainConfiguration(props: {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <div className="flex">
+        <div className="flex justify-between">
           <Heading size="lg">Registered Domains</Heading>
           <Tooltip
             trigger={
               <Button
                 data-button-add-new-domain
                 size="icon-sm"
-                className="ml-auto"
                 onClick={() => setState({ type: 'create' })}
               >
                 <PlusIcon size="12" />{' '}
@@ -994,7 +985,9 @@ function RemoveOIDCIntegrationModal(props: {
       title="Remove OpenID Connect Integration"
       footer={
         removed || oidcIntegrationId === null ? (
-          <Button onClick={props.close}>Close</Button>
+          <Button onSurface="raised" onClick={props.close}>
+            Close
+          </Button>
         ) : (
           <>
             <Button variant="outline" onClick={props.close}>

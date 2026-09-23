@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
-import clsx from 'clsx';
-import { FolderIcon, FolderOpenIcon, SquareTerminalIcon } from 'lucide-react';
+import {
+  BookmarkIcon,
+  EllipsisIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  PlusIcon,
+  SquareTerminalIcon,
+} from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Accordion } from '@/components/base/accordion/accordion';
+import { Button } from '@/components/base/button/button';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { useToast } from '@/components/base/toast/toast';
@@ -10,8 +17,6 @@ import { CreateCollectionModal } from '@/components/target/laboratory/create-col
 import { DeleteCollectionModal } from '@/components/target/laboratory/delete-collection-modal';
 import { DeleteOperationModal } from '@/components/target/laboratory/delete-operation-modal';
 import { EditOperationModal } from '@/components/target/laboratory/edit-operation-modal';
-import { Button } from '@/components/ui/button';
-import { PlusIcon } from '@/components/ui/icon';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
@@ -19,7 +24,6 @@ import { useClipboard, useToggle } from '@/lib/hooks';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { cn } from '@/lib/utils';
 import { GraphiQLPlugin, useEditorContext, usePluginContext } from '@graphiql/react';
-import { BookmarkFilledIcon, BookmarkIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { useParams, useRouter } from '@tanstack/react-router';
 import { useCollections } from './use-collections';
 import { useCurrentOperation } from './use-current-operation';
@@ -100,11 +104,8 @@ export const operationCollectionsPlugin: GraphiQLPlugin = {
   content: Content,
   icon: function Icon() {
     const pluginContext = usePluginContext();
-    const IconToUse =
-      pluginContext?.visiblePlugin === operationCollectionsPlugin
-        ? BookmarkFilledIcon
-        : BookmarkIcon;
-    return <IconToUse />;
+    const active = pluginContext?.visiblePlugin === operationCollectionsPlugin;
+    return <BookmarkIcon fill={active ? 'currentColor' : 'none'} />;
   },
 };
 
@@ -320,7 +321,7 @@ export function Content() {
             className="graphiql-toolbar-button"
             data-cy="collection-menu-trigger"
           >
-            <DotsHorizontalIcon />
+            <EllipsisIcon className="size-4" />
           </button>
         }
         sections={[
@@ -391,7 +392,7 @@ export function Content() {
                     type="button"
                     className="graphiql-toolbar-button text-neutral-12 opacity-0 transition-opacity [div:hover>&]:opacity-100"
                   >
-                    <DotsHorizontalIcon />
+                    <EllipsisIcon className="size-4" />
                   </button>
                 }
                 sections={[
@@ -426,13 +427,11 @@ export function Content() {
             </div>
           ))
         ) : (
-          <Button
-            variant="orangeLink"
-            className="mx-auto block"
-            onClick={() => void addOperation(collection.id)}
-          >
-            <PlusIcon className="mr-1 inline size-4" /> Add Operation
-          </Button>
+          <div className="text-center">
+            <Button variant="link" onClick={() => void addOperation(collection.id)}>
+              <PlusIcon className="mr-1 inline size-4" /> Add Operation
+            </Button>
+          </div>
         )}
       </div>
     ),
@@ -445,29 +444,30 @@ export function Content() {
       <div className="mb-5 flex items-center justify-between gap-1">
         <div className="graphiql-doc-explorer-title">Operations</div>
         {target?.viewerCanModifyLaboratory && (
-          <Tooltip
-            trigger={
-              <Button
-                variant="orangeLink"
-                size="icon-sm"
-                data-cy="new-collection"
-                className={clsx(
-                  'flex w-auto items-center gap-1',
-                  'min-w-0', // trick to make work truncate
-                )}
-                onClick={() => {
-                  if (collectionId) {
-                    setCollectionId('');
-                  }
-                  toggleCollectionModal();
-                }}
-              >
-                <PlusIcon className="size-4 shrink-0" />
-                <span className="truncate">New collection</span>
-              </Button>
-            }
-            content="Create a new collection of GraphQL Operations"
-          />
+          // The flex item needs min-w-0 for the label inside to truncate; the button fills it.
+          <span className="flex min-w-0">
+            <Tooltip
+              trigger={
+                <Button
+                  variant="link"
+                  width="full"
+                  data-cy="new-collection"
+                  onClick={() => {
+                    if (collectionId) {
+                      setCollectionId('');
+                    }
+                    toggleCollectionModal();
+                  }}
+                >
+                  <span className="flex min-w-0 items-center gap-1">
+                    <PlusIcon className="size-4 shrink-0" />
+                    <span className="truncate">New collection</span>
+                  </span>
+                </Button>
+              }
+              content="Create a new collection of GraphQL Operations"
+            />
+          </span>
         )}
       </div>
       {loading ? (
@@ -488,21 +488,22 @@ export function Content() {
       ) : (
         <div className="flex h-fit flex-1 items-center justify-center">
           <div className="flex flex-col items-center">
-            <BookmarkIcon width={30} height={30} />
+            <BookmarkIcon size={30} />
             <div className="mt-2 text-xs">There are no collections available.</div>
             {canEdit && (
-              <Button
-                onClick={() => {
-                  if (collectionId) {
-                    setCollectionId('');
-                  }
-                  toggleCollectionModal();
-                }}
-                data-cy="create-collection"
-                className="mt-3"
-              >
-                Create your first Collection.
-              </Button>
+              <div className="mt-3">
+                <Button
+                  onClick={() => {
+                    if (collectionId) {
+                      setCollectionId('');
+                    }
+                    toggleCollectionModal();
+                  }}
+                  data-cy="create-collection"
+                >
+                  Create your first Collection.
+                </Button>
+              </div>
             )}
           </div>
         </div>

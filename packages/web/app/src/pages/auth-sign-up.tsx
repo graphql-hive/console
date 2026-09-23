@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from 'react';
+import { CircleUserRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { FaRegUserCircle } from 'react-icons/fa';
-import { SiGithub, SiGoogle, SiOkta } from 'react-icons/si';
 import { sendVerificationEmail } from 'supertokens-auth-react/recipe/emailverification';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { emailPasswordSignUp } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
@@ -11,8 +10,9 @@ import {
   SignUpFormSchema,
   type SignUpFormValues,
 } from '@/components/auth/sign-up-form';
+import { Button } from '@/components/base/button/button';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { env } from '@/env/frontend';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
@@ -183,7 +183,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                   form={form}
                   onSubmit={onSubmit}
                   submit={
-                    <Button type="submit" className="w-full" disabled={isPending}>
+                    <Button type="submit" width="full" onSurface="raised" disabled={isPending}>
                       {signUp.isSuccess && signUp.data.status === 'OK' && isVerificationSettled
                         ? 'Redirecting...'
                         : signUp.isPending
@@ -197,11 +197,11 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                   <SignInButton previousSignIn={lastAuthMethod === 'google'} variant="outline">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('google')}
                       disabled={isPending}
                     >
-                      <SiGoogle className="mr-4 size-4" /> Sign up with Google
+                      <GoogleIcon className="mr-4 size-4" /> Sign up with Google
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -209,11 +209,11 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                   <SignInButton previousSignIn={lastAuthMethod === 'github'} variant="outline">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('github')}
                       disabled={isPending}
                     >
-                      <SiGithub className="mr-4 size-4" /> Sign up with Github
+                      <GitHubIcon className="mr-4 size-4" /> Sign up with Github
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -221,25 +221,25 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                   <SignInButton previousSignIn={lastAuthMethod === 'okta'} variant="outline">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('okta')}
                       disabled={isPending}
                     >
-                      <SiOkta className="mr-4 size-4" /> Sign up with Okta
+                      <OktaIcon className="mr-4 size-4" /> Sign up with Okta
                     </Button>
                   </SignInButton>
                 ) : null}
                 {isProviderEnabled('oidc') ? (
                   <SignInButton previousSignIn={lastAuthMethod === 'oidc'} variant="outline">
-                    <Button asChild variant="outline" className="w-full" disabled={isPending}>
-                      <Link
-                        to="/auth/sso"
-                        search={{
-                          redirectToPath: props.redirectToPath,
-                        }}
-                      >
-                        <FaRegUserCircle className="mr-4 size-4" /> Sign up with SSO
-                      </Link>
+                    <Button
+                      variant="outline"
+                      width="full"
+                      disabled={isPending}
+                      render={
+                        <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
+                      }
+                    >
+                      <CircleUserRound className="mr-4 size-4" /> Sign up with SSO
                     </Button>
                   </SignInButton>
                 ) : null}

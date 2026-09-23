@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Check, RefreshCw, RotateCw, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { CombinedError, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
@@ -7,7 +8,6 @@ import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckIcon, Cross2Icon, ReloadIcon, UpdateIcon } from '@radix-ui/react-icons';
 import {
   ExternalCompositionForm,
   ExternalCompositionFormSchema,
@@ -125,7 +125,7 @@ const ExternalCompositionStatus = ({
         <Tooltip
           trigger={
             <span className="inline-flex">
-              <UpdateIcon
+              <RefreshCw
                 className="text-neutral-10 size-5 animate-spin cursor-default"
                 onClick={e => e.preventDefault()}
               />
@@ -146,7 +146,7 @@ const ExternalCompositionStatus = ({
                 executeTestQuery();
               }}
             >
-              <ReloadIcon className="size-5" />
+              <RotateCw className="size-5" />
             </button>
           }
           content="Execute test"
@@ -158,10 +158,7 @@ const ExternalCompositionStatus = ({
           defaultOpen
           trigger={
             <span className="inline-flex">
-              <Cross2Icon
-                className="size-5 cursor-default text-red-500"
-                onClick={e => e.preventDefault()}
-              />
+              <X className="size-5 cursor-default text-red-500" onClick={e => e.preventDefault()} />
             </span>
           }
           content={error}
@@ -173,7 +170,7 @@ const ExternalCompositionStatus = ({
         <Tooltip
           trigger={
             <span className="inline-flex">
-              <CheckIcon
+              <Check
                 className="size-5 cursor-default text-green-500"
                 onClick={e => e.preventDefault()}
               />

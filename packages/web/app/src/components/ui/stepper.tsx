@@ -3,9 +3,8 @@
  */
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Button } from '@/components/ui/button';
+import { focusRing } from '@/components/base/shared-styles';
 import { cn } from '@/lib/utils';
-import { Slot } from '@radix-ui/react-slot';
 import * as Stepperize from '@stepperize/react';
 
 //#region Types
@@ -38,14 +37,10 @@ type DefineStepperProps<Steps extends Stepperize.Step[]> = Omit<
       clickable?: boolean;
     },
   ) => React.ReactElement;
-  StepperTitle: (props: React.ComponentProps<'h4'> & { asChild?: boolean }) => React.ReactElement;
-  StepperDescription: (
-    props: React.ComponentProps<'p'> & { asChild?: boolean },
-  ) => React.ReactElement;
-  StepperPanel: (props: React.ComponentProps<'div'> & { asChild?: boolean }) => React.ReactElement;
-  StepperControls: (
-    props: React.ComponentProps<'div'> & { asChild?: boolean },
-  ) => React.ReactElement;
+  StepperTitle: (props: React.ComponentProps<'h4'>) => React.ReactElement;
+  StepperDescription: (props: React.ComponentProps<'p'>) => React.ReactElement;
+  StepperPanel: (props: React.ComponentProps<'div'>) => React.ReactElement;
+  StepperControls: (props: React.ComponentProps<'div'>) => React.ReactElement;
 };
 
 type CircleStepIndicatorProps = {
@@ -179,14 +174,19 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
             data-state={dataState}
             data-disabled={props.disabled}
           >
-            <Button
+            <button
               id={`step-${step.id}`}
               type="button"
               role="tab"
               tabIndex={dataState !== 'inactive' ? 0 : -1}
-              className={cn('rounded-full', clickable === false && 'cursor-default')}
-              variant={dataState !== 'inactive' ? 'default' : 'secondary'}
-              size="icon"
+              className={cn(
+                'inline-flex size-9 items-center justify-center rounded-full text-sm font-medium transition-colors',
+                focusRing,
+                dataState !== 'inactive'
+                  ? 'bg-neutral-4 text-neutral-12'
+                  : 'bg-neutral-2 text-neutral-11',
+                clickable === false && 'cursor-default',
+              )}
               aria-controls={`step-panel-${props.of}`}
               aria-current={isActive ? 'step' : undefined}
               aria-posinset={stepIndex + 1}
@@ -196,7 +196,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
               {...props}
             >
               {icon ?? stepIndex + 1}
-            </Button>
+            </button>
             {variant === 'horizontal' && labelOrientation === 'vertical' && (
               <StepperSeparator
                 orientation="horizontal"
@@ -241,22 +241,20 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
     },
     StepperTitle,
     StepperDescription,
-    StepperPanel: ({ children, className, asChild, ...props }) => {
-      const Comp = asChild ? Slot : 'div';
+    StepperPanel: ({ children, className, ...props }) => {
       const { tracking } = useStepperProvider();
 
       return (
-        <Comp className={className} ref={node => scrollIntoStepperPanel(node, tracking)} {...props}>
+        <div className={className} ref={node => scrollIntoStepperPanel(node, tracking)} {...props}>
           {children}
-        </Comp>
+        </div>
       );
     },
-    StepperControls: ({ children, className, asChild, ...props }) => {
-      const Comp = asChild ? Slot : 'div';
+    StepperControls: ({ children, className, ...props }) => {
       return (
-        <Comp className={cn('flex justify-end gap-4', className)} {...props}>
+        <div className={cn('flex justify-end gap-4', className)} {...props}>
           {children}
-        </Comp>
+        </div>
       );
     },
   };
@@ -266,18 +264,11 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
 
 //#region Stepper Title
 
-const StepperTitle = ({
-  children,
-  className,
-  asChild,
-  ...props
-}: React.ComponentProps<'h4'> & { asChild?: boolean }) => {
-  const Comp = asChild ? Slot : 'h4';
-
+const StepperTitle = ({ children, className, ...props }: React.ComponentProps<'h4'>) => {
   return (
-    <Comp className={cn('text-base font-medium', className)} {...props}>
+    <h4 className={cn('text-base font-medium', className)} {...props}>
       {children}
-    </Comp>
+    </h4>
   );
 };
 
@@ -285,18 +276,11 @@ const StepperTitle = ({
 
 //#region Stepper Description
 
-const StepperDescription = ({
-  children,
-  className,
-  asChild,
-  ...props
-}: React.ComponentProps<'p'> & { asChild?: boolean }) => {
-  const Comp = asChild ? Slot : 'p';
-
+const StepperDescription = ({ children, className, ...props }: React.ComponentProps<'p'>) => {
   return (
-    <Comp className={cn('text-neutral-10 text-sm', className)} {...props}>
+    <p className={cn('text-neutral-10 text-sm', className)} {...props}>
       {children}
-    </Comp>
+    </p>
   );
 };
 

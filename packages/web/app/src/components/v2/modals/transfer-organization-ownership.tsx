@@ -1,6 +1,7 @@
 import { ReactElement } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import {
@@ -9,7 +10,6 @@ import {
   transferOwnershipFormSchema,
   type TransferOwnershipFormValues,
 } from '@/components/organization/settings/transfer-ownership-form';
-import { Button } from '@/components/ui/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -146,6 +146,7 @@ export const TransferOrganizationOwnershipModal = ({
           <Button
             type="submit"
             form={TRANSFER_OWNERSHIP_FORM_ID}
+            onSurface="raised"
             disabled={form.formState.isSubmitting || !form.formState.isValid}
           >
             Transfer this organization

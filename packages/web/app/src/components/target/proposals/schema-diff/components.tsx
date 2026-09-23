@@ -7,11 +7,10 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { CheckIcon, TriangleAlert, XIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { CheckIcon, XIcon } from '@/components/ui/icon';
 import { SeverityLevelType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { ChangeRowContext } from './context';
 
 const TAB = <>&nbsp;&nbsp;</>;
@@ -130,7 +129,7 @@ export function ChangeRow(props: {
             )}
             {props.severityLevel === SeverityLevelType.Dangerous && (
               <span title="Dangerous Change">
-                <ExclamationTriangleIcon className="mr-1 inline-block text-yellow-600" />
+                <TriangleAlert className="mr-1 inline-block size-4 text-yellow-600" />
               </span>
             )}
             {props.severityLevel === SeverityLevelType.Safe && (

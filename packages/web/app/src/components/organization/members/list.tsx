@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import {
   Info,
+  KeyIcon,
   SearchIcon,
   ShieldCheck,
   TriangleAlert,
@@ -9,11 +10,10 @@ import {
   UserRoundX,
   UsersIcon,
 } from 'lucide-react';
-import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
-import { IconType } from 'react-icons/lib';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
@@ -22,9 +22,8 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
+import { GitHubIcon, GoogleIcon, OpenIdIcon } from '@/components/ui/brand-icon';
 import { Callout } from '@/components/ui/callout';
-import { KeyIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
@@ -103,24 +102,24 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
 export const authProviderToIconAndTextMap: Record<
   GraphQLSchema.AuthProviderType,
   {
-    Icon: IconType;
+    Icon: ComponentType<{ className?: string }>;
     text: string;
   }
 > = {
   [GraphQLSchema.AuthProviderType.Google]: {
-    Icon: FaGoogle,
+    Icon: GoogleIcon,
     text: 'Google OAuth 2.0',
   },
   [GraphQLSchema.AuthProviderType.Github]: {
-    Icon: FaGithub,
+    Icon: GitHubIcon,
     text: 'GitHub OAuth 2.0',
   },
   [GraphQLSchema.AuthProviderType.Oidc]: {
-    Icon: FaOpenid,
+    Icon: OpenIdIcon,
     text: 'OpenID Connect',
   },
   [GraphQLSchema.AuthProviderType.UsernamePassword]: {
-    Icon: FaUserLock,
+    Icon: UserLock,
     text: 'Email & Password',
   },
 };
@@ -329,7 +328,7 @@ function MemberRoleCell(props: {
             open={scimOpen}
             onOpenChange={setScimOpen}
             trigger={
-              <Button type="button" size="xs" variant="orangeLink">
+              <Button type="button" variant="link">
                 <TriangleAlert className="mr-1 size-3" />
                 SCIM matched this existing account
               </Button>
