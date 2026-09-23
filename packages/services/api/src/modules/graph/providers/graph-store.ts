@@ -28,7 +28,7 @@ export type Graph = z.infer<typeof GraphModel>;
 export type GraphConfig = z.infer<typeof GraphConfigModel>;
 
 @Injectable({
-  scope: Scope.Operation,
+  scope: Scope.Singleton,
   global: true,
 })
 export class GraphStore {
