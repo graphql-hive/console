@@ -21,7 +21,6 @@ import type {
   OrganizationInvitation,
   PaginatedDocumentCollectionOperations,
   PaginatedDocumentCollections,
-  Project,
   SchemaPolicy,
   User,
 } from '../../../shared/entities';
@@ -201,62 +200,6 @@ export interface Storage {
   deleteOrganizationMember(_: OrganizationSelector & { userId: string }): Promise<void>;
 
   deleteOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<void>;
-
-  getProject(_: ProjectSelector): Promise<Project | never>;
-
-  getProjectId(_: { organizationSlug: string; projectSlug: string }): Promise<string | never>;
-
-  getProjectBySlug(_: { slug: string } & OrganizationSelector): Promise<Project | null>;
-
-  getProjects(_: OrganizationSelector): Promise<Project[] | never>;
-
-  getProjectById(projectId: string): Promise<Project | null>;
-
-  findProjectsByIds(args: { projectIds: Array<string> }): Promise<Map<string, Project>>;
-
-  createProject(_: Pick<Project, 'type'> & { slug: string } & OrganizationSelector): Promise<
-    | {
-        ok: true;
-        project: Project;
-      }
-    | {
-        ok: false;
-        message: string;
-      }
-  >;
-
-  deleteProject(_: ProjectSelector): Promise<
-    | (Project & {
-        tokens: string[];
-      })
-    | never
-  >;
-
-  updateProjectSlug(_: ProjectSelector & { slug: string }): Promise<
-    | {
-        ok: true;
-        project: Project;
-      }
-    | {
-        ok: false;
-        message: string;
-      }
-  >;
-
-  updateNativeSchemaComposition(
-    _: ProjectSelector & {
-      enabled: boolean;
-    },
-  ): Promise<Project>;
-
-  enableExternalSchemaComposition(
-    _: ProjectSelector & {
-      endpoint: string;
-      encryptedSecret: string;
-    },
-  ): Promise<Project>;
-
-  enableProjectNameInGithubCheck(_: ProjectSelector): Promise<Project>;
 
   getPaginatedSchemaChecksForSchemaProposal<
     TransformedSchemaCheck extends SchemaCheck = SchemaCheck,

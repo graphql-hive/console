@@ -9,6 +9,7 @@ import {
   PermissionsPerResourceLevelAssignment,
   ResourceLevel,
 } from '../../auth/lib/authz';
+import { ProjectStore } from '../../project/providers/project-store';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
@@ -27,6 +28,7 @@ export class ResourceAssignments {
 
   constructor(
     private storage: Storage,
+    private projectStore: ProjectStore,
     private targetStore: TargetStore,
     logger: Logger,
   ) {
@@ -42,7 +44,7 @@ export class ResourceAssignments {
     if (args.resources.mode === '*') {
       return { mode: 'ALL' };
     }
-    const projects = await this.storage.findProjectsByIds({
+    const projects = await this.projectStore.findProjectsByIds({
       projectIds: args.resources.projects.map(project => project.id),
     });
 
@@ -143,7 +145,7 @@ export class ResourceAssignments {
 
     const sanitizedProjects = input.projects.filter(project => isUUID(project.projectId));
 
-    const projects = await this.storage.findProjectsByIds({
+    const projects = await this.projectStore.findProjectsByIds({
       projectIds: sanitizedProjects.map(record => record.projectId),
     });
 
@@ -286,7 +288,7 @@ export class ResourceAssignments {
     }
 
     const projectIds = resourceAssignment.projects.map(project => project.id);
-    const projects = await this.storage.findProjectsByIds({ projectIds });
+    const projects = await this.projectStore.findProjectsByIds({ projectIds });
 
     const targetLookupIds = new Set<string>();
     const projectTargetAssignments: Array<{

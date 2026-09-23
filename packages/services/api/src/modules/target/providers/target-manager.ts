@@ -6,6 +6,7 @@ import type { Project, Target, TargetSettings } from '../../../shared/entities';
 import { cache, share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
+import { ProjectStore } from '../../project/providers/project-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { ProjectSelector, Storage, TargetSelector } from '../../shared/providers/storage';
@@ -30,6 +31,7 @@ export class TargetManager {
   constructor(
     logger: Logger,
     private storage: Storage,
+    private projectStore: ProjectStore,
     private targetStore: TargetStore,
     private tokenStorage: TokenStorage,
     private session: Session,
@@ -120,7 +122,7 @@ export class TargetManager {
     });
 
     const [project, organization] = await Promise.all([
-      this.storage.getProjectById(selector.projectId),
+      this.projectStore.getProjectById(selector.projectId),
       this.storage.getOrganization({ organizationId: selector.organizationId }),
     ]);
 
@@ -182,7 +184,7 @@ export class TargetManager {
     await this.targetsCache.purge(deletedTarget);
 
     const [project, organization] = await Promise.all([
-      this.storage.getProjectById(selector.projectId),
+      this.projectStore.getProjectById(selector.projectId),
       this.storage.getOrganization({ organizationId: selector.organizationId }),
     ]);
 
@@ -496,7 +498,7 @@ export class TargetManager {
     });
 
     const [project, organization] = await Promise.all([
-      this.storage.getProjectById(selector.projectId),
+      this.projectStore.getProjectById(selector.projectId),
       this.storage.getOrganization({ organizationId: selector.organizationId }),
     ]);
 
