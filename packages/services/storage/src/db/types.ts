@@ -163,6 +163,17 @@ export interface graphile_worker_deduplication {
   task_name: string;
 }
 
+export interface graphs {
+  config: any;
+  created_at: Date;
+  id: string;
+  name: string;
+  organization_id: string;
+  project_id: string;
+  source_graph_id: string | null;
+  target_id: string;
+}
+
 export interface group_members {
   created_at: Date | null;
   group_id: string | null;
@@ -550,6 +561,8 @@ export interface schema_versions {
   diff_schema_version_id: string | null;
   github_repository: string | null;
   github_sha: string | null;
+  graph_id: string | null;
+  graph_metadata: any | null;
   has_contract_composition_errors: boolean | null;
   has_persisted_schema_changes: boolean | null;
   id: string;
@@ -561,6 +574,7 @@ export interface schema_versions {
   record_version: string | null;
   schema_composition_errors: any | null;
   schema_metadata: any | null;
+  source_schema_version_id: string | null;
   supergraph_changes: any | null;
   supergraph_sdl: string | null;
   tags: Array<string> | null;
@@ -678,6 +692,7 @@ export interface DBTables {
   document_preflight_scripts: document_preflight_scripts;
   email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
+  graphs: graphs;
   group_members: group_members;
   group_role_assignments: group_role_assignments;
   groups: groups;
