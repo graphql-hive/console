@@ -1,5 +1,24 @@
 # hive
 
+## 11.14.2
+
+### Patch Changes
+
+- [#8533](https://github.com/graphql-hive/console/pull/8533)
+  [`a46b133`](https://github.com/graphql-hive/console/commit/a46b133029dd6e7ced9a04fb1b62966702a25ff8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-8wmf-6v46-5gfg](https://github.com/advisories/GHSA-8wmf-6v46-5gfg).
+
+- [#8531](https://github.com/graphql-hive/console/pull/8531)
+  [`edb1b9b`](https://github.com/graphql-hive/console/commit/edb1b9bcdc0991b3430653972b3ad6f0f05756bc)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Return a 404 for missing frontend
+  assets instead of the SPA HTML fallback.
+
+- [#8325](https://github.com/graphql-hive/console/pull/8325)
+  [`21e64b1`](https://github.com/graphql-hive/console/commit/21e64b1a743822a65728267e915ee8954a04b2ac)
+  Thanks [@lisa-0831](https://github.com/lisa-0831)! - Attach standalone Cloudflare Worker and AWS
+  Lambda CDN archives to stable releases and document their deployment configuration.
+
 ## 11.14.1
 
 ### Patch Changes
