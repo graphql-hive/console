@@ -2,9 +2,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { useMutation } from 'urql';
 import { Button as BaseButton } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
+import { useToast } from '@/components/base/toast/toast';
 import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';
 
@@ -116,17 +115,17 @@ export function UpdateFilterButton({
       trigger={<BaseButton label={`Update "${activeView.name}"`} variant="muted-action" />}
       content={
         <div className="flex gap-2">
-          <Button
+          <BaseButton
             variant="primary"
-            className="flex-1"
+            width="full"
             onClick={() => void handleUpdate()}
             disabled={updateResult.fetching}
           >
             Update filter
-          </Button>
-          <Button variant="outline" className="flex-1" onClick={() => setConfirmOpen(false)}>
+          </BaseButton>
+          <BaseButton variant="outline" width="full" onClick={() => setConfirmOpen(false)}>
             Cancel
-          </Button>
+          </BaseButton>
         </div>
       }
     />

@@ -5,6 +5,8 @@ import { cache } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { Session } from '../../auth/lib/authz';
 import { TargetAccessTokenSession } from '../../auth/lib/target-access-token-strategy';
+import { ProjectStore } from '../../project/providers/project-store';
+import { TargetStore } from '../../target/providers/target-store';
 import { Logger } from './logger';
 import { Storage } from './storage';
 
@@ -27,6 +29,8 @@ export class IdTranslator {
   private logger: Logger;
   constructor(
     private storage: Storage,
+    private projectStore: ProjectStore,
+    private targetStore: TargetStore,
     private session: Session,
     logger: Logger,
   ) {
@@ -69,7 +73,7 @@ export class IdTranslator {
       'Translating Project Clean ID (selector=%o)',
       filterSelector('project', selector),
     );
-    return this.storage.getProjectId({
+    return this.projectStore.getProjectId({
       organizationSlug: selector.organizationSlug,
       projectSlug: selector.projectSlug,
     });
@@ -84,7 +88,7 @@ export class IdTranslator {
       filterSelector('target', selector),
     );
 
-    return this.storage.getTargetId({
+    return this.targetStore.getTargetId({
       organizationSlug: selector.organizationSlug,
       projectSlug: selector.projectSlug,
       targetSlug: selector.targetSlug,
@@ -137,7 +141,7 @@ export class IdTranslator {
         return null;
       }
 
-      const target = await this.storage.getTargetById(args.reference.byId);
+      const target = await this.targetStore.getTargetById(args.reference.byId);
       if (!target) {
         this.logger.debug('Target not found. (targetId=%s)', args.reference.byId);
         return null;
@@ -256,7 +260,7 @@ export class IdTranslator {
         return null;
       }
 
-      const project = await this.storage.getProjectById(args.reference.byId);
+      const project = await this.projectStore.getProjectById(args.reference.byId);
       if (!project) {
         this.logger.debug('Project not found. (targetId=%s)', args.reference.byId);
         return null;

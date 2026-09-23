@@ -1,40 +1,43 @@
-import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  ReactElement,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
+import { TriangleAlert } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Button } from '@/components/base/button/button';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
+import { Label } from '@/components/base/label/label';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { Tabs } from '@/components/base/tabs/tabs';
 import { Textarea } from '@/components/base/textarea/textarea';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
-import {
-  ProposalEditor,
-  Proposals_SelectFragmentType,
-  Proposals_TargetProjectTypeFragmentType,
-  Service,
-  ServiceTab,
-} from '@/components/target/proposals/editor';
+import { ProposalEditor, ServiceTab } from '@/components/target/proposals/editor';
 import {
   SaveProposalContext,
   SaveProposalModal,
   SaveProposalProvider,
 } from '@/components/target/proposals/save-proposal-modal';
 import { schemaTitle } from '@/components/target/proposals/util';
-import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Modal, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { graphql } from '@/gql';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
-import { cn } from '@/lib/utils';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const ProposeChangesMutation = graphql(`
   mutation ProposalsNew_ProposeChanges($input: CreateSchemaProposalInput!) {
@@ -114,7 +117,6 @@ export function TargetProposalsNewPage(props: {
         page={Page.Proposals}
         className="h-(--content-height) flex min-h-[300px] flex-col pb-0"
       >
-        <ProposalsNewHeading {...props} />
         <SaveProposalProvider>
           <ProposalsNewContent {...props} />
         </SaveProposalProvider>
@@ -123,11 +125,14 @@ export function TargetProposalsNewPage(props: {
   );
 }
 
-function ProposalsNewHeading(props: Parameters<typeof TargetProposalsNewPage>[0]) {
+function ProposalsNewHeading(
+  props: Parameters<typeof TargetProposalsNewPage>[0] & { sideContent?: ReactNode },
+) {
   return (
     <div className="flex py-6">
       <div className="flex-1">
         <SubPageLayoutHeader
+          sideContent={props.sideContent}
           subPageTitle={
             <span className="flex items-center">
               <Link
@@ -188,54 +193,56 @@ function ConfirmationModal(props: {
   useEffect(() => {
     setConfirmed(props.confirmations.map(_ => false));
   }, [props.confirmations]);
+
+  const rows = props.confirmations.map((confirmation, index) => ({
+    id: String(index),
+    ...confirmation,
+  }));
+  const columns: ColumnDef<(typeof rows)[number], unknown>[] = [
+    {
+      id: 'confirm',
+      header: 'Confirm',
+      meta: { align: 'center', width: 'xs' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="checkbox"
+          checked={confirmed[row.index] ?? false}
+          onCheckedChange={checked =>
+            setConfirmed(prev =>
+              prev.map((value, index) => (index === row.index ? checked : value)),
+            )
+          }
+          label={`Confirm ${row.original.name}`}
+        />
+      ),
+    },
+    {
+      id: 'schema',
+      header: 'Schema',
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.name} mono />,
+    },
+    {
+      id: 'reason',
+      header: 'Change',
+      meta: { width: 'fill' },
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.reason} truncate />,
+    },
+  ];
+
   return (
-    <Modal
+    <Dialog
       open={props.confirmations.length > 0}
       onOpenChange={isOpen => {
-        if (isOpen === false) {
+        if (!isOpen) {
           props.setConfirmations([]);
         }
       }}
-      className="w-[90vw]"
-    >
-      <SubPageLayoutHeader
-        subPageTitle="Issues Found"
-        description={
-          <p className="pb-4">
-            The proposed changes are invalid but can be automatically corrected.
-          </p>
-        }
-      />
-      <Table>
-        <THead>
-          <Th className="px-0 text-center">confirm</Th>
-          <Th colSpan={2}>schema</Th>
-        </THead>
-        <TBody>
-          {props.confirmations.map((c, idx) => {
-            return (
-              <Tr key={idx}>
-                <Td>
-                  <div className="flex justify-center">
-                    <Checkbox
-                      size="sm"
-                      checked={confirmed[idx]}
-                      onClick={_ => {
-                        confirmed[idx] = !confirmed[idx];
-                        setConfirmed([...confirmed]);
-                      }}
-                    />
-                  </div>
-                </Td>
-                <Td className="truncate">{c.name}</Td>
-                <Td className="break-normal">{c.reason}</Td>
-              </Tr>
-            );
-          })}
-        </TBody>
-      </Table>
-      <div className="mt-4 text-right">
+      width="xl"
+      title="Issues Found"
+      description="The proposed changes are invalid but can be automatically corrected."
+      footer={
         <Button
+          onSurface="raised"
           disabled={!confirmed.every(c => c)}
           onClick={() => {
             const allConfirmed = confirmed.every(c => c);
@@ -247,8 +254,16 @@ function ConfirmationModal(props: {
         >
           Confirm Changes
         </Button>
-      </div>
-    </Modal>
+      }
+    >
+      <DataTable
+        data={rows}
+        columns={columns}
+        getRowId={row => row.id}
+        pagination={{ kind: 'none' }}
+        variants={{ onSurface: 'raised' }}
+      />
+    </Dialog>
   );
 }
 
@@ -529,66 +544,65 @@ function ProposalsNewContent(
 
   if (query.error) {
     return (
-      <Callout type="error" className="mx-auto w-2/3">
-        <b>Oops, something went wrong.</b>
-        <br />
-        {query.error.message}
-      </Callout>
+      <>
+        <ProposalsNewHeading {...props} />
+        <Callout type="error" className="mx-auto w-2/3">
+          <b>Oops, something went wrong.</b>
+          <br />
+          {query.error.message}
+        </Callout>
+      </>
     );
   }
 
   return (
     <>
+      <ProposalsNewHeading
+        {...props}
+        sideContent={
+          // @todo disable if proposal is invalid
+          <Button
+            variant="primary"
+            disabled={query.fetching || isSubmitting}
+            onClick={onSubmitProposal}
+          >
+            {isSubmitting ? <Spinner /> : 'Submit Proposal'}
+          </Button>
+        }
+      />
       <SaveProposalModal />
       <ConfirmationModal confirmations={confirmations} setConfirmations={setConfirmations} />
-      <Tabs orientation="vertical" className="flex" value={page} onValueChange={setPage}>
-        <TabsList
-          variant="content"
-          className={cn(
-            'flex h-full w-[20vw] min-w-[160px] flex-col items-start border-0',
-            '*:flex *:w-full *:justify-start *:p-3',
-          )}
-        >
-          <TabsTrigger variant="menu" value="overview" asChild>
-            <Link>Overview</Link>
-          </TabsTrigger>
-          <TabsTrigger variant="menu" value="editor" asChild>
-            <Link>Editor</Link>
-          </TabsTrigger>
-          <TabsTrigger variant="menu" value="changes" asChild className="mb-2">
-            <Link>Changes</Link>
-          </TabsTrigger>
-          {/* @todo disable if proposal is invalid */}
-          <div className="mt-6">
-            <Button
-              variant="ghost"
-              className="mb-10 mt-2 w-full justify-center px-3 font-bold"
-              disabled={query.fetching || isSubmitting}
-              onClick={onSubmitProposal}
-            >
-              {isSubmitting ? <Spinner /> : 'Submit Proposal'}
-            </Button>
-          </div>
-        </TabsList>
-        <div className="w-full flex-col items-start overflow-x-hidden pl-8 *:pt-0">
-          <OverviewTab
-            title={title}
-            description={description}
-            setTitle={setTitle}
-            setDescription={setDescription}
-            error={
-              overviewError.length > 0 && (
-                <Callout type="error" className="mb-6 w-full text-sm">
-                  {overviewError}
-                </Callout>
-              )
-            }
-          />
-          {query.fetching ? (
-            <Spinner />
-          ) : (
-            <>
-              <EditorTab
+      <Tabs
+        orientation="vertical"
+        value={page}
+        onValueChange={setPage}
+        items={[
+          {
+            value: 'overview',
+            label: 'Overview',
+            content: (
+              <OverviewTab
+                title={title}
+                description={description}
+                setTitle={setTitle}
+                setDescription={setDescription}
+                error={
+                  overviewError.length > 0 && (
+                    <Callout type="error" className="mb-6 w-full text-sm">
+                      {overviewError}
+                    </Callout>
+                  )
+                }
+              />
+            ),
+          },
+          {
+            value: 'editor',
+            label: 'Editor',
+            content: query.fetching ? (
+              <Spinner />
+            ) : (
+              <ProposalEditor
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
                 targetSlug={props.targetSlug}
@@ -605,11 +619,15 @@ function ProposalsNewContent(
                   )
                 }
               />
-              <ChangesTab diffs={serviceDiff} />
-            </>
-          )}
-        </div>
-      </Tabs>
+            ),
+          },
+          {
+            value: 'changes',
+            label: 'Changes',
+            content: query.fetching ? <Spinner /> : <ChangesTab diffs={serviceDiff} />,
+          },
+        ]}
+      />
     </>
   );
 }
@@ -618,7 +636,7 @@ function ChangesTab(props: {
   diffs: Array<{ title: string; changes: Change[]; error?: string }> | null;
 }) {
   return (
-    <TabsContent value="changes">
+    <>
       {props.diffs === null && <Spinner />}
       {props.diffs?.length === 0 && (
         <div className="mt-8 text-center">
@@ -629,7 +647,7 @@ function ChangesTab(props: {
         </div>
       )}
       {props.diffs?.map((changeProps, idx) => <DiffService key={idx} {...changeProps} />)}
-    </TabsContent>
+    </>
   );
 }
 
@@ -640,7 +658,7 @@ function DiffService(props: { title: string; changes: Change<any>[]; error?: str
       <div className="mb-6">
         {props.error ? (
           <div className="flex items-center text-red-500">
-            <ExclamationTriangleIcon className="mr-2" />
+            <TriangleAlert className="mr-2 size-4" />
             {props.error}
           </div>
         ) : (
@@ -654,24 +672,6 @@ function DiffService(props: { title: string; changes: Change<any>[]; error?: str
   );
 }
 
-function EditorTab(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  projectTypeFragment: Proposals_TargetProjectTypeFragmentType | undefined;
-  selectFragment: Proposals_SelectFragmentType | undefined;
-  changedServices: Array<ServiceTab>;
-  setChangedServices: (s: Array<ServiceTab>) => void;
-  existingServices: Array<Service>;
-  error?: false | ReactElement;
-}) {
-  return (
-    <TabsContent value="editor">
-      <ProposalEditor {...props} />
-    </TabsContent>
-  );
-}
-
 function OverviewTab(props: {
   title: string;
   setTitle: (title: string) => void;
@@ -680,12 +680,10 @@ function OverviewTab(props: {
   error?: false | ReactElement;
 }) {
   return (
-    <TabsContent className="max-w-[600px]" value="overview">
+    <div className="max-w-[600px]">
       {props.error}
       <div className="pb-10">
-        <Label htmlFor="proposal-title" className="p-1">
-          Title <span className="text-neutral-10">(required)</span>
-        </Label>
+        <Label htmlFor="proposal-title" label="Title (required)" />
         <div className="mt-2">
           <Input
             aria-label="title"
@@ -698,9 +696,7 @@ function OverviewTab(props: {
         </div>
       </div>
       <div className="pb-10">
-        <Label className="p-1" htmlFor="proposal-description">
-          Description
-        </Label>
+        <Label htmlFor="proposal-description" label="Description" />
         <div className="mt-2">
           <Textarea
             aria-label="description"
@@ -714,6 +710,6 @@ function OverviewTab(props: {
           />
         </div>
       </div>
-    </TabsContent>
+    </div>
   );
 }

@@ -30,6 +30,25 @@ export const STATE_ICON: Record<
   [MetricAlertRuleState.Recovering]: { Icon: CircleDotDashed, className: 'text-info' },
 };
 
+const STATE_BADGE_VARIANT: Record<
+  MetricAlertRuleState,
+  'success' | 'warning' | 'critical' | 'info'
+> = {
+  [MetricAlertRuleState.Normal]: 'success',
+  [MetricAlertRuleState.Pending]: 'warning',
+  [MetricAlertRuleState.Firing]: 'critical',
+  [MetricAlertRuleState.Recovering]: 'info',
+};
+
+/** The state as a badge item for a DataTable status cell. */
+export function stateBadgeItem(state: MetricAlertRuleState) {
+  const label = ALERT_STATE_LABEL[state];
+  return {
+    content: label.charAt(0) + label.slice(1).toLowerCase(),
+    variant: STATE_BADGE_VARIANT[state],
+  };
+}
+
 const STATE_SUMMARY_CLASS: Record<MetricAlertRuleState, string> = {
   [MetricAlertRuleState.Normal]: 'border-success_10 bg-success_08 text-success',
   [MetricAlertRuleState.Pending]: 'border-warning_10 bg-warning_08 text-warning',

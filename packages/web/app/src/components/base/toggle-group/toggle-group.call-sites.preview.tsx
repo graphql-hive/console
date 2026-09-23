@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import clsx from 'clsx';
-import { InfoIcon } from 'lucide-react';
+import { CircleMinus, CircleX, InfoIcon, TriangleAlert } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { PolicyConfigBox } from '@/components/policy/policy-config-box';
-import { CrossCircledIcon, ExclamationTriangleIcon, MinusCircledIcon } from '@radix-ui/react-icons';
 import { Popover } from '../floating/popover/popover';
 import { ToggleGroup } from './toggle-group';
 
@@ -12,7 +11,7 @@ export const nav: NavPath = 'Base/FormControls/ToggleGroup/Component Examples';
 
 /**
  * Every ToggleGroup in the app, transcribed with its real surroundings. The laboratory pages run
- * GraphiQL and the policy pages a Formik form, so none can be imported.
+ * GraphiQL and the policy pages a form over GraphQL, so none can be imported.
  *
  * History: all four were `v2/toggle-group` (Radix) until round 4. The component shipped no pressed
  * state, so each site painted its own with a className, and every group carried a copy-pasted
@@ -31,6 +30,12 @@ const ENTRIES = [
     origin: 'base',
     what: 'The same switch on the new laboratory page',
     coveredBy: 'Laboratory endpoint',
+  },
+  {
+    source: 'pages/target-laboratory.tsx:459 and pages/target-laboratory-new.tsx:799',
+    origin: 'base',
+    what: 'GraphiQL / Hive Laboratory page switch beside the title (was ui/tabs until round 7)',
+    coveredBy: 'Laboratory switch',
   },
   {
     source: 'components/policy/rules-configuration/severity-toggle.tsx:47',
@@ -53,12 +58,53 @@ export const Inventory = createPreview({
       component="base/toggle-group"
       summary={
         <>
-          Four groups, all single-select. Two text groups on the laboratory pages, and two in the
-          schema policy form: an icon-only severity picker and a text picker over an enum.
+          Five groups, all single-select. Two endpoint switches and the page switch on the
+          laboratory pages, and two in the schema policy form: an icon-only severity picker and a
+          text picker over an enum.
         </>
       }
       entries={ENTRIES}
     />
+  ),
+});
+
+function LaboratorySwitch() {
+  const [tab, setTab] = useState('graphiql');
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-neutral-12 text-2xl font-semibold">Laboratory</span>
+      <div className="bg-neutral-5 h-4 w-px" />
+      <ToggleGroup
+        aria-label="Laboratory version"
+        value={tab}
+        onValueChange={setTab}
+        options={[
+          { value: 'graphiql', label: 'GraphiQL' },
+          {
+            value: 'hive-laboratory',
+            label: (
+              <>
+                Hive Laboratory
+                <span className="bg-accent ml-1 size-2 rounded-full" />
+              </>
+            ),
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+export const LaboratorySwitchPreview = createPreview({
+  label: 'Laboratory switch',
+  render: () => (
+    <CallSite
+      source="pages/target-laboratory.tsx:459 and pages/target-laboratory-new.tsx:799"
+      origin="base"
+      note="Beside the Laboratory title. Pressing the other option swaps the whole page below, so the router holds the value; the accent dot marks the new laboratory."
+    >
+      <LaboratorySwitch />
+    </CallSite>
   ),
 });
 
@@ -129,8 +175,12 @@ function Severity() {
       value: 'OFF',
       label: 'Disables a rule defined at the organization level',
       icon: (active: boolean) => (
-        <MinusCircledIcon
-          className={clsx(active ? 'text-neutral-12' : 'text-neutral-8', 'hover:text-neutral-12')}
+        <CircleMinus
+          className={clsx(
+            'size-4',
+            active ? 'text-neutral-12' : 'text-neutral-8',
+            'hover:text-neutral-12',
+          )}
         />
       ),
     },
@@ -138,8 +188,12 @@ function Severity() {
       value: 'WARNING',
       label: 'Warning',
       icon: (active: boolean) => (
-        <ExclamationTriangleIcon
-          className={clsx(active ? 'text-orange-500' : 'text-neutral-8', 'hover:text-orange-500')}
+        <TriangleAlert
+          className={clsx(
+            'size-4',
+            active ? 'text-orange-500' : 'text-neutral-8',
+            'hover:text-orange-500',
+          )}
         />
       ),
     },
@@ -147,8 +201,12 @@ function Severity() {
       value: 'ERROR',
       label: 'Error',
       icon: (active: boolean) => (
-        <CrossCircledIcon
-          className={clsx(active ? 'text-red-600' : 'text-neutral-8', 'hover:text-red-600')}
+        <CircleX
+          className={clsx(
+            'size-4',
+            active ? 'text-red-600' : 'text-neutral-8',
+            'hover:text-red-600',
+          )}
         />
       ),
     },

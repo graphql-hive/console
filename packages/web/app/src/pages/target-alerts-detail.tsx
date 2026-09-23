@@ -262,6 +262,7 @@ export function TargetAlertsDetailPage(props: {
 
         <div className="flex">
           <Select
+            aria-label="Time range"
             options={VIEW_RANGE_OPTIONS}
             value={viewRangeMinutes}
             onValueChange={setViewRangeMinutes}

@@ -1,8 +1,8 @@
 import React from 'react';
 import clsx from 'clsx';
+import { ChevronDown, CircleX } from 'lucide-react';
 import Select, { components } from 'react-select';
 import CreatableSelect from 'react-select/creatable';
-import { CaretDownIcon, CrossCircledIcon } from '@radix-ui/react-icons';
 
 interface Option {
   value: string;
@@ -12,6 +12,7 @@ interface Option {
 export function Combobox(
   props: React.PropsWithoutRef<{
     name: string;
+    inputId?: string;
     placeholder: string;
     options: readonly Option[];
     value?: readonly Option[];
@@ -28,16 +29,17 @@ export function Combobox(
   return (
     <Comp
       name={props.name}
+      inputId={props.inputId}
       className={props.className}
       components={{
         ClearIndicator: compProps => (
           <components.ClearIndicator {...compProps}>
-            <CrossCircledIcon />
+            <CircleX className="size-4" />
           </components.ClearIndicator>
         ),
         DropdownIndicator: compProps => (
           <components.DropdownIndicator {...compProps}>
-            <CaretDownIcon />
+            <ChevronDown className="size-4" />
           </components.DropdownIndicator>
         ),
         NoOptionsMessage: compProps => (

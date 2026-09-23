@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import clsx from 'clsx';
+import { HiveLogo } from '@/components/ui/brand-icon';
 import { Link } from '@tanstack/react-router';
-import { HiveLogo } from './icon';
 
 export const HiveLink = ({ className }: { className?: string }): ReactElement => {
   return (

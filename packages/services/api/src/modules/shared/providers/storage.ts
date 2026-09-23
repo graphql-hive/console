@@ -6,9 +6,8 @@ import type {
   SchemaChangeType,
   SchemaCheck,
   SchemaCheckInput,
-  TargetBreadcrumb,
 } from '@hive/storage';
-import type { DangerousChangeType, SchemaChecksFilter } from '../../../__generated__/types';
+import type { SchemaChecksFilter } from '../../../__generated__/types';
 import type {
   Alert,
   AlertChannel,
@@ -22,10 +21,7 @@ import type {
   OrganizationInvitation,
   PaginatedDocumentCollectionOperations,
   PaginatedDocumentCollections,
-  Project,
   SchemaPolicy,
-  Target,
-  TargetSettings,
   User,
 } from '../../../shared/entities';
 import type {
@@ -205,141 +201,6 @@ export interface Storage {
 
   deleteOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<void>;
 
-  getProject(_: ProjectSelector): Promise<Project | never>;
-
-  getProjectId(_: { organizationSlug: string; projectSlug: string }): Promise<string | never>;
-
-  getProjectBySlug(_: { slug: string } & OrganizationSelector): Promise<Project | null>;
-
-  getProjects(_: OrganizationSelector): Promise<Project[] | never>;
-
-  getProjectById(projectId: string): Promise<Project | null>;
-
-  findProjectsByIds(args: { projectIds: Array<string> }): Promise<Map<string, Project>>;
-
-  createProject(_: Pick<Project, 'type'> & { slug: string } & OrganizationSelector): Promise<
-    | {
-        ok: true;
-        project: Project;
-      }
-    | {
-        ok: false;
-        message: string;
-      }
-  >;
-
-  deleteProject(_: ProjectSelector): Promise<
-    | (Project & {
-        tokens: string[];
-      })
-    | never
-  >;
-
-  updateProjectSlug(_: ProjectSelector & { slug: string }): Promise<
-    | {
-        ok: true;
-        project: Project;
-      }
-    | {
-        ok: false;
-        message: string;
-      }
-  >;
-
-  updateNativeSchemaComposition(
-    _: ProjectSelector & {
-      enabled: boolean;
-    },
-  ): Promise<Project>;
-
-  enableExternalSchemaComposition(
-    _: ProjectSelector & {
-      endpoint: string;
-      encryptedSecret: string;
-    },
-  ): Promise<Project>;
-
-  enableProjectNameInGithubCheck(_: ProjectSelector): Promise<Project>;
-
-  getTargetId(_: {
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
-  }): Promise<string | never>;
-
-  getTargetBySlug(
-    _: {
-      slug: string;
-    } & ProjectSelector,
-  ): Promise<Target | null>;
-
-  createTarget(_: { slug: string } & ProjectSelector): Promise<
-    | {
-        ok: true;
-        target: Target;
-      }
-    | {
-        ok: false;
-        message: string;
-      }
-  >;
-
-  updateTargetSlug(_: TargetSelector & { slug: string }): Promise<
-    | {
-        ok: true;
-        target: Target;
-      }
-    | {
-        ok: false;
-        message: string;
-      }
-  >;
-
-  updateTargetGraphQLEndpointUrl(_: {
-    targetId: string;
-    organizationId: string;
-    graphqlEndpointUrl: string | null;
-  }): Promise<Target | null>;
-
-  deleteTarget(_: TargetSelector): Promise<
-    | (Target & {
-        tokens: string[];
-      })
-    | never
-  >;
-
-  getTarget(_: TargetSelector): Promise<Target | never>;
-
-  getTargets(_: ProjectSelector): Promise<readonly Target[]>;
-
-  findTargetsByIds(args: {
-    organizationId: string;
-    targetIds: Array<string>;
-  }): Promise<Map<string, Target>>;
-
-  getTargetIdsOfOrganization(_: OrganizationSelector): Promise<readonly string[]>;
-  getTargetIdsOfProject(_: ProjectSelector): Promise<readonly string[]>;
-  getTargetSettings(_: TargetSelector): Promise<TargetSettings | never>;
-
-  updateTargetValidationSettings(
-    _: TargetSelector & Partial<TargetSettings['validation']>,
-  ): Promise<TargetSettings['validation'] | never>;
-
-  updateTargetDangerousChangeClassification(
-    _: TargetSelector & Pick<TargetSettings, 'failDiffOnDangerousChange'>,
-  ): Promise<TargetSettings | never>; // @todo decide if something should be returned.
-
-  updateTargetFailingDangerousChanges(
-    _: TargetSelector & {
-      all: boolean;
-      failingTypes: readonly DangerousChangeType[];
-    },
-  ): Promise<void>;
-
-  updateTargetAppDeploymentProtectionSettings(
-    _: Pick<TargetSelector, 'targetId' | 'projectId'> &
-      Partial<TargetSettings['appDeploymentProtection']>,
-  ): Promise<TargetSettings['appDeploymentProtection']>;
   getPaginatedSchemaChecksForSchemaProposal<
     TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
   >(_: {
@@ -705,10 +566,6 @@ export interface Storage {
     contextId: string;
   }): Promise<Map<string, SchemaChangeType>>;
 
-  getTargetById(targetId: string): Promise<Target | null>;
-
-  getTargetBreadcrumbForTargetId(_: { targetId: string }): Promise<TargetBreadcrumb | null>;
-
   // Zendesk
   setZendeskUserId(_: { userId: string; zendeskId: string }): Promise<void>;
   setZendeskOrganizationId(_: { organizationId: string; zendeskId: string }): Promise<void>;
@@ -716,16 +573,6 @@ export interface Storage {
     userId: string;
     organizationId: string;
   }): Promise<void>;
-
-  /**
-   * @deprecated It's a temporary method to force legacy composition in targets, when native composition is enabled for a project.
-   */
-  updateTargetSchemaComposition(_: {
-    organizationId: string;
-    projectId: string;
-    targetId: string;
-    nativeComposition: boolean;
-  }): Promise<Target>;
 }
 
 @Injectable()

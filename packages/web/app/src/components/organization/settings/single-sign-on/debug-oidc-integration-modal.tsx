@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useClient } from 'urql';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Button } from '@/components/base/button/button';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { VirtualLogList } from '@/components/ui/virtual-log-list';
 import { DocumentType, graphql } from '@/gql';
 
@@ -25,7 +18,13 @@ type OIDCLogEventType = DocumentType<
   typeof SubscribeToOIDCIntegrationLogSubscription
 >['oidcIntegrationLog'];
 
-export function DebugOIDCIntegrationModal(props: { close: () => void; oidcIntegrationId: string }) {
+export function DebugOIDCIntegrationModal(props: {
+  open: boolean;
+  close: () => void;
+  /** Fires once the close transition has finished; the parent remounts the modal on it. */
+  onOpenChangeComplete: (open: boolean) => void;
+  oidcIntegrationId: string;
+}) {
   const client = useClient();
 
   const [isSubscribing, setIsSubscribing] = useState(true);
@@ -33,7 +32,7 @@ export function DebugOIDCIntegrationModal(props: { close: () => void; oidcIntegr
   const [logs, setLogs] = useState<Array<OIDCLogEventType>>([]);
 
   useEffect(() => {
-    if (isSubscribing && props.oidcIntegrationId) {
+    if (props.open && isSubscribing && props.oidcIntegrationId) {
       setLogs(logs => [
         ...logs,
         {
@@ -66,33 +65,34 @@ export function DebugOIDCIntegrationModal(props: { close: () => void; oidcIntegr
         sub.unsubscribe();
       };
     }
-  }, [props.oidcIntegrationId, isSubscribing]);
+  }, [props.oidcIntegrationId, isSubscribing, props.open]);
 
   return (
-    <Dialog open onOpenChange={props.close}>
-      <DialogContent className="min-w-[750px]">
-        <DialogHeader>
-          <DialogTitle>Debug OpenID Connect Integration</DialogTitle>
-          <DialogDescription>
-            Here you can see to the live logs of users attempting to sign in. It can help
-            identifying issues with the OpenID Connect configuration.
-          </DialogDescription>
-        </DialogHeader>
-        <VirtualLogList logs={logs} className="h-[300px]" />
-        <DialogFooter>
+    <Dialog
+      open={props.open}
+      onOpenChange={props.close}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      width="xl"
+      title="Debug OpenID Connect Integration"
+      description="Here you can see to the live logs of users attempting to sign in. It can help identifying issues with the OpenID Connect configuration."
+      footer={
+        <>
           <Button type="button" onClick={props.close} tabIndex={0} variant="destructive">
             Close
           </Button>
           <Button
-            type="submit"
+            type="button"
+            onSurface="raised"
             onClick={() => {
               setIsSubscribing(isSubscribed => !isSubscribed);
             }}
           >
             {isSubscribing ? 'Stop subscription' : 'Subscribe to logs'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </>
+      }
+    >
+      <VirtualLogList logs={logs} className="h-[300px]" />
     </Dialog>
   );
 }

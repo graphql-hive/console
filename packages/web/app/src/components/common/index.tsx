@@ -61,26 +61,3 @@ export const Section = {
     </div>
   ),
 };
-
-export function Scale({
-  value,
-  max,
-  size,
-  className,
-}: {
-  value: number;
-  max: number;
-  size: number;
-  className?: string;
-}): ReactElement {
-  return (
-    <div className={cn('flex grow-0 flex-row space-x-1', className)}>
-      {new Array(size).fill(null).map((_, i) => (
-        <div
-          key={i}
-          className={cn('h-4 w-1', value >= i * (max / size) ? 'bg-emerald-400' : 'bg-neutral-10')}
-        />
-      ))}
-    </div>
-  );
-}

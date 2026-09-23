@@ -115,6 +115,18 @@
           "legendFormat": "Promotion",
           "range": false,
           "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"push\"}[$__range])) or vector(0)",
+          "instant": true,
+          "legendFormat": "Push",
+          "range": false,
+          "refId": "E"
         }
       ],
       "title": "Schema Registry operations",
@@ -395,6 +407,17 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
+          "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"push\"}[$__rate_interval]))",
+          "legendFormat": "Push",
+          "range": true,
+          "refId": "H"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
           "expr": "sum(increase(registry_operation_outcome_count_total{operation=\"app_deployment_create\"}[$__rate_interval]))",
           "legendFormat": "Deployment create",
           "range": true,
@@ -554,6 +577,17 @@
           "legendFormat": "Promotion",
           "range": true,
           "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "100 * sum(increase(registry_operation_outcome_count_total{operation=\"push\", conclusion=\"failure\"}[$__rate_interval])) / clamp_min(sum(increase(registry_operation_outcome_count_total{operation=\"push\"}[$__rate_interval])), 1e-9)",
+          "legendFormat": "Push",
+          "range": true,
+          "refId": "H"
         },
         {
           "datasource": {

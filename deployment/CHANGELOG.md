@@ -1,5 +1,82 @@
 # hive
 
+## 11.14.2
+
+### Patch Changes
+
+- [#8533](https://github.com/graphql-hive/console/pull/8533)
+  [`a46b133`](https://github.com/graphql-hive/console/commit/a46b133029dd6e7ced9a04fb1b62966702a25ff8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-8wmf-6v46-5gfg](https://github.com/advisories/GHSA-8wmf-6v46-5gfg).
+
+- [#8531](https://github.com/graphql-hive/console/pull/8531)
+  [`edb1b9b`](https://github.com/graphql-hive/console/commit/edb1b9bcdc0991b3430653972b3ad6f0f05756bc)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Return a 404 for missing frontend
+  assets instead of the SPA HTML fallback.
+
+- [#8325](https://github.com/graphql-hive/console/pull/8325)
+  [`21e64b1`](https://github.com/graphql-hive/console/commit/21e64b1a743822a65728267e915ee8954a04b2ac)
+  Thanks [@lisa-0831](https://github.com/lisa-0831)! - Attach standalone Cloudflare Worker and AWS
+  Lambda CDN archives to stable releases and document their deployment configuration.
+
+## 11.14.1
+
+### Patch Changes
+
+- [#8530](https://github.com/graphql-hive/console/pull/8530)
+  [`d427046`](https://github.com/graphql-hive/console/commit/d427046ca6f7a2d4ad5b3dee3c8bb4678b4da35f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update
+  `@theguild/federation-composition` to `0.26.3`. Unresolvable `@requires`, `@key`, `@provides` and
+  `@fromContext` selections are now reported as composition errors instead of throwing, so
+  composition fails with a proper error message instead of crashing.
+
+- [#8493](https://github.com/graphql-hive/console/pull/8493)
+  [`1de91b9`](https://github.com/graphql-hive/console/commit/1de91b96205be07b15c258efd204220e31c66cbf)
+  Thanks [@jdolle](https://github.com/jdolle)! - Track operations dropped by the usage fallback
+  queue. Messages were silently discarded when they were too large for Kafka or when the queue
+  overflowed its max size, with only a log line and no metric - add dedicated counters for each case
+  so both failure modes are visible to monitoring.
+
+## 11.14.0
+
+### Minor Changes
+
+- [#8498](https://github.com/graphql-hive/console/pull/8498)
+  [`995a5de`](https://github.com/graphql-hive/console/commit/995a5de801ad60071102114f457c1894730b88cd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add `schema:publish --fail-on-composition-error` to
+  prevent publishing a federation schema that would cause a composition error.
+
+  Closes https://github.com/graphql-hive/console/issues/7588
+
+- [#8461](https://github.com/graphql-hive/console/pull/8461)
+  [`9422d5a`](https://github.com/graphql-hive/console/commit/9422d5a0bed09a86ca23c6b9bd2c148d6c11d4e0)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add SchemaVersion.origin to public schema. This
+  provides necessary info to determine which subgraph was added or removed, or whether a target was
+  promoted to create the schema version.
+
+- [#8490](https://github.com/graphql-hive/console/pull/8490)
+  [`dbc26a5`](https://github.com/graphql-hive/console/commit/dbc26a5f88369ca83a54d1d0e50e7acac53a95dd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add schema push support. Named schema revisions can
+  now be uploaded without publishing them immediately and published later.
+
+  Adds the `schema:push` permission for organization members, organization access tokens, and target
+  access tokens for felxibly managing access control for the new capabality.
+
+  Use the `hive schema:push` command for pushing a (subgraph) schema to the registry, then reference
+  it when running the `hive schema:publish` command.
+
+  ```sh
+  hive schema:push schema.graphql \
+    --target my-org/my-project/my-target \
+    --revision "$REVISION"
+  
+  hive schema:publish \
+    --target my-org/my-project/my-target \
+    --revision "$REVISION"
+  ```
+
+  Closes https://github.com/graphql-hive/console/issues/8404
+
 ## 11.13.0
 
 ### Minor Changes

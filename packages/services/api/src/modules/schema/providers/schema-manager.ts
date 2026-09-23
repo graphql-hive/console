@@ -30,6 +30,7 @@ import { parseGraphQLSource } from '../../../shared/schema';
 import { Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
+import { ProjectStore } from '../../project/providers/project-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -39,6 +40,7 @@ import {
   TargetSelector,
 } from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
+import { TargetStore } from '../../target/providers/target-store';
 import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { SCHEMA_MODULE_CONFIG, type SchemaModuleConfig } from './config';
 import { Contracts } from './contracts';
@@ -74,6 +76,8 @@ export class SchemaManager {
     logger: Logger,
     private session: Session,
     private storage: Storage,
+    private projectStore: ProjectStore,
+    private targetStore: TargetStore,
     private projectManager: ProjectManager,
     private compositionOrchestrator: CompositionOrchestrator,
     private crypto: Encryptor,
@@ -164,11 +168,11 @@ export class SchemaManager {
       this.storage.getOrganization({
         organizationId: selector.organizationId,
       }),
-      this.storage.getProject({
+      this.projectStore.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
-      this.storage.getTarget({
+      this.targetStore.getTarget({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
         targetId: selector.targetId,
@@ -320,7 +324,7 @@ export class SchemaManager {
       return null;
     }
 
-    const target = await this.storage.getTargetById(schemaVersion.targetId);
+    const target = await this.targetStore.getTargetById(schemaVersion.targetId);
 
     if (!target) {
       this.logger.debug(
@@ -490,6 +494,8 @@ export class SchemaManager {
       existingSchemaLogs: Array<{ id: string; serviceName: string | null }>;
       base_schema: string | null;
       metadata: string | null;
+      schemaRevisionId: string | null;
+      revision: string | null;
       actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: string | null;
@@ -564,7 +570,7 @@ export class SchemaManager {
       },
     });
 
-    const project = await this.storage.getProject({
+    const project = await this.projectStore.getProject({
       organizationId: selector.organizationId,
       projectId: selector.projectId,
     });
@@ -710,7 +716,7 @@ export class SchemaManager {
       case 'native': {
         return {
           ok: {
-            updatedProject: await this.storage.updateNativeSchemaComposition({
+            updatedProject: await this.projectStore.updateNativeSchemaComposition({
               projectId: input.projectId,
               organizationId: input.organizationId,
               enabled: true,
@@ -721,7 +727,7 @@ export class SchemaManager {
       case 'legacy': {
         return {
           ok: {
-            updatedProject: await this.storage.updateNativeSchemaComposition({
+            updatedProject: await this.projectStore.updateNativeSchemaComposition({
               projectId: input.projectId,
               organizationId: input.organizationId,
               enabled: false,
@@ -750,7 +756,7 @@ export class SchemaManager {
 
         return {
           ok: {
-            updatedProject: await this.storage.enableExternalSchemaComposition({
+            updatedProject: await this.projectStore.enableExternalSchemaComposition({
               projectId: input.projectId,
               organizationId: input.organizationId,
               endpoint: parseResult.data.endpoint.trim(),
@@ -841,7 +847,7 @@ export class SchemaManager {
       return null;
     }
 
-    const breadcrumb = await this.storage.getTargetBreadcrumbForTargetId({
+    const breadcrumb = await this.targetStore.getTargetBreadcrumbForTargetId({
       targetId: args.targetId,
     });
     if (!breadcrumb) {
@@ -998,7 +1004,7 @@ export class SchemaManager {
         targetId: args.targetId,
         schemaCheckId: args.schemaCheckId,
       }),
-      this.storage.getTarget({
+      this.targetStore.getTarget({
         organizationId: args.organizationId,
         projectId: args.projectId,
         targetId: args.targetId,

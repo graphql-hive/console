@@ -1,44 +1,29 @@
 import { ReactElement, ReactNode } from 'react';
-import { BlocksIcon, BoxIcon, FoldVerticalIcon } from 'lucide-react';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { PlusIcon } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
-import { Input } from '@/components/base/input/input';
+import { Button } from '@/components/base/button/button';
 import { NotFound } from '@/components/base/not-found/not-found';
-import { RadioGroup } from '@/components/base/radio-group/radio-group';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
-import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { useToast } from '@/components/ui/use-toast';
+  CreateProjectForm,
+  CreateProjectFormSchema,
+  type CreateProjectFormValues,
+} from '@/components/project/create-project-form';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { ProPlanBilling } from '../organization/billing/ProPlanBillingWarm';
 import { RateLimitWarn } from '../organization/billing/RateLimitWarn';
 import { HiveLink } from '../ui/hive-link';
-import { PlusIcon } from '../ui/icon';
 import { QueryError } from '../ui/query-error';
 import { OrganizationSelector } from './organization-selectors';
 
@@ -130,7 +115,6 @@ export function OrganizationLayout({
       <SecondaryNavigation
         page={page}
         loading={!currentOrganization}
-        className="min-w-[600px]"
         links={
           currentOrganization
             ? [
@@ -179,15 +163,15 @@ export function OrganizationLayout({
           currentOrganization?.viewerCanCreateProject ? (
             <>
               <Button onClick={toggleModalOpen} variant="link" data-cy="new-project-button">
-                <PlusIcon size={16} className="mr-2" />
-                New project
+                <span className="flex items-center">
+                  <PlusIcon size={16} className="mr-2" />
+                  New project
+                </span>
               </Button>
               <CreateProjectModal
                 organizationSlug={organizationSlug}
                 isOpen={isModalOpen}
                 toggleModalOpen={toggleModalOpen}
-                // reset the form every time it is closed
-                key={String(isModalOpen)}
               />
             </>
           ) : null
@@ -241,43 +225,6 @@ export const CreateProjectMutation = graphql(`
   }
 `);
 
-const createProjectFormSchema = z.object({
-  projectSlug: z
-    .string({
-      required_error: 'Project slug is required',
-    })
-    .min(2, {
-      message: 'Project slug must be at least 2 characters long',
-    })
-    .max(50, {
-      message: 'Project slug must be at most 50 characters long',
-    }),
-  projectType: z.nativeEnum(ProjectType, {
-    required_error: 'Project type is required',
-  }),
-});
-
-const PROJECT_TYPES = [
-  {
-    type: ProjectType.Single,
-    title: 'Monolith',
-    description: 'Single GraphQL schema developed as a monolith',
-    Icon: BoxIcon,
-  },
-  {
-    type: ProjectType.Federation,
-    title: 'Federation',
-    description: 'Project developed according to Apollo Federation specification',
-    Icon: BlocksIcon,
-  },
-  {
-    type: ProjectType.Stitching,
-    title: 'Stitching',
-    description: 'Project that stitches together multiple GraphQL APIs',
-    Icon: FoldVerticalIcon,
-  },
-];
-
 function CreateProjectModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
@@ -287,16 +234,16 @@ function CreateProjectModal(props: {
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof createProjectFormSchema>>({
+  const form = useForm<CreateProjectFormValues>({
     mode: 'onChange',
-    resolver: zodResolver(createProjectFormSchema),
+    resolver: zodResolver(CreateProjectFormSchema),
     defaultValues: {
       projectSlug: '',
       projectType: ProjectType.Single,
     },
   });
 
-  async function onSubmit(values: z.infer<typeof createProjectFormSchema>) {
+  async function onSubmit(values: CreateProjectFormValues) {
     const { data, error } = await mutate({
       input: {
         organization: {
@@ -331,104 +278,26 @@ function CreateProjectModal(props: {
   }
 
   return (
-    <CreateProjectModalContent
-      isOpen={props.isOpen}
-      toggleModalOpen={props.toggleModalOpen}
-      form={form}
-      onSubmit={onSubmit}
-    />
-  );
-}
-
-export function CreateProjectModalContent(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  form: UseFormReturn<z.infer<typeof createProjectFormSchema>>;
-  onSubmit: (values: z.infer<typeof createProjectFormSchema>) => void | Promise<void>;
-}) {
-  return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[600px] md:w-3/5">
-        <Form {...props.form}>
-          <form onSubmit={props.form.handleSubmit(props.onSubmit)} data-cy="create-project-form">
-            <DialogHeader className="mb-8">
-              <DialogTitle>Create a project</DialogTitle>
-              <DialogDescription>
-                A Hive <b>project</b> represents a <b>GraphQL API</b> running a GraphQL schema.
-              </DialogDescription>
-            </DialogHeader>
-            <div>
-              <FormField
-                control={props.form.control}
-                name="projectSlug"
-                render={({ field }) => {
-                  return (
-                    <FormItem className="mt-0">
-                      <FormLabel>Slug of your project</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="my-project"
-                          data-cy="slug"
-                          autoComplete="off"
-                          onSurface="raised"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-              <FormField
-                control={props.form.control}
-                name="projectType"
-                render={({ field }) => {
-                  return (
-                    <FormItem className="mt-2">
-                      <FormLabel>Project Type</FormLabel>
-                      <RadioGroup
-                        variant="as-card"
-                        onSurface="floating"
-                        orientation="vertical"
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        items={PROJECT_TYPES.map(({ type, title, description, Icon }) => ({
-                          value: type,
-                          content: (
-                            <>
-                              <Icon
-                                className={cn(
-                                  'size-8 shrink-0',
-                                  field.value === type ? 'text-neutral-12' : 'text-neutral-9',
-                                )}
-                              />
-                              <div>
-                                <span className="text-neutral-12 text-sm font-medium">{title}</span>
-                                <p className="text-neutral-11 text-sm">{description}</p>
-                              </div>
-                            </>
-                          ),
-                        }))}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-            <DialogFooter className="mt-8">
-              <Button
-                className="w-full"
-                type="submit"
-                data-cy="submit"
-                disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
-              >
-                {props.form.formState.isSubmitting ? 'Submitting...' : 'Create Project'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      // The form clears once the close transition has finished, rather than on toggle, which
+      // would blank it mid-fade, or by remounting, which would skip the transitions.
+      onOpenChangeComplete={open => {
+        if (!open) {
+          form.reset();
+        }
+      }}
+      width="lg"
+      title="Create a project"
+      description={
+        <>
+          A Hive <span className="text-neutral-12 font-medium">project</span> represents a{' '}
+          <span className="text-neutral-12 font-medium">GraphQL API</span> running a GraphQL schema.
+        </>
+      }
+    >
+      <CreateProjectForm form={form} onSubmit={onSubmit} />
     </Dialog>
   );
 }

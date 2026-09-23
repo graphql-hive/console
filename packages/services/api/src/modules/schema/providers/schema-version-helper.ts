@@ -16,6 +16,7 @@ import { parseGraphQLSource } from '../../../shared/schema';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks } from './registry-checks';
@@ -39,6 +40,7 @@ export class SchemaVersionHelper {
     private projectManager: ProjectManager,
     private registryChecks: RegistryChecks,
     private storage: Storage,
+    private targetStore: TargetStore,
     private logger: Logger,
     private compositionOrchestrator: CompositionOrchestrator,
     private schemaVersions: SchemaVersionStore,
@@ -236,7 +238,7 @@ export class SchemaVersionHelper {
       { failDiffOnDangerousChange, failAllDangerousChanges, failDangerousChangeTypes },
     ] = await Promise.all([
       this.projectManager.getProjectById(schemaVersion.projectId),
-      this.storage.getTargetSettings({
+      this.targetStore.getTargetSettings({
         targetId: schemaVersion.targetId,
         projectId: schemaVersion.projectId,
         organizationId: schemaVersion.organizationId,
@@ -394,6 +396,11 @@ export class SchemaVersionHelper {
 
     await Promise.all(previousSchemaLogPromises);
 
+    const revisionsBySchemaLogId = await this.schemaVersions.getSchemaRevisionsBySchemaLogIds([
+      ...edges.map(edge => edge.node.id),
+      ...previousSchemaLogsById.keys(),
+    ]);
+
     return edges.map(edge => {
       if (edge.type === 'unchanged') {
         invariant(edge.node.kind === 'composite', 'Edge can not have other type than composite.');
@@ -402,6 +409,7 @@ export class SchemaVersionHelper {
           __typename: 'SubgraphDiffUnchanged',
           subgraphVersion: {
             id: edge.node.id,
+            revision: revisionsBySchemaLogId.get(edge.node.id) ?? null,
             sdl: edge.node.sdl,
             serviceName: edge.node.service_name,
             url: edge.node.service_url,
@@ -416,6 +424,7 @@ export class SchemaVersionHelper {
           __typename: 'SubgraphDiffAdded',
           subgraphVersion: {
             id: edge.node.id,
+            revision: revisionsBySchemaLogId.get(edge.node.id) ?? null,
             sdl: edge.node.sdl,
             serviceName: edge.node.service_name,
             url: edge.node.service_url,
@@ -435,12 +444,14 @@ export class SchemaVersionHelper {
           __typename: 'SubgraphDiffChanged',
           previousSubgraphVersion: {
             id: previousLog.id,
+            revision: revisionsBySchemaLogId.get(previousLog.id) ?? null,
             sdl: previousLog.sdl,
             serviceName: previousLog.service_name,
             url: previousLog.service_url,
           },
           subgraphVersion: {
             id: edge.node.id,
+            revision: revisionsBySchemaLogId.get(edge.node.id) ?? null,
             sdl: edge.node.sdl,
             serviceName: edge.node.service_name,
             url: edge.node.service_url,
@@ -459,6 +470,7 @@ export class SchemaVersionHelper {
           __typename: 'SubgraphDiffRemoved',
           removedSubgraphVersion: {
             id: previousLog.id,
+            revision: revisionsBySchemaLogId.get(previousLog.id) ?? null,
             sdl: previousLog.sdl,
             serviceName: previousLog.service_name,
             url: previousLog.service_url,
@@ -556,6 +568,7 @@ export class SchemaVersionHelper {
       if (schemaVersion.origin.type === 'publish') {
         return {
           __typename: 'SchemaVersionPublishOrigin',
+          revision: schemaVersion.origin.revision ?? null,
           publishedSubgraphs: schemaVersion.origin.services ?? null,
         } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
       }
@@ -582,6 +595,7 @@ export class SchemaVersionHelper {
     if (project.type === ProjectType.SINGLE) {
       return {
         __typename: 'SchemaVersionPublishOrigin',
+        revision: null,
         publishedSubgraphs: null,
       } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
     }
@@ -592,6 +606,7 @@ export class SchemaVersionHelper {
     if (log.action === 'PUSH') {
       return {
         __typename: 'SchemaVersionPublishOrigin',
+        revision: null,
         publishedSubgraphs: [
           {
             name: log.service_name,

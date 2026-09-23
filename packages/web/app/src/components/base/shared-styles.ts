@@ -23,6 +23,14 @@ export const focusRing =
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
 
 /**
+ * The quiet ring for text on the page rather than a control with an edge: tabs and navigation
+ * links. 1px dotted. The outline follows the element's own radius, which stays with the element:
+ * a radius here would also round a border the element draws, like a nav link's underline.
+ */
+export const focusRingQuiet =
+  'focus-visible:outline-1 focus-visible:outline-dotted focus-visible:outline-accent';
+
+/**
  * Vertical scroll container with a thin, muted scrollbar. Use anywhere content can overflow
  * (sheets, dialogs, floating lists). `thin-scrollbar` is a utility in `index.css` rather than
  * arbitrary Tailwind properties, because older Chromium and Safari need `::-webkit-scrollbar`
@@ -81,5 +89,5 @@ export type ControlSize = 'compact' | 'default';
 
 export const controlSize = {
   compact: 'h-7.5 text-control',
-  default: 'h-9 text-control',
+  default: 'h-9 text-sm',
 } as const satisfies Record<ControlSize, string>;

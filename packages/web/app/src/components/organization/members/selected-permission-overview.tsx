@@ -1,12 +1,6 @@
 import { useMemo } from 'react';
-import { Badge } from '@/components/base/badge/badge';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { Accordion } from '@/components/base/accordion/accordion';
+import { PermissionTable } from '@/components/organization/permission-table';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { PermissionLevelType } from '@/gql/graphql';
 import { ResultOf } from '@graphql-typed-document-node/core';
@@ -150,57 +144,43 @@ function PermissionLevelGroup(props: {
 
   return (
     <Accordion
-      type="single"
-      defaultValue={totalAllowedCount > 0 && props.isExpanded ? props.title : undefined}
-      collapsible
-    >
-      <AccordionItem value={props.title}>
-        <AccordionTrigger className="w-full">
-          {props.title}
-          <span className="ml-auto mr-2">{totalAllowedCount} allowed</span>
-        </AccordionTrigger>
-        <AccordionContent className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-scroll">
-          {filteredGroups.map(group =>
-            props.showOnlyAllowedPermissions && group.totalAllowedCount === 0 ? null : (
-              <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.id}>
-                <table key={group.title} className="w-full">
-                  <tr>
-                    <th className="pb-2 text-left">{group.title}</th>
-                  </tr>
-                  {group.permissions.map(permission =>
-                    props.showOnlyAllowedPermissions &&
-                    props.activePermissionIds.has(permission.id) === false &&
-                    !permission.isReadOnly ? null : (
-                      <tr key={permission.id}>
-                        <td>{permission.title}</td>
-                        <td className="ml-2 text-right">
-                          {props.activePermissionIds.has(permission.id) || permission.isReadOnly ? (
-                            permission.warning ? (
-                              <Tooltip
-                                trigger={
-                                  <span className="inline-flex">
-                                    <Badge content="Allowed" variants={{ variant: 'warning' }} />
-                                  </span>
-                                }
-                                content={permission.warning}
-                              />
-                            ) : (
-                              <Badge content="Allowed" variants={{ variant: 'success' }} />
-                            )
-                          ) : (
-                            <Badge content="Denied" variants={{ variant: 'critical' }} />
-                          )}
-                        </td>
-                      </tr>
-                    ),
-                  )}
-                </table>
-              </div>
-            ),
-          )}
-          {props.additionalContent}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+      defaultValue={totalAllowedCount > 0 && props.isExpanded ? [props.title] : undefined}
+      items={[
+        {
+          value: props.title,
+          label: props.title,
+          trailing: <span>{totalAllowedCount} allowed</span>,
+          content: (
+            <div className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-auto">
+              {filteredGroups.map(group =>
+                props.showOnlyAllowedPermissions && group.totalAllowedCount === 0 ? null : (
+                  <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.id}>
+                    <PermissionTable
+                      title={group.title}
+                      permissions={group.permissions.flatMap(permission => {
+                        const granted =
+                          props.activePermissionIds.has(permission.id) || permission.isReadOnly;
+                        if (props.showOnlyAllowedPermissions && !granted) {
+                          return [];
+                        }
+                        return [
+                          {
+                            id: permission.id,
+                            title: permission.title,
+                            granted,
+                            warning: permission.warning,
+                          },
+                        ];
+                      })}
+                    />
+                  </div>
+                ),
+              )}
+              {props.additionalContent}
+            </div>
+          ),
+        },
+      ]}
+    />
   );
 }

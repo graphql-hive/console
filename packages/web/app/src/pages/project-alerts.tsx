@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { AlertsTable, AlertsTable_AlertFragment } from '@/components/project/alerts/alerts-table';
@@ -15,7 +16,6 @@ import {
 import { CreateChannelModal } from '@/components/project/alerts/create-channel';
 import { DeleteAlertsButton } from '@/components/project/alerts/delete-alerts-button';
 import { DeleteChannelsButton } from '@/components/project/alerts/delete-channels-button';
-import { Button } from '@/components/ui/button';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -31,11 +31,11 @@ function Channels(props: {
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [isModalOpen, toggleModalOpen] = useToggle();
+  const [modalSession, setModalSession] = useState(0);
   const channels = props.channels ?? [];
 
   return (
     <Card
-      variants={{ onSurface: 'raised' }}
       title="Channels"
       description={
         <>
@@ -55,9 +55,7 @@ function Channels(props: {
         }}
       />
       <div className="mt-4 flex items-center gap-x-2">
-        <Button variant="default" onClick={toggleModalOpen}>
-          Add channel
-        </Button>
+        <Button onClick={toggleModalOpen}>Add channel</Button>
         {channels.length > 0 && (
           <DeleteChannelsButton
             organizationSlug={props.organizationSlug}
@@ -69,14 +67,18 @@ function Channels(props: {
           />
         )}
       </div>
-      {isModalOpen && (
-        <CreateChannelModal
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          isOpen={isModalOpen}
-          toggleModalOpen={toggleModalOpen}
-        />
-      )}
+      <CreateChannelModal
+        key={modalSession}
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        isOpen={isModalOpen}
+        toggleModalOpen={toggleModalOpen}
+        onOpenChangeComplete={open => {
+          if (!open) {
+            setModalSession(s => s + 1);
+          }
+        }}
+      />
     </Card>
   );
 }
@@ -90,12 +92,12 @@ function Alerts(props: {
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [isModalOpen, toggleModalOpen] = useToggle();
+  const [modalSession, setModalSession] = useState(0);
   const alerts = props.alerts ?? [];
 
   return (
     <>
       <Card
-        variants={{ onSurface: 'raised' }}
         title="Alerts and Notifications"
         description={
           <>
@@ -118,9 +120,7 @@ function Alerts(props: {
           }}
         />
         <div className="mt-4 flex items-center gap-x-2">
-          <Button variant="default" onClick={toggleModalOpen}>
-            Create alert
-          </Button>
+          <Button onClick={toggleModalOpen}>Create alert</Button>
           <DeleteAlertsButton
             organizationSlug={props.organizationSlug}
             projectSlug={props.projectSlug}
@@ -131,16 +131,20 @@ function Alerts(props: {
           />
         </div>
       </Card>
-      {isModalOpen && (
-        <CreateAlertModal
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
-          targets={props.targets}
-          channels={props.channels}
-          isOpen={isModalOpen}
-          toggleModalOpen={toggleModalOpen}
-        />
-      )}
+      <CreateAlertModal
+        key={modalSession}
+        projectSlug={props.projectSlug}
+        organizationSlug={props.organizationSlug}
+        targets={props.targets}
+        channels={props.channels}
+        isOpen={isModalOpen}
+        toggleModalOpen={toggleModalOpen}
+        onOpenChangeComplete={open => {
+          if (!open) {
+            setModalSession(s => s + 1);
+          }
+        }}
+      />
     </>
   );
 }

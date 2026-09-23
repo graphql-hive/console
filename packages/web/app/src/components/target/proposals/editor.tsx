@@ -1,17 +1,15 @@
-import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import { Circle, Settings, TriangleAlertIcon, WandSparkles, XIcon } from 'lucide-react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
+import { Button } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
-import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
-import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs } from '@/components/base/tabs/tabs';
 import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { DotFilledIcon, GearIcon, MagicWandIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import { prettier, schemaTitle } from './util';
 
@@ -106,20 +104,6 @@ export function ProposalEditor(props: {
 }) {
   const { changedServices, setChangedServices } = props;
   const [activeTab, setActiveTab] = useState<number>(0);
-  const tabsRef = useRef<HTMLDivElement | null>(null);
-  const setActiveTabAndScroll = (tab: number) => {
-    setActiveTab(tab);
-    // scroll to the activated tab
-    setTimeout(() => {
-      if (tabsRef?.current) {
-        const left = (tabsRef.current.childNodes.item(Math.max(tab - 1, 0)) as any)?.offsetLeft;
-        if (left) {
-          tabsRef.current.scrollTo({ left: left + 100 });
-        }
-      }
-    });
-  };
-  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (changedServices.length - 1 < activeTab) {
@@ -127,7 +111,9 @@ export function ProposalEditor(props: {
     }
   }, [changedServices, activeTab]);
 
-  const activeService = changedServices[activeTab] as ServiceTab | undefined;
+  // Clamped for the render in which the parent shortens the list, before the effect syncs the state.
+  const activeIndex = Math.min(activeTab, Math.max(changedServices.length - 1, 0));
+  const activeService = changedServices[activeIndex] as ServiceTab | undefined;
 
   const onAddNewService = useCallback(
     (
@@ -162,7 +148,7 @@ export function ProposalEditor(props: {
         unpublished: true,
       };
       setChangedServices([...changedServices, newService]);
-      setActiveTabAndScroll(changedServices.length);
+      setActiveTab(changedServices.length);
     },
     [changedServices],
   );
@@ -172,7 +158,7 @@ export function ProposalEditor(props: {
       // check the tab list to be extra safe
       const existing = changedServices.findIndex(s => s.id === serviceId);
       if (existing >= 0) {
-        setActiveTabAndScroll(existing);
+        setActiveTab(existing);
         return;
       }
 
@@ -184,7 +170,7 @@ export function ProposalEditor(props: {
           { ...addedService, source: prettier(addedService.source) },
         ]);
         // select the new last element in the changedServices list
-        setActiveTabAndScroll(changedServices.length);
+        setActiveTab(changedServices.length);
       }
     },
     [props.existingServices, changedServices],
@@ -195,7 +181,7 @@ export function ProposalEditor(props: {
       // @todo if changed, add confirmation, "Remove "___" from your proposal?"
       const tabs = changedServices.toSpliced(index, 1);
       setChangedServices(tabs);
-      setActiveTabAndScroll(Math.min(index, tabs.length - 1));
+      setActiveTab(Math.min(index, tabs.length - 1));
     },
     [changedServices],
   );
@@ -225,24 +211,29 @@ export function ProposalEditor(props: {
 
   const setActiveTabSource = useCallback(
     (source: string | undefined) => {
-      changedServices[activeTab] = { ...changedServices[activeTab], source: source ?? '' };
+      changedServices[activeIndex] = { ...changedServices[activeIndex], source: source ?? '' };
       setChangedServices([...changedServices]);
     },
-    [activeTab, changedServices],
+    [activeIndex, changedServices],
   );
   const setActiveTabUrl = useCallback(
     (url: string | undefined) => {
-      if (changedServices[activeTab].__typename === 'CompositeSchema') {
-        changedServices[activeTab] = { ...changedServices[activeTab], url: url ?? '' };
+      if (changedServices[activeIndex].__typename === 'CompositeSchema') {
+        changedServices[activeIndex] = { ...changedServices[activeIndex], url: url ?? '' };
         setChangedServices([...changedServices]);
       }
     },
-    [activeTab, changedServices],
+    [activeIndex, changedServices],
   );
-  const onToggleTabSettings = (e: any) => {
-    e?.preventDefault?.();
-    setShowSettings(!showSettings);
-  };
+  const setActiveTabName = useCallback(
+    (name: string) => {
+      if (changedServices[activeIndex].__typename === 'CompositeSchema') {
+        changedServices[activeIndex] = { ...changedServices[activeIndex], service: name };
+        setChangedServices([...changedServices]);
+      }
+    },
+    [activeIndex, changedServices],
+  );
   /** A reference to the monaco editor so we can force set the value on prettify */
   const [editor, setEditor] = useState<editor.IStandaloneCodeEditor | null>(null);
 
@@ -268,165 +259,156 @@ export function ProposalEditor(props: {
         />
       </div>
       {props.error}
-      {(activeService || changedServices.length > 0) && (
-        <Tabs
-          value={`${activeTab}`}
-          onValueChange={idx => {
-            try {
-              setActiveTab(parseInt(idx, 10));
-            } catch (_e: unknown) {
-              console.error('Cannot set active tab. Could not parse index.');
+      {activeService && (
+        <div className="mt-4">
+          <Tabs
+            value={tabValue(activeService, activeIndex)}
+            onValueChange={value =>
+              setActiveTab(
+                changedServices.findIndex((service, idx) => tabValue(service, idx) === value),
+              )
             }
-          }}
-        >
-          <div className="mt-4 flex w-full flex-row pl-2">
-            <TabsList
-              ref={tabsRef}
-              className="no-scrollbar [&>*:not:(:first-child)]:mr-2 mr-auto max-w-full justify-normal overflow-x-auto whitespace-nowrap rounded-b-none p-2 pb-0 text-sm"
-            >
-              {changedServices.map((service, idx) => {
-                const isActiveTab = idx === activeTab;
-                if (service.__typename === 'SingleSchema') {
-                  return (
-                    <TabsTrigger
-                      variant="default"
-                      value={`${idx}`}
-                      asChild
-                      key={service.id.length ? `changed-${service.id}` : `tab-${idx}`}
-                    >
-                      <div className="p-2 font-bold">single schema</div>
-                    </TabsTrigger>
-                  );
-                }
-                return (
-                  <TabsTrigger
-                    variant="default"
-                    value={`${idx}`}
-                    asChild
-                    key={service.unpublished ? `newtab-${idx}` : `tab-${service.id}`}
-                  >
-                    <div className="flex items-center p-2 font-bold">
-                      {service.unpublished ? (
-                        <>
-                          <DotFilledIcon className="-ml-2 size-4 text-green-600" />
-                          <input
-                            className="min-w-[150px] border-none bg-transparent p-0 text-sm leading-none outline-none"
-                            value={schemaTitle(service)}
-                            onChange={e => {
-                              service.service = e.target.value;
-                              setChangedServices([...changedServices]);
-                            }}
-                          />
-                          {props.existingServices.some(
-                            s =>
-                              s.__typename === 'CompositeSchema' && s.service === service.service,
-                          ) && (
-                            <Popover
-                              trigger={
-                                <button type="button" aria-label="Name conflict">
-                                  <AlertTriangleIcon className="size-4 text-red-600" />
-                                </button>
-                              }
-                              openOnHover
-                              width="auto"
-                              content={
-                                <p className="text-neutral-11 text-sm">
-                                  New service name cannot match an existing service name
-                                </p>
-                              }
-                            />
-                          )}
-                        </>
-                      ) : (
-                        schemaTitle(service)
-                      )}
-                      <div
-                        className="ml-2"
-                        onClick={() => {
-                          onRemoveTab(idx);
+            items={changedServices.map((service, idx) => {
+              const isActiveTab = idx === activeIndex;
+              const isNewService = service.__typename === 'CompositeSchema' && service.unpublished;
+              const hasNameConflict =
+                isNewService &&
+                props.existingServices.some(
+                  s => s.__typename === 'CompositeSchema' && s.service === service.service,
+                );
+              const hasEmptyName = isNewService && !service.service?.trim();
+              const nameError = hasNameConflict
+                ? 'New service name cannot match an existing service name'
+                : hasEmptyName
+                  ? 'New service needs a name'
+                  : undefined;
+              const existing = props.existingServices.find(
+                s =>
+                  (s.__typename === 'CompositeSchema' &&
+                    service.__typename === 'CompositeSchema' &&
+                    s.service === service.service) ||
+                  (s.__typename === 'SingleSchema' && service.__typename === 'SingleSchema'),
+              );
+              return {
+                value: tabValue(service, idx),
+                label: (
+                  <>
+                    {isNewService ? (
+                      <Circle
+                        className="-ml-2 size-4 p-1 text-green-600"
+                        fill="currentColor"
+                        strokeWidth={0}
+                      />
+                    ) : null}
+                    {service.__typename === 'SingleSchema' ? (
+                      'single schema'
+                    ) : hasEmptyName ? (
+                      // The tab keeps its width and a name while the field is empty.
+                      <span className="italic">unnamed service</span>
+                    ) : (
+                      schemaTitle(service)
+                    )}
+                    {nameError ? <TriangleAlertIcon className="size-4 text-red-600" /> : null}
+                    {service.__typename === 'CompositeSchema' ? (
+                      <span className="ml-2" onClick={() => onRemoveTab(idx)}>
+                        <XIcon className={cn('size-4', !isActiveTab && 'hidden')} />
+                      </span>
+                    ) : null}
+                  </>
+                ),
+                tooltip: nameError,
+                content: (
+                  <div className="rounded-sm border">
+                    <div className="flex items-center justify-end border-b px-2 py-1">
+                      <Link
+                        className="hover:text-accent ml-2 cursor-pointer p-1"
+                        title="Prettify schema"
+                        onClick={e => {
+                          e.preventDefault();
+                          const prettierSource = prettier(activeService?.source ?? '');
+                          setActiveTabSource(prettierSource);
+                          editor?.setValue(prettierSource);
                         }}
                       >
-                        <XIcon className={cn('size-4', !isActiveTab && 'hidden')} />
-                      </div>
+                        <WandSparkles className="size-4" />
+                      </Link>
+                      {service.__typename === 'CompositeSchema' && (
+                        <Popover
+                          trigger={
+                            <button
+                              type="button"
+                              className="hover:text-accent ml-2 cursor-pointer p-1"
+                              aria-label="Edit schema settings"
+                              title="Edit schema settings"
+                            >
+                              <Settings className="size-4" />
+                            </button>
+                          }
+                          align="end"
+                          width="sm"
+                          title="Settings"
+                          description="Additional service configuration"
+                          content={
+                            <div className="flex flex-col gap-4 text-sm">
+                              {isNewService && (
+                                <div>
+                                  <div className="mb-2 font-semibold">Service name</div>
+                                  <Input
+                                    onSurface="raised"
+                                    value={service.service ?? ''}
+                                    onChange={ev => setActiveTabName(ev.target.value)}
+                                    invalid={nameError != null}
+                                  />
+                                  {nameError && (
+                                    <p className="text-critical mt-1 text-xs">{nameError}</p>
+                                  )}
+                                </div>
+                              )}
+                              <div>
+                                <div className="mb-2 font-semibold">Service URL</div>
+                                <Input
+                                  onSurface="raised"
+                                  value={service.url ?? ''}
+                                  onChange={ev => setActiveTabUrl(ev.target.value)}
+                                />
+                              </div>
+                              {/* The X on the tab sits inside the tab button, out of the keyboard's reach. */}
+                              <div>
+                                <Button
+                                  variant="destructive"
+                                  size="compact"
+                                  onClick={() => onRemoveTab(idx)}
+                                >
+                                  Remove from proposal
+                                </Button>
+                              </div>
+                            </div>
+                          }
+                        />
+                      )}
                     </div>
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-            <div className="flex flex-row items-center justify-end">
-              <Link
-                className="hover:text-accent ml-2 cursor-pointer p-1"
-                title="Prettify schema"
-                onClick={e => {
-                  e.preventDefault();
-                  const prettierSource = prettier(activeService?.source ?? '');
-                  setActiveTabSource(prettierSource);
-                  editor?.setValue(prettierSource);
-                }}
-              >
-                <MagicWandIcon className="size-4" />
-              </Link>
-              <Link
-                className={cn(
-                  'hover:text-accent ml-2 cursor-pointer p-1',
-                  showSettings && 'border-accent border-b-2',
-                  projectType?.project.type === ProjectType.Single && 'hidden',
-                )}
-                title="Edit schema settings"
-                onClick={onToggleTabSettings}
-              >
-                <GearIcon />
-              </Link>
-            </div>
-          </div>
-          {changedServices.map((service, idx) => {
-            const existing = props.existingServices.find(
-              s =>
-                (s.__typename === 'CompositeSchema' &&
-                  service.__typename === 'CompositeSchema' &&
-                  s.service === service.service) ||
-                (s.__typename === 'SingleSchema' && service.__typename === 'SingleSchema'),
-            );
-            return (
-              <TabsContent
-                value={`${idx}`}
-                key={
-                  service.__typename === 'CompositeSchema' && service.unpublished
-                    ? `new-${idx}`
-                    : `tab-${service.id}`
-                }
-                className="relative mt-0 rounded-sm border py-0"
-              >
-                <DiffEditor
-                  before={existing?.source ?? ''}
-                  after={service.source ?? ''}
-                  editable
-                  lineNumbers
-                  onMount={setEditor}
-                  onChange={setActiveTabSource}
-                />
-                {showSettings && service.__typename === 'CompositeSchema' && (
-                  <div className="bg-neutral-1 absolute right-0 top-0 z-10 h-full w-[20vw] min-w-[200px] max-w-full border p-4 pt-6 text-sm">
-                    {!!service.service && (
-                      <SubPageLayoutHeader
-                        subPageTitle="Settings"
-                        description={<p className="pb-4">Additional service configuration</p>}
-                      />
-                    )}
-                    <div className="my-2 font-semibold">Service URL</div>
-                    <Input
-                      value={service.url ?? ''}
-                      onChange={ev => setActiveTabUrl(ev.target.value)}
+                    <DiffEditor
+                      before={existing?.source ?? ''}
+                      after={service.source ?? ''}
+                      editable
+                      lineNumbers
+                      onMount={setEditor}
+                      onChange={setActiveTabSource}
                     />
                   </div>
-                )}
-              </TabsContent>
-            );
-          })}
-        </Tabs>
+                ),
+              };
+            })}
+          />
+        </div>
       )}
     </div>
   );
+}
+
+/** Identity for a service's tab: published services keep it across reorders, new ones sit by index. */
+function tabValue(service: ServiceTab, idx: number) {
+  return service.id ? `tab-${service.id}` : `new-${idx}`;
 }
 
 function ServiceSelect(props: {
@@ -452,6 +434,7 @@ function ServiceSelect(props: {
   return schemaEdges && schemaEdges.length > 1 ? (
     <div className="flex grow flex-row">
       <Select
+        aria-label="Add a service"
         options={selectableServices}
         value=""
         onValueChange={props.onSelect}
@@ -459,8 +442,10 @@ function ServiceSelect(props: {
         disabled={selectableServices.length === 0}
         width="md"
       />
-      <Button variant="orangeLink" className="ml-0 whitespace-nowrap" onClick={props.onSelectNew}>
-        + New<span className="hidden sm:inline-block">&nbsp;Service</span>
+      <Button variant="link" onClick={props.onSelectNew}>
+        <span className="whitespace-nowrap">
+          + New<span className="hidden sm:inline-block">&nbsp;Service</span>
+        </span>
       </Button>
     </div>
   ) : null;

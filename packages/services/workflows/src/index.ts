@@ -54,6 +54,7 @@ const modules = await Promise.all([
   import('./tasks/password-reset.js'),
   import('./tasks/purge-expired-dedupe-keys.js'),
   import('./tasks/purge-expired-schema-checks.js'),
+  import('./tasks/purge-expired-schema-revisions.js'),
   import('./tasks/schema-change-notification.js'),
   import('./tasks/usage-rate-limit-exceeded.js'),
   import('./tasks/usage-rate-limit-warning.js'),
@@ -98,6 +99,8 @@ const crontabLines: string[] = [
   '0 10 * * 0 purgeExpiredSchemaChecks',
   '# Every day at 3:00 AM',
   '0 3 * * * purgeExpiredDedupeKeys',
+  '# Purge expired schema revisions and orphaned SDL artifacts every Sunday at 11:00 AM',
+  '0 11 * * 0 purgeExpiredSchemaRevisions',
 ];
 if (env.clickhouse) {
   crontabLines.push(

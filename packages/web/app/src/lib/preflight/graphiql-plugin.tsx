@@ -9,29 +9,21 @@ import {
   useState,
 } from 'react';
 import { clsx } from 'clsx';
-import { PowerIcon } from 'lucide-react';
+import { InfoIcon, PencilIcon, PlayIcon, PowerIcon, XIcon } from 'lucide-react';
 import type { editor } from 'monaco-editor';
 import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { Subtitle } from '@/components/ui/page';
 import { usePromptManager } from '@/components/ui/prompt';
-import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLocalStorage, useLocalStorageJson, useToggle } from '@/lib/hooks';
 import { GraphiQLPlugin } from '@graphiql/react';
 import { Editor as MonacoEditor, OnMount, type Monaco } from '@monaco-editor/react';
-import { Cross2Icon, InfoCircledIcon, Pencil1Icon, TriangleRightIcon } from '@radix-ui/react-icons';
 import { captureException } from '@sentry/react';
 import { useParams } from '@tanstack/react-router';
 import { Kit } from '../kit';
@@ -489,6 +481,7 @@ function PreflightContent() {
   }
 
   const [showModal, toggleShowModal] = useToggle();
+  const [modalSession, setModalSession] = useState(0);
   const params = useParams({
     from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug',
   });
@@ -526,10 +519,14 @@ function PreflightContent() {
     <>
       {preflight.viewerCanModifyPreflightScript && (
         <PreflightModal
-          // to unmount on submit/close
-          key={String(showModal)}
+          key={modalSession}
           isOpen={showModal}
           toggle={toggleShowModal}
+          onOpenChangeComplete={open => {
+            if (!open) {
+              setModalSession(s => s + 1);
+            }
+          }}
           execute={value =>
             preflight.execute(value, true).catch(err => {
               console.error(err);
@@ -548,15 +545,11 @@ function PreflightContent() {
       <div className="graphiql-doc-explorer-title flex items-center justify-between gap-4">
         Preflight Script
         {preflight.viewerCanModifyPreflightScript && (
-          <Button
-            variant="orangeLink"
-            size="icon-sm"
-            className="size-auto gap-1"
-            onClick={toggleShowModal}
-            data-cy="preflight-modal-button"
-          >
-            <Pencil1Icon className="shrink-0" />
-            Edit
+          <Button variant="link" onClick={toggleShowModal} data-cy="preflight-modal-button">
+            <span className="flex items-center gap-1">
+              <PencilIcon className="size-4 shrink-0" />
+              Edit
+            </span>
           </Button>
         )}
       </div>
@@ -565,11 +558,10 @@ function PreflightContent() {
         handle authentication.
       </Subtitle>
 
-      <div>
+      <div className="mt-3">
         <Button
-          size="sm"
+          size="compact"
           variant="outline"
-          className="mt-3"
           onClick={() => preflight.setIsEnabled(!preflight.isEnabled)}
           data-cy="toggle-preflight"
         >
@@ -634,6 +626,7 @@ function PreflightContent() {
 function PreflightModal({
   isOpen,
   toggle,
+  onOpenChangeComplete,
   content,
   state,
   execute,
@@ -646,6 +639,7 @@ function PreflightModal({
 }: {
   isOpen: boolean;
   toggle: () => void;
+  onOpenChangeComplete: (open: boolean) => void;
   content?: string;
   state: PreflightWorkerState;
   execute: (script: string) => void;
@@ -703,130 +697,40 @@ function PreflightModal({
   return (
     <Dialog
       open={isOpen}
-      onOpenChange={open => {
+      onOpenChange={(open, details) => {
+        // Escape inside Monaco leaves the editor's own mode, not the modal.
+        if (
+          !open &&
+          details.reason === 'escape-key' &&
+          details.event.target instanceof HTMLTextAreaElement
+        ) {
+          details.cancel();
+          return;
+        }
         if (!open) {
           abortExecution();
         }
         toggle();
       }}
-    >
-      <DialogContent
-        className="w-11/12 max-w-[unset] xl:w-4/5"
-        onEscapeKeyDown={ev => {
-          // prevent pressing escape in monaco to close the modal
-          if (ev.target instanceof HTMLTextAreaElement) {
-            ev.preventDefault();
-          }
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle>Edit your Preflight Script</DialogTitle>
-          <DialogDescription>
-            This script will run in each user's browser and be stored in plain text on our servers.
-            Don't share any secrets here.
-            <br />
-            All team members can view the script and toggle it off when they need to.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid h-[60vh] grid-cols-2 [&_section]:grow">
-          <div className="mr-4 flex flex-col">
-            <div className="flex justify-between p-2">
-              <EditorTitle className="flex gap-2">
-                Script Editor
-                <Badge content="JavaScript" variants={{ variant: 'outline' }} />
-              </EditorTitle>
-              <Button
-                variant="orangeLink"
-                size="icon-sm"
-                className="size-auto gap-1"
-                onClick={e => {
-                  e.stopPropagation();
-                  if (state === PreflightWorkerState.running) {
-                    abortExecution();
-                    return;
-                  }
-
-                  execute(scriptEditorRef.current?.getValue() ?? '');
-                }}
-                data-cy="run-preflight"
-              >
-                {state === PreflightWorkerState.running && (
-                  <>
-                    <Cross2Icon className="shrink-0" />
-                    Stop Script
-                  </>
-                )}
-                {state === PreflightWorkerState.ready && (
-                  <>
-                    <TriangleRightIcon className="shrink-0" />
-                    Run Script
-                  </>
-                )}
-              </Button>
-            </div>
-            <MonacoEditor
-              value={content}
-              beforeMount={handleMonacoEditorBeforeMount}
-              onMount={handleScriptEditorDidMount}
-              {...monacoProps.script}
-              options={{
-                ...monacoProps.script.options,
-                wordWrap: 'wordWrapColumn',
-              }}
-              wrapperProps={{
-                ['data-cy']: 'preflight-editor',
-              }}
-            />
-          </div>
-          <div className="flex h-[inherit] flex-col">
-            <div className="flex justify-between p-2">
-              <EditorTitle>Console Output</EditorTitle>
-              <Button
-                variant="orangeLink"
-                size="icon-sm"
-                className="size-auto gap-1"
-                onClick={clearLogs}
-                disabled={state === PreflightWorkerState.running}
-              >
-                <Cross2Icon className="shrink-0" height="12" />
-                Clear Output
-              </Button>
-            </div>
-            <div className="flex h-1/2 flex-col bg-[#10151f]">
-              <ScrollArea fill ref={consoleRef} data-cy="console-output">
-                <section className="py-2.5 pl-[26px] pr-2.5 font-mono text-xs/[18px]">
-                  {logs.map((log, index) => (
-                    <LogLine key={index} log={log} />
-                  ))}
-                </section>
-              </ScrollArea>
-            </div>
-            <EditorTitle className="flex gap-2 p-2">
-              Environment Variables
-              <Badge content="JSON" variants={{ variant: 'outline' }} />
-            </EditorTitle>
-            <MonacoEditor
-              value={envValue}
-              onChange={value => onEnvValueChange(value ?? '')}
-              onMount={handleEnvEditorDidMount}
-              {...monacoProps.env}
-              options={{
-                ...monacoProps.env.options,
-                wordWrap: 'wordWrapColumn',
-              }}
-              wrapperProps={{
-                ['data-cy']: 'env-editor',
-              }}
-            />
-          </div>
-        </div>
-        <DialogFooter className="items-center">
-          <p className="me-5 flex items-center gap-2 text-sm">
-            <InfoCircledIcon />
+      onOpenChangeComplete={onOpenChangeComplete}
+      width="xl"
+      title="Edit your Preflight Script"
+      description={
+        <>
+          This script will run in each user's browser and be stored in plain text on our servers.
+          Don't share any secrets here.
+          <br />
+          All team members can view the script and toggle it off when they need to.
+        </>
+      }
+      footer={
+        <>
+          <p className="text-neutral-11 me-auto flex items-center gap-2 text-sm">
+            <InfoIcon className="size-4 shrink-0" />
             Changes made to this Preflight Script will apply to all users on your team using this
             target.
           </p>
-          <Button type="button" onClick={toggle} data-cy="preflight-modal-cancel">
+          <Button type="button" variant="outline" onClick={toggle} data-cy="preflight-modal-cancel">
             Close
           </Button>
           <Button
@@ -837,8 +741,101 @@ function PreflightModal({
           >
             Save
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </>
+      }
+    >
+      <div className="grid h-[60vh] grid-cols-2 [&_section]:grow">
+        <div className="mr-4 flex flex-col">
+          <div className="flex justify-between p-2">
+            <EditorTitle className="flex gap-2">
+              Script Editor
+              <Badge content="JavaScript" variants={{ variant: 'outline' }} />
+            </EditorTitle>
+            <Button
+              variant="link"
+              onClick={e => {
+                e.stopPropagation();
+                if (state === PreflightWorkerState.running) {
+                  abortExecution();
+                  return;
+                }
+
+                execute(scriptEditorRef.current?.getValue() ?? '');
+              }}
+              data-cy="run-preflight"
+            >
+              <span className="flex items-center gap-1">
+                {state === PreflightWorkerState.running && (
+                  <>
+                    <XIcon className="size-4 shrink-0" />
+                    Stop Script
+                  </>
+                )}
+                {state === PreflightWorkerState.ready && (
+                  <>
+                    <PlayIcon className="size-4 shrink-0" />
+                    Run Script
+                  </>
+                )}
+              </span>
+            </Button>
+          </div>
+          <MonacoEditor
+            value={content}
+            beforeMount={handleMonacoEditorBeforeMount}
+            onMount={handleScriptEditorDidMount}
+            {...monacoProps.script}
+            options={{
+              ...monacoProps.script.options,
+              wordWrap: 'wordWrapColumn',
+            }}
+            wrapperProps={{
+              ['data-cy']: 'preflight-editor',
+            }}
+          />
+        </div>
+        <div className="flex h-[inherit] flex-col">
+          <div className="flex justify-between p-2">
+            <EditorTitle>Console Output</EditorTitle>
+            <Button
+              variant="link"
+              onClick={clearLogs}
+              disabled={state === PreflightWorkerState.running}
+            >
+              <span className="flex items-center gap-1">
+                <XIcon className="size-3 shrink-0" />
+                Clear Output
+              </span>
+            </Button>
+          </div>
+          <div className="flex h-1/2 flex-col bg-[#10151f]">
+            <ScrollArea fill ref={consoleRef} data-cy="console-output">
+              <section className="py-2.5 pl-[26px] pr-2.5 font-mono text-xs/[18px]">
+                {logs.map((log, index) => (
+                  <LogLine key={index} log={log} />
+                ))}
+              </section>
+            </ScrollArea>
+          </div>
+          <EditorTitle className="flex gap-2 p-2">
+            Environment Variables
+            <Badge content="JSON" variants={{ variant: 'outline' }} />
+          </EditorTitle>
+          <MonacoEditor
+            value={envValue}
+            onChange={value => onEnvValueChange(value ?? '')}
+            onMount={handleEnvEditorDidMount}
+            {...monacoProps.env}
+            options={{
+              ...monacoProps.env.options,
+              wordWrap: 'wordWrapColumn',
+            }}
+            wrapperProps={{
+              ['data-cy']: 'env-editor',
+            }}
+          />
+        </div>
+      </div>
     </Dialog>
   );
 }

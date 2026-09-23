@@ -1,14 +1,17 @@
 import React, { ReactElement, ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
+import { ActivityIcon, UsersIcon } from 'lucide-react';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { PulseIcon, UsersIcon } from '@/components/ui/icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Markdown } from '@/components/v2/markdown';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, toDecimal } from '@/lib/hooks';
 import { capitalize, cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 import AvailabilityBar from './availability-bar';
 import { useDescriptionsVisibleToggle, useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
@@ -43,6 +46,10 @@ const SchemaExplorerUsageStats_UsageFragment = graphql(`
   }
 `);
 
+type TopOperation = NonNullable<
+  DocumentType<typeof SchemaExplorerUsageStats_UsageFragment>['topOperations']
+>[number];
+
 export function SchemaExplorerUsageStats(props: {
   usage: FragmentType<typeof SchemaExplorerUsageStats_UsageFragment>;
   totalRequests: number;
@@ -59,6 +66,53 @@ export function SchemaExplorerUsageStats(props: {
     : null;
 
   const kindLabel = useMemo(() => props.kindLabel ?? 'field', [props.kindLabel]);
+
+  const topOperationColumns: ColumnDef<TopOperation, unknown>[] = [
+    {
+      id: 'name',
+      header: 'Top 5 Operations',
+      meta: { width: 'fill' },
+      cell: ({ row }) => {
+        const operationName = `${row.original.hash.substring(0, 4)}_${row.original.name}`;
+        return (
+          <DataTableCell
+            kind="link"
+            tone="accent"
+            mono
+            truncate
+            label={operationName}
+            link={{
+              to: '/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
+              params: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+                operationName,
+                operationHash: row.original.hash,
+              },
+            }}
+          />
+        );
+      },
+    },
+    {
+      id: 'count',
+      header: 'Reqs',
+      meta: { align: 'right', width: 'xs' },
+      cell: ({ row }) => <DataTableCell kind="number" value={formatNumber(row.original.count)} />,
+    },
+    {
+      id: 'share',
+      header: 'Of total',
+      meta: { align: 'right', width: 'xs' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="number"
+          value={`${toDecimal((row.original.count / props.totalRequests) * 100)}%`}
+        />
+      ),
+    },
+  ];
 
   return (
     <div className="ml-3 flex flex-row items-center gap-2 text-xs">
@@ -87,36 +141,26 @@ export function SchemaExplorerUsageStats(props: {
                     (which can multiply within lists or drop to zero if a parent returned null).
                   </div>
                 ) : null}
-                <table className="mt-4 table-auto">
-                  <thead>
-                    <tr>
-                      <th className="px-2 pl-0 text-left font-normal">
-                        <span className="font-bold">{formatNumber(usage.total)} Requests</span>{' '}
-                        {hasFieldLevelMetrics ? 'with' : null}
-                      </th>
-                    </tr>
-                    {usage.totalResolutions ? (
-                      <tr>
-                        <th className="pl-0 text-left">
-                          {formatNumber(usage.totalResolutions)} Resolutions
-                        </th>
-                      </tr>
-                    ) : null}
-                    {usage.errorTotal ? (
-                      <tr>
-                        <th className="pl-0 text-left">{formatNumber(usage.errorTotal)} Errors</th>
-                      </tr>
-                    ) : null}
-                    <tr>
-                      <td className="pl-0 text-left">
-                        for{' '}
-                        <span className="text-orange-800 dark:text-orange-500">
-                          {availability.toFixed(2)}% Availability
-                        </span>
-                      </td>
-                    </tr>
-                  </thead>
-                </table>
+                <div className="mt-4 space-y-1 text-left">
+                  <div>
+                    <span className="font-bold">{formatNumber(usage.total)} Requests</span>{' '}
+                    {hasFieldLevelMetrics ? 'with' : null}
+                  </div>
+                  {usage.totalResolutions ? (
+                    <div className="font-bold">
+                      {formatNumber(usage.totalResolutions)} Resolutions
+                    </div>
+                  ) : null}
+                  {usage.errorTotal ? (
+                    <div className="font-bold">{formatNumber(usage.errorTotal)} Errors</div>
+                  ) : null}
+                  <div>
+                    for{' '}
+                    <span className="text-orange-800 dark:text-orange-500">
+                      {availability.toFixed(2)}% Availability
+                    </span>
+                  </div>
+                </div>
               </div>
             }
           />
@@ -125,15 +169,16 @@ export function SchemaExplorerUsageStats(props: {
       <Popover
         trigger={
           <button type="button" aria-label="Usage" className="cursor-help text-xl">
-            <PulseIcon className="h-6 w-auto" />
+            <ActivityIcon className="h-6 w-auto" />
           </button>
         }
         openOnHover
         align="end"
-        width="auto"
+        // The table inside fills its container, so the popup needs a width of its own.
+        width="lg"
         content={
           <div>
-            <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Usage</div>
+            <div className="mb-1 text-lg font-medium">{capitalize(kindLabel)} Usage</div>
             {usage.isUsed === false ? (
               <div>This {kindLabel} is currently not in use.</div>
             ) : (
@@ -141,48 +186,25 @@ export function SchemaExplorerUsageStats(props: {
                 <ul>
                   <li>
                     This {kindLabel} has been queried in{' '}
-                    <strong>{formatNumber(usage.total)}</strong> requests.
+                    <span className="text-neutral-12 font-medium">{formatNumber(usage.total)}</span>{' '}
+                    requests.
                   </li>
                   <li>
-                    <strong>{toDecimal(percentage)}%</strong> of all requests use this {kindLabel}.
+                    <span className="text-neutral-12 font-medium">{toDecimal(percentage)}%</span> of
+                    all requests use this {kindLabel}.
                   </li>
                 </ul>
 
                 {Array.isArray(usage.topOperations) && (
-                  <table className="mt-4 table-auto">
-                    <thead>
-                      <tr>
-                        <th className="p-2 pl-0 text-left">Top 5 Operations</th>
-                        <th className="p-2 text-center">Reqs</th>
-                        <th className="p-2 text-center">Of total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {usage.topOperations.map(op => (
-                        <tr key={op.hash}>
-                          <td className="px-2 pl-0 text-left">
-                            <Link
-                              className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
-                              to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                              params={{
-                                organizationSlug: props.organizationSlug,
-                                projectSlug: props.projectSlug,
-                                targetSlug: props.targetSlug,
-                                operationName: `${op.hash.substring(0, 4)}_${op.name}`,
-                                operationHash: op.hash,
-                              }}
-                            >
-                              {op.hash.substring(0, 4)}_{op.name}
-                            </Link>
-                          </td>
-                          <td className="px-2 text-center font-bold">{formatNumber(op.count)}</td>
-                          <td className="px-2 text-center font-bold">
-                            {toDecimal((op.count / props.totalRequests) * 100)}%
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="mt-4">
+                    <DataTable
+                      data={usage.topOperations}
+                      columns={topOperationColumns}
+                      getRowId={operation => operation.hash}
+                      pagination={{ kind: 'none' }}
+                      variants={{ onSurface: 'raised', bordered: false, striped: false }}
+                    />
+                  </div>
                 )}
               </div>
             )}
@@ -193,7 +215,7 @@ export function SchemaExplorerUsageStats(props: {
       <Popover
         trigger={
           <button type="button" aria-label="Client usage" className="cursor-help p-1 text-xl">
-            <UsersIcon size={16} className="h-6 w-auto" />
+            <UsersIcon className="size-4" />
           </button>
         }
         openOnHover
@@ -201,7 +223,7 @@ export function SchemaExplorerUsageStats(props: {
         width="auto"
         content={
           <>
-            <div className="mb-1 text-lg font-bold">Client Usage</div>
+            <div className="mb-1 text-lg font-medium">Client Usage</div>
 
             {Array.isArray(usage.usedByClients) && usage.usedByClients.length > 0 ? (
               <>

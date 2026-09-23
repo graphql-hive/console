@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { StatCard } from '@/components/base/stat-card/stat-card';
-import { Button } from '@/components/ui/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { OperationStatsFilterInput } from '@/gql/graphql';
 import { createAdaptiveTimeFormatter } from '@/lib/date-time';

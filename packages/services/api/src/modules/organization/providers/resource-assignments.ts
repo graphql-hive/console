@@ -9,8 +9,10 @@ import {
   PermissionsPerResourceLevelAssignment,
   ResourceLevel,
 } from '../../auth/lib/authz';
+import { ProjectStore } from '../../project/providers/project-store';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
+import { TargetStore } from '../../target/providers/target-store';
 import {
   AssignedTarget,
   GranularAssignedProjects,
@@ -26,6 +28,8 @@ export class ResourceAssignments {
 
   constructor(
     private storage: Storage,
+    private projectStore: ProjectStore,
+    private targetStore: TargetStore,
     logger: Logger,
   ) {
     this.logger = logger.child({
@@ -40,7 +44,7 @@ export class ResourceAssignments {
     if (args.resources.mode === '*') {
       return { mode: 'ALL' };
     }
-    const projects = await this.storage.findProjectsByIds({
+    const projects = await this.projectStore.findProjectsByIds({
       projectIds: args.resources.projects.map(project => project.id),
     });
 
@@ -50,7 +54,7 @@ export class ResourceAssignments {
       project.targets.mode === 'granular' ? project.targets.targets : [],
     );
 
-    const targets = await this.storage.findTargetsByIds({
+    const targets = await this.targetStore.findTargetsByIds({
       organizationId: args.organizationId,
       targetIds: targetAssignments.map(target => target.id),
     });
@@ -141,7 +145,7 @@ export class ResourceAssignments {
 
     const sanitizedProjects = input.projects.filter(project => isUUID(project.projectId));
 
-    const projects = await this.storage.findProjectsByIds({
+    const projects = await this.projectStore.findProjectsByIds({
       projectIds: sanitizedProjects.map(record => record.projectId),
     });
 
@@ -197,7 +201,7 @@ export class ResourceAssignments {
       }
     }
 
-    const targets = await this.storage.findTargetsByIds({
+    const targets = await this.targetStore.findTargetsByIds({
       organizationId,
       targetIds: Array.from(targetLookupIds),
     });
@@ -284,7 +288,7 @@ export class ResourceAssignments {
     }
 
     const projectIds = resourceAssignment.projects.map(project => project.id);
-    const projects = await this.storage.findProjectsByIds({ projectIds });
+    const projects = await this.projectStore.findProjectsByIds({ projectIds });
 
     const targetLookupIds = new Set<string>();
     const projectTargetAssignments: Array<{
@@ -320,7 +324,7 @@ export class ResourceAssignments {
       }
     }
 
-    const targets = await this.storage.findTargetsByIds({
+    const targets = await this.targetStore.findTargetsByIds({
       organizationId,
       targetIds: Array.from(targetLookupIds),
     });

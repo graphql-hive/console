@@ -1,3 +1,4 @@
+import { SchemaRevisionStore } from '../providers/schema-revision-store';
 import type { CompositeSchemaResolvers } from './../../../__generated__/types';
 
 export const CompositeSchema: CompositeSchemaResolvers = {
@@ -13,4 +14,8 @@ export const CompositeSchema: CompositeSchemaResolvers = {
   url: schema => {
     return schema.service_url;
   },
+  revision: (schema, _, { injector }) =>
+    schema.schemaRevisionId
+      ? injector.get(SchemaRevisionStore).getById(schema.schemaRevisionId)
+      : null,
 };

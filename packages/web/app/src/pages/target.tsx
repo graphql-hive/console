@@ -1,14 +1,15 @@
 import { ReactElement } from 'react';
 import { XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Accordion } from '@/components/base/accordion/accordion';
+import { Button } from '@/components/base/button/button';
+import { Card } from '@/components/base/card/card';
 import { Select } from '@/components/base/floating/select/select';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/ui/button';
 import { EmptyList, noSchema, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { Accordion } from '@/components/v2/accordion';
 import { GraphQLBlock, GraphQLHighlight } from '@/components/v2/graphql-block';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -34,23 +35,23 @@ function isCompositeSchema(
   return schema.__typename === 'CompositeSchema';
 }
 
-function SchemaBlock({ schema }: { schema: CompositeSchema }) {
+/** The service's name, an anchor for deep links, and its URL. */
+function serviceHeader(schema: CompositeSchema) {
   return (
-    <Accordion.Item value={schema.id} key={schema.id} className="border-neutral-5/50 border-2">
-      <Accordion.Header>
-        <div>
-          <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>
-            {schema.service ?? 'SDL'}
-          </div>
-          {schema.url ? <div className="text-neutral-10 text-xs">{schema.url}</div> : null}
-        </div>
-      </Accordion.Header>
-      <Accordion.Content>
-        <div className="p-2">
-          <GraphQLHighlight code={schema.source} />
-        </div>
-      </Accordion.Content>
-    </Accordion.Item>
+    <div>
+      <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>
+        {schema.service ?? 'SDL'}
+      </div>
+      {schema.url ? <div className="text-neutral-10 text-xs font-normal">{schema.url}</div> : null}
+    </div>
+  );
+}
+
+function serviceSchema(schema: CompositeSchema) {
+  return (
+    <div className="p-2">
+      <GraphQLHighlight code={schema.source} />
+    </div>
   );
 }
 
@@ -71,11 +72,14 @@ function Schemas(props: { schemas?: readonly CompositeSchema[]; schema?: SingleS
 
   if (props.schemas.length > 1) {
     return (
-      <Accordion className="space-y-4" type="single">
-        {props.schemas.map(schema => (
-          <SchemaBlock key={schema.id} schema={schema} />
-        ))}
-      </Accordion>
+      <Accordion
+        variant="boxed"
+        items={props.schemas.map(schema => ({
+          value: schema.id,
+          label: serviceHeader(schema),
+          content: serviceSchema(schema),
+        }))}
+      />
     );
   }
 
@@ -90,10 +94,12 @@ function Schemas(props: { schemas?: readonly CompositeSchema[]; schema?: SingleS
     );
   }
 
+  // One service has nothing to collapse, so it is a card, not an accordion locked open.
   return (
-    <Accordion type="single" disabled value={schema.id}>
-      <SchemaBlock key={schema.id} schema={schema} />
-    </Accordion>
+    <Card>
+      {serviceHeader(schema)}
+      {serviceSchema(schema)}
+    </Card>
   );
 }
 
@@ -189,6 +195,7 @@ function SchemaView(props: {
           {isDistributed && schemas && schemas.length > 1 && (
             <>
               <Select
+                aria-label="Service"
                 options={compositeSchemas.map(schema => ({
                   value: schema.service as string,
                   label: schema.service as string,
@@ -270,30 +277,36 @@ function TargetSchemaPage(props: {
           <Subtitle>The latest published schema.</Subtitle>
         </div>
         <div className="flex flex-row items-center gap-x-4">
-          <Button variant="outline" asChild>
-            <Link
-              to="/$organizationSlug/$projectSlug/$targetSlug/explorer/unused"
-              params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
-              }}
-            >
-              Unused schema
-            </Link>
+          <Button
+            variant="outline"
+            render={
+              <Link
+                to="/$organizationSlug/$projectSlug/$targetSlug/explorer/unused"
+                params={{
+                  organizationSlug: props.organizationSlug,
+                  projectSlug: props.projectSlug,
+                  targetSlug: props.targetSlug,
+                }}
+              />
+            }
+          >
+            Unused schema
           </Button>
           <span className="italic">|</span>
-          <Button variant="outline" asChild>
-            <Link
-              to="/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated"
-              params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
-              }}
-            >
-              Deprecated schema
-            </Link>
+          <Button
+            variant="outline"
+            render={
+              <Link
+                to="/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated"
+                params={{
+                  organizationSlug: props.organizationSlug,
+                  projectSlug: props.projectSlug,
+                  targetSlug: props.targetSlug,
+                }}
+              />
+            }
+          >
+            Deprecated schema
           </Button>
         </div>
       </div>

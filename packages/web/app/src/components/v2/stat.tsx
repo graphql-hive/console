@@ -6,7 +6,7 @@ function Stat({ children, className }: ComponentProps<'dl'>): ReactElement {
 }
 
 function Label({ children, className }: ComponentProps<'dt'>): ReactElement {
-  return <dt className={clsx('text-sm font-medium', className)}>{children}</dt>;
+  return <dt className={clsx('text-neutral-11 text-sm font-medium', className)}>{children}</dt>;
 }
 
 function Number({ children, className }: ComponentProps<'dd'>): ReactElement {
@@ -14,7 +14,7 @@ function Number({ children, className }: ComponentProps<'dd'>): ReactElement {
 }
 
 function HelpText({ children, className }: ComponentProps<'dd'>): ReactElement {
-  return <dd className={clsx('text-sm opacity-80', className)}>{children}</dd>;
+  return <dd className={clsx('text-neutral-9 text-sm', className)}>{children}</dd>;
 }
 
 export default Object.assign(Stat, { Label, Number, HelpText });

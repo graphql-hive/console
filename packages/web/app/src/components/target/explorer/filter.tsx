@@ -1,14 +1,10 @@
 import { useCallback } from 'react';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Link,
-  RegisteredRouter,
-  RoutePaths,
-  ToPathOption,
-  useLocation,
-} from '@tanstack/react-router';
+  SecondaryNavigation,
+  type SecondaryNavigationItem,
+} from '@/components/base/navigation/secondary-navigation/secondary-navigation';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { useLocation } from '@tanstack/react-router';
 import { usePeriodSelector } from './provider';
 
 export function DateRangeFilter() {
@@ -36,7 +32,7 @@ export function DateRangeFilter() {
 const variants: Array<{
   value: 'all' | 'unused' | 'deprecated';
   label: string;
-  pathname: ToPathOption<RegisteredRouter, RoutePaths<RegisteredRouter['routeTree']>, ''>;
+  pathname: NonNullable<SecondaryNavigationItem['to']>;
   tooltip: string;
 }> = [
   {
@@ -67,46 +63,23 @@ export function SchemaVariantFilter(props: {
 }) {
   const { search } = useLocation();
   return (
-    <Tabs defaultValue={props.variant}>
-      <TabsList className="dark:bg-neutral-3 bg-neutral-5">
-        {variants.map(variant => (
-          <Tooltip
-            key={variant.value}
-            trigger={
-              props.variant === variant.value ? (
-                <div>
-                  <TabsTrigger
-                    className="dark:data-[state=active]:bg-neutral-5 data-[state=active]:bg-neutral-6 data-[state=active]:text-neutral-12"
-                    value={variant.value}
-                  >
-                    {variant.label}
-                  </TabsTrigger>
-                </div>
-              ) : (
-                <TabsTrigger
-                  className="text-neutral-9 hover:text-neutral-11"
-                  value={variant.value}
-                  asChild
-                >
-                  <Link
-                    to={variant.pathname}
-                    params={{
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
-                      targetSlug: props.targetSlug,
-                    }}
-                    search={search}
-                  >
-                    {variant.label}
-                  </Link>
-                </TabsTrigger>
-              )
-            }
-            content={variant.tooltip}
-            side="bottom"
-          />
-        ))}
-      </TabsList>
-    </Tabs>
+    <SecondaryNavigation
+      aria-label="Type filter"
+      variant="pill"
+      size="sm"
+      value={props.variant}
+      items={variants.map(variant => ({
+        value: variant.value,
+        label: variant.label,
+        tooltip: variant.tooltip,
+        to: variant.pathname,
+        params: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+        },
+        search,
+      }))}
+    />
   );
 }
