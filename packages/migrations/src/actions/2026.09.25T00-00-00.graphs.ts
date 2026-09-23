@@ -27,6 +27,7 @@ export default {
       , "source_graph_id" uuid REFERENCES "graphs"("id") ON DELETE CASCADE
       , "created_at" timestamptz NOT NULL DEFAULT now()
       , PRIMARY KEY ("id")
+      , CONSTRAINT "graphs_target_id_name_key" UNIQUE ("target_id", "name")
     );
 
     CREATE INDEX "graphs_organization_id" ON "graphs" ("organization_id");
