@@ -2626,6 +2626,7 @@ test.concurrent(
       supergraphChanges: null,
       schemaMetadata: null,
       metadataAttributes: null,
+      graph: null,
     });
     await storage.destroy();
 
