@@ -81,12 +81,12 @@ export class SchemaVersionStore {
       meta: SchemaVersionMeta | null;
       conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadata | null;
       /** The UUID of the graph this schema version belongs to */
-      graphId: string | null;
+      graphId: string;
       /**
        * Additional metadata about the graph
        * Since graphs can be deleted but its version could still be referenced somewhere else, we store that information here.
        */
-      graphMetadata: GraphMetadata | null;
+      graphMetadata: GraphMetadata;
       /** Contracts have a direct relationship to the parent schema version that caused it. */
       sourceSchemaVersionId: string | null;
     },
@@ -141,7 +141,7 @@ export class SchemaVersionStore {
           ${psql.jsonb(SchemaVersionOriginModel.parse(args.origin))},
           ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))},
           ${args.graphId},
-          ${psql.jsonbOrNull(GraphMetadataModel.nullable().parse(args.graphMetadata))},
+          ${psql.jsonb(GraphMetadataModel.parse(args.graphMetadata))},
           ${args.sourceSchemaVersionId}
         )
       RETURNING
@@ -343,7 +343,7 @@ export class SchemaVersionStore {
       organizationId: string;
       schemaRevisionId: string | null;
       revision: string | null;
-      graph: Graph | null;
+      graph: Graph;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -404,14 +404,12 @@ export class SchemaVersionStore {
       const version = await this.insertSchemaVersion(trx, {
         isComposable: args.valid,
         targetId: args.targetId,
-        graphId: args.graph?.id ?? null,
-        graphMetadata: args.graph
-          ? {
-              id: args.graph.id,
-              name: args.graph.name,
-              type: 'default',
-            }
-          : null,
+        graphId: args.graph.id,
+        graphMetadata: {
+          id: args.graph.id,
+          name: args.graph.name,
+          type: 'default',
+        },
         sourceSchemaVersionId: null,
         origin: {
           type: 'publish',
@@ -520,7 +518,7 @@ export class SchemaVersionStore {
       diffSchemaVersionId: string | null;
       conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
       contracts: null | Array<CreateContractVersionInput>;
-      graph: Graph | null;
+      graph: Graph;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -623,10 +621,8 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        graphId: args.graph?.id ?? null,
-        graphMetadata: args.graph
-          ? { id: args.graph.id, name: args.graph.name, type: 'default' }
-          : null,
+        graphId: args.graph.id,
+        graphMetadata: { id: args.graph.id, name: args.graph.name, type: 'default' },
         sourceSchemaVersionId: null,
       });
 
@@ -1384,7 +1380,7 @@ export class SchemaVersionStore {
     origin: {
       version: SchemaVersion;
       target: Target;
-      graph: Graph | null;
+      graph: Graph;
       /** Because of legacy schema versions we cannot rely on the value on the version itself. */
       publicSchemaSdl: string | null;
       /** Because of legacy schema versions we cannot rely on the value on the version itself. */
@@ -1392,7 +1388,7 @@ export class SchemaVersionStore {
     };
     target: {
       target: Target;
-      graph: Graph | null;
+      graph: Graph;
       latestVersion: SchemaVersion | null;
       latestValidVersion: SchemaVersion | null;
     };
@@ -1412,9 +1408,7 @@ export class SchemaVersionStore {
           source: {
             schemaVersion: { id: args.origin.version.id },
             target: { id: args.origin.target.id, name: args.origin.target.name },
-            graph: args.origin.graph
-              ? { id: args.origin.graph.id, name: args.origin.graph.name }
-              : undefined,
+            graph: { id: args.origin.graph.id, name: args.origin.graph.name },
           },
         },
         baseSchema: args.origin.version.baseSchema,
@@ -1432,10 +1426,8 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        graphId: args.target.graph?.id ?? null,
-        graphMetadata: args.target.graph
-          ? { id: args.target.graph.id, name: args.target.graph.name, type: 'default' }
-          : null,
+        graphId: args.target.graph.id,
+        graphMetadata: { id: args.target.graph.id, name: args.target.graph.name, type: 'default' },
         sourceSchemaVersionId: null,
       });
 
