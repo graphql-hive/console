@@ -222,12 +222,25 @@ export function BreakingChangesForm(props: {
             name="targetIds"
             render={({ field }) => (
               <FormItem group>
-                <div>
-                  <div className="font-semibold">Schema usage data from these targets:</div>
+                <div className="space-y-1">
+                  <div className="font-semibold">Check usage in these targets:</div>
                   <div className="text-neutral-10 text-xs">
-                    Marks a breaking change as safe when it was not requested in the targets
-                    clients.
+                    Traffic from the checked targets is what the Conditional Breaking Change
+                    threshold is measured against. A change is flagged as breaking only when clients
+                    of these targets use the affected field or type. Some common configurations are:
                   </div>
+                  <ul className="text-neutral-10 list-disc space-y-1 pl-4 text-xs">
+                    <li>
+                      Check only <span className="font-semibold">production</span> on a development
+                      target to allow changes that would only break development clients, while still
+                      blocking changes that production clients depend on.
+                    </li>
+                    <li>
+                      Check <span className="font-semibold">staging</span> and{' '}
+                      <span className="font-semibold">production</span> on the production target to
+                      protect clients that are only exercised in staging.
+                    </li>
+                  </ul>
                 </div>
                 <div className="space-y-2 pl-2">
                   {props.targets.map(target => (
