@@ -64,7 +64,7 @@ import {
 } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Link,
@@ -115,11 +115,8 @@ export const TokensDocument = graphql(`
   }
 `);
 
-function RegistryAccessTokens(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function RegistryAccessTokens() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [{ fetching: deleting }, mutate] = useMutation(DeleteTokensDocument);
   const [checked, setChecked] = useState<string[]>([]);
   const [isModalOpen, toggleModalOpen] = useToggle();
@@ -128,9 +125,9 @@ function RegistryAccessTokens(props: {
     query: TokensDocument,
     variables: {
       selector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
     },
   });
@@ -140,14 +137,14 @@ function RegistryAccessTokens(props: {
   const deleteTokens = useCallback(async () => {
     await mutate({
       input: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
         tokenIds: checked,
       },
     });
     setChecked([]);
-  }, [checked, mutate, props.organizationSlug, props.projectSlug, props.targetSlug]);
+  }, [checked, mutate, organizationSlug, projectSlug, targetSlug]);
 
   type Token = NonNullable<typeof tokens>[number];
   const columns: ColumnDef<Token, unknown>[] = [
@@ -236,13 +233,7 @@ function RegistryAccessTokens(props: {
         loading={tokensQuery.fetching && !tokensQuery.data}
         emptyMessage="No registry tokens yet."
       />
-      <CreateAccessTokenModal
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        isOpen={isModalOpen}
-        toggleModalOpen={toggleModalOpen}
-      />
+      <CreateAccessTokenModal isOpen={isModalOpen} toggleModalOpen={toggleModalOpen} />
     </SubPageLayout>
   );
 }
@@ -263,12 +254,8 @@ const Settings_UpdateBaseSchemaMutation = graphql(`
   }
 `);
 
-const ExtendBaseSchema = (props: {
-  baseSchema: string;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) => {
+const ExtendBaseSchema = (props: { baseSchema: string }) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [mutation, mutate] = useMutation(Settings_UpdateBaseSchemaMutation);
   const [baseSchema, setBaseSchema] = useState(props.baseSchema);
   const { toast } = useToast();
@@ -305,9 +292,9 @@ const ExtendBaseSchema = (props: {
           onClick={async () => {
             await mutate({
               input: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 newBase: baseSchema,
               },
             }).then(result => {
@@ -354,21 +341,20 @@ const ClientExclusion_AvailableClientNamesQuery = graphql(`
 function ClientExclusion(
   props: PropsWithoutRef<
     {
-      organizationSlug: string;
-      projectSlug: string;
       selectedTargetIds: string[];
       clientsFromSettings: string[];
       value: string[];
     } & Pick<ComponentProps<typeof Combobox>, 'name' | 'disabled' | 'onBlur' | 'onChange'>
   >,
 ) {
+  const { organizationSlug, projectSlug } = useSlugs('target');
   const now = floorDate(new Date());
   const [availableClientNamesQuery] = useQuery({
     query: ClientExclusion_AvailableClientNamesQuery,
     variables: {
       selector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
+        organizationSlug,
+        projectSlug,
         targetIds: props.selectedTargetIds,
         period: {
           from: formatISO(subDays(now, 90)),
@@ -422,21 +408,19 @@ const AppDeploymentExclusion_AvailableAppDeploymentNamesQuery = graphql(`
 function AppDeploymentExclusion(
   props: PropsWithoutRef<
     {
-      organizationSlug: string;
-      projectSlug: string;
-      targetSlug: string;
       appDeploymentsFromSettings: string[];
       value: string[];
     } & Pick<ComponentProps<typeof Combobox>, 'name' | 'disabled' | 'onBlur' | 'onChange'>
   >,
 ) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [availableAppDeploymentNamesQuery] = useQuery({
     query: AppDeploymentExclusion_AvailableAppDeploymentNamesQuery,
     variables: {
       selector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
     },
   });
@@ -611,11 +595,8 @@ function floorDate(date: Date): Date {
   return new Date(Math.floor(date.getTime() / time) * time);
 }
 
-export const BreakingChanges = (props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) => {
+export const BreakingChanges = () => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [mutation, updateValidation] = useMutation(
     TargetSettingsPage_UpdateTargetConditionalBreakingChangeConfigurationMutation,
   );
@@ -626,16 +607,16 @@ export const BreakingChanges = (props: {
     query: TargetSettingsPage_TargetSettingsQuery,
     variables: {
       selector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
       targetsSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
+        organizationSlug,
+        projectSlug,
       },
       organizationSelector: {
-        organizationSlug: props.organizationSlug,
+        organizationSlug,
       },
     },
   });
@@ -674,9 +655,9 @@ export const BreakingChanges = (props: {
       input: {
         target: {
           bySelector: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
           },
         },
         conditionalBreakingChangeConfiguration: {
@@ -751,9 +732,9 @@ export const BreakingChanges = (props: {
                       failDiffOnDangerousChange,
                       target: {
                         bySelector: {
-                          targetSlug: props.targetSlug,
-                          projectSlug: props.projectSlug,
-                          organizationSlug: props.organizationSlug,
+                          targetSlug,
+                          projectSlug,
+                          organizationSlug,
                         },
                       },
                     },
@@ -777,9 +758,6 @@ export const BreakingChanges = (props: {
             targetSettings.data?.target?.failAllDangerousChanges ?? true
           }
           initialFailingChangeTypes={targetSettings.data?.target?.failDangerousChangeTypes ?? []}
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
         />
       </SubPageLayout>
       <SubPageLayout>
@@ -801,9 +779,9 @@ export const BreakingChanges = (props: {
                     input: {
                       target: {
                         bySelector: {
-                          organizationSlug: props.organizationSlug,
-                          targetSlug: props.targetSlug,
-                          projectSlug: props.projectSlug,
+                          organizationSlug,
+                          targetSlug,
+                          projectSlug,
                         },
                       },
                       conditionalBreakingChangeConfiguration: {
@@ -825,8 +803,6 @@ export const BreakingChanges = (props: {
           targets={possibleTargets ?? []}
           clientExclusion={(field, targetIds) => (
             <ClientExclusion
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
               selectedTargetIds={targetIds}
               clientsFromSettings={configuration?.excludedClients ?? []}
               name={field.name}
@@ -838,9 +814,6 @@ export const BreakingChanges = (props: {
           )}
           appDeploymentExclusion={field => (
             <AppDeploymentExclusion
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
               appDeploymentsFromSettings={configuration?.excludedAppDeployments ?? []}
               name={field.name}
               value={field.value}
@@ -856,11 +829,8 @@ export const BreakingChanges = (props: {
   );
 };
 
-export const AppDeploymentProtection = (props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) => {
+export const AppDeploymentProtection = () => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [mutation, updateProtection] = useMutation(
     TargetSettingsPage_UpdateTargetAppDeploymentProtectionConfigurationMutation,
   );
@@ -868,16 +838,16 @@ export const AppDeploymentProtection = (props: {
     query: TargetSettingsPage_TargetSettingsQuery,
     variables: {
       selector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
       targetsSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
+        organizationSlug,
+        projectSlug,
       },
       organizationSelector: {
-        organizationSlug: props.organizationSlug,
+        organizationSlug,
       },
     },
   });
@@ -908,9 +878,9 @@ export const AppDeploymentProtection = (props: {
       input: {
         target: {
           bySelector: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
           },
         },
         appDeploymentProtectionConfiguration: {
@@ -985,9 +955,9 @@ export const AppDeploymentProtection = (props: {
                     input: {
                       target: {
                         bySelector: {
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
+                          organizationSlug,
+                          projectSlug,
+                          targetSlug,
                         },
                       },
                       appDeploymentProtectionConfiguration: {
@@ -1012,7 +982,8 @@ export const AppDeploymentProtection = (props: {
   );
 };
 
-function TargetSlug(props: { organizationSlug: string; projectSlug: string; targetSlug: string }) {
+function TargetSlug() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const router = useRouter();
   const { toast } = useToast();
 
@@ -1021,7 +992,7 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
     mode: 'all',
     resolver: zodResolver(slugFormSchema('Target')),
     defaultValues: {
-      slug: props.targetSlug,
+      slug: targetSlug,
     },
   });
 
@@ -1032,9 +1003,9 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
           input: {
             target: {
               bySelector: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
               },
             },
             slug: data.slug,
@@ -1052,8 +1023,8 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
           void router.navigate({
             to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
             params: {
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
+              organizationSlug,
+              projectSlug,
               targetSlug: result.data.updateTargetSlug.ok.target.slug,
             },
           });
@@ -1090,7 +1061,7 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
       <SlugForm
         form={slugForm}
         onSubmit={onSlugFormSubmit}
-        prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${props.organizationSlug}/${props.projectSlug}/`}
+        prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${organizationSlug}/${projectSlug}/`}
       />
     </SubPageLayout>
   );
@@ -1114,12 +1085,8 @@ const TargetSettingsPage_UpdateTargetGraphQLEndpointUrl = graphql(`
   }
 `);
 
-export function GraphQLEndpointUrl(props: {
-  graphqlEndpointUrl: string | null;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function GraphQLEndpointUrl(props: { graphqlEndpointUrl: string | null }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { toast } = useToast();
   const [mutation, mutate] = useMutation(TargetSettingsPage_UpdateTargetGraphQLEndpointUrl);
   const form = useForm<GraphqlEndpointFormValues>({
@@ -1137,9 +1104,9 @@ export function GraphQLEndpointUrl(props: {
       input: {
         target: {
           bySelector: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
           },
         },
         graphqlEndpointUrl: values.graphqlEndpointUrl === '' ? null : values.graphqlEndpointUrl,
@@ -1171,9 +1138,9 @@ export function GraphQLEndpointUrl(props: {
             <Link
               to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
               params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
               }}
             >
               Hive Laboratory
@@ -1216,11 +1183,7 @@ const TargetSettingsPage_UpdateTargetSlugMutation = graphql(`
   }
 `);
 
-function TargetDelete(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function TargetDelete() {
   const [isModalOpen, toggleModalOpen] = useToggle();
 
   return (
@@ -1242,13 +1205,7 @@ function TargetDelete(props: {
         Delete Target
       </Button>
 
-      <DeleteTargetModal
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        isOpen={isModalOpen}
-        toggleModalOpen={toggleModalOpen}
-      />
+      <DeleteTargetModal isOpen={isModalOpen} toggleModalOpen={toggleModalOpen} />
     </SubPageLayout>
   );
 }
@@ -1290,12 +1247,6 @@ function TargetInfo(props: { targetId: string }) {
     </div>
   );
 }
-
-type SectionProps = {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-};
 
 const SETTINGS = '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings';
 
@@ -1359,8 +1310,10 @@ const sections: readonly Section[] = [
   },
 ];
 
-export function TargetSettingsPage(props: SectionProps) {
-  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: props });
+export function TargetSettingsPage() {
+  const slugs = useSlugs('target');
+  const { organizationSlug } = slugs;
+  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: slugs });
   const currentOrganization = query.data?.organization;
   const currentProject = currentOrganization?.project;
   const currentTarget = currentProject?.target;
@@ -1369,7 +1322,7 @@ export function TargetSettingsPage(props: SectionProps) {
     canAccess: currentTarget?.viewerCanAccessSettings === true,
     entity: currentTarget,
     redirectTo: router => {
-      void router.navigate({ to: '/$organizationSlug/$projectSlug/$targetSlug', params: props });
+      void router.navigate({ to: '/$organizationSlug/$projectSlug/$targetSlug', params: slugs });
     },
   });
 
@@ -1400,8 +1353,8 @@ export function TargetSettingsPage(props: SectionProps) {
       const fallback = visible.at(0);
       void router.navigate(
         fallback
-          ? { to: fallback.to, params: props, replace: true }
-          : { to: '/$organizationSlug/$projectSlug/$targetSlug', params: props, replace: true },
+          ? { to: fallback.to, params: slugs, replace: true }
+          : { to: '/$organizationSlug/$projectSlug/$targetSlug', params: slugs, replace: true },
       );
     },
   });
@@ -1410,7 +1363,7 @@ export function TargetSettingsPage(props: SectionProps) {
     return (
       <LayoutContent>
         <QueryError
-          organizationSlug={props.organizationSlug}
+          organizationSlug={organizationSlug}
           error={query.error}
           showLogoutButton={false}
         />
@@ -1431,7 +1384,7 @@ export function TargetSettingsPage(props: SectionProps) {
                 id: section.id,
                 label: section.label,
                 to: section.to,
-                params: props,
+                params: slugs,
                 exact: section.exact,
                 attrs: { 'data-cy': `target-settings-${section.id}-link` },
               }))}
@@ -1448,8 +1401,9 @@ export function TargetSettingsPage(props: SectionProps) {
   );
 }
 
-export function TargetSettingsGeneralSection(props: SectionProps) {
-  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: props });
+export function TargetSettingsGeneralSection() {
+  const slugs = useSlugs('target');
+  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: slugs });
   const currentOrganization = query.data?.organization;
   const currentProject = currentOrganization?.project;
   const currentTarget = currentProject?.target;
@@ -1459,47 +1413,34 @@ export function TargetSettingsGeneralSection(props: SectionProps) {
   return (
     <>
       <TargetInfo targetId={currentTarget.id} />
-      <TargetSlug {...props} />
-      <GraphQLEndpointUrl
-        targetSlug={currentTarget.slug}
-        projectSlug={currentProject.slug}
-        organizationSlug={currentOrganization.slug}
-        graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null}
-      />
-      {currentTarget.viewerCanDelete && (
-        <TargetDelete
-          targetSlug={currentTarget.slug}
-          projectSlug={currentProject.slug}
-          organizationSlug={currentOrganization.slug}
-        />
-      )}
+      <TargetSlug />
+      <GraphQLEndpointUrl graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null} />
+      {currentTarget.viewerCanDelete && <TargetDelete />}
     </>
   );
 }
 
-export function TargetSettingsRegistryTokensSection(props: SectionProps) {
-  return <RegistryAccessTokens {...props} />;
+export function TargetSettingsRegistryTokensSection() {
+  return <RegistryAccessTokens />;
 }
 
-export function TargetSettingsBreakingChangesSection(props: SectionProps) {
-  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: props });
+export function TargetSettingsBreakingChangesSection() {
+  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: useSlugs('target') });
   return (
     <>
-      <BreakingChanges {...props} />
-      {query.data?.organization?.isAppDeploymentsEnabled ? (
-        <AppDeploymentProtection {...props} />
-      ) : null}
+      <BreakingChanges />
+      {query.data?.organization?.isAppDeploymentsEnabled ? <AppDeploymentProtection /> : null}
     </>
   );
 }
 
-export function TargetSettingsBaseSchemaSection(props: SectionProps) {
-  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: props });
+export function TargetSettingsBaseSchemaSection() {
+  const [query] = useQuery({ query: TargetSettingsPageQuery, variables: useSlugs('target') });
   const currentTarget = query.data?.organization?.project?.target;
   if (!currentTarget) {
     return null;
   }
-  return <ExtendBaseSchema baseSchema={currentTarget.baseSchema ?? ''} {...props} />;
+  return <ExtendBaseSchema baseSchema={currentTarget.baseSchema ?? ''} />;
 }
 
 export const DeleteTargetMutation = graphql(`
@@ -1512,14 +1453,8 @@ export const DeleteTargetMutation = graphql(`
   }
 `);
 
-export function DeleteTargetModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
-  const { organizationSlug, projectSlug, targetSlug } = props;
+export function DeleteTargetModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [, mutate] = useMutation(DeleteTargetMutation);
   const { toast } = useToast();
   const router = useRouter();
@@ -1617,17 +1552,12 @@ export function DangerousChangeTypeForm({
   considerDangerousAsBreaking,
   initialFailingChangeTypes,
   initialFailAllDangerousChanges,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
 }: {
   considerDangerousAsBreaking: boolean;
   initialFailingChangeTypes: DangerousChangeType[];
   initialFailAllDangerousChanges: boolean;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [_, mutate] = useMutation(TargetSettingsPage_UpdateFailingDangerousChangeSettings);
   const { saveStatus, triggerSaveMessage } = useSaveStatus();
   const [error, setError] = useState<{ title: string; description?: string }>();

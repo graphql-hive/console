@@ -8,9 +8,8 @@ export const targetRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '$organizationSlug/$projectSlug/$targetSlug',
   component: function TargetRoute() {
-    const params = targetRoute.useParams();
     return (
-      <TargetLayout {...params}>
+      <TargetLayout>
         <Outlet />
       </TargetLayout>
     );
@@ -23,14 +22,5 @@ export const targetIndexRoute = createRoute({
   validateSearch: z.object({
     service: z.string().optional(),
   }),
-  component: function TargetRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetIndexRoute.useParams();
-    return (
-      <TargetPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
-    );
-  },
+  component: TargetPage,
 });

@@ -38,6 +38,12 @@ vi.mock('@tanstack/react-router', async importOriginal => ({
 
 const selector = { organizationSlug: 'acme', projectSlug: 'shop', targetSlug: 'production' };
 
+// These sections read the current target from the URL; here they render outside a router.
+vi.mock('@/lib/hooks', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/lib/hooks')>()),
+  useSlugs: () => selector,
+}));
+
 describe('GraphQLEndpointUrl', () => {
   function renderForm(graphqlEndpointUrl: string | null) {
     // A fresh element each time, or React skips the update and never reads the mutation state.
@@ -254,7 +260,7 @@ describe('AppDeploymentProtection', () => {
     // A fresh element each time, or React skips the update and never reads the mutation state.
     const element = () => (
       <ToastProvider>
-        <AppDeploymentProtection {...selector} />
+        <AppDeploymentProtection />
       </ToastProvider>
     );
     const view = render(element());
@@ -441,7 +447,7 @@ describe('BreakingChanges', () => {
     // A fresh element each time, or React skips the update and never reads the mutation state.
     const element = () => (
       <ToastProvider>
-        <BreakingChanges {...selector} />
+        <BreakingChanges />
       </ToastProvider>
     );
     const view = render(element());

@@ -20,6 +20,12 @@ vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
 
 const selector = { organizationSlug: 'acme', projectSlug: 'shop', targetSlug: 'production' };
 
+// The modal reads the current target from the URL; here it renders outside a router.
+vi.mock('@/lib/hooks', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/lib/hooks')>()),
+  useSlugs: () => selector,
+}));
+
 function renderModal() {
   const onCreateCDNAccessToken = vi.fn();
   const onClose = vi.fn();
@@ -31,7 +37,6 @@ function renderModal() {
         onOpenChangeComplete={() => {}}
         onCreateCDNAccessToken={onCreateCDNAccessToken}
         onClose={onClose}
-        {...selector}
       />
     </ToastProvider>
   );

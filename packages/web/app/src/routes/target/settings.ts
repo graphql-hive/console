@@ -16,10 +16,7 @@ import { targetRoute } from './route';
 export const targetSettingsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'settings',
-  component: function TargetSettingsRoute() {
-    const params = targetSettingsRoute.useParams();
-    return <TargetSettingsPage {...params} />;
-  },
+  component: TargetSettingsPage,
 });
 
 // The bare URL is General. `page` exists only to catch the old `?page=` form.
@@ -30,10 +27,7 @@ export const targetSettingsIndexRoute = createRoute({
     z.object({ page: legacySearch.targetSettings.values.optional().catch(undefined) }),
   ),
   beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.targetSettings, search),
-  component: function TargetSettingsIndexRoute() {
-    const params = targetSettingsIndexRoute.useParams();
-    return <TargetSettingsGeneralSection {...params} />;
-  },
+  component: TargetSettingsGeneralSection,
 });
 
 export const targetSettingsCdnRoute = createRoute({
@@ -46,44 +40,29 @@ export const targetSettingsCdnRoute = createRoute({
       id: z.string().optional(),
     }),
   ),
-  component: function TargetSettingsCdnRoute() {
-    const params = targetSettingsCdnRoute.useParams();
-    return <CDNAccessTokens {...params} />;
-  },
+  component: CDNAccessTokens,
 });
 
 export const targetSettingsRegistryTokenRoute = createRoute({
   getParentRoute: () => targetSettingsRoute,
   path: 'registry-token',
-  component: function TargetSettingsRegistryTokenRoute() {
-    const params = targetSettingsRegistryTokenRoute.useParams();
-    return <TargetSettingsRegistryTokensSection {...params} />;
-  },
+  component: TargetSettingsRegistryTokensSection,
 });
 
 export const targetSettingsBreakingChangesRoute = createRoute({
   getParentRoute: () => targetSettingsRoute,
   path: 'breaking-changes',
-  component: function TargetSettingsBreakingChangesRoute() {
-    const params = targetSettingsBreakingChangesRoute.useParams();
-    return <TargetSettingsBreakingChangesSection {...params} />;
-  },
+  component: TargetSettingsBreakingChangesSection,
 });
 
 export const targetSettingsBaseSchemaRoute = createRoute({
   getParentRoute: () => targetSettingsRoute,
   path: 'base-schema',
-  component: function TargetSettingsBaseSchemaRoute() {
-    const params = targetSettingsBaseSchemaRoute.useParams();
-    return <TargetSettingsBaseSchemaSection {...params} />;
-  },
+  component: TargetSettingsBaseSchemaSection,
 });
 
 export const targetSettingsSchemaContractsRoute = createRoute({
   getParentRoute: () => targetSettingsRoute,
   path: 'schema-contracts',
-  component: function TargetSettingsSchemaContractsRoute() {
-    const params = targetSettingsSchemaContractsRoute.useParams();
-    return <SchemaContracts {...params} />;
-  },
+  component: SchemaContracts,
 });

@@ -15,7 +15,7 @@ import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { Tabs } from '../base/tabs/tabs';
@@ -72,22 +72,9 @@ const TargetLayoutQuery = graphql(`
   }
 `);
 
-export const TargetLayout = ({
-  children,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-}: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  children: ReactNode;
-}): ReactElement | null => {
-  const params = {
-    organizationSlug,
-    projectSlug,
-    targetSlug,
-  };
+export const TargetLayout = ({ children }: { children: ReactNode }): ReactElement | null => {
+  const params = useSlugs('target');
+  const { organizationSlug, projectSlug, targetSlug } = params;
 
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
