@@ -1180,6 +1180,7 @@ export function getSchemaVersionWithAllDetails(
               ... on SubgraphDiffAdded {
                 subgraphVersion {
                   id
+                  revision
                   sdl
                   serviceName
                 }
@@ -1187,11 +1188,13 @@ export function getSchemaVersionWithAllDetails(
               ... on SubgraphDiffChanged {
                 subgraphVersion {
                   id
+                  revision
                   sdl
                   serviceName
                 }
                 previousSubgraphVersion {
                   id
+                  revision
                   sdl
                   serviceName
                 }
@@ -1206,6 +1209,7 @@ export function getSchemaVersionWithAllDetails(
               ... on SubgraphDiffRemoved {
                 removedSubgraphVersion {
                   id
+                  revision
                   sdl
                   serviceName
                 }
@@ -1213,6 +1217,7 @@ export function getSchemaVersionWithAllDetails(
               ... on SubgraphDiffUnchanged {
                 subgraphVersion {
                   id
+                  revision
                   sdl
                   serviceName
                 }
@@ -2650,6 +2655,30 @@ export function updateMe(input: GraphQLSchema.UpdateMeInput, authToken: string) 
               displayName
               fullName
             }
+          }
+        }
+      }
+    `),
+    variables: { input },
+    authToken,
+  });
+}
+
+export function schemaPush(input: GraphQLSchema.SchemaPushInput, authToken: string) {
+  return execute({
+    document: graphql(/* GraphQL */ `
+      mutation TestKit_SchemaPush($input: SchemaPushInput!) {
+        schemaPush(input: $input) {
+          ok {
+            schemaRevision {
+              id
+              service
+              revision
+              digest
+            }
+          }
+          error {
+            message
           }
         }
       }

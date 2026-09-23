@@ -1,30 +1,16 @@
 import { ReactElement, useMemo } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { z } from 'zod';
-import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/base/button/button';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
 import { useEditorContext } from '@graphiql/react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { OperationForm, OperationFormSchema, type OperationFormValues } from './operation-form';
+
+const EDIT_OPERATION_FORM_ID = 'edit-operation-form';
 
 const UpdateOperationNameMutation = graphql(`
   mutation UpdateOperation(
@@ -47,24 +33,6 @@ const UpdateOperationNameMutation = graphql(`
     }
   }
 `);
-
-const editOperationModalFormSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Operation name is required',
-    })
-    .min(3, {
-      message: 'Operation name must be at least 3 characters long',
-    })
-    .max(50, {
-      message: 'Operation name must be less than 50 characters long',
-    }),
-  collectionId: z.string({
-    required_error: 'Collection is required',
-  }),
-});
-
-export type EditOperationModalFormValues = z.infer<typeof editOperationModalFormSchema>;
 
 export const EditOperationModal = (props: {
   operationId: string;
@@ -93,16 +61,16 @@ export const EditOperationModal = (props: {
     return [null, null] as const;
   }, [collections]);
 
-  const form = useForm<EditOperationModalFormValues>({
+  const form = useForm<OperationFormValues>({
     mode: 'all',
-    resolver: zodResolver(editOperationModalFormSchema),
+    resolver: zodResolver(OperationFormSchema),
     defaultValues: {
       name: operation?.name || '',
       collectionId: collection?.id || '',
     },
   });
 
-  async function onSubmit(values: EditOperationModalFormValues) {
+  async function onSubmit(values: OperationFormValues) {
     const response = await mutate({
       selector: {
         targetSlug: props.targetSlug,
@@ -155,8 +123,8 @@ export const EditOperationModalContent = (props: {
   fetching: boolean;
   isOpen: boolean;
   close: () => void;
-  form: UseFormReturn<EditOperationModalFormValues>;
-  onSubmit: (values: EditOperationModalFormValues) => void;
+  form: UseFormReturn<OperationFormValues>;
+  onSubmit: (values: OperationFormValues) => void;
   opreationId?: string;
 }): ReactElement => {
   return (
@@ -166,69 +134,43 @@ export const EditOperationModalContent = (props: {
         props.close();
         props.form.reset();
       }}
+      width="lg"
+      attrs={{ 'data-cy': 'edit-operation-modal' }}
+      title="Edit Operation"
+      description="Update the operation name"
+      footer={
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            width="full"
+            onClick={() => {
+              props.close();
+              props.form.reset();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form={EDIT_OPERATION_FORM_ID}
+            width="full"
+            onSurface="raised"
+            disabled={
+              props.form.formState.isSubmitting ||
+              !props.form.formState.isValid ||
+              !props.form.formState.isDirty
+            }
+            data-cy="confirm"
+          >
+            Update Operation
+          </Button>
+        </>
+      }
     >
-      <DialogContent className="w-4/5 max-w-[600px] md:w-3/5" data-cy="edit-operation-modal">
-        {!props.fetching && (
-          <Form {...props.form}>
-            <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
-              <DialogHeader>
-                <DialogTitle>Edit Operation</DialogTitle>
-                <DialogDescription>Update the operation name</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-8">
-                <FormField
-                  control={props.form.control}
-                  name="name"
-                  render={({ field }) => {
-                    return (
-                      <FormItem>
-                        <FormLabel>Operation Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            autoComplete="off"
-                            {...field}
-                            placeholder="Your Operation Name"
-                            onSurface="raised"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
-                />
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  size="lg"
-                  className="w-full justify-center"
-                  onClick={ev => {
-                    ev.preventDefault();
-                    props.close();
-                    props.form.reset();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full justify-center"
-                  variant="primary"
-                  disabled={
-                    props.form.formState.isSubmitting ||
-                    !props.form.formState.isValid ||
-                    !props.form.formState.isDirty
-                  }
-                  data-cy="confirm"
-                >
-                  Update Operation
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        )}
-      </DialogContent>
+      {!props.fetching && (
+        <OperationForm form={props.form} onSubmit={props.onSubmit} id={EDIT_OPERATION_FORM_ID} />
+      )}
     </Dialog>
   );
 };

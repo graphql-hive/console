@@ -1,8 +1,9 @@
 import { ReactElement } from 'react';
-import { Button } from '@/components/ui/button';
-import { Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
-import { FragmentType, graphql, useFragment } from '@/gql';
-import { CurrencyFormatter, DateFormatter } from './helpers';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
+import { BillingInvoiceStatus } from '@/gql/graphql';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const OrganizationInvoicesList_OrganizationFragment = graphql(`
   fragment OrganizationInvoicesList_OrganizationFragment on Organization {
@@ -23,6 +24,76 @@ const OrganizationInvoicesList_OrganizationFragment = graphql(`
   }
 `);
 
+type Invoice = NonNullable<
+  NonNullable<
+    DocumentType<typeof OrganizationInvoicesList_OrganizationFragment>['billingConfiguration']
+  >['invoices']
+>[number];
+
+const STATUS_BADGE: Record<BillingInvoiceStatus, 'success' | 'info' | 'warning' | 'critical'> = {
+  [BillingInvoiceStatus.Paid]: 'success',
+  [BillingInvoiceStatus.Open]: 'info',
+  [BillingInvoiceStatus.Draft]: 'info',
+  [BillingInvoiceStatus.Uncollectible]: 'critical',
+  [BillingInvoiceStatus.Void]: 'warning',
+};
+
+const INVOICE_COLUMNS: ColumnDef<Invoice, unknown>[] = [
+  {
+    id: 'date',
+    header: 'Invoice Date',
+    cell: ({ row }) => <DataTableCell kind="time" date={row.original.date} mode="date" />,
+  },
+  {
+    id: 'amount',
+    header: 'Amount',
+    meta: { align: 'right' },
+    cell: ({ row }) => (
+      <DataTableCell kind="number" value={row.original.amount} format="currency" />
+    ),
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    cell: ({ row }) => (
+      <DataTableCell
+        kind="badge"
+        items={{
+          content: row.original.status.charAt(0) + row.original.status.slice(1).toLowerCase(),
+          variant: STATUS_BADGE[row.original.status],
+        }}
+      />
+    ),
+  },
+  {
+    id: 'periodStart',
+    header: 'Period Start',
+    cell: ({ row }) => <DataTableCell kind="time" date={row.original.periodStart} mode="date" />,
+  },
+  {
+    id: 'periodEnd',
+    header: 'Period End',
+    meta: { width: 'fill' },
+    cell: ({ row }) => <DataTableCell kind="time" date={row.original.periodEnd} mode="date" />,
+  },
+  {
+    id: 'pdf',
+    header: 'PDF',
+    cell: ({ row }) =>
+      row.original.pdfLink ? (
+        <DataTableCell
+          kind="link"
+          label="Download"
+          href={row.original.pdfLink}
+          external
+          tone="accent"
+        />
+      ) : (
+        <DataTableCell kind="placeholder" />
+      ),
+  },
+];
+
 export function InvoicesList(props: {
   organization: FragmentType<typeof OrganizationInvoicesList_OrganizationFragment>;
 }): ReactElement | null {
@@ -35,35 +106,11 @@ export function InvoicesList(props: {
   }
 
   return (
-    <Table>
-      <THead>
-        <Th>Invoice Date</Th>
-        <Th>Amount</Th>
-        <Th>Status</Th>
-        <Th>Period Start</Th>
-        <Th>Period End</Th>
-        <Th>PDF</Th>
-      </THead>
-      <TBody>
-        {organization.billingConfiguration.invoices.map(invoice => (
-          <Tr key={invoice.id}>
-            <Td>{DateFormatter.format(new Date(invoice.date))}</Td>
-            <Td>{CurrencyFormatter.format(invoice.amount)}</Td>
-            <Td>{invoice.status}</Td>
-            <Td>{DateFormatter.format(new Date(invoice.periodStart))}</Td>
-            <Td>{DateFormatter.format(new Date(invoice.periodEnd))}</Td>
-            <Td>
-              {invoice.pdfLink && (
-                <Button variant="orangeLink" asChild>
-                  <a href={invoice.pdfLink} target="_blank" rel="noreferrer">
-                    Download
-                  </a>
-                </Button>
-              )}
-            </Td>
-          </Tr>
-        ))}
-      </TBody>
-    </Table>
+    <DataTable
+      data={[...organization.billingConfiguration.invoices]}
+      columns={INVOICE_COLUMNS}
+      getRowId={invoice => invoice.id}
+      pagination={{ kind: 'none' }}
+    />
   );
 }

@@ -52,6 +52,7 @@ Add "user" field to ./docker/docker-compose.dev.yml
 - Run `pnpm generate` to generate the typings from the graphql files (use `pnpm graphql:generate` if
   you only need to run GraphQL Codegen)
 - Run `pnpm build` to build all services
+  - This also builds `laboratory`, which console consumes from `dist` as any other consumer would.
 - Click on `Start Hive` in the bottom bar of VSCode (alternatively you can manually start the
   services you need)
 - Open the UI (`http://localhost:3000` by default) and Sign in with any of the identity provider

@@ -268,6 +268,7 @@ function ActivityView(props: {
         <AlertActivityTable
           key={tableResetKey}
           events={visibleEvents}
+          loading={result.fetching && !data}
           organizationSlug={organizationSlug}
           projectSlug={projectSlug}
           targetSlug={targetSlug}

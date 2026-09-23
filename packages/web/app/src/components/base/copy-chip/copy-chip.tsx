@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 
-export function CopyChip(props: { value: string; label?: string }) {
+export function CopyChip(props: {
+  value: string;
+  label?: string;
+  /** Attributes for the text, such as a hook for a test. */
+  attrs?: Record<string, string>;
+}) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -21,9 +26,11 @@ export function CopyChip(props: { value: string; label?: string }) {
         cleanPendingTimer();
         timeoutRef.current = setTimeout(() => setCopied(false), 1200);
       }}
-      className="group inline-flex items-center gap-1.5 rounded-md text-xs"
+      className="group inline-flex max-w-full items-center gap-1.5 rounded-md"
     >
-      <span className="truncate">{props.label ?? props.value}</span>
+      <span className="min-w-0 truncate" {...props.attrs}>
+        {props.label ?? props.value}
+      </span>
       {copied ? (
         <Check className="h-3 w-3" />
       ) : (

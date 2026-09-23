@@ -1,6 +1,50 @@
+import { cva, type VariantProps } from 'class-variance-authority';
+import { Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { CopyChip } from '../copy-chip/copy-chip';
+import { Tooltip } from '../floating/tooltip/tooltip';
+
+const termVariants = cva('text-neutral-10 mb-1 inline-flex items-center gap-1', {
+  variants: {
+    termStyle: {
+      /** Small caps, for a details panel beside or under a table. */
+      label: 'text-[9px] font-medium uppercase tracking-[0.75px]',
+      /** Sentence case at 12px, for a card at the top of a page. */
+      title: 'text-xs font-medium',
+    },
+  },
+  defaultVariants: {
+    termStyle: 'label',
+  },
+});
+
+const rowVariants = cva('grid gap-4', {
+  variants: {
+    columns: {
+      /** One column per item in the row. */
+      fixed: '',
+      /** As many columns as fit, so a row wraps on a narrow window. */
+      auto: 'grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]',
+    },
+  },
+  defaultVariants: {
+    columns: 'fixed',
+  },
+});
+
+type DescriptionListVariants = VariantProps<typeof termVariants> & VariantProps<typeof rowVariants>;
+
 type DescriptionListItemProps = {
   term: string;
   description: React.ReactNode;
+  /** Explains the term, on an info icon after it. */
+  tooltip?: string;
+  /** An identifier, endpoint or record value rather than prose. */
+  mono?: boolean;
+  /** A string description the reader will paste somewhere: rendered as a copy chip. */
+  copyable?: boolean;
+  /** Attributes for the value element, such as a hook for a test. */
+  attrs?: Record<string, string>;
 };
 
 type DescriptionListItemRowProps = {
@@ -9,6 +53,7 @@ type DescriptionListItemRowProps = {
 
 type DescriptionListProps = {
   rows: Array<DescriptionListItemRowProps>;
+  variants?: DescriptionListVariants;
 };
 
 // Tailwind needs full class strings to detect them — explicit map by column count.
@@ -21,28 +66,64 @@ const COLS_CLASS: Record<number, string> = {
   6: 'grid-cols-6',
 };
 
-function DescriptionListItem({ term, description }: DescriptionListItemProps) {
+function DescriptionListItem({
+  term,
+  description,
+  tooltip,
+  mono,
+  copyable,
+  attrs,
+  termStyle,
+}: DescriptionListItemProps & VariantProps<typeof termVariants>) {
+  const value =
+    copyable && typeof description === 'string' ? (
+      <CopyChip value={description} attrs={attrs} />
+    ) : attrs ? (
+      <span {...attrs}>{description}</span>
+    ) : (
+      description
+    );
   return (
     <>
-      <div className="text-neutral-10 mb-1 inline-block text-[9px] font-medium uppercase tracking-[0.75px]">
+      <div className={termVariants({ termStyle })}>
         {term}
+        {tooltip ? (
+          <Tooltip
+            trigger={
+              <span className="text-neutral-9 inline-flex">
+                <Info className="size-3" />
+              </span>
+            }
+            content={tooltip}
+          />
+        ) : null}
       </div>
-      <div className="text-neutral-12 text-control">{description}</div>
+      {/* An identifier has no spaces to wrap at, so it breaks anywhere rather than overflowing. */}
+      <div
+        className={cn('text-neutral-12 text-control', mono && 'break-all font-mono')}
+        // A value that gets clipped by a narrow column can still be read on hover.
+        title={typeof description === 'string' ? description : undefined}
+      >
+        {value}
+      </div>
     </>
   );
 }
 
-export function DescriptionList({ rows }: DescriptionListProps) {
+export function DescriptionList({ rows, variants }: DescriptionListProps) {
   return (
     <div className="space-y-3.5">
       {rows.map((row, rowIndex) => (
         <div
           key={rowIndex}
-          className={`grid gap-4 ${COLS_CLASS[row.items.length] ?? 'grid-cols-1'}`}
+          className={cn(
+            rowVariants({ columns: variants?.columns }),
+            variants?.columns !== 'auto' && (COLS_CLASS[row.items.length] ?? 'grid-cols-1'),
+          )}
         >
           {row.items.map((item, itemIndex) => (
-            <div key={itemIndex}>
-              <DescriptionListItem term={item.term} description={item.description} />
+            <div key={itemIndex} className="min-w-0">
+              <DescriptionListItem {...item} termStyle={variants?.termStyle} />
             </div>
           ))}
         </div>

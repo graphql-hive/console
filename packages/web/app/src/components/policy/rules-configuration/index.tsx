@@ -1,21 +1,28 @@
 import { ReactElement } from 'react';
 import type { JSONSchema } from 'json-schema-typed';
-import convertToYup from 'json-schema-yup-transformer';
-import * as Yup from 'yup';
+import { z } from 'zod';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Markdown } from '@/components/v2/markdown';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
-import type { AvailableRulesList } from '../policy-settings';
 import { PolicyBooleanToggle } from './boolean-config';
 import { PolicyEnumSelect } from './enum-config';
 import { PolicyMultiSelect } from './multiselect-config';
 import { NamingConventionConfigEditor } from './naming-convention-rule-editor';
 import { PolicyStringInputConfig } from './string-config';
 
-export type PolicyFormValues = {
-  allowOverrides: boolean;
-  rules: Record<string, { enabled: boolean; severity: RuleInstanceSeverityLevel; config: unknown }>;
-};
+/** Rule configs are checked against their JSON Schema by the policy service on save. */
+export const PolicyFormSchema = z.object({
+  allowOverrides: z.boolean(),
+  rules: z.record(
+    z.object({
+      enabled: z.boolean(),
+      severity: z.nativeEnum(RuleInstanceSeverityLevel),
+      config: z.unknown(),
+    }),
+  ),
+});
+
+export type PolicyFormValues = z.infer<typeof PolicyFormSchema>;
 
 function composeTooltipContent(input: {
   description?: string;
@@ -59,31 +66,6 @@ function composeDocsLink(
   return attributes.length === 0
     ? undefined
     : `${baseUrl}#${[propertyName.toLowerCase(), ...attributes].join('-')}`;
-}
-
-export function buildValidationSchema(availableRules: AvailableRulesList) {
-  return Yup.object().shape(
-    availableRules.reduce((acc, rule) => {
-      return {
-        ...acc,
-        [rule.id]: Yup.object()
-          .shape({
-            severity: Yup.mixed()
-              .oneOf([
-                RuleInstanceSeverityLevel.Off,
-                RuleInstanceSeverityLevel.Warning,
-                RuleInstanceSeverityLevel.Error,
-              ])
-              .required(),
-            config: rule.configJsonSchema
-              ? convertToYup(rule.configJsonSchema as object)!
-              : Yup.object().nullable(),
-          })
-          .optional()
-          .default(undefined),
-      };
-    }, {}),
-  );
 }
 
 export function PolicyRuleConfig({

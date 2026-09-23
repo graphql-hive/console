@@ -56,9 +56,10 @@ export function CallSiteGroup(props: { label: string; children: ReactNode }) {
  * Which folder the call site imports from. Several components exist in both legacy folders with
  * different APIs, so the folder is part of identifying what a call site actually uses. `base` marks
  * a site that has already migrated: it is listed so the inventory stays a complete count, and so
- * the preview shows the thing that actually ships there.
+ * the preview shows the thing that actually ships there. `raw` is a site that uses no component at
+ * all, a hand-built element doing the same job, which a round has to fold in or rule out.
  */
-export type Origin = 'ui' | 'v2' | 'base';
+export type Origin = 'ui' | 'v2' | 'base' | 'raw';
 
 export type InventoryEntry = {
   /** Repo-relative path and line. */
@@ -83,6 +84,7 @@ export function OriginTag(props: { origin: Origin }) {
           ui: 'bg-neutral-4 text-neutral-11 rounded-xs text-2xs px-1 py-px font-mono leading-none',
           v2: 'bg-neutral-5 text-neutral-12 rounded-xs text-2xs px-1 py-px font-mono leading-none',
           base: 'bg-success_80/20 text-success_80 rounded-xs text-2xs px-1 py-px font-mono leading-none',
+          raw: 'bg-warning_10 text-warning rounded-xs text-2xs px-1 py-px font-mono leading-none',
         }[props.origin]
       }
     >

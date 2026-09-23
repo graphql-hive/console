@@ -1,15 +1,7 @@
 import { ReactElement } from 'react';
 import { useMutation } from 'urql';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { useToast } from '@/components/ui/use-toast';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
 
 const DeleteOperationMutation = graphql(`
@@ -98,30 +90,24 @@ export function DeleteOperationModalContent(props: {
   handleDelete: () => void;
 }): ReactElement {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5" data-cy="delete-operation-modal">
-        <DialogHeader>
-          <DialogTitle>Delete Operation</DialogTitle>
-          <DialogDescription>Do you really want to delete this operation?</DialogDescription>
-          <DialogDescription>
-            <span className="font-bold">This action is irreversible!</span>
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={ev => {
-              ev.preventDefault();
-              props.toggleModalOpen();
-            }}
-          >
-            Cancel
-          </Button>
-          <Button variant="destructive" data-cy="confirm" onClick={props.handleDelete}>
-            Delete
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      attrs={{ 'data-cy': 'delete-operation-modal' }}
+      title="Delete Operation"
+      description={
+        <>
+          Do you really want to delete this operation?
+          <br />
+          <strong>This action is irreversible!</strong>
+        </>
+      }
+      confirm={{
+        label: 'Delete',
+        variant: 'destructive',
+        onClick: props.handleDelete,
+        'data-cy': 'confirm',
+      }}
+    />
   );
 }

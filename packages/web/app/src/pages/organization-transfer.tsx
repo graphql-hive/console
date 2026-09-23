@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 import { LoaderCircleIcon, LogOutIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
+import { useToast } from '@/components/base/toast/toast';
+import { HiveLogo } from '@/components/ui/brand-icon';
 import { DottedBackground } from '@/components/ui/dotted-background';
-import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { graphql } from '@/gql';
-import { useNotifications } from '@/lib/hooks/use-notifications';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 
@@ -49,7 +49,7 @@ const OrganizationTransferPage_AnswerRequest = graphql(`
 
 export function OrganizationTransferPage(props: { organizationSlug: string; code: string }) {
   const router = useRouter();
-  const notify = useNotifications();
+  const { toast } = useToast();
   const code = props.code;
   const [query] = useQuery({
     query: OrganizationTransferPage_GetRequest,
@@ -73,7 +73,7 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
       if (result.data?.answerOrganizationTransferRequest) {
         if (result.data.answerOrganizationTransferRequest.ok) {
           if (accept) {
-            notify('The organization is now yours!', 'success');
+            toast({ title: 'The organization is now yours!' });
           }
           void router.navigate({
             to: '/$organizationSlug',
@@ -82,15 +82,18 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
             },
           });
         } else {
-          notify(result.data.answerOrganizationTransferRequest.error!.message, 'error');
+          toast({
+            variant: 'destructive',
+            title: result.data.answerOrganizationTransferRequest.error!.message,
+          });
         }
       }
 
       if (result.error) {
-        notify('Failed to answer', 'error');
+        toast({ variant: 'destructive', title: 'Failed to answer' });
       }
     },
-    [mutate, props.organizationSlug, code, router, notify],
+    [mutate, props.organizationSlug, code, router, toast],
   );
 
   const accept = useCallback(() => answer(true), [answer]);
@@ -107,17 +110,18 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
       <Meta title="Organization Transfer" />
       <DottedBackground className="min-h-screen">
         <div className="flex h-full grow items-center">
-          <Button
-            variant="outline"
-            onClick={() =>
-              void router.navigate({
-                to: '/logout',
-              })
-            }
-            className="absolute right-6 top-6"
-          >
-            <LogOutIcon className="mr-2 size-4" /> Sign out
-          </Button>
+          <div className="absolute right-6 top-6">
+            <Button
+              variant="outline"
+              onClick={() =>
+                void router.navigate({
+                  to: '/logout',
+                })
+              }
+            >
+              <LogOutIcon className="mr-2 size-4" /> Sign out
+            </Button>
+          </div>
           <Link to="/" className="absolute left-6 top-6">
             <HiveLogo className="size-10" />
           </Link>
@@ -139,12 +143,8 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
                   </p>
 
                   <div className={classes.actions}>
-                    <Button size="lg" onClick={goBack}>
-                      Back to Hive
-                    </Button>
-                    <Button asChild size="lg">
-                      <Link to="/logout">Sign Out</Link>
-                    </Button>
+                    <Button onClick={goBack}>Back to Hive</Button>
+                    <Button render={<Link to="/logout" />}>Sign Out</Button>
                   </div>
                 </>
               ) : !query?.data?.organizationTransferRequest ? (
@@ -153,9 +153,7 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
                   <p className={classes.description}>Not found</p>
 
                   <div className={classes.actions}>
-                    <Button size="lg" onClick={goBack}>
-                      Back to Hive
-                    </Button>
+                    <Button onClick={goBack}>Back to Hive</Button>
                   </div>
                 </>
               ) : (
@@ -168,20 +166,10 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
                   </p>
 
                   <div className={classes.actions}>
-                    <Button
-                      size="lg"
-                      variant="default"
-                      onClick={accept}
-                      disabled={mutation.fetching}
-                    >
+                    <Button onClick={accept} disabled={mutation.fetching}>
                       Accept
                     </Button>
-                    <Button
-                      size="lg"
-                      variant="destructive"
-                      onClick={reject}
-                      disabled={mutation.fetching}
-                    >
+                    <Button variant="destructive" onClick={reject} disabled={mutation.fetching}>
                       Reject
                     </Button>
                   </div>

@@ -5,12 +5,12 @@ import { DateRange, Matcher } from 'react-day-picker';
 import { Button } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Input } from '@/components/base/input/input';
+import { Label } from '@/components/base/label/label';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { type ControlSize } from '@/components/base/shared-styles';
 import { DurationUnit, formatDateToString, parse, units } from '@/lib/date-math';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { Calendar } from './calendar';
-import { Label } from './label';
 
 export interface DateRangePickerProps {
   presets?: Preset[];
@@ -370,9 +370,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
             <div className="text-control mb-2 mt-1">Absolute date range</div>
             <div className="space-y-2">
               <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="from" className="text-neutral-10 text-xs">
-                  From
-                </Label>
+                <Label htmlFor="from" label="From" />
                 <div className="flex w-full max-w-sm items-center space-x-2">
                   <Input
                     type="text"
@@ -403,9 +401,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                 </div>
               </div>
               <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="to" className="text-neutral-10 text-xs">
-                  To
-                </Label>
+                <Label htmlFor="to" label="To" />
                 <div className="flex w-full max-w-sm items-center space-x-2">
                   <Input
                     type="text"

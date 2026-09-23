@@ -11,14 +11,14 @@ export const nav: NavPath = 'Base/FormControls/RadioGroup/Component Examples';
  * Every RadioGroup call site in the app, transcribed with its real copy so a change to the
  * component can be judged against what actually ships.
  *
- * The pages themselves cannot be imported: they mount react-hook-form or Formik, run GraphQL
+ * The pages themselves cannot be imported: they mount react-hook-form, run GraphQL
  * queries, and several sit behind permission flags. Each preview reproduces the call site's
  * `items` and variant props and holds the selection in local state.
  */
 
 // ---------------------------------------------------------------------------
 // components/layouts/organization.tsx:388 - create-project dialog
-// The only `onSurface="floating"` in the app, because it sits inside a Dialog.
+// The only `onSurface="raised"` in the app, because it sits inside a Dialog.
 // ---------------------------------------------------------------------------
 
 const PROJECT_TYPES = [
@@ -49,7 +49,7 @@ function ProjectTypePicker() {
     <div className="w-[28rem]">
       <RadioGroup
         variant="as-card"
-        onSurface="floating"
+        onSurface="raised"
         orientation="vertical"
         value={value}
         onValueChange={setValue}
@@ -298,7 +298,7 @@ export const Playground = createPreview({
   controls: defineControls({
     variant: { type: 'radio', options: ['as-card', 'as-button'], default: 'as-card' },
     orientation: { type: 'radio', options: ['vertical', 'horizontal'], default: 'vertical' },
-    onSurface: { type: 'radio', options: ['base', 'floating'], default: 'base' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
     disabled: { type: 'boolean', default: false },
     itemShape: { type: 'radio', options: ['label', 'content'], default: 'label' },
     withIndicator: { type: 'boolean', default: false },

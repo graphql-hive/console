@@ -2,19 +2,18 @@ import { useState } from 'react';
 import { CalendarDays, SearchIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Button } from '@/components/ui/button';
 import { InputCopy } from '@/components/ui/input-copy';
-import { Label } from '@/components/ui/label';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { Button as BaseButton } from '../button/button';
+import { Label } from '../label/label';
 import { Input } from './input';
 
 export const nav: NavPath = 'Base/Primitives/Input/Component Examples';
 
 /**
  * Every field in the app, by shape, transcribed from one of its sites with the others listed
- * under it. The pages themselves cannot be imported: they mount react-hook-form or Formik and run
- * GraphQL, so each preview holds its value locally.
+ * under it. The pages themselves cannot be imported: they mount react-hook-form and run GraphQL,
+ * so each preview holds its value locally.
  *
  * History: `ui/input` (a bare styled input, so a search icon, a joined prefix or a unit suffix
  * was hand-assembled around it with absolute positioning or a sibling div) and `v2/input` (a
@@ -105,11 +104,10 @@ const ENTRIES = [
     coveredBy: 'Password',
   },
   {
-    source:
-      'user/settings.tsx ×2, transfer-organization-ownership.tsx, organization-subscription-manage.tsx ×2, cdn-access-tokens.tsx, alerts/create-channel.tsx ×3, schema-contracts.tsx ×3, target-settings.tsx ×8',
+    source: 'target/proposals/editor.tsx:341',
     origin: 'base',
-    what: 'Formik fields, invalid wired by hand from touched and errors',
-    coveredBy: 'Formik fields',
+    what: 'A field outside a Form, invalid set by hand',
+    coveredBy: 'Hand-wired field',
   },
 ] as const;
 
@@ -145,15 +143,11 @@ export const FormField = createPreview({
       >
         <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-4 flex w-[24rem] flex-col gap-4 rounded-md border p-6">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email" className="text-sm font-medium">
-              Email
-            </Label>
+            <Label htmlFor="email" label="Email" />
             <Input id="email" type="email" placeholder="m@example.com" onSurface="raised" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email-invalid" className="text-sm font-medium">
-              Email
-            </Label>
+            <Label htmlFor="email-invalid" label="Email" />
             <Input
               id="email-invalid"
               type="email"
@@ -171,9 +165,7 @@ export const FormField = createPreview({
         note="Dialogs and sheets sit at neutral-3 as well, so their fields are raised. The create-role dialog's name field."
       >
         <div className="bg-neutral-3 border-neutral-5 flex w-[24rem] flex-col gap-1.5 rounded-md border p-6">
-          <Label htmlFor="role-name" className="text-sm font-medium">
-            Name
-          </Label>
+          <Label htmlFor="role-name" label="Name" />
           <Input
             id="role-name"
             placeholder="Enter a name"
@@ -401,9 +393,7 @@ export const FieldWithInlineButton = createPreview({
         note="The calendar button is the trailing slot: a compact ghost icon-only base Button. The field is mono."
       >
         <div className="grid w-full max-w-sm items-center gap-1.5">
-          <Label htmlFor="from" className="text-neutral-10 text-xs">
-            From
-          </Label>
+          <Label htmlFor="from" label="From" />
           <Input
             type="text"
             id="from"
@@ -456,8 +446,9 @@ export const Password = createPreview({
         note="When a secret is already stored, the placeholder previews its last characters rather than showing a value. In a sheet, so raised."
       >
         <div className="bg-neutral-3 border-neutral-5 flex w-[24rem] flex-col gap-1.5 rounded-md border p-6">
-          <Label className="text-sm font-medium">Client Secret</Label>
+          <Label htmlFor="client-secret" label="Client Secret" />
           <Input
+            id="client-secret"
             type="password"
             autoComplete="off"
             placeholder="Value ending with a91f"
@@ -470,79 +461,44 @@ export const Password = createPreview({
 });
 
 // ---------------------------------------------------------------------------
-// Formik fields: invalid is wired by hand from touched and errors.
+// A field outside a Form: invalid is set by hand.
 // ---------------------------------------------------------------------------
 
-export const FormikFields = createPreview({
-  label: 'Formik fields',
-  render: () => <FormikShapes />,
+export const HandWiredField = createPreview({
+  label: 'Hand-wired field',
+  render: () => <HandWiredShape />,
 });
 
-function FormikShapes() {
-  const [fullName, setFullName] = useState('');
-  const invalid = fullName.trim() === '';
+function HandWiredShape() {
+  const [service, setService] = useState('reviews');
+  const hasNameConflict = service.trim() === 'products';
 
   return (
-    <div className="flex flex-col gap-8">
-      <CallSite
-        source="components/user/settings.tsx:95"
-        origin="base"
-        note="The profile modal. invalid follows touched and errors; the message is a plain span under the field. Clear the field to see both."
-      >
-        <div className="flex w-[24rem] flex-col gap-4">
-          <label className="text-sm font-semibold" htmlFor="fullName">
-            Full name
-          </label>
-          <Input
-            id="fullName"
-            placeholder="Full name"
-            name="fullName"
-            value={fullName}
-            onChange={e => setFullName(e.target.value)}
-            invalid={invalid}
-          />
-          {invalid ? <span className="text-red-500">Full name is required</span> : null}
-        </div>
-      </CallSite>
-      <CallSite
-        source="pages/target-settings.tsx:1585"
-        origin="base"
-        note="The GraphQL endpoint URL form: width=md beside its Save button, the error text under the row."
-      >
+    <CallSite
+      source="target/proposals/editor.tsx:341"
+      origin="base"
+      note="The service settings popover in the proposal editor, the one field left outside a Form. invalid comes from the page's own check. Type 'products' to collide with the existing service."
+    >
+      <div className="flex w-[24rem] flex-col gap-4 text-sm">
         <div>
-          <div className="flex flex-row items-center gap-x-2">
-            <Input
-              placeholder="Endpoint Url"
-              name="graphqlEndpointUrl"
-              defaultValue="sss"
-              invalid
-              width="md"
-            />
-            <Button type="submit">Save</Button>
-          </div>
-          <div className="mt-2 text-red-500">Please enter a valid url.</div>
-        </div>
-      </CallSite>
-      <CallSite
-        source="components/project/alerts/create-channel.tsx:130, organization-subscription-manage.tsx:488"
-        origin="base"
-        note="A channel name in the create-channel modal, and the operations limit beside the subscription slider."
-      >
-        <div className="flex w-[24rem] flex-col gap-6">
-          <div className="flex flex-col gap-4">
-            <label className="text-sm font-semibold" htmlFor="channel-name">
-              Name
-            </label>
-            <Input id="channel-name" name="name" placeholder="Example: Slack #hives" />
-            <p className="text-neutral-10 text-sm">
-              This will be displayed on channels list, we recommend to make it self-explanatory.
+          <div className="mb-2 font-semibold">Service name</div>
+          <Input
+            onSurface="raised"
+            value={service}
+            onChange={ev => setService(ev.target.value)}
+            invalid={hasNameConflict}
+          />
+          {hasNameConflict && (
+            <p className="text-critical mt-1 text-xs">
+              New service name cannot match an existing service name
             </p>
-          </div>
-          <div className="ml-auto w-48">
-            <Input defaultValue="500M" />
-          </div>
+          )}
         </div>
-      </CallSite>
-    </div>
+        <div>
+          <div className="mb-2 font-semibold">Service URL</div>
+          <Input onSurface="raised" defaultValue="https://reviews.internal/graphql" />
+        </div>
+      </div>
+    </CallSite>
   );
 }

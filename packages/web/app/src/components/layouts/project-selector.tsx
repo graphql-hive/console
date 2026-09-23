@@ -58,6 +58,7 @@ export function ProjectSelector(props: {
         <>
           <div className="text-neutral-10 italic">/</div>
           <Select
+            aria-label="Project"
             options={projectEdges.map(edge => ({ value: edge.node.slug, label: edge.node.slug }))}
             value={props.currentProjectSlug}
             onValueChange={id => {

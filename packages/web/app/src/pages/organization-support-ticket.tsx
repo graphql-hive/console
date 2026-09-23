@@ -2,31 +2,24 @@ import { useCallback, useMemo } from 'react';
 import { ChevronRightIcon, UserIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
-import { Textarea } from '@/components/base/textarea/textarea';
+import { useToast } from '@/components/base/toast/toast';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import {
+  ReplyTicketForm,
+  ReplyTicketFormSchema,
+  type ReplyTicketFormValues,
+} from '@/components/organization/reply-ticket-form';
 import { priorityDescription, statusDescription } from '@/components/organization/support';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useNotifications } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
-
-const replyTicketFormSchema = z.object({
-  body: z.string().min(2, {
-    message: 'Comment must be at least 2 characters.',
-  }),
-});
-
-type ReplyTicketFormValues = z.infer<typeof replyTicketFormSchema>;
 
 const ReplyTicketForm_SupportTicketReplyMutation = graphql(`
   mutation ReplyTicketForm_SupportTicketReplyMutation($input: SupportTicketReplyInput!) {
@@ -41,14 +34,10 @@ const ReplyTicketForm_SupportTicketReplyMutation = graphql(`
   }
 `);
 
-function ReplyTicketForm(props: {
-  organizationSlug: string;
-  ticketId: string;
-  onSubmit: () => void;
-}) {
-  const notify = useNotifications();
+function ReplyTicket(props: { organizationSlug: string; ticketId: string; onSubmit: () => void }) {
+  const { toast } = useToast();
   const form = useForm<ReplyTicketFormValues>({
-    resolver: zodResolver(replyTicketFormSchema),
+    resolver: zodResolver(ReplyTicketFormSchema),
     defaultValues: {
       body: '',
     },
@@ -66,46 +55,31 @@ function ReplyTicketForm(props: {
       });
 
       if (result.error) {
-        notify(`Failed to reply: ${result.error.message}`, 'error');
+        toast({
+          variant: 'destructive',
+          title: 'Failed to reply',
+          description: result.error.message,
+        });
         return;
       }
 
       if (result.data?.supportTicketReply.ok) {
         props.onSubmit();
-        notify('Replied to the ticket.', 'success');
+        toast({ title: 'Replied to the ticket.' });
         form.reset({ body: '' });
       } else if (result.data?.supportTicketReply.error) {
-        notify(`Failed to reply: ${result.data.supportTicketReply.error.message}`, 'error');
+        toast({
+          variant: 'destructive',
+          title: 'Failed to reply',
+          description: result.data.supportTicketReply.error.message,
+        });
       }
     } catch (error) {
-      notify(`Failed to reply: ${String(error)}`, 'error');
+      toast({ variant: 'destructive', title: 'Failed to reply', description: String(error) });
     }
   }
 
-  return (
-    <Form {...form}>
-      <form className="flex flex-col gap-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-        <FormField
-          control={form.control}
-          name="body"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Textarea placeholder="Type your comment here." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="flex flex-row gap-x-4">
-          <Button type="submit">Reply</Button>
-          <Button variant="link" type="reset" onClick={() => form.reset({ body: '' })}>
-            Reset
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
+  return <ReplyTicketForm form={form} onSubmit={onSubmit} />;
 }
 
 const Comment_SupportTicketComment = graphql(`
@@ -193,20 +167,15 @@ function SupportTicket(props: {
         <div className="flex flex-row items-start justify-between gap-x-6">
           <div className="border-neutral-5 flex-1 border-r pr-6">
             <Title className="flex flex-row items-center gap-x-2">
-              <Button
-                variant="link"
-                className="h-auto p-0 text-lg font-semibold tracking-tight"
-                asChild
+              <Link
+                to="/$organizationSlug/view/support"
+                params={{
+                  organizationSlug: organization.slug,
+                }}
+                className="text-accent text-lg font-semibold tracking-tight underline-offset-4 hover:underline"
               >
-                <Link
-                  to="/$organizationSlug/view/support"
-                  params={{
-                    organizationSlug: organization.slug,
-                  }}
-                >
-                  Tickets
-                </Link>
-              </Button>
+                Tickets
+              </Link>
               <span className="text-neutral-10 text-lg font-semibold tracking-tight">
                 <ChevronRightIcon className="size-4" />
               </span>
@@ -219,7 +188,7 @@ function SupportTicket(props: {
               ))}
 
               <div className="mt-6">
-                <ReplyTicketForm
+                <ReplyTicket
                   organizationSlug={organization.slug}
                   ticketId={ticket.id}
                   onSubmit={props.refetch}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, UseQueryExecute } from 'urql';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { Groups } from '@/components/organization/members/groups';
@@ -11,6 +12,7 @@ import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-c
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { organizationMembersRoute } from '../router';
 
 const OrganizationMembersPage_OrganizationFragment = graphql(`
@@ -52,6 +54,7 @@ function PageContent(props: {
   organization: FragmentType<typeof OrganizationMembersPage_OrganizationFragment>;
   refetchQuery: UseQueryExecute;
   setAfter: (after: string | null) => void;
+  loading: boolean;
 }) {
   const organization = useFragment(
     OrganizationMembersPage_OrganizationFragment,
@@ -92,6 +95,7 @@ function PageContent(props: {
             refetchMembers={props.refetchQuery}
             organization={organization}
             setAfter={props.setAfter}
+            loading={props.loading}
           />
         ) : null}
         {props.page === 'roles' && organization.viewerCanManageRoles ? (
@@ -165,6 +169,11 @@ function OrganizationMembersPageContent(props: {
     refetch({ requestPolicy: 'network-only' });
   }, [refetch]);
 
+  // A page or search change swaps the variables, which would blank the page until the new result
+  // lands; the last result stays up and the list's paging bar reports the fetch instead.
+  const loading = query.fetching || query.stale;
+  const data = useKeepPreviousData(query.data, loading);
+
   if (query.data?.organization?.viewerCanSeeMembers === false) {
     return null;
   }
@@ -179,14 +188,19 @@ function OrganizationMembersPageContent(props: {
       page={Page.Members}
       className="flex flex-col gap-y-10"
     >
-      {query.data?.organization ? (
+      {data?.organization ? (
         <PageContent
-          organization={query.data.organization}
+          organization={data.organization}
           onPageChange={props.onPageChange}
           page={props.page}
           refetchQuery={refetchQuery}
           setAfter={setAfter}
+          loading={loading}
         />
+      ) : loading ? (
+        <div className="flex justify-center py-12">
+          <Spinner variants={{ size: 'lg' }} />
+        </div>
       ) : null}
     </OrganizationLayout>
   );

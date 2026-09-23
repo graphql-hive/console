@@ -23,10 +23,10 @@ export const TriggerVariants = createPreview(() => (
 ));
 
 /**
- * The two rungs of `controlSize`, one row each, across the three layouts. `default` (36px) is a
- * form control; `compact` (30px) is filter chrome. An icon-only button is a square at either rung.
- * `icon-sm` (28px) is the square for a close or clear icon inside something else and sits outside
- * the ladder.
+ * The two `controlSize` values, one row each, across the three layouts. `default` (36px) is a
+ * form control; `compact` (30px) is filter chrome. An icon-only button is a square at either size.
+ * `icon-sm` (28px) is the square for a close or clear icon inside something else and is not a
+ * `controlSize`.
  */
 export const Sizes = createPreview(() => (
   <div className="flex flex-col gap-4">
@@ -85,6 +85,39 @@ export const WithIcon = createPreview(() => (
   </Button>
 ));
 
+/** Text that acts, inline with the copy around it: no box, accent, underlined on hover. */
+export const Link = createPreview(() => (
+  <p className="text-neutral-11 max-w-md text-sm">
+    The schema check failed on a breaking change.{' '}
+    <Button variant="link">See the affected deployments</Button> before approving it, or{' '}
+    <Button variant="link" disabled>
+      request a re-run
+    </Button>{' '}
+    once the queue clears.
+  </p>
+));
+
+/**
+ * A button that navigates. `anchor` renders an `<a>` for links out; `render` takes the router
+ * `<Link>` for links within the app and merges the button's classes, ref and handlers onto it.
+ * Together they replace the old `asChild`. Anchors stand in for the router here.
+ */
+export const AsLink = createPreview(() => (
+  <div className="flex w-96 flex-col gap-3">
+    <Button width="full" anchor={{ href: '#' }}>
+      Go to your organization
+    </Button>
+    <Button variant="outline" width="full" anchor={{ href: '#' }}>
+      Sign in instead
+    </Button>
+    <div>
+      <Button variant="ghost" size="compact" anchor={{ href: '#' }}>
+        Back to traces
+      </Button>
+    </div>
+  </div>
+));
+
 export const Disabled = createPreview(() => (
   <div className="flex items-center gap-4">
     <Button variant="primary" disabled>
@@ -128,6 +161,7 @@ export const Playground = createPreview({
         'outline',
         'ghost',
         'destructive',
+        'link',
       ],
       default: 'primary',
     },

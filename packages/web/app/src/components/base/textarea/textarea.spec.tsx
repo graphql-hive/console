@@ -1,30 +1,28 @@
 // @vitest-environment jsdom
 import { createRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Textarea } from './textarea';
 
 function ReactHookFormField(props: { onSubmit: (values: { description: string }) => void }) {
   const form = useForm<{ description: string }>({ defaultValues: { description: '' } });
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(props.onSubmit)}>
-        <FormField
-          control={form.control}
-          name="description"
-          rules={{ required: 'Description is required' }}
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Textarea placeholder="Description" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <button type="submit">Save</button>
-      </form>
+    <Form form={form} onSubmit={props.onSubmit}>
+      <FormField
+        control={form.control}
+        name="description"
+        rules={{ required: 'Description is required' }}
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <Textarea placeholder="Description" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <button type="submit">Save</button>
     </Form>
   );
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
 import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
+import { TargetStore } from '@hive/api/modules/target/providers/target-store';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
 import { TargetTokenCache } from '@hive/api/modules/token/providers/target-token-cache';
@@ -94,8 +95,9 @@ async function main() {
   });
 
   const prometheusConfig = new PrometheusConfig(!!env.prometheus);
-  const targetsByIdCache = new TargetsByIdCache(redis, pgPool, prometheusConfig);
-  const targetsBySlugCache = new TargetsBySlugCache(redis, pgPool, prometheusConfig);
+  const targetStore = new TargetStore(server.log, pgPool);
+  const targetsByIdCache = new TargetsByIdCache(redis, targetStore, prometheusConfig);
+  const targetsBySlugCache = new TargetsBySlugCache(redis, targetStore, prometheusConfig);
   const targetTokenCache = new TargetTokenCache(redis, pgPool, prometheusConfig);
 
   if (tracing) {

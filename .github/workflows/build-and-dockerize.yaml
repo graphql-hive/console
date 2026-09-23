@@ -101,6 +101,52 @@ jobs:
             packages/services/cdn-worker/dist/index.lambda.mjs
           dest: ${{ inputs.imageTag }}.zip
 
+      - name: prepare CDN release artifacts
+        if:
+          ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag'
+          && github.ref_name == format('hive@{0}', inputs.latestVersion) && matrix.platform ==
+          'linux/amd64' }}
+        run: |
+          mkdir -p release-assets/cloudflare release-assets/lambda
+          cp packages/services/cdn-worker/dist/index.worker.mjs release-assets/cloudflare/index.mjs
+          cp packages/services/cdn-worker/dist/index.lambda.mjs release-assets/lambda/index.mjs
+
+      # recursive: true puts directory contents at the zip root (index.mjs), matching the
+      # Lambda handler `index.handler` and Wrangler `main = "index.mjs"`.
+      - uses: vimtor/action-zip@5f1c4aa587ea41db1110df6a99981dbe19cee310 # v1
+        name: archive CDN Cloudflare Worker release artifact
+        if:
+          ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag'
+          && github.ref_name == format('hive@{0}', inputs.latestVersion) && matrix.platform ==
+          'linux/amd64' }}
+        with:
+          recursive: true
+          files: release-assets/cloudflare/
+          dest: release-assets/hive-cdn-cloudflare-worker.zip
+
+      - uses: vimtor/action-zip@5f1c4aa587ea41db1110df6a99981dbe19cee310 # v1
+        name: archive CDN AWS Lambda release artifact
+        if:
+          ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag'
+          && github.ref_name == format('hive@{0}', inputs.latestVersion) && matrix.platform ==
+          'linux/amd64' }}
+        with:
+          recursive: true
+          files: release-assets/lambda/
+          dest: release-assets/hive-cdn-aws-lambda.zip
+
+      - name: upload CDN release artifacts
+        if:
+          ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag'
+          && github.ref_name == format('hive@{0}', inputs.latestVersion) && matrix.platform ==
+          'linux/amd64' }}
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: hive-cdn-release-artifacts
+          path: |
+            release-assets/hive-cdn-cloudflare-worker.zip
+            release-assets/hive-cdn-aws-lambda.zip
+
       - name: upload artifact
         if: ${{ inputs.uploadJavaScriptArtifacts }}
         uses: randomairborne/r2-release@9cbc35a2039ee2ef453a6988cd2a85bb2d7ba8af # v1.0.2
@@ -231,6 +277,30 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_RELEASE: ${{ inputs.imageTag }}
         run: pnpm sourcemaps:upload
+
+  publish_cdn_release_artifacts:
+    needs: build-and-dockerize
+    if:
+      ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag' &&
+      github.ref_name == format('hive@{0}', inputs.latestVersion) }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: download CDN release artifacts
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
+        with:
+          name: hive-cdn-release-artifacts
+
+      - name: attach CDN artifacts to Hive release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: hive@${{ inputs.latestVersion }}
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            hive-cdn-cloudflare-worker.zip \
+            hive-cdn-aws-lambda.zip \
+            --clobber
 
   publish_docker_manifest:
     needs: build-and-dockerize

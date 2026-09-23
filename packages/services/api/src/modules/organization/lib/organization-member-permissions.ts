@@ -304,6 +304,12 @@ export const permissionGroups: Array<PermissionGroup> = [
         dependsOn: 'personalAccessToken:modify',
       },
       {
+        id: 'schema:push',
+        title: 'Push schema/service/subgraph',
+        description: 'Grant access to push schema revisions for later publication.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
         id: 'schemaVersion:deleteService',
         title: 'Delete service',
         description: 'Deletes a service from the schema registry.',
@@ -380,6 +386,7 @@ assertAllRulesAreAssigned([
   'schema:compose',
   'schemaCheck:create',
   'schemaVersion:publish',
+  'schema:push',
   'schemaVersion:deleteService',
   'appDeployment:create',
   'appDeployment:publish',

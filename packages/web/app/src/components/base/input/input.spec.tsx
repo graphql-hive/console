@@ -1,56 +1,31 @@
 // @vitest-environment jsdom
 import { createRef } from 'react';
-import { useFormik } from 'formik';
 import { Search } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Input } from './input';
 
-/** A field that react-hook-form's FormControl wraps, the way every Form in the app does. */
+/** A field that FormControl wraps, the way every Form in the app does. */
 function ReactHookFormField(props: { onSubmit: (values: { name: string }) => void }) {
   const form = useForm<{ name: string }>({ defaultValues: { name: '' } });
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(props.onSubmit)}>
-        <FormField
-          control={form.control}
-          name="name"
-          rules={{ required: 'Name is required' }}
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input placeholder="Name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <button type="submit">Save</button>
-      </form>
-    </Form>
-  );
-}
-
-/** A field wired by hand from Formik state, the way the Formik forms in the app do. */
-function FormikField(props: { onSubmit: (values: { name: string }) => void }) {
-  const formik = useFormik({
-    initialValues: { name: '' },
-    validate: values => (values.name ? {} : { name: 'Name is required' }),
-    onSubmit: props.onSubmit,
-  });
-  return (
-    <form onSubmit={formik.handleSubmit}>
-      <Input
+    <Form form={form} onSubmit={props.onSubmit}>
+      <FormField
+        control={form.control}
         name="name"
-        placeholder="Name"
-        value={formik.values.name}
-        onChange={formik.handleChange}
-        onBlur={formik.handleBlur}
-        invalid={formik.touched.name && !!formik.errors.name}
+        rules={{ required: 'Name is required' }}
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <Input placeholder="Name" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
       <button type="submit">Save</button>
-    </form>
+    </Form>
   );
 }
 
@@ -81,8 +56,8 @@ describe('Input', () => {
   });
 
   it('keeps its own classes under a FormControl', () => {
-    // Regression: FormControl is a Radix Slot that merges a className into its child, an empty
-    // one when the field is valid. Spread onto the input it wiped every class the component had.
+    // Regression: the old FormControl was a Radix Slot that merged a className into its child, an
+    // empty one when the field was valid. Spread onto the input it wiped every class it had.
     render(<ReactHookFormField onSubmit={() => {}} />);
     const input = screen.getByPlaceholderText('Name');
     expect(input.className).toContain('rounded-sm');
@@ -101,21 +76,6 @@ describe('Input', () => {
     fireEvent.change(input, { target: { value: 'production' } });
     fireEvent.click(screen.getByText('Save'));
     // react-hook-form passes the submit event as the second argument.
-    await waitFor(() =>
-      expect(onSubmit).toHaveBeenCalledWith({ name: 'production' }, expect.anything()),
-    );
-    expect(input.getAttribute('aria-invalid')).toBeNull();
-  });
-
-  it('reports a Formik error and submits the typed value', async () => {
-    const onSubmit = vi.fn();
-    render(<FormikField onSubmit={onSubmit} />);
-    fireEvent.click(screen.getByText('Save'));
-    const input = screen.getByPlaceholderText('Name');
-    await waitFor(() => expect(input.getAttribute('aria-invalid')).toBe('true'));
-
-    fireEvent.change(input, { target: { value: 'production' } });
-    fireEvent.click(screen.getByText('Save'));
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith({ name: 'production' }, expect.anything()),
     );

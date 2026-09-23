@@ -11,6 +11,8 @@ import { SchemaCheckManager } from './providers/schema-check-manager';
 import { SchemaHelper } from './providers/schema-helper';
 import { SchemaManager } from './providers/schema-manager';
 import { SchemaPublisher } from './providers/schema-publisher';
+import { SchemaPusher } from './providers/schema-pusher';
+import { SchemaRevisionStore } from './providers/schema-revision-store';
 import { SchemaVersionHelper } from './providers/schema-version-helper';
 import { SchemaVersionStore } from './providers/schema-version-store';
 import { resolvers } from './resolvers.generated';
@@ -25,6 +27,8 @@ export const schemaModule = createModule({
     SchemaVersionStore,
     SchemaManager,
     SchemaPublisher,
+    SchemaPusher,
+    SchemaRevisionStore,
     Inspector,
     SchemaHelper,
     RegistryChecks,

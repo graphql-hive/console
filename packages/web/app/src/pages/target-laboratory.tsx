@@ -1,23 +1,22 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GraphiQL } from 'graphiql';
 import { buildSchema } from 'graphql';
-import { EraserIcon } from 'lucide-react';
+import { EraserIcon, MaximizeIcon, MinimizeIcon, SaveIcon, ShareIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useMutation, useQuery } from 'urql';
-import { Button as BaseButton } from '@/components/base/button/button';
+import { Button } from '@/components/base/button/button';
 import { Collapsible } from '@/components/base/collapsible/collapsible';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { useToast } from '@/components/base/toast/toast';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
-import { Button } from '@/components/ui/button';
 import { DocsLink } from '@/components/ui/docs-note';
-import { SaveIcon, ShareIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
-import { useClipboard, useNotifications, useToggle } from '@/lib/hooks';
+import { useClipboard, useToggle } from '@/lib/hooks';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
 import { useCurrentOperation } from '@/lib/hooks/laboratory/use-current-operation';
 import {
@@ -44,7 +43,6 @@ import {
   useEditorContext,
 } from '@graphiql/react';
 import { createGraphiQLFetcher, Fetcher, isAsyncIterable } from '@graphiql/toolkit';
-import { EnterFullScreenIcon, ExitFullScreenIcon } from '@radix-ui/react-icons';
 import { Repeater } from '@repeaterjs/repeater';
 import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
@@ -52,7 +50,6 @@ import '@graphiql/plugin-explorer/style.css';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRedirect } from '@/lib/access/common';
 import { Kit } from '@/lib/kit';
 
@@ -117,7 +114,7 @@ function Save(props: {
     projectSlug: props.projectSlug,
     targetSlug: props.targetSlug,
   });
-  const notify = useNotifications();
+  const { toast } = useToast();
   const currentOperation = useCurrentOperation({
     organizationSlug: props.organizationSlug,
     projectSlug: props.projectSlug,
@@ -218,10 +215,10 @@ function Save(props: {
                 });
                 if (data) {
                   clearOperation();
-                  notify('Updated!', 'success');
+                  toast({ title: 'Updated!' });
                 }
                 if (error) {
-                  notify(error.message, 'error');
+                  toast({ variant: 'destructive', title: error.message });
                 }
               },
             },
@@ -229,7 +226,7 @@ function Save(props: {
               label: 'Save as',
               onClick: () => {
                 if (!collections.length) {
-                  notify('Please create a collection first.', 'error');
+                  toast({ variant: 'destructive', title: 'Please create a collection first.' });
                   return;
                 }
                 toggleOperationModal();
@@ -400,7 +397,7 @@ function LaboratoryPageContent(props: {
     preflight.isEnabled,
   ]);
 
-  const FullScreenIcon = isFullScreen ? ExitFullScreenIcon : EnterFullScreenIcon;
+  const FullScreenIcon = isFullScreen ? MinimizeIcon : MaximizeIcon;
 
   const handleTabChange = useCallback<Exclude<GraphiQLProviderProps['onTabChange'], undefined>>(
     ({ tabs, activeTabIndex }) => {
@@ -456,22 +453,25 @@ function LaboratoryPageContent(props: {
           <div className="flex items-center gap-2">
             <Title>Laboratory</Title>
             <div className="bg-neutral-5 h-4 w-px" />
-            <Tabs
-              defaultValue={props.defaultLaboratoryTab}
+            <ToggleGroup
+              aria-label="Laboratory version"
+              value={props.defaultLaboratoryTab}
               onValueChange={value =>
                 props.onLaboratoryTabChange(value as 'graphiql' | 'hive-laboratory')
               }
-            >
-              <TabsList className="h-auto p-1">
-                <TabsTrigger value="graphiql" className="px-2 py-0">
-                  GraphiQL
-                </TabsTrigger>
-                <TabsTrigger value="hive-laboratory" className="px-2 py-0">
-                  Hive Laboratory
-                  <div className="bg-accent ml-1 size-2 rounded-full" />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+              options={[
+                { value: 'graphiql', label: 'GraphiQL' },
+                {
+                  value: 'hive-laboratory',
+                  label: (
+                    <>
+                      Hive Laboratory
+                      <span className="bg-accent ml-1 size-2 rounded-full" />
+                    </>
+                  ),
+                },
+              ]}
+            />
           </div>
           <Subtitle>Explore your GraphQL schema and run queries against your GraphQL API.</Subtitle>
           <p>
@@ -490,12 +490,12 @@ function LaboratoryPageContent(props: {
                 }}
                 search={{ page: 'general' }}
               >
-                <Button variant="outline" className="mr-2" size="sm">
+                <Button variant="outline" size="compact">
                   Connect GraphQL API Endpoint
                 </Button>
               </RouterLink>
             ) : null}
-            <Button onClick={toggleConnectLabModal} variant="ghost" size="sm">
+            <Button onClick={toggleConnectLabModal} variant="ghost" size="compact">
               Mock Data Endpoint
             </Button>
           </div>
@@ -591,13 +591,11 @@ function LaboratoryPageContent(props: {
             readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
           >
             <GraphiQL.Logo>
-              <Button
-                onClick={() => setIsFullScreen(prev => !prev)}
-                variant="orangeLink"
-                className="gap-2 whitespace-nowrap"
-              >
-                <FullScreenIcon className="size-4" />
-                {isFullScreen ? 'Exit' : 'Enter'} Full Screen
+              <Button onClick={() => setIsFullScreen(prev => !prev)} variant="link">
+                <span className="flex items-center gap-2 whitespace-nowrap">
+                  <FullScreenIcon className="size-4" />
+                  {isFullScreen ? 'Exit' : 'Enter'} Full Screen
+                </span>
               </Button>
             </GraphiQL.Logo>
             <GraphiQL.Toolbar>
@@ -711,7 +709,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
         onOpenChange={setIsOpen}
         actions={
           isOpen ? (
-            <BaseButton
+            <Button
               layout="iconOnly"
               icon={EraserIcon}
               aria-label="Clear logs"

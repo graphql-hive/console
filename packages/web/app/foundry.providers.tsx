@@ -3,6 +3,7 @@ import type { FoundryProvider } from 'react-foundry';
 import { RouterProvider } from '@tanstack/react-router';
 import { previewRouter, PreviewSlotProvider } from './foundry.router';
 import { TooltipProvider } from './src/components/base/floating/tooltip/tooltip';
+import { ToastProvider } from './src/components/base/toast/toast';
 import { ThemeProvider, useTheme } from './src/components/theme/theme-provider';
 import './src/index.css';
 
@@ -30,9 +31,11 @@ export const Provider: FoundryProvider = ({ children, theme }) => (
   <ThemeProvider>
     <ThemeSynchronizer theme={theme} />
     <TooltipProvider>
-      <PreviewSlotProvider value={children}>
-        <RouterProvider router={previewRouter} />
-      </PreviewSlotProvider>
+      <ToastProvider>
+        <PreviewSlotProvider value={children}>
+          <RouterProvider router={previewRouter} />
+        </PreviewSlotProvider>
+      </ToastProvider>
     </TooltipProvider>
   </ThemeProvider>
 );

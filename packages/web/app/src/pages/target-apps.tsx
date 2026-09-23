@@ -1,32 +1,20 @@
-import { useState } from 'react';
 import { format } from 'date-fns';
-import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
-import { Badge } from '@/components/base/badge/badge';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/ui/button';
-import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { formatTimeAgo } from '@/components/ui/time-ago';
-import { Sortable } from '@/components/v2';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { graphql, useFragment, type DocumentType } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { usePagedConnection } from '@/lib/hooks';
+import { useNavigate } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 
 export const TargetAppsSortSchema = z.object({
   field: z.enum(['CREATED_AT', 'ACTIVATED_AT', 'LAST_USED']),
@@ -131,83 +119,7 @@ const TargetAppsViewFetchMoreQuery = graphql(`
   }
 `);
 
-function AppTableRow(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  appDeployment: FragmentType<typeof AppTableRow_AppDeploymentFragment>;
-}) {
-  const appDeployment = useFragment(AppTableRow_AppDeploymentFragment, props.appDeployment);
-
-  return (
-    <TableRow>
-      <TableCell>
-        <Link
-          className="font-mono text-xs font-bold"
-          to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
-          params={{
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
-            appName: appDeployment.name,
-            appVersion: appDeployment.version,
-          }}
-        >
-          {appDeployment.name}@{appDeployment.version}
-        </Link>
-      </TableCell>
-      <TableCell className="hidden text-center sm:table-cell">
-        <Badge
-          content={
-            appDeployment.status === 'retired' && appDeployment.retiredAt
-              ? `${appDeployment.status} (${format(appDeployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})`
-              : appDeployment.status
-          }
-          variants={{ variant: 'secondary' }}
-        />
-      </TableCell>
-      <TableCell className="text-center">{appDeployment.totalDocumentCount}</TableCell>
-      <TableCell className="hidden text-center sm:table-cell">
-        <span className="text-xs">
-          <DateWithTimeAgo date={appDeployment.createdAt} />
-        </span>
-      </TableCell>
-      <TableCell className="hidden text-center sm:table-cell">
-        {appDeployment.activatedAt ? (
-          <span className="text-xs">
-            <DateWithTimeAgo date={appDeployment.activatedAt} />
-          </span>
-        ) : (
-          <span className="text-neutral-10 text-xs">—</span>
-        )}
-      </TableCell>
-      <TableCell className="text-end">
-        {appDeployment.lastUsed ? (
-          <Tooltip
-            trigger={
-              <span className="inline-flex cursor-help">
-                <Badge
-                  content={formatTimeAgo(new Date(appDeployment.lastUsed), Date.now())}
-                  variants={{ variant: 'outline' }}
-                />
-              </span>
-            }
-            content={format(appDeployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
-          />
-        ) : (
-          <Tooltip
-            trigger={
-              <span className="inline-flex cursor-help">
-                <Badge content="No data" variants={{ variant: 'outline' }} />
-              </span>
-            }
-            content="There was no usage reported yet."
-          />
-        )}
-      </TableCell>
-    </TableRow>
-  );
-}
+type AppDeploymentRow = DocumentType<typeof AppTableRow_AppDeploymentFragment>;
 
 function TargetAppsView(props: {
   organizationSlug: string;
@@ -231,23 +143,28 @@ function TargetAppsView(props: {
     },
   });
   const client = useClient();
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  function handleSortClick(field: SortState['field']) {
-    const newDirection =
-      props.sorting.field === field && props.sorting.direction === 'DESC' ? 'ASC' : 'DESC';
-    void navigate({
-      search: (prev: Record<string, unknown>) => ({
-        ...prev,
-        sort: { field, direction: newDirection },
-      }),
-    });
-  }
-
-  function getSortOrder(field: SortState['field']): 'asc' | 'desc' | false {
-    if (props.sorting.field !== field) return false;
-    return props.sorting.direction === 'ASC' ? 'asc' : 'desc';
-  }
+  const connection = data.data?.target?.appDeployments;
+  const deployments = useFragment(
+    AppTableRow_AppDeploymentFragment,
+    connection?.edges.map(edge => edge.node) ?? [],
+  );
+  const { rows, pagination } = usePagedConnection({
+    edges: deployments,
+    pageInfo: connection?.pageInfo ?? { hasNextPage: false },
+    pageSize: 20,
+    total: connection?.total,
+    loadMore: after =>
+      client
+        .query(TargetAppsViewFetchMoreQuery, {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+          after,
+          sort: sortVariable,
+        })
+        .toPromise(),
+  });
+  const sortingState = [{ id: props.sorting.field, desc: props.sorting.direction === 'DESC' }];
 
   const project = data.data?.target;
 
@@ -281,6 +198,89 @@ function TargetAppsView(props: {
     return null;
   }
 
+  const columns: ColumnDef<AppDeploymentRow, unknown>[] = [
+    {
+      id: 'name',
+      header: 'App@Version',
+      meta: { width: 'fill' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="link"
+          label={`${row.original.name}@${row.original.version}`}
+          mono
+          link={{
+            to: '/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion',
+            params: {
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.targetSlug,
+              appName: row.original.name,
+              appVersion: row.original.version,
+            },
+          }}
+        />
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      meta: { align: 'center', hideBelow: 'sm' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="badge"
+          items={{
+            content:
+              row.original.status === 'retired' && row.original.retiredAt
+                ? `${row.original.status} (${format(row.original.retiredAt, 'MMM d, yyyy HH:mm:ss')})`
+                : row.original.status,
+            variant: 'secondary',
+          }}
+        />
+      ),
+    },
+    {
+      id: 'documents',
+      header: 'Documents',
+      meta: { align: 'right', width: 'xs' },
+      cell: ({ row }) => <DataTableCell kind="number" value={row.original.totalDocumentCount} />,
+    },
+    {
+      id: 'CREATED_AT',
+      header: 'Created',
+      meta: { sortable: true, hideBelow: 'sm' },
+      cell: ({ row }) => (
+        <DataTableCell kind="time" date={row.original.createdAt} mode="relative-info" />
+      ),
+    },
+    {
+      id: 'ACTIVATED_AT',
+      header: 'Activated',
+      meta: { sortable: true, hideBelow: 'sm' },
+      cell: ({ row }) =>
+        row.original.activatedAt ? (
+          <DataTableCell kind="time" date={row.original.activatedAt} mode="relative-info" />
+        ) : (
+          <DataTableCell kind="placeholder" />
+        ),
+    },
+    {
+      id: 'LAST_USED',
+      header: 'Last used',
+      meta: {
+        sortable: true,
+        align: 'right',
+        tooltip:
+          'Last time a request was sent for this app. Requires usage reporting being set up.',
+      },
+      cell: ({ row }) =>
+        row.original.lastUsed ? (
+          <DataTableCell kind="time" date={row.original.lastUsed} mode="relative-info" />
+        ) : (
+          <DataTableCell kind="placeholder" />
+        ),
+    },
+  ];
+
   return (
     <div className="flex flex-1 flex-col py-6">
       <PageLead
@@ -304,106 +304,41 @@ function TargetAppsView(props: {
           recommendedAction="publish"
           projectType={data.data?.target?.project?.type ?? null}
         />
-      ) : !data.data.target.appDeployments?.edges?.length ? (
+      ) : !connection?.edges.length ? (
         <EmptyList
           title="Hive is waiting for your first app deployment"
           description="You can create an app deployment with the Hive CLI"
           docsUrl="/schema-registry/app-deployments"
         />
       ) : (
-        <div>
-          <div className="rounded-md border">
-            <Table className="table-fixed">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="hidden w-[30%] sm:table-cell">App@Version</TableHead>
-                  <TableHead className="hidden w-[15%] text-center sm:table-cell">Status</TableHead>
-                  <TableHead className="hidden w-[5%] text-center sm:table-cell">
-                    Documents
-                  </TableHead>
-                  <TableHead className="hidden w-[10%] text-center sm:table-cell">
-                    <Sortable
-                      sortOrder={getSortOrder('CREATED_AT')}
-                      onClick={() => handleSortClick('CREATED_AT')}
-                    >
-                      Created
-                    </Sortable>
-                  </TableHead>
-                  <TableHead className="hidden w-[10%] text-center sm:table-cell">
-                    <Sortable
-                      sortOrder={getSortOrder('ACTIVATED_AT')}
-                      onClick={() => handleSortClick('ACTIVATED_AT')}
-                    >
-                      Activated
-                    </Sortable>
-                  </TableHead>
-                  <TableHead className="hidden w-[7%] text-end sm:table-cell">
-                    <Sortable
-                      sortOrder={getSortOrder('LAST_USED')}
-                      onClick={() => handleSortClick('LAST_USED')}
-                    >
-                      <Tooltip
-                        trigger="Last used"
-                        content="Last time a request was sent for this app. Requires usage reporting being set up."
-                      />
-                    </Sortable>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.data?.target?.appDeployments?.edges.map((edge, i) => (
-                  <AppTableRow
-                    key={i}
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                    appDeployment={edge.node}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-xs">
-              Showing {data.data?.target?.appDeployments?.edges.length ?? 0} of{' '}
-              {data.data?.target?.appDeployments?.total ?? 0} deployments
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex"
-              disabled={!data?.data?.target?.appDeployments?.pageInfo?.hasNextPage || isLoadingMore}
-              onClick={() => {
-                if (
-                  data?.data?.target?.appDeployments?.pageInfo?.endCursor &&
-                  data?.data?.target?.appDeployments?.pageInfo?.hasNextPage
-                ) {
-                  setIsLoadingMore(true);
-                  void client
-                    .query(TargetAppsViewFetchMoreQuery, {
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
-                      targetSlug: props.targetSlug,
-                      after: data?.data?.target?.appDeployments?.pageInfo?.endCursor,
-                      sort: sortVariable,
-                    })
-                    .toPromise()
-                    .finally(() => {
-                      setIsLoadingMore(false);
-                    });
-                }
-              }}
-            >
-              {isLoadingMore ? (
-                <>
-                  <LoaderCircleIcon className="mr-2 inline size-4 animate-spin" /> Loading
-                </>
-              ) : (
-                'Load more'
-              )}
-            </Button>
-          </div>
-        </div>
+        <DataTable
+          data={rows}
+          columns={columns}
+          getRowId={deployment => deployment.id}
+          sorting={{
+            state: sortingState,
+            manual: true,
+            onChange: updater => {
+              const [next] = typeof updater === 'function' ? updater(sortingState) : updater;
+              if (!next) {
+                return;
+              }
+              void navigate({
+                search: (prev: Record<string, unknown>) => ({
+                  ...prev,
+                  sort: {
+                    field: next.id as SortState['field'],
+                    direction: next.desc ? 'DESC' : 'ASC',
+                  },
+                }),
+              });
+            },
+          }}
+          pagination={{
+            ...pagination,
+            summary: `${pagination.summary} · ${connection.total} deployments`,
+          }}
+        />
       )}
     </div>
   );

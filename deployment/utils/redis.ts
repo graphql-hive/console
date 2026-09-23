@@ -8,7 +8,7 @@ import { createService } from './service-deployment';
 
 const REDIS_PORT = 6379;
 const METRICS_PORT = 9121;
-const REDIS_EXPORTER_IMAGE = 'oliver006/redis_exporter:v1.70.0-alpine';
+const REDIS_EXPORTER_IMAGE = 'oliver006/redis_exporter:v1.91.1-alpine';
 
 export class Redis {
   constructor(
@@ -92,8 +92,17 @@ export class Redis {
     const memoryInBytes = memoryParser(input.limits.memory) * 0.9; // Redis recommends 80%
     const memoryInMegabytes = Math.floor(memoryInBytes / 1024 / 1024);
 
+    const priorityClass = new k8s.scheduling.v1.PriorityClass('redis-priority', {
+      value: 1_000_000,
+      globalDefault: false,
+      preemptionPolicy: 'PreemptLowerPriority',
+      description:
+        'In-cluster Redis cache. Scheduled before and never preempted by application pods.',
+    });
+
     const pb = new PodBuilder({
       restartPolicy: 'Always',
+      priorityClassName: priorityClass.metadata.name,
       containers: [
         {
           name,
@@ -172,6 +181,7 @@ export class Redis {
         },
         {
           annotations: {
+            'cluster-autoscaler.kubernetes.io/safe-to-evict': 'false',
             'prometheus.io/scrape': 'true',
             'prometheus.io/port': String(METRICS_PORT),
             'prometheus.io/path': '/metrics',
