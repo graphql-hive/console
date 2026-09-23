@@ -45,7 +45,7 @@ function createSupportManager(overrides?: {
       id: 'user-1',
       email: 'user@example.com',
       fullName: 'Test User',
-      zendeskId: 'zendesk-user-1',
+      zendeskId: '200',
     }),
     setZendeskOrganizationId: vi.fn().mockResolvedValue(undefined),
     setZendeskUserId: vi.fn().mockResolvedValue(undefined),
@@ -191,7 +191,7 @@ describe('SupportManager.createTicket', () => {
           id: 'org-1',
           name: 'Test Org',
           billingPlan,
-          zendeskId: 'zendesk-org-1',
+          zendeskId: '100',
         }),
       },
     });
@@ -219,7 +219,7 @@ describe('SupportManager.createTicket', () => {
           id: 'org-1',
           name: 'Test Org',
           billingPlan: 'UNKNOWN',
-          zendeskId: 'zendesk-org-1',
+          zendeskId: '100',
         }),
       },
     });
@@ -245,7 +245,7 @@ describe('SupportManager.ensureZendeskUserId', () => {
       organizationId: 'org-1',
     });
 
-    expect(zendeskUserId).toBe('zendesk-user-1');
+    expect(zendeskUserId).toBe('200');
     expect(httpClient.get).not.toHaveBeenCalled();
     expect(httpClient.post).not.toHaveBeenCalled();
   });
@@ -358,7 +358,7 @@ describe('SupportManager.ensureZendeskUserId', () => {
         userId: 'user-1',
         organizationId: 'org-1',
       }),
-    ).resolves.toBe('zendesk-user-1');
+    ).resolves.toBe('200');
     expect(storage.setZendeskOrganizationUserConnection).toHaveBeenCalled();
   });
 
