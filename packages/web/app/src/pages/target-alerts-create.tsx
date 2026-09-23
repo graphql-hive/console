@@ -7,6 +7,7 @@ import {
   type AlertFormValues,
 } from '@/components/target/alerts/alert-form';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { useNavigate } from '@tanstack/react-router';
 
 const TargetAlertsCreatePage_CapQuery = graphql(`
@@ -33,13 +34,9 @@ const TargetAlertsCreatePage_CapQuery = graphql(`
   }
 `);
 
-export function TargetAlertsCreatePage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  savedFilterId?: string;
-}) {
-  const { organizationSlug, projectSlug, targetSlug, savedFilterId } = props;
+export function TargetAlertsCreatePage(props: { savedFilterId?: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const { savedFilterId } = props;
   const navigate = useNavigate();
 
   // Direct-navigate gate: a user can land here while at the per-target cap
@@ -85,9 +82,6 @@ export function TargetAlertsCreatePage(props: {
   return (
     <AlertForm
       mode="create"
-      organizationSlug={organizationSlug}
-      projectSlug={projectSlug}
-      targetSlug={targetSlug}
       defaultValues={defaultValues}
       expandAdvanced={!!savedFilterId}
       showPreview

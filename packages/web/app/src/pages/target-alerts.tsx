@@ -5,13 +5,8 @@ import { Meta } from '@/components/ui/meta';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { graphql } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
+import { useSlugs } from '@/lib/hooks';
 import { Outlet } from '@tanstack/react-router';
-
-type AlertsProps = {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-};
 
 const TargetAlertsPageQuery = graphql(`
   query TargetAlertsPageQuery(
@@ -35,8 +30,9 @@ const TargetAlertsPageQuery = graphql(`
 `);
 
 /** The gate every alerts page sits behind; the pages with the nav and the rule detail render in it. */
-export function TargetAlertsPage(props: AlertsProps) {
-  const [data] = useQuery({ query: TargetAlertsPageQuery, variables: props });
+export function TargetAlertsPage() {
+  const slugs = useSlugs('target');
+  const [data] = useQuery({ query: TargetAlertsPageQuery, variables: slugs });
   const target = data.data?.target;
 
   useRedirect({
@@ -45,7 +41,7 @@ export function TargetAlertsPage(props: AlertsProps) {
     redirectTo(router) {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: props,
+        params: slugs,
         replace: true,
       });
     },
@@ -64,7 +60,8 @@ export function TargetAlertsPage(props: AlertsProps) {
 }
 
 /** Activity (the bare URL), rules and create beside their nav. */
-export function TargetAlertsWithNav(props: AlertsProps) {
+export function TargetAlertsWithNav() {
+  const slugs = useSlugs('target');
   return (
     <PageLayout>
       <Navigation
@@ -75,20 +72,20 @@ export function TargetAlertsWithNav(props: AlertsProps) {
             id: 'activity',
             label: 'Alert activity',
             to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
-            params: props,
+            params: slugs,
             exact: true,
           },
           {
             id: 'rules',
             label: 'Alert rules',
             to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/rules',
-            params: props,
+            params: slugs,
           },
           {
             id: 'create',
             label: 'Create a new alert',
             to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/create',
-            params: props,
+            params: slugs,
           },
         ]}
       />
