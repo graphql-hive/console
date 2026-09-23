@@ -1766,7 +1766,7 @@ const SchemaVersionModel = z
     /** This property only exists for legacy backfill behaviour, do not use it unless you know what you are doing. */
     actionId: z.string().nullable(),
     origin: SchemaVersionOriginModel.nullable(),
-    graphId: z.string(),
+    graphId: z.string().nullable(),
     graphMetadata: GraphMetadataModel.nullable(),
     sourceSchemaVersionId: z.string().nullable(),
   })
