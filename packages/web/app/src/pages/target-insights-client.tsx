@@ -15,7 +15,7 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
-import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
+import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { pick } from '@/lib/object';
 import { useChartStyles } from '@/lib/utils';
@@ -56,13 +56,8 @@ const ClientView_ClientStatsQuery = graphql(`
   }
 `);
 
-function ClientView(props: {
-  clientName: string;
-  dataRetentionInDays: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function ClientView(props: { clientName: string; dataRetentionInDays: number }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { styles, colors } = useChartStyles();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: props.dataRetentionInDays,
@@ -73,9 +68,9 @@ function ClientView(props: {
     query: ClientView_ClientStatsQuery,
     variables: {
       targetSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
       period: dateRangeController.resolvedRange,
       clientName: props.clientName,
@@ -106,7 +101,7 @@ function ClientView(props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -270,9 +265,9 @@ function ClientView(props: {
                         className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                         params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
+                          organizationSlug,
+                          projectSlug,
+                          targetSlug,
                           operationName: operation.name,
                           operationHash: operation.operationHash ?? '_',
                         }}
@@ -350,25 +345,21 @@ const ClientInsightsPageQuery = graphql(`
   }
 `);
 
-function ClientInsightsPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  name: string;
-}) {
+function ClientInsightsPageContent(props: { name: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ClientInsightsPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
 
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -397,24 +388,16 @@ function ClientInsightsPageContent(props: {
     <ClientView
       clientName={props.name}
       dataRetentionInDays={currentOrganization.usageRetentionInDays}
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
     />
   );
 }
 
-export function TargetInsightsClientPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  name: string;
-}) {
+export function TargetInsightsClientPage(props: { name: string }) {
   return (
     <>
       <Meta title={`${props.name} - client`} />
       <LayoutContent>
-        <ClientInsightsPageContent {...props} />
+        <ClientInsightsPageContent name={props.name} />
       </LayoutContent>
     </>
   );

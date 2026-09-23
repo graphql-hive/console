@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';
+import { useSlugs } from '@/lib/hooks';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
@@ -162,17 +163,12 @@ function NameCell({
   filter,
   isRenaming,
   onStopRename,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
 }: {
   filter: SavedFilterNode;
   isRenaming: boolean;
   onStopRename: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [updateResult, updateSavedFilter] = useMutation(ManageFilters_UpdateSavedFilterMutation);
   const { toast } = useToast();
   const [renameValue, setRenameValue] = useState(filter.name);
@@ -269,17 +265,12 @@ function ActionsCell({
   filter,
   onRename,
   onDelete,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
 }: {
   filter: SavedFilterNode;
   onRename: () => void;
   onDelete: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   return (
     <DataTableCell
       kind="actions"
@@ -326,17 +317,12 @@ function ActionsCell({
 
 function SavedFilterRowFilters({
   filter,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   dataRetentionInDays,
 }: {
   filter: SavedFilterNode;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   dataRetentionInDays: number;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { operationHashes, clientFilters } = filter.filters;
 
   const savedDateRange = filter.filters.dateRange ?? DEFAULT_DATE_RANGE;
@@ -644,12 +630,8 @@ function SavedFilterRowFilters({
 
 const columnHelper = createColumnHelper<SavedFilterNode>();
 
-function ManageFiltersContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
-  const { organizationSlug, projectSlug, targetSlug } = props;
+function ManageFiltersContent() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [, deleteSavedFilter] = useMutation(ManageFilters_DeleteSavedFilterMutation);
   const { toast } = useToast();
@@ -707,9 +689,6 @@ function ManageFiltersContent(props: {
             filter={info.row.original}
             isRenaming={renamingId === info.row.original.id}
             onStopRename={() => setRenamingId(null)}
-            organizationSlug={organizationSlug}
-            projectSlug={projectSlug}
-            targetSlug={targetSlug}
           />
         ),
       }),
@@ -739,9 +718,6 @@ function ManageFiltersContent(props: {
             filter={ctx.row.original}
             onRename={() => setRenamingId(ctx.row.original.id)}
             onDelete={() => handleDelete(ctx.row.original)}
-            organizationSlug={organizationSlug}
-            projectSlug={projectSlug}
-            targetSlug={targetSlug}
           />
         ),
       }),
@@ -807,9 +783,6 @@ function ManageFiltersContent(props: {
           renderSubComponent={row => (
             <SavedFilterRowFilters
               filter={row.original}
-              organizationSlug={organizationSlug}
-              projectSlug={projectSlug}
-              targetSlug={targetSlug}
               dataRetentionInDays={dataRetentionInDays}
             />
           )}
@@ -819,15 +792,8 @@ function ManageFiltersContent(props: {
   );
 }
 
-export function TargetInsightsManageFiltersPage({
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-}: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}): ReactElement {
+export function TargetInsightsManageFiltersPage(): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   return (
     <>
       <Meta title="Manage saved filters" />
@@ -847,11 +813,7 @@ export function TargetInsightsManageFiltersPage({
             description="View and manage your saved filter views"
           />
         </div>
-        <ManageFiltersContent
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
-        />
+        <ManageFiltersContent />
       </LayoutContent>
     </>
   );

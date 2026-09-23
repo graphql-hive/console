@@ -14,6 +14,7 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 
 const GraphQLOperationBody_OperationFragment = graphql(`
@@ -47,20 +48,15 @@ const Operation_View_OperationBodyQuery = graphql(`
 `);
 
 function OperationView({
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   dataRetentionInDays,
   operationHash,
   operationName,
 }: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   dataRetentionInDays: number;
   operationHash: string;
   operationName: string;
 }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const dateRangeController = useDateRangeController({
     dataRetentionInDays,
     defaultPreset: presetLast1Day,
@@ -110,9 +106,6 @@ function OperationView({
       </div>
       {!result.fetching && isNotNoQueryOrMutation === false ? (
         <OperationsStats
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
           period={dateRangeController.resolvedRange}
           dateRangeText={dateRangeController.selectedPreset.label}
           filter={operationFilter}
@@ -167,26 +160,21 @@ const OperationInsightsPageQuery = graphql(`
   }
 `);
 
-function OperationInsightsContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  operationHash: string;
-  operationName: string;
-}) {
+function OperationInsightsContent(props: { operationHash: string; operationName: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: OperationInsightsPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
 
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -213,9 +201,6 @@ function OperationInsightsContent(props: {
 
   return (
     <OperationView
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
       dataRetentionInDays={currentOrganization.usageRetentionInDays}
       operationHash={props.operationHash}
       operationName={props.operationName}
@@ -224,9 +209,6 @@ function OperationInsightsContent(props: {
 }
 
 export function TargetInsightsOperationPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   operationHash: string;
   operationName: string;
 }) {
@@ -234,7 +216,10 @@ export function TargetInsightsOperationPage(props: {
     <>
       <Meta title={`Operation ${props.operationName}`} />
       <LayoutContent>
-        <OperationInsightsContent {...props} />
+        <OperationInsightsContent
+          operationHash={props.operationHash}
+          operationName={props.operationName}
+        />
       </LayoutContent>
     </>
   );

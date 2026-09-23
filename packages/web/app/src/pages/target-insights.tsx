@@ -22,6 +22,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
 
@@ -110,17 +111,8 @@ const InsightsTrackView_Mutation = graphql(`
   }
 `);
 
-function OperationsView({
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-  dataRetentionInDays,
-}: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  dataRetentionInDays: number;
-}): ReactElement {
+function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const search = insightsRoute.useSearch();
   const navigate = insightsRoute.useNavigate();
   const dateRangeController = useDateRangeController({
@@ -335,9 +327,6 @@ function OperationsView({
                     excludeOperations: search.excludeOperations ?? false,
                     excludeClientFilters: search.excludeClients ?? false,
                   }}
-                  organizationSlug={organizationSlug}
-                  projectSlug={projectSlug}
-                  targetSlug={targetSlug}
                   onSaved={viewId => {
                     void navigate({
                       search: prev => ({ ...prev, viewId }),
@@ -363,9 +352,6 @@ function OperationsView({
         </div>
       </div>
       <OperationsStats
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         period={dateRangeController.resolvedRange}
         filter={filter}
         dateRangeText={dateRangeController.selectedPreset.label}
@@ -374,9 +360,6 @@ function OperationsView({
       />
       <OperationsList
         period={dateRangeController.resolvedRange}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         filter={filter}
         selectedPeriod={dateRangeController.selectedPreset.range}
       />
@@ -405,24 +388,21 @@ const TargetOperationsPageQuery = graphql(`
   }
 `);
 
-function TargetOperationsPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function TargetOperationsPageContent() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetOperationsPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
 
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -448,26 +428,15 @@ function TargetOperationsPageContent(props: {
     );
   }
 
-  return (
-    <OperationsView
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      dataRetentionInDays={currentOrganization.usageRetentionInDays}
-    />
-  );
+  return <OperationsView dataRetentionInDays={currentOrganization.usageRetentionInDays} />;
 }
 
-export function TargetInsightsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function TargetInsightsPage() {
   return (
     <>
       <Meta title="Insights" />
       <LayoutContent>
-        <TargetOperationsPageContent {...props} />
+        <TargetOperationsPageContent />
       </LayoutContent>
     </>
   );
