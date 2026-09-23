@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
+import { GraphStore } from '@hive/api/modules/graph/providers/graph-store';
 import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
 import { TargetStore } from '@hive/api/modules/target/providers/target-store';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -95,7 +96,8 @@ async function main() {
   });
 
   const prometheusConfig = new PrometheusConfig(!!env.prometheus);
-  const targetStore = new TargetStore(server.log, pgPool);
+  const graphStore = new GraphStore(server.log, pgPool);
+  const targetStore = new TargetStore(server.log, graphStore, pgPool);
   const targetsByIdCache = new TargetsByIdCache(redis, targetStore, prometheusConfig);
   const targetsBySlugCache = new TargetsBySlugCache(redis, targetStore, prometheusConfig);
   const targetTokenCache = new TargetTokenCache(redis, pgPool, prometheusConfig);
