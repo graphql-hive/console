@@ -18,7 +18,6 @@ export const targetProposalsRoute = createRoute({
     user: z.string().array().optional().catch(undefined),
   }),
   component: function TargetProposalsRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetProposalsRoute.useParams();
     // select proposalId from child route
     const proposalId = useParams({
       strict: false,
@@ -27,9 +26,6 @@ export const targetProposalsRoute = createRoute({
     const { stage, user } = targetProposalsRoute.useSearch();
     return (
       <TargetProposalsPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         filterStages={stage}
         filterUserIds={user}
         selectedProposalId={proposalId}
@@ -41,16 +37,7 @@ export const targetProposalsRoute = createRoute({
 export const targetProposalsNewRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'proposals/new',
-  component: function TargetProposalRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetProposalsNewRoute.useParams();
-    return (
-      <TargetProposalsNewPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
-    );
-  },
+  component: TargetProposalsNewPage,
 });
 
 export const targetProposalsSingleRoute = createRoute({
@@ -65,14 +52,10 @@ export const targetProposalsSingleRoute = createRoute({
     version: z.string().optional(),
   }),
   component: function TargetProposalRoute() {
-    const { organizationSlug, projectSlug, targetSlug, proposalId } =
-      targetProposalsSingleRoute.useParams();
+    const { proposalId } = targetProposalsSingleRoute.useParams();
     const { page, version, ts } = targetProposalsSingleRoute.useSearch();
     return (
       <TargetProposalsSinglePage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         proposalId={proposalId}
         tab={page ?? (ProposalTab.DETAILS as string)}
         version={version}

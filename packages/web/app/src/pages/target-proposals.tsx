@@ -14,6 +14,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
+import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { getRouteApi, useNavigate, useSearch } from '@tanstack/react-router';
 
@@ -44,19 +45,17 @@ const TargetProposalsQuery = graphql(`
 `);
 
 export function TargetProposalsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   filterUserIds?: string[];
   filterStages?: string[];
   selectedProposalId?: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetProposalsQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
   const target = query.data?.organization?.project?.target;
@@ -67,9 +66,9 @@ export function TargetProposalsPage(props: {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
       });
     },
@@ -86,14 +85,15 @@ export function TargetProposalsPage(props: {
 }
 
 const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const navigate = useNavigate();
   const proposeChange = () => {
     void navigate({
       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/new',
       params: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
     });
   };
@@ -177,24 +177,22 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
  * This renders a single page of proposals for the ProposalList component.
  */
 const ProposalsListPage = (props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   filterUserIds?: string[];
   filterStages?: string[];
   selectedProposalId?: string;
   isLastPage: boolean;
   onLoadMore: (after: string) => void | Promise<void>;
 }) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ProposalsQuery,
     variables: {
       input: {
         target: {
           bySelector: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
           },
         },
         stages: (
@@ -241,9 +239,9 @@ const ProposalsListPage = (props: {
               key={proposal.id}
               to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
               params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 proposalId: proposal.id,
               }}
               search={{

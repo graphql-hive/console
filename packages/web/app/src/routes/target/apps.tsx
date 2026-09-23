@@ -13,21 +13,13 @@ export const targetAppsRoute = createRoute({
   path: 'apps',
   validateSearch: TargetAppsRouteSearch.parse,
   component: function TargetAppsRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetAppsRoute.useParams();
     const {
       sort = {
         field: 'ACTIVATED_AT',
         direction: 'DESC',
       } satisfies SortState,
     } = targetAppsRoute.useSearch();
-    return (
-      <TargetAppsPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        sorting={sort}
-      />
-    );
+    return <TargetAppsPage sorting={sort} />;
   },
 });
 
@@ -36,18 +28,10 @@ export const targetAppVersionRoute = createRoute({
   path: 'apps/$appName/$appVersion',
   validateSearch: () => ({}) as { search?: string; coordinates?: string },
   component: function TargetAppVersionRoute() {
-    const { organizationSlug, projectSlug, targetSlug, appName, appVersion } =
-      targetAppVersionRoute.useParams();
+    const { appName, appVersion } = targetAppVersionRoute.useParams();
     const { coordinates } = targetAppVersionRoute.useSearch();
     return (
-      <TargetAppVersionPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        appName={appName}
-        appVersion={appVersion}
-        coordinates={coordinates}
-      />
+      <TargetAppVersionPage appName={appName} appVersion={appVersion} coordinates={coordinates} />
     );
   },
 });

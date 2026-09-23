@@ -65,13 +65,10 @@ export const targetTraceRoute = createRoute({
   },
   path: 'traces/$traceId',
   component: function TargetTraceRoute() {
-    const { organizationSlug, projectSlug, targetSlug, traceId } = targetTraceRoute.useParams();
+    const { traceId } = targetTraceRoute.useParams();
     const { activeSpanId, activeSpanTab } = targetTraceRoute.useSearch();
     return (
       <TargetTracePage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         traceId={traceId}
         activeSpanId={activeSpanId ?? null}
         activeSpanTab={activeSpanTab ?? null}

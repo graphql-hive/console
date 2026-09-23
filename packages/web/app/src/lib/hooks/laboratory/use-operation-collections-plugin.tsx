@@ -509,26 +509,17 @@ export function Content() {
         </div>
       )}
       <CreateCollectionModal
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         isOpen={isCollectionModalOpen}
         toggleModalOpen={toggleCollectionModal}
         collectionId={collectionId}
       />
       <DeleteCollectionModal
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         isOpen={isDeleteCollectionModalOpen}
         toggleModalOpen={toggleDeleteCollectionModalOpen}
         collectionId={collectionId}
       />
       {operationToDeleteId && (
         <DeleteOperationModal
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
           isOpen={isDeleteOperationModalOpen}
           toggleModalOpen={toggleDeleteOperationModalOpen}
           operationId={operationToDeleteId}
@@ -536,9 +527,6 @@ export function Content() {
       )}
       {operationToEditId && (
         <EditOperationModal
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
           operationId={operationToEditId}
           close={() => setOperationToEditId(null)}
         />

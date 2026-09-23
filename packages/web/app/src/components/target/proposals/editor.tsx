@@ -91,9 +91,6 @@ export type Proposals_TargetProjectTypeFragmentType = FragmentType<
 export type Proposals_SelectFragmentType = FragmentType<typeof Proposals_SelectFragment>;
 
 export function ProposalEditor(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   projectTypeFragment: Proposals_TargetProjectTypeFragmentType | undefined;
   selectFragment: Proposals_SelectFragmentType | undefined;
   changedServices: Array<ServiceTab>;

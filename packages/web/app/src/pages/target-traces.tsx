@@ -837,16 +837,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           </div>
         ) : null}
       </div>
-      {trace && (
-        <ImportedTraceSheet
-          activeSpanId={null}
-          activeSpanTab={null}
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          trace={trace}
-        />
-      )}
+      {trace && <ImportedTraceSheet activeSpanId={null} activeSpanTab={null} trace={trace} />}
     </Sheet>
   );
 }

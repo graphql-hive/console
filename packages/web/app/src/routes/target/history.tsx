@@ -8,16 +8,7 @@ import { targetRoute } from './route';
 export const targetHistoryRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'history',
-  component: function TargetHistoryRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetHistoryRoute.useParams();
-    return (
-      <TargetHistoryPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-      />
-    );
-  },
+  component: TargetHistoryPage,
 });
 
 // The bare URL is the latest version. A target without versions stays here and the list renders
@@ -41,16 +32,10 @@ export const targetHistoryVersionRoute = createRoute({
   getParentRoute: () => targetHistoryRoute,
   path: '$versionId',
   component: function TargetHistoryVersionRoute() {
-    const { organizationSlug, projectSlug, targetSlug, versionId } =
-      targetHistoryVersionRoute.useParams();
+    const { versionId } = targetHistoryVersionRoute.useParams();
     return (
       <DiffsWorkerPoolProvider>
-        <TargetHistorySchemaVersionPage
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
-          schemaVersionId={versionId}
-        />
+        <TargetHistorySchemaVersionPage schemaVersionId={versionId} />
       </DiffsWorkerPoolProvider>
     );
   },

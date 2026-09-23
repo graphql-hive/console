@@ -17,7 +17,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { graphql, type DocumentType } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { usePagedConnection } from '@/lib/hooks';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -121,13 +121,11 @@ type AppDocument = NonNullable<
 >['edges'][number]['node'];
 
 function TargetAppVersionContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   appName: string;
   appVersion: string;
   coordinates?: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const router = useRouter();
   const search =
     typeof router.latestLocation.search.search === 'string'
@@ -147,9 +145,9 @@ function TargetAppVersionContent(props: {
   const [data] = useQuery({
     query: TargetAppsVersionQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       appName: props.appName,
       appVersion: props.appVersion,
       first: 20,
@@ -168,9 +166,9 @@ function TargetAppVersionContent(props: {
     loadMore: after =>
       client
         .query(TargetAppsVersionFetchMoreQuery, {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
           appName: props.appName,
           appVersion: props.appVersion,
           first: 20,
@@ -192,9 +190,9 @@ function TargetAppVersionContent(props: {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
         replace: true,
       });
@@ -205,11 +203,7 @@ function TargetAppVersionContent(props: {
 
   if (data.error) {
     return (
-      <QueryError
-        organizationSlug={props.organizationSlug}
-        error={data.error}
-        showLogoutButton={false}
-      />
+      <QueryError organizationSlug={organizationSlug} error={data.error} showLogoutButton={false} />
     );
   }
 
@@ -273,9 +267,9 @@ function TargetAppVersionContent(props: {
                   <Link
                     to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
                     params={{
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
-                      targetSlug: props.targetSlug,
+                      organizationSlug,
+                      projectSlug,
+                      targetSlug,
                     }}
                     search={{ operationString: row.original.body }}
                   />
@@ -287,9 +281,9 @@ function TargetAppVersionContent(props: {
                   <Link
                     to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                     params={{
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
-                      targetSlug: props.targetSlug,
+                      organizationSlug,
+                      projectSlug,
+                      targetSlug,
                       operationName: row.original.operationName ?? row.original.hash,
                       operationHash: row.original.insightsHash,
                     }}
@@ -325,9 +319,9 @@ function TargetAppVersionContent(props: {
             copy="Back to App Deployments"
             link={{
               params: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
               },
               to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
             }}
@@ -357,9 +351,9 @@ function TargetAppVersionContent(props: {
             <Link
               to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
               params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 appName: props.appName,
                 appVersion: props.appVersion,
               }}
@@ -479,9 +473,6 @@ function TargetAppVersionContent(props: {
 }
 
 export function TargetAppVersionPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   appName: string;
   appVersion: string;
   coordinates?: string;

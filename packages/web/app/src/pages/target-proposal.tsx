@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { Change } from '@graphql-inspector/core';
 import { errors, patchSchema } from '@graphql-inspector/patch';
@@ -152,9 +153,6 @@ const ReviewSchemaProposalMutation = graphql(/* GraphQL */ `
 `);
 
 export function TargetProposalsSinglePage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   proposalId: string;
   tab?: string;
   version?: string;
@@ -171,21 +169,22 @@ export function TargetProposalsSinglePage(props: {
 }
 
 const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   // fetch main page details
   const [query, refreshProposal] = useQuery({
     query: ProposalQuery,
     variables: {
       projectRef: {
         bySelector: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
+          organizationSlug,
+          projectSlug,
         },
       },
       targetRef: {
         bySelector: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
       },
       id: props.proposalId,
@@ -391,9 +390,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   className="text-neutral-12"
                   to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                   params={{
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
+                    organizationSlug,
+                    projectSlug,
+                    targetSlug,
                   }}
                 >
                   Schema Proposals
@@ -490,9 +489,6 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
 };
 
 function TabbedContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   proposalId: string;
   version?: string;
   page?: string;
@@ -504,13 +500,14 @@ function TabbedContent(props: {
   me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
   isDistributedGraph: boolean;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const page = props.page ?? Tab.DETAILS;
   const proposalLink = {
     to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
     params: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       proposalId: props.proposalId,
     },
   } as const;

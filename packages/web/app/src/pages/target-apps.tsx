@@ -12,7 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { graphql, useFragment, type DocumentType } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { usePagedConnection } from '@/lib/hooks';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { getRouteApi } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -123,12 +123,8 @@ const TargetAppsViewFetchMoreQuery = graphql(`
 
 type AppDeploymentRow = DocumentType<typeof AppTableRow_AppDeploymentFragment>;
 
-function TargetAppsView(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  sorting: SortState;
-}) {
+function TargetAppsView(props: { sorting: SortState }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const navigate = appsRoute.useNavigate();
   const sortVariable = {
     field: props.sorting.field as AppDeploymentsSortField,
@@ -138,9 +134,9 @@ function TargetAppsView(props: {
   const [data] = useQuery({
     query: TargetAppsViewQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       sort: sortVariable,
     },
   });
@@ -158,9 +154,9 @@ function TargetAppsView(props: {
     loadMore: after =>
       client
         .query(TargetAppsViewFetchMoreQuery, {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
           after,
           sort: sortVariable,
         })
@@ -177,9 +173,9 @@ function TargetAppsView(props: {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
         replace: true,
       });
@@ -188,11 +184,7 @@ function TargetAppsView(props: {
 
   if (data.error) {
     return (
-      <QueryError
-        organizationSlug={props.organizationSlug}
-        error={data.error}
-        showLogoutButton={false}
-      />
+      <QueryError organizationSlug={organizationSlug} error={data.error} showLogoutButton={false} />
     );
   }
 
@@ -213,9 +205,9 @@ function TargetAppsView(props: {
           link={{
             to: '/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion',
             params: {
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
+              organizationSlug,
+              projectSlug,
+              targetSlug,
               appName: row.original.name,
               appVersion: row.original.version,
             },
@@ -346,22 +338,12 @@ function TargetAppsView(props: {
   );
 }
 
-export function TargetAppsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  sorting: SortState;
-}) {
+export function TargetAppsPage(props: { sorting: SortState }) {
   return (
     <>
       <Meta title="App Deployments" />
       <LayoutContent>
-        <TargetAppsView
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          sorting={props.sorting}
-        />
+        <TargetAppsView sorting={props.sorting} />
       </LayoutContent>
     </>
   );

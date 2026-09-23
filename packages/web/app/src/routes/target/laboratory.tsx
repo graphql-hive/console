@@ -13,16 +13,11 @@ export const targetLaboratoryRoute = createRoute({
       'hive:laboratory:type',
       'hive-laboratory',
     );
-
-    const { organizationSlug, projectSlug, targetSlug } = targetLaboratoryRoute.useParams();
     const { operation } = targetLaboratoryRoute.useSearch();
 
     if (laboratoryTab === 'hive-laboratory') {
       return (
         <TargetLaboratoryPageNew
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
           selectedOperationId={operation}
           defaultLaboratoryTab={laboratoryTab as 'graphiql' | 'hive-laboratory'}
           onLaboratoryTabChange={setLaboratoryTab}
@@ -32,9 +27,6 @@ export const targetLaboratoryRoute = createRoute({
 
     return (
       <TargetLaboratoryPage
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         selectedOperationId={operation}
         defaultLaboratoryTab={laboratoryTab as 'graphiql' | 'hive-laboratory'}
         onLaboratoryTabChange={setLaboratoryTab}
