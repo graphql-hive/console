@@ -139,14 +139,11 @@ export class SchemaVersionStore {
           ${psql.jsonbOrNull(args.schemaMetadata)},
           ${psql.jsonbOrNull(args.metadataAttributes)},
           ${psql.jsonb(SchemaVersionOriginModel.parse(args.origin))},
-<<<<<<< HEAD
           ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))}
-=======
           ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))},
           ${args.graphId},
           ${psql.jsonbOrNull(GraphMetadataModel.nullable().parse(args.graphMetadata))},
           ${args.sourceSchemaVersionId}
->>>>>>> 8c30cec74 (associate new schema versions with the default graph (if it exists))
         )
       RETURNING
         ${schemaVersionSQLFields()}
