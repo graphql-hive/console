@@ -81,7 +81,9 @@ Three kinds of slug stay props, and each has a reason:
   project a table row links to: that is data. `members/resource-selector.tsx` is the example.
 - **The component renders outside that route.** `OrganizationLayout` and the user menu also render
   in the OIDC interstitial (`$organizationSlug/oidc-request`), which is a sibling route, and
-  `QueryError` renders on `/manage` and `/join/$inviteCode` too. The hook would throw there.
+  `QueryError` renders on `/manage` and `/join/$inviteCode` too. Asking for a scope you do not sit
+  under errors into the route's error boundary rather than returning a blank slug, so the page shows
+  the error screen (`use-slugs.spec.tsx` pins this).
 - **It is not a component.** `laboratory/plugins/target-env.tsx` is a factory the page calls, so the
   page reads the slugs and hands them over.
 
