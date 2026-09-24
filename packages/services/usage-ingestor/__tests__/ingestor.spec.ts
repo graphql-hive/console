@@ -1,5 +1,7 @@
+import { createHash } from 'node:crypto';
 import type { KafkaMessage } from 'kafkajs';
 import { compressZstd, type RawReport } from '@hive/usage-common';
+import { createInflightTracker } from '../src/inflight';
 import { processMessage } from '../src/ingestor';
 import { poisonPillMessages } from '../src/metrics';
 import type { createProcessor } from '../src/processor';
@@ -46,97 +48,185 @@ async function buildMessage(): Promise<KafkaMessage> {
 function buildLogger() {
   return {
     error: vi.fn(),
+    warn: vi.fn(),
     debug: vi.fn(),
   } as any;
 }
 
+const processedRows = {
+  registryRecords: ['reg1'],
+  operations: ['op1', 'op2'],
+  subscriptionOperations: ['sub1'],
+  appDeploymentUsageRecords: ['app1'],
+  errors: ['err1'],
+};
+
 function buildProcessor(): ReturnType<typeof createProcessor> {
   return {
-    processReports: vi.fn().mockResolvedValue({
-      registryRecords: ['reg1'],
-      operations: ['op1'],
-      subscriptionOperations: [],
-      appDeploymentUsageRecords: [],
-      errors: [],
-    }),
+    processReports: vi.fn().mockResolvedValue(processedRows),
   };
 }
 
-test('permanent operations-write failure increments the poison-pill counter and logs a bounded summary plus the full payload at debug', async () => {
-  const processor = buildProcessor();
-  const writer: ReturnType<typeof createWriter> = {
-    writeRegistry: vi.fn().mockResolvedValue(undefined),
-    writeOperations: vi.fn().mockRejectedValue(new Error('clickhouse rejected the insert')),
-    writeSubscriptionOperations: vi.fn().mockResolvedValue(undefined),
-    writeAppDeploymentUsage: vi.fn().mockResolvedValue(undefined),
-    writeOperationErrors: vi.fn().mockResolvedValue(undefined),
-    destroy: vi.fn(),
-  };
-  const logger = buildLogger();
-  const message = await buildMessage();
-  const incSpy = vi.spyOn(poisonPillMessages, 'inc');
-
-  await expect(
-    processMessage({ processor, writer, message, logger, topic: 'usage_reports', partition: 2 }),
-  ).rejects.toThrow('clickhouse rejected the insert');
-
-  expect(incSpy).toHaveBeenCalledTimes(1);
-
-  const [summaryArg, summaryMsg] = logger.error.mock.calls.at(-1)!;
-  expect(summaryMsg).toEqual(
-    'Report write failed - offset not committed, message will be reprocessed',
-  );
-  expect(summaryArg).toMatchObject({
-    topic: 'usage_reports',
-    partition: 2,
-    offset: '123',
-    reportCount: 1,
-    totalOperations: 1,
-    targets: ['target-1'],
-    organizations: ['org-1'],
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>(res => {
+    resolve = res;
   });
-  expect(summaryArg.rawReports).toBeUndefined();
+  return { promise, resolve };
+}
 
-  const [debugArg, debugMsg] = logger.debug.mock.calls.at(-1)!;
-  expect(debugMsg).toEqual('Poison pill message full payload');
-  expect(debugArg.rawReports).toEqual(rawReports);
+type WriterMock = ReturnType<typeof createWriter>;
+const writeMethods = [
+  'writeRegistry',
+  'writeOperations',
+  'writeSubscriptionOperations',
+  'writeAppDeploymentUsage',
+  'writeOperationErrors',
+] as const;
 
-  incSpy.mockRestore();
-});
-
-test('a registry-only failure does not touch the poison-pill counter', async () => {
-  const processor = buildProcessor();
-  const writer: ReturnType<typeof createWriter> = {
-    writeRegistry: vi.fn().mockRejectedValue(new Error('registry write failed')),
+function buildWriter(overrides: Partial<WriterMock> = {}): WriterMock {
+  return {
+    writeRegistry: vi.fn().mockResolvedValue(undefined),
     writeOperations: vi.fn().mockResolvedValue(undefined),
     writeSubscriptionOperations: vi.fn().mockResolvedValue(undefined),
     writeAppDeploymentUsage: vi.fn().mockResolvedValue(undefined),
     writeOperationErrors: vi.fn().mockResolvedValue(undefined),
     destroy: vi.fn(),
+    ...overrides,
   };
-  const logger = buildLogger();
+}
+
+function buildTracker() {
+  const onCommit = vi.fn().mockResolvedValue(undefined);
+  const tracker = createInflightTracker({
+    maxBytes: 1_000_000,
+    commitIntervalMs: 1000,
+    onCommit,
+    logger: buildLogger(),
+  });
+  return { tracker, onCommit };
+}
+
+const heartbeat = () => Promise.resolve();
+
+test('tags every write with a token derived from the message bytes and resolves before the writes settle', async () => {
+  const processor = buildProcessor();
+  const pending = deferred();
+  const writer = buildWriter({ writeOperations: vi.fn().mockReturnValue(pending.promise) });
+  const tracker = { waitForCapacity: vi.fn().mockResolvedValue(undefined), track: vi.fn() };
   const message = await buildMessage();
-  const incSpy = vi.spyOn(poisonPillMessages, 'inc');
+  const expectedToken = createHash('sha256').update(message.value!).digest('hex');
 
   await expect(
-    processMessage({ processor, writer, message, logger, topic: 'usage_reports', partition: 0 }),
+    processMessage({
+      processor,
+      writer,
+      tracker,
+      message,
+      heartbeat,
+      logger: buildLogger(),
+      topic: 'usage_reports',
+      partition: 2,
+    }),
   ).resolves.toBeUndefined();
 
-  expect(incSpy).not.toHaveBeenCalled();
+  const options = { deduplicationToken: expectedToken, source: 'usage_reports/2@123' };
+  expect(writer.writeRegistry).toHaveBeenCalledWith(processedRows.registryRecords, options);
+  expect(writer.writeOperations).toHaveBeenCalledWith(processedRows.operations, options);
+  expect(writer.writeSubscriptionOperations).toHaveBeenCalledWith(
+    processedRows.subscriptionOperations,
+    options,
+  );
+  expect(writer.writeAppDeploymentUsage).toHaveBeenCalledWith(
+    processedRows.appDeploymentUsageRecords,
+    options,
+  );
+  expect(writer.writeOperationErrors).toHaveBeenCalledWith(processedRows.errors, options);
 
-  incSpy.mockRestore();
+  const expectedBytes = Object.values(processedRows)
+    .flat()
+    .reduce((sum, row) => sum + row.length, 0);
+  expect(tracker.waitForCapacity).toHaveBeenCalledWith(expectedBytes, heartbeat);
+  expect(tracker.track).toHaveBeenCalledWith({
+    topic: 'usage_reports',
+    partition: 2,
+    offset: '123',
+    bytes: expectedBytes,
+    promise: expect.any(Promise),
+  });
+
+  pending.resolve();
+});
+
+test('two copies of the same message bytes produce the same token', async () => {
+  const message = await buildMessage();
+  const tokens: string[] = [];
+  const writer = buildWriter({
+    writeOperations: vi.fn((_rows, options) => {
+      tokens.push(options.deduplicationToken);
+      return Promise.resolve();
+    }),
+  });
+  const tracker = { waitForCapacity: vi.fn().mockResolvedValue(undefined), track: vi.fn() };
+
+  for (const offset of ['1', '2']) {
+    await processMessage({
+      processor: buildProcessor(),
+      writer,
+      tracker,
+      message: { ...message, offset },
+      heartbeat,
+      logger: buildLogger(),
+      topic: 'usage_reports',
+      partition: 0,
+    });
+  }
+
+  expect(tokens).toHaveLength(2);
+  expect(tokens[0]).toEqual(tokens[1]);
+});
+
+describe('the offset is committed only once every table has acknowledged', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test.each(writeMethods)('%s pending keeps the offset uncommitted', async method => {
+    const pending = deferred();
+    const writer = buildWriter({ [method]: vi.fn().mockReturnValue(pending.promise) });
+    const { tracker, onCommit } = buildTracker();
+    const message = await buildMessage();
+
+    await processMessage({
+      processor: buildProcessor(),
+      writer,
+      tracker,
+      message,
+      heartbeat,
+      logger: buildLogger(),
+      topic: 'usage_reports',
+      partition: 0,
+    });
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(onCommit).not.toHaveBeenCalled();
+
+    pending.resolve();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(onCommit).toHaveBeenCalledWith([
+      { topic: 'usage_reports', partition: 0, offset: '124' },
+    ]);
+  });
 });
 
 test('a corrupt/unparseable message increments the poison-pill counter and logs', async () => {
   const processor = buildProcessor();
-  const writer: ReturnType<typeof createWriter> = {
-    writeRegistry: vi.fn().mockResolvedValue(undefined),
-    writeOperations: vi.fn().mockResolvedValue(undefined),
-    writeSubscriptionOperations: vi.fn().mockResolvedValue(undefined),
-    writeAppDeploymentUsage: vi.fn().mockResolvedValue(undefined),
-    writeOperationErrors: vi.fn().mockResolvedValue(undefined),
-    destroy: vi.fn(),
-  };
+  const writer = buildWriter();
+  const tracker = { waitForCapacity: vi.fn().mockResolvedValue(undefined), track: vi.fn() };
   const logger = buildLogger();
   const corruptMessage: KafkaMessage = {
     key: null,
@@ -152,7 +242,9 @@ test('a corrupt/unparseable message increments the poison-pill counter and logs'
     processMessage({
       processor,
       writer,
+      tracker,
       message: corruptMessage,
+      heartbeat,
       logger,
       topic: 'usage_reports',
       partition: 4,
@@ -161,6 +253,7 @@ test('a corrupt/unparseable message increments the poison-pill counter and logs'
 
   expect(incSpy).toHaveBeenCalledTimes(1);
   expect(processor.processReports).not.toHaveBeenCalled();
+  expect(tracker.track).not.toHaveBeenCalled();
 
   const [errorArg, errorMsg] = logger.error.mock.calls.at(-1)!;
   expect(errorMsg).toEqual(

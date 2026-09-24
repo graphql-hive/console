@@ -84,5 +84,11 @@ export const ingestedOperationErrorsFailures = new metrics.Counter({
  */
 export const poisonPillMessages = new metrics.Counter({
   name: 'usage_ingestor_poison_pill_messages',
-  help: 'Number of times a report failed to write and its offset was not committed, so the message will be reprocessed - sustained/repeated firing for the same message signals a stuck partition',
+  help: 'Number of times a report failed to write and its offset was not committed; the insert is retried in place with the same deduplication token - sustained/repeated firing for the same message signals a stuck partition',
+});
+
+export const committedOffsetLag = new metrics.Gauge({
+  name: 'usage_ingestor_committed_offset_lag',
+  help: 'Messages between the partition high watermark and the next offset to commit; grows when ClickHouse is not acknowledging writes or offset commits are failing',
+  labelNames: ['partition'],
 });
