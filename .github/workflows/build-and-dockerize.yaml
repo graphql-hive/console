@@ -295,6 +295,7 @@ jobs:
       - name: attach CDN artifacts to Hive release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           RELEASE_TAG: hive@${{ inputs.latestVersion }}
         run: |
           gh release upload "$RELEASE_TAG" \
