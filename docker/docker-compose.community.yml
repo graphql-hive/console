@@ -90,36 +90,38 @@ services:
       - './.hive/redis/db:/bitnami/redis/data'
 
   s3:
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
-    command: server /data --console-address ":9001"
+    image: ghcr.io/versity/versitygw:v1.8.0@sha256:30292fc2eeacc67a36993b01f7a7a5e3361a19cced0e80c1d71cfa2a4b0a2499
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - >-
+        mkdir -p /data/artifacts /data/audit-logs /metadata && exec /usr/local/bin/versitygw
+        --port :9000 --webui :9001 --webui-no-tls --region auto --health /minio/health/live
+        --disable-acl posix --sidecar /metadata /data
     ports:
       - '9000:9000'
       - '9001:9001'
     networks:
       - 'stack'
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:9000/minio/health/live']
       interval: 30s
       timeout: 20s
       retries: 3
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      ROOT_ACCESS_KEY: ${MINIO_ROOT_USER}
+      ROOT_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     volumes:
-      - './.hive/minio/db:/data'
+      - './.hive/versitygw/db:/data'
+      - './.hive/versitygw/metadata:/metadata'
 
   s3_provision_buckets:
-    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: busybox:1.37.0
     depends_on:
       s3:
         condition: service_healthy
     networks:
       - 'stack'
-    entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set myminio http://s3:9000 ${MINIO_ROOT_USER}
-      ${MINIO_ROOT_PASSWORD}; /usr/bin/mc ls myminio/artifacts >/dev/null 2>&1 || /usr/bin/mc mb
-      myminio/artifacts; /usr/bin/mc ls myminio/audit-logs >/dev/null 2>&1 || /usr/bin/mc mb
-      myminio/audit-logs; exit 0"
+    command: ['true']
 
   s3_reverse_proxy:
     image: caddy:2.9.1-alpine
