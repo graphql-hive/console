@@ -1,9 +1,10 @@
+import { invariant } from '@hive/service-common';
 import { parseDateRangeInput } from '../../../shared/helpers';
+import { GraphStore } from '../../graph/providers/graph-store';
 import { OperationsManager } from '../../operations/providers/operations-manager';
 import { isFieldRequestedDeep } from '../lib/is-field-requested';
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaManager } from '../providers/schema-manager';
-import { SchemaVersionStore } from '../providers/schema-version-store';
 import { toGraphQLSchemaCheck, toGraphQLSchemaCheckCurry } from '../to-graphql-schema-check';
 import type { TargetResolvers } from './../../../__generated__/types';
 
@@ -24,7 +25,9 @@ export const Target: Pick<
   | 'schemaVersionsCount'
 > = {
   schemaVersions: async (target, args, { injector }) => {
-    return injector.get(SchemaManager).getPaginatedSchemaVersionsForTargetId(target, {
+    const graph = await injector.get(GraphStore).findGraphForTargetIdByName(target.id, 'default');
+    invariant(graph, "No graph with name 'default' exists.");
+    return injector.get(SchemaManager).getPaginatedSchemaVersionsForGraph(graph, {
       cursor: args.after ?? null,
       first: args.first ?? null,
     });
@@ -37,17 +40,21 @@ export const Target: Pick<
       versionId: args.id,
     });
   },
-  latestSchemaVersion: (target, _, { injector }) => {
-    return injector.get(SchemaManager).getMaybeLatestVersion(target);
+  async latestSchemaVersion(target, _, { injector }) {
+    const graph = await injector.get(GraphStore).findGraphForTargetIdByName(target.id, 'default');
+    invariant(graph, "No graph with name 'default' exists.");
+    return injector.get(SchemaManager).getMaybeLatestVersionForGraph(graph);
   },
-  latestValidSchemaVersion: async (target, __, { injector }) => {
-    return injector.get(SchemaManager).getMaybeLatestValidVersion(target);
+  async latestValidSchemaVersion(target, __, { injector }) {
+    const graph = await injector.get(GraphStore).findGraphForTargetIdByName(target.id, 'default');
+    invariant(graph, "No graph with name 'default' exists.");
+    return injector.get(SchemaManager).getMaybeLatestValidVersionForGraph(graph);
   },
   baseSchema: (target, _, { injector }) => {
     return injector.get(SchemaManager).getBaseSchemaForTarget(target);
   },
   hasSchema: (target, _, { injector }) => {
-    return injector.get(SchemaVersionStore).anyVersionExistsForTarget(target);
+    return injector.get(SchemaManager).hasPublishedSchemaVersionInDefaultGraph(target);
   },
   schemaCheck: async (target, args, { injector }) => {
     const schemaCheck = await injector.get(SchemaManager).findSchemaCheckForTarget(target, args.id);

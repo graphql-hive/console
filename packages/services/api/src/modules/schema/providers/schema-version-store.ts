@@ -505,8 +505,8 @@ export class SchemaVersionStore {
     return output.version;
   }
 
-  async deleteSubgraphFromTarget(
-    target: Target,
+  async deleteSubgraphFromGraph(
+    graph: Graph,
     args: {
       service: {
         name: string;
@@ -518,7 +518,6 @@ export class SchemaVersionStore {
       diffSchemaVersionId: string | null;
       conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
       contracts: null | Array<CreateContractVersionInput>;
-      graph: Graph;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -551,9 +550,22 @@ export class SchemaVersionStore {
           SELECT
             "id"
             , "base_schema" AS "baseSchema"
-          FROM "schema_versions"
-          WHERE "target_id" = ${target.id}
-          ORDER BY "created_at" DESC
+          FROM
+            "schema_versions"
+          WHERE
+            "graph_id" = ${graph.id}
+            ${
+              graph.isBackfilled
+                ? psql`
+                    OR (
+                      "target_id" = ${graph.targetId}
+                      AND "graph_id" IS NULL
+                    )
+                  `
+                : psql``
+            }
+          ORDER BY
+            "created_at" DESC
           LIMIT 1
         `,
         )
@@ -576,7 +588,7 @@ export class SchemaVersionStore {
               ${'system'}::text,
               ${'system'}::text,
               lower(${args.service.name}::text),
-              ${target.projectId},
+              ${graph.projectId},
               'DELETE'
             )
           RETURNING
@@ -600,7 +612,7 @@ export class SchemaVersionStore {
       // creates a new version
       const newVersion = await this.insertSchemaVersion(trx, {
         isComposable: args.composable,
-        targetId: target.id,
+        targetId: graph.targetId,
         origin: {
           type: 'delete',
           services: [{ name: args.service.name, versionId: args.service.versionId }],
@@ -621,8 +633,8 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        graphId: args.graph.id,
-        graphMetadata: { id: args.graph.id, name: args.graph.name, type: 'default' },
+        graphId: graph.id,
+        graphMetadata: { id: graph.id, name: graph.name, type: 'default' },
         sourceSchemaVersionId: null,
       });
 
@@ -759,53 +771,60 @@ export class SchemaVersionStore {
     return result?.total ?? 0;
   }
 
-  async anyVersionExistsForTarget(target: Target) {
+  async anyVersionExistsForGraph(graph: Graph) {
     return this.pg.exists(
       psql`/* hasSchema */
-        SELECT 1 FROM schema_versions as v WHERE v.target_id = ${target.id} LIMIT 1
-      `,
-    );
-  }
-
-  async getMaybeLatestValidSchemaVersion(target: Target): Promise<SchemaVersion | null> {
-    const version = await this.pg.maybeOne(
-      psql`/* getMaybeLatestValidVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`sv.`)}
-        FROM schema_versions as sv
-        WHERE sv.target_id = ${target.id} AND sv.is_composable IS TRUE
-        ORDER BY sv.created_at DESC
+          1
+        FROM
+          "schema_versions" as "v"
+        WHERE
+          "v"."graph_id" = ${graph.id}
+          ${
+            graph.isBackfilled
+              ? psql`
+                  OR (
+                    "v"."target_id" = ${graph.targetId}
+                    AND "v"."graph_id" IS NULL
+                  )
+                `
+              : psql``
+          }
         LIMIT 1
       `,
     );
-
-    return SchemaVersionModel.nullable().parse(version);
   }
 
-  async getLatestValidSchemaVersionForTargetId(targetId: string): Promise<SchemaVersion> {
-    const version = await this.pg.maybeOne(
+  async getMaybeLatestValidSchemaVersionForGraph(graph: Graph): Promise<SchemaVersion | null> {
+    let version = await this.pg.maybeOne(
       psql`/* getLatestValidVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`sv.`)}
-        FROM schema_versions as sv
-        WHERE sv.target_id = ${targetId} AND sv.is_composable IS TRUE
-        ORDER BY sv.created_at DESC
+          ${schemaVersionSQLFields(psql`"sv".`)}
+        FROM
+          "schema_versions" as "sv"
+        WHERE
+          "sv"."graph_id" = ${graph.id}
+          AND "sv"."is_composable" IS TRUE
+        ORDER BY
+          "sv"."created_at" DESC
         LIMIT 1
       `,
     );
 
-    return SchemaVersionModel.parse(version);
-  }
+    if (!graph.isBackfilled || version) {
+      return SchemaVersionModel.nullable().parse(version);
+    }
 
-  async getMaybeLatestSchemaVersionForTargetId(targetId: string): Promise<SchemaVersion | null> {
-    const version = await this.pg.maybeOne(
-      psql`/* getMaybeLatestVersion */
+    version = await this.pg.maybeOne(
+      psql`/* getLatestValidVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`sv.`)}
+          ${schemaVersionSQLFields(psql`"sv".`)}
         FROM
-          "schema_versions" AS "sv"
+          "schema_versions" as "sv"
         WHERE
-          "sv"."target_id" = ${targetId}
+          "sv"."target_ud" = ${graph.targetId}
+          AND "sv"."is_composable" IS TRUE
+          AND "sv"."graph_id" IS NULL
         ORDER BY
           "sv"."created_at" DESC
         LIMIT 1
@@ -815,7 +834,67 @@ export class SchemaVersionStore {
     return SchemaVersionModel.nullable().parse(version);
   }
 
-  async getSchemaVersionBeforeSchemaVersion(schemaVersion: SchemaVersion, onlyComposable: boolean) {
+  async getLatestValidSchemaVersionForGraph(graph: Graph): Promise<SchemaVersion> {
+    const version = await this.getMaybeLatestValidSchemaVersionForGraph(graph);
+    invariant(version, 'Expected version to exist.');
+    return version;
+  }
+
+  async getMaybeLatestSchemaVersionForGraph(graph: Graph): Promise<SchemaVersion | null> {
+    let version = await this.pg.maybeOne(
+      psql`/* getMaybeLatestVersion */
+        SELECT
+          ${schemaVersionSQLFields(psql`sv.`)}
+        FROM
+          "schema_versions" AS "sv"
+        WHERE
+          "sv"."graph_id" = ${graph.id}
+        ORDER BY
+          "sv"."created_at" DESC
+        LIMIT 1
+      `,
+    );
+
+    if (version || !graph.isBackfilled) {
+      return SchemaVersionModel.nullable().parse(version);
+    }
+
+    version = await this.pg.maybeOne(
+      psql`/* getMaybeLatestVersion */
+        SELECT
+          ${schemaVersionSQLFields(psql`sv.`)}
+        FROM
+          "schema_versions" AS "sv"
+        WHERE
+          "sv"."target_id" = ${graph.targetId}
+          AND "sv"."graph_id" IS NULL
+        ORDER BY
+          "sv"."created_at" DESC
+        LIMIT 1
+      `,
+    );
+
+    return SchemaVersionModel.nullable().parse(version);
+  }
+
+  async getSchemaVersionBeforeSchemaVersion(
+    schemaVersion: SchemaVersion,
+    /** whether to retrieve the previous composable version or not. */
+    onlyComposable: boolean,
+  ) {
+    // shortcut without an index scan
+    if (schemaVersion.recordVersion === '2024-01-10') {
+      if (onlyComposable && schemaVersion.diffSchemaVersionId) {
+        return this.getSchemaVersionById(schemaVersion.diffSchemaVersionId);
+      }
+
+      if (!onlyComposable && schemaVersion.previousSchemaVersionId) {
+        return this.getSchemaVersionById(schemaVersion.previousSchemaVersionId);
+      }
+
+      return null;
+    }
+
     const version = await this.pg.maybeOne(
       psql`/* getVersionBeforeVersionId */
         SELECT
@@ -943,36 +1022,18 @@ export class SchemaVersionStore {
     return SchemaVersionModel.nullable().parse(result);
   }
 
-  async getSchemaVersionForTargetById(
-    target: Target,
-    schemaVersionId: string,
-  ): Promise<SchemaVersion | null> {
-    const schemaVersion = await this.getSchemaVersionById(schemaVersionId);
-
-    if (schemaVersion?.targetId !== target.id) {
-      return null;
-    }
-
-    return schemaVersion;
-  }
-
-  async getPaginatedSchemaVersionsForTarget(
-    target: Target,
+  /**
+   * Note: This is an implementation detail of `SchemaVersionStore.getPaginatedSchemaVersionsForGraph`.
+   * Do not use this method directly for pagination unless you know what you are doing.
+   */
+  private async getPaginatedSchemaVersionsForGraphId(
+    graphId: string,
     args: {
-      first: number | null;
-      cursor: string | null;
+      first: number;
+      cursor: { createdAt: string; id: string } | null;
     },
   ) {
-    let cursor: null | {
-      createdAt: string;
-      id: string;
-    } = null;
-
-    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
-
-    if (args.cursor) {
-      cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
-    }
+    const limit = args.first;
 
     const query = psql`/* getPaginatedSchemaVersionsForTargetId */
       SELECT
@@ -980,16 +1041,16 @@ export class SchemaVersionStore {
       FROM
         "schema_versions"
       WHERE
-        "target_id" = ${target.id}
+        "graph_id" = ${graphId}
         ${
-          cursor
+          args.cursor
             ? psql`
               AND (
                 (
-                  "created_at" = ${cursor.createdAt}
-                  AND "id" < ${cursor.id}
+                  "created_at" = ${args.cursor.createdAt}
+                  AND "id" < ${args.cursor.id}
                 )
-                OR "created_at" < ${cursor.createdAt}
+                OR "created_at" < ${args.cursor.createdAt}
               )
             `
             : psql``
@@ -1002,33 +1063,149 @@ export class SchemaVersionStore {
 
     const result = await this.pg.any(query);
 
-    let edges = result.map(row => {
-      const node = SchemaVersionModel.parse(row);
+    let nodes = z.array(SchemaVersionModel).parse(result);
 
-      return {
-        node,
-        get cursor() {
-          return encodeCreatedAtAndUUIDIdBasedCursor(node);
-        },
-      };
-    });
+    const hasNextPage = nodes.length > limit;
+    nodes = nodes.slice(0, limit);
 
-    const hasNextPage = edges.length > limit;
-    edges = edges.slice(0, limit);
+    return {
+      nodes,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: args.cursor !== null,
+      },
+    };
+  }
+
+  /**
+   * Note: This is an implementation detail of `SchemaVersionStore.getPaginatedSchemaVersionsForGraph`.
+   * Do not use this method directly for pagination unless you know what you are doing.
+   */
+  private async getPaginatedSchemaVersionsForTargetId(
+    targetId: string,
+    args: {
+      first: number;
+      cursor: { createdAt: string; id: string } | null;
+    },
+  ) {
+    let cursor: null | {
+      createdAt: string;
+      id: string;
+    } = null;
+
+    const limit = args.first;
+
+    const query = psql`/* getPaginatedSchemaVersionsForTargetId */
+      SELECT
+        ${schemaVersionSQLFields()}
+      FROM
+        "schema_versions"
+      WHERE
+        "target_id" = ${targetId}
+        ${
+          args.cursor
+            ? psql`
+              AND (
+                (
+                  "created_at" = ${args.cursor.createdAt}
+                  AND "id" < ${args.cursor.id}
+                )
+                OR "created_at" < ${args.cursor.createdAt}
+              )
+            `
+            : psql``
+        }
+      ORDER BY
+        "created_at" DESC
+        , "id" DESC
+      LIMIT ${limit + 1}
+    `;
+
+    const result = await this.pg.any(query);
+
+    let nodes = z.array(SchemaVersionModel).parse(result);
+
+    const hasNextPage = nodes.length > limit;
+    nodes = nodes.slice(0, limit);
+
+    return {
+      nodes,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+      },
+    };
+  }
+
+  private buildSchemaVersionConnection(
+    nodes: Array<SchemaVersion>,
+    pageInfo: {
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    },
+  ) {
+    const edges = nodes.map(node => ({
+      node,
+      get cursor() {
+        return encodeCreatedAtAndUUIDIdBasedCursor(node);
+      },
+    }));
 
     return {
       edges,
       pageInfo: {
-        hasNextPage,
-        hasPreviousPage: cursor !== null,
+        ...pageInfo,
         get endCursor() {
-          return edges[edges.length - 1]?.cursor ?? '';
+          return edges[edges.length - 1].cursor ?? '';
         },
         get startCursor() {
           return edges[0]?.cursor ?? '';
         },
       },
     };
+  }
+
+  /**
+   * Retrieve the paginated schema versions for a graph.
+   * Handles legacy schema version records that do not have a `graph_id` populated.
+   */
+  async getPaginatedSchemaVersionsForGraph(
+    graph: Graph,
+    args: {
+      first: number | null;
+      cursor: null | string;
+    },
+  ) {
+    const first = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+
+    const cursor = args.cursor ? decodeCreatedAtAndUUIDIdBasedCursor(args.cursor) : null;
+
+    const connection = await this.getPaginatedSchemaVersionsForGraphId(graph.id, {
+      first,
+      cursor,
+    });
+
+    // in case we have a graph that is not backfilled or still have a next page we don't need to
+    // look for legacy schema version records.
+    if (graph.isBackfilled === false || connection.pageInfo.hasNextPage) {
+      return this.buildSchemaVersionConnection(connection.nodes, connection.pageInfo);
+    }
+
+    // if there is no next page, we need to lookup in the old db to make sure we did not miss any records without `graph_id` populated
+    // then we need to merge those two connections.
+
+    const nonGraphIdConnection = await this.getPaginatedSchemaVersionsForTargetId(graph.targetId, {
+      // we only need to fetch
+      first: first - connection.nodes.length,
+      // in case a end cursor already exists we will use that one to find previous records
+      // if it is empty, we need to assume that no schema version records with `graph_id` exists
+      cursor: connection.nodes[connection.nodes.length - 1] || cursor,
+    });
+
+    return this.buildSchemaVersionConnection([...connection.nodes, ...nonGraphIdConnection.nodes], {
+      hasNextPage: nonGraphIdConnection.pageInfo.hasNextPage,
+      hasPreviousPage: args.cursor !== null,
+    });
   }
 
   async getSchemaSchangesForSchemaVersion(schemaVersion: SchemaVersion) {
@@ -1055,14 +1232,26 @@ export class SchemaVersionStore {
     return changes;
   }
 
-  async getSchemaVersionForTargetByCommit(target: Target, commit: string) {
+  async getSchemaVersionForGraphByCommit(graph: Graph, commit: string) {
     const record = await this.pg.maybeOne(psql`/* getSchemaVersionByCommit */
       SELECT
         ${schemaVersionSQLFields()}
       FROM
         "schema_versions"
       WHERE
-        "target_id" = ${target.id}
+        (
+          "graph_id" = ${graph.id}
+          ${
+            graph.isBackfilled
+              ? psql`
+                  OR (
+                    "target_id" = ${graph.targetId}
+                    AND "graph_id" IS NULL
+                  )
+                `
+              : psql``
+          }
+        )
         AND (
           "meta"->>'commit' = ${commit}
           OR "action_id" = ANY(
@@ -1071,7 +1260,7 @@ export class SchemaVersionStore {
             FROM
               "schema_log"
             WHERE
-              "schema_log"."project_id" = ${target.projectId}
+              "schema_log"."project_id" = ${graph.projectId}
               AND "schema_log"."commit" = ${commit}
             ORDER BY "schema_log"."created_at" DESC
           )

@@ -272,18 +272,6 @@ export class SchemaVersionHelper {
   async getPreviousDiffableSchemaVersion(
     schemaVersion: SchemaVersion,
   ): Promise<SchemaVersion | null> {
-    if (schemaVersion.recordVersion === '2024-01-10') {
-      if (schemaVersion.diffSchemaVersionId) {
-        return await this.schemaManager.getSchemaVersionBySelector({
-          organizationId: schemaVersion.organizationId,
-          projectId: schemaVersion.projectId,
-          targetId: schemaVersion.targetId,
-          versionId: schemaVersion.diffSchemaVersionId,
-        });
-      }
-      return null;
-    }
-
     return await this.schemaManager.getComposableVersionBeforeVersionId(schemaVersion);
   }
 
