@@ -139,7 +139,6 @@ const graphFields = psql`
   , "project_id" AS "projectId"
   , "target_id" AS "targetId"
   , "name"
-  , "type"
   , "config"
   , "source_graph_id" AS "sourceGraphId"
   , "is_backfilled" AS "isBackfilled"
