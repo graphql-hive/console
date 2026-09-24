@@ -66,16 +66,6 @@ services:
       - './.hive-dev/versitygw/db:/data'
       - './.hive-dev/versitygw/metadata:/metadata'
 
-  s3_provision_buckets:
-    image: busybox:1.37.0
-    depends_on:
-      s3:
-        condition: service_healthy
-    restart: 'no'
-    networks:
-      - 'stack'
-    command: ['true']
-
   clickhouse:
     image: clickhouse/clickhouse-server:26.3.12.3-alpine
     mem_limit: 4096m

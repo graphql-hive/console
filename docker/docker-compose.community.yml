@@ -114,15 +114,6 @@ services:
       - './.hive/versitygw/db:/data'
       - './.hive/versitygw/metadata:/metadata'
 
-  s3_provision_buckets:
-    image: busybox:1.37.0
-    depends_on:
-      s3:
-        condition: service_healthy
-    networks:
-      - 'stack'
-    command: ['true']
-
   s3_reverse_proxy:
     image: caddy:2.9.1-alpine
     depends_on:
@@ -174,8 +165,8 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
-      s3_provision_buckets:
-        condition: service_completed_successfully
+      s3:
+        condition: service_healthy
       schema:
         condition: service_healthy
       policy:
