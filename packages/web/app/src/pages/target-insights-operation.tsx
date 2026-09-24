@@ -1,12 +1,12 @@
 import { ReactElement, useMemo } from 'react';
 import { AlertCircleIcon, RefreshCw } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsStats } from '@/components/target/insights/stats';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast1Day } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
@@ -99,9 +99,12 @@ function OperationView({
               align="end"
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
             />
-            <Button variant="outline" onClick={() => dateRangeController.refreshResolvedRange()}>
-              <RefreshCw className="size-4" />
-            </Button>
+            <Button
+              layout="iconOnly"
+              icon={RefreshCw}
+              aria-label="Refresh"
+              onClick={() => dateRangeController.refreshResolvedRange()}
+            />
           </div>
         )}
       </div>

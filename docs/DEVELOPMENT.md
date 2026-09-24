@@ -52,6 +52,7 @@ Add "user" field to ./docker/docker-compose.dev.yml
 - Run `pnpm generate` to generate the typings from the graphql files (use `pnpm graphql:generate` if
   you only need to run GraphQL Codegen)
 - Run `pnpm build` to build all services
+  - This also builds `laboratory`, which console consumes from `dist` as any other consumer would.
 - Click on `Start Hive` in the bottom bar of VSCode (alternatively you can manually start the
   services you need)
 - Open the UI (`http://localhost:3000` by default) and Sign in with any of the identity provider
@@ -174,6 +175,40 @@ permission-denied errors when Grafana tries to write to `docker/.hive-dev/grafan
 UID/GID workaround documented above for `clickhouse`/`db` applies: add `user: '${UID}:${GID}'` to
 the `grafana` service entry in `docker/docker-compose.dev.yml` (and ensure those env vars are
 exported in your shell). macOS does not need this.
+
+## Zendesk mock (optional)
+
+The dev stack includes an opt-in `zendesk` profile that runs a MockServer instance to mimic the
+Zendesk API. This is configured in
+[docker/configs/zendesk-mock/expectations.json](../docker/configs/zendesk-mock/expectations.json).
+
+Use this to test the support-ticket flow locally without a real Zendesk account.
+
+1. Set these variables in `packages/services/server/.env` (restart the server afterwards so it picks
+   them up):
+
+   ```
+   ZENDESK_SUPPORT=1
+   ZENDESK_USERNAME=mock
+   ZENDESK_PASSWORD=mock
+   ZENDESK_BASE_URL=http://localhost:3043/local
+   ```
+
+   The `/local` path suffix is optional; the mock matches any path ending in `/api/v2/...`.
+
+2. Start the mock. It uses a separate command since it's not frequently needed:
+
+   ```bash
+   pnpm dev:zendesk-mock
+   ```
+
+   Tear it down with `pnpm dev:zendesk-mock:down`.
+
+After submitting a ticket, confirm the request reached the mock by querying its recorded requests:
+
+```bash
+curl -s -X PUT 'http://localhost:3043/mockserver/retrieve?type=REQUESTS' | jq
+```
 
 ## Publish your first schema (manually)
 

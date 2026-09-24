@@ -1,6 +1,9 @@
 import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
+import { Input } from '@/components/base/input/input';
+import { PageLead } from '@/components/base/page-lead';
 import { Slider } from '@/components/base/slider/slider';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import {
@@ -11,12 +14,9 @@ import { BillingPlanPicker } from '@/components/organization/billing/BillingPlan
 import { formatMillionOrBillion } from '@/components/organization/billing/helpers';
 import { PlanSummary } from '@/components/organization/billing/PlanSummary';
 import { RenderIfStripeAvailable } from '@/components/organization/stripe';
-import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { Input } from '@/components/v2/input';
 import Stat from '@/components/v2/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
@@ -267,9 +267,9 @@ function Inner(props: {
 
     if (plan === 'ENTERPRISE') {
       return (
-        <Button type="button" asChild className="mt-2">
-          <a href="mailto:contact@graphql-hive.com">Contact Us</a>
-        </Button>
+        <div className="mt-2">
+          <Button anchor={{ href: 'mailto:contact@graphql-hive.com' }}>Contact Us</Button>
+        </div>
       );
     }
 
@@ -286,8 +286,6 @@ function Inner(props: {
                 <div>
                   <Heading className="mb-3">Discount</Heading>
                   <Input
-                    className="w-full"
-                    size="medium"
                     value={couponCode ?? ''}
                     disabled={isFetching}
                     onChange={e => setCouponCode(e.target.value)}
@@ -306,9 +304,11 @@ function Inner(props: {
 
     if (plan === 'HOBBY') {
       return (
-        <Button type="button" onClick={downgrade} disabled={isFetching}>
-          Downgrade to Hobby
-        </Button>
+        <div className="mt-4">
+          <Button type="button" onClick={downgrade} disabled={isFetching}>
+            Downgrade to Hobby
+          </Button>
+        </div>
       );
     }
 
@@ -332,13 +332,15 @@ function Inner(props: {
   return (
     <div className="flex w-full flex-col gap-5">
       <div className="w-full">
-        <Card variants={{ onSurface: 'base' }}>
-          <Heading className="mb-4">Choose Your Plan</Heading>
-          {missingBillingUpdatePermissions ? (
-            <div className="text-neutral-10 mb-3 text-sm">
-              You lack the necessary permission 'billing:update' to update the subscription plan.
-            </div>
-          ) : null}
+        <Card
+          variants={{ onSurface: 'base', titleSize: 'large' }}
+          title="Choose Your Plan"
+          description={
+            missingBillingUpdatePermissions
+              ? "You lack the necessary permission 'billing:update' to update the subscription plan."
+              : undefined
+          }
+        >
           <BillingPlanPicker
             disabled={!organization.billingConfiguration.canUpdateSubscription}
             activePlan={organization.plan}
@@ -349,8 +351,7 @@ function Inner(props: {
         </Card>
       </div>
       <div className="w-full self-start" ref={planSummaryRef}>
-        <Card variants={{ onSurface: 'base' }}>
-          <Heading className="mb-2">Plan Summary</Heading>
+        <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Plan Summary">
           <div>
             <div className="flex flex-col">
               <div>
@@ -358,8 +359,8 @@ function Inner(props: {
                   {selectedPlan.planType === BillingPlanType.Pro && (
                     <Stat>
                       <Stat.Label>Free Trial</Stat.Label>
-                      <Stat.Number>30</Stat.Number>
                       <Stat.HelpText>days</Stat.HelpText>
+                      <Stat.Number>30</Stat.Number>
                     </Stat>
                   )}
                 </PlanSummary>
@@ -485,13 +486,7 @@ function SubscriptionSlider({
       </div>
 
       <div className="ml-auto w-48">
-        <Input
-          ref={inputRef}
-          value={inputValue}
-          className="ml-auto text-end"
-          onChange={handleInputChange}
-          onBlur={handleBlur}
-        />
+        <Input ref={inputRef} value={inputValue} onChange={handleInputChange} onBlur={handleBlur} />
         {inputError && <div className="mt-1 text-end text-sm text-red-500">{inputError}</div>}
       </div>
     </div>
@@ -560,19 +555,22 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
     >
       <div className="grow">
         <div className="flex flex-row items-center justify-between py-6">
-          <div>
-            <Title>Manage subscription</Title>
-            <Subtitle>Manage your current plan and invoices.</Subtitle>
-          </div>
+          <PageLead
+            title="Manage subscription"
+            description="Manage your current plan and invoices."
+          />
+
           {currentOrganization ? (
             <div>
-              <Button asChild>
-                <Link
-                  to="/$organizationSlug/view/subscription"
-                  params={{ organizationSlug: currentOrganization.slug }}
-                >
-                  Subscription usage
-                </Link>
+              <Button
+                render={
+                  <Link
+                    to="/$organizationSlug/view/subscription"
+                    params={{ organizationSlug: currentOrganization.slug }}
+                  />
+                }
+              >
+                Subscription usage
               </Button>
             </div>
           ) : null}

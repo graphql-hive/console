@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import stringify from 'fast-json-stable-stringify';
-import { parse, print } from 'graphql';
+import { GraphQLError, parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import promClient from 'prom-client';
@@ -28,6 +28,7 @@ import {
   type GitHubCheckRun,
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
+import { ProjectStore } from '../../project/providers/project-store';
 import { SchemaProposalStorage } from '../../proposals/providers/schema-proposal-storage';
 import { DistributedCache } from '../../shared/providers/distributed-cache';
 import { IdTranslator } from '../../shared/providers/id-translator';
@@ -40,6 +41,7 @@ import {
 } from '../../shared/providers/registry-operation-metrics';
 import { Storage, type TargetSelector } from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
+import { TargetStore } from '../../target/providers/target-store';
 import { toGraphQLSchemaCheck } from '../to-graphql-schema-check';
 import { ArtifactStorageWriter } from './artifact-storage-writer';
 import type { SchemaModuleConfig } from './config';
@@ -75,6 +77,7 @@ import {
   type SchemaInput,
 } from './schema-helper';
 import { SchemaManager } from './schema-manager';
+import { SchemaRevisionStore } from './schema-revision-store';
 import { SchemaVersionHelper } from './schema-version-helper';
 import {
   SchemaVersionStore,
@@ -110,6 +113,12 @@ export type DeleteInput = Types.SchemaDeleteInput;
 
 export type PublishInput = Types.SchemaPublishInput & {
   isSchemaPublishMissingUrlErrorSelected: boolean;
+};
+
+type ResolvedPublishInput = Omit<PublishInput, 'sdl' | 'schema'> & {
+  sdl: string;
+  schemaRevisionId: string | null;
+  revision: string | null;
 };
 
 type BreakPromise<T> = T extends Promise<infer U> ? U : never;
@@ -160,6 +169,8 @@ export class SchemaPublisher {
     logger: Logger,
     private session: Session,
     private storage: Storage,
+    private projectStore: ProjectStore,
+    private targetStore: TargetStore,
     private schemaManager: SchemaManager,
     private targetManager: TargetManager,
     private alertsManager: AlertsManager,
@@ -176,6 +187,7 @@ export class SchemaPublisher {
     private schemaVersions: SchemaVersionStore,
     private registryChecks: RegistryChecks,
     private appDeployments: AppDeployments,
+    private schemaRevisions: SchemaRevisionStore,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -203,7 +215,7 @@ export class SchemaPublisher {
     failDangerousChangeTypes: Types.DangerousChangeType[];
   }> {
     try {
-      const settings = await this.storage.getTargetSettings(selector);
+      const settings = await this.targetStore.getTargetSettings(selector);
 
       if (!settings.validation.isEnabled) {
         this.logger.debug('Usage validation disabled');
@@ -357,12 +369,12 @@ export class SchemaPublisher {
     });
 
     const [target, project, organization, schemaProposal] = await Promise.all([
-      this.storage.getTarget({
+      this.targetStore.getTarget({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
         targetId: selector.targetId,
       }),
-      this.storage.getProject({
+      this.projectStore.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
@@ -1331,16 +1343,56 @@ export class SchemaPublisher {
     );
 
     const [target, project] = await Promise.all([
-      this.storage.getTarget({
+      this.targetStore.getTarget({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
         targetId: selector.targetId,
       }),
-      this.storage.getProject({
+      this.projectStore.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
     ]);
+
+    if (input.sdl != null && input.schema != null) {
+      throw new GraphQLError(
+        "Provide exactly one schema source: 'PublishInput.sdl' or 'PublishInput.schema'.",
+      );
+    }
+
+    let revisionId: string | null = null;
+    let revisionName: string | null = null;
+    let resolvedSdl = input.sdl ?? input.schema?.sdl ?? null;
+
+    if (input.schema?.revision != null) {
+      const revision = await this.schemaRevisions.getByRevision({
+        projectId: selector.projectId,
+        service: project.type === Types.ProjectType.SINGLE ? null : (input.service ?? null),
+        revision: input.schema.revision,
+      });
+
+      if (!revision) {
+        return {
+          __typename: 'SchemaPublishError',
+          valid: false,
+          changes: [],
+          errors: [{ message: `Schema revision '${input.schema.revision}' was not found.` }],
+        };
+      }
+      revisionId = revision.id;
+      revisionName = revision.revision;
+      resolvedSdl = revision.sdl;
+    }
+
+    invariant(resolvedSdl !== null, 'No SDL resolved.');
+
+    const { schema: _, ...inputWithoutSchema } = input;
+    const publishInput: ResolvedPublishInput = {
+      ...inputWithoutSchema,
+      sdl: resolvedSdl,
+      schemaRevisionId: revisionId,
+      revision: revisionName,
+    };
 
     const [contracts, latestVersion] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
@@ -1383,7 +1435,7 @@ export class SchemaPublisher {
     const checksum = createHash('md5')
       .update(
         stringify({
-          ...input,
+          ...publishInput,
           organization: selector.organizationId,
           project: selector.projectId,
           target: selector.targetId,
@@ -1430,8 +1482,8 @@ export class SchemaPublisher {
             ttlSeconds: 15,
             executor: () =>
               this.internalPublish({
-                ...input,
-                sdl: tryPrettifySDL(input.sdl),
+                ...publishInput,
+                sdl: tryPrettifySDL(publishInput.sdl),
                 checksum,
                 selector,
               }),
@@ -1538,11 +1590,11 @@ export class SchemaPublisher {
             this.storage.getOrganization({
               organizationId: selector.organizationId,
             }),
-            this.storage.getProject({
+            this.projectStore.getProject({
               organizationId: selector.organizationId,
               projectId: selector.projectId,
             }),
-            this.storage.getTarget({
+            this.targetStore.getTarget({
               organizationId: selector.organizationId,
               projectId: selector.projectId,
               targetId: selector.targetId,
@@ -1812,7 +1864,7 @@ export class SchemaPublisher {
   }
 
   private async internalPublish(
-    input: PublishInput & {
+    input: ResolvedPublishInput & {
       checksum: string;
       selector: TargetSelector;
     },
@@ -1837,11 +1889,11 @@ export class SchemaPublisher {
       this.storage.getOrganization({
         organizationId: organizationId,
       }),
-      this.storage.getProject({
+      this.projectStore.getProject({
         organizationId: organizationId,
         projectId: projectId,
       }),
-      this.storage.getTarget({
+      this.targetStore.getTarget({
         organizationId: organizationId,
         projectId: projectId,
         targetId: targetId,
@@ -1984,6 +2036,7 @@ export class SchemaPublisher {
           input: {
             sdl: input.sdl,
             metadata: input.metadata ?? null,
+            skipNoChangesCheck: input.schemaRevisionId !== null,
           },
           latest: latestVersion
             ? {
@@ -2028,6 +2081,7 @@ export class SchemaPublisher {
             service: input.service,
             metadata: input.metadata ?? null,
             url: input.url ?? null,
+            skipNoChangesCheck: input.schemaRevisionId !== null,
           },
           latest: latestVersion
             ? {
@@ -2167,6 +2221,49 @@ export class SchemaPublisher {
       };
     }
 
+    const contractCompositionErrors =
+      publishResult.state.contracts?.flatMap(
+        contract =>
+          contract.compositionErrors?.map(err => ({
+            ...err,
+            message: `[${contract.contractName}] ${err.message}`,
+          })) ?? [],
+      ) ?? [];
+
+    if (
+      project.type === ProjectType.FEDERATION &&
+      input.failOnCompositionError === true &&
+      (publishResult.state.composable === false || contractCompositionErrors.length > 0)
+    ) {
+      this.logger.debug('Publish rejected because it would cause a composition error');
+      increaseSchemaPublishCountMetric('rejected');
+
+      const errors = [
+        ...(publishResult.state.compositionErrors ?? []),
+        ...contractCompositionErrors,
+      ];
+
+      if (githubCheckRun) {
+        return this.updateGithubCheckRunForSchemaPublish({
+          githubCheckRun,
+          force: false,
+          initial: false,
+          valid: false,
+          changes: [],
+          errors,
+          organizationId: organization.id,
+          detailsUrl: null,
+        });
+      }
+
+      return {
+        __typename: 'SchemaPublishError' as const,
+        valid: false,
+        changes: [],
+        errors,
+      };
+    }
+
     const errors = (
       [] as Array<{
         message: string;
@@ -2237,6 +2334,8 @@ export class SchemaPublisher {
       serviceChanges: publishResult.state.serviceChanges ?? null,
       base_schema: baseSchema,
       metadata: input.metadata ?? null,
+      schemaRevisionId: input.schemaRevisionId,
+      revision: input.revision,
       github,
       actionFn: async (versionId: string) => {
         if (composable && fullSchemaSdl) {
@@ -2474,7 +2573,7 @@ export class SchemaPublisher {
         'hive.source.target.id': target.targetId,
       });
     } else if (args.source.fromSchemaVersionById) {
-      const project = await this.storage.getProject({
+      const project = await this.projectStore.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       });
@@ -2949,8 +3048,8 @@ export class SchemaPublisher {
     this.logger.debug('start schema version promotion process');
     const [organization, project, target] = await Promise.all([
       this.storage.getOrganization({ organizationId: args.target.organizationId }),
-      this.storage.getProjectById(args.target.projectId),
-      this.storage.getTargetById(args.target.targetId),
+      this.projectStore.getProjectById(args.target.projectId),
+      this.targetStore.getTargetById(args.target.targetId),
     ]);
 
     if (!organization || !target || !project) {
@@ -3000,7 +3099,7 @@ export class SchemaPublisher {
       const sourceTarget =
         args.source.targetId === target.id
           ? target
-          : await this.storage.getTargetById(args.source.targetId);
+          : await this.targetStore.getTargetById(args.source.targetId);
 
       if (!sourceTarget) {
         this.logger.debug(
@@ -3860,6 +3959,6 @@ const SchemaCheckContextIdModel = z
     message: 'Context ID cannot exceed length of 200 characters.',
   });
 
-function isValidServiceName(service: string): boolean {
+export function isValidServiceName(service: string): boolean {
   return service.length <= 64 && /^[a-zA-Z][\w_-]*$/g.test(service);
 }

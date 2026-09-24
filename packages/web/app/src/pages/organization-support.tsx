@@ -2,73 +2,27 @@ import { useCallback } from 'react';
 import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
-import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Button } from '@/components/base/button/button';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { useToast } from '@/components/base/toast/toast';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
-import { Priority, priorityDescription, Status } from '@/components/organization/support';
-import { Button } from '@/components/ui/button';
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+  NEW_TICKET_FORM_ID,
+  NewTicketForm,
+  NewTicketFormSchema,
+  type NewTicketFormValues,
+} from '@/components/organization/new-ticket-form';
+import { priorityDescription } from '@/components/organization/support';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
-import { TimeAgo } from '@/components/ui/time-ago';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
-import { useNotifications, useToggle } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
+import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from '@tanstack/react-router';
-
-const PRIORITY_ITEMS = [
-  SupportTicketPriority.Normal,
-  SupportTicketPriority.High,
-  SupportTicketPriority.Urgent,
-].map(priority => ({
-  value: priority,
-  label: priority.charAt(0) + priority.slice(1).toLowerCase(),
-  description: priorityDescription[priority],
-}));
-
-const newTicketFormSchema = z.object({
-  subject: z.string().min(2, {
-    message: 'Subject must be at least 2 characters.',
-  }),
-  priority: z.nativeEnum(SupportTicketPriority, {
-    required_error: 'A priority is required.',
-  }),
-  description: z.string().min(5, {
-    message: 'Description must be at least 5 characters.',
-  }),
-});
-
-type NewTicketFormValues = z.infer<typeof newTicketFormSchema>;
+import type { ColumnDef } from '@tanstack/react-table';
 
 const NewTicketForm_SupportTicketCreateMutation = graphql(`
   mutation NewTicketForm_SupportTicketCreateMutation($input: SupportTicketCreateInput!) {
@@ -83,15 +37,15 @@ const NewTicketForm_SupportTicketCreateMutation = graphql(`
   }
 `);
 
-function NewTicketForm(props: {
+function NewTicketSheet(props: {
   organizationSlug: string;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: () => void;
 }) {
-  const notify = useNotifications();
+  const { toast } = useToast();
   const form = useForm<NewTicketFormValues>({
-    resolver: zodResolver(newTicketFormSchema),
+    resolver: zodResolver(NewTicketFormSchema),
     defaultValues: {
       subject: '',
       priority: SupportTicketPriority.Normal,
@@ -100,14 +54,9 @@ function NewTicketForm(props: {
   });
   const [_, mutate] = useMutation(NewTicketForm_SupportTicketCreateMutation);
 
-  const onClose = useCallback(() => {
-    form.reset({
-      subject: '',
-      priority: SupportTicketPriority.Normal,
-      description: '',
-    });
-    props.onClose();
-  }, [form.reset]);
+  function failed(message: string) {
+    toast({ variant: 'destructive', title: 'Failed to submit your ticket', description: message });
+  }
 
   async function onSubmit(data: NewTicketFormValues) {
     try {
@@ -121,107 +70,43 @@ function NewTicketForm(props: {
       });
 
       if (result.error) {
-        notify(`Failed to submit your ticket: ${result.error.message}`, 'error');
+        failed(result.error.message);
         return;
       }
 
       if (result.data?.supportTicketCreate.ok) {
-        notify('Your ticket has been submitted.', 'success');
+        toast({ title: 'Your ticket has been submitted.' });
         props.onSubmit();
       } else if (result.data?.supportTicketCreate.error) {
-        notify(
-          `Failed to submit your ticket: ${result.data.supportTicketCreate.error.message}`,
-          'error',
-        );
+        failed(result.data.supportTicketCreate.error.message);
       }
     } catch (error) {
-      notify(`Failed to submit your ticket: ${String(error)}`, 'error');
+      failed(String(error));
     }
   }
 
   return (
     <Sheet
-      defaultOpen={false}
       open={props.isOpen}
       onOpenChange={open => {
         if (!open) {
-          onClose();
+          props.onClose();
         }
       }}
+      onOpenChangeComplete={open => {
+        if (!open) {
+          form.reset();
+        }
+      }}
+      title="New ticket"
+      description="Create a new case for the support team"
+      footer={
+        <Button type="submit" form={NEW_TICKET_FORM_ID} onSurface="raised">
+          Submit
+        </Button>
+      }
     >
-      <SheetContent className="flex h-full w-1/3 max-w-none grow flex-col sm:w-1/2 sm:max-w-none md:w-1/3 md:max-w-[500px]">
-        <Form {...form}>
-          <form
-            className="flex h-full grow flex-col justify-between gap-y-4"
-            onSubmit={form.handleSubmit(onSubmit)}
-          >
-            <SheetHeader>
-              <SheetTitle>New ticket</SheetTitle>
-              <SheetDescription className="text-ellipsis">
-                Create a new case for the support team
-              </SheetDescription>
-            </SheetHeader>
-
-            <div className="flex min-h-0 flex-1 flex-col">
-              <ScrollArea fill>
-                <div className="w-full space-y-6 text-ellipsis px-2 text-sm">
-                  <FormField
-                    control={form.control}
-                    name="priority"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>Priority level</FormLabel>
-                        <RadioGroup
-                          variant="as-card"
-                          orientation="vertical"
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          items={PRIORITY_ITEMS}
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subject</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter a subject of your issue" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Enter a short description of your issue"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>Help us understand it better.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </ScrollArea>
-            </div>
-
-            <SheetFooter className="flex flex-col gap-y-2 sm:flex-col">
-              <Button type="submit">Submit</Button>
-            </SheetFooter>
-          </form>
-        </Form>
-      </SheetContent>
+      <NewTicketForm form={form} onSubmit={onSubmit} />
     </Sheet>
   );
 }
@@ -236,42 +121,20 @@ const SupportTicketRow_SupportTicket = graphql(`
   }
 `);
 
-function SupportTicketRow(props: {
-  organizationSlug: string;
-  ticket: FragmentType<typeof SupportTicketRow_SupportTicket>;
-}) {
-  const ticket = useFragment(SupportTicketRow_SupportTicket, props.ticket);
-  const isSolved = ticket.status === SupportTicketStatus.Solved;
+type SupportTicket = DocumentType<typeof SupportTicketRow_SupportTicket>;
 
-  return (
-    <TableRow className={cn(isSolved ? 'text-neutral-10' : '')}>
-      <TableCell className="text-center">{ticket.id}</TableCell>
-      <TableCell>
-        <Button
-          variant="link"
-          className={cn(isSolved ? 'text-neutral-10' : '', 'h-auto p-0 text-left')}
-          asChild
-        >
-          <Link
-            to="/$organizationSlug/view/support/ticket/$ticketId"
-            params={{ organizationSlug: props.organizationSlug, ticketId: ticket.id }}
-          >
-            {ticket.subject}
-          </Link>
-        </Button>
-      </TableCell>
-      <TableCell className="w-[150px] text-center">
-        <Status status={ticket.status} />
-      </TableCell>
-      <TableCell className="w-[150px] text-center">
-        <Priority level={ticket.priority} />
-      </TableCell>
-      <TableCell className="w-[200px] text-right text-xs">
-        <TimeAgo date={ticket.updatedAt} className="text-neutral-10" />
-      </TableCell>
-    </TableRow>
-  );
-}
+const STATUS_BADGE = {
+  [SupportTicketStatus.Open]: 'info',
+  [SupportTicketStatus.Solved]: 'success',
+} as const;
+
+const PRIORITY_DOT = {
+  [SupportTicketPriority.Normal]: 'info',
+  [SupportTicketPriority.High]: 'warning',
+  [SupportTicketPriority.Urgent]: 'critical',
+} as const;
+
+const titleCase = (value: string) => value.charAt(0) + value.slice(1).toLowerCase();
 
 const Support_OrganizationFragment = graphql(`
   fragment Support_OrganizationFragment on Organization {
@@ -309,7 +172,67 @@ function Support(props: {
     props.refetch();
   }, [toggle, props.refetch]);
 
-  const tickets = supportTicketsConnection?.edges.map(e => e.node);
+  const tickets = useFragment(
+    SupportTicketRow_SupportTicket,
+    supportTicketsConnection?.edges.map(e => e.node) ?? [],
+  );
+
+  const columns: ColumnDef<SupportTicket, unknown>[] = [
+    {
+      id: 'id',
+      header: 'ID',
+      meta: { align: 'center', width: 'xs' },
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.id} mono />,
+    },
+    {
+      id: 'subject',
+      header: 'Subject',
+      meta: { width: 'fill' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="link"
+          label={row.original.subject}
+          link={{
+            to: '/$organizationSlug/view/support/ticket/$ticketId',
+            params: { organizationSlug: organization.slug, ticketId: row.original.id },
+          }}
+        />
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      meta: { align: 'center', width: 'sm' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="badge"
+          items={{
+            content: titleCase(row.original.status),
+            variant: STATUS_BADGE[row.original.status],
+          }}
+        />
+      ),
+    },
+    {
+      id: 'priority',
+      header: 'Priority',
+      meta: { width: 'sm' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="status"
+          label={titleCase(row.original.priority)}
+          dot={PRIORITY_DOT[row.original.priority]}
+          tooltip={priorityDescription[row.original.priority]}
+        />
+      ),
+    },
+    {
+      id: 'updatedAt',
+      header: 'Last updated',
+      meta: { align: 'right', width: 'md' },
+      cell: ({ row }) => <DataTableCell kind="time" date={row.original.updatedAt} tone="muted" />,
+    },
+  ];
 
   return (
     <>
@@ -324,7 +247,7 @@ function Support(props: {
               <PencilIcon className="mr-2 size-4" />
               New ticket
             </Button>
-            <NewTicketForm
+            <NewTicketSheet
               isOpen={isOpen}
               onClose={toggle}
               organizationSlug={organization.slug}
@@ -333,26 +256,16 @@ function Support(props: {
           </div>
         </div>
         <div className="flex flex-col gap-y-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px] text-center">ID</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead className="w-[150px] text-center">Status</TableHead>
-                <TableHead className="w-[150px] text-center">Priority</TableHead>
-                <TableHead className="w-[150px] text-right">Last updated</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(tickets ?? []).map(ticket => (
-                <SupportTicketRow
-                  key={ticket.id}
-                  organizationSlug={organization.slug}
-                  ticket={ticket}
-                />
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            data={tickets}
+            columns={columns}
+            getRowId={ticket => ticket.id}
+            pagination={{ kind: 'none' }}
+            emptyMessage="No support tickets yet."
+            rowState={ticket =>
+              ticket.status === SupportTicketStatus.Solved ? { muted: true } : undefined
+            }
+          />
         </div>
       </div>
     </>

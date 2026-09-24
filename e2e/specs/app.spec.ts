@@ -101,7 +101,7 @@ test.describe('oidc', () => {
     await oidc.loginWithMockUser({ username: 'test-user-2', email: 'tom.sailor@gmail.com' });
 
     await expectOrganizationHome(page, slug);
-    await expect(page.getByRole('tab', { name: 'Members' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Members' })).toBeVisible();
   });
 
   test('oidc account linking with existing emailpassword user', async ({

@@ -75,3 +75,14 @@ export const ingestedOperationErrorsFailures = new metrics.Counter({
   name: 'usage_ingested_operation_errors_failures',
   help: 'Number of failed to ingest operations_errors',
 });
+
+/**
+ * An additional error tracking metric that should never be encountered
+ * since the messages are both consumed and published by Hive, but
+ * if a poison pill does ever occur, it should instantly alert the on call,
+ * which is why it is a separate metric.
+ */
+export const poisonPillMessages = new metrics.Counter({
+  name: 'usage_ingestor_poison_pill_messages',
+  help: 'Number of times a report failed to write and its offset was not committed, so the message will be reprocessed - sustained/repeated firing for the same message signals a stuck partition',
+});

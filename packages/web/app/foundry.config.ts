@@ -1,6 +1,31 @@
 import { defineConfig } from 'react-foundry';
+import type { Plugin } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
+
+/**
+ * `@/env/frontend` validates `window.__ENV` at import time and throws when it is missing, so
+ * any preview whose component reaches it (PageLead through DocsLink, for one) fails before it
+ * renders. The app sets `__ENV` from a `<script src="/__env.js">` in its index.html; this puts
+ * an equivalent inline script at the top of foundry's, with the schema's required keys and the
+ * same values as `.env.template`. Nothing in a preview calls these endpoints.
+ */
+const previewEnv: Plugin = {
+  name: 'hive-preview-env',
+  transformIndexHtml: () => [
+    {
+      tag: 'script',
+      injectTo: 'head-prepend',
+      children: `window.__ENV = ${JSON.stringify({
+        ENVIRONMENT: 'development',
+        APP_BASE_URL: 'http://localhost:3000',
+        GRAPHQL_PUBLIC_ENDPOINT: 'http://localhost:3001/graphql',
+        GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: 'http://localhost:3001/graphql',
+        GRAPHQL_PUBLIC_ORIGIN: 'http://localhost:3001',
+      })};`,
+    },
+  ],
+};
 
 export default defineConfig({
   // Widened past `base/` so real app components can be previewed too, not just design-system
@@ -22,17 +47,21 @@ export default defineConfig({
         {
           label: 'Primitives',
           children: [
-            { label: 'Accordion' },
+            { label: 'Accordion', children: [{ label: 'Component Examples' }] },
             { label: 'Avatar', children: [{ label: 'Component Examples' }] },
             { label: 'Badge', children: [{ label: 'Component Examples' }] },
             { label: 'StatusDot' },
-            { label: 'Button' },
+            { label: 'Legend' },
+            { label: 'Spinner' },
+            { label: 'Button', children: [{ label: 'Component Examples' }] },
             { label: 'Card' },
             { label: 'StatCard' },
-            { label: 'Input' },
+            { label: 'Input', children: [{ label: 'Component Examples' }] },
+            { label: 'Textarea', children: [{ label: 'Component Examples' }] },
             { label: 'CopyChip' },
             { label: 'Collapsible', children: [{ label: 'Component Examples' }] },
             { label: 'ScrollArea', children: [{ label: 'Component Examples' }] },
+            { label: 'Tabs', children: [{ label: 'Component Examples' }] },
             { label: 'Separator', children: [{ label: 'Component Examples' }] },
           ],
         },
@@ -47,7 +76,8 @@ export default defineConfig({
             { label: 'Switch', children: [{ label: 'Component Examples' }] },
             { label: 'Slider', children: [{ label: 'Component Examples' }] },
             { label: 'ToggleGroup', children: [{ label: 'Component Examples' }] },
-            { label: 'Form' },
+            { label: 'Form', children: [{ label: 'Component Examples' }] },
+            { label: 'Label' },
           ],
         },
         {
@@ -63,8 +93,24 @@ export default defineConfig({
             { label: 'PortalContainer' },
           ],
         },
+        {
+          label: 'Overlays',
+          children: [
+            { label: 'Dialog', children: [{ label: 'Component Examples' }] },
+            { label: 'Sheet', children: [{ label: 'Component Examples' }] },
+            { label: 'AlertDialog', children: [{ label: 'Component Examples' }] },
+          ],
+        },
+        {
+          label: 'Feedback',
+          children: [{ label: 'Toast', children: [{ label: 'Component Examples' }] }],
+        },
+        {
+          label: 'Navigation',
+          children: [{ label: 'SecondaryNavigation', children: [{ label: 'Component Examples' }] }],
+        },
         // Data and layout
-        { label: 'DataTable' },
+        { label: 'DataTable', children: [{ label: 'Component Examples' }] },
         { label: 'DescriptionList' },
       ],
     },
@@ -74,24 +120,21 @@ export default defineConfig({
     // coverage checklist to migrate through. Entries are deleted as their component lands.
     {
       label: 'Inventory',
-      children: [
-        { label: 'Button' },
-        { label: 'DataLayout' },
-        { label: 'Form' },
-        { label: 'Input' },
-        { label: 'Overlays' },
-        { label: 'Presentational' },
-        { label: 'Textarea' },
-        { label: 'Toast' },
-        { label: 'V2Leftovers' },
-      ],
+      children: [{ label: 'Presentational' }, { label: 'V2Leftovers' }],
     },
     // App components, as opposed to the design-system primitives above. Each preview
     // reproduces a real call site so a base-component change can be judged against the
     // compositions that actually ship.
     {
       label: 'Components',
-      children: [{ label: 'BillingPlanPicker' }, { label: 'PageLead' }, { label: 'NotFound' }],
+      children: [
+        { label: 'BillingPlanPicker' },
+        { label: 'PageLead' },
+        { label: 'NotFound' },
+        { label: 'FailureCard' },
+        { label: 'SupportForms' },
+        { label: 'TabbedView', children: [{ label: 'Component Examples' }] },
+      ],
     },
   ],
   theme: {
@@ -104,6 +147,6 @@ export default defineConfig({
     // Foundry's vite root is inside node_modules and this config is bundled to a cache
     // dir before it runs, so neither location can anchor tsconfig discovery. cwd is the
     // app directory, which is where `foundry dev` is invoked from.
-    plugins: [tsconfigPaths({ root: process.cwd() }), tailwindcss()],
+    plugins: [tsconfigPaths({ root: process.cwd() }), tailwindcss(), previewEnv],
   },
 });

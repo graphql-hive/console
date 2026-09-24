@@ -429,6 +429,7 @@ const permissionsByLevel = {
     z.literal('schemaCheck:approve'),
     z.literal('schemaVersion:publish'),
     z.literal('schemaVersion:deleteService'),
+    z.literal('schema:push'),
   ],
   appDeployment: [
     z.literal('appDeployment:create'),

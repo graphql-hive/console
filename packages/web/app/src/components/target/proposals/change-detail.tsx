@@ -1,16 +1,10 @@
 import { ReactNode } from 'react';
+import { Diamond, Info, TriangleAlert } from 'lucide-react';
+import { Accordion } from '@/components/base/accordion/accordion';
+import { Button } from '@/components/base/button/button';
 import { Popover } from '@/components/base/floating/popover/popover';
-import {
-  AccordionContent,
-  AccordionHeader,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-import { Accordion } from '@/components/v2';
 import { MergeStatus } from '@/pages/target-proposal-details';
 import type { Change } from '@graphql-inspector/core';
-import { ComponentNoneIcon, ExclamationTriangleIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { labelize } from '../history/errors-and-changes';
 
 export function ProposalChangeDetail(props: {
@@ -19,21 +13,20 @@ export function ProposalChangeDetail(props: {
   icon?: ReactNode;
 }) {
   return (
-    <Accordion type="single">
-      <AccordionItem value="item-1">
-        <AccordionHeader className="flex">
-          <AccordionTrigger className="text-neutral-8 py-3 hover:no-underline">
-            <div className="flex w-full flex-row items-center text-left">
+    <Accordion
+      items={[
+        {
+          value: 'item-1',
+          label: (
+            <div className="text-neutral-8 flex w-full flex-row items-center">
               <div>{labelize(props.change.message)}</div>
               <div className="min-w-fit grow pr-2 md:flex-none">{props.icon}</div>
             </div>
-          </AccordionTrigger>
-        </AccordionHeader>
-        <AccordionContent>
-          {props.error?.message ?? <>No details available for this change.</>}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+          ),
+          content: props.error?.message ?? 'No details available for this change.',
+        },
+      ]}
+    />
   );
 }
 
@@ -59,14 +52,14 @@ export function ChangeBlock(props: {
             if (mergeStatus === MergeStatus.CONFLICT) {
               icon = (
                 <span className="flex items-center justify-end pl-4 text-red-400">
-                  <ExclamationTriangleIcon className="mr-2" />
+                  <TriangleAlert className="mr-2 size-4" />
                   CONFLICT
                 </span>
               );
             } else if (mergeStatus === MergeStatus.IGNORED) {
               icon = (
                 <span className="text-neutral-10 flex items-center justify-end pl-4">
-                  <ComponentNoneIcon className="mr-2" /> NO CHANGE
+                  <Diamond className="mr-2 size-4" strokeDasharray="2 2" /> NO CHANGE
                 </span>
               );
             }
@@ -89,13 +82,8 @@ function ChangesBlockTooltip(props: { info: string }) {
   return (
     <Popover
       trigger={
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="text-neutral-10 ml-1"
-          aria-label="More about this change"
-        >
-          <InfoCircledIcon className="size-4" />
+        <Button variant="ghost" size="icon-sm" aria-label="More about this change">
+          <Info className="size-4" />
         </Button>
       }
       openOnHover

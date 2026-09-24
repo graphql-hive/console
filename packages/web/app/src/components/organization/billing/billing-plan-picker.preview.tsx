@@ -1,4 +1,5 @@
-import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { useState } from 'react';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import {
   BillingPlanPicker,
   BillingPlanPicker_PlanFragment,
@@ -67,33 +68,37 @@ export const Disabled = createPreview(() => (
 ));
 
 export const Playground = createPreview({
-  controls: defineControls({
-    value: {
-      type: 'radio',
-      options: [BillingPlanType.Hobby, BillingPlanType.Pro, BillingPlanType.Enterprise],
-      default: BillingPlanType.Hobby,
-    },
+  controls: controlsFor(BillingPlanPicker, {
     activePlan: {
       type: 'radio',
       options: [BillingPlanType.Hobby, BillingPlanType.Pro, BillingPlanType.Enterprise],
       default: BillingPlanType.Hobby,
     },
-    proBasePrice: { type: 'number', default: 10 },
+    plans: {
+      type: 'number',
+      label: 'Pro base price',
+      default: 10,
+      derive: price => [
+        plan(BillingPlanType.Hobby, 'Hobby', 0),
+        plan(BillingPlanType.Pro, 'Pro', price),
+        plan(BillingPlanType.Enterprise, 'Enterprise', null),
+      ],
+    },
     disabled: { type: 'boolean', default: false },
   }),
-  render: v => (
-    <div className="w-[64rem]">
-      <BillingPlanPicker
-        disabled={v.disabled}
-        plans={[
-          plan(BillingPlanType.Hobby, 'Hobby', 0),
-          plan(BillingPlanType.Pro, 'Pro', v.proBasePrice),
-          plan(BillingPlanType.Enterprise, 'Enterprise', null),
-        ]}
-        value={v.value}
-        activePlan={v.activePlan}
-        onPlanChange={() => {}}
-      />
-    </div>
-  ),
+  // Selection is held here rather than in the panel so the cards can be clicked.
+  render: v => {
+    const [value, setValue] = useState(v.activePlan);
+    return (
+      <div className="w-[64rem]">
+        <BillingPlanPicker
+          disabled={v.disabled}
+          plans={v.plans}
+          value={value}
+          activePlan={v.activePlan}
+          onPlanChange={setValue}
+        />
+      </div>
+    );
+  },
 });

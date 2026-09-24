@@ -1,9 +1,8 @@
 import { ReactNode, useState } from 'react';
 import { useMutation } from 'urql';
 import { Badge } from '@/components/base/badge/badge';
-import { Button } from '@/components/ui/button';
-import * as Sheet from '@/components/ui/sheet';
-import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/base/button/button';
+import { useToast } from '@/components/base/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { RoleMappingPickerSheet } from '../../settings/shared/role-mapping-picker-sheet';
@@ -112,131 +111,133 @@ export function ManageGroupMappingSheet(props: ManageGroupMappingSheetProps): Re
   );
 
   return (
-    <Sheet.Sheet open onOpenChange={props.close}>
-      <RoleMappingPickerSheet
-        organization={organization}
-        selectedRoleId={selectedRoleId}
-        onSelectedRoleIdChange={setSelectedRoleId}
-        onSelectionChange={setSelection}
-        resourceAssignment={selection}
-        close={props.close}
-        defaultRoleId={null}
-        title={
-          existingGroupMapping ? (
-            <>Adjust Group Role Mapping</>
-          ) : (
-            <>
-              Add new group role mapping to <Badge content={group.name} />
-            </>
-          )
-        }
-        description={<>Assign a role with permissions to the group role.</>}
-        actions={
-          existingGroupMapping ? (
-            <>
-              <Button onClick={props.close} variant="ghost">
-                Abort
-              </Button>
-              <Button
-                disabled={updateGroupMappingState.fetching}
-                onClick={async () => {
-                  if (!selectedRoleId) {
-                    return;
-                  }
-                  try {
-                    const result = await updateGroupMapping({
-                      input: {
-                        groupMappingId: existingGroupMapping.id,
-                        roleId: selectedRoleId,
-                        assignedResources:
-                          resourceSlectionToGraphQLSchemaResourceAssignmentInput(selection),
-                      },
-                    });
-                    if (result.error) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Failed to update group mapping.',
-                        description: result.error.message,
-                      });
-                    } else if (result.data?.updateGroupMapping.error) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Failed to update group mapping.',
-                        description: result.data?.updateGroupMapping.error.message,
-                      });
-                    } else if (result.data?.updateGroupMapping.ok) {
-                      toast({
-                        title: 'Updated group mapping.',
-                      });
-                      props.close();
-                    }
-                  } catch (error: any) {
-                    console.error(error);
+    // Mounted open by the groups page's node state, so it has no enter transition yet.
+    <RoleMappingPickerSheet
+      open
+      onOpenChange={props.close}
+      organization={organization}
+      selectedRoleId={selectedRoleId}
+      onSelectedRoleIdChange={setSelectedRoleId}
+      onSelectionChange={setSelection}
+      resourceAssignment={selection}
+      defaultRoleId={null}
+      title={
+        existingGroupMapping ? (
+          <>Adjust Group Role Mapping</>
+        ) : (
+          <>
+            Add new group role mapping to <Badge content={group.name} />
+          </>
+        )
+      }
+      description={<>Assign a role with permissions to the group role.</>}
+      actions={
+        existingGroupMapping ? (
+          <>
+            <Button onClick={props.close} variant="ghost">
+              Abort
+            </Button>
+            <Button
+              onSurface="raised"
+              disabled={updateGroupMappingState.fetching}
+              onClick={async () => {
+                if (!selectedRoleId) {
+                  return;
+                }
+                try {
+                  const result = await updateGroupMapping({
+                    input: {
+                      groupMappingId: existingGroupMapping.id,
+                      roleId: selectedRoleId,
+                      assignedResources:
+                        resourceSlectionToGraphQLSchemaResourceAssignmentInput(selection),
+                    },
+                  });
+                  if (result.error) {
                     toast({
                       variant: 'destructive',
                       title: 'Failed to update group mapping.',
-                      description: 'message' in error ? error.message : String(error),
+                      description: result.error.message,
                     });
-                  }
-                }}
-              >
-                {updateGroupMappingState.fetching ? 'Loading...' : 'Update Group Mapping'}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button onClick={props.close} variant="ghost">
-                Abort
-              </Button>
-              <Button
-                disabled={addGroupMappingToGroupState.fetching}
-                onClick={async () => {
-                  if (!selectedRoleId) {
-                    return;
-                  }
-                  try {
-                    const result = await addGroupMappingToGroup({
-                      input: {
-                        groupId: group.id,
-                        roleId: selectedRoleId,
-                        assignedResources:
-                          resourceSlectionToGraphQLSchemaResourceAssignmentInput(selection),
-                      },
+                  } else if (result.data?.updateGroupMapping.error) {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Failed to update group mapping.',
+                      description: result.data?.updateGroupMapping.error.message,
                     });
-                    if (result.error) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Failed to create mapping.',
-                        description: result.error.message,
-                      });
-                    } else if (result.data?.addGroupMappingToGroup.error) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Failed to create mapping.',
-                        description: result.data?.addGroupMappingToGroup.error.message,
-                      });
-                    } else if (result.data?.addGroupMappingToGroup.ok) {
-                      toast({
-                        title: 'Created new mapping.',
-                      });
-                      props.close();
-                    }
-                  } catch (error: any) {
-                    console.error(error);
+                  } else if (result.data?.updateGroupMapping.ok) {
+                    toast({
+                      title: 'Updated group mapping.',
+                    });
+                    props.close();
+                  }
+                } catch (error: any) {
+                  console.error(error);
+                  toast({
+                    variant: 'destructive',
+                    title: 'Failed to update group mapping.',
+                    description: 'message' in error ? error.message : String(error),
+                  });
+                }
+              }}
+            >
+              {updateGroupMappingState.fetching ? 'Loading...' : 'Update Group Mapping'}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button onClick={props.close} variant="ghost">
+              Abort
+            </Button>
+            <Button
+              onSurface="raised"
+              disabled={addGroupMappingToGroupState.fetching}
+              onClick={async () => {
+                if (!selectedRoleId) {
+                  return;
+                }
+                try {
+                  const result = await addGroupMappingToGroup({
+                    input: {
+                      groupId: group.id,
+                      roleId: selectedRoleId,
+                      assignedResources:
+                        resourceSlectionToGraphQLSchemaResourceAssignmentInput(selection),
+                    },
+                  });
+                  if (result.error) {
                     toast({
                       variant: 'destructive',
                       title: 'Failed to create mapping.',
-                      description: 'message' in error ? error.message : String(error),
+                      description: result.error.message,
                     });
+                  } else if (result.data?.addGroupMappingToGroup.error) {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Failed to create mapping.',
+                      description: result.data?.addGroupMappingToGroup.error.message,
+                    });
+                  } else if (result.data?.addGroupMappingToGroup.ok) {
+                    toast({
+                      title: 'Created new mapping.',
+                    });
+                    props.close();
                   }
-                }}
-              >
-                {addGroupMappingToGroupState.fetching ? 'Loading...' : 'Create Role Assignment'}
-              </Button>
-            </>
-          )
-        }
-      />
-    </Sheet.Sheet>
+                } catch (error: any) {
+                  console.error(error);
+                  toast({
+                    variant: 'destructive',
+                    title: 'Failed to create mapping.',
+                    description: 'message' in error ? error.message : String(error),
+                  });
+                }
+              }}
+            >
+              {addGroupMappingToGroupState.fetching ? 'Loading...' : 'Create Role Assignment'}
+            </Button>
+          </>
+        )
+      }
+    />
   );
 }

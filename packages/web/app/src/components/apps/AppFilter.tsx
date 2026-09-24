@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { Input } from '@/components/ui/input';
+import { SearchIcon } from 'lucide-react';
+import { Input } from '@/components/base/input/input';
 import { useRouter } from '@tanstack/react-router';
 
 export function AppFilter() {
@@ -20,11 +21,13 @@ export function AppFilter() {
       : '';
 
   return (
-    <Input
-      className="min-w-[200px] grow cursor-text"
-      placeholder="Search by operation name..."
-      onChange={cb}
-      defaultValue={initialValue}
-    />
+    <div className="min-w-[200px] grow">
+      <Input
+        placeholder="Search by operation name..."
+        leadingIcon={SearchIcon}
+        onChange={cb}
+        defaultValue={initialValue}
+      />
+    </div>
   );
 }

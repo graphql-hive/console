@@ -1,8 +1,8 @@
 import { memo, useEffect, useMemo, useState } from 'react';
-import { AlertCircleIcon, ChevronDown, PartyPopperIcon } from 'lucide-react';
+import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button as BaseButton } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { focusRingQuiet } from '@/components/base/shared-styles';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
   ExplorerFilteredEmptyState,
@@ -16,7 +16,6 @@ import {
 } from '@/components/target/explorer/provider';
 import { matchesSubgraphFilter } from '@/components/target/explorer/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
@@ -197,17 +196,19 @@ function InternalUnusedSchemaView(props: {
             <Tooltip
               key={letter}
               trigger={
-                <Button
+                <button
+                  type="button"
                   onClick={() => setSelectedLetter(letter)}
-                  variant={letter === activeLetter ? 'secondary' : 'ghost'}
-                  size="sm"
                   className={cn(
-                    'rounded-none px-2 py-1',
-                    letter === activeLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
+                    'inline-flex h-9 items-center px-2 py-1 text-sm font-medium transition-colors',
+                    focusRingQuiet,
+                    letter === activeLetter
+                      ? 'bg-neutral-2 text-accent'
+                      : 'text-neutral-10 hover:bg-neutral-2 hover:text-accent',
                   )}
                 >
                   {letter}
-                </Button>
+                </button>
               }
               content={`${typesGroupedByFirstLetter.get(letter)?.length ?? 0} types`}
             />
@@ -261,6 +262,10 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
         id
         explorer {
           subgraphNames
+          metadataAttributes {
+            name
+            values
+          }
         }
         unusedSchema(period: { absoluteRange: $period }) {
           ...UnusedSchemaView_UnusedSchemaExplorerFragment
@@ -326,13 +331,7 @@ function UnusedSchemaExplorer({
   const latestValidSchemaVersion = query.data?.target?.latestValidSchemaVersion;
   const dateRangeFilter = (
     <DateRangePicker
-      trigger={
-        <BaseButton
-          label={dateRangeController.selectedPreset.label}
-          variant="default"
-          rightIcon={{ icon: ChevronDown, withSeparator: true }}
-        />
-      }
+      size="compact"
       validUnits={['y', 'M', 'w', 'd', 'h']}
       selectedRange={dateRangeController.selectedPreset.range}
       startDate={dateRangeController.startDate}
@@ -352,6 +351,7 @@ function UnusedSchemaExplorer({
         period={dateRangeController.resolvedRange}
         variant="unused"
         subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
+        metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
         dateRangeControl={dateRangeFilter}
       />
 

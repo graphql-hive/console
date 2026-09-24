@@ -1,36 +1,22 @@
 import { ReactElement } from 'react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
-import { BoxIcon, CheckIcon } from 'lucide-react';
+import { ActivityIcon, BoxIcon, CheckIcon, CircleCheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
+import { Accordion } from '@/components/base/accordion/accordion';
+import { Button } from '@/components/base/button/button';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Label, Label as LegacyLabel } from '@/components/common';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionHeader,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
-import { PulseIcon } from '@/components/ui/icon';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { TimeAgo } from '@/components/ui/time-ago';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
-import { CheckCircledIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 
 export function labelize(message: string) {
   // Replace '...' and "..." with <Label>...</Label>
@@ -137,6 +123,16 @@ export const ChangesBlock_SchemaChangeFragment = graphql(`
   }
 `);
 
+type ChangeWithUsage = DocumentType<typeof ChangesBlock_SchemaChangeWithUsageFragment>;
+type UsageStatistics = NonNullable<ChangeWithUsage['usageStatistics']>;
+type AffectedOperation = UsageStatistics['topAffectedOperations'][number];
+type AffectedClient = UsageStatistics['topAffectedClients'][number];
+type AffectedDeploymentConnection = NonNullable<ChangeWithUsage['affectedAppDeployments']>;
+type AffectedDeployment = AffectedDeploymentConnection['edges'][number]['node'];
+type InsightsTarget = DocumentType<
+  typeof ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment
+>['settings']['targets'][number];
+
 export function ChangesBlock(
   props: {
     title?: string | React.ReactElement;
@@ -226,15 +222,16 @@ function ChangeItem(
   );
 
   return (
-    <Accordion type="single" collapsible>
-      <AccordionItem value="item-1">
-        <AccordionHeader className="flex">
-          <AccordionTrigger className="py-3 hover:no-underline">
+    <Accordion
+      items={[
+        {
+          value: 'item-1',
+          label: (
             <div
               className={clsx(
                 'text-left',
                 (change.approval && 'text-accent') ||
-                  (severityLevelMapping[change.severityLevel] ?? 'text-red-400'),
+                  (severityLevelMapping[change.severityLevel] ?? 'text-critical'),
               )}
             >
               <div>
@@ -248,8 +245,8 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="bg-neutral-5 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold text-red-400">
-                      <PulseIcon className="h-4 stroke-[1px]" />
+                    <span className="bg-neutral-5 text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                      <ActivityIcon className="size-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}
                         {change.usageStatistics.topAffectedOperations.length > 10 ? '+' : ''}{' '}
@@ -288,411 +285,346 @@ function ChangeItem(
                 )}
               </div>
             </div>
-          </AccordionTrigger>
-        </AccordionHeader>
-        <AccordionContent className="pb-8 pt-4">
-          {change.approval && (
-            <SchemaChangeApproval
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
-              schemaCheckId={props.schemaCheckId}
-              approval={change.approval}
-            />
-          )}
-          {'usageStatistics' in change && change.usageStatistics && metadata ? (
-            <div>
-              <h4 className="text-neutral-12 mb-1 text-sm font-medium">
-                Affected Operations (based on usage)
-              </h4>
-              <div className="text-neutral-10 mb-2 flex justify-between text-sm">
-                <span>
-                  Top 10 operations and clients affected by this change based on usage data.
-                </span>
-                {metadata && (
-                  <span className="text-neutral-11 text-xs">
-                    See{' '}
-                    {metadata.settings.targets.map((target, index, arr) => (
-                      <>
-                        {!target.target ? (
-                          <Tooltip
-                            key={index}
-                            trigger={target.slug}
-                            content="Target does no longer exist."
-                          />
-                        ) : (
-                          <Link
-                            key={index}
-                            className="text-accent_80 hover:text-accent"
-                            to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                              targetSlug: target.target.slug,
-                              coordinate: change.path!.join('.'),
-                            }}
-                            target="_blank"
-                          >
-                            {target.slug}
-                          </Link>
-                        )}
-                        {index === arr.length - 1
-                          ? null
-                          : index === arr.length - 2
-                            ? ' and '
-                            : ', '}
-                      </>
-                    ))}{' '}
-                    target insights for live usage data.
-                  </span>
-                )}
-              </div>
-              <div className="flex space-x-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[150px]">Operation Name</TableHead>
-                      <TableHead className="text-right">Total Requests</TableHead>
-                      <TableHead className="text-right">% of traffic</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {change.usageStatistics.topAffectedOperations.map(
-                      ({ hash, name, countFormatted, percentageFormatted }) => (
-                        <TableRow key={hash}>
-                          <TableCell className="font-medium">
-                            <Popover
-                              trigger={
-                                <button
-                                  type="button"
-                                  className="text-orange-800 hover:text-orange-800 hover:underline-offset-4 dark:text-orange-500 dark:hover:text-orange-500"
-                                >
-                                  {hash.substring(0, 4)}_{name}
-                                </button>
-                              }
-                              side="right"
-                              arrow
-                              content={
-                                <div className="flex flex-col gap-y-2 text-sm">
-                                  View live usage on
-                                  {metadata.settings.targets.map((target, i) =>
-                                    target.target ? (
-                                      <p key={i}>
-                                        <Link
-                                          className="text-accent_80 hover:text-accent"
-                                          to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                                          params={{
-                                            organizationSlug: props.organizationSlug,
-                                            projectSlug: props.projectSlug,
-                                            targetSlug: target.target.slug,
-                                            operationName: `${hash.substring(0, 4)}_${name}`,
-                                            operationHash: hash,
-                                          }}
-                                          target="_blank"
-                                        >
-                                          {target.slug}
-                                        </Link>{' '}
-                                        <span className="text-neutral-12">target</span>
-                                      </p>
-                                    ) : null,
-                                  )}
-                                </div>
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">{countFormatted}</TableCell>
-                          <TableCell className="text-right">{percentageFormatted}</TableCell>
-                        </TableRow>
-                      ),
-                    )}
-                  </TableBody>
-                </Table>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[150px]">Client Name</TableHead>
-                      <TableHead className="text-right">Total Requests</TableHead>
-                      <TableHead className="text-right">% of traffic</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {change.usageStatistics.topAffectedClients.map(
-                      ({ name, countFormatted, percentageFormatted }) => (
-                        <TableRow key={name}>
-                          <TableCell className="font-medium">{name}</TableCell>
-                          <TableCell className="text-right">{countFormatted}</TableCell>
-                          <TableCell className="text-right">{percentageFormatted}</TableCell>
-                        </TableRow>
-                      ),
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-              {'affectedAppDeployments' in change &&
-              change.affectedAppDeployments?.edges?.length ? (
-                <div className="mt-6">
+          ),
+          content: (
+            <div className="pb-4 pt-4">
+              {change.approval && (
+                <SchemaChangeApproval
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
+                  schemaCheckId={props.schemaCheckId}
+                  approval={change.approval}
+                />
+              )}
+              {'usageStatistics' in change && change.usageStatistics && metadata ? (
+                <div>
                   <h4 className="text-neutral-12 mb-1 text-sm font-medium">
-                    Affected App Deployments
+                    Affected Operations (based on usage)
                   </h4>
-                  <p className="text-neutral-10 mb-2 text-sm">
-                    Top 5 active app deployments that have operations using this schema coordinate
-                    (snapshot from when the check was run).
-                  </p>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[200px]">App Name</TableHead>
-                        <TableHead>Version</TableHead>
-                        <TableHead>Activated</TableHead>
-                        <TableHead className="text-end">Last Used</TableHead>
-                        <TableHead className="text-right">Affected Operations</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {change.affectedAppDeployments.edges.map(({ node: deployment }) => (
-                        <TableRow key={deployment.id}>
-                          <TableCell className="font-medium">
-                            <Link
-                              to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
-                              params={{
-                                organizationSlug: props.organizationSlug,
-                                projectSlug: props.projectSlug,
-                                targetSlug: props.targetSlug,
-                                appName: deployment.name,
-                                appVersion: deployment.version,
-                              }}
-                              search={{ coordinates: change.path?.join('.') }}
-                              className="text-neutral-11 hover:text-neutral-12"
-                            >
-                              {deployment.name}
-                            </Link>
-                          </TableCell>
-                          <TableCell>{deployment.version}</TableCell>
-                          <TableCell>
-                            {deployment.activatedAt ? (
-                              <span className="text-neutral-11 cursor-help text-xs">
-                                <TimeAgo date={deployment.activatedAt} />
-                              </span>
-                            ) : (
-                              <span className="text-neutral-10 text-xs">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-end">
-                            {deployment.lastUsed ? (
+                  <div className="text-neutral-10 mb-2 flex justify-between text-sm">
+                    <span>
+                      Top 10 operations and clients affected by this change based on usage data.
+                    </span>
+                    {metadata && (
+                      <span className="text-neutral-11 text-xs">
+                        See{' '}
+                        {metadata.settings.targets.map((target, index, arr) => (
+                          <>
+                            {!target.target ? (
                               <Tooltip
-                                trigger={
-                                  <span className="text-neutral-11 cursor-help text-xs">
-                                    <TimeAgo date={deployment.lastUsed} />
-                                  </span>
-                                }
-                                content={format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
+                                key={index}
+                                trigger={target.slug}
+                                content="Target does no longer exist."
                               />
                             ) : (
-                              <span className="text-neutral-10 text-xs">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Popover
-                              trigger={
-                                <Button variant="link" className="h-auto p-0">
-                                  {deployment.totalAffectedOperations}{' '}
-                                  {deployment.totalAffectedOperations === 1
-                                    ? 'operation'
-                                    : 'operations'}
-                                </Button>
-                              }
-                              side="left"
-                              width="md"
-                              arrow
-                              content={
-                                <div className="space-y-2">
-                                  <h5 className="text-neutral-12 font-medium">
-                                    Affected Operations
-                                  </h5>
-                                  <ScrollArea maxHeight="sm">
-                                    <ul className="space-y-1 text-sm">
-                                      {deployment.affectedOperations.edges.map(({ node: op }) => (
-                                        <li key={op.hash} className="text-neutral-11">
-                                          {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </ScrollArea>
-                                  <Link
-                                    to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
-                                    params={{
-                                      organizationSlug: props.organizationSlug,
-                                      projectSlug: props.projectSlug,
-                                      targetSlug: props.targetSlug,
-                                      appName: deployment.name,
-                                      appVersion: deployment.version,
-                                    }}
-                                    search={{ coordinates: change.path?.join('.') }}
-                                    className="text-accent block pt-2 text-sm hover:underline"
-                                  >
-                                    Show all ({deployment.totalAffectedOperations}) affected
-                                    operations
-                                  </Link>
-                                </div>
-                              }
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  {change.affectedAppDeployments.totalCount > 5 && (
-                    <Link
-                      to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId/affected-deployments"
-                      params={{
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                        schemaCheckId: props.schemaCheckId,
-                      }}
-                      search={{ coordinate: change.path?.join('.') }}
-                      className="mt-2 block text-sm text-orange-500 hover:underline"
-                    >
-                      View all ({change.affectedAppDeployments.totalCount}) affected app deployments
-                    </Link>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          ) : 'affectedAppDeployments' in change && change.affectedAppDeployments?.edges?.length ? (
-            <div>
-              <h4 className="text-neutral-12 mb-1 text-sm font-medium">Affected App Deployments</h4>
-              <p className="text-neutral-10 mb-2 text-sm">
-                Top 5 active app deployments that have operations using this schema coordinate
-                (snapshot from when the check was run).
-              </p>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[200px]">App Name</TableHead>
-                    <TableHead>Version</TableHead>
-                    <TableHead>Activated</TableHead>
-                    <TableHead className="text-end">Last Used</TableHead>
-                    <TableHead className="text-right">Affected Operations</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {change.affectedAppDeployments.edges.map(({ node: deployment }) => (
-                    <TableRow key={deployment.id}>
-                      <TableCell className="font-medium">
-                        <Link
-                          to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
-                            appName: deployment.name,
-                            appVersion: deployment.version,
-                          }}
-                          search={{ coordinates: change.path?.join('.') }}
-                          className="text-neutral-11 hover:text-neutral-12"
-                        >
-                          {deployment.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{deployment.version}</TableCell>
-                      <TableCell>
-                        {deployment.activatedAt ? (
-                          <span className="text-neutral-11 cursor-help text-xs">
-                            <TimeAgo date={deployment.activatedAt} />
-                          </span>
-                        ) : (
-                          <span className="text-neutral-10 text-xs">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-end">
-                        {deployment.lastUsed ? (
-                          <Tooltip
-                            trigger={
-                              <span className="text-neutral-11 cursor-help text-xs">
-                                <TimeAgo date={deployment.lastUsed} />
-                              </span>
-                            }
-                            content={format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
-                          />
-                        ) : (
-                          <span className="text-neutral-10 text-xs">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Popover
-                          trigger={
-                            <Button variant="link" className="h-auto p-0">
-                              {deployment.totalAffectedOperations}{' '}
-                              {deployment.totalAffectedOperations === 1
-                                ? 'operation'
-                                : 'operations'}
-                            </Button>
-                          }
-                          side="left"
-                          width="md"
-                          arrow
-                          content={
-                            <div className="space-y-2">
-                              <h5 className="text-neutral-12 font-medium">Affected Operations</h5>
-                              <ScrollArea maxHeight="sm">
-                                <ul className="space-y-1 text-sm">
-                                  {deployment.affectedOperations.edges.map(({ node: op }) => (
-                                    <li key={op.hash} className="text-neutral-11">
-                                      {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </ScrollArea>
                               <Link
-                                to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
+                                key={index}
+                                className="text-accent_80 hover:text-accent"
+                                to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
                                 params={{
                                   organizationSlug: props.organizationSlug,
                                   projectSlug: props.projectSlug,
-                                  targetSlug: props.targetSlug,
-                                  appName: deployment.name,
-                                  appVersion: deployment.version,
+                                  targetSlug: target.target.slug,
+                                  coordinate: change.path!.join('.'),
                                 }}
-                                search={{ coordinates: change.path?.join('.') }}
-                                className="text-accent block pt-2 text-sm hover:underline"
+                                target="_blank"
                               >
-                                Show all ({deployment.totalAffectedOperations}) affected operations
+                                {target.slug}
                               </Link>
-                            </div>
-                          }
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {change.affectedAppDeployments.totalCount > 5 && (
-                <Link
-                  to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId/affected-deployments"
-                  params={{
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
-                    schemaCheckId: props.schemaCheckId,
-                  }}
-                  search={{ coordinate: change.path?.join('.') }}
-                  className="mt-2 block text-sm text-orange-500 hover:underline"
-                >
-                  View all ({change.affectedAppDeployments.totalCount}) affected app deployments
-                </Link>
+                            )}
+                            {index === arr.length - 1
+                              ? null
+                              : index === arr.length - 2
+                                ? ' and '
+                                : ', '}
+                          </>
+                        ))}{' '}
+                        target insights for live usage data.
+                      </span>
+                    )}
+                  </div>
+                  <UsageStatisticsPanels
+                    organizationSlug={props.organizationSlug}
+                    projectSlug={props.projectSlug}
+                    usageStatistics={change.usageStatistics}
+                    targets={metadata.settings.targets}
+                  />
+                  {'affectedAppDeployments' in change &&
+                  change.affectedAppDeployments?.edges?.length ? (
+                    <div className="mt-6">
+                      <AffectedAppDeploymentsPanel
+                        organizationSlug={props.organizationSlug}
+                        projectSlug={props.projectSlug}
+                        targetSlug={props.targetSlug}
+                        schemaCheckId={props.schemaCheckId}
+                        coordinate={change.path?.join('.')}
+                        connection={change.affectedAppDeployments}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : 'affectedAppDeployments' in change &&
+                change.affectedAppDeployments?.edges?.length ? (
+                <AffectedAppDeploymentsPanel
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
+                  schemaCheckId={props.schemaCheckId}
+                  coordinate={change.path?.join('.')}
+                  connection={change.affectedAppDeployments}
+                />
+              ) : (
+                <>
+                  {change.severityReason ??
+                    `No details available for this ${
+                      change.severityLevel === SeverityLevelType.Breaking ? 'breaking ' : ''
+                    }change.`}
+                </>
               )}
             </div>
-          ) : (
-            <>
-              {change.severityReason ??
-                `No details available for this ${
-                  change.severityLevel === SeverityLevelType.Breaking ? 'breaking ' : ''
-                }change.`}
-            </>
-          )}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+          ),
+        },
+      ]}
+    />
+  );
+}
+
+function trafficColumns<
+  TRow extends { countFormatted: string; percentageFormatted: string },
+>(): ColumnDef<TRow, unknown>[] {
+  return [
+    {
+      id: 'count',
+      header: 'Total Requests',
+      meta: { align: 'right', width: 'sm' },
+      cell: ({ row }) => <DataTableCell kind="number" value={row.original.countFormatted} />,
+    },
+    {
+      id: 'share',
+      header: '% of traffic',
+      meta: { align: 'right', width: 'sm' },
+      cell: ({ row }) => <DataTableCell kind="number" value={row.original.percentageFormatted} />,
+    },
+  ];
+}
+
+function UsageStatisticsPanels(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  usageStatistics: UsageStatistics;
+  targets: InsightsTarget[];
+}) {
+  const operationColumns: ColumnDef<AffectedOperation, unknown>[] = [
+    {
+      id: 'name',
+      header: 'Operation Name',
+      meta: { width: 'fill' },
+      cell: ({ row }) => {
+        const operationName = `${row.original.hash.substring(0, 4)}_${row.original.name}`;
+        const targets = props.targets.flatMap(target =>
+          target.target
+            ? [
+                {
+                  label: target.slug,
+                  link: {
+                    to: '/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash' as const,
+                    params: {
+                      organizationSlug: props.organizationSlug,
+                      projectSlug: props.projectSlug,
+                      targetSlug: target.target.slug,
+                      operationName,
+                      operationHash: row.original.hash,
+                    },
+                  },
+                },
+              ]
+            : [],
+        );
+        return targets.length ? (
+          <DataTableCell
+            kind="link-out"
+            label={operationName}
+            mono
+            targets={targets}
+            tooltip="View live usage in Insights"
+          />
+        ) : (
+          <DataTableCell kind="text" value={operationName} mono />
+        );
+      },
+    },
+    ...trafficColumns<AffectedOperation>(),
+  ];
+  const clientColumns: ColumnDef<AffectedClient, unknown>[] = [
+    {
+      id: 'name',
+      header: 'Client Name',
+      meta: { width: 'fill' },
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.name} weight="medium" />,
+    },
+    ...trafficColumns<AffectedClient>(),
+  ];
+
+  return (
+    <div className="flex gap-4">
+      <div className="min-w-0 flex-1">
+        <DataTable
+          data={props.usageStatistics.topAffectedOperations}
+          columns={operationColumns}
+          getRowId={operation => operation.hash}
+          pagination={{ kind: 'none' }}
+          variants={{ bordered: false }}
+          emptyMessage="No affected operations."
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <DataTable
+          data={props.usageStatistics.topAffectedClients}
+          columns={clientColumns}
+          getRowId={client => client.name}
+          pagination={{ kind: 'none' }}
+          variants={{ bordered: false }}
+          emptyMessage="No affected clients."
+        />
+      </div>
+    </div>
+  );
+}
+
+function AffectedAppDeploymentsPanel(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  schemaCheckId: string;
+  coordinate: string | undefined;
+  connection: AffectedDeploymentConnection;
+}) {
+  const appVersionLink = (deployment: AffectedDeployment) => ({
+    to: '/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion' as const,
+    params: {
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      targetSlug: props.targetSlug,
+      appName: deployment.name,
+      appVersion: deployment.version,
+    },
+    search: { coordinates: props.coordinate },
+  });
+
+  const columns: ColumnDef<AffectedDeployment, unknown>[] = [
+    {
+      id: 'name',
+      header: 'App Name',
+      meta: { width: 'md' },
+      cell: ({ row }) => (
+        <DataTableCell kind="link" label={row.original.name} link={appVersionLink(row.original)} />
+      ),
+    },
+    {
+      id: 'version',
+      header: 'Version',
+      meta: { width: 'fill' },
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.version} />,
+    },
+    {
+      id: 'activatedAt',
+      header: 'Activated',
+      cell: ({ row }) =>
+        row.original.activatedAt ? (
+          <DataTableCell kind="time" date={row.original.activatedAt} mode="relative-info" />
+        ) : (
+          <DataTableCell kind="placeholder" />
+        ),
+    },
+    {
+      id: 'lastUsed',
+      header: 'Last Used',
+      meta: { align: 'right' },
+      cell: ({ row }) =>
+        row.original.lastUsed ? (
+          <DataTableCell kind="time" date={row.original.lastUsed} mode="relative-info" />
+        ) : (
+          <DataTableCell kind="placeholder" />
+        ),
+    },
+    {
+      id: 'operations',
+      header: 'Affected Operations',
+      meta: { align: 'right' },
+      cell: ({ row }) => {
+        const deployment = row.original;
+        return (
+          <DataTableCell
+            kind="text"
+            value={
+              <Popover
+                trigger={
+                  <Button variant="link">
+                    {deployment.totalAffectedOperations}{' '}
+                    {deployment.totalAffectedOperations === 1 ? 'operation' : 'operations'}
+                  </Button>
+                }
+                side="left"
+                width="md"
+                arrow
+                content={
+                  <div className="space-y-2">
+                    <h5 className="text-neutral-12 font-medium">Affected Operations</h5>
+                    <ScrollArea maxHeight="sm">
+                      <ul className="space-y-1 text-sm">
+                        {deployment.affectedOperations.edges.map(({ node: op }) => (
+                          <li key={op.hash} className="text-neutral-11">
+                            {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
+                          </li>
+                        ))}
+                      </ul>
+                    </ScrollArea>
+                    <Link
+                      {...appVersionLink(deployment)}
+                      className="text-accent block pt-2 text-sm hover:underline"
+                    >
+                      Show all ({deployment.totalAffectedOperations}) affected operations
+                    </Link>
+                  </div>
+                }
+              />
+            }
+          />
+        );
+      },
+    },
+  ];
+
+  return (
+    <div>
+      <h4 className="text-neutral-12 mb-1 text-sm font-medium">Affected App Deployments</h4>
+      <p className="text-neutral-10 mb-2 text-sm">
+        Top 5 active app deployments that have operations using this schema coordinate (snapshot
+        from when the check was run).
+      </p>
+      <DataTable
+        data={props.connection.edges.map(edge => edge.node)}
+        columns={columns}
+        getRowId={deployment => deployment.id}
+        pagination={{ kind: 'none' }}
+      />
+      {props.connection.totalCount > 5 && (
+        <Link
+          to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId/affected-deployments"
+          params={{
+            organizationSlug: props.organizationSlug,
+            projectSlug: props.projectSlug,
+            targetSlug: props.targetSlug,
+            schemaCheckId: props.schemaCheckId,
+          }}
+          search={{ coordinate: props.coordinate }}
+          className="mt-2 block text-sm text-orange-500 hover:underline"
+        >
+          View all ({props.connection.totalCount}) affected app deployments
+        </Link>
+      )}
+    </div>
   );
 }
 
@@ -825,7 +757,7 @@ export function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CheckCircledIcon className="h-4 w-auto text-emerald-500" />
+        <CircleCheckIcon className="size-4 text-emerald-500" />
         <h2 className="text-neutral-12 text-base font-medium">No Graph Changes</h2>
       </div>
       <p className="text-neutral-10 text-xs">There are no changes in this graph for this graph.</p>

@@ -2,13 +2,13 @@ import { useCallback, useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { SessionAuth, useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
-import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/base/toast/toast';
+import { HiveLogo } from '@/components/ui/brand-icon';
 import { DottedBackground } from '@/components/ui/dotted-background';
-import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Spinner } from '@/components/ui/spinner';
-import { useToast } from '@/components/ui/use-toast';
 import { DataWrapper } from '@/components/v2/data-wrapper';
 import { graphql } from '@/gql';
 import { HiveStripeWrapper } from '@/lib/billing/stripe';
@@ -123,13 +123,11 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
       <HiveStripeWrapper>
         <Meta title={orgName ? `Invitation to ${orgName}` : 'Invitation'} />
         <DottedBackground className="min-h-[100vh]">
-          <Button
-            variant="outline"
-            onClick={() => router.navigate({ to: '/logout' })}
-            className="absolute right-6 top-6"
-          >
-            <LogOutIcon className="mr-2 size-4" /> Sign out
-          </Button>
+          <div className="absolute right-6 top-6">
+            <Button variant="outline" onClick={() => router.navigate({ to: '/logout' })}>
+              <LogOutIcon className="mr-2 size-4" /> Sign out
+            </Button>
+          </div>
           <Link href="/" className="absolute left-6 top-6">
             <HiveLogo className="size-10" />
           </Link>
@@ -150,7 +148,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                       >
                         {invitation.message}
                         <div className="mt-6 flex items-center">
-                          <Button className="w-full" onClick={goBack}>
+                          <Button width="full" onSurface="raised" onClick={goBack}>
                             Back to Hive
                           </Button>
                         </div>
@@ -175,15 +173,16 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                       </p>
                       <div className="mt-6 flex flex-col gap-y-4 md:flex-row md:justify-evenly md:gap-x-4 md:gap-y-0">
                         <Button
-                          className="w-full md:flex-1"
                           variant="outline"
+                          width="full"
                           disabled={mutation.fetching}
                           onClick={goBack}
                         >
                           Ignore
                         </Button>
                         <Button
-                          className="w-full md:flex-1"
+                          width="full"
+                          onSurface="raised"
                           onClick={accept}
                           disabled={mutation.fetching}
                         >

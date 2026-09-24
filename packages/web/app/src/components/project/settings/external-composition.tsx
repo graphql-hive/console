@@ -1,25 +1,18 @@
 import { useEffect, useState } from 'react';
+import { Check, RefreshCw, RotateCw, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { CombinedError, useQuery } from 'urql';
-import { z } from 'zod';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/base/toast/toast';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
-import { useNotifications } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckIcon, Cross2Icon, ReloadIcon, UpdateIcon } from '@radix-ui/react-icons';
+import {
+  ExternalCompositionForm,
+  ExternalCompositionFormSchema,
+  type ExternalCompositionFormValues,
+} from './external-composition-form';
 
 const ExternalCompositionStatus_TestQuery = graphql(`
   query ExternalCompositionStatus_TestQuery($selector: TestExternalSchemaCompositionInput!) {
@@ -132,7 +125,7 @@ const ExternalCompositionStatus = ({
         <Tooltip
           trigger={
             <span className="inline-flex">
-              <UpdateIcon
+              <RefreshCw
                 className="text-neutral-10 size-5 animate-spin cursor-default"
                 onClick={e => e.preventDefault()}
               />
@@ -153,7 +146,7 @@ const ExternalCompositionStatus = ({
                 executeTestQuery();
               }}
             >
-              <ReloadIcon className="size-5" />
+              <RotateCw className="size-5" />
             </button>
           }
           content="Execute test"
@@ -165,10 +158,7 @@ const ExternalCompositionStatus = ({
           defaultOpen
           trigger={
             <span className="inline-flex">
-              <Cross2Icon
-                className="size-5 cursor-default text-red-500"
-                onClick={e => e.preventDefault()}
-              />
+              <X className="size-5 cursor-default text-red-500" onClick={e => e.preventDefault()} />
             </span>
           }
           content={error}
@@ -180,7 +170,7 @@ const ExternalCompositionStatus = ({
         <Tooltip
           trigger={
             <span className="inline-flex">
-              <CheckIcon
+              <Check
                 className="size-5 cursor-default text-green-500"
                 onClick={e => e.preventDefault()}
               />
@@ -194,24 +184,6 @@ const ExternalCompositionStatus = ({
     </>
   );
 };
-
-const formSchema = z.object({
-  endpoint: z
-    .string({
-      required_error: 'Please provide an endpoint',
-    })
-    .url({
-      message: 'Invalid URL',
-    }),
-  secret: z
-    .string({
-      required_error: 'Please provide a secret',
-    })
-    .min(2, 'Too short')
-    .max(256, 'Max 256 characters long'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 export const ExternalCompositionSettings = (props: {
   project: FragmentType<typeof ExternalCompositionSettings_ProjectFragment>;
@@ -228,12 +200,12 @@ export const ExternalCompositionSettings = (props: {
     ExternalCompositionSettings_OrganizationFragment,
     props.organization,
   );
-  const notify = useNotifications();
+  const { toast } = useToast();
   const [error, setError] = useState<string>();
   const [isMutating, setIsMutating] = useState(false);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<ExternalCompositionFormValues>({
+    resolver: zodResolver(ExternalCompositionFormSchema),
     mode: 'onChange',
     defaultValues: {
       endpoint: project.externalSchemaComposition?.endpoint ?? '',
@@ -242,7 +214,7 @@ export const ExternalCompositionSettings = (props: {
     disabled: isMutating,
   });
 
-  function onSubmit(values: FormValues) {
+  function onSubmit(values: ExternalCompositionFormValues) {
     setError(undefined);
     setIsMutating(true);
     void props
@@ -263,7 +235,7 @@ export const ExternalCompositionSettings = (props: {
       .then(result => {
         setIsMutating(false);
         if (result instanceof CombinedError) {
-          notify(result.message, 'error');
+          toast({ variant: 'destructive', title: result.message });
           setError(result.message);
         } else {
           // actually not a hook
@@ -275,7 +247,7 @@ export const ExternalCompositionSettings = (props: {
           if (updateResult.ok) {
             const endpoint = updateResult.ok.updatedProject.externalSchemaComposition?.endpoint;
 
-            notify('External composition enabled.', 'success');
+            toast({ title: 'External composition enabled.' });
 
             if (endpoint) {
               form.reset(
@@ -290,7 +262,7 @@ export const ExternalCompositionSettings = (props: {
               );
             }
           } else if (updateResult.error) {
-            notify(updateResult.error.message, 'error');
+            toast({ variant: 'destructive', title: updateResult.error.message });
             setError(updateResult.error.message);
 
             if (updateResult.error.__typename === 'UpdateSchemaCompositionExternalError') {
@@ -326,70 +298,24 @@ export const ExternalCompositionSettings = (props: {
         />
       </div>
       <div className="flex justify-between">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex flex-wrap gap-x-24 gap-y-4">
-              <FormField
-                control={form.control}
-                name="endpoint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>HTTP Endpoint</FormLabel>
-                    <FormDescription>A POST request will be sent to that endpoint</FormDescription>
-                    <div className="flex w-full items-center space-x-2">
-                      <FormControl>
-                        <Input
-                          className="max-w-md shrink-0"
-                          placeholder="Endpoint"
-                          type="text"
-                          autoComplete="off"
-                          {...field}
-                        />
-                      </FormControl>
-                      {!form.formState.isDirty && project.externalSchemaComposition?.endpoint ? (
-                        <ExternalCompositionStatus
-                          projectSlug={project.slug}
-                          organizationSlug={organization.slug}
-                        />
-                      ) : null}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
+        <ExternalCompositionForm
+          form={form}
+          onSubmit={onSubmit}
+          endpointStatus={
+            project.externalSchemaComposition?.endpoint ? (
+              <ExternalCompositionStatus
+                projectSlug={project.slug}
+                organizationSlug={organization.slug}
               />
-              <FormField
-                control={form.control}
-                name="secret"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Secret</FormLabel>
-                    <FormDescription>
-                      The secret is needed to sign and verify the request.
-                    </FormDescription>
-                    <FormControl>
-                      <Input
-                        className="w-full max-w-md"
-                        placeholder="Secret"
-                        type="password"
-                        autoComplete="off"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            {error && <div className="mt-2 text-xs text-red-500">{error}</div>}
-            <div className="flex flex-row items-center gap-x-8">
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {props.activeCompositionMode === 'external'
-                  ? 'Save Configuration'
-                  : 'Use External Composition'}
-              </Button>
-            </div>
-          </form>
-        </Form>
+            ) : null
+          }
+          error={error}
+          submitLabel={
+            props.activeCompositionMode === 'external'
+              ? 'Save Configuration'
+              : 'Use External Composition'
+          }
+        />
       </div>
     </div>
   );

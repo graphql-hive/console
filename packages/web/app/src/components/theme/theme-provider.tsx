@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { useLocalStorage } from '@/lib/hooks';
+import { useLocalStorage } from '@/lib/hooks/use-local-storage';
 
 const STORAGE_KEY = 'hive-theme';
 

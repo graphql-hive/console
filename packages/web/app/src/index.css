@@ -254,6 +254,11 @@
   --animate-slide-left-fade: slide-left-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shimmer: shimmer 1.5s linear infinite;
   --animate-shake: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  --animate-spinner-spin: spinner-spin 1.6s linear infinite;
+  --animate-spinner-arc: spinner-arc 1.6s var(--ease-authentic) infinite;
+
+  /* Easing */
+  --ease-authentic: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Min Height */
   --min-h-content: var(--content-height);
@@ -308,7 +313,8 @@
     --chart-6: 330 81% 60%;
     --chart-grid: 0 0% 35%;
 
-    --ring: 216 58% 49%;
+    /* The legacy ui/ focus ring, kept on the accent so it matches base until ui/button goes. */
+    --ring: var(--accent);
   }
 
   .dark {
@@ -438,9 +444,10 @@
     appearance: none;
   }
 
+  /* Scoped to the editor: Base UI's tab indicator is a presentation role too. */
   .monaco-editor,
   .monaco-editor-background,
-  [role='presentation'] {
+  .monaco-editor [role='presentation'] {
     background: transparent !important;
     --vscode-focusBorder: transparent !important;
   }
@@ -564,6 +571,28 @@
 }
 
 /* Keyframes (must be outside @theme) */
+
+@keyframes spinner-spin {
+  to {
+    transform: rotate(580deg);
+  }
+}
+
+@keyframes spinner-arc {
+  0% {
+    stroke-dasharray: 16 46;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 38 46;
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dasharray: 16 46;
+    stroke-dashoffset: -22;
+  }
+}
+
 @keyframes slide-up-fade {
   0% {
     opacity: 0;

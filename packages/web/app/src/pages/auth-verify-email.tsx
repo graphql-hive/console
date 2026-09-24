@@ -2,9 +2,9 @@ import { useCallback, useEffect } from 'react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation } from 'urql';
 import { AuthCard, AuthCardStack } from '@/components/auth';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
+import { useToast } from '@/components/base/toast/toast';
 import { Meta } from '@/components/ui/meta';
-import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { authVerifyEmailRoute } from '@/router';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -118,14 +118,15 @@ function AuthVerifyEmail() {
             <AuthCardStack>
               <p>There was an unexpected error when verifying your email address.</p>
               <Button
-                className="w-full"
+                width="full"
+                onSurface="raised"
                 disabled={sendEmailMutation.fetching}
                 onClick={() => sendEmail(true)}
               >
                 Resend verification email
               </Button>
-              <Button asChild className="w-full" variant="outline">
-                <Link to="/logout">Logout</Link>
+              <Button variant="outline" width="full" render={<Link to="/logout" />}>
+                Logout
               </Button>
             </AuthCardStack>
           }
@@ -140,10 +141,12 @@ function AuthVerifyEmail() {
           description="Your email address has been successfully verified."
           content={
             <AuthCardStack>
-              <Button className="w-full" asChild>
-                <Link to="/" data-button-verify-email-continue>
-                  Continue
-                </Link>
+              <Button
+                width="full"
+                onSurface="raised"
+                render={<Link to="/" data-button-verify-email-continue />}
+              >
+                Continue
               </Button>
             </AuthCardStack>
           }
@@ -158,10 +161,12 @@ function AuthVerifyEmail() {
           content={
             <AuthCardStack>
               <p>{verifyMutation.data?.verifyEmail.error.message}</p>
-              <Button asChild className="w-full">
-                <Link to="/auth" search={{ redirectToPath: '/' }}>
-                  Continue
-                </Link>
+              <Button
+                width="full"
+                onSurface="raised"
+                render={<Link to="/auth" search={{ redirectToPath: '/' }} />}
+              >
+                Continue
               </Button>
             </AuthCardStack>
           }
@@ -195,14 +200,15 @@ function AuthVerifyEmail() {
           </p>
           <Button
             type="button"
-            className="w-full"
+            width="full"
+            onSurface="raised"
             disabled={sendEmailMutation.fetching}
             onClick={() => sendEmail(true)}
           >
             Resend verification email
           </Button>
-          <Button asChild className="w-full" variant="outline">
-            <Link to="/logout">Logout</Link>
+          <Button variant="outline" width="full" render={<Link to="/logout" />}>
+            Logout
           </Button>
         </AuthCardStack>
       }

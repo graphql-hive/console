@@ -1,4 +1,4 @@
-import { createPreview, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { ScrollArea } from './scroll-area';
 
 export const nav: NavPath = 'Base/Primitives/ScrollArea';
@@ -109,3 +109,36 @@ export const Both = createPreview(() => (
     </ScrollArea>
   </div>
 ));
+
+/** Row count against the height steps, to find where each one starts scrolling. */
+export const Playground = createPreview({
+  controls: controlsFor(ScrollArea, {
+    children: {
+      type: 'range',
+      label: 'Rows',
+      min: 1,
+      max: 60,
+      default: 30,
+      derive: count => <Rows count={count} />,
+    },
+    height: {
+      type: 'radio',
+      options: ['unset', 'sm', 'md', 'lg'],
+      default: 'sm',
+      derive: step => (step === 'unset' ? undefined : step),
+    },
+    maxHeight: {
+      type: 'radio',
+      options: ['unset', 'sm', 'md', 'lg', 'screen'],
+      default: 'unset',
+      derive: step => (step === 'unset' ? undefined : step),
+    },
+  }),
+  render: v => (
+    <div className="border-neutral-5 w-72 rounded-md border p-2">
+      <ScrollArea height={v.height} maxHeight={v.maxHeight}>
+        {v.children}
+      </ScrollArea>
+    </div>
+  ),
+});

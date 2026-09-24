@@ -1,5 +1,5 @@
 import { useQuery } from 'urql';
-import { Button } from '@/components/ui/button';
+import { subPageNavigationLinkClasses } from '@/components/navigation/sub-page-navigation-link';
 import { Meta } from '@/components/ui/meta';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { graphql } from '@/gql';
@@ -88,26 +88,16 @@ export function TargetAlertsPage(props: {
       <PageLayout>
         <NavLayout>
           {navItems.map(item => (
-            <Button
+            <Link
               key={item.segment}
-              variant="ghost"
-              className="h-auto justify-start text-left"
-              asChild
+              to={`/$organizationSlug/$projectSlug/$targetSlug/alerts/${item.segment}`}
+              params={params}
+              className={subPageNavigationLinkClasses.base}
+              activeProps={{ className: subPageNavigationLinkClasses.active }}
+              inactiveProps={{ className: subPageNavigationLinkClasses.inactive }}
             >
-              <Link
-                to={`/$organizationSlug/$projectSlug/$targetSlug/alerts/${item.segment}`}
-                params={params}
-                activeProps={{
-                  className:
-                    'text-neutral-12 bg-neutral-5 hover:bg-neutral-5 dark:bg-neutral-3 dark:hover:bg-neutral-3',
-                }}
-                inactiveProps={{
-                  className: 'text-neutral-11 hover:bg-transparent hover:underline',
-                }}
-              >
-                {item.label}
-              </Link>
-            </Button>
+              {item.label}
+            </Link>
           ))}
         </NavLayout>
         <PageLayoutContent>

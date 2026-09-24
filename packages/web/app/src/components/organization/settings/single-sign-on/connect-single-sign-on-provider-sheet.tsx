@@ -1,25 +1,25 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import * as Sheet from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/base/button/button';
+import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { Tabs } from '@/components/base/tabs/tabs';
+import { useToast } from '@/components/base/toast/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation as useRQMutation } from '@tanstack/react-query';
+import {
+  ConnectProviderForm,
+  ConnectProviderFormSchema,
+  OIDCMetadataSchema,
+  OIDCMetadataUrlForm,
+  OIDCMetadataUrlFormSchema,
+  type OIDCMetadataUrlFormValues,
+} from './connect-provider-form';
 
 type ConnectSingleSignOnProviderSheetProps = {
+  open: boolean;
   onClose: () => void;
+  /** Fires once the close transition has finished; the parent remounts the sheet on it. */
+  onOpenChangeComplete: (open: boolean) => void;
   initialValues: null | {
     authorizationEndpoint: string;
     tokenEndpoint: string;
@@ -58,7 +58,7 @@ export function ConnectSingleSignOnProviderSheet(
 ): React.ReactNode {
   const [state, setState] = useState<'discovery' | 'manual'>('discovery');
   const form = useForm({
-    resolver: zodResolver(OIDCMetadataSchema),
+    resolver: zodResolver(ConnectProviderFormSchema),
     defaultValues: {
       authorization_endpoint: props.initialValues?.authorizationEndpoint ?? '',
       token_endpoint: props.initialValues?.tokenEndpoint ?? '',
@@ -127,196 +127,32 @@ export function ConnectSingleSignOnProviderSheet(
   }
 
   const formNode = (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} data-form-oidc>
-        <FormField
-          control={form.control}
-          name="authorization_endpoint"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Authorization Endpoint</FormLabel>
-                <FormControl>
-                  <Input
-                    disabled={state === 'discovery'}
-                    placeholder="https://my.okta.com/oauth2/v1/authorize"
-                    autoComplete="off"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="token_endpoint"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Token Endpoint</FormLabel>
-                <FormControl>
-                  <Input
-                    disabled={state === 'discovery'}
-                    placeholder="https://my.okta.com/oauth2/v1/token"
-                    autoComplete="off"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="userinfo_endpoint"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Userinfo Endpoint</FormLabel>
-                <FormControl>
-                  <Input
-                    disabled={state === 'discovery'}
-                    placeholder="https://my.okta.com/oauth2/v1/userinfo"
-                    autoComplete="off"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="clientId"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Client ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="Client ID" autoComplete="off" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="clientSecret"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Client Secret</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={
-                      props.initialValues
-                        ? `Value ending with ${props.initialValues?.clientSecretPreview}`
-                        : 'Client Secret'
-                    }
-                    autoComplete="off"
-                    type="password"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="userIdClaim"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>User ID Claim</FormLabel>
-                <FormControl>
-                  <Input placeholder="sub" autoComplete="off" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-        <FormField
-          control={form.control}
-          name="additionalScopes"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <FormLabel>Additional Scopes</FormLabel>
-                <FormControl>
-                  <Input placeholder="Separated by spaces" autoComplete="off" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-      </form>
-    </Form>
+    <ConnectProviderForm
+      form={form}
+      onSubmit={onSubmit}
+      endpointsEditable={state === 'manual'}
+      clientSecretPreview={props.initialValues?.clientSecretPreview}
+    />
   );
 
   return (
-    <Sheet.Sheet open onOpenChange={props.onClose}>
-      <Sheet.SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
-        <Sheet.SheetHeader>
-          <Sheet.SheetTitle>Connect OpenID Connect Provider</Sheet.SheetTitle>
-          <Sheet.SheetDescription>
-            Connecting an OIDC provider to this organization allows users to automatically log in
-            and be part of this organization.
-          </Sheet.SheetDescription>
-          <Sheet.SheetDescription>
-            Use Okta, Auth0, Google Workspaces or any other OAuth2 Open ID Connect compatible
-            provider.
-          </Sheet.SheetDescription>
-        </Sheet.SheetHeader>
-        <Tabs value={state}>
-          <TabsList variant="content" className="mt-1">
-            <TabsTrigger
-              variant="content"
-              value="discovery"
-              onClick={() => setState('discovery')}
-              data-button-oidc-discovery
-            >
-              Discovery Document
-            </TabsTrigger>
-            <TabsTrigger
-              variant="content"
-              value="manual"
-              onClick={() => setState('manual')}
-              data-button-oidc-manual
-            >
-              Manual
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="discovery" variant="content">
-            <OIDCMetadataFetcher
-              onEndpointChange={args => {
-                form.setValue('authorization_endpoint', args.authorization, {
-                  shouldValidate: true,
-                });
-                form.setValue('token_endpoint', args.token, {
-                  shouldValidate: true,
-                });
-                form.setValue('userinfo_endpoint', args.userinfo, {
-                  shouldValidate: true,
-                });
-              }}
-            />
-            {formNode}
-          </TabsContent>
-          <TabsContent value="manual" variant="content">
-            {formNode}
-          </TabsContent>
-        </Tabs>
-        <Sheet.SheetFooter className="mb-0 mt-auto">
-          <Button variant="secondary" onClick={props.onClose}>
+    <Sheet
+      open={props.open}
+      onOpenChange={props.onClose}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      title="Connect OpenID Connect Provider"
+      description={
+        <>
+          Connecting an OIDC provider to this organization allows users to automatically log in and
+          be part of this organization.
+          <br />
+          Use Okta, Auth0, Google Workspaces or any other OAuth2 Open ID Connect compatible
+          provider.
+        </>
+      }
+      footer={
+        <>
+          <Button variant="outline" onClick={props.onClose}>
             Abort
           </Button>
           <Button
@@ -327,9 +163,45 @@ export function ConnectSingleSignOnProviderSheet(
           >
             Save
           </Button>
-        </Sheet.SheetFooter>
-      </Sheet.SheetContent>
-    </Sheet.Sheet>
+        </>
+      }
+    >
+      <Tabs
+        value={state}
+        onValueChange={value => setState(value === 'manual' ? 'manual' : 'discovery')}
+        items={[
+          {
+            value: 'discovery',
+            label: 'Discovery Document',
+            attrs: { 'data-button-oidc-discovery': '' },
+            content: (
+              <div className="space-y-2">
+                <OIDCMetadataFetcher
+                  onEndpointChange={args => {
+                    form.setValue('authorization_endpoint', args.authorization, {
+                      shouldValidate: true,
+                    });
+                    form.setValue('token_endpoint', args.token, {
+                      shouldValidate: true,
+                    });
+                    form.setValue('userinfo_endpoint', args.userinfo, {
+                      shouldValidate: true,
+                    });
+                  }}
+                />
+                {formNode}
+              </div>
+            ),
+          },
+          {
+            value: 'manual',
+            label: 'Manual',
+            attrs: { 'data-button-oidc-manual': '' },
+            content: formNode,
+          },
+        ]}
+      />
+    </Sheet>
   );
 }
 
@@ -393,12 +265,12 @@ function OIDCMetadataFetcher(props: {
     },
   });
 
-  function onSubmit(data: z.infer<typeof OIDCMetadataFormSchema>) {
+  function onSubmit(data: OIDCMetadataUrlFormValues) {
     fetchMetadata.mutate(data.url);
   }
 
   const form = useForm({
-    resolver: zodResolver(OIDCMetadataFormSchema),
+    resolver: zodResolver(OIDCMetadataUrlFormSchema),
     defaultValues: {
       url: '',
     },
@@ -406,43 +278,9 @@ function OIDCMetadataFetcher(props: {
   });
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <FormField
-          control={form.control}
-          name="url"
-          render={({ field }) => {
-            return (
-              <FormItem>
-                <div className="flex flex-row justify-center gap-x-4">
-                  <FormControl>
-                    <Input
-                      disabled={fetchMetadata.isPending}
-                      placeholder="https://my.okta.com/.well-known/openid-configuration"
-                      autoComplete="off"
-                      {...field}
-                    />
-                  </FormControl>
-                  <Button type="submit" className="w-48" disabled={fetchMetadata.isPending}>
-                    {fetchMetadata.isPending ? 'Fetching...' : 'Fetch endpoints'}
-                  </Button>
-                </div>
-                <FormDescription>
-                  Provide the OIDC metadata URL to automatically fill in the fields below.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
-      </form>
-    </Form>
+    <OIDCMetadataUrlForm form={form} onSubmit={onSubmit} isPending={fetchMetadata.isPending} />
   );
 }
-
-const OIDCMetadataFormSchema = z.object({
-  url: z.string().url('Must be a valid URL'),
-});
 
 async function fetchOIDCMetadata(url: string) {
   const res = await fetch(url, {
@@ -472,21 +310,3 @@ async function fetchOIDCMetadata(url: string) {
     metadata: await res.json(),
   } as const;
 }
-
-const OIDCMetadataSchema = z.object({
-  token_endpoint: z
-    .string({
-      required_error: 'Token endpoint not found',
-    })
-    .url('Token endpoint must be a valid URL'),
-  userinfo_endpoint: z
-    .string({
-      required_error: 'Userinfo endpoint not found',
-    })
-    .url('Userinfo endpoint must be a valid URL'),
-  authorization_endpoint: z
-    .string({
-      required_error: 'Authorization endpoint not found',
-    })
-    .url('Authorization endpoint must be a valid URL'),
-});

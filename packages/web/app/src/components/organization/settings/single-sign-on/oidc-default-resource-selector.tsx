@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
+import { CheckIcon, XIcon } from 'lucide-react';
 import { useMutation } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
-import { CheckIcon, XIcon } from '@/components/ui/icon';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {

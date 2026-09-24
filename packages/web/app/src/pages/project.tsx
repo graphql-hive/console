@@ -3,13 +3,13 @@ import { endOfDay, formatISO, startOfDay } from 'date-fns';
 import { MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import { Select } from '@/components/base/floating/select/select';
+import { Input } from '@/components/base/input/input';
 import { Separator } from '@/components/base/separator/separator';
 import { ResourceCard } from '@/components/common/resource-card';
 import { Page, ProjectLayout } from '@/components/layouts/project';
-import { Button } from '@/components/ui/button';
 import { EmptyList } from '@/components/ui/empty-list';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -223,18 +223,18 @@ const ProjectsPageContent = (
         </div>
         <div>
           <div className="flex flex-row items-center gap-x-4">
-            <div className="relative">
-              <SearchIcon className="text-neutral-10 absolute left-2.5 top-2.5 size-4" />
+            <div className="w-full md:w-[200px] lg:w-[336px]">
               <Input
                 type="search"
                 placeholder="Search..."
                 defaultValue={props.search}
                 onChange={onSearchChange}
-                className="dark:bg-neutral-3 bg-neutral-2 h-9 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
+                leadingIcon={SearchIcon}
               />
             </div>
             <Separator orientation="vertical" />
             <Select
+              aria-label="Sort targets by"
               options={[
                 {
                   value: 'requests',
@@ -251,13 +251,13 @@ const ProjectsPageContent = (
               value={props.sortBy ?? 'requests'}
               onValueChange={onRequestsValueChange}
             />
-            <Button className="size-9 shrink-0" variant="outline" size="icon" onClick={onSortClick}>
-              {props.sortOrder === 'asc' ? (
-                <MoveUpIcon className="size-4" />
-              ) : (
-                <MoveDownIcon className="size-4" />
-              )}
-            </Button>
+            <Button
+              variant="outline"
+              layout="iconOnly"
+              icon={props.sortOrder === 'asc' ? MoveUpIcon : MoveDownIcon}
+              aria-label={props.sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
+              onClick={onSortClick}
+            />
           </div>
         </div>
       </div>

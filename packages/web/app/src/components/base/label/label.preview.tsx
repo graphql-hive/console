@@ -1,0 +1,76 @@
+import { useState } from 'react';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { Select } from '../floating/select/select';
+import { Input } from '../input/input';
+import { Switch } from '../switch/switch';
+import { Label } from './label';
+
+export const nav: NavPath = 'Base/FormControls/Label';
+
+/**
+ * A label on its own, for a control that is not inside a Form. Text only; small caps over a
+ * control by default, the same look as a form label; `inline` beside a switch or a checkbox in a
+ * row. A `tooltip` puts an explanation behind an icon beside it, the same slot FormLabel has.
+ */
+
+/** The CDN dialog: a label over each select, pointing at the trigger. */
+export const OverAControl = createPreview(() => {
+  const [graph, setGraph] = useState('DEFAULT_GRAPH');
+  return (
+    <div className="flex gap-3">
+      <div>
+        <Label htmlFor="cdn-graph" label="Graph Variant" />
+        <Select
+          id="cdn-graph"
+          options={[
+            { value: 'DEFAULT_GRAPH', label: 'Default Graph' },
+            { value: 'mobile', label: 'mobile' },
+          ]}
+          value={graph}
+          onValueChange={setGraph}
+          width="md"
+        />
+      </div>
+      <div>
+        <Label
+          htmlFor="proposal-title"
+          label="Title"
+          tooltip="Shown in the proposals list and in notifications."
+        />
+        <Input id="proposal-title" placeholder="A title for the proposal" />
+      </div>
+    </div>
+  );
+});
+
+/** The checks list filters: a label and a switch at each end of a row. */
+export const Inline = createPreview(() => {
+  const [changed, setChanged] = useState(true);
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="flex w-72 flex-col">
+      <div className="flex h-9 flex-row items-center justify-between">
+        <Label htmlFor="filter-changed" label="Show only changed schemas" variant="inline" />
+        <Switch id="filter-changed" checked={changed} onCheckedChange={setChanged} />
+      </div>
+      <div className="flex h-9 flex-row items-center justify-between">
+        <Label htmlFor="filter-failed" label="Show only failed checks" variant="inline" />
+        <Switch id="filter-failed" checked={failed} onCheckedChange={setFailed} />
+      </div>
+    </div>
+  );
+});
+
+export const Playground = createPreview({
+  controls: controlsFor(Label, {
+    label: { type: 'text', default: 'Graph Variant' },
+    variant: { type: 'radio', options: ['caps', 'inline'], default: 'caps' },
+    tooltip: { type: 'text', default: '', derive: text => text || undefined },
+  }),
+  render: v => (
+    <div>
+      <Label htmlFor="playground-input" label={v.label} variant={v.variant} tooltip={v.tooltip} />
+      <Input id="playground-input" placeholder="Type here" />
+    </div>
+  ),
+});

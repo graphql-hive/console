@@ -45,6 +45,13 @@ export async function schemaPublish(args: string[]) {
   );
 }
 
+export async function schemaPush(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+  return await exec(
+    ['schema:push', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
 export async function introspect(args: string[]) {
   return await exec(['introspect', ...args].join(' '));
 }

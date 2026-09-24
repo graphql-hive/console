@@ -1,76 +1,27 @@
-import { useCallback, useState } from 'react';
-import { LockIcon, MoreHorizontalIcon } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { LockIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Menu } from '@/components/base/floating/menu/menu';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 import { PermissionSelector } from './permission-selector';
+import { RoleFields, RoleForm, RoleFormSchema, type RoleFormValues } from './role-form';
 import { SelectedPermissionOverview } from './selected-permission-overview';
-
-export const roleFormSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Required',
-    })
-    .trim()
-    .min(2, 'Too short')
-    .max(64, 'Max 64 characters long')
-    .refine(
-      val => typeof val === 'string' && val.length > 0 && val[0] === val[0].toUpperCase(),
-      'Must start with a capital letter',
-    )
-    .refine(val => val !== 'Viewer' && val !== 'Admin', 'Viewer and Admin are reserved'),
-  description: z
-    .string({
-      required_error: 'Please enter role description',
-    })
-    .trim()
-    .min(2, 'Too short')
-    .max(256, 'Description is too long'),
-  selectedPermissions: z.array(z.string()),
-});
-
-type RoleFormValues = z.infer<typeof roleFormSchema>;
 
 const OrganizationMemberRoleEditor_UpdateMemberRoleMutation = graphql(`
   mutation OrganizationMemberRoleEditor_UpdateMemberRoleMutation($input: UpdateMemberRoleInput!) {
@@ -118,7 +69,7 @@ function OrganizationMemberRoleEditor(props: {
   const { toast } = useToast();
   const isDisabled = updateMemberRoleState.fetching;
   const form = useForm<RoleFormValues>({
-    resolver: zodResolver(roleFormSchema),
+    resolver: zodResolver(RoleFormSchema),
     mode: 'onChange',
     defaultValues: {
       name: role.name,
@@ -194,70 +145,36 @@ function OrganizationMemberRoleEditor(props: {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <DialogContent className="max-w-[960px]">
-          <DialogHeader>
-            <DialogTitle>Member Role Editor</DialogTitle>
-            <DialogDescription>Adjust the permissions of this role.</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-row space-x-6">
-            <div className="w-72 shrink-0 space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter a name" type="text" autoComplete="off" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Enter a description" autoComplete="off" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grow">
-              <div className="flex h-[400px] flex-col space-y-2">
-                <FormLabel>Permissions</FormLabel>
-                <ScrollArea fill>
-                  <PermissionSelector
-                    onSelectedPermissionsChange={onChangeSelectedPermissions}
-                    permissionGroups={organization.availableMemberPermissionGroups}
-                    selectedPermissionIds={selectedPermissions}
-                  />
-                </ScrollArea>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={props.close}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              onClick={form.handleSubmit(onSubmit)}
-              disabled={form.formState.isSubmitting || form.formState.disabled}
-            >
-              {form.formState.isSubmitting ? 'Creating...' : 'Confirm selection'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </form>
-    </Form>
+    <RoleForm
+      form={form}
+      onSubmit={onSubmit}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={props.close}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            onSurface="raised"
+            disabled={form.formState.isSubmitting || form.formState.disabled}
+          >
+            {form.formState.isSubmitting ? 'Creating...' : 'Confirm selection'}
+          </Button>
+        </>
+      }
+    >
+      <RoleFields
+        form={form}
+        permissions={
+          <PermissionSelector
+            onSurface="raised"
+            onSelectedPermissionsChange={onChangeSelectedPermissions}
+            permissionGroups={organization.availableMemberPermissionGroups}
+            selectedPermissionIds={selectedPermissions}
+          />
+        }
+      />
+    </RoleForm>
   );
 }
 
@@ -284,23 +201,17 @@ function OrganizationMemberRoleView(props: {
   const [showOnlyGrantedPermissions, setShowOnlyGrantedPermissions] = useState(true);
 
   return (
-    <DialogContent className="max-w-[960px]">
-      <DialogHeader>
-        <DialogTitle>Member Role: {role.name}</DialogTitle>
-        <DialogDescription>{role.description}</DialogDescription>
-      </DialogHeader>
-      <div className="grow">
-        <div className="flex h-[400px] flex-col space-y-2">
-          <ScrollArea fill>
-            <SelectedPermissionOverview
-              showOnlyAllowedPermissions={showOnlyGrantedPermissions}
-              activePermissionIds={role.permissions}
-              permissionsGroups={organization.availableMemberPermissionGroups}
-            />
-          </ScrollArea>
-        </div>
+    <div className="flex flex-col gap-4">
+      <div className="flex h-[400px] flex-col space-y-2">
+        <ScrollArea fill>
+          <SelectedPermissionOverview
+            showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+            activePermissionIds={role.permissions}
+            permissionsGroups={organization.availableMemberPermissionGroups}
+          />
+        </ScrollArea>
       </div>
-      <DialogFooter>
+      <div className="flex items-center justify-end gap-2">
         <div className="mr-2 flex items-center space-x-2">
           <Checkbox
             id="show-only-granted-permissions"
@@ -317,8 +228,8 @@ function OrganizationMemberRoleView(props: {
         <Button variant="ghost" onClick={props.close}>
           Close
         </Button>
-      </DialogFooter>
-    </DialogContent>
+      </div>
+    </div>
   );
 }
 
@@ -375,7 +286,7 @@ function OrganizationMemberRoleCreator(props: {
   );
   const { toast } = useToast();
   const form = useForm<RoleFormValues>({
-    resolver: zodResolver(roleFormSchema),
+    resolver: zodResolver(RoleFormSchema),
     mode: 'onChange',
     defaultValues: {
       name: '',
@@ -449,128 +360,85 @@ function OrganizationMemberRoleCreator(props: {
     }
   }
 
+  const goToConfirm = () => setState('confirm');
+
   return (
-    <Form {...form}>
-      <form>
-        <DialogContent className="max-w-[960px]">
-          <DialogHeader>
-            <DialogTitle>Member Role Creator</DialogTitle>
-            <DialogDescription>
-              Create a new role that can be assigned to members of this organization.
-            </DialogDescription>
-          </DialogHeader>
-          {state === 'select' ? (
-            <div className="flex flex-row space-x-6">
-              <div className="w-72 shrink-0 space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter a name"
-                          type="text"
-                          autoComplete="off"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea autoComplete="off" placeholder="Enter a description" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grow">
-                <div className="flex h-[400px] flex-col space-y-2">
-                  <FormLabel>Permissions</FormLabel>
-                  <ScrollArea fill>
-                    <PermissionSelector
-                      onSelectedPermissionsChange={onChangeSelectedPermissions}
-                      permissionGroups={organization.availableMemberPermissionGroups}
-                      selectedPermissionIds={selectedPermissions}
-                    />
-                  </ScrollArea>
-                </div>
-              </div>
+    // The step buttons are not submit buttons: React reuses a footer button's element across
+    // steps, and a click that turns it into a submit button submits the form.
+    <RoleForm
+      form={form}
+      onSubmit={state === 'select' ? goToConfirm : onSubmit}
+      footer={
+        state === 'select' ? (
+          <>
+            <Button type="button" variant="ghost" onClick={props.close}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onSurface="raised"
+              onClick={form.handleSubmit(goToConfirm)}
+              disabled={form.formState.isSubmitting || form.formState.disabled}
+            >
+              Confirm selection
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="mr-2 flex items-center space-x-2">
+              <Checkbox
+                id="show-only-granted-permissions"
+                checked={showOnlyGrantedPermissions}
+                onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
+              />
+              <label
+                htmlFor="show-only-granted-permissions"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Show only granted permissions
+              </label>
             </div>
-          ) : (
-            <div className="flex h-[400px] flex-col">
-              <ScrollArea fill>
-                <SelectedPermissionOverview
-                  activePermissionIds={Array.from(selectedPermissions)}
-                  permissionsGroups={organization.availableMemberPermissionGroups}
-                  showOnlyAllowedPermissions={showOnlyGrantedPermissions}
-                />
-              </ScrollArea>
-            </div>
-          )}
-          <DialogFooter>
-            {state === 'select' ? (
-              <>
-                <Button variant="ghost" onClick={props.close}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  onClick={async () => {
-                    const isValid = await form.trigger();
-                    if (!isValid) {
-                      return;
-                    }
-                    setState('confirm');
-                  }}
-                  disabled={form.formState.isSubmitting || form.formState.disabled}
-                >
-                  Confirm selection
-                </Button>
-              </>
-            ) : (
-              <>
-                <div className="mr-2 flex items-center space-x-2">
-                  <Checkbox
-                    id="show-only-granted-permissions"
-                    checked={showOnlyGrantedPermissions}
-                    onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
-                  />
-                  <label
-                    htmlFor="show-only-granted-permissions"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Show only granted permissions
-                  </label>
-                </div>
-                <Button variant="ghost" onClick={() => setState('select')}>
-                  Go back
-                </Button>
-                <Button
-                  type="submit"
-                  onClick={form.handleSubmit(onSubmit)}
-                  disabled={form.formState.isSubmitting || form.formState.disabled}
-                >
-                  {form.formState.isSubmitting
-                    ? 'Creating...'
-                    : `Create role "${form.getValues().name}"`}
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </form>
-    </Form>
+            <Button type="button" variant="ghost" onClick={() => setState('select')}>
+              Go back
+            </Button>
+            <Button
+              type="button"
+              onSurface="raised"
+              onClick={form.handleSubmit(onSubmit)}
+              disabled={form.formState.isSubmitting || form.formState.disabled}
+            >
+              {form.formState.isSubmitting
+                ? 'Creating...'
+                : `Create role "${form.getValues().name}"`}
+            </Button>
+          </>
+        )
+      }
+    >
+      {state === 'select' ? (
+        <RoleFields
+          form={form}
+          permissions={
+            <PermissionSelector
+              onSurface="raised"
+              onSelectedPermissionsChange={onChangeSelectedPermissions}
+              permissionGroups={organization.availableMemberPermissionGroups}
+              selectedPermissionIds={selectedPermissions}
+            />
+          }
+        />
+      ) : (
+        <div className="flex h-[400px] flex-col">
+          <ScrollArea fill>
+            <SelectedPermissionOverview
+              activePermissionIds={Array.from(selectedPermissions)}
+              permissionsGroups={organization.availableMemberPermissionGroups}
+              showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+            />
+          </ScrollArea>
+        </div>
+      )}
+    </RoleForm>
   );
 }
 
@@ -578,18 +446,28 @@ function OrganizationMemberRoleCreateButton(props: {
   organization: FragmentType<typeof OrganizationMemberRoleCreator_OrganizationFragment>;
 }) {
   const [open, setOpen] = useState(false);
+  // Bumped on each open so the creator starts fresh without remounting the dialog.
+  const [session, setSession] = useState(0);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>Create a new role</Button>
-      </DialogTrigger>
-      {open ? (
-        <OrganizationMemberRoleCreator
-          organization={props.organization}
-          close={() => setOpen(false)}
-        />
-      ) : null}
+    <Dialog
+      open={open}
+      onOpenChange={next => {
+        if (next) {
+          setSession(s => s + 1);
+        }
+        setOpen(next);
+      }}
+      trigger={<Button>Create a new role</Button>}
+      width="xl"
+      title="Member Role Creator"
+      description="Create a new role that can be assigned to members of this organization."
+    >
+      <OrganizationMemberRoleCreator
+        key={session}
+        organization={props.organization}
+        close={() => setOpen(false)}
+      />
     </Dialog>
   );
 }
@@ -607,127 +485,137 @@ const OrganizationMemberRoleRow_MemberRoleFragment = graphql(`
   }
 `);
 
-function OrganizationMemberRoleRow(props: {
+type RoleNode = FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>;
+
+function RoleNameCell(props: {
+  role: RoleNode;
   organizationSlug: string;
-  canChangeOIDCDefaultRole: boolean;
   isOIDCDefaultRole: boolean;
-  role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>;
-  onEdit(role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>): void;
-  onDelete(role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>): void;
-  onShow(role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>): void;
+  canChangeOIDCDefaultRole: boolean;
+}) {
+  const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
+  const trailing =
+    role.isLocked || props.isOIDCDefaultRole ? (
+      <>
+        {role.isLocked ? (
+          <Tooltip
+            trigger={
+              <span className="inline-flex">
+                <LockIcon className="size-4" />
+              </span>
+            }
+            side="right"
+            content={
+              <div className="flex flex-col items-start gap-y-1 p-2">
+                <div className="text-xs font-medium">This role is locked</div>
+                <div className="text-neutral-10 text-xs">
+                  Locked roles are created by the system and cannot be modified or deleted.
+                </div>
+              </div>
+            }
+          />
+        ) : null}
+        {props.isOIDCDefaultRole ? (
+          <Popover
+            trigger={
+              <button type="button" aria-label="About the default role">
+                <Badge content="default" variants={{ variant: 'outline' }} />
+              </button>
+            }
+            openOnHover
+            side="right"
+            content={
+              <div className="flex flex-col items-start gap-y-2">
+                <div className="font-medium">Default role for new members</div>
+                <div className="text-neutral-10 text-sm">
+                  <p>New members will be assigned to this role by default.</p>
+                  {props.canChangeOIDCDefaultRole ? (
+                    <p>
+                      You can change it in the{' '}
+                      <Link
+                        to="/$organizationSlug/view/settings"
+                        hash="manage-oidc-integration"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                        }}
+                        className="underline"
+                      >
+                        OIDC settings
+                      </Link>
+                      .
+                    </p>
+                  ) : (
+                    <p>Only admins can change it in the OIDC settings.</p>
+                  )}
+                </div>
+              </div>
+            }
+          />
+        ) : null}
+      </>
+    ) : undefined;
+  return <DataTableCell kind="text" value={role.name} weight="medium" trailing={trailing} />;
+}
+
+function RoleDescriptionCell(props: { role: RoleNode }) {
+  const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
+  return (
+    <DataTableCell
+      kind="text"
+      value={<span title={role.description}>{role.description}</span>}
+      tone="muted"
+      truncate
+    />
+  );
+}
+
+function RoleMembersCell(props: { role: RoleNode }) {
+  const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
+  return (
+    <DataTableCell
+      kind="text"
+      value={`${role.membersCount} ${role.membersCount === 1 ? 'member' : 'members'}`}
+    />
+  );
+}
+
+function RoleActionsCell(props: {
+  role: RoleNode;
+  onShow(): void;
+  onEdit(): void;
+  onDelete(): void;
 }) {
   const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
   return (
-    <tr>
-      <td className="py-3 text-sm font-medium">
-        <div className="flex flex-row items-center">
-          <div>{role.name}</div>
-          {role.isLocked ? (
-            <div className="ml-2">
-              <Tooltip
-                trigger={
-                  <span className="inline-flex">
-                    <LockIcon className="size-4" />
-                  </span>
-                }
-                side="right"
-                content={
-                  <div className="flex flex-col items-start gap-y-1 p-2">
-                    <div className="text-xs font-medium">This role is locked</div>
-                    <div className="text-neutral-10 text-xs">
-                      Locked roles are created by the system and cannot be modified or deleted.
-                    </div>
-                  </div>
-                }
-              />
-            </div>
-          ) : null}
-          {props.isOIDCDefaultRole ? (
-            <div className="ml-2">
-              <Popover
-                trigger={
-                  <button type="button" aria-label="About the default role">
-                    <Badge content="default" variants={{ variant: 'outline' }} />
-                  </button>
-                }
-                openOnHover
-                side="right"
-                content={
-                  <div className="flex flex-col items-start gap-y-2">
-                    <div className="font-medium">Default role for new members</div>
-                    <div className="text-neutral-10 text-sm">
-                      <p>New members will be assigned to this role by default.</p>
-                      {props.canChangeOIDCDefaultRole ? (
-                        <p>
-                          You can change it in the{' '}
-                          <Link
-                            to="/$organizationSlug/view/settings"
-                            hash="manage-oidc-integration"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                            }}
-                            className="underline"
-                          >
-                            OIDC settings
-                          </Link>
-                          .
-                        </p>
-                      ) : (
-                        <p>Only admins can change it in the OIDC settings.</p>
-                      )}
-                    </div>
-                  </div>
-                }
-              />
-            </div>
-          ) : null}
-        </div>
-      </td>
-      <td className="text-neutral-10 break-words py-3 text-sm" title={role.description}>
-        {role.description}
-      </td>
-      <td className="py-3 text-center text-sm">
-        {role.membersCount} {role.membersCount === 1 ? 'member' : 'members'}
-      </td>
-      <td className="py-3 text-right text-sm">
-        <Menu
-          align="end"
-          width="sm"
-          trigger={
-            <Button variant="ghost" className="data-[popup-open]:bg-neutral-3 flex size-8 p-0">
-              <MoreHorizontalIcon className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          }
-          sections={[
-            [
-              { label: 'Show', onClick: () => props.onShow(props.role) },
-              {
-                label: 'Edit',
-                onClick: () => props.onEdit(props.role),
-                disabled: !role.canUpdate,
-                // Only set when it applies, so an allowed row gets no tooltip wrapper at all.
-                tooltip: role.canUpdate
-                  ? undefined
-                  : "You cannot edit this role as you don't have enough permissions.",
-              },
-              {
-                label: 'Delete',
-                onClick: () => props.onDelete(props.role),
-                disabled: !role.canDelete,
-                tooltip: role.canDelete
-                  ? undefined
-                  : `You cannot delete this role as ${
-                      role.membersCount > 0
-                        ? 'it has members.'
-                        : "you don't have enough permissions."
-                    }`,
-              },
-            ],
-          ]}
-        />
-      </td>
-    </tr>
+    <DataTableCell
+      kind="actions"
+      label={`Actions for ${role.name}`}
+      sections={[
+        [
+          { label: 'Show', onClick: props.onShow },
+          {
+            label: 'Edit',
+            onClick: props.onEdit,
+            disabled: !role.canUpdate,
+            // Only set when it applies, so an allowed row gets no tooltip wrapper at all.
+            tooltip: role.canUpdate
+              ? undefined
+              : "You cannot edit this role as you don't have enough permissions.",
+          },
+          {
+            label: 'Delete',
+            variant: 'destructiveAction',
+            onClick: props.onDelete,
+            disabled: !role.canDelete,
+            tooltip: role.canDelete
+              ? undefined
+              : `You cannot delete this role as ${
+                  role.membersCount > 0 ? 'it has members.' : "you don't have enough permissions."
+                }`,
+          },
+        ],
+      ]}
+    />
   );
 }
 
@@ -814,6 +702,62 @@ export function OrganizationMemberRoles(props: {
   const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
   const [roleToShow, setRoleToShow] = useState<Role | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+  // Each dialog keeps its last role while it closes, so the exit transition is not empty, and a
+  // session counter remounts the editor and viewer on every open so they start from the role.
+  const editRole = useKeepPreviousData(roleToEdit ?? undefined, roleToEdit === null);
+  const showRole = useKeepPreviousData(roleToShow ?? undefined, roleToShow === null);
+  const showRoleHeader = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, showRole);
+  const deleteTarget = useKeepPreviousData(roleToDelete ?? undefined, roleToDelete === null);
+  const [session, setSession] = useState(0);
+  const openFor = (set: (role: Role) => void) => (role: Role) => {
+    setSession(s => s + 1);
+    set(role);
+  };
+
+  const defaultMemberRoleId = organization.oidcIntegration?.defaultMemberRole?.id;
+  const canChangeOIDCDefaultRole = organization.me?.role?.name === 'Admin';
+  const columns = useMemo<ColumnDef<NonNullable<Role>, unknown>[]>(
+    () => [
+      {
+        id: 'name',
+        header: 'Name',
+        meta: { width: 'md' },
+        cell: ({ row }) => (
+          <RoleNameCell
+            role={row.original}
+            organizationSlug={organization.slug}
+            isOIDCDefaultRole={defaultMemberRoleId === row.original.id}
+            canChangeOIDCDefaultRole={canChangeOIDCDefaultRole}
+          />
+        ),
+      },
+      {
+        id: 'description',
+        header: 'Description',
+        meta: { width: 'fill' },
+        cell: ({ row }) => <RoleDescriptionCell role={row.original} />,
+      },
+      {
+        id: 'members',
+        header: 'Members',
+        meta: { align: 'center', width: 'sm' },
+        cell: ({ row }) => <RoleMembersCell role={row.original} />,
+      },
+      {
+        id: 'actions',
+        meta: { width: 'xs' },
+        cell: ({ row }) => (
+          <RoleActionsCell
+            role={row.original}
+            onShow={() => openFor(setRoleToShow)(row.original)}
+            onEdit={() => openFor(setRoleToEdit)(row.original)}
+            onDelete={() => setRoleToDelete(row.original)}
+          />
+        ),
+      },
+    ],
+    [organization.slug, defaultMemberRoleId, canChangeOIDCDefaultRole],
+  );
 
   return (
     <>
@@ -824,11 +768,15 @@ export function OrganizationMemberRoles(props: {
             setRoleToEdit(null);
           }
         }}
+        width="xl"
+        title="Member Role Editor"
+        description="Adjust the permissions of this role."
       >
-        {roleToEdit ? (
+        {editRole ? (
           <OrganizationMemberRoleEditor
+            key={session}
             organization={organization}
-            role={roleToEdit}
+            role={editRole}
             close={() => setRoleToEdit(null)}
           />
         ) : null}
@@ -840,11 +788,15 @@ export function OrganizationMemberRoles(props: {
             setRoleToShow(null);
           }
         }}
+        width="xl"
+        title={`Member Role: ${showRoleHeader?.name ?? ''}`}
+        description={showRoleHeader?.description}
       >
-        {roleToShow ? (
+        {showRole ? (
           <OrganizationMemberRoleView
+            key={session}
             organization={organization}
-            role={roleToShow}
+            role={showRole}
             close={() => setRoleToShow(null)}
           />
         ) : null}
@@ -856,91 +808,68 @@ export function OrganizationMemberRoles(props: {
             setRoleToDelete(null);
           }
         }}
-      >
-        {roleToDelete ? (
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete{' '}
-                <strong>{roleToDelete.name}</strong> from the organization.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleteRoleState.fetching}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                disabled={deleteRoleState.fetching}
-                onClick={async event => {
-                  event.preventDefault();
+        title="Are you absolutely sure?"
+        description={
+          <>
+            This action cannot be undone. This will permanently delete{' '}
+            <strong>{deleteTarget?.name}</strong> from the organization.
+          </>
+        }
+        confirm={{
+          label: deleteRoleState.fetching ? 'Deleting...' : 'Continue',
+          variant: 'destructive',
+          disabled: deleteRoleState.fetching,
+          onClick: async () => {
+            if (!roleToDelete) {
+              return;
+            }
+            try {
+              const result = await deleteRole({
+                input: {
+                  memberRole: {
+                    byId: roleToDelete.id,
+                  },
+                },
+              });
 
-                  try {
-                    const result = await deleteRole({
-                      input: {
-                        memberRole: {
-                          byId: roleToDelete.id,
-                        },
-                      },
-                    });
-
-                    if (result.error) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Failed to delete a role',
-                        description: result.error.message,
-                      });
-                    } else {
-                      toast({
-                        title: 'Role deleted',
-                      });
-                      setRoleToDelete(null);
-                    }
-                  } catch (error) {
-                    console.log('Failed to delete a role');
-                    console.error(error);
-                    toast({
-                      variant: 'destructive',
-                      title: 'Failed to delete a role',
-                      description: String(error),
-                    });
-                  }
-                }}
-              >
-                {deleteRoleState.fetching ? 'Deleting...' : 'Continue'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        ) : null}
-      </AlertDialog>
+              if (result.error) {
+                toast({
+                  variant: 'destructive',
+                  title: 'Failed to delete a role',
+                  description: result.error.message,
+                });
+              } else {
+                toast({
+                  title: 'Role deleted',
+                });
+                setRoleToDelete(null);
+              }
+            } catch (error) {
+              console.log('Failed to delete a role');
+              console.error(error);
+              toast({
+                variant: 'destructive',
+                title: 'Failed to delete a role',
+                description: String(error),
+              });
+            }
+          },
+        }}
+        cancel={{ disabled: deleteRoleState.fetching }}
+      />
       <SubPageLayout>
         <SubPageLayoutHeader
           subPageTitle="List of roles"
           description="Manage the roles that can be assigned to members of this organization."
           sideContent={<OrganizationMemberRoleCreateButton organization={organization} />}
         />
-        <table className="divide-neutral-10/20 w-full table-auto divide-y-[1px]">
-          <thead>
-            <tr>
-              <th className="min-w-[200px] py-3 text-left text-sm font-semibold">Name</th>
-              <th className="py-3 text-left text-sm font-semibold">Description</th>
-              <th className="min-w-[150px] py-3 text-center text-sm font-semibold">Members</th>
-              <th className="w-12 py-3 text-right text-sm font-semibold" />
-            </tr>
-          </thead>
-          <tbody className="divide-neutral-10/20 divide-y-[1px]">
-            {organization.memberRoles?.edges.map(({ node: role }) => (
-              <OrganizationMemberRoleRow
-                organizationSlug={organization.slug}
-                isOIDCDefaultRole={organization.oidcIntegration?.defaultMemberRole?.id === role.id}
-                canChangeOIDCDefaultRole={organization.me?.role?.name === 'Admin'}
-                key={role.id}
-                role={role}
-                onEdit={() => setRoleToEdit(role)}
-                onDelete={() => setRoleToDelete(role)}
-                onShow={() => setRoleToShow(role)}
-              />
-            ))}
-          </tbody>
-        </table>
+        <DataTable
+          data={organization.memberRoles?.edges.map(({ node }) => node) ?? []}
+          columns={columns}
+          getRowId={role => role.id}
+          pagination={{ kind: 'none' }}
+          emptyMessage="No roles yet."
+        />
       </SubPageLayout>
     </>
   );

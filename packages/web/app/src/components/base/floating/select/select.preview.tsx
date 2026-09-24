@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { createPreview, type NavPath } from 'react-foundry';
+import { AlertTriangle, Check, GitCompare } from 'lucide-react';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../../button/button';
 import { Select, type SelectOption } from './select';
 
@@ -210,6 +211,35 @@ export const WithTooltips = createPreview(() => {
  * (36px) is what a select in a form gets; `compact` (30px) is for a select that sits in a filter
  * row beside chips and a date picker, which are 30px.
  */
+/**
+ * `trailing` sits at the row's far end, clear of the selection check in the leading slot: a
+ * status, a count, a shortcut. The contract pickers on the check and version pages put each
+ * contract's composition status there.
+ */
+export const WithTrailing = createPreview(() => {
+  const [value, setValue] = useState('default');
+  return (
+    <Select
+      options={[
+        {
+          value: 'default',
+          label: 'Default Graph',
+          trailing: <AlertTriangle className="text-warning size-3.5" />,
+        },
+        { value: 'public-api', label: 'public-api', trailing: <GitCompare className="size-3.5" /> },
+        {
+          value: 'partner-api',
+          label: 'partner-api',
+          trailing: <Check className="text-success size-3.5" />,
+        },
+      ]}
+      value={value}
+      onValueChange={setValue}
+      width="md"
+    />
+  );
+});
+
 export const Sizes = createPreview(() => (
   <div className="flex flex-col gap-4">
     <div className="flex items-center gap-4">
@@ -289,4 +319,66 @@ export const OnSurface = createPreview(() => {
       </div>
     </div>
   );
+});
+
+export const Playground = createPreview({
+  controls: controlsFor(Select, {
+    options: {
+      type: 'list',
+      of: {
+        value: { type: 'text' },
+        label: { type: 'text', default: 'Option' },
+        description: { type: 'text' },
+        tooltip: { type: 'text' },
+        disabled: { type: 'boolean', default: false },
+      },
+      default: [
+        {
+          value: 'requests',
+          label: 'Requests',
+          description: 'GraphQL requests made in the last 30 days.',
+        },
+        {
+          value: 'versions',
+          label: 'Schema Versions',
+          description: 'Schemas published in last 30 days.',
+        },
+        { value: 'name', label: 'Name', description: 'Sort by project name.' },
+      ],
+    },
+    placeholder: { type: 'text', default: 'Select…' },
+    // The trigger reads `label ?? selectedLabel ?? placeholder`, so an empty string would blank it.
+    label: { type: 'text', default: '', derive: text => text || undefined },
+    searchable: { type: 'boolean', default: false },
+    disabled: { type: 'boolean', default: false },
+    matchTriggerWidth: { type: 'boolean', default: false },
+    size: { type: 'radio', options: ['default', 'compact'], default: 'default' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
+    width: { type: 'radio', options: ['auto', 'sm', 'md', 'lg', 'full'], default: 'auto' },
+    side: { type: 'radio', options: ['bottom', 'top', 'left', 'right'], default: 'bottom' },
+    align: { type: 'radio', options: ['start', 'center', 'end'], default: 'start' },
+  }),
+  // Starts unselected so the placeholder shows; picking an option fills the trigger.
+  render: v => {
+    const [value, setValue] = useState<string | undefined>(undefined);
+    return (
+      <div className="w-[28rem]">
+        <Select
+          options={v.options}
+          value={value}
+          onValueChange={setValue}
+          placeholder={v.placeholder}
+          label={v.label}
+          searchable={v.searchable}
+          disabled={v.disabled}
+          matchTriggerWidth={v.matchTriggerWidth}
+          size={v.size}
+          onSurface={v.onSurface}
+          width={v.width}
+          side={v.side}
+          align={v.align}
+        />
+      </div>
+    );
+  },
 });

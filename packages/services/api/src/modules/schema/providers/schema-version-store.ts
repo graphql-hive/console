@@ -17,6 +17,7 @@ import {
 import type { Project, Target } from '../../../shared/entities';
 import { batch, cache } from '../../../shared/helpers';
 import { Logger, NoopLogger } from '../../shared/providers/logger';
+import { SchemaRevisionStore } from './schema-revision-store';
 
 @Injectable({
   scope: Scope.Operation,
@@ -168,6 +169,7 @@ export class SchemaVersionStore {
       schema: string;
       projectId: string;
       metadata: string | null;
+      schemaRevisionId: string | null;
     },
   ) {
     const query = psql`/* insertSchemaLog */
@@ -180,6 +182,7 @@ export class SchemaVersionStore {
           "sdl",
           "project_id",
           "metadata",
+          "schema_revision_id",
           "action"
         )
       VALUES
@@ -191,6 +194,7 @@ export class SchemaVersionStore {
         ${args.schema}::text,
         ${args.projectId},
         ${args.metadata},
+        ${args.schemaRevisionId},
         'PUSH'
       )
       RETURNING
@@ -299,6 +303,8 @@ export class SchemaVersionStore {
       targetId: string;
       projectId: string;
       organizationId: string;
+      schemaRevisionId: string | null;
+      revision: string | null;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -332,7 +338,12 @@ export class SchemaVersionStore {
         schema: args.schema,
         service: args.service?.name ?? null,
         url: args.service?.url ?? null,
+        schemaRevisionId: args.schemaRevisionId,
       });
+
+      if (args.schemaRevisionId) {
+        await SchemaRevisionStore.markPublished(args.schemaRevisionId, trx);
+      }
 
       // creates a new version
       const version = await this.insertSchemaVersion(trx, {
@@ -340,11 +351,13 @@ export class SchemaVersionStore {
         targetId: args.targetId,
         origin: {
           type: 'publish',
+          revision: args.service ? null : args.revision,
           services: args.service
             ? [
                 {
                   name: args.service.name,
                   versionId: newLog.id,
+                  revision: args.revision,
                 },
               ]
             : null,
@@ -804,6 +817,33 @@ export class SchemaVersionStore {
         `,
       )
       .then(z.array(SchemaPushLogModel).parse);
+  }
+
+  async getSchemaRevisionsBySchemaLogIds(schemaLogIds: Array<string>) {
+    if (schemaLogIds.length === 0) {
+      return new Map<string, string>();
+    }
+
+    const rows = await this.pg.any(psql`/* getSchemaRevisionsBySchemaLogIds */
+      SELECT
+        "schema_log"."id" AS "schemaLogId"
+        , "schema_revisions"."revision"
+      FROM
+        "schema_log"
+      INNER JOIN
+        "schema_revisions"
+      ON
+        "schema_revisions"."id" = "schema_log"."schema_revision_id"
+      WHERE
+        "schema_log"."id" = ANY(${psql.array(schemaLogIds, 'uuid')})
+    `);
+
+    return new Map(
+      z
+        .array(z.object({ schemaLogId: z.string(), revision: z.string() }))
+        .parse(rows)
+        .map(row => [row.schemaLogId, row.revision]),
+    );
   }
 
   async getServiceSchemaOfVersion(schemaVersion: SchemaVersion, serviceName: string) {
@@ -1486,6 +1526,7 @@ const schemaLogFields = (prefix = psql``) => psql`
   , lower(${prefix}"service_name") AS "service_name"
   , ${prefix}"service_url"
   , ${prefix}"action"
+  , ${prefix}"schema_revision_id" AS "schemaRevisionId"
 `;
 
 export type CreateContractVersionInput = {
@@ -1507,6 +1548,7 @@ const SchemaLogBase = z.object({
 const SchemaPushLogBase = SchemaLogBase.extend({
   sdl: z.string(),
   metadata: z.string().nullish().default(null),
+  schemaRevisionId: z.string().nullable(),
 });
 
 const SinglePushSchemaLogModel = SchemaPushLogBase.extend({
@@ -1577,12 +1619,14 @@ const SchemaVersionOriginPromotionModel = z.object({
 
 const SchemaVersionOriginPublishModel = z.object({
   type: z.literal('publish'),
+  revision: z.string().nullable().optional(),
   /** This is nullable in case it is a monolith. */
   services: z
     .array(
       z.object({
         name: z.string(),
         versionId: z.string(),
+        revision: z.string().nullable().optional(),
       }),
     )
     .nullable(),

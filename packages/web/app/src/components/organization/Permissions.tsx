@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { Select } from '@/components/base/floating/select/select';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import type { OnSurface } from '@/components/base/shared-styles';
 import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@/gql/graphql';
 import { NoAccess, Scope } from '@/lib/access/common';
 import { truthy } from '@/lib/utils';
@@ -25,6 +26,7 @@ export const PermissionScopeItem = <
   noDowngrade?: boolean;
   possibleScope: T[];
   dataCy?: string;
+  onSurface?: OnSurface;
 }): React.ReactElement => {
   const initialScope = props.initialScope ?? NoAccess;
 
@@ -42,6 +44,7 @@ export const PermissionScopeItem = <
         <div className="text-neutral-10 text-xs">{props.scope.description}</div>
       </div>
       <Select
+        aria-label={`${props.scope.name} access`}
         options={[
           { value: NoAccess, label: 'No access' },
           props.scope.mapping['read-only'] &&
@@ -80,6 +83,7 @@ export const PermissionScopeItem = <
           props.onChange(value as T | typeof NoAccess);
         }}
         width="sm"
+        onSurface={props.onSurface}
         data-cy="select-trigger"
         popupDataCy={props.dataCy ? `${props.dataCy}-select-content` : undefined}
       />

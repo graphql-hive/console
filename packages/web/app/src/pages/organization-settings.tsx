@@ -1,27 +1,25 @@
-import { useCallback, useMemo } from 'react';
-import { ArrowRightIcon } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { useToast } from '@/components/base/toast/toast';
+import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
+import {
+  AuditLogsForm,
+  AuditLogsFormSchema,
+  type AuditLogsFormValues,
+} from '@/components/organization/settings/audit-logs-form';
 import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
 import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
 import { PolicySettings } from '@/components/policy/policy-settings';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
+import { GitHubIcon, SlackIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -32,7 +30,6 @@ import {
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
-import { useToast } from '@/components/ui/use-toast';
 import { TransferOrganizationOwnershipModal } from '@/components/v2/modals';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -96,16 +93,14 @@ function GitHubIntegrationSection(props: {
         <GitHubIcon className="mr-2" />
         Disconnect GitHub
       </Button>
-      <Button variant="destructive" asChild>
-        <a href={`/api/github/connect/${organization.slug}`}>Adjust permissions</a>
+      <Button variant="destructive" anchor={{ href: `/api/github/connect/${organization.slug}` }}>
+        Adjust permissions
       </Button>
     </div>
   ) : (
-    <Button variant="default" asChild>
-      <a href={`/api/github/connect/${organization.slug}`}>
-        <GitHubIcon className="mr-2" />
-        Connect GitHub
-      </a>
+    <Button anchor={{ href: `/api/github/connect/${organization.slug}` }}>
+      <GitHubIcon className="mr-2" />
+      Connect GitHub
     </Button>
   );
 }
@@ -143,11 +138,9 @@ function SlackIntegrationSection(props: {
       Disconnect Slack
     </Button>
   ) : (
-    <Button variant="default" asChild>
-      <a href={`/api/slack/connect/${organization.slug}`}>
-        <SlackIcon className="mr-2" />
-        Connect Slack
-      </a>
+    <Button anchor={{ href: `/api/slack/connect/${organization.slug}` }}>
+      <SlackIcon className="mr-2" />
+      Connect Slack
     </Button>
   );
 }
@@ -190,18 +183,6 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
   }
 `);
 
-const SlugFormSchema = z.object({
-  slug: z
-    .string({
-      required_error: 'Organization slug is required',
-    })
-    .min(1, 'Organization slug is required')
-    .max(50, 'Slug must be less than 50 characters')
-    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers and dashes'),
-});
-
-type SlugFormValues = z.infer<typeof SlugFormSchema>;
-
 const OrganizationSettingsContent = (props: {
   organization: FragmentType<typeof SettingsPageRenderer_OrganizationFragment>;
   organizationSlug: string;
@@ -210,6 +191,7 @@ const OrganizationSettingsContent = (props: {
   const router = useRouter();
   const [isDeleteModalOpen, toggleDeleteModalOpen] = useToggle();
   const [isTransferModalOpen, toggleTransferModalOpen] = useToggle();
+  const [transferSession, setTransferSession] = useState(0);
   const [isAuditLogsModalOpen, toggleAuditLogsModalOpen] = useToggle();
   const { toast } = useToast();
 
@@ -217,7 +199,7 @@ const OrganizationSettingsContent = (props: {
 
   const slugForm = useForm({
     mode: 'all',
-    resolver: zodResolver(SlugFormSchema),
+    resolver: zodResolver(slugFormSchema('Organization')),
     defaultValues: {
       slug: organization.slug,
     },
@@ -282,30 +264,11 @@ const OrganizationSettingsContent = (props: {
               text: 'Read more in the documentation',
             }}
           />
-          <Form {...slugForm}>
-            <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
-              <FormField
-                control={slugForm.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <div className="flex items-center">
-                        <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 rounded-md rounded-r-none border-y border-l px-3 py-2 text-sm">
-                          {env.appBaseUrl.replace(/https?:\/\//i, '')}/
-                        </div>
-                        <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button disabled={slugForm.formState.isSubmitting} className="px-10" type="submit">
-                Save
-              </Button>
-            </form>
-          </Form>
+          <SlugForm
+            form={slugForm}
+            onSubmit={onSlugFormSubmit}
+            prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/`}
+          />
         </>
       )}
 
@@ -352,12 +315,18 @@ const OrganizationSettingsContent = (props: {
               text: 'Learn more about the process',
             }}
           />
-          <Button variant="destructive" onClick={toggleTransferModalOpen} className="px-5">
+          <Button variant="destructive" onClick={toggleTransferModalOpen}>
             Transfer Ownership
           </Button>
           <TransferOrganizationOwnershipModal
+            key={transferSession}
             isOpen={isTransferModalOpen}
             toggleModalOpen={toggleTransferModalOpen}
+            onOpenChangeComplete={open => {
+              if (!open) {
+                setTransferSession(s => s + 1);
+              }
+            }}
             organization={organization}
           />
         </SubPageLayout>
@@ -378,7 +347,7 @@ const OrganizationSettingsContent = (props: {
               text: 'You can find more information about this process in the documentation',
             }}
           />
-          <Button variant="destructive" onClick={toggleDeleteModalOpen} className="px-5">
+          <Button variant="destructive" onClick={toggleDeleteModalOpen}>
             Delete Organization
           </Button>
           <DeleteOrganizationModal
@@ -399,9 +368,7 @@ const OrganizationSettingsContent = (props: {
               text: 'Learn more',
             }}
           />
-          <Button variant="default" onClick={toggleAuditLogsModalOpen} className="px-5">
-            Export Audit Logs
-          </Button>
+          <Button onClick={toggleAuditLogsModalOpen}>Export Audit Logs</Button>
           <AuditLogsOrganizationModal
             organizationSlug={organization.slug}
             isOpen={isAuditLogsModalOpen}
@@ -514,13 +481,13 @@ function OrganizationPolicySettings(props: {
         }
         currentState={currentOrganization.schemaPolicy}
       >
-        {form => (
+        {({ allowOverrides, setAllowOverrides }) => (
           <div className="flex items-center pl-1 pt-2">
             <Checkbox
               id="allowOverrides"
-              checked={form.values.allowOverrides}
+              checked={allowOverrides}
               value="allowOverrides"
-              onCheckedChange={newValue => form.setFieldValue('allowOverrides', newValue)}
+              onCheckedChange={setAllowOverrides}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
             <label htmlFor="allowOverrides" className="text-neutral-11 ml-2 inline-block text-sm">
@@ -762,33 +729,19 @@ export function DeleteOrganizationModalContent(props: {
   handleDelete: () => void;
 }) {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
-        <DialogHeader>
-          <DialogTitle>Delete organization</DialogTitle>
-          <DialogDescription>
-            Every project created under this organization will be deleted as well.
-          </DialogDescription>
-          <DialogDescription>
-            <span className="font-bold">This action is irreversible!</span>
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={ev => {
-              ev.preventDefault();
-              props.toggleModalOpen();
-            }}
-          >
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={props.handleDelete}>
-            Delete
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      title="Delete organization"
+      description={
+        <>
+          Every project created under this organization will be deleted as well.
+          <br />
+          <strong>This action is irreversible!</strong>
+        </>
+      }
+      confirm={{ label: 'Delete', variant: 'destructive', onClick: props.handleDelete }}
+    />
   );
 }
 
@@ -805,12 +758,6 @@ const AuditLogsOrganizationSettingsPageMutation = graphql(`
   }
 `);
 
-const AuditLogsSchema = z.object({
-  startDate: z.string(),
-  endDate: z.string(),
-  userId: z.string().optional(),
-});
-
 function AuditLogsOrganizationModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
@@ -825,16 +772,16 @@ function AuditLogsOrganizationModal(props: {
     .toISOString()
     .split('T')[0];
 
-  const form = useForm<z.infer<typeof AuditLogsSchema>>({
+  const form = useForm<AuditLogsFormValues>({
     mode: 'onSubmit',
-    resolver: zodResolver(AuditLogsSchema),
+    resolver: zodResolver(AuditLogsFormSchema),
     defaultValues: {
       startDate: lastYear,
       endDate: today,
     },
   });
 
-  async function onSubmit(data: z.infer<typeof AuditLogsSchema>) {
+  async function onSubmit(data: AuditLogsFormValues) {
     const formattedStartDate = new Date(data.startDate).toISOString();
     const formattedEndDate = new Date(data.endDate).toISOString();
 
@@ -868,57 +815,13 @@ function AuditLogsOrganizationModal(props: {
   }
 
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
-        <Form {...form}>
-          <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
-            <DialogHeader>
-              <DialogTitle>Audit Logs</DialogTitle>
-              <DialogDescription>
-                Select a date range to generate an audit logs report.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-row justify-evenly gap-x-8">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="mt-2">
-                <ArrowRightIcon className="text-neutral-10 size-6" />
-              </div>
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                className="w-full"
-                type="submit"
-                disabled={!form.formState.isValid || form.formState.isSubmitting}
-              >
-                Generate Report
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      title="Audit Logs"
+      description="Select a date range to generate an audit logs report."
+    >
+      <AuditLogsForm form={form} onSubmit={onSubmit} />
     </Dialog>
   );
 }

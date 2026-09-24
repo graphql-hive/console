@@ -12,6 +12,9 @@ packages:
   - rules
   - load-tests/otel-traces
 
+catalog:
+  react-foundry: 0.0.16
+
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - 'envelop'

@@ -1,34 +1,26 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/AppFilter';
-import { Menu } from '@/components/base/floating/menu/menu';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { PageLead } from '@/components/base/page-lead';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Button } from '@/components/ui/button';
+import { BackLink } from '@/components/navigation/back-link';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
-import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { graphql } from '@/gql';
+import { graphql, type DocumentType } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
+import { usePagedConnection } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Link, useRouter } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const TargetAppsVersionQuery = graphql(`
   query TargetAppsVersionQuery(
@@ -122,6 +114,12 @@ const TargetAppsVersionFetchMoreQuery = graphql(`
   }
 `);
 
+type AppDocument = NonNullable<
+  NonNullable<
+    NonNullable<DocumentType<typeof TargetAppsVersionQuery>['target']>['appDeployment']
+  >['documents']
+>['edges'][number]['node'];
+
 function TargetAppVersionContent(props: {
   organizationSlug: string;
   projectSlug: string;
@@ -162,7 +160,28 @@ function TargetAppVersionContent(props: {
     },
   });
   const client = useClient();
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const documents = data.data?.target?.appDeployment?.documents;
+  const { rows, pagination } = usePagedConnection({
+    edges: documents?.edges.map(edge => edge.node) ?? [],
+    pageInfo: documents?.pageInfo ?? { hasNextPage: false },
+    pageSize: 20,
+    loadMore: after =>
+      client
+        .query(TargetAppsVersionFetchMoreQuery, {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+          appName: props.appName,
+          appVersion: props.appVersion,
+          first: 20,
+          after,
+          documentsFilter: {
+            operationName: debouncedSearch,
+            schemaCoordinates: coordinates ? [coordinates] : null,
+          },
+        })
+        .toPromise(),
+  });
 
   const project = data.data?.target;
 
@@ -182,9 +201,7 @@ function TargetAppVersionContent(props: {
     },
   });
 
-  const title = data.data?.target?.appDeployment
-    ? `${data.data.target.appDeployment.name}@${data.data.target.appDeployment.version}`
-    : 'App Deployment';
+  const title = `${props.appName}@${props.appVersion}`;
 
   if (data.error) {
     return (
@@ -199,6 +216,92 @@ function TargetAppVersionContent(props: {
   if (project?.viewerCanViewAppDeployments === false) {
     return null;
   }
+
+  const columns: ColumnDef<AppDocument, unknown>[] = [
+    {
+      id: 'hash',
+      header: 'Document Hash',
+      cell: ({ row }) => <DataTableCell kind="text" value={row.original.hash} mono />,
+    },
+    {
+      id: 'operationName',
+      header: 'Operation Name',
+      cell: ({ row }) =>
+        row.original.operationName ? (
+          <DataTableCell kind="text" value={row.original.operationName} mono />
+        ) : (
+          <DataTableCell
+            kind="text"
+            tone="muted"
+            value={
+              <Tooltip
+                trigger={<span className="cursor-help italic">anonymous</span>}
+                content="The operation within the document has no name."
+              />
+            }
+          />
+        ),
+    },
+    {
+      id: 'body',
+      header: 'Document Content',
+      meta: { width: 'fill', align: 'right' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="text"
+          mono
+          value={
+            row.original.body.length > 43
+              ? row.original.body.substring(0, 43).replace(/\n/g, '\\n') + '...'
+              : row.original.body
+          }
+        />
+      ),
+    },
+    {
+      id: 'actions',
+      meta: { width: 'xs' },
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="actions"
+          label={`Actions for ${row.original.operationName ?? row.original.hash}`}
+          sections={[
+            [
+              {
+                label: 'Open in Laboratory',
+                render: (
+                  <Link
+                    to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
+                    params={{
+                      organizationSlug: props.organizationSlug,
+                      projectSlug: props.projectSlug,
+                      targetSlug: props.targetSlug,
+                    }}
+                    search={{ operationString: row.original.body }}
+                  />
+                ),
+              },
+              {
+                label: 'Show Insights',
+                render: (
+                  <Link
+                    to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
+                    params={{
+                      organizationSlug: props.organizationSlug,
+                      projectSlug: props.projectSlug,
+                      targetSlug: props.targetSlug,
+                      operationName: row.original.operationName ?? row.original.hash,
+                      operationHash: row.original.insightsHash,
+                    }}
+                  />
+                ),
+              },
+            ],
+          ]}
+        />
+      ),
+    },
+  ];
 
   const appDeployment = data.data?.target?.appDeployment;
   if (!data.fetching && !data.stale && !appDeployment) {
@@ -217,34 +320,32 @@ function TargetAppVersionContent(props: {
     <>
       <Meta title={title} />
       <div className="flex h-full flex-1 flex-col py-6">
-        <SubPageLayoutHeader
-          subPageTitle={
-            <span className="flex items-center">
-              <Link
-                to="/$organizationSlug/$projectSlug/$targetSlug/apps"
-                params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
-                }}
-              >
-                App Deployments
-              </Link>{' '}
-              <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
-              {appDeployment ? (
-                `${appDeployment.name}@${appDeployment.version}`
-              ) : (
-                <Skeleton className="inline-block h-5 w-[150px]" />
-              )}
-            </span>
-          }
-          description="Group your GraphQL operations by app version for app version statistics and persisted operations."
-          docsLink={{
-            href: '/schema-registry/management/targets#cdn-access-tokens',
-            text: 'Learn more about App Deployments',
-          }}
-          sideContent={<AppFilter />}
-        />
+        <div>
+          <BackLink
+            copy="Back to App Deployments"
+            link={{
+              params: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+              to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
+            }}
+          />
+          <div className="flex items-start justify-between gap-4">
+            <PageLead
+              title={title}
+              description="Group your GraphQL operations by app version for app version statistics and persisted operations."
+              docsLink={{
+                href: '/schema-registry/app-deployments',
+                text: 'Learn more about App Deployments',
+              }}
+            />
+            <div className="flex">
+              <AppFilter />
+            </div>
+          </div>
+        </div>
         {coordinates ? (
           <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
             <span>
@@ -364,143 +465,12 @@ function TargetAppVersionContent(props: {
                 </div>
               </div>
             </div>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="hidden sm:table-cell">Document Hash</TableHead>
-                    <TableHead className="hidden sm:table-cell">Operation Name</TableHead>
-                    <TableHead className="hidden text-end sm:table-cell">
-                      Document Content
-                    </TableHead>
-                    <TableHead className="hidden sm:table-cell" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.data?.target?.appDeployment.documents?.edges.map((edge, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <span className="bg-neutral-5 rounded-sm p-1 font-mono text-sm">
-                          {edge.node.hash}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {!edge.node.operationName ? (
-                          <Tooltip
-                            trigger={<span className="cursor-help italic">anonymous</span>}
-                            content="The operation within the document has no name."
-                          />
-                        ) : (
-                          <span className="bg-neutral-5 rounded-sm p-1 font-mono text-xs">
-                            {edge.node.operationName}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-end">
-                        <span className="bg-neutral-5 rounded-sm p-1 font-mono text-xs">
-                          {edge.node.body.length > 43
-                            ? edge.node.body.substring(0, 43).replace(/\n/g, '\\n') + '...'
-                            : edge.node.body}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-end">
-                        <Menu
-                          trigger={
-                            <Button size="icon-sm" variant="ghost">
-                              <DotsHorizontalIcon />
-                            </Button>
-                          }
-                          sections={[
-                            [
-                              {
-                                label: 'Open in Laboratory',
-                                render: (
-                                  <Link
-                                    to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
-                                    params={{
-                                      organizationSlug: props.organizationSlug,
-                                      projectSlug: props.projectSlug,
-                                      targetSlug: props.targetSlug,
-                                    }}
-                                    search={{ operationString: edge.node.body }}
-                                  />
-                                ),
-                              },
-                              {
-                                label: 'Show Insights',
-                                render: (
-                                  <Link
-                                    to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                                    params={{
-                                      organizationSlug: props.organizationSlug,
-                                      projectSlug: props.projectSlug,
-                                      targetSlug: props.targetSlug,
-                                      operationName: edge.node.operationName ?? edge.node.hash,
-                                      operationHash: edge.node.insightsHash,
-                                    }}
-                                  />
-                                ),
-                              },
-                            ],
-                          ]}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <div
-              className={cn(
-                'mt-2',
-                data?.data?.target?.appDeployment?.documents?.pageInfo?.hasNextPage === false &&
-                  'hidden',
-              )}
-            >
-              <Button
-                size="sm"
-                variant="outline"
-                className="ml-auto mr-0 flex"
-                disabled={
-                  !data?.data?.target?.appDeployment?.documents?.pageInfo?.hasNextPage ||
-                  isLoadingMore
-                }
-                onClick={() => {
-                  if (
-                    data?.data?.target?.appDeployment?.documents?.pageInfo?.endCursor &&
-                    data?.data?.target?.appDeployment?.documents?.pageInfo?.hasNextPage
-                  ) {
-                    setIsLoadingMore(true);
-                    void client
-                      .query(TargetAppsVersionFetchMoreQuery, {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                        appName: props.appName,
-                        appVersion: props.appVersion,
-                        first: 20,
-                        after: data?.data?.target?.appDeployment?.documents.pageInfo?.endCursor,
-                        documentsFilter: {
-                          operationName: debouncedSearch,
-                          schemaCoordinates: coordinates ? [coordinates] : null,
-                        },
-                      })
-                      .toPromise()
-                      .finally(() => {
-                        setIsLoadingMore(false);
-                      });
-                  }
-                }}
-              >
-                {isLoadingMore ? (
-                  <>
-                    <LoaderCircleIcon className="mr-2 inline size-4 animate-spin" /> Loading
-                  </>
-                ) : (
-                  'Load more'
-                )}
-              </Button>
-            </div>
+            <DataTable
+              data={rows}
+              columns={columns}
+              getRowId={document => document.hash}
+              pagination={pagination}
+            />
           </>
         )}
       </div>

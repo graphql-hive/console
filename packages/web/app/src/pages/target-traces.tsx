@@ -1,31 +1,17 @@
-import {
-  Fragment,
-  memo,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { memo, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Clock,
-  ExternalLinkIcon,
-  LoaderCircleIcon,
-  RefreshCw,
-  XIcon,
-} from 'lucide-react';
+import { Clock, ExternalLinkIcon, RefreshCw, XIcon } from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
+import { DataTable, type DataTablePaginationProp } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Button } from '@/components/ui/button';
+import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import {
   ChartConfig,
   ChartContainer,
@@ -36,35 +22,14 @@ import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DateRangePicker, Preset, presetLast7Days } from '@/components/ui/date-range-picker';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Spinner } from '@/components/ui/spinner';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
+import { usePagedConnection } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router';
-import {
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  OnChangeFn,
-  useReactTable,
-} from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
 import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
@@ -265,148 +230,108 @@ const TracesList_Trace = graphql(`
   }
 `);
 
+type TraceRow = DocumentType<typeof TracesList_Trace>;
+
 const TracesList = memo(function TracesList(
   props: SortProps & {
     traces: FragmentType<typeof TracesList_Trace>[];
     onSelectTraceId: (traceId: string) => void;
     selectedTraceId: string | null;
     isFetching: boolean;
-    filter: GraphQLSchema.TracesFilterInput;
-    isFetchingMore: boolean;
-    fetchMore: null | (() => void);
+    pagination: DataTablePaginationProp;
   },
 ) {
   const router = useRouter();
   const data = useFragment(TracesList_Trace, props.traces);
 
-  const onSortingChange = useCallback<
-    OnChangeFn<
-      Array<{
-        id: string;
-        desc: boolean;
-      }>
-    >
-  >(
-    updater => {
-      const value = typeof updater === 'function' ? updater([props.sorting]) : updater;
-      void router.navigate({
-        search(params) {
-          return {
-            ...params,
-            sort: value[0] as SortState,
-          };
-        },
-      });
-    },
-    [router],
-  );
-
   const targetRef = useParams({
     from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces',
   });
-  const table = useReactTable({
-    data,
-    columns: [
+
+  const rows = useMemo(() => [...data], [data]);
+
+  const columns = useMemo<ColumnDef<TraceRow, unknown>[]>(
+    () => [
       {
         accessorKey: 'id',
-        header: () => <div className="pl-2 text-left">Trace ID</div>,
-        cell: ({ row }) => {
-          const traceId = row.getValue('id') as string;
-
-          return (
-            <div className="px-2 text-left font-mono text-xs font-medium">
-              <Link
-                to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
-                params={{
-                  organizationSlug: targetRef.organizationSlug,
-                  projectSlug: targetRef.projectSlug,
-                  targetSlug: targetRef.targetSlug,
-                  traceId,
-                }}
-                className="text-neutral-12 group block w-[6ch] overflow-hidden whitespace-nowrap"
-              >
-                <span>
-                  <span className="decoration-neutral-5 group-hover:decoration-neutral-12 underline decoration-2 underline-offset-2">
-                    {traceId.substring(0, 8)}
-                  </span>
-                  <span
-                    style={{
-                      color: 'transparent',
-                      pointerEvents: 'none',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    {traceId.substring(8)}
-                  </span>
-                </span>
-              </Link>
-            </div>
-          );
-        },
+        header: 'Trace ID',
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="link"
+            mono
+            label={row.original.id.substring(0, 8)}
+            link={{
+              to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+              params: {
+                organizationSlug: targetRef.organizationSlug,
+                projectSlug: targetRef.projectSlug,
+                targetSlug: targetRef.targetSlug,
+                traceId: row.original.id,
+              },
+            }}
+          />
+        ),
       },
       {
         accessorKey: 'timestamp',
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="link"
-              className="text-neutral-10"
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            >
-              Timestamp
-              {props.sorting.id === 'timestamp' ? (
-                props.sorting.desc ? (
-                  <ArrowDown className="ml-2 size-4" />
-                ) : (
-                  <ArrowUp className="ml-2 size-4" />
-                )
-              ) : (
-                <ArrowUpDown className="ml-2 size-4" />
-              )}
-            </Button>
-          );
-        },
+        header: 'Timestamp',
+        meta: { sortable: true },
         cell: ({ row }) => {
-          const timestamp = row.getValue('timestamp') as number;
-
+          const timestamp = row.original.timestamp;
           return (
-            <Tooltip
-              side="bottom"
-              trigger={
-                <div className="px-4 font-mono text-xs uppercase">
-                  {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
-                </div>
-              }
-              content={
-                <div
-                  className="min-w-[150px] cursor-auto"
-                  onClick={e => {
-                    // Prevent the click event from bubbling up to the row,
-                    // which would trigger the sheet with trace details to open
-                    e.stopPropagation();
-                  }}
-                >
-                  <GridTable
-                    rows={[
-                      {
-                        key: 'Local',
-                        value: formatDate(timestamp, 'MMM dd HH:mm:ss'),
-                      },
-                      {
-                        key: 'UTC',
-                        value: formatInTimeZone(timestamp, 'UTC', 'MMM dd HH:mm:ss'),
-                      },
-                      {
-                        key: 'Unix',
-                        value: timestamp,
-                      },
-                      {
-                        key: 'ISO',
-                        value: formatISO(toZonedTime(timestamp, 'UTC')),
-                      },
-                    ]}
-                  />
-                </div>
+            <DataTableCell
+              kind="text"
+              mono
+              value={
+                <Tooltip
+                  side="bottom"
+                  trigger={
+                    <span className="uppercase">{formatDate(timestamp, 'MMM dd HH:mm:ss')}</span>
+                  }
+                  content={
+                    <div
+                      className="min-w-[150px] cursor-auto"
+                      onClick={e => {
+                        // Prevent the click event from bubbling up to the row,
+                        // which would trigger the sheet with trace details to open
+                        e.stopPropagation();
+                      }}
+                    >
+                      <DescriptionList
+                        rows={[
+                          {
+                            items: [
+                              {
+                                term: 'Local',
+                                description: formatDate(timestamp, 'MMM dd HH:mm:ss'),
+                                mono: true,
+                              },
+                            ],
+                          },
+                          {
+                            items: [
+                              {
+                                term: 'UTC',
+                                description: formatInTimeZone(timestamp, 'UTC', 'MMM dd HH:mm:ss'),
+                                mono: true,
+                              },
+                            ],
+                          },
+                          { items: [{ term: 'Unix', description: timestamp, mono: true }] },
+                          {
+                            items: [
+                              {
+                                term: 'ISO',
+                                description: formatISO(toZonedTime(timestamp, 'UTC')),
+                                mono: true,
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                    </div>
+                  }
+                />
               }
             />
           );
@@ -414,119 +339,113 @@ const TracesList = memo(function TracesList(
       },
       {
         accessorKey: 'operationName',
-        header: () => {
-          return <div className="text-neutral-10 px-4">Operation Name</div>;
-        },
+        header: 'Operation Name',
+        meta: { width: 'fill' },
         cell: ({ row }) => (
-          <Tooltip
-            side="bottom"
-            disableHoverablePopup
-            trigger={
-              <div className="flex items-center gap-2 px-4 text-xs">
-                <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
-                  {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
-                </span>
-                <span>
-                  {row.getValue('operationName') ?? (
-                    <span className="text-neutral-10">{'<unknown>'}</span>
-                  )}
-                </span>
-              </div>
-            }
-            content={
-              <div className="min-w-[150px]">
-                <GridTable
-                  rows={[
-                    {
-                      key: 'Name',
-                      value: row.getValue('operationName'),
-                    },
-                    {
-                      key: 'Kind',
-                      value: row.original.operationType,
-                    },
-                    {
-                      key: 'Hash',
-                      value: row.original.operationHash,
-                    },
-                  ]}
-                />
-              </div>
+          <DataTableCell
+            kind="text"
+            value={
+              <Tooltip
+                side="bottom"
+                disableHoverablePopup
+                maxWidth="md"
+                trigger={
+                  <span className="inline-flex items-center gap-2">
+                    <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 text-xs uppercase">
+                      {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
+                    </span>
+                    {row.original.operationName ?? (
+                      <span className="text-neutral-10">{'<unknown>'}</span>
+                    )}
+                  </span>
+                }
+                content={
+                  <div className="min-w-[150px]">
+                    <DescriptionList
+                      rows={[
+                        {
+                          items: [
+                            { term: 'Name', description: row.original.operationName, mono: true },
+                          ],
+                        },
+                        {
+                          items: [
+                            { term: 'Kind', description: row.original.operationType, mono: true },
+                          ],
+                        },
+                        {
+                          items: [
+                            { term: 'Hash', description: row.original.operationHash, mono: true },
+                          ],
+                        },
+                      ]}
+                    />
+                  </div>
+                }
+              />
             }
           />
         ),
       },
       {
         accessorKey: 'duration',
-        header: ({ column }) => {
-          return (
-            <div>
-              <Button
-                variant="link"
-                className="text-neutral-10"
-                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              >
-                Duration
-                {props.sorting.id === 'duration' ? (
-                  props.sorting.desc ? (
-                    <ArrowDown className="ml-2 size-4" />
-                  ) : (
-                    <ArrowUp className="ml-2 size-4" />
-                  )
-                ) : (
-                  <ArrowUpDown className="ml-2 size-4" />
-                )}
-              </Button>
-            </div>
-          );
-        },
-        cell: ({ row }) => {
-          const duration = formatNanoseconds(BigInt(row.getValue('duration')));
-          return <div className="px-4 font-mono text-xs font-medium">{duration}</div>;
-        },
+        header: 'Duration',
+        meta: { sortable: true, align: 'right' },
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="text"
+            mono
+            value={formatNanoseconds(BigInt(row.original.duration))}
+          />
+        ),
       },
       {
         accessorKey: 'success',
-        header: () => <div className="text-center">Status</div>,
-        cell: ({ row }) => {
-          const status = row.getValue('success');
-
-          return (
-            <div className="text-center">
-              <Badge
-                content={status ? 'Ok' : 'Error'}
-                variants={{ variant: status ? 'success' : 'critical' }}
-              />
-            </div>
-          );
-        },
+        header: 'Status',
+        meta: { align: 'center' },
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="badge"
+            items={{
+              content: row.original.success ? 'Ok' : 'Error',
+              variant: row.original.success ? 'success' : 'critical',
+            }}
+          />
+        ),
       },
       {
         accessorKey: 'subgraphs',
-        header: () => <div className="text-center">Subgraphs</div>,
+        header: 'Subgraphs',
+        meta: { align: 'center' },
         cell: ({ row }) => {
+          const subgraphs = row.original.subgraphs ?? [];
           return (
-            <Tooltip
-              side="bottom"
-              disableHoverablePopup
-              trigger={
-                <div className="text-center font-mono text-xs font-medium">
-                  {(row.getValue('subgraphs') as Array<string>).length}
-                </div>
-              }
-              content={
-                <div className="min-w-[150px]">
-                  <GridTable
-                    rows={[
-                      {
-                        key: 'Subgraphs',
-                        value: (row.getValue('subgraphs') as Array<string>).length
-                          ? (row.getValue('subgraphs') as Array<string>).join(', ')
-                          : '<none>',
-                      },
-                    ]}
-                  />
-                </div>
+            <DataTableCell
+              kind="text"
+              mono
+              value={
+                <Tooltip
+                  side="bottom"
+                  disableHoverablePopup
+                  trigger={<span>{subgraphs.length}</span>}
+                  content={
+                    <div className="min-w-[150px]">
+                      <DescriptionList
+                        rows={[
+                          {
+                            items: [
+                              {
+                                term: 'Subgraphs',
+                                description: subgraphs.length ? subgraphs.join(', ') : '<none>',
+                                mono: true,
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                    </div>
+                  }
+                />
               }
             />
           );
@@ -534,117 +453,47 @@ const TracesList = memo(function TracesList(
       },
       {
         accessorKey: 'httpMethod',
-        header: () => <div className="text-center">HTTP Method</div>,
-        cell: ({ row }) => {
-          return (
-            <div className="text-center font-mono text-xs font-medium">
-              {row.getValue('httpMethod')}
-            </div>
-          );
-        },
+        header: 'HTTP Method',
+        meta: { align: 'center' },
+        cell: ({ row }) => <DataTableCell kind="text" mono value={row.original.httpMethod} />,
       },
       {
         accessorKey: 'httpStatusCode',
-        header: () => <div className="text-center">HTTP Status</div>,
-        cell: ({ row }) => {
-          return (
-            <div className="text-center font-mono text-xs font-medium">
-              {row.getValue('httpStatusCode')}
-            </div>
-          );
-        },
+        header: 'HTTP Status',
+        meta: { align: 'center' },
+        cell: ({ row }) => <DataTableCell kind="text" mono value={row.original.httpStatusCode} />,
       },
     ],
-    onSortingChange,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    manualPagination: true,
-    state: {
-      sorting: [props.sorting],
-    },
-  });
+    [targetRef.organizationSlug, targetRef.projectSlug, targetRef.targetSlug],
+  );
 
   return (
-    <>
-      <div className="bg-neutral-2/50 rounded-lg border shadow-sm">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
-                  return (
-                    <TableHead key={header.id} className="[&:has([role=checkbox])]:pl-3">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}{' '}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {props.isFetching && props.traces.length === 0 ? (
-              <tr>
-                <td colSpan={table.options.columns.length}>
-                  <div className="flex h-24 w-full">
-                    <Spinner className="m-auto" />
-                  </div>
-                </td>
-              </tr>
-            ) : data.length ? (
-              table.getRowModel().rows.map(row => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  className={cn(
-                    'cursor-pointer',
-                    props.selectedTraceId === row.original.id ? 'bg-neutral-12/10' : '',
-                  )}
-                  onClick={ev => {
-                    ev.preventDefault();
-                    props.onSelectTraceId(row.original.id);
-                  }}
-                >
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id} className="font-mono [&:has([role=checkbox])]:pl-3">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={table.options.columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 pt-4">
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              props.fetchMore?.();
-            }}
-            disabled={props.isFetchingMore || !props.fetchMore}
-          >
-            {props.isFetchingMore ? (
-              <>
-                <LoaderCircleIcon className="mr-2 inline size-4 animate-spin" /> Loading
-              </>
-            ) : (
-              'Load more'
-            )}
-          </Button>
-        </div>
-      </div>
-    </>
+    <DataTable
+      data={rows}
+      columns={columns}
+      getRowId={trace => trace.id}
+      loading={props.isFetching && props.traces.length === 0}
+      emptyMessage="No results."
+      sorting={{
+        state: [props.sorting],
+        manual: true,
+        onChange: updater => {
+          const [next] = typeof updater === 'function' ? updater([props.sorting]) : updater;
+          if (!next) {
+            return;
+          }
+          void router.navigate({
+            search(params) {
+              return { ...params, sort: next as SortState };
+            },
+          });
+        },
+      }}
+      selectedRowId={props.selectedTraceId ?? undefined}
+      onRowClick={trace => props.onSelectTraceId(trace.id)}
+      hideRowIndicator
+      pagination={props.pagination}
+    />
   );
 });
 
@@ -871,10 +720,13 @@ function Filters(
 }
 
 type SelectedTraceSheetProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  traceId: string;
+  /** Null until a trace has been selected. */
+  traceId: string | null;
 };
 
 const SelectedTraceSheetQuery = graphql(`
@@ -902,30 +754,33 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
         projectSlug: props.projectSlug,
         targetSlug: props.targetSlug,
       },
-      traceId: props.traceId,
+      traceId: props.traceId ?? '',
     },
+    pause: !props.traceId,
   });
 
   const trace = queryResult.data?.target?.trace;
 
   return (
-    <SheetContent className="border-neutral-5 text-neutral-12 bg-neutral-1 border-l p-0 md:max-w-[50%]">
-      <SheetHeader className="border-neutral-5 relative border-b p-4">
-        <div className="flex items-center justify-between">
-          <SheetTitle className="text-neutral-12 text-lg font-medium">
-            {trace ? (
-              <>
-                {trace.operationName ?? <span className="text-neutral-10">{'<unknown>'}</span>}
-                <span className="text-neutral-10 ml-2 font-mono font-normal">
-                  {trace.id.substring(0, 4)}
-                </span>
-              </>
-            ) : (
-              <Skeleton className="inline-block h-5 w-[260px]" />
-            )}
-          </SheetTitle>
-        </div>
-        <SheetDescription className="text-neutral-10 mt-1 text-xs">
+    <Sheet
+      open={props.open}
+      onOpenChange={props.onOpenChange}
+      width="half"
+      padding="none"
+      title={
+        trace ? (
+          <>
+            {trace.operationName ?? <span className="text-neutral-10">{'<unknown>'}</span>}
+            <span className="text-neutral-10 ml-2 font-mono font-normal">
+              {trace.id.substring(0, 4)}
+            </span>
+          </>
+        ) : (
+          <Skeleton className="inline-block h-5 w-[260px]" />
+        )
+      }
+      description={
+        <>
           Trace ID:{' '}
           {trace?.id ? (
             <>
@@ -935,42 +790,50 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           ) : (
             <Skeleton className="inline-block h-4 w-[200px]" />
           )}
-        </SheetDescription>
-        <div className="mt-2 flex items-center gap-3 text-xs">
-          {trace ? (
-            <>
-              <div className="flex items-center gap-1">
-                <Clock className="text-neutral-10 size-3" />
-                <span className="text-neutral-11">{formatNanoseconds(BigInt(trace.duration))}</span>
-              </div>
-              <Badge
-                content={trace.success ? 'Ok' : 'Error'}
-                variants={{ variant: trace.success ? 'success' : 'critical' }}
-              />
-              <span className="text-neutral-11 font-mono uppercase">
-                {trace ? formatDate(trace.timestamp, 'MMM dd HH:mm:ss') : null}
-              </span>
-            </>
-          ) : (
-            <Skeleton className="inline-block h-4 w-[150px]" />
-          )}
-          <Button asChild variant="outline" size="sm">
-            <Link
-              to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
-              params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
-                traceId: props.traceId,
-              }}
-              className="absolute bottom-4 right-4"
+        </>
+      }
+    >
+      <div className="border-neutral-5 flex items-center gap-3 border-b px-6 pb-4 text-xs">
+        {trace ? (
+          <>
+            <div className="flex items-center gap-1">
+              <Clock className="text-neutral-10 size-3" />
+              <span className="text-neutral-11">{formatNanoseconds(BigInt(trace.duration))}</span>
+            </div>
+            <Badge
+              content={trace.success ? 'Ok' : 'Error'}
+              variants={{ variant: trace.success ? 'success' : 'critical' }}
+            />
+            <span className="text-neutral-11 font-mono uppercase">
+              {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
+            </span>
+          </>
+        ) : (
+          <Skeleton className="inline-block h-4 w-[150px]" />
+        )}
+        {props.traceId ? (
+          <div className="ml-auto">
+            <Button
+              variant="outline"
+              size="compact"
+              render={
+                <Link
+                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                    targetSlug: props.targetSlug,
+                    traceId: props.traceId,
+                  }}
+                />
+              }
             >
               <ExternalLinkIcon className="mr-1 size-3" />
               Full Trace
-            </Link>
-          </Button>
-        </div>
-      </SheetHeader>
+            </Button>
+          </div>
+        ) : null}
+      </div>
       {trace && (
         <ImportedTraceSheet
           activeSpanId={null}
@@ -981,7 +844,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           trace={trace}
         />
       )}
-    </SheetContent>
+    </Sheet>
   );
 }
 
@@ -1122,6 +985,15 @@ export function TargetTracesPageContent(
   };
 
   const paginationSize = 50;
+  const sort = {
+    sort:
+      props.sorting.id === 'duration'
+        ? GraphQLSchema.TracesSortType.Duration
+        : GraphQLSchema.TracesSortType.Timestamp,
+    direction: props.sorting.desc
+      ? GraphQLSchema.SortDirectionType.Desc
+      : GraphQLSchema.SortDirectionType.Asc,
+  };
 
   const urql = useClient();
   const [query, refetch] = useQuery({
@@ -1134,15 +1006,7 @@ export function TargetTracesPageContent(
       },
       filter,
       first: paginationSize,
-      sort: {
-        sort:
-          props.sorting.id === 'duration'
-            ? GraphQLSchema.TracesSortType.Duration
-            : GraphQLSchema.TracesSortType.Timestamp,
-        direction: props.sorting.desc
-          ? GraphQLSchema.SortDirectionType.Desc
-          : GraphQLSchema.SortDirectionType.Asc,
-      },
+      sort,
       filterTopN: 5,
     },
     requestPolicy: 'network-only',
@@ -1158,14 +1022,31 @@ export function TargetTracesPageContent(
     refetch();
   }, [dateRangeController.resolvedRange]);
 
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
-
-  const traces = useMemo(
-    () => query.data?.target?.traces.edges.map(e => e.node),
-    [query.data?.target?.traces.edges],
-  );
+  const connection = query.data?.target?.traces;
+  const { rows: traces, pagination } = usePagedConnection({
+    edges: connection?.edges.map(edge => edge.node) ?? [],
+    pageInfo: connection?.pageInfo ?? { hasNextPage: false },
+    pageSize: paginationSize,
+    loadMore: after =>
+      urql
+        .query(TargetTracesFetchMoreTracesQuery, {
+          targetRef: {
+            organizationSlug: targetRef.organizationSlug,
+            projectSlug: targetRef.projectSlug,
+            targetSlug: targetRef.targetSlug,
+          },
+          filter,
+          first: paginationSize,
+          sort,
+          after,
+        })
+        .toPromise(),
+  });
 
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
+  // The last trace stays up through the sheet's close transition.
+  const sheetTraceId =
+    useKeepPreviousData(selectedTraceId ?? undefined, selectedTraceId === null) ?? null;
 
   const filterOptions = useMemo(() => {
     const options = query.data?.target?.tracesFilterOptions;
@@ -1278,16 +1159,12 @@ export function TargetTracesPageContent(
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
             />
             <Button
-              variant="outline"
-              onClick={() => {
-                dateRangeController.refreshResolvedRange();
-              }}
+              layout="iconOnly"
+              icon={RefreshCw}
+              aria-label="Refresh"
+              onClick={() => dateRangeController.refreshResolvedRange()}
               disabled={isLoading}
-            >
-              <RefreshCw
-                className={cn('size-4', isLoading && 'animate-spin [animation-duration:0.45s]')}
-              />
-            </Button>
+            />
           </div>
         }
       />
@@ -1304,89 +1181,27 @@ export function TargetTracesPageContent(
             </div>
             <TracesList
               sorting={props.sorting}
-              traces={traces ?? []}
+              traces={traces}
               onSelectTraceId={setSelectedTraceId}
               selectedTraceId={selectedTraceId}
               isFetching={query.fetching}
-              filter={filter}
-              isFetchingMore={isFetchingMore}
-              fetchMore={
-                query.data?.target?.traces.pageInfo.hasNextPage
-                  ? () => {
-                      if (
-                        !query.data?.target?.traces.pageInfo.hasNextPage ||
-                        !query.data?.target?.traces.pageInfo.endCursor
-                      ) {
-                        return;
-                      }
-                      setIsFetchingMore(true);
-
-                      void urql
-                        .query(TargetTracesFetchMoreTracesQuery, {
-                          targetRef: {
-                            organizationSlug: targetRef.organizationSlug,
-                            projectSlug: targetRef.projectSlug,
-                            targetSlug: targetRef.targetSlug,
-                          },
-                          filter,
-                          first: paginationSize,
-                          sort: {
-                            sort:
-                              props.sorting.id === 'duration'
-                                ? GraphQLSchema.TracesSortType.Duration
-                                : GraphQLSchema.TracesSortType.Timestamp,
-                            direction: props.sorting.desc
-                              ? GraphQLSchema.SortDirectionType.Desc
-                              : GraphQLSchema.SortDirectionType.Asc,
-                          },
-                          after: query.data.target.traces.pageInfo.endCursor,
-                        })
-                        .toPromise()
-                        .finally(() => {
-                          setIsFetchingMore(false);
-                        });
-                    }
-                  : null
-              }
+              pagination={pagination}
             />
           </div>
         </main>
       </div>
-      <Sheet
+      <SelectedTraceSheet
         open={selectedTraceId !== null}
         onOpenChange={isOpen => {
           if (!isOpen) {
             setSelectedTraceId(null);
           }
         }}
-      >
-        {selectedTraceId && (
-          <SelectedTraceSheet
-            organizationSlug={targetRef.organizationSlug}
-            projectSlug={targetRef.projectSlug}
-            targetSlug={targetRef.targetSlug}
-            traceId={selectedTraceId}
-          />
-        )}
-      </Sheet>
-    </div>
-  );
-}
-
-function GridTable(props: {
-  rows: Array<{
-    key: string;
-    value: ReactNode;
-  }>;
-}) {
-  return (
-    <div className="grid grid-cols-[auto,1fr] gap-x-6 gap-y-2">
-      {props.rows.map(row => (
-        <Fragment key={row.key}>
-          <div className="text-neutral-10 font-sans">{row.key}</div>
-          <div className="text-right font-mono">{row.value}</div>
-        </Fragment>
-      ))}
+        organizationSlug={targetRef.organizationSlug}
+        projectSlug={targetRef.projectSlug}
+        targetSlug={targetRef.targetSlug}
+        traceId={sheetTraceId}
+      />
     </div>
   );
 }

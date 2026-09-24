@@ -1,30 +1,24 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
-import { formatDate, formatISO, subDays } from 'date-fns';
-import { BellRing, ChevronDown, Lock, MoreVertical, Users } from 'lucide-react';
+import { formatISO, subDays } from 'date-fns';
+import { BellRing, Lock, Users } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Button as BaseButton } from '@/components/base/button/button';
+import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
-import { Menu } from '@/components/base/floating/menu/menu';
+import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
 import { StatCard } from '@/components/base/stat-card/stat-card';
+import { useToast } from '@/components/base/toast/toast';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BackLink } from '@/components/navigation/back-link';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
-import { Button } from '@/components/ui/button';
-import {
-  availablePresets,
-  buildDateRangeString,
-  DateRangePicker,
-  type Preset,
-} from '@/components/ui/date-range-picker';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
-import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
-import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';
@@ -222,7 +216,7 @@ function NameCell({
     onStopRename,
   ]);
 
-  if (!isRenaming) return <span className="font-medium">{filter.name}</span>;
+  if (!isRenaming) return <DataTableCell kind="text" value={filter.name} weight="medium" />;
 
   return (
     <span className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
@@ -233,7 +227,7 @@ function NameCell({
           if (e.key === 'Enter') void handleRename();
           else if (e.key === 'Escape') onStopRename();
         }}
-        className="h-8"
+        size="compact"
       />
       <Button
         variant="primary"
@@ -249,29 +243,23 @@ function NameCell({
 }
 
 function VisibilityCell({ filter }: { filter: SavedFilterNode }) {
+  const shared = filter.visibility === SavedFilterVisibilityType.Shared;
   return (
-    <span className="flex items-center gap-1.5">
-      {filter.visibility === SavedFilterVisibilityType.Shared ? (
-        <>
-          <Users className="text-neutral-10 size-4" />
-          Shared
-        </>
-      ) : (
-        <>
-          <Lock className="text-neutral-10 size-4" />
-          Private
-        </>
-      )}
+    <span className="inline-flex items-center gap-3">
+      <DataTableCell
+        kind="status"
+        label={shared ? 'Shared' : 'Private'}
+        icon={shared ? Users : Lock}
+      />
       {filter.usedByAlertRulesCount > 0 && (
-        <span
-          className="text-neutral-10 text-control ml-1.5 inline-flex items-center gap-1"
-          title={`Used by ${filter.usedByAlertRulesCount} alert rule${
+        <DataTableCell
+          kind="status"
+          label="In use"
+          icon={BellRing}
+          tooltip={`Used by ${filter.usedByAlertRulesCount} alert rule${
             filter.usedByAlertRulesCount === 1 ? '' : 's'
           }. Detach it from those alerts to delete.`}
-        >
-          <BellRing className="size-3.5" />
-          In use
-        </span>
+        />
       )}
     </span>
   );
@@ -293,53 +281,46 @@ function ActionsCell({
   targetSlug: string;
 }) {
   return (
-    <span className="flex justify-end" onClick={e => e.stopPropagation()}>
-      <Menu
-        trigger={
-          <Button variant="ghost" className="flex size-8 p-0">
-            <MoreVertical className="size-4" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        }
-        align="end"
-        sections={[
-          [
-            {
-              label: 'View in Insights',
-              render: (
-                <Link
-                  to="/$organizationSlug/$projectSlug/$targetSlug/insights"
-                  params={{ organizationSlug, projectSlug, targetSlug }}
-                  search={savedFilterToSearchParams({
-                    ...filter,
-                    filters: {
-                      ...filter.filters,
-                      excludeOperations: filter.filters.excludeOperations ?? undefined,
-                      excludeClientFilters: filter.filters.excludeClientFilters ?? undefined,
-                    },
-                  })}
-                />
-              ),
-            },
-            filter.visibility === SavedFilterVisibilityType.Shared && {
-              label: 'Create alert',
-              render: (
-                <Link
-                  to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
-                  params={{ organizationSlug, projectSlug, targetSlug }}
-                  search={{ savedFilterId: filter.id }}
-                />
-              ),
-            },
-            filter.viewerCanUpdate && { label: 'Rename', onClick: onRename },
-            filter.viewerCanDelete &&
-              (filter.usedByAlertRulesCount > 0
-                ? { label: 'Delete', variant: 'destructiveAction', disabled: true }
-                : { label: 'Delete', variant: 'destructiveAction', onClick: onDelete }),
-          ],
-        ]}
-      />
-    </span>
+    <DataTableCell
+      kind="actions"
+      label={`Actions for ${filter.name}`}
+      sections={[
+        [
+          {
+            label: 'View in Insights',
+            render: (
+              <Link
+                to="/$organizationSlug/$projectSlug/$targetSlug/insights"
+                params={{ organizationSlug, projectSlug, targetSlug }}
+                search={savedFilterToSearchParams({
+                  ...filter,
+                  filters: {
+                    ...filter.filters,
+                    excludeOperations: filter.filters.excludeOperations ?? undefined,
+                    excludeClientFilters: filter.filters.excludeClientFilters ?? undefined,
+                  },
+                })}
+              />
+            ),
+          },
+          filter.visibility === SavedFilterVisibilityType.Shared && {
+            label: 'Create alert',
+            render: (
+              <Link
+                to="/$organizationSlug/$projectSlug/$targetSlug/alerts/create"
+                params={{ organizationSlug, projectSlug, targetSlug }}
+                search={{ savedFilterId: filter.id }}
+              />
+            ),
+          },
+          filter.viewerCanUpdate && { label: 'Rename', onClick: onRename },
+          filter.viewerCanDelete &&
+            (filter.usedByAlertRulesCount > 0
+              ? { label: 'Delete', variant: 'destructiveAction', disabled: true }
+              : { label: 'Delete', variant: 'destructiveAction', onClick: onDelete }),
+        ],
+      ]}
+    />
   );
 }
 
@@ -362,25 +343,6 @@ function SavedFilterRowFilters({
   const [dateRange, setDateRange] = useState(savedDateRange);
 
   const startDate = useMemo(() => subDays(new Date(), dataRetentionInDays), [dataRetentionInDays]);
-
-  const selectedPreset = useMemo<Preset>(() => {
-    const match = availablePresets.find(
-      p => p.range.from === dateRange.from && p.range.to === dateRange.to,
-    );
-    if (match) return match;
-
-    const from = parse(dateRange.from);
-    const to = parse(dateRange.to);
-    if (from && to) {
-      return {
-        name: `${dateRange.from}_${dateRange.to}`,
-        label: buildDateRangeString({ from, to }),
-        range: dateRange,
-      };
-    }
-
-    return { name: 'last7d', label: 'Last 7 days', range: DEFAULT_DATE_RANGE };
-  }, [dateRange]);
 
   const resolvedPeriod = useMemo(() => {
     const from = parse(dateRange.from);
@@ -620,13 +582,7 @@ function SavedFilterRowFilters({
     <div className="px-10 py-4">
       <div className="flex flex-wrap items-center gap-2">
         <DateRangePicker
-          trigger={
-            <BaseButton
-              label={selectedPreset.label}
-              variant="default"
-              rightIcon={{ icon: ChevronDown, withSeparator: true }}
-            />
-          }
+          size="compact"
           selectedRange={dateRange}
           onUpdate={({ preset }) => setDateRange(preset.range)}
           startDate={startDate}
@@ -677,11 +633,7 @@ function SavedFilterRowFilters({
           >
             Save changes
           </Button>
-          <Button
-            variant="default"
-            onClick={handleCancel}
-            disabled={updateResult.fetching || !hasChanges}
-          >
+          <Button onClick={handleCancel} disabled={updateResult.fetching || !hasChanges}>
             Cancel
           </Button>
         </div>
@@ -749,6 +701,7 @@ function ManageFiltersContent(props: {
     () => [
       columnHelper.accessor('name', {
         header: 'Name',
+        meta: { width: 'fill' },
         cell: info => (
           <NameCell
             filter={info.row.original}
@@ -762,15 +715,16 @@ function ManageFiltersContent(props: {
       }),
       columnHelper.accessor('viewsCount', {
         header: 'Views',
-        cell: info => info.getValue().toLocaleString(),
+        meta: { align: 'right', width: 'xs' },
+        cell: info => <DataTableCell kind="number" value={info.getValue()} />,
       }),
       columnHelper.accessor('createdAt', {
         header: 'Created',
-        cell: info => formatDate(info.getValue(), 'MMM d, yyyy'),
+        cell: info => <DataTableCell kind="time" date={info.getValue()} mode="absolute" />,
       }),
       columnHelper.accessor('updatedAt', {
         header: 'Modified',
-        cell: info => formatDate(info.getValue(), 'MMM d, yyyy'),
+        cell: info => <DataTableCell kind="time" date={info.getValue()} mode="absolute" />,
       }),
       columnHelper.display({
         id: 'visibility',
@@ -779,7 +733,7 @@ function ManageFiltersContent(props: {
       }),
       columnHelper.display({
         id: 'actions',
-        header: '',
+        meta: { width: 'xs' },
         cell: ctx => (
           <ActionsCell
             filter={ctx.row.original}

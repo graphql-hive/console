@@ -1,33 +1,26 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useMemo, useState } from 'react';
 import { AlertOctagonIcon, BugPlayIcon, CheckIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
+import { DataTable } from '@/components/base/data-table/data-table';
+import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Switch } from '@/components/base/switch/switch';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/base/toast/toast';
 import { Callout } from '@/components/ui/callout';
-import { CopyIconButton } from '@/components/ui/copy-icon-button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
-import * as Table from '@/components/ui/table';
-import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { DebugOIDCIntegrationModal } from './debug-oidc-integration-modal';
 import { OIDCDefaultResourceSelector } from './oidc-default-resource-selector';
@@ -143,6 +136,13 @@ export function OIDCIntegrationConfiguration(props: {
     UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation,
   );
   const [modalState, setModalState] = useState(ModalState.closed);
+  // Bumped once a sheet or modal has closed, so the next open starts fresh.
+  const [overlaySession, setOverlaySession] = useState(0);
+  const resetOnClose = (isOpen: boolean) => {
+    if (!isOpen) {
+      setOverlaySession(s => s + 1);
+    }
+  };
 
   const onOidcRestrictionChange = async (
     name:
@@ -209,15 +209,11 @@ export function OIDCIntegrationConfiguration(props: {
   return (
     <div className="space-y-10">
       <div className="space-y-2">
-        <div className="flex">
+        <div className="flex justify-between">
           <Heading size="lg">Overview</Heading>
           <Tooltip
             trigger={
-              <Button
-                size="icon-sm"
-                className="ml-auto"
-                onClick={() => setModalState(ModalState.openDebugLogs)}
-              >
+              <Button size="icon-sm" onClick={() => setModalState(ModalState.openDebugLogs)}>
                 <BugPlayIcon size="12" />{' '}
               </Button>
             }
@@ -225,119 +221,115 @@ export function OIDCIntegrationConfiguration(props: {
           />
         </div>
         <p>Endpoints for configuring the OIDC provider.</p>
-        <Table.Table>
-          <Table.TableHeader>
-            <Table.TableRow>
-              <Table.TableHead>Endpoint</Table.TableHead>
-              <Table.TableHead>URL</Table.TableHead>
-            </Table.TableRow>
-          </Table.TableHeader>
-          <Table.TableBody>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Sign-in redirect URI</Table.TableCell>
-              <Table.TableCell>
-                <span
-                  data-oidc-property-sign-in-redirect-uri
-                >{`${env.appBaseUrl}/auth/callback/oidc`}</span>{' '}
-                <CopyIconButton label="Copy" value={`${env.appBaseUrl}/auth/callback/oidc`} />
-              </Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Sign-out redirect URI</Table.TableCell>
-              <Table.TableCell>
-                <span data-oidc-property-sign-out-redirect-uri>{`${env.appBaseUrl}/logout`}</span>{' '}
-                <CopyIconButton label="Copy" value={`${env.appBaseUrl}/logout`} />
-              </Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Sign-in URL</Table.TableCell>
-              <Table.TableCell>
-                <span
-                  data-oidc-property-sign-in-url
-                >{`${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`}</span>{' '}
-                <CopyIconButton
-                  label="Copy"
-                  value={`${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`}
-                />
-              </Table.TableCell>
-            </Table.TableRow>
-          </Table.TableBody>
-        </Table.Table>
+        <DescriptionList
+          rows={[
+            {
+              items: [
+                {
+                  term: 'Sign-in redirect URI',
+                  description: `${env.appBaseUrl}/auth/callback/oidc`,
+                  mono: true,
+                  copyable: true,
+                  attrs: { 'data-oidc-property-sign-in-redirect-uri': '' },
+                },
+              ],
+            },
+            {
+              items: [
+                {
+                  term: 'Sign-out redirect URI',
+                  description: `${env.appBaseUrl}/logout`,
+                  mono: true,
+                  copyable: true,
+                  attrs: { 'data-oidc-property-sign-out-redirect-uri': '' },
+                },
+              ],
+            },
+            {
+              items: [
+                {
+                  term: 'Sign-in URL',
+                  description: `${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`,
+                  mono: true,
+                  copyable: true,
+                  attrs: { 'data-oidc-property-sign-in-url': '' },
+                },
+              ],
+            },
+          ]}
+        />
       </div>
       <div className="space-y-2">
-        <div className="flex">
+        <div className="flex justify-between">
           <Heading size="lg">OIDC Configuration</Heading>
           <Tooltip
             trigger={
-              <Button
-                size="icon-sm"
-                className="ml-auto"
-                onClick={() => setModalState(ModalState.openSettings)}
-              >
+              <Button size="icon-sm" onClick={() => setModalState(ModalState.openSettings)}>
                 <SettingsIcon size="12" />{' '}
               </Button>
             }
             content="Update endpoint configuration"
           />
         </div>
-        <Table.Table>
-          <Table.TableHeader>
-            <Table.TableRow>
-              <Table.TableHead>Configuration</Table.TableHead>
-              <Table.TableHead>Value</Table.TableHead>
-            </Table.TableRow>
-          </Table.TableHeader>
-          <Table.TableBody>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Authorization Endpoint</Table.TableCell>
-              <Table.TableCell>{oidcIntegration.authorizationEndpoint}</Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Token Endpoint</Table.TableCell>
-              <Table.TableCell>{oidcIntegration.tokenEndpoint}</Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">User Info Endpoint</Table.TableCell>
-              <Table.TableCell>{oidcIntegration.userinfoEndpoint}</Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Client ID</Table.TableCell>
-              <Table.TableCell className="font-mono">{oidcIntegration.clientId}</Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">Client Secret</Table.TableCell>
-              <Table.TableCell className="font-mono">
-                •••••••{oidcIntegration.clientSecretPreview}
-              </Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">
-                <Tooltip
-                  trigger="User ID Claim"
-                  content="The claim that should be used to uniquely identify an user."
-                />
-              </Table.TableCell>
-              <Table.TableCell className="font-mono">
-                {oidcIntegration.userIdClaim ?? <span className="text-neutral-10">none set</span>}
-              </Table.TableCell>
-            </Table.TableRow>
-            <Table.TableRow>
-              <Table.TableCell className="font-medium">
-                <Tooltip
-                  trigger="Additional Scopes"
-                  content="Additional scopes that are requested from the OIDC provider."
-                />
-              </Table.TableCell>
-              <Table.TableCell>
-                {oidcIntegration.additionalScopes.length ? (
-                  <span className="font-mono">{oidcIntegration.additionalScopes.join(' ')}</span>
-                ) : (
-                  <span className="text-neutral-8">none</span>
-                )}
-              </Table.TableCell>
-            </Table.TableRow>
-          </Table.TableBody>
-        </Table.Table>
+        <DescriptionList
+          rows={[
+            {
+              items: [
+                {
+                  term: 'Authorization Endpoint',
+                  description: oidcIntegration.authorizationEndpoint,
+                  mono: true,
+                },
+              ],
+            },
+            {
+              items: [
+                { term: 'Token Endpoint', description: oidcIntegration.tokenEndpoint, mono: true },
+              ],
+            },
+            {
+              items: [
+                {
+                  term: 'User Info Endpoint',
+                  description: oidcIntegration.userinfoEndpoint,
+                  mono: true,
+                },
+              ],
+            },
+            {
+              items: [
+                { term: 'Client ID', description: oidcIntegration.clientId, mono: true },
+                {
+                  term: 'Client Secret',
+                  description: `•••••••${oidcIntegration.clientSecretPreview}`,
+                  mono: true,
+                },
+              ],
+            },
+            {
+              items: [
+                {
+                  term: 'User ID Claim',
+                  tooltip: 'The claim that should be used to uniquely identify an user.',
+                  description: oidcIntegration.userIdClaim ?? (
+                    <span className="text-neutral-10">none set</span>
+                  ),
+                  mono: true,
+                },
+                {
+                  term: 'Additional Scopes',
+                  tooltip: 'Additional scopes that are requested from the OIDC provider.',
+                  description: oidcIntegration.additionalScopes.length ? (
+                    oidcIntegration.additionalScopes.join(' ')
+                  ) : (
+                    <span className="text-neutral-8">none</span>
+                  ),
+                  mono: true,
+                },
+              ],
+            },
+          ]}
+        />
       </div>
       <OIDCDomainConfiguration
         oidcIntegration={oidcIntegration}
@@ -355,71 +347,74 @@ export function OIDCIntegrationConfiguration(props: {
           Delete OIDC Provider
         </Button>
       </div>
-      {modalState === ModalState.openSettings && (
-        <ConnectSingleSignOnProviderSheet
-          onClose={() => setModalState(ModalState.closed)}
-          initialValues={{
-            additionalScopes: oidcIntegration.additionalScopes.join(' '),
-            userIdClaim: oidcIntegration.userIdClaim ?? '',
-            clientId: oidcIntegration.clientId,
-            authorizationEndpoint: oidcIntegration.authorizationEndpoint,
-            tokenEndpoint: oidcIntegration.tokenEndpoint,
-            userinfoEndpoint: oidcIntegration.userinfoEndpoint,
-            clientSecretPreview: oidcIntegration.clientSecretPreview,
-          }}
-          onSave={async args => {
-            const result = await updateOIDCIntegrationMutate({
-              input: {
-                oidcIntegrationId: oidcIntegration.id,
-                clientId: args.clientId || undefined,
-                clientSecret: args.clientSecret || undefined,
-                userIdClaim: args.userIdClaim || undefined,
-                additionalScopes: args.additionalScopes?.trim()
-                  ? args.additionalScopes.trim().split(' ')
-                  : undefined,
-                authorizationEndpoint: args.authorizationEndpoint || undefined,
-                tokenEndpoint: args.tokenEndpoint || undefined,
-                userinfoEndpoint: args.userinfoEndpoint || undefined,
-              },
-            });
+      <ConnectSingleSignOnProviderSheet
+        key={`settings-${overlaySession}`}
+        open={modalState === ModalState.openSettings}
+        onClose={() => setModalState(ModalState.closed)}
+        onOpenChangeComplete={resetOnClose}
+        initialValues={{
+          additionalScopes: oidcIntegration.additionalScopes.join(' '),
+          userIdClaim: oidcIntegration.userIdClaim ?? '',
+          clientId: oidcIntegration.clientId,
+          authorizationEndpoint: oidcIntegration.authorizationEndpoint,
+          tokenEndpoint: oidcIntegration.tokenEndpoint,
+          userinfoEndpoint: oidcIntegration.userinfoEndpoint,
+          clientSecretPreview: oidcIntegration.clientSecretPreview,
+        }}
+        onSave={async args => {
+          const result = await updateOIDCIntegrationMutate({
+            input: {
+              oidcIntegrationId: oidcIntegration.id,
+              clientId: args.clientId || undefined,
+              clientSecret: args.clientSecret || undefined,
+              userIdClaim: args.userIdClaim || undefined,
+              additionalScopes: args.additionalScopes?.trim()
+                ? args.additionalScopes.trim().split(' ')
+                : undefined,
+              authorizationEndpoint: args.authorizationEndpoint || undefined,
+              tokenEndpoint: args.tokenEndpoint || undefined,
+              userinfoEndpoint: args.userinfoEndpoint || undefined,
+            },
+          });
 
-            if (result.data?.updateOIDCIntegration.error) {
-              const { error } = result.data.updateOIDCIntegration;
-
-              return {
-                type: 'error',
-                clientId: error.details.clientId ?? null,
-                clientSecret: error.details.clientSecret ?? null,
-                authorizationEndpoint: error.details.authorizationEndpoint ?? null,
-                userinfoEndpoint: error.details.userinfoEndpoint ?? null,
-                tokenEndpoint: error.details.tokenEndpoint ?? null,
-                additionalScopes: error.details.additionalScopes ?? null,
-              };
-            }
-
-            toast({
-              variant: 'default',
-              title: 'Updated OIDC Configuration',
-            });
+          if (result.data?.updateOIDCIntegration.error) {
+            const { error } = result.data.updateOIDCIntegration;
 
             return {
-              type: 'success',
+              type: 'error',
+              clientId: error.details.clientId ?? null,
+              clientSecret: error.details.clientSecret ?? null,
+              authorizationEndpoint: error.details.authorizationEndpoint ?? null,
+              userinfoEndpoint: error.details.userinfoEndpoint ?? null,
+              tokenEndpoint: error.details.tokenEndpoint ?? null,
+              additionalScopes: error.details.additionalScopes ?? null,
             };
-          }}
-        />
-      )}
-      {modalState === ModalState.openDelete && (
-        <RemoveOIDCIntegrationModal
-          close={() => setModalState(ModalState.closed)}
-          oidcIntegrationId={oidcIntegration.id}
-        />
-      )}
-      {modalState === ModalState.openDebugLogs && (
-        <DebugOIDCIntegrationModal
-          close={() => setModalState(ModalState.closed)}
-          oidcIntegrationId={oidcIntegration.id}
-        />
-      )}
+          }
+
+          toast({
+            variant: 'default',
+            title: 'Updated OIDC Configuration',
+          });
+
+          return {
+            type: 'success',
+          };
+        }}
+      />
+      <RemoveOIDCIntegrationModal
+        key={`delete-${overlaySession}`}
+        open={modalState === ModalState.openDelete}
+        close={() => setModalState(ModalState.closed)}
+        onOpenChangeComplete={resetOnClose}
+        oidcIntegrationId={oidcIntegration.id}
+      />
+      <DebugOIDCIntegrationModal
+        key={`debug-${overlaySession}`}
+        open={modalState === ModalState.openDebugLogs}
+        close={() => setModalState(ModalState.closed)}
+        onOpenChangeComplete={resetOnClose}
+        oidcIntegrationId={oidcIntegration.id}
+      />
     </div>
   );
 }
@@ -437,6 +432,10 @@ const OIDCDomainConfiguration_OIDCIntegrationFragment = graphql(`
     oidcForVerifiedDomainsRequired
   }
 `);
+
+type RegisteredDomain = DocumentType<
+  typeof OIDCDomainConfiguration_OIDCIntegrationFragment
+>['registeredDomains'][number];
 
 function OIDCDomainConfiguration(props: {
   oidcIntegration: FragmentType<typeof OIDCDomainConfiguration_OIDCIntegrationFragment>;
@@ -458,18 +457,64 @@ function OIDCDomainConfiguration(props: {
           domainId: string;
         },
   );
+  const [enforceOpen, setEnforceOpen] = useState(false);
+  // The sheet keeps its last domain through the exit transition and remounts once closed. It
+  // also remounts when a new domain is registered, which is what moves it to the verify step.
+  const sheetState = useKeepPreviousData(state ?? undefined, state === null);
+  const [domainSheetSession, setDomainSheetSession] = useState(0);
+
+  const columns = useMemo<ColumnDef<RegisteredDomain, unknown>[]>(
+    () => [
+      {
+        id: 'domain',
+        header: 'Domain',
+        meta: { width: 'fill' },
+        cell: ({ row }) => (
+          <DataTableCell kind="text" value={row.original.domainName} mono weight="medium" />
+        ),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: ({ row }) =>
+          row.original.verifiedAt ? (
+            <DataTableCell kind="status" label="Verified" icon={CheckIcon} iconTone="success" />
+          ) : (
+            <DataTableCell
+              kind="status"
+              label="Pending"
+              icon={AlertOctagonIcon}
+              iconTone="warning"
+              tooltip="The domain ownership challenge has not been completed."
+            />
+          ),
+      },
+      {
+        id: 'manage',
+        meta: { width: 'xs' },
+        cell: ({ row }) => (
+          <DataTableCell
+            kind="icon-button"
+            icon={SettingsIcon}
+            label={`Manage ${row.original.domainName}`}
+            onClick={() => setState({ domainId: row.original.id, type: 'manage' })}
+          />
+        ),
+      },
+    ],
+    [setState],
+  );
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <div className="flex">
+        <div className="flex justify-between">
           <Heading size="lg">Registered Domains</Heading>
           <Tooltip
             trigger={
               <Button
                 data-button-add-new-domain
                 size="icon-sm"
-                className="ml-auto"
                 onClick={() => setState({ type: 'create' })}
               >
                 <PlusIcon size="12" />{' '}
@@ -481,65 +526,13 @@ function OIDCDomainConfiguration(props: {
         <p>
           Verify domain ownership to skip mandatory email confirmation for organization members.
         </p>
-        <Table.Table>
-          <Table.TableHeader>
-            <Table.TableRow>
-              <Table.TableHead>Domain</Table.TableHead>
-              <Table.TableHead>Status</Table.TableHead>
-              <Table.TableHead />
-            </Table.TableRow>
-          </Table.TableHeader>
-          <Table.TableBody>
-            {oidcIntegration.registeredDomains.map(domain => (
-              <Table.TableRow key={domain.id}>
-                <Table.TableCell className="font-mono font-medium">
-                  {domain.domainName}
-                </Table.TableCell>
-                <Table.TableCell>
-                  {domain.verifiedAt ? (
-                    <>
-                      Verified <CheckIcon size="12" className="inline-block" />
-                    </>
-                  ) : (
-                    <Tooltip
-                      trigger={
-                        <span>
-                          Pending <AlertOctagonIcon size="12" className="inline-block" />
-                        </span>
-                      }
-                      content="The domain ownership challenge has not been completed."
-                      disableHoverablePopup
-                    />
-                  )}
-                </Table.TableCell>
-                <Table.TableCell className="text-right">
-                  <Tooltip
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() =>
-                          setState({
-                            domainId: domain.id,
-                            type: 'manage',
-                          })
-                        }
-                        className="ml-auto"
-                      >
-                        <SettingsIcon size="10" />
-                      </Button>
-                    }
-                    content="Manage"
-                    disableHoverablePopup
-                  />
-                </Table.TableCell>
-              </Table.TableRow>
-            ))}
-          </Table.TableBody>
-          {oidcIntegration.registeredDomains.length === 0 && (
-            <Table.TableCaption>No Domains registered</Table.TableCaption>
-          )}
-        </Table.Table>
+        <DataTable
+          data={oidcIntegration.registeredDomains}
+          columns={columns}
+          getRowId={domain => domain.id}
+          pagination={{ kind: 'none' }}
+          emptyMessage="No Domains registered"
+        />
       </div>
       <Card title="Domain Settings" description="Settings for the verified domains.">
         <div className="flex items-center justify-between space-x-4">
@@ -550,72 +543,70 @@ function OIDCDomainConfiguration(props: {
               blocked. The organization owner is excluded from this restriction.
             </p>
           </div>
-          <AlertDialog>
-            <AlertDialogContent>
-              {oidcIntegration.oidcForVerifiedDomainsRequired ? (
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Disable enforced OIDC login</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Users will be able to login with any method, such as email + password or social
-                    logins.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-              ) : (
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Enforce OIDC login</AlertDialogTitle>{' '}
-                  <AlertDialogDescription>
-                    Users will no longer be able to login with email+password or social logins.
-                    <Callout type="warning">
-                      This action can potentially lock you out of the organization. Make sure your
-                      OIDC provider is configured properly and you can log in using it.
-                    </Callout>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-              )}
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  variant="destructive"
-                  onClick={() =>
-                    props.onRestrictionChange(
-                      'oidcForVerifiedDomainsRequired',
-                      !oidcIntegration.oidcForVerifiedDomainsRequired,
-                    )
-                  }
-                >
-                  {oidcIntegration.oidcForVerifiedDomainsRequired
-                    ? 'Disable enforced ODIC login'
-                    : 'Enforce OIDC login'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-            <AlertDialogTrigger>
-              <Switch
-                checked={oidcIntegration.oidcForVerifiedDomainsRequired}
-                data-cy="oidc-require-verified-domain-login-toggle"
-              />
-            </AlertDialogTrigger>
+          {/* The switch only asks; the dialog's confirm flips the setting. */}
+          <Switch
+            checked={oidcIntegration.oidcForVerifiedDomainsRequired}
+            onCheckedChange={() => setEnforceOpen(true)}
+            data-cy="oidc-require-verified-domain-login-toggle"
+          />
+          <AlertDialog
+            open={enforceOpen}
+            onOpenChange={setEnforceOpen}
+            title={
+              oidcIntegration.oidcForVerifiedDomainsRequired
+                ? 'Disable enforced OIDC login'
+                : 'Enforce OIDC login'
+            }
+            description={
+              oidcIntegration.oidcForVerifiedDomainsRequired
+                ? 'Users will be able to login with any method, such as email + password or social logins.'
+                : 'Users will no longer be able to login with email+password or social logins.'
+            }
+            confirm={{
+              label: oidcIntegration.oidcForVerifiedDomainsRequired
+                ? 'Disable enforced ODIC login'
+                : 'Enforce OIDC login',
+              variant: 'destructive',
+              onClick: () => {
+                props.onRestrictionChange(
+                  'oidcForVerifiedDomainsRequired',
+                  !oidcIntegration.oidcForVerifiedDomainsRequired,
+                );
+                setEnforceOpen(false);
+              },
+            }}
+          >
+            {oidcIntegration.oidcForVerifiedDomainsRequired ? null : (
+              <Callout type="warning">
+                This action can potentially lock you out of the organization. Make sure your OIDC
+                provider is configured properly and you can log in using it.
+              </Callout>
+            )}
           </AlertDialog>
         </div>
       </Card>
-      {state && (
-        <OIDCRegisteredDomainSheet
-          key={state.type}
-          oidcIntegrationId={oidcIntegration.id}
-          domain={
-            (state.type === 'manage'
-              ? oidcIntegration.registeredDomains.find(domain => domain.id === state.domainId)
-              : null) ?? null
+      <OIDCRegisteredDomainSheet
+        key={`${sheetState?.type ?? 'none'}-${sheetState?.type === 'manage' ? sheetState.domainId : ''}-${domainSheetSession}`}
+        open={state !== null}
+        onOpenChangeComplete={isOpen => {
+          if (!isOpen) {
+            setDomainSheetSession(s => s + 1);
           }
-          onClose={() => setState(null)}
-          onRegisterDomainSuccess={domainId =>
-            setState({
-              type: 'manage',
-              domainId,
-            })
-          }
-        />
-      )}
+        }}
+        oidcIntegrationId={oidcIntegration.id}
+        domain={
+          (sheetState?.type === 'manage'
+            ? oidcIntegration.registeredDomains.find(domain => domain.id === sheetState.domainId)
+            : null) ?? null
+        }
+        onClose={() => setState(null)}
+        onRegisterDomainSuccess={domainId =>
+          setState({
+            type: 'manage',
+            domainId,
+          })
+        }
+      />
     </div>
   );
 }
@@ -735,32 +726,24 @@ function OIDCAccessSettings(props: {
               : []),
           ]}
         />
-        <AlertDialog open={confirmSCIMProvisioning} onOpenChange={setConfirmSCIMProvisioning}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Require SCIM provisioning?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Users who are not provisioned through SCIM will no longer be able to access this
-                organization. The organization owner is not affected.
-                <Callout type="warning">
-                  Members with unresolved SCIM provisioning conflicts will keep their current access
-                  until you review them. New OIDC users must first be provisioned through SCIM.
-                </Callout>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                onClick={() => {
-                  props.onRestrictionChange('userProvisioningRequired', true);
-                  setConfirmSCIMProvisioning(false);
-                }}
-              >
-                Require SCIM provisioning
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
+        <AlertDialog
+          open={confirmSCIMProvisioning}
+          onOpenChange={setConfirmSCIMProvisioning}
+          title="Require SCIM provisioning?"
+          description="Users who are not provisioned through SCIM will no longer be able to access this organization. The organization owner is not affected."
+          confirm={{
+            label: 'Require SCIM provisioning',
+            variant: 'destructive',
+            onClick: () => {
+              props.onRestrictionChange('userProvisioningRequired', true);
+              setConfirmSCIMProvisioning(false);
+            },
+          }}
+        >
+          <Callout type="warning">
+            Members with unresolved SCIM provisioning conflicts will keep their current access until
+            you review them. New OIDC users must first be provisioned through SCIM.
+          </Callout>
         </AlertDialog>
         {isSCIMProvisioningEnabled ? (
           <>
@@ -984,57 +967,58 @@ const RemoveOIDCIntegrationModal_DeleteOIDCIntegrationMutation = graphql(`
 `);
 
 function RemoveOIDCIntegrationModal(props: {
+  open: boolean;
   close: () => void;
+  /** Fires once the close transition has finished; the parent remounts the modal on it. */
+  onOpenChangeComplete: (open: boolean) => void;
   oidcIntegrationId: null | string;
 }): ReactElement {
   const [mutation, mutate] = useMutation(RemoveOIDCIntegrationModal_DeleteOIDCIntegrationMutation);
   const { oidcIntegrationId } = props;
+  const removed = !!mutation.data?.deleteOIDCIntegration.ok;
 
   return (
-    <Dialog open onOpenChange={props.close}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Remove OpenID Connect Integration</DialogTitle>
-        </DialogHeader>
-        {mutation.data?.deleteOIDCIntegration.ok ? (
-          <>
-            <p>The OIDC integration has been removed successfully.</p>
-            <div className="text-right">
-              <Button onClick={props.close}>Close</Button>
-            </div>
-          </>
-        ) : oidcIntegrationId === null ? (
-          <>
-            <p>This organization does not have an OIDC integration.</p>
-            <div className="text-right">
-              <Button onClick={props.close}>Close</Button>
-            </div>
-          </>
+    <Dialog
+      open={props.open}
+      onOpenChange={props.close}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      title="Remove OpenID Connect Integration"
+      footer={
+        removed || oidcIntegrationId === null ? (
+          <Button onSurface="raised" onClick={props.close}>
+            Close
+          </Button>
         ) : (
           <>
-            <Callout type="warning">
-              This action is not reversible and revoke access to all users that have signed in with
-              this OIDC integration.
-            </Callout>
-            <p>Do you really want to proceed?</p>
-
-            <div className="space-x-2 text-right">
-              <Button variant="outline" onClick={props.close}>
-                Close
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={mutation.fetching}
-                onClick={async () => {
-                  await mutate({ input: { oidcIntegrationId } });
-                }}
-              >
-                Delete
-              </Button>
-            </div>
+            <Button variant="outline" onClick={props.close}>
+              Close
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={mutation.fetching}
+              onClick={async () => {
+                await mutate({ input: { oidcIntegrationId } });
+              }}
+            >
+              Delete
+            </Button>
           </>
-        )}
-      </DialogContent>
+        )
+      }
+    >
+      {removed ? (
+        <p>The OIDC integration has been removed successfully.</p>
+      ) : oidcIntegrationId === null ? (
+        <p>This organization does not have an OIDC integration.</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <Callout type="warning">
+            This action is not reversible and revoke access to all users that have signed in with
+            this OIDC integration.
+          </Callout>
+          <p>Do you really want to proceed?</p>
+        </div>
+      )}
     </Dialog>
   );
 }

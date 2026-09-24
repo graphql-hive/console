@@ -11,7 +11,7 @@ const radioItemVariants = cva(
         'as-button': 'gap-1.5 rounded-xs px-3 py-1.5 text-control font-medium',
         'as-card': 'gap-4 rounded-md p-4 text-left text-sm',
       },
-      onSurface: { base: '', floating: '' },
+      onSurface: { base: '', raised: '' },
       orientation: { horizontal: '', vertical: '' },
     },
     compoundVariants: [
@@ -36,8 +36,17 @@ const radioItemVariants = cva(
         ],
       },
       {
+        variant: 'as-button',
+        onSurface: 'raised',
+        class: [
+          'bg-neutral-3 border-neutral-5 text-neutral-11',
+          'hover:bg-neutral-4 hover:text-neutral-12',
+          'data-[checked]:bg-neutral-5 data-[checked]:border-neutral-6 data-[checked]:text-neutral-12',
+        ],
+      },
+      {
         variant: 'as-card',
-        onSurface: 'floating',
+        onSurface: 'raised',
         class: [
           'bg-neutral-4 border-neutral-5',
           'hover:bg-neutral-5',

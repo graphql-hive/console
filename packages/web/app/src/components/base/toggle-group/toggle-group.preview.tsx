@@ -121,27 +121,33 @@ export const OnSurface = createPreview(() => {
 
 export const Playground = createPreview({
   controls: controlsFor(ToggleGroup, {
+    options: {
+      type: 'list',
+      of: {
+        value: { type: 'text' },
+        label: { type: 'text', default: 'Option' },
+        tooltip: { type: 'text' },
+        disabled: { type: 'boolean', default: false },
+      },
+      default: ENDPOINTS,
+    },
     size: { type: 'radio', options: ['compact', 'default'], default: 'compact' },
     onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
     disabled: { type: 'boolean', default: false },
+    'aria-label': { type: 'text', default: 'Query' },
   }),
-  render: v => <PlaygroundGroup {...v} />,
+  render: v => {
+    const [value, setValue] = useState(v.options[0]?.value);
+    return (
+      <ToggleGroup
+        options={v.options}
+        value={value}
+        onValueChange={setValue}
+        size={v.size}
+        onSurface={v.onSurface}
+        disabled={v.disabled}
+        aria-label={v['aria-label']}
+      />
+    );
+  },
 });
-
-function PlaygroundGroup(props: {
-  size: 'compact' | 'default';
-  onSurface: 'base' | 'raised';
-  disabled: boolean;
-}) {
-  const [value, setValue] = useState('mockApi');
-  return (
-    <ToggleGroup
-      options={ENDPOINTS}
-      value={value}
-      onValueChange={setValue}
-      size={props.size}
-      onSurface={props.onSurface}
-      disabled={props.disabled}
-    />
-  );
-}

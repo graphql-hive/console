@@ -17,6 +17,11 @@ export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
 
 type OmitNever<T> = { [K in keyof T as T[K] extends never ? never : K]: T[K] };
+type StringConfigurationKeys = {
+  [TKey in ValidConfigurationKeys]: GetConfigurationValueType<TKey> extends string | undefined
+    ? TKey
+    : never;
+}[ValidConfigurationKeys];
 
 export default abstract class BaseCommand<T extends typeof Command> extends Command {
   protected _userConfig: Config | undefined;
@@ -25,6 +30,10 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     debug: Flags.boolean({
       default: false,
       summary: 'Whether debug output for HTTP calls and similar should be enabled.',
+    }),
+    'registry.header': Flags.string({
+      description: 'HTTP header to add to registry requests (in Name=Value format)',
+      multiple: true,
     }),
   };
 
@@ -119,7 +128,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
    * @param env an env var name
    */
   ensure<
-    TKey extends ValidConfigurationKeys,
+    TKey extends StringConfigurationKeys,
     TArgs extends {
       [_key in TKey]: GetConfigurationValueType<TKey>;
     },
@@ -173,7 +182,19 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   }
 
   registryApi(registry: string, token: string) {
+    const flagHeaders = Object.fromEntries(
+      (this.flags['registry.header'] ?? []).map(header => {
+        const separatorIndex = header.indexOf('=');
+        if (separatorIndex <= 0) {
+          throw new Error(`Invalid registry header "${header}". Expected Name=Value.`);
+        }
+
+        return [header.slice(0, separatorIndex), header.slice(separatorIndex + 1)];
+      }),
+    );
     const requestHeaders = {
+      ...this.userConfig.get('registry.headers'),
+      ...flagHeaders,
       Authorization: `Bearer ${token}`,
       'graphql-client-name': 'Hive CLI',
       'graphql-client-version': this.config.version,

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { BlocksIcon, BoxIcon, FoldVerticalIcon } from 'lucide-react';
 import { createPreview, defineControls, type NavPath } from 'react-foundry';
+import { Input } from '@/components/base/input/input';
 import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 export const nav: NavPath = 'Base/FormControls/RadioGroup/Component Examples';
@@ -11,14 +11,14 @@ export const nav: NavPath = 'Base/FormControls/RadioGroup/Component Examples';
  * Every RadioGroup call site in the app, transcribed with its real copy so a change to the
  * component can be judged against what actually ships.
  *
- * The pages themselves cannot be imported: they mount react-hook-form or Formik, run GraphQL
+ * The pages themselves cannot be imported: they mount react-hook-form, run GraphQL
  * queries, and several sit behind permission flags. Each preview reproduces the call site's
  * `items` and variant props and holds the selection in local state.
  */
 
 // ---------------------------------------------------------------------------
 // components/layouts/organization.tsx:388 - create-project dialog
-// The only `onSurface="floating"` in the app, because it sits inside a Dialog.
+// The only `onSurface="raised"` in the app, because it sits inside a Dialog.
 // ---------------------------------------------------------------------------
 
 const PROJECT_TYPES = [
@@ -49,7 +49,7 @@ function ProjectTypePicker() {
     <div className="w-[28rem]">
       <RadioGroup
         variant="as-card"
-        onSurface="floating"
+        onSurface="raised"
         orientation="vertical"
         value={value}
         onValueChange={setValue}
@@ -203,13 +203,13 @@ function BreakingChangeFormula(props: { disabled?: boolean }) {
             ariaLabel: 'Percent of Traffic',
             withIndicator: true,
             content: (
-              <span>
+              <span className="inline-flex items-center gap-2">
                 <Input
                   type="number"
                   step="0.01"
                   defaultValue={5}
                   disabled={props.disabled}
-                  className="inline-flex! mr-2 w-16 text-center"
+                  width="xs"
                 />
                 Percent of Traffic
               </span>
@@ -220,13 +220,8 @@ function BreakingChangeFormula(props: { disabled?: boolean }) {
             ariaLabel: 'Total Operations',
             withIndicator: true,
             content: (
-              <span>
-                <Input
-                  type="number"
-                  defaultValue={100}
-                  disabled={props.disabled}
-                  className="inline-flex! mr-2 w-16 text-center"
-                />
+              <span className="inline-flex items-center gap-2">
+                <Input type="number" defaultValue={100} disabled={props.disabled} width="xs" />
                 Total Operations
               </span>
             ),
@@ -295,73 +290,64 @@ export const AlertSeverity = createPreview({
 /**
  * Controls map to the props `RadioGroup` actually takes. Item shape is a control too, because
  * `label`/`description` and `content` are mutually exclusive in `RadioItemProps` and they lay
- * out differently.
+ * out differently. That union is also why this is `defineControls` rather than a `list` on
+ * `items`: a list's row schema is checked against each arm separately, so it can only offer
+ * the keys the two shapes share.
  */
 export const Playground = createPreview({
   controls: defineControls({
     variant: { type: 'radio', options: ['as-card', 'as-button'], default: 'as-card' },
     orientation: { type: 'radio', options: ['vertical', 'horizontal'], default: 'vertical' },
-    onSurface: { type: 'radio', options: ['base', 'floating'], default: 'base' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
     disabled: { type: 'boolean', default: false },
     itemShape: { type: 'radio', options: ['label', 'content'], default: 'label' },
     withIndicator: { type: 'boolean', default: false },
     withDescription: { type: 'boolean', default: true },
     optionCount: { type: 'range', min: 1, max: 4, step: 1, default: 3 },
   }),
-  render: v => <PlaygroundGroup {...v} />,
+  render: v => {
+    const [value, setValue] = useState('option-1');
+    const labels = ['Monolith', 'Federation', 'Stitching', 'Proxy'];
+
+    const items = Array.from({ length: v.optionCount }, (_, i) =>
+      v.itemShape === 'content'
+        ? {
+            value: `option-${i + 1}`,
+            ariaLabel: labels[i],
+            withIndicator: v.withIndicator,
+            content: (
+              <>
+                <BoxIcon className="text-neutral-9 size-8 shrink-0" />
+                <div>
+                  <span className="text-neutral-12 text-sm font-medium">{labels[i]}</span>
+                  {v.withDescription ? (
+                    <p className="text-neutral-11 text-sm">Custom content replaces the label.</p>
+                  ) : null}
+                </div>
+              </>
+            ),
+          }
+        : {
+            value: `option-${i + 1}`,
+            label: labels[i],
+            description: v.withDescription
+              ? 'Supporting copy, rendered by as-card only.'
+              : undefined,
+          },
+    );
+
+    return (
+      <div className={v.orientation === 'horizontal' ? 'w-[52rem]' : 'w-[36rem]'}>
+        <RadioGroup
+          variant={v.variant}
+          orientation={v.orientation}
+          onSurface={v.onSurface}
+          disabled={v.disabled}
+          value={value}
+          onValueChange={setValue}
+          items={items}
+        />
+      </div>
+    );
+  },
 });
-
-function PlaygroundGroup(props: {
-  variant: 'as-card' | 'as-button';
-  orientation: 'vertical' | 'horizontal';
-  onSurface: 'base' | 'floating';
-  disabled: boolean;
-  itemShape: 'label' | 'content';
-  withIndicator: boolean;
-  withDescription: boolean;
-  optionCount: number;
-}) {
-  const [value, setValue] = useState('option-1');
-  const labels = ['Monolith', 'Federation', 'Stitching', 'Proxy'];
-
-  const items = Array.from({ length: props.optionCount }, (_, i) =>
-    props.itemShape === 'content'
-      ? {
-          value: `option-${i + 1}`,
-          ariaLabel: labels[i],
-          withIndicator: props.withIndicator,
-          content: (
-            <>
-              <BoxIcon className="text-neutral-9 size-8 shrink-0" />
-              <div>
-                <span className="text-neutral-12 text-sm font-medium">{labels[i]}</span>
-                {props.withDescription ? (
-                  <p className="text-neutral-11 text-sm">Custom content replaces the label.</p>
-                ) : null}
-              </div>
-            </>
-          ),
-        }
-      : {
-          value: `option-${i + 1}`,
-          label: labels[i],
-          description: props.withDescription
-            ? 'Supporting copy, rendered by as-card only.'
-            : undefined,
-        },
-  );
-
-  return (
-    <div className={props.orientation === 'horizontal' ? 'w-[52rem]' : 'w-[36rem]'}>
-      <RadioGroup
-        variant={props.variant}
-        orientation={props.orientation}
-        onSurface={props.onSurface}
-        disabled={props.disabled}
-        value={value}
-        onValueChange={setValue}
-        items={items}
-      />
-    </div>
-  );
-}

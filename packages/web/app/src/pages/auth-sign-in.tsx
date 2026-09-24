@@ -1,71 +1,47 @@
 import { useCallback, useEffect } from 'react';
+import { CircleUserRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { FaRegUserCircle } from 'react-icons/fa';
-import { SiGithub, SiGoogle, SiOkta } from 'react-icons/si';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { emailPasswordSignIn as superEmailPasswordSignIn } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
-import z from 'zod';
 import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Button } from '@/components/ui/button';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+  SignInForm,
+  SignInFormSchema,
+  type SignInFormValues,
+} from '@/components/auth/sign-in-form';
+import { Button } from '@/components/base/button/button';
+import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { useToast } from '@/components/base/toast/toast';
+import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { Text } from '@/components/ui/text';
-import { useToast } from '@/components/ui/use-toast';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
 import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';
 import { enabledProviders, isProviderEnabled } from '@/lib/supertokens/thirdparty';
-import { cn, exhaustiveGuard } from '@/lib/utils';
+import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Slot } from '@radix-ui/react-slot';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 
 export function SignInButton(props: {
-  children: React.ReactNode;
+  children: React.ReactElement;
   previousSignIn: boolean;
   variant?: 'outline' | 'default';
 }) {
   if (props.previousSignIn) {
     return (
-      <Tooltip
-        trigger={
-          <Slot
-            className={cn(
-              'animate-shimmer bg-size-[200%_100%] transition-colors',
-              'bg-[linear-gradient(110deg,transparent,30%,hsl(var(--neutral-6)),70%,transparent)]',
-            )}
-          >
-            {props.children}
-          </Slot>
-        }
-        content="You signed in with it last time."
-        side="top"
-      />
+      <span className="relative inline-flex w-full">
+        <Tooltip trigger={props.children} content="You signed in with it last time." side="top" />
+        <span
+          aria-hidden
+          className="animate-shimmer bg-size-[200%_100%] pointer-events-none absolute inset-0 rounded-sm bg-[linear-gradient(110deg,transparent,30%,hsl(var(--neutral-6)/0.35),70%,transparent)]"
+        />
+      </span>
     );
   }
 
-  return <>{props.children}</>;
+  return props.children;
 }
-
-const SignInFormSchema = z.object({
-  email: z
-    .string({
-      required_error: 'Email is required',
-    })
-    .email('Invalid email address'),
-  password: z.string(),
-});
-
-type SignInFormValues = z.infer<typeof SignInFormSchema>;
 
 export function AuthSignInPage(props: { redirectToPath: string }) {
   const session = useSessionContext();
@@ -197,53 +173,25 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
           <>
             <AuthCardStack>
               <>
-                <Form {...form}>
-                  <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="m@example.com"
-                              type="email"
-                              {...form.register('email')}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={() => (
-                        <FormItem>
-                          <div className="flex items-center">
-                            <FormLabel>Password</FormLabel>
-                            <Link
-                              tabIndex={-1}
-                              to="/auth/reset-password"
-                              search={{
-                                email: form.getValues().email || undefined,
-                                redirectToPath: props.redirectToPath,
-                              }}
-                              className="ml-auto inline-block text-sm underline"
-                            >
-                              Forgot your password?
-                            </Link>
-                          </div>
-                          <FormControl>
-                            <Input type="password" {...form.register('password')} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <SignInForm
+                  form={form}
+                  onSubmit={onSubmit}
+                  forgotPasswordLink={email => (
+                    <Link
+                      tabIndex={-1}
+                      to="/auth/reset-password"
+                      search={{
+                        email: email || undefined,
+                        redirectToPath: props.redirectToPath,
+                      }}
+                      className="ml-auto inline-block text-sm underline"
+                    >
+                      Forgot your password?
+                    </Link>
+                  )}
+                  submit={
                     <SignInButton previousSignIn={lastAuthMethod === 'email'}>
-                      <Button type="submit" className="w-full" disabled={isPending}>
+                      <Button type="submit" width="full" onSurface="raised" disabled={isPending}>
                         {emailPasswordSignIn.data?.status === 'OK'
                           ? 'Redirecting...'
                           : emailPasswordSignIn.isPending
@@ -251,18 +199,18 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                             : 'Sign in'}
                       </Button>
                     </SignInButton>
-                  </form>
-                </Form>
+                  }
+                />
                 {enabledProviders.length ? <AuthOrSeparator /> : null}
                 {isProviderEnabled('google') ? (
                   <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'google'}>
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('google')}
                       disabled={isPending}
                     >
-                      <SiGoogle className="mr-4 size-4" /> Login with Google
+                      <GoogleIcon className="mr-4 size-4" /> Login with Google
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -270,11 +218,11 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                   <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'github'}>
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('github')}
                       disabled={isPending}
                     >
-                      <SiGithub className="mr-4 size-4" /> Login with Github
+                      <GitHubIcon className="mr-4 size-4" /> Login with Github
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -283,25 +231,25 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                   <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'okta'}>
                     <Button
                       variant="outline"
-                      className="w-full"
+                      width="full"
                       onClick={() => thirdPartySignIn.mutate('okta')}
                       disabled={isPending}
                     >
-                      <SiOkta className="mr-4 size-4" /> Login with Okta
+                      <OktaIcon className="mr-4 size-4" /> Login with Okta
                     </Button>
                   </SignInButton>
                 ) : null}
                 {isProviderEnabled('oidc') ? (
                   <SignInButton variant="outline" previousSignIn={lastAuthMethod === 'oidc'}>
-                    <Button asChild variant="outline" className="w-full" disabled={isPending}>
-                      <Link
-                        to="/auth/sso"
-                        search={{
-                          redirectToPath: props.redirectToPath,
-                        }}
-                      >
-                        <FaRegUserCircle className="mr-4 size-4" /> Login with SSO
-                      </Link>
+                    <Button
+                      variant="outline"
+                      width="full"
+                      disabled={isPending}
+                      render={
+                        <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
+                      }
+                    >
+                      <CircleUserRound className="mr-4 size-4" /> Login with SSO
                     </Button>
                   </SignInButton>
                 ) : null}

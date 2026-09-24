@@ -1,22 +1,18 @@
 import { ReactNode } from 'react';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { PlusIcon } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
+import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { useToast } from '@/components/base/toast/toast';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
-import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/use-toast';
+  CreateTargetForm,
+  CreateTargetFormSchema,
+  type CreateTargetFormValues,
+} from '@/components/target/create-target-form';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { useToggle } from '@/lib/hooks';
@@ -25,7 +21,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
 import { HiveLink } from '../ui/hive-link';
-import { PlusIcon } from '../ui/icon';
 import { ProjectSelector } from './project-selector';
 
 export enum Page {
@@ -154,8 +149,10 @@ export function ProjectLayout({
               currentProject?.viewerCanCreateTarget ? (
                 <>
                   <Button onClick={toggleModalOpen} variant="link">
-                    <PlusIcon size={16} className="mr-2" />
-                    New target
+                    <span className="flex items-center">
+                      <PlusIcon size={16} className="mr-2" />
+                      New target
+                    </span>
                   </Button>
                   <CreateTargetModal
                     organizationSlug={organizationSlug}
@@ -203,19 +200,6 @@ export const CreateTarget_CreateTargetMutation = graphql(`
   }
 `);
 
-const createTargetFormSchema = z.object({
-  targetSlug: z
-    .string({
-      required_error: 'Target slug is required',
-    })
-    .min(2, {
-      message: 'Target slug must be at least 2 characters long',
-    })
-    .max(50, {
-      message: 'Target slug must be at most 50 characters long',
-    }),
-});
-
 function CreateTargetModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
@@ -227,15 +211,15 @@ function CreateTargetModal(props: {
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof createTargetFormSchema>>({
+  const form = useForm<CreateTargetFormValues>({
     mode: 'onChange',
-    resolver: zodResolver(createTargetFormSchema),
+    resolver: zodResolver(CreateTargetFormSchema),
     defaultValues: {
       targetSlug: '',
     },
   });
 
-  async function onSubmit(values: z.infer<typeof createTargetFormSchema>) {
+  async function onSubmit(values: CreateTargetFormValues) {
     const { data, error } = await mutate({
       input: {
         project: {
@@ -277,60 +261,17 @@ function CreateTargetModal(props: {
   }
 
   return (
-    <CreateTargetModalContent
-      form={form}
-      isOpen={props.isOpen}
-      onSubmit={onSubmit}
-      toggleModalOpen={props.toggleModalOpen}
-    />
-  );
-}
-
-export function CreateTargetModalContent(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  onSubmit: (values: z.infer<typeof createTargetFormSchema>) => void | Promise<void>;
-  form: UseFormReturn<z.infer<typeof createTargetFormSchema>>;
-}) {
-  return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
-        <Form {...props.form}>
-          <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
-            <DialogHeader>
-              <DialogTitle>Create a new target</DialogTitle>
-              <DialogDescription>
-                A project is built on top of <b>Targets</b>, which are just your environments.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-8">
-              <FormField
-                control={props.form.control}
-                name="targetSlug"
-                render={({ field }) => {
-                  return (
-                    <FormItem>
-                      <FormControl>
-                        <Input placeholder="my-target" autoComplete="off" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                className="w-full"
-                type="submit"
-                disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
-              >
-                {props.form.formState.isSubmitting ? 'Submitting...' : 'Create Target'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+    <Dialog
+      open={props.isOpen}
+      onOpenChange={props.toggleModalOpen}
+      title="Create a new target"
+      description={
+        <>
+          A project is built on top of <b>Targets</b>, which are just your environments.
+        </>
+      }
+    >
+      <CreateTargetForm form={form} onSubmit={onSubmit} />
     </Dialog>
   );
 }

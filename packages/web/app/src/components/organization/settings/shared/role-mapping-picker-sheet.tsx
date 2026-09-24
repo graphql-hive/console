@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
+import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { Heading } from '@/components/ui/heading';
-import * as Sheet from '@/components/ui/sheet';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ReactNode } from '@tanstack/react-router';
 import { MemberRoleSelector } from '../../members/member-role-selector';
@@ -27,10 +27,15 @@ const RoleMappingPickerSheet_OrganizationFragment = graphql(`
   }
 `);
 
+/** A role and the resources it applies to, for a member or a group mapping. */
 export function RoleMappingPickerSheet(props: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpenChangeComplete?: (open: boolean) => void;
+  /** The button that opens the sheet, when one sits beside it. */
+  trigger?: ReactElement;
   organization: FragmentType<typeof RoleMappingPickerSheet_OrganizationFragment>;
   defaultRoleId: string | null;
-  close: VoidFunction;
   title: ReactNode;
   description: ReactNode;
   actions: ReactNode;
@@ -48,16 +53,22 @@ export function RoleMappingPickerSheet(props: {
     null;
 
   return (
-    <Sheet.SheetContent className="flex max-h-screen min-w-[800px] flex-col overflow-y-scroll">
-      <Sheet.SheetHeader>
-        <Sheet.SheetTitle>{props.title}</Sheet.SheetTitle>
-        <Sheet.SheetDescription>{props.description}</Sheet.SheetDescription>
-      </Sheet.SheetHeader>
+    <Sheet
+      open={props.open}
+      onOpenChange={props.onOpenChange}
+      onOpenChangeComplete={props.onOpenChangeComplete}
+      trigger={props.trigger}
+      width="lg"
+      title={props.title}
+      description={props.description}
+      footer={props.actions}
+    >
       <div className="pt-2">
         <Heading size="lg" className="mb-1 text-sm">
           Assigned Member Role
         </Heading>
         <MemberRoleSelector
+          onSurface="raised"
           organization={organization}
           currentRoleId={initialSelectedRoleId}
           selectedRoleId={props.selectedRoleId}
@@ -88,7 +99,6 @@ export function RoleMappingPickerSheet(props: {
           organization={organization}
         />
       </div>
-      <Sheet.SheetFooter className="mb-0 mt-auto">{props.actions}</Sheet.SheetFooter>
-    </Sheet.SheetContent>
+    </Sheet>
   );
 }
