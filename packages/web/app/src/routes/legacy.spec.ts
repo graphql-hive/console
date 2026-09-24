@@ -73,4 +73,18 @@ describe('legacy URLs', () => {
     const router = await loadAt('/acme/oidc-request?id=oidc-1&redirectToPath=%2Facme%2Fshop');
     expect(router.state.location.pathname).toBe('/acme/shop');
   });
+
+  // `redirectToPath` is whatever the link said; only a path on this app may be followed.
+  it.each(['https%3A%2F%2Fevil.example', '%2F%2Fevil.example', '%2F%5Cevil.example'])(
+    'sends a hostile redirectToPath home instead: %s',
+    { timeout: 30_000 },
+    async encoded => {
+      const auth = await loadAt(`/auth?redirectToPath=${encoded}`);
+      expect(auth.state.location.pathname).toBe('/auth/sign-in');
+      expect(auth.state.location.search).toEqual({ redirectToPath: '/' });
+
+      const oidc = await loadAt(`/acme/oidc-request?id=oidc-1&redirectToPath=${encoded}`);
+      expect(oidc.state.location.pathname).toBe('/');
+    },
+  );
 });

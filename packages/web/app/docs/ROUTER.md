@@ -126,6 +126,8 @@ For the rest of the route state:
   because a validation failure renders the error boundary before `beforeLoad` can redirect.
 - `/insights`, `/traces` and `/proposals` serialize search with jsurl2 (arrays and objects); every
   other route uses JSON. See `src/router.ts`.
+- A redirect target read from the URL (`redirectToPath`) goes through `redirectToPathSchema` in
+  `src/lib/route-utils.ts`, so it is a path on this app or `/` by the time anything follows it.
 
 ## Recipes
 

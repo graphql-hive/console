@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * Remove null and undefined values from an object before writing to URL search params.
  *
@@ -15,3 +17,21 @@
 export function stripNullValues<T extends Record<string, unknown>>(obj: T): T {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v != null)) as T;
 }
+
+/**
+ * A path on this app: starts with `/` and is not protocol-relative (`//host` or its `/\host`
+ * spelling, which browsers read the same way). Anything else could carry a user to another site.
+ */
+export function isSafeRedirectPath(value: string): boolean {
+  return /^\/(?![/\\])/.test(value);
+}
+
+/**
+ * `redirectToPath` arrives in the URL, so whoever wrote the link controls it. Validate it here,
+ * once, and every page and redirect downstream gets a path on this app or the home page; a
+ * hostile link degrades quietly instead of erroring or leaving the site.
+ */
+export const redirectToPathSchema = z
+  .string()
+  .optional()
+  .transform(value => (value !== undefined && isSafeRedirectPath(value) ? value : '/'));

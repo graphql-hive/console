@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { authenticated } from '@/components/authenticated-container';
+import { redirectToPathSchema } from '@/lib/route-utils';
 import { AuthPage } from '@/pages/auth';
 import { AuthCallbackPage } from '@/pages/auth-callback';
 import { AuthOIDCPage } from '@/pages/auth-oidc';
@@ -23,7 +24,7 @@ export const authRoute = createRoute({
 });
 
 const AuthSharedSearch = z.object({
-  redirectToPath: z.string().optional().default('/'),
+  redirectToPath: redirectToPathSchema,
 });
 
 export const authIndexRoute = createRoute({

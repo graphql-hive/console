@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { authenticated } from '@/components/authenticated-container';
 import { OrganizationLayout } from '@/components/layouts/organization';
+import { redirectToPathSchema } from '@/lib/route-utils';
 import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
 import { DevPage } from '@/pages/dev';
 import { IndexPage } from '@/pages/index';
@@ -64,7 +65,7 @@ export const transferOrganizationRoute = createRoute({
 
 const OrganizationOIDCRequestRouteSearch = z.object({
   id: z.string({ required_error: 'OIDC ID is required' }),
-  redirectToPath: z.string().optional().default('/'),
+  redirectToPath: redirectToPathSchema,
 });
 export const organizationOIDCRequestRoute = createRoute({
   // An auth interstitial, not an organization page: it sits outside the organization route and
