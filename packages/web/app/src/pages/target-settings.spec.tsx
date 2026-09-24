@@ -457,7 +457,10 @@ describe('BreakingChanges', () => {
   const numberInput = (name: string) =>
     document.querySelector(`input[name="${name}"]`) as HTMLInputElement;
   const targetBox = (slug: string) =>
-    screen.getByText(slug).closest('div')!.querySelector('[role="checkbox"]') as HTMLElement;
+    screen
+      .getByText(slug, { selector: 'label' })
+      .closest('div')!
+      .querySelector('[role="checkbox"]') as HTMLElement;
   const save = () =>
     act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
