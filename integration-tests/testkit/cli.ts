@@ -314,6 +314,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     remote: boolean;
     write?: string;
     useLatestVersion?: boolean;
+    headers?: string[];
   }) {
     return dev([
       ...(input.remote
@@ -325,6 +326,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
           ]
         : []),
       input.write ? `--write ${input.write}` : '',
+      ...(input.headers ?? []).map(header => `--header ${header}`),
       ...(await Promise.all(
         input.services.map(async ({ name, url, sdl }) => {
           return [

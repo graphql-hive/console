@@ -133,6 +133,12 @@ export default class Dev extends Command<typeof Dev> {
       helpValue: '<filepath>',
       dependsOn: ['service'],
     }),
+    header: Flags.string({
+      aliases: ['H'],
+      description:
+        'HTTP header to add to the introspection request (in key:value format). Applies to all services introspected from a URL.',
+      multiple: true,
+    }),
     watch: Flags.boolean({
       description: 'Watch mode',
       default: false,
@@ -173,6 +179,18 @@ export default class Dev extends Command<typeof Dev> {
     if (flags.service.length !== flags.url.length) {
       throw new ServiceAndUrlLengthMismatch(flags.service, flags.url);
     }
+
+    const headers = flags.header?.reduce(
+      (acc, header) => {
+        const [key, ...values] = header.split(':');
+
+        return {
+          ...acc,
+          [key]: values.join(':'),
+        };
+      },
+      {} as Record<string, string>,
+    );
 
     const isRemote = flags.remote === true;
 
@@ -225,7 +243,7 @@ export default class Dev extends Command<typeof Dev> {
           throw new MissingRegistryTokenError();
         }
 
-        void this.watch(flags.watchInterval, serviceInputs, services =>
+        void this.watch(flags.watchInterval, serviceInputs, headers, services =>
           this.compose({
             services,
             registry,
@@ -243,7 +261,7 @@ export default class Dev extends Command<typeof Dev> {
         return;
       }
 
-      void this.watch(flags.watchInterval, serviceInputs, services =>
+      void this.watch(flags.watchInterval, serviceInputs, headers, services =>
         this.composeLocally({
           services,
           write: flags.write,
@@ -256,7 +274,7 @@ export default class Dev extends Command<typeof Dev> {
       return;
     }
 
-    const services = await this.resolveServices(serviceInputs);
+    const services = await this.resolveServices(serviceInputs, headers);
 
     if (isRemote) {
       let registry: string, token: string;
@@ -413,13 +431,14 @@ export default class Dev extends Command<typeof Dev> {
   private async watch(
     watchInterval: number,
     serviceInputs: ServiceInput[],
+    headers: Record<string, string> | undefined,
     compose: (services: Service[]) => Promise<void>,
   ) {
     this.logInfo('Watch mode enabled');
 
     let services: ServiceWithSource[];
     try {
-      services = await this.resolveServices(serviceInputs);
+      services = await this.resolveServices(serviceInputs, headers);
       await compose(services);
     } catch (e) {
       throw new UnexpectedError(e);
@@ -436,7 +455,7 @@ export default class Dev extends Command<typeof Dev> {
     let timeoutId: ReturnType<typeof setTimeout>;
     const watch = async () => {
       try {
-        const newServices = await this.resolveServices(serviceInputs);
+        const newServices = await this.resolveServices(serviceInputs, headers);
         if (
           newServices.some(
             service => services.find(s => s.name === service.name)!.sdl !== service.sdl,
@@ -470,7 +489,10 @@ export default class Dev extends Command<typeof Dev> {
     return watchPromise;
   }
 
-  private async resolveServices(services: ServiceInput[]): Promise<Array<ServiceWithSource>> {
+  private async resolveServices(
+    services: ServiceInput[],
+    headers: Record<string, string> | undefined,
+  ): Promise<Array<ServiceWithSource>> {
     return await Promise.all(
       services.map(async input => {
         if (input.sdl) {
@@ -488,7 +510,7 @@ export default class Dev extends Command<typeof Dev> {
         return {
           name: input.name,
           url: input.url,
-          sdl: await this.resolveSdlFromUrl(input.name, input.url),
+          sdl: await this.resolveSdlFromUrl(input.name, input.url, headers),
           input: {
             kind: 'url' as const,
             url: input.url,
@@ -507,9 +529,14 @@ export default class Dev extends Command<typeof Dev> {
     return sdl;
   }
 
-  private async resolveSdlFromUrl(serviceName: string, url: string) {
+  private async resolveSdlFromUrl(
+    serviceName: string,
+    url: string,
+    headers: Record<string, string> | undefined,
+  ) {
     const sdl = await loadSchema('only-federation-introspection', url, {
       logger: this.logger,
+      headers,
     }).catch(err => {
       this.logFailure(err);
       throw err;

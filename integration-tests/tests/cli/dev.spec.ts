@@ -54,6 +54,91 @@ describe('dev', () => {
     await expect(supergraph.read()).resolves.toMatch('http://localhost/bar');
     await expect(supergraph.read()).resolves.not.toMatch('http://localhost/foo');
   });
+
+  test.concurrent(
+    'fails to introspect a protected subgraph without a header',
+    async ({ expect }) => {
+      const server = await createHTTPGraphQLServer();
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const { secret } = await createTargetAccessToken({});
+      const cli = createCLI({ readwrite: secret, readonly: secret });
+
+      const supergraph = tmpFile('graphql');
+      const cmd = cli.dev({
+        remote: false,
+        services: [
+          {
+            name: 'bar',
+            url: server.url + '/graphql-federation-protected',
+          },
+        ],
+        write: supergraph.filepath,
+      });
+
+      await expect(cmd).rejects.toThrow();
+    },
+  );
+
+  test.concurrent('introspects a protected subgraph using --header', async ({ expect }) => {
+    const server = await createHTTPGraphQLServer();
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { secret } = await createTargetAccessToken({});
+    const cli = createCLI({ readwrite: secret, readonly: secret });
+
+    const supergraph = tmpFile('graphql');
+    const cmd = cli.dev({
+      remote: false,
+      headers: ['x-auth:AUTH_AUTH_BABY'],
+      services: [
+        {
+          name: 'bar',
+          url: server.url + '/graphql-federation-protected',
+        },
+      ],
+      write: supergraph.filepath,
+    });
+
+    await expect(cmd).resolves.toMatch(supergraph.filepath);
+    await expect(supergraph.read()).resolves.toMatch(server.url + '/graphql-federation-protected');
+  });
+
+  test.concurrent(
+    'applies --header globally when introspecting multiple protected subgraphs',
+    async ({ expect }) => {
+      const server = await createHTTPGraphQLServer();
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const { secret } = await createTargetAccessToken({});
+      const cli = createCLI({ readwrite: secret, readonly: secret });
+
+      const supergraph = tmpFile('graphql');
+      const cmd = cli.dev({
+        remote: false,
+        headers: ['x-auth:AUTH_AUTH_BABY'],
+        services: [
+          {
+            name: 'bar',
+            url: server.url + '/graphql-federation-protected',
+          },
+          {
+            name: 'baz',
+            url: server.url + '/graphql-federation-protected',
+          },
+        ],
+        write: supergraph.filepath,
+      });
+
+      // Composition succeeding proves both subgraphs were introspected past the
+      // auth header check (an auth failure would instead surface as an
+      // introspection/HTTP error, not a successful composition).
+      await expect(cmd).resolves.toContain('Composition successful');
+    },
+  );
 });
 
 describe('dev --remote', () => {
