@@ -15,6 +15,7 @@ import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
@@ -489,10 +490,10 @@ type RoleNode = FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment
 
 function RoleNameCell(props: {
   role: RoleNode;
-  organizationSlug: string;
   isOIDCDefaultRole: boolean;
   canChangeOIDCDefaultRole: boolean;
 }) {
+  const { organizationSlug } = useSlugs('organization');
   const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
   const trailing =
     role.isLocked || props.isOIDCDefaultRole ? (
@@ -536,7 +537,7 @@ function RoleNameCell(props: {
                         to="/$organizationSlug/view/settings"
                         hash="manage-oidc-integration"
                         params={{
-                          organizationSlug: props.organizationSlug,
+                          organizationSlug,
                         }}
                         className="underline"
                       >
@@ -725,7 +726,6 @@ export function OrganizationMemberRoles(props: {
         cell: ({ row }) => (
           <RoleNameCell
             role={row.original}
-            organizationSlug={organization.slug}
             isOIDCDefaultRole={defaultMemberRoleId === row.original.id}
             canChangeOIDCDefaultRole={canChangeOIDCDefaultRole}
           />

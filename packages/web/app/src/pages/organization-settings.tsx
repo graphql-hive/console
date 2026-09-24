@@ -29,7 +29,7 @@ import { TransferOrganizationOwnershipModal } from '@/components/v2/modals';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Outlet,
@@ -186,8 +186,8 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
 
 const OrganizationSettingsContent = (props: {
   organization: FragmentType<typeof SettingsPageRenderer_OrganizationFragment>;
-  organizationSlug: string;
 }) => {
+  const { organizationSlug } = useSlugs('organization');
   const organization = useFragment(SettingsPageRenderer_OrganizationFragment, props.organization);
   const router = useRouter();
   const [isDeleteModalOpen, toggleDeleteModalOpen] = useToggle();
@@ -211,7 +211,7 @@ const OrganizationSettingsContent = (props: {
       try {
         const result = await slugMutate({
           input: {
-            organizationSlug: props.organizationSlug,
+            organizationSlug,
             slug: data.slug,
           },
         });
@@ -243,7 +243,7 @@ const OrganizationSettingsContent = (props: {
         });
       }
     },
-    [slugMutate, props.organizationSlug],
+    [slugMutate, organizationSlug],
   );
 
   return (
@@ -352,7 +352,6 @@ const OrganizationSettingsContent = (props: {
             Delete Organization
           </Button>
           <DeleteOrganizationModal
-            organizationSlug={props.organizationSlug}
             isOpen={isDeleteModalOpen}
             toggleModalOpen={toggleDeleteModalOpen}
           />
@@ -371,7 +370,6 @@ const OrganizationSettingsContent = (props: {
           />
           <Button onClick={toggleAuditLogsModalOpen}>Export Audit Logs</Button>
           <AuditLogsOrganizationModal
-            organizationSlug={organization.slug}
             isOpen={isAuditLogsModalOpen}
             toggleModalOpen={toggleAuditLogsModalOpen}
           />
@@ -564,8 +562,10 @@ const sections: readonly Section[] = [
   },
 ];
 
-export function OrganizationSettingsPage(props: { organizationSlug: string }) {
-  const [query] = useQuery({ query: OrganizationSettingsPageQuery, variables: props });
+export function OrganizationSettingsPage() {
+  const slugs = useSlugs('organization');
+  const { organizationSlug } = slugs;
+  const [query] = useQuery({ query: OrganizationSettingsPageQuery, variables: slugs });
   const currentOrganization = query.data?.organization;
 
   const visible = useMemo(() => {
@@ -596,14 +596,14 @@ export function OrganizationSettingsPage(props: { organizationSlug: string }) {
       const fallback = visible.at(0);
       void router.navigate(
         fallback
-          ? { to: fallback.to, params: props, replace: true }
-          : { to: '/$organizationSlug', params: props, replace: true },
+          ? { to: fallback.to, params: slugs, replace: true }
+          : { to: '/$organizationSlug', params: slugs, replace: true },
       );
     },
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   return (
@@ -619,7 +619,7 @@ export function OrganizationSettingsPage(props: { organizationSlug: string }) {
                 id: section.id,
                 label: section.label,
                 to: section.to,
-                params: props,
+                params: slugs,
                 exact: section.exact,
                 attrs: { 'data-cy': `link-${section.id}` },
               }))}
@@ -636,22 +636,23 @@ export function OrganizationSettingsPage(props: { organizationSlug: string }) {
   );
 }
 
-export function OrganizationSettingsGeneralSection(props: { organizationSlug: string }) {
-  const [query] = useQuery({ query: OrganizationSettingsPageQuery, variables: props });
+export function OrganizationSettingsGeneralSection() {
+  const [query] = useQuery({
+    query: OrganizationSettingsPageQuery,
+    variables: useSlugs('organization'),
+  });
   const currentOrganization = query.data?.organization;
   if (!currentOrganization) {
     return null;
   }
-  return (
-    <OrganizationSettingsContent
-      organizationSlug={props.organizationSlug}
-      organization={currentOrganization}
-    />
-  );
+  return <OrganizationSettingsContent organization={currentOrganization} />;
 }
 
-export function OrganizationSettingsPolicySection(props: { organizationSlug: string }) {
-  const [query] = useQuery({ query: OrganizationSettingsPageQuery, variables: props });
+export function OrganizationSettingsPolicySection() {
+  const [query] = useQuery({
+    query: OrganizationSettingsPageQuery,
+    variables: useSlugs('organization'),
+  });
   const currentOrganization = query.data?.organization;
   if (!currentOrganization) {
     return null;
@@ -673,12 +674,8 @@ export const DeleteOrganizationDocument = graphql(`
   }
 `);
 
-export function DeleteOrganizationModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-}) {
-  const { organizationSlug } = props;
+export function DeleteOrganizationModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
+  const { organizationSlug } = useSlugs('organization');
   const [, mutate] = useMutation(DeleteOrganizationDocument);
   const { toast } = useToast();
   const router = useRouter();
@@ -751,12 +748,8 @@ const AuditLogsOrganizationSettingsPageMutation = graphql(`
   }
 `);
 
-function AuditLogsOrganizationModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-}) {
-  const { organizationSlug: organization } = props;
+function AuditLogsOrganizationModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
+  const { organizationSlug: organization } = useSlugs('organization');
   const { toast } = useToast();
   const [, exportAuditLogs] = useMutation(AuditLogsOrganizationSettingsPageMutation);
 

@@ -17,7 +17,7 @@ import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import Stat from '@/components/v2/stat';
 import { graphql, useFragment } from '@/gql';
-import { formatNumber } from '@/lib/hooks';
+import { formatNumber, useSlugs } from '@/lib/hooks';
 import { useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
@@ -74,11 +74,12 @@ const SubscriptionPageQuery = graphql(`
   }
 `);
 
-function SubscriptionPageContent(props: { organizationSlug: string }) {
+function SubscriptionPageContent() {
+  const { organizationSlug } = useSlugs('organization');
   const [query] = useQuery({
     query: SubscriptionPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
     },
   });
 
@@ -95,7 +96,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
   );
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   if (query.fetching) {
@@ -252,12 +253,12 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
   );
 }
 
-export function OrganizationSubscriptionPage(props: { organizationSlug: string }): ReactElement {
+export function OrganizationSubscriptionPage(): ReactElement {
   return (
     <>
       <Meta title="Subscription & Usage" />
-      <RenderIfStripeAvailable organizationSlug={props.organizationSlug}>
-        <SubscriptionPageContent organizationSlug={props.organizationSlug} />
+      <RenderIfStripeAvailable>
+        <SubscriptionPageContent />
       </RenderIfStripeAvailable>
     </>
   );

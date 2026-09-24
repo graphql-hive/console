@@ -216,13 +216,7 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
                       </span>
                     </Button>
                   </div>
-                  <ConnectSchemaModal
-                    organizationSlug={organizationSlug}
-                    projectSlug={projectSlug}
-                    targetSlug={targetSlug}
-                    isOpen={isModalOpen}
-                    toggleModalOpen={toggleModalOpen}
-                  />
+                  <ConnectSchemaModal isOpen={isModalOpen} toggleModalOpen={toggleModalOpen} />
                 </>
               ) : null
             }
@@ -275,20 +269,15 @@ function composeEndpoint(baseUrl: string, artifactType: CdnArtifactType): string
   return `${baseUrl}/${artifactType}`;
 }
 
-export function ConnectSchemaModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function ConnectSchemaModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ConnectSchemaModalQuery,
     variables: {
       targetSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
     },
     requestPolicy: 'cache-and-network',
@@ -313,6 +302,8 @@ export function ConnectSchemaModal(props: {
     () => (target?.project.type === ProjectType.Federation ? 'supergraph' : 'sdl'),
     [target?.project.type],
   );
+
+  console.log('proper?', { check: getDocsUrl('/high-availability-cdn') });
 
   return (
     <Dialog
@@ -385,12 +376,7 @@ export function ConnectSchemaModal(props: {
               </div>
             </div>
             {selectedArtifact === 'supergraph' ? (
-              <FederationModalContent
-                cdnUrl={selectedContract?.cdnUrl ?? target.cdnUrl}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
+              <FederationModalContent cdnUrl={selectedContract?.cdnUrl ?? target.cdnUrl} />
             ) : (
               <div className="space-y-2 text-sm">
                 <p>To access your schema from Hive's CDN, use the following endpoint:</p>
@@ -404,13 +390,12 @@ export function ConnectSchemaModal(props: {
                 <p>
                   To authenticate,{' '}
                   <UiLink
-                    as="a"
                     variant="primary"
                     to="/$organizationSlug/$projectSlug/$targetSlug/settings/cdn"
                     params={{
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
-                      targetSlug: props.targetSlug,
+                      organizationSlug,
+                      projectSlug,
+                      targetSlug,
                     }}
                     target="_blank"
                     rel="noreferrer"
@@ -430,12 +415,8 @@ export function ConnectSchemaModal(props: {
   );
 }
 
-function FederationModalContent(props: {
-  cdnUrl: string;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function FederationModalContent(props: { cdnUrl: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   // reference local machine and not the docker container
   const dockerCdnUrl = props.cdnUrl.replace('http://localhost:', 'http://host.docker.internal:');
   const authenticateSection = (
@@ -445,9 +426,9 @@ function FederationModalContent(props: {
         variant="primary"
         to="/$organizationSlug/$projectSlug/$targetSlug/settings/cdn"
         params={{
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         }}
         target="_blank"
         rel="noreferrer"

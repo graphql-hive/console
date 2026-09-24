@@ -26,7 +26,7 @@ import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
-import { usePagedConnection } from '@/lib/hooks';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
@@ -725,9 +725,6 @@ function Filters(
 type SelectedTraceSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   /** Null until a trace has been selected. */
   traceId: string | null;
 };
@@ -749,13 +746,14 @@ const SelectedTraceSheetQuery = graphql(`
 `);
 
 function SelectedTraceSheet(props: SelectedTraceSheetProps) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [queryResult] = useQuery({
     query: SelectedTraceSheetQuery,
     variables: {
       targetSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
       traceId: props.traceId ?? '',
     },
@@ -823,9 +821,9 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
                 <Link
                   to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                   params={{
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
+                    organizationSlug,
+                    projectSlug,
+                    targetSlug,
                     traceId: props.traceId,
                   }}
                 />
@@ -1205,9 +1203,6 @@ function TargetTracesPageContent(
             setSelectedTraceId(null);
           }
         }}
-        organizationSlug={targetRef.organizationSlug}
-        projectSlug={targetRef.projectSlug}
-        targetSlug={targetRef.targetSlug}
         traceId={sheetTraceId}
       />
     </div>

@@ -15,6 +15,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { subDays } from '@/lib/date-time';
+import { useSlugs } from '@/lib/hooks';
 import { UTCDate } from '@date-fns/utc';
 import { getRouteApi, useRouter } from '@tanstack/react-router';
 
@@ -56,11 +57,8 @@ const OrganizationProjectsPageQuery = graphql(`
   }
 `);
 
-function OrganizationPageContent(
-  props: {
-    organizationSlug: string;
-  } & RouteSearchProps,
-) {
+function OrganizationPageContent(props: {} & RouteSearchProps) {
+  const { organizationSlug } = useSlugs('organization');
   const days = 14;
   const period = useRef<{
     from: string;
@@ -93,7 +91,7 @@ function OrganizationPageContent(
   const [query] = useQuery({
     query: OrganizationProjectsPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
       chartResolution: days, // 14 days = 14 data points
       period: period.current,
     },
@@ -195,7 +193,7 @@ function OrganizationPageContent(
   }, [router, props.sortOrder]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   return (
@@ -290,16 +288,11 @@ function OrganizationPageContent(
   );
 }
 
-export function OrganizationPage(
-  props: {
-    organizationSlug: string;
-  } & RouteSearchProps,
-) {
+export function OrganizationPage(props: {} & RouteSearchProps) {
   return (
     <>
       <Meta title="Organization" />
       <OrganizationPageContent
-        organizationSlug={props.organizationSlug}
         search={props.search}
         sortBy={props.sortBy}
         sortOrder={props.sortOrder}

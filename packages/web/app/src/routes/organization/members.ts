@@ -14,10 +14,7 @@ import { organizationRoute } from './route';
 export const organizationMembersRoute = createRoute({
   getParentRoute: () => organizationRoute,
   path: 'view/members',
-  component: function OrganizationMembersRoute() {
-    const params = organizationMembersRoute.useParams();
-    return <OrganizationMembersPage {...params} />;
-  },
+  component: OrganizationMembersPage,
 });
 
 // The bare URL is the member list, which owns the search and SCIM filter params. `page` exists
@@ -33,35 +30,23 @@ export const organizationMembersIndexRoute = createRoute({
     }),
   ),
   beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.organizationMembers, search),
-  component: function OrganizationMembersIndexRoute() {
-    const params = organizationMembersIndexRoute.useParams();
-    return <OrganizationMembersListSection {...params} />;
-  },
+  component: OrganizationMembersListSection,
 });
 
 export const organizationMembersRolesRoute = createRoute({
   getParentRoute: () => organizationMembersRoute,
   path: 'roles',
-  component: function OrganizationMembersRolesRoute() {
-    const params = organizationMembersRolesRoute.useParams();
-    return <OrganizationMembersRolesSection {...params} />;
-  },
+  component: OrganizationMembersRolesSection,
 });
 
 export const organizationMembersGroupsRoute = createRoute({
   getParentRoute: () => organizationMembersRoute,
   path: 'groups',
-  component: function OrganizationMembersGroupsRoute() {
-    const params = organizationMembersGroupsRoute.useParams();
-    return <OrganizationMembersGroupsSection {...params} />;
-  },
+  component: OrganizationMembersGroupsSection,
 });
 
 export const organizationMembersInvitationsRoute = createRoute({
   getParentRoute: () => organizationMembersRoute,
   path: 'invitations',
-  component: function OrganizationMembersInvitationsRoute() {
-    const params = organizationMembersInvitationsRoute.useParams();
-    return <OrganizationMembersInvitationsSection {...params} />;
-  },
+  component: OrganizationMembersInvitationsSection,
 });

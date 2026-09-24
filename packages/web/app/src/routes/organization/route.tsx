@@ -25,53 +25,34 @@ export const organizationIndexRoute = createRoute({
   path: '/',
   validateSearch: OrganizationIndexRouteSearch.parse,
   component: function OrganizationRoute() {
-    const { organizationSlug } = organizationRoute.useParams();
     const { search, sortBy, sortOrder } = organizationIndexRoute.useSearch();
-    return (
-      <OrganizationPage
-        organizationSlug={organizationSlug}
-        search={search}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-      />
-    );
+    return <OrganizationPage search={search} sortBy={sortBy} sortOrder={sortOrder} />;
   },
 });
 
 export const organizationSupportRoute = createRoute({
   getParentRoute: () => organizationRoute,
   path: 'view/support',
-  component: function OrganizationSupportRoute() {
-    const { organizationSlug } = organizationSupportRoute.useParams();
-    return <OrganizationSupportPage organizationSlug={organizationSlug} />;
-  },
+  component: OrganizationSupportPage,
 });
 
 export const organizationSupportTicketRoute = createRoute({
   getParentRoute: () => organizationRoute,
   path: 'view/support/ticket/$ticketId',
   component: function OrganizationSupportTicketRoute() {
-    const { organizationSlug, ticketId } = organizationSupportTicketRoute.useParams();
-    return (
-      <OrganizationSupportTicketPage organizationSlug={organizationSlug} ticketId={ticketId} />
-    );
+    const { ticketId } = organizationSupportTicketRoute.useParams();
+    return <OrganizationSupportTicketPage ticketId={ticketId} />;
   },
 });
 
 export const organizationSubscriptionRoute = createRoute({
   getParentRoute: () => organizationRoute,
   path: 'view/subscription',
-  component: function OrganizationSubscriptionRoute() {
-    const { organizationSlug } = organizationSubscriptionRoute.useParams();
-    return <OrganizationSubscriptionPage organizationSlug={organizationSlug} />;
-  },
+  component: OrganizationSubscriptionPage,
 });
 
 export const organizationSubscriptionManageRoute = createRoute({
   getParentRoute: () => organizationRoute,
   path: 'view/subscription/manage',
-  component: function OrganizationSubscriptionManageRoute() {
-    const { organizationSlug } = organizationSubscriptionManageRoute.useParams();
-    return <OrganizationSubscriptionManagePage organizationSlug={organizationSlug} />;
-  },
+  component: OrganizationSubscriptionManagePage,
 });

@@ -12,6 +12,7 @@ import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layo
 import { QueryError } from '@/components/ui/query-error';
 import { graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
+import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import {
   getRouteApi,
@@ -65,8 +66,6 @@ function membersVariables(
   return { organizationSlug, first: PAGE_SIZE, ...list };
 }
 
-type SectionProps = { organizationSlug: string };
-
 const MEMBERS = '/authenticated/$organizationSlug/view/members';
 
 type SectionId = 'list' | 'roles' | 'groups' | 'invitations';
@@ -111,10 +110,12 @@ const sections: readonly Section[] = [
   },
 ];
 
-export function OrganizationMembersPage(props: SectionProps) {
+export function OrganizationMembersPage() {
+  const slugs = useSlugs('organization');
+  const { organizationSlug } = slugs;
   const [query] = useQuery({
     query: OrganizationMembersPageQuery,
-    variables: membersVariables(props.organizationSlug),
+    variables: membersVariables(organizationSlug),
   });
   const organization = useFragment(
     OrganizationMembersPage_OrganizationFragment,
@@ -125,7 +126,7 @@ export function OrganizationMembersPage(props: SectionProps) {
     canAccess: query.data?.organization?.viewerCanSeeMembers === true,
     entity: query.data?.organization,
     redirectTo: router => {
-      void router.navigate({ to: '/$organizationSlug', params: props });
+      void router.navigate({ to: '/$organizationSlug', params: slugs });
     },
   });
 
@@ -148,7 +149,7 @@ export function OrganizationMembersPage(props: SectionProps) {
     canAccess: allowed,
     entity: organization,
     redirectTo: router => {
-      void router.navigate({ to: '/$organizationSlug/view/members', params: props, replace: true });
+      void router.navigate({ to: '/$organizationSlug/view/members', params: slugs, replace: true });
     },
   });
 
@@ -157,7 +158,7 @@ export function OrganizationMembersPage(props: SectionProps) {
   }
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   return (
@@ -173,7 +174,7 @@ export function OrganizationMembersPage(props: SectionProps) {
                 id: section.id,
                 label: section.label,
                 to: section.to,
-                params: props,
+                params: slugs,
                 exact: section.exact,
               }))}
             />
@@ -191,7 +192,8 @@ export function OrganizationMembersPage(props: SectionProps) {
   );
 }
 
-export function OrganizationMembersListSection(props: SectionProps) {
+export function OrganizationMembersListSection() {
+  const { organizationSlug } = useSlugs('organization');
   const search = membersListRoute.useSearch();
   const [after, setAfter] = useState<string | null>(null);
 
@@ -202,7 +204,7 @@ export function OrganizationMembersListSection(props: SectionProps) {
 
   const [query, refetch] = useQuery({
     query: OrganizationMembersPageQuery,
-    variables: membersVariables(props.organizationSlug, {
+    variables: membersVariables(organizationSlug, {
       searchTerm: search.search || undefined,
       needsSCIMManagementConfirmation: search.showPendingSCIMManagementConfirmations,
       after,
@@ -252,18 +254,21 @@ function useMembersOrganization(organizationSlug: string) {
   return { organization, refetchQuery };
 }
 
-export function OrganizationMembersRolesSection(props: SectionProps) {
-  const { organization } = useMembersOrganization(props.organizationSlug);
+export function OrganizationMembersRolesSection() {
+  const { organizationSlug } = useSlugs('organization');
+  const { organization } = useMembersOrganization(organizationSlug);
   return organization ? <OrganizationMemberRoles organization={organization} /> : null;
 }
 
-export function OrganizationMembersGroupsSection(props: SectionProps) {
-  const { organization } = useMembersOrganization(props.organizationSlug);
+export function OrganizationMembersGroupsSection() {
+  const { organizationSlug } = useSlugs('organization');
+  const { organization } = useMembersOrganization(organizationSlug);
   return organization ? <Groups organization={organization} /> : null;
 }
 
-export function OrganizationMembersInvitationsSection(props: SectionProps) {
-  const { organization, refetchQuery } = useMembersOrganization(props.organizationSlug);
+export function OrganizationMembersInvitationsSection() {
+  const { organizationSlug } = useSlugs('organization');
+  const { organization, refetchQuery } = useMembersOrganization(organizationSlug);
   return organization ? (
     <OrganizationInvitations refetchInvitations={refetchQuery} organization={organization} />
   ) : null;

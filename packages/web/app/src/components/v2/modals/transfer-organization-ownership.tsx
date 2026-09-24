@@ -155,12 +155,7 @@ export const TransferOrganizationOwnershipModal = ({
       }
     >
       <div className="flex flex-col gap-5">
-        <TransferOwnershipForm
-          form={form}
-          onSubmit={onSubmit}
-          members={members}
-          organizationSlug={organization.slug}
-        />
+        <TransferOwnershipForm form={form} onSubmit={onSubmit} members={members} />
 
         <div className="border-neutral-5 h-0 w-full border-t" />
 

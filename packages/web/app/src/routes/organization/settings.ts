@@ -15,10 +15,7 @@ import { organizationRoute } from './route';
 export const organizationSettingsRoute = createRoute({
   getParentRoute: () => organizationRoute,
   path: 'view/settings',
-  component: function OrganizationSettingsRoute() {
-    const params = organizationSettingsRoute.useParams();
-    return <OrganizationSettingsPage {...params} />;
-  },
+  component: OrganizationSettingsPage,
 });
 
 // The bare URL is General. `page` exists only to catch the old `?page=` form.
@@ -29,44 +26,29 @@ export const organizationSettingsIndexRoute = createRoute({
     z.object({ page: legacySearch.organizationSettings.values.optional().catch(undefined) }),
   ),
   beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.organizationSettings, search),
-  component: function OrganizationSettingsIndexRoute() {
-    const params = organizationSettingsIndexRoute.useParams();
-    return <OrganizationSettingsGeneralSection {...params} />;
-  },
+  component: OrganizationSettingsGeneralSection,
 });
 
 export const organizationSettingsSsoRoute = createRoute({
   getParentRoute: () => organizationSettingsRoute,
   path: 'sso',
-  component: function OrganizationSettingsSsoRoute() {
-    const params = organizationSettingsSsoRoute.useParams();
-    return <SingleSignOnSubpage {...params} />;
-  },
+  component: SingleSignOnSubpage,
 });
 
 export const organizationSettingsPolicyRoute = createRoute({
   getParentRoute: () => organizationSettingsRoute,
   path: 'policy',
-  component: function OrganizationSettingsPolicyRoute() {
-    const params = organizationSettingsPolicyRoute.useParams();
-    return <OrganizationSettingsPolicySection {...params} />;
-  },
+  component: OrganizationSettingsPolicySection,
 });
 
 export const organizationSettingsAccessTokensRoute = createRoute({
   getParentRoute: () => organizationSettingsRoute,
   path: 'access-tokens',
-  component: function OrganizationSettingsAccessTokensRoute() {
-    const params = organizationSettingsAccessTokensRoute.useParams();
-    return <AccessTokensSubPage {...params} />;
-  },
+  component: AccessTokensSubPage,
 });
 
 export const organizationSettingsPersonalAccessTokensRoute = createRoute({
   getParentRoute: () => organizationSettingsRoute,
   path: 'personal-access-tokens',
-  component: function OrganizationSettingsPersonalAccessTokensRoute() {
-    const params = organizationSettingsPersonalAccessTokensRoute.useParams();
-    return <PersonalAccessTokensSubPage {...params} />;
-  },
+  component: PersonalAccessTokensSubPage,
 });

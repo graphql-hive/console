@@ -20,6 +20,7 @@ import { QueryError } from '@/components/ui/query-error';
 import Stat from '@/components/v2/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { Link } from '@tanstack/react-router';
 
@@ -532,11 +533,12 @@ const ManageSubscriptionPageQuery = graphql(`
   }
 `);
 
-function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
+function ManageSubscriptionPageContent() {
+  const { organizationSlug } = useSlugs('organization');
   const [query] = useQuery({
     query: ManageSubscriptionPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
     },
   });
 
@@ -544,7 +546,7 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
   const billingPlans = query.data?.billingPlans;
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   return (
@@ -581,14 +583,12 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
   );
 }
 
-export function OrganizationSubscriptionManagePage(props: {
-  organizationSlug: string;
-}): ReactElement {
+export function OrganizationSubscriptionManagePage(): ReactElement {
   return (
     <>
       <Meta title="Manage Subscription" />
-      <RenderIfStripeAvailable organizationSlug={props.organizationSlug}>
-        <ManageSubscriptionPageContent organizationSlug={props.organizationSlug} />
+      <RenderIfStripeAvailable>
+        <ManageSubscriptionPageContent />
       </RenderIfStripeAvailable>
     </>
   );
