@@ -1,10 +1,10 @@
 import { createContext, ReactNode, useContext, useState } from 'react';
 import { Check, TriangleAlert } from 'lucide-react';
 import { useMutation } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { Button } from '@/components/ui/button';
 import { graphql } from '@/gql';
 import { useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -212,6 +212,7 @@ export function SaveProposalModal() {
       description="The proposed changes being published."
       footer={
         <Button
+          onSurface="raised"
           disabled={!state.every(c => 'error' in c || c.loading === false)}
           onClick={viewProposal}
         >

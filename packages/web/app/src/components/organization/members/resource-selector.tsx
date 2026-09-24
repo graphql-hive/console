@@ -1,13 +1,12 @@
 import { MouseEvent, useMemo, useState } from 'react';
 import { produce } from 'immer';
-import { ChevronRightIcon, XIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronRightIcon, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { useToast } from '@/components/base/toast/toast';
-import { ArrowDownIcon } from '@/components/ui/icon';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { cn } from '@/lib/utils';
@@ -767,7 +766,7 @@ export function ResourceSelector(props: {
                                   className="flex items-center"
                                   onClick={toggleServiceAppsState}
                                 >
-                                  <ArrowDownIcon
+                                  <ChevronDownIcon
                                     className={cn(
                                       'size-4',
                                       serviceAppsState !== ServicesAppsState.service &&
@@ -1058,7 +1057,7 @@ export function ResourceSelector(props: {
                                     className="flex items-center text-sm font-bold"
                                     onClick={toggleServiceAppsState}
                                   >
-                                    <ArrowDownIcon
+                                    <ChevronDownIcon
                                       className={cn(
                                         'size-4',
                                         serviceAppsState !== ServicesAppsState.apps && '-rotate-90',

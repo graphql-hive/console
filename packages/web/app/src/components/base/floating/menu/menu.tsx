@@ -9,7 +9,7 @@ import {
 import { type VariantProps } from 'class-variance-authority';
 import { ArrowRight, Check, ChevronRight } from 'lucide-react';
 import { Switch } from '@/components/base/switch/switch';
-import { type IconProps } from '@/components/ui/icon';
+import { type IconProps } from '@/components/ui/brand-icon';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { useFloatingPortalContainer } from '../floating-portal-container';
 import { floatingVariants, itemVariants, type FloatingProps } from '../shared-styles';
@@ -18,9 +18,9 @@ import { Tooltip } from '../tooltip/tooltip';
 type ItemVariant = VariantProps<typeof itemVariants>['variant'];
 
 /**
- * An icon as this app defines one, via `IconProps` in `ui/icon.tsx`. Not `LucideIcon`: lucide,
- * react-icons and our own hand-rolled SVGs have incompatible signatures, and menus only ever
- * hand an icon a `className`.
+ * An icon as this app defines one, via `IconProps` in `ui/brand-icon.tsx`. Not `LucideIcon`:
+ * lucide and our own brand marks have incompatible signatures, and menus only ever hand an icon
+ * a `className`.
  */
 type MenuIcon = ComponentType<IconProps>;
 

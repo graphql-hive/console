@@ -1,18 +1,13 @@
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { CircleXIcon, InfoIcon, TriangleAlertIcon, ZapIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  CrossCircledIcon,
-  ExclamationTriangleIcon,
-  InfoCircledIcon,
-  LightningBoltIcon,
-} from '@radix-ui/react-icons';
 
 const TypeToEmoji = {
-  default: <LightningBoltIcon className="h-6 w-auto" />,
-  error: <CrossCircledIcon className="h-6 w-auto" />,
-  info: <InfoCircledIcon className="h-6 w-auto" />,
-  warning: <ExclamationTriangleIcon className="h-6 w-auto" />,
+  default: <ZapIcon className="size-6" />,
+  error: <CircleXIcon className="size-6" />,
+  info: <InfoIcon className="size-6" />,
+  warning: <TriangleAlertIcon className="size-6" />,
 };
 
 type CalloutType = keyof typeof TypeToEmoji;

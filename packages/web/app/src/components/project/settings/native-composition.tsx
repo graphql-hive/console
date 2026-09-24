@@ -2,10 +2,10 @@ import { useCallback, useState } from 'react';
 import { FlaskConicalIcon, HeartCrackIcon, PartyPopperIcon, RefreshCcwIcon } from 'lucide-react';
 import { CombinedError, useMutation, useQuery } from 'urql';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Switch } from '@/components/base/switch/switch';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
 import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -368,10 +368,13 @@ export function NativeCompositionSettings(props: {
           )}
         </Button>
         <div>
-          <Button variant="link" asChild>
-            <a href="https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility">
-              Learn more about risks and compatibility with other composition libraries
-            </a>
+          <Button
+            variant="link"
+            anchor={{
+              href: 'https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility',
+            }}
+          >
+            Learn more about risks and compatibility with other composition libraries
           </Button>
         </div>
       </div>

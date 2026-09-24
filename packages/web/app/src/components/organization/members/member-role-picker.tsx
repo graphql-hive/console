@@ -1,7 +1,7 @@
 import { useState, type ReactElement } from 'react';
 import { useMutation } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RoleMappingPickerSheet } from '../settings/shared/role-mapping-picker-sheet';
 import {
@@ -112,6 +112,7 @@ export function MemberRolePicker(props: {
             Abort
           </Button>
           <Button
+            onSurface="raised"
             disabled={assignRoleState.fetching}
             onClick={async () => {
               try {

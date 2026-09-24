@@ -1,10 +1,9 @@
-import { LinkIcon, PlusIcon } from 'lucide-react';
+import { ChartPieIcon, FileDiffIcon, LinkIcon, ListIcon, PencilIcon, PlusIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { Button } from '@/components/base/button/button';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { SecondaryNavigation as SecondaryNavigationBar } from '@/components/navigation/secondary-navigation';
-import { Button } from '@/components/ui/button';
-import { DiffIcon, EditIcon, GraphQLIcon } from '@/components/ui/icon';
-import { ListBulletIcon, PieChartIcon } from '@radix-ui/react-icons';
+import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { SecondaryNavigation, type SecondaryNavigationItem } from './secondary-navigation';
 
 export const nav: NavPath = 'Base/Navigation/SecondaryNavigation/Component Examples';
@@ -107,8 +106,10 @@ export const Bars = createPreview({
           links={ORGANIZATION_LINKS}
           actions={
             <Button variant="link">
-              <PlusIcon size={16} className="mr-2" />
-              New project
+              <span className="flex items-center">
+                <PlusIcon size={16} className="mr-2" />
+                New project
+              </span>
             </Button>
           }
         />
@@ -123,8 +124,10 @@ export const Bars = createPreview({
           links={PROJECT_LINKS}
           actions={
             <Button variant="link">
-              <PlusIcon size={16} className="mr-2" />
-              New target
+              <span className="flex items-center">
+                <PlusIcon size={16} className="mr-2" />
+                New target
+              </span>
             </Button>
           }
         />
@@ -138,10 +141,14 @@ export const Bars = createPreview({
           page="checks"
           links={TARGET_LINKS}
           actions={
-            <Button variant="link" className="hidden whitespace-nowrap md:flex">
-              <LinkIcon size={16} className="mr-2" />
-              Connect to CDN
-            </Button>
+            <div className="hidden md:block">
+              <Button variant="link">
+                <span className="flex items-center whitespace-nowrap">
+                  <LinkIcon size={16} className="mr-2" />
+                  Connect to CDN
+                </span>
+              </Button>
+            </div>
           }
         />
       </CallSite>
@@ -157,11 +164,11 @@ export const Bars = createPreview({
 });
 
 const PROPOSAL_SECTIONS: SecondaryNavigationItem[] = [
-  { value: 'details', label: 'Details', icon: ListBulletIcon },
-  { value: 'schema', label: 'Schema', icon: DiffIcon },
+  { value: 'details', label: 'Details', icon: ListIcon },
+  { value: 'schema', label: 'Schema', icon: FileDiffIcon },
   { value: 'supergraph', label: 'Supergraph Preview', icon: GraphQLIcon },
-  { value: 'checks', label: 'Checks', icon: PieChartIcon },
-  { value: 'edit', label: 'Edit', icon: EditIcon },
+  { value: 'checks', label: 'Checks', icon: ChartPieIcon },
+  { value: 'edit', label: 'Edit', icon: PencilIcon },
 ].map(item => ({ ...item, to: '/$organizationSlug/$projectSlug/$targetSlug', params: TARGET }));
 
 export const ProposalSections = createPreview({

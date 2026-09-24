@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import clsx from 'clsx';
-import { InfoIcon } from 'lucide-react';
+import { CircleMinus, CircleX, InfoIcon, TriangleAlert } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { PolicyConfigBox } from '@/components/policy/policy-config-box';
-import { CrossCircledIcon, ExclamationTriangleIcon, MinusCircledIcon } from '@radix-ui/react-icons';
 import { Popover } from '../floating/popover/popover';
 import { ToggleGroup } from './toggle-group';
 
@@ -176,8 +175,12 @@ function Severity() {
       value: 'OFF',
       label: 'Disables a rule defined at the organization level',
       icon: (active: boolean) => (
-        <MinusCircledIcon
-          className={clsx(active ? 'text-neutral-12' : 'text-neutral-8', 'hover:text-neutral-12')}
+        <CircleMinus
+          className={clsx(
+            'size-4',
+            active ? 'text-neutral-12' : 'text-neutral-8',
+            'hover:text-neutral-12',
+          )}
         />
       ),
     },
@@ -185,8 +188,12 @@ function Severity() {
       value: 'WARNING',
       label: 'Warning',
       icon: (active: boolean) => (
-        <ExclamationTriangleIcon
-          className={clsx(active ? 'text-orange-500' : 'text-neutral-8', 'hover:text-orange-500')}
+        <TriangleAlert
+          className={clsx(
+            'size-4',
+            active ? 'text-orange-500' : 'text-neutral-8',
+            'hover:text-orange-500',
+          )}
         />
       ),
     },
@@ -194,8 +201,12 @@ function Severity() {
       value: 'ERROR',
       label: 'Error',
       icon: (active: boolean) => (
-        <CrossCircledIcon
-          className={clsx(active ? 'text-red-600' : 'text-neutral-8', 'hover:text-red-600')}
+        <CircleX
+          className={clsx(
+            'size-4',
+            active ? 'text-red-600' : 'text-neutral-8',
+            'hover:text-red-600',
+          )}
         />
       ),
     },

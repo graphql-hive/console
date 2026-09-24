@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { useForm } from 'react-hook-form';
+import { Button } from '@/components/base/button/button';
 import { CallSite } from '@/components/inventory/shared';
 import {
   OperationForm,
   OperationFormSchema,
   type OperationFormValues,
 } from '@/components/target/laboratory/operation-form';
-import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { InputCopy } from '@/components/ui/input-copy';
 import type { DocumentCollectionOperation } from '@/lib/hooks/laboratory/use-collections';
@@ -63,21 +63,10 @@ function CreateOperationExample() {
         description="Create a new operation and add it to a collection"
         footer={
           <>
-            <Button
-              type="button"
-              size="lg"
-              className="w-full justify-center"
-              onClick={() => setOpen(false)}
-            >
+            <Button type="button" variant="outline" width="full" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              form="create-operation-form"
-              size="lg"
-              className="w-full justify-center"
-              variant="primary"
-            >
+            <Button type="submit" form="create-operation-form" width="full" onSurface="raised">
               Add Operation
             </Button>
           </>
@@ -129,7 +118,7 @@ function PromptExample() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" form="prompt-form">
+            <Button type="submit" form="prompt-form" onSurface="raised">
               OK
             </Button>
           </>
@@ -181,7 +170,7 @@ function CreateAlertExample() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" form="create-alert-form">
+            <Button type="submit" form="create-alert-form" onSurface="raised">
               Create Alert
             </Button>
           </>
@@ -281,7 +270,7 @@ function CreatedTokenExample() {
         title="Token successfully created!"
         attrs={{ 'data-cy': 'registry-token-created' }}
         footer={
-          <Button data-cy="close" onClick={() => setOpen(false)}>
+          <Button data-cy="close" onSurface="raised" onClick={() => setOpen(false)}>
             Ok, got it!
           </Button>
         }
@@ -338,6 +327,7 @@ function TransferOwnershipExample() {
               Cancel
             </Button>
             <Button
+              onSurface="raised"
               disabled={!newOwner || confirmation !== 'the-guild'}
               onClick={() => setOpen(false)}
             >

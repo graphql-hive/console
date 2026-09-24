@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { FolderIcon, FolderOpenIcon } from 'lucide-react';
+import {
+  ActivityIcon,
+  CheckIcon,
+  EllipsisIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  PlusIcon,
+  TriangleAlertIcon,
+} from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '@/components/base/badge/badge';
 import { Card } from '@/components/base/card/card';
@@ -7,13 +15,6 @@ import { Menu } from '@/components/base/floating/menu/menu';
 import { Select } from '@/components/base/floating/select/select';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import { PermissionTable } from '@/components/organization/permission-table';
-import { PulseIcon } from '@/components/ui/icon';
-import {
-  CheckIcon,
-  DotsHorizontalIcon,
-  ExclamationTriangleIcon,
-  PlusIcon,
-} from '@radix-ui/react-icons';
 import { Accordion } from './accordion';
 
 export const nav: NavPath = 'Base/Primitives/Accordion/Component Examples';
@@ -338,7 +339,7 @@ function ChangeRow(props: { change: (typeof CHANGES)[number] }) {
                   <>
                     {' '}
                     <span className="bg-neutral-5 text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
-                      <PulseIcon className="h-4 stroke-[1px]" />
+                      <ActivityIcon className="size-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usage.operations} operations by {change.usage.clients} clients
                         affected
@@ -403,7 +404,7 @@ export const ProposalChangePreview = createPreview({
                 <div className="text-neutral-8 flex w-full flex-row items-center">
                   <div>Field 'Query.invoices' was removed</div>
                   <div className="min-w-fit grow pr-2 md:flex-none">
-                    <ExclamationTriangleIcon className="text-critical ml-2 inline size-4" />
+                    <TriangleAlertIcon className="text-critical ml-2 inline size-4" />
                   </div>
                 </div>
               ),
@@ -589,7 +590,7 @@ function Collections() {
                 className="hover:bg-neutral-11/10 rounded-sm p-1"
                 data-cy="collection-menu-trigger"
               >
-                <DotsHorizontalIcon />
+                <EllipsisIcon className="size-4" />
               </button>
             }
             sections={[

@@ -1,8 +1,8 @@
 import { ReactElement, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { Button } from '@/components/ui/button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { AlertType } from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -99,7 +99,12 @@ export const CreateAlertModal = (props: {
           <Button type="button" variant="outline" onClick={toggleModalOpen}>
             Cancel
           </Button>
-          <Button type="submit" form={ALERT_FORM_ID} disabled={form.formState.isSubmitting}>
+          <Button
+            type="submit"
+            form={ALERT_FORM_ID}
+            onSurface="raised"
+            disabled={form.formState.isSubmitting}
+          >
             Create Alert
           </Button>
         </>
