@@ -59,12 +59,6 @@ export class SchemaVersionStore {
       };
       meta: SchemaVersionMeta | null;
       conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadata | null;
-      /**
-       * The action ID that caused this version.
-       * This column is a leftover, so we can easily rollback the introduced changes.
-       * In the future we should delete this column fully and instead sorely use the `origin` column.
-       **/
-      actionId: string;
     },
   ) {
     const query = psql`/* insertSchemaVersion */
@@ -89,8 +83,7 @@ export class SchemaVersionStore {
           "schema_metadata",
           "metadata_attributes",
           "origin",
-          "meta",
-          "action_id"
+          "meta"
         )
       VALUES
         (
@@ -113,8 +106,7 @@ export class SchemaVersionStore {
           ${psql.jsonbOrNull(args.schemaMetadata)},
           ${psql.jsonbOrNull(args.metadataAttributes)},
           ${psql.jsonb(SchemaVersionOriginModel.parse(args.origin))},
-          ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))},
-          ${args.actionId}
+          ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))}
         )
       RETURNING
         ${schemaVersionSQLFields()}
@@ -380,7 +372,6 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        actionId: newLog.id,
       });
 
       await trx.query(psql`/* insertSchemaVersionToLog */
@@ -559,7 +550,6 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        actionId: deleteActionResult.id,
       });
 
       // Move all the schema_version_to_log entries of the previous version to the new version
@@ -1182,7 +1172,7 @@ export class SchemaVersionStore {
         node.id,
       );
 
-      // Legacy case: We need to produce the edge by looking at the node adn previous schema version
+      // Legacy case: We need to produce the edge by looking at the node and previous schema version
       // In legacy versions a PUSH and DELETE action can be identified by looking at the `actionId`
 
       invariant(
@@ -1235,6 +1225,12 @@ export class SchemaVersionStore {
         if (node.kind !== 'single') {
           throw new Error(`Invariant: The action can only be a single schema.`);
         }
+
+        invariant(
+          previousSchemaVersion.actionId,
+          `The schema version '${previousSchemaVersion.id}' should have a 'actionId' property.`,
+        );
+
         edgesWithNodes.push({
           type: 'changed',
           subgraphName: null,
@@ -1363,12 +1359,6 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        // Note: we re-use the original version action id here to allow rolling back the introduced changes easily.
-        // In the future we will make the actionId column nullable and remove it from being inserted here.
-        // In case we would rollback the schema promotion feature, the users would still see the promoted schema versions
-        // even though the action would be misleading. This is a trade-off to make sure we can quickly rollback the schema promotion feature
-        // in case it causes unexpected issues.
-        actionId: args.origin.version.actionId,
       });
 
       if (args.publicSchemaChanges?.length) {
@@ -1684,7 +1674,8 @@ const SchemaVersionModel = z
     conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadataModel.nullable(),
     targetId: z.string(),
     meta: SchemaVersionMetaModel.nullable(),
-    actionId: z.string(),
+    /** This property only exists for legacy backfill reasons, do not use it unless you know what you are doing. */
+    actionId: z.string().nullable(),
     origin: SchemaVersionOriginModel.nullable(),
   })
   .and(
