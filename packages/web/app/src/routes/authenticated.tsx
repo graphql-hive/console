@@ -1,3 +1,4 @@
+import Session from 'supertokens-auth-react/recipe/session';
 import { z } from 'zod';
 import { authenticated } from '@/components/authenticated-container';
 import { OrganizationLayout } from '@/components/layouts/organization';
@@ -16,6 +17,14 @@ import { root } from './root';
 export const authenticatedRoute = createRoute({
   getParentRoute: () => root,
   id: 'authenticated',
+  // Loaders run before render, so an anonymous visitor is turned away here, not by `SessionAuth`.
+  beforeLoad: async ({ location }) => {
+    if (!(await Session.doesSessionExist())) {
+      throw redirect({ to: '/auth', search: { redirectToPath: location.href } });
+    }
+  },
+  // Never a pending boundary: the async check would otherwise hide the header behind a skeleton.
+  pendingMs: Infinity,
   component: authenticated(function AuthenticatedRoute() {
     return <Outlet />;
   }),
