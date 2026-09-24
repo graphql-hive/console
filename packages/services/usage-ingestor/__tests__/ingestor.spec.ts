@@ -129,13 +129,15 @@ function buildTracker() {
 
 const heartbeat = () => Promise.resolve();
 
-test('tags every write with a token derived from the message bytes and resolves before the writes settle', async () => {
+test('tags every write with a hash of the report ids and resolves before the writes settle', async () => {
   const processor = buildProcessor();
   const pending = deferred();
   const writer = buildWriter({ writeOperations: vi.fn().mockReturnValue(pending.promise) });
   const tracker = { waitForCapacity: vi.fn().mockResolvedValue(undefined), track: vi.fn() };
   const message = await buildMessage();
-  const expectedToken = createHash('sha256').update(message.value!).digest('hex');
+  const expectedToken = createHash('sha256')
+    .update(rawReports.map(report => report.id).join(','))
+    .digest('hex');
 
   await expect(
     processMessage({
@@ -178,7 +180,7 @@ test('tags every write with a token derived from the message bytes and resolves 
   pending.resolve();
 });
 
-test('two copies of the same message bytes produce the same token', async () => {
+test('two copies of the same message produce the same token, and different reports do not', async () => {
   const message = await buildMessage();
   const tokens: string[] = [];
   const writer = buildWriter({
@@ -202,8 +204,22 @@ test('two copies of the same message bytes produce the same token', async () => 
     });
   }
 
-  expect(tokens).toHaveLength(2);
+  const otherReports = rawReports.map(report => ({ ...report, id: 'other-report-id' }));
+  await processMessage({
+    processor: buildProcessor(),
+    writer,
+    tracker,
+    message: { ...message, value: await compressZstd(JSON.stringify(otherReports)) },
+    heartbeat,
+    logger: buildLogger(),
+    topic: 'usage_reports',
+    partition: 0,
+  });
+
+  expect(tokens).toHaveLength(3);
   expect(tokens[0]).toEqual(tokens[1]);
+  expect(tokens[2]).toEqual(createHash('sha256').update('other-report-id').digest('hex'));
+  expect(tokens[2]).not.toEqual(tokens[0]);
 });
 
 describe('the offset is committed only once every table has acknowledged', () => {

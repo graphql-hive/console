@@ -2,10 +2,10 @@
 
 This service takes care of feeding usage data into the ClickHouse instance.
 
-Every insert carries an `insert_deduplication_token` derived from the Kafka message bytes, and a
-message's offset is committed only after ClickHouse has acknowledged all of its inserts. Retried or
-replayed messages are therefore written once. ClickHouse Cloud and replicated tables keep the
-deduplication log by default; self-hosted `MergeTree` tables get it from the
+Every insert carries an `insert_deduplication_token`, a hash of the ids of the reports in the Kafka
+message, and a message's offset is committed only after ClickHouse has acknowledged all of its
+inserts. Retried or replayed messages are therefore written once. ClickHouse Cloud and replicated
+tables keep the deduplication log by default; self-hosted `MergeTree` tables get it from the
 `non_replicated_deduplication_window` setting applied by the ClickHouse migrations.
 
 ## Configuration

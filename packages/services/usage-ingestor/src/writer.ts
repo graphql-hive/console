@@ -37,9 +37,8 @@ export interface ClickHouseConfig {
 
 export interface WriteOptions {
   /**
-   * Identifies the Kafka message the rows came from. ClickHouse skips an insert whose token
-   * it has already applied to the same table, so retries and replays of a message are not
-   * double counted.
+   * Identifies the reports the rows came from. ClickHouse skips an insert whose token it
+   * has already applied to the same table, so retries and replays are not double counted.
    */
   deduplicationToken: string;
   /**

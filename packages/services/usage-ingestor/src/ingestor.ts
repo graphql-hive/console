@@ -247,6 +247,11 @@ function serializedBytes(rows: string[]) {
  * Parses one Kafka message and starts its ClickHouse writes. Resolves as soon as the writes
  * are handed to the in-flight tracker; the tracker commits the offset when they are all
  * acknowledged. Rejects only for a message that cannot be parsed.
+ *
+ * The deduplication token is a hash of the report ids in the message, hashed so it stays a
+ * fixed size in the query string however many reports a message carries. Today the usage
+ * service assigns those ids, so the token identifies the produced message; once clients
+ * supply their own ids it will identify the reports themselves.
  */
 export async function processMessage({
   processor,
@@ -268,7 +273,6 @@ export async function processMessage({
   partition: number;
 }) {
   reportMessageBytes.observe(message.value!.byteLength);
-  const deduplicationToken = createHash('sha256').update(message.value!).digest('hex');
   const source = `${topic}/${partition}@${message.offset}`;
 
   let rawReports: RawReport[];
@@ -296,6 +300,10 @@ export async function processMessage({
     );
     throw error;
   }
+
+  const deduplicationToken = createHash('sha256')
+    .update(rawReports.map(report => report.id).join(','))
+    .digest('hex');
 
   const {
     registryRecords,

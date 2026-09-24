@@ -5,7 +5,7 @@
 Make usage ingestion durable and deduplicated. The usage ingestor now waits for ClickHouse
 to persist each async insert before committing the Kafka offset, so a ClickHouse restart no
 longer loses buffered usage data, and every insert carries an `insert_deduplication_token`
-derived from the Kafka message bytes so retried or replayed messages are not double counted.
+hashed from the report ids in the message so retried or replayed messages are not double counted.
 A message's offset is committed only once all of its tables have acknowledged the write; an
 insert that keeps failing is retried in place with the same token instead of the message
 being replayed. A ClickHouse migration enables the deduplication log on non-replicated
