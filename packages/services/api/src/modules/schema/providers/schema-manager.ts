@@ -4,7 +4,7 @@ import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
-import { Encryptor, trace, traceFn } from '@hive/service-common';
+import { Encryptor, invariant, trace, traceFn } from '@hive/service-common';
 import type { SchemaCheck } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
 import { SchemaChecksFilter } from '../../../__generated__/types';
@@ -23,6 +23,7 @@ import { atomic, cache, stringifySelector } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { parseGraphQLSource } from '../../../shared/schema';
 import { Session } from '../../auth/lib/authz';
+import { GraphStore, type Graph } from '../../graph/providers/graph-store';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { ProjectStore } from '../../project/providers/project-store';
@@ -83,6 +84,7 @@ export class SchemaManager {
     private breakingSchemaChangeUsageHelper: BreakingSchemaChangeUsageHelper,
     private idTranslator: IdTranslator,
     private schemaVersions: SchemaVersionStore,
+    private graphs: GraphStore,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
   ) {
     this.logger = logger.child({ source: 'SchemaManager' });
@@ -90,10 +92,11 @@ export class SchemaManager {
       selectors => {
         return Promise.all(
           selectors.map(async selector => {
+            const graph = await graphs.findGraphForTargetIdByName(selector.targetId, 'default');
+            invariant(graph, "No graph with name 'default' exists.");
+
             return {
-              ...(await this.schemaVersions.getLatestValidSchemaVersionForTargetId(
-                selector.targetId,
-              )),
+              ...(await this.schemaVersions.getLatestValidSchemaVersionForGraph(graph)),
               projectId: selector.projectId,
               targetId: selector.targetId,
               organizationId: selector.organizationId,
@@ -109,9 +112,11 @@ export class SchemaManager {
     );
   }
 
-  async hasSchema(target: Target) {
+  async hasPublishedSchemaVersionInDefaultGraph(target: Target) {
     this.logger.debug('Checking if schema is available (targetId=%s)', target.id);
-    return this.schemaVersions.anyVersionExistsForTarget(target);
+    const graph = await this.graphs.findGraphForTargetIdByName(target.id, 'default');
+    invariant(graph, "No graph with name 'default' exists.");
+    return this.schemaVersions.anyVersionExistsForGraph(graph);
   }
 
   @traceFn('SchemaManager.compose', {
@@ -159,7 +164,7 @@ export class SchemaManager {
       },
     });
 
-    const [organization, project, target] = await Promise.all([
+    const [organization, project, graph] = await Promise.all([
       this.storage.getOrganization({
         organizationId: selector.organizationId,
       }),
@@ -167,11 +172,7 @@ export class SchemaManager {
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
-      this.targetStore.getTarget({
-        organizationId: selector.organizationId,
-        projectId: selector.projectId,
-        targetId: selector.targetId,
-      }),
+      this.graphs.findGraphForTargetIdByName(selector.targetId, 'default'),
     ]);
 
     if (project.type !== ProjectType.FEDERATION) {
@@ -181,8 +182,10 @@ export class SchemaManager {
       };
     }
 
-    const latestSchemas = await this.getLatestSchemaVersionWithSchemaLogs({
-      target,
+    invariant(graph, "No graph with name 'default' exists.");
+
+    const latestSchemas = await this.getLatestSchemaVersionWithSchemaLogsForGraph({
+      graph,
       onlyComposable: input.onlyComposable,
     });
 
@@ -280,9 +283,10 @@ export class SchemaManager {
     return this.schemaVersions.getMatchingServiceSchemaOfVersions(versions);
   }
 
-  async getMaybeLatestValidVersion(target: Target) {
-    this.logger.debug('Fetching maybe latest valid version (targetId=%o)', target.id);
-    const version = await this.schemaVersions.getMaybeLatestValidSchemaVersion(target);
+  async getMaybeLatestValidVersionForGraph(graph: Graph) {
+    this.logger.debug('Fetching maybe latest valid version (graphId=%s)', graph.id);
+
+    const version = await this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(graph);
 
     if (!version) {
       return null;
@@ -290,17 +294,18 @@ export class SchemaManager {
 
     return {
       ...version,
-      projectId: target.projectId,
-      targetId: target.id,
-      organizationId: target.orgId,
+      projectId: graph.projectId,
+      targetId: graph.id,
+      organizationId: graph.organizationId,
     };
   }
 
-  async getSchemaVersionWithTargetBySchemaVersionIdForProject(
+  async getSchemaVersionWithTargetAndGraphBySchemaVersionIdForProject(
     project: Project,
     schemaVersionId: string,
   ): Promise<null | {
     target: Target;
+    graph: Graph;
     schemaVersion: SchemaVersion & {
       projectId: string;
       targetId: string;
@@ -344,8 +349,12 @@ export class SchemaManager {
       schemaVersion.id,
     );
 
+    const graph = await this.graphs.findGraphForTargetIdByName(target.id, 'default');
+    invariant(graph, "No graph with name 'default' exists.");
+
     return {
       target,
+      graph,
       schemaVersion: {
         ...schemaVersion,
         projectId: target.projectId,
@@ -360,9 +369,9 @@ export class SchemaManager {
     return this.latestSchemaVersionLoader.load(selector);
   }
 
-  async getMaybeLatestVersion(target: Target) {
-    this.logger.debug('Fetching maybe latest version (targetId=%o)', target.id);
-    const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+  async getMaybeLatestVersionForGraph(graph: Graph) {
+    this.logger.debug('Fetching maybe latest version (graphId=%s)', graph.id);
+    const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
 
     if (!latest) {
       return null;
@@ -370,9 +379,9 @@ export class SchemaManager {
 
     return {
       ...latest,
-      projectId: target.projectId,
-      targetId: target.id,
-      organizationId: target.orgId,
+      projectId: graph.projectId,
+      targetId: graph.id,
+      organizationId: graph.organizationId,
     };
   }
 
@@ -406,10 +415,13 @@ export class SchemaManager {
   /**
    * Retrieve the latest schema version including the schema logs.
    */
-  async getLatestSchemaVersionWithSchemaLogs(args: { target: Target; onlyComposable?: boolean }) {
+  async getLatestSchemaVersionWithSchemaLogsForGraph(args: {
+    graph: Graph;
+    onlyComposable?: boolean;
+  }) {
     const schemaVersion = await (args.onlyComposable
-      ? this.getMaybeLatestValidVersion(args.target)
-      : this.getMaybeLatestVersion(args.target));
+      ? this.getMaybeLatestValidVersionForGraph(args.graph)
+      : this.getMaybeLatestVersionForGraph(args.graph));
 
     if (!schemaVersion) {
       return null;
@@ -423,14 +435,18 @@ export class SchemaManager {
     };
   }
 
-  async getPaginatedSchemaVersionsForTargetId(
-    target: Target,
+  async getPaginatedSchemaVersionsForGraph(
+    graph: Graph,
     args: {
       first: number | null;
       cursor: null | string;
     },
   ) {
-    const connection = await this.schemaVersions.getPaginatedSchemaVersionsForTarget(target, args);
+    const first = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+    const connection = await this.schemaVersions.getPaginatedSchemaVersionsForGraph(graph, {
+      first,
+      cursor: args.cursor,
+    });
 
     return {
       ...connection,
@@ -438,9 +454,9 @@ export class SchemaManager {
         ...edge,
         node: {
           ...edge.node,
-          organizationId: target.orgId,
-          projectId: target.projectId,
-          targetId: target.id,
+          organizationId: graph.organizationId,
+          projectId: graph.projectId,
+          targetId: graph.targetId,
         },
       })),
     };
@@ -1058,7 +1074,10 @@ export class SchemaManager {
     });
 
     const target = await this.targetManager.getTargetById({ targetId: selector.targetId });
-    const record = await this.schemaVersions.getSchemaVersionForTargetByCommit(target, args.commit);
+    const graph = await this.graphs.findGraphForTargetIdByName(target.id, 'default');
+    invariant(graph, "No graph with name 'default' exists.");
+
+    const record = await this.schemaVersions.getSchemaVersionForGraphByCommit(graph, args.commit);
 
     if (!record) {
       return null;
@@ -1173,7 +1192,9 @@ export class SchemaManager {
 
     const results = await Promise.all(
       targets.map(async target => {
-        const schemaVersion = await this.getMaybeLatestValidVersion(target);
+        const graph = await this.graphs.findGraphForTargetIdByName(target.id, 'default');
+        invariant(graph, "No graph with name 'default' exists.");
+        const schemaVersion = await this.getMaybeLatestValidVersionForGraph(graph);
 
         if (schemaVersion === null) {
           return {

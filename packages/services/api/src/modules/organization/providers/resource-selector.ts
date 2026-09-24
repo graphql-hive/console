@@ -1,11 +1,13 @@
 import { Injectable, Scope } from 'graphql-modules';
 import z from 'zod';
 import { psql } from '@hive/postgres';
+import { invariant } from '@hive/service-common';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization, ProjectType } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import { ProjectStore } from '../../project/providers/project-store';
+import { GraphStore } from '../../graph/providers/graph-store';
 import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
@@ -25,6 +27,7 @@ export class ResourceSelector {
     private targetStore: TargetStore,
     private session: Session,
     private schemaVersions: SchemaVersionStore,
+    private graphs: GraphStore,
   ) {}
 
   private async _assertResourceSelectorAdminPermissions(organizationId: string) {
@@ -169,9 +172,11 @@ export class ResourceSelector {
     if (target.type === GraphQLSchema.ProjectType.SINGLE) {
       return null;
     }
-    const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForTargetId(
-      target.targetId,
-    );
+
+    const graph = await this.graphs.findGraphForTargetIdByName(target.targetId, 'default');
+    invariant(graph, "No graph with name 'default' exists.");
+
+    const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
     if (latest) {
       return await this.storage.pool
         .anyFirst(

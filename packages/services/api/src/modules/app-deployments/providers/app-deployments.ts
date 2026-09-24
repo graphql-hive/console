@@ -20,7 +20,7 @@ import {
   encodeCreatedAtAndUUIDIdBasedCursor,
   encodeHashBasedCursor,
 } from '@hive/storage';
-import type { Target } from '../../../shared/entities';
+import { type Graph } from '../../graph/providers/graph-store';
 import { ClickHouse, sql as cSql } from '../../operations/providers/clickhouse-client';
 import { SchemaVersionHelper } from '../../schema/providers/schema-version-helper';
 import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
@@ -258,7 +258,7 @@ export class AppDeployments {
   }
 
   async addDocumentsToAppDeployment(args: {
-    target: Target;
+    graph: Graph;
     appDeployment: {
       name: string;
       version: string;
@@ -270,7 +270,7 @@ export class AppDeployments {
   }) {
     if (this.appDeploymentsEnabled === false) {
       const organization = await this.storage.getOrganization({
-        organizationId: args.target.orgId,
+        organizationId: args.graph.organizationId,
       });
       if (organization.featureFlags.appDeployments === false) {
         this.logger.debug(
@@ -290,7 +290,7 @@ export class AppDeployments {
     // todo: validate input
 
     const appDeployment = await this.findAppDeployment({
-      targetId: args.target.id,
+      targetId: args.graph.targetId,
       name: args.appDeployment.name,
       version: args.appDeployment.version,
     });
@@ -316,9 +316,8 @@ export class AppDeployments {
     }
 
     if (args.operations.length !== 0) {
-      const latestSchemaVersion = await this.schemaVersions.getMaybeLatestValidSchemaVersion(
-        args.target,
-      );
+      const latestSchemaVersion =
+        await this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(args.graph);
 
       if (latestSchemaVersion === null) {
         return {
@@ -333,10 +332,11 @@ export class AppDeployments {
 
       const compositeSchemaSdl = await this.schemaVersionHelper.getCompositeSchemaSdl({
         ...latestSchemaVersion,
-        organizationId: args.target.orgId,
-        projectId: args.target.projectId,
-        targetId: args.target.id,
+        organizationId: args.graph.organizationId,
+        projectId: args.graph.projectId,
+        targetId: args.graph.id,
       });
+
       if (compositeSchemaSdl === null) {
         // No valid schema found.
         return {
@@ -350,7 +350,7 @@ export class AppDeployments {
 
       const result = await this.persistedDocumentScheduler.processBatch({
         schemaSdl: compositeSchemaSdl,
-        targetId: args.target.id,
+        targetId: args.graph.targetId,
         appDeployment: {
           id: appDeployment.id,
           name: args.appDeployment.name,
