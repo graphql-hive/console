@@ -1,4 +1,6 @@
+import { invariant } from '@hive/service-common';
 import type { Schema } from '../../../shared/entities';
+import { GraphStore } from '../../graph/providers/graph-store';
 import { SchemaManager } from '../../schema/providers/schema-manager';
 import { toGraphQLSchemaCheckCurry } from '../../schema/to-graphql-schema-check';
 import { TargetStore } from '../../target/providers/target-store';
@@ -21,8 +23,11 @@ export const SchemaProposal: SchemaProposalResolvers = {
       throw new Error('uh oh');
     }
 
+    const graph = await injector.get(GraphStore).findGraphForTargetIdByName(target.id, 'default');
+    invariant(graph, "No graph with name 'default' exists.");
+
     if (target) {
-      const latest = await injector.get(SchemaManager).getMaybeLatestValidVersion(target);
+      const latest = await injector.get(SchemaManager).getMaybeLatestValidVersionForGraph(graph);
       if (latest) {
         const schemaChecks = await injector
           .get(SchemaManager)
