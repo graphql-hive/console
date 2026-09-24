@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { PageLead } from '@/components/base/page-lead';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
@@ -12,9 +12,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { graphql, useFragment, type DocumentType } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { usePagedConnection } from '@/lib/hooks';
-import { useNavigate } from '@tanstack/react-router';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
+import { getRouteApi } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+
+const appsRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/apps');
 
 export const TargetAppsSortSchema = z.object({
   field: z.enum(['CREATED_AT', 'ACTIVATED_AT', 'LAST_USED']),
@@ -121,13 +123,9 @@ const TargetAppsViewFetchMoreQuery = graphql(`
 
 type AppDeploymentRow = DocumentType<typeof AppTableRow_AppDeploymentFragment>;
 
-function TargetAppsView(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  sorting: SortState;
-}) {
-  const navigate = useNavigate();
+function TargetAppsView(props: { sorting: SortState }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const navigate = appsRoute.useNavigate();
   const sortVariable = {
     field: props.sorting.field as AppDeploymentsSortField,
     direction: props.sorting.direction as SortDirectionType,
@@ -136,9 +134,9 @@ function TargetAppsView(props: {
   const [data] = useQuery({
     query: TargetAppsViewQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       sort: sortVariable,
     },
   });
@@ -156,9 +154,9 @@ function TargetAppsView(props: {
     loadMore: after =>
       client
         .query(TargetAppsViewFetchMoreQuery, {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
           after,
           sort: sortVariable,
         })
@@ -175,9 +173,9 @@ function TargetAppsView(props: {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
         replace: true,
       });
@@ -186,11 +184,7 @@ function TargetAppsView(props: {
 
   if (data.error) {
     return (
-      <QueryError
-        organizationSlug={props.organizationSlug}
-        error={data.error}
-        showLogoutButton={false}
-      />
+      <QueryError organizationSlug={organizationSlug} error={data.error} showLogoutButton={false} />
     );
   }
 
@@ -211,9 +205,9 @@ function TargetAppsView(props: {
           link={{
             to: '/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion',
             params: {
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
+              organizationSlug,
+              projectSlug,
+              targetSlug,
               appName: row.original.name,
               appVersion: row.original.version,
             },
@@ -344,28 +338,13 @@ function TargetAppsView(props: {
   );
 }
 
-export function TargetAppsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  sorting: SortState;
-}) {
+export function TargetAppsPage(props: { sorting: SortState }) {
   return (
     <>
       <Meta title="App Deployments" />
-      <TargetLayout
-        targetSlug={props.targetSlug}
-        projectSlug={props.projectSlug}
-        organizationSlug={props.organizationSlug}
-        page={Page.Apps}
-      >
-        <TargetAppsView
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          sorting={props.sorting}
-        />
-      </TargetLayout>
+      <LayoutContent>
+        <TargetAppsView sorting={props.sorting} />
+      </LayoutContent>
     </>
   );
 }

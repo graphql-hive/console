@@ -188,7 +188,7 @@ test.describe('oidc', () => {
       await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
 
       await oidc.createIntegration();
-      await page.goto(`/${slug}/view/members?page=invitations`, {
+      await page.goto(`/${slug}/view/members/invitations`, {
         waitUntil: 'domcontentloaded',
       });
       await page.locator('button[data-cy="send-invite-trigger"]').click();
@@ -204,7 +204,7 @@ test.describe('oidc', () => {
       await expectOrganizationHome(page, slug);
       await expect(page.getByText('not invited')).not.toBeVisible();
 
-      await page.goto(`/${slug}/view/members?page=list`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`/${slug}/view/members`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('tr').filter({ hasText: 'tom.sailor@gmail.com' })).toContainText(
         'Admin',
       );

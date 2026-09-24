@@ -1,6 +1,7 @@
 import { useMutation } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 
 export const DeleteChannelsButton_DeleteChannelsMutation = graphql(`
   mutation DeleteChannelsButton_DeleteChannelsMutation($input: DeleteAlertChannelsInput!) {
@@ -20,14 +21,11 @@ export const DeleteChannelsButton_DeleteChannelsMutation = graphql(`
 export function DeleteChannelsButton({
   selected,
   onSuccess,
-  organizationSlug,
-  projectSlug,
 }: {
   selected: string[];
   onSuccess(): void;
-  organizationSlug: string;
-  projectSlug: string;
 }) {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const [mutation, mutate] = useMutation(DeleteChannelsButton_DeleteChannelsMutation);
 
   return (

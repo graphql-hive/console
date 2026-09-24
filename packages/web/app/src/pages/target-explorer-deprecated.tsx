@@ -3,7 +3,7 @@ import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { focusRingQuiet } from '@/components/base/shared-styles';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
@@ -22,6 +22,7 @@ import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
@@ -56,9 +57,6 @@ const DeprecatedSchemaView_DeprecatedSchemaExplorerFragment = graphql(`
 function InternalDeprecatedSchemaView(props: {
   explorer: FragmentType<typeof DeprecatedSchemaView_DeprecatedSchemaExplorerFragment>;
   totalRequests: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
   const [selectedLetter, setSelectedLetter] = useState<string>();
   const { types } = useFragment(
@@ -160,9 +158,6 @@ function InternalDeprecatedSchemaView(props: {
               key={i}
               type={type}
               totalRequests={props.totalRequests}
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
               warnAboutDeprecatedArguments
               warnAboutUnusedArguments={false}
             />
@@ -221,12 +216,8 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
   }
 `);
 
-function DeprecatedSchemaExplorer(props: {
-  dataRetentionInDays: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function DeprecatedSchemaExplorer(props: { dataRetentionInDays: number }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: props.dataRetentionInDays,
     defaultPreset: presetLast7Days,
@@ -235,9 +226,9 @@ function DeprecatedSchemaExplorer(props: {
   const [query, refresh] = useQuery({
     query: DeprecatedSchemaExplorer_DeprecatedSchemaQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       period: dateRangeController.resolvedRange,
     },
   });
@@ -251,7 +242,7 @@ function DeprecatedSchemaExplorer(props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -276,11 +267,7 @@ function DeprecatedSchemaExplorer(props: {
       <ExplorerHeader
         title="Deprecated Schema"
         description="Understand the deprecated part of GraphQL schema"
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
         period={dateRangeController.resolvedRange}
-        variant="deprecated"
         subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
         metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
         dateRangeControl={dateRangeFilter}
@@ -304,9 +291,9 @@ function DeprecatedSchemaExplorer(props: {
                     <Link
                       to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
                       params={{
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
+                        organizationSlug,
+                        projectSlug,
+                        targetSlug,
                         versionId: latestSchemaVersion.id,
                       }}
                     >
@@ -318,9 +305,6 @@ function DeprecatedSchemaExplorer(props: {
               <DeprecatedSchemaView
                 totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.deprecatedSchema}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
               />
             </>
           ) : (
@@ -360,24 +344,21 @@ const TargetExplorerDeprecatedSchemaPageQuery = graphql(`
   }
 `);
 
-function ExplorerDeprecatedSchemaPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function ExplorerDeprecatedSchemaPageContent() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetExplorerDeprecatedSchemaPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
 
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -391,32 +372,18 @@ function ExplorerDeprecatedSchemaPageContent(props: {
   }
 
   return (
-    <DeprecatedSchemaExplorer
-      dataRetentionInDays={currentOrganization.usageRetentionInDays}
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-    />
+    <DeprecatedSchemaExplorer dataRetentionInDays={currentOrganization.usageRetentionInDays} />
   );
 }
 
-export function TargetExplorerDeprecatedPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}): ReactElement {
+export function TargetExplorerDeprecatedPage(): ReactElement {
   return (
     <>
       <Meta title="Deprecated Schema Explorer" />
       <SchemaExplorerProvider>
-        <TargetLayout
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          page={Page.Explorer}
-        >
-          <ExplorerDeprecatedSchemaPageContent {...props} />
-        </TargetLayout>
+        <LayoutContent>
+          <ExplorerDeprecatedSchemaPageContent />
+        </LayoutContent>
       </SchemaExplorerProvider>
     </>
   );

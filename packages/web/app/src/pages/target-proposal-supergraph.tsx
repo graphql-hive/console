@@ -4,6 +4,7 @@ import { Proposal_ChangeFragment, toUpperSnakeCase } from '@/components/target/p
 import { SchemaDiff } from '@/components/target/proposals/schema-diff/core';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { Change } from '@graphql-inspector/core';
 import { errors, patchSchema } from '@graphql-inspector/patch';
 
@@ -43,12 +44,8 @@ const ProposalSupergraphLatestQuery = graphql(/* GraphQL */ `
   }
 `);
 
-export function TargetProposalSupergraphPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  proposalId: string;
-}) {
+export function TargetProposalSupergraphPage(props: { proposalId: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ProposalSupergraphChangesQuery,
     variables: {
@@ -61,9 +58,9 @@ export function TargetProposalSupergraphPage(props: {
     variables: {
       reference: {
         bySelector: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
       },
     },

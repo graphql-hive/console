@@ -3,6 +3,7 @@ import { useMutation } from 'urql';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 
 const DeleteOperationMutation = graphql(`
   mutation DeleteOperation($selector: TargetSelectorInput!, $id: ID!) {
@@ -42,10 +43,8 @@ export function DeleteOperationModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
   operationId: string;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { toast } = useToast();
   const { isOpen, toggleModalOpen, operationId } = props;
   const [, mutate] = useMutation(DeleteOperationMutation);
@@ -54,9 +53,9 @@ export function DeleteOperationModal(props: {
     const { error } = await mutate({
       id: operationId,
       selector: {
-        targetSlug: props.targetSlug,
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
+        targetSlug,
+        organizationSlug,
+        projectSlug,
       },
     });
     toggleModalOpen();

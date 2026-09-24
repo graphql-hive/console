@@ -7,4 +7,5 @@ export { useLocalStorageJson } from './use-local-storage-json';
 export { useLocalStorage } from './use-local-storage';
 export { usePagedConnection } from './use-paged-connection';
 export { usePrettify } from './use-prettify';
+export { useSlugs } from './use-slugs';
 export { useToggle } from './use-toggle';

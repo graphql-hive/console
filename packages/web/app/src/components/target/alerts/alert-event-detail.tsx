@@ -15,6 +15,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
 import { Link } from '@tanstack/react-router';
@@ -232,20 +233,15 @@ export function StateFlow({
 export function AlertEventDetail({
   rule,
   event,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   showRuleDetailLink,
   ruleId,
 }: {
   rule: AlertEventDetailRule;
   event: AlertEventRow;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   showRuleDetailLink?: boolean;
   ruleId?: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const onFilterValue = rule.savedFilter ? (
     <Link
       to="/$organizationSlug/$projectSlug/$targetSlug/insights"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -22,7 +22,6 @@ import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
-import { ReactNode } from '@tanstack/react-router';
 import { ManageGroupMappingSheet } from './groups/manage-group-mapping-sheet';
 
 const Groups_OrganizationFragment = graphql(`

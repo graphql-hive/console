@@ -128,7 +128,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
               <LogOutIcon className="mr-2 size-4" /> Sign out
             </Button>
           </div>
-          <Link href="/" className="absolute left-6 top-6">
+          <Link to="/" className="absolute left-6 top-6">
             <HiveLogo className="size-10" />
           </Link>
           <div className="container md:w-3/5 lg:w-1/2">

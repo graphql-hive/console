@@ -121,9 +121,9 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
             </p>
             <p className="text-neutral-10 text-sm">
               If you don't receive an email, try to{' '}
-              <Link href="#" className="underline" onClick={resetEmail.reset}>
+              <button type="button" className="underline" onClick={resetEmail.reset}>
                 reset your password again
-              </Link>
+              </button>
               .
             </p>
           </AuthCardStack>

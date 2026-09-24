@@ -2,6 +2,7 @@ import { useQuery } from 'urql';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { TokenExpiration } from '@/components/organization/settings/access-tokens/token-expiration';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { PermissionDetailView } from '../../../organization/settings/access-tokens/permission-detail-view';
 
@@ -34,13 +35,12 @@ const ProjectAccessTokenDetailViewSheet_OrganizationQuery = graphql(`
 type ProjectAccessTokenDetailViewSheetProps = {
   open: boolean;
   onClose: () => void;
-  organizationSlug: string;
-  projectSlug: string;
   /** Null while closed; the sheet keeps the last token through its exit transition. */
   accessTokenId: string | null;
 };
 
 export function ProjectAccessTokenDetailViewSheet(props: ProjectAccessTokenDetailViewSheetProps) {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const accessTokenId = useKeepPreviousData(
     props.accessTokenId ?? undefined,
     props.accessTokenId === null,
@@ -48,8 +48,8 @@ export function ProjectAccessTokenDetailViewSheet(props: ProjectAccessTokenDetai
   const [query] = useQuery({
     query: ProjectAccessTokenDetailViewSheet_OrganizationQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
+      organizationSlug,
+      projectSlug,
       accessTokenId: accessTokenId ?? '',
     },
     pause: !accessTokenId,

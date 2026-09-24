@@ -27,6 +27,7 @@ import {
   useFormattedDuration,
   useFormattedNumber,
   useFormattedThroughput,
+  useSlugs,
 } from '@/lib/hooks';
 import { pick } from '@/lib/object';
 import { useChartStyles } from '@/lib/utils';
@@ -408,10 +409,8 @@ function getLevelOption() {
 
 function ClientsStats(props: {
   operationStats: FragmentType<typeof ClientsStats_OperationsStatsFragment> | null;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const router = useRouter();
   const { styles, colors } = useChartStyles();
   const operationStats = useFragment(ClientsStats_OperationsStatsFragment, props.operationStats);
@@ -551,9 +550,9 @@ function ClientsStats(props: {
         void router.navigate({
           to: '/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name',
           params: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
             name: ev.value,
           },
           search(searchParams) {
@@ -1025,18 +1024,12 @@ function RpmOverTimeStats({
 }
 
 export function OperationsStats({
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   period,
   filter,
   resolution,
   mode,
   dateRangeText,
 }: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   period: {
     from: string;
     to: string;
@@ -1046,6 +1039,7 @@ export function OperationsStats({
   filter: OperationStatsFilterInput;
   mode: 'operation-page' | 'operation-list';
 }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query, refetchQuery] = useQuery({
     query: Stats_GeneralOperationsStatsQuery,
     variables: {
@@ -1138,12 +1132,7 @@ export function OperationsStats({
       </OperationsFallback>
       <div>
         <OperationsFallback state={state} refetch={refetch}>
-          <ClientsStats
-            operationStats={operationsStats ?? null}
-            organizationSlug={organizationSlug}
-            projectSlug={projectSlug}
-            targetSlug={targetSlug}
-          />
+          <ClientsStats operationStats={operationsStats ?? null} />
         </OperationsFallback>
       </div>
       <div>

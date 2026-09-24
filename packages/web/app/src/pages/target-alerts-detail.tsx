@@ -22,6 +22,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -194,13 +195,9 @@ function buildDescription(rule: {
   )}.`;
 }
 
-export function TargetAlertsDetailPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  ruleId: string;
-}) {
-  const { organizationSlug, projectSlug, targetSlug, ruleId } = props;
+export function TargetAlertsDetailPage(props: { ruleId: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const { ruleId } = props;
   const navigate = useNavigate();
 
   const [viewRangeMinutes, setViewRangeMinutes] = useState('60');
@@ -269,22 +266,12 @@ export function TargetAlertsDetailPage(props: {
           />
         </div>
 
-        <RuleStateLogSection
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
-          ruleId={rule.id}
-          viewRangeMinutes={viewRangeMinutes}
-          rule={rule}
-        />
+        <RuleStateLogSection ruleId={rule.id} viewRangeMinutes={viewRangeMinutes} rule={rule} />
       </div>
 
       <aside className="w-94 sticky top-6 shrink-0 self-start">
         <AlertConditionsPanel
           rule={rule}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
           onRuleDeleted={() => {
             void navigate({
               to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/rules',
@@ -298,9 +285,6 @@ export function TargetAlertsDetailPage(props: {
 }
 
 function RuleStateLogSection(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   ruleId: string;
   viewRangeMinutes: string;
   rule: AlertEventsTableRule & {
@@ -309,7 +293,8 @@ function RuleStateLogSection(props: {
     severity: MetricAlertRuleSeverity;
   };
 }) {
-  const { organizationSlug, projectSlug, targetSlug, ruleId, viewRangeMinutes, rule } = props;
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const { ruleId, viewRangeMinutes, rule } = props;
 
   const now = useRollingNow(ALERTS_POLL_INTERVAL_MS);
   const { from, to, resolution } = useMemo(() => {
@@ -384,15 +369,7 @@ function RuleStateLogSection(props: {
         />
       </section>
 
-      {stateLogStatus ? null : (
-        <AlertEventsTable
-          stateLog={stateLog}
-          rule={rule}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
-        />
-      )}
+      {stateLogStatus ? null : <AlertEventsTable stateLog={stateLog} rule={rule} />}
     </>
   );
 }

@@ -10,7 +10,6 @@ import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
 import { prettier, schemaTitle } from './util';
 
 export type Service =
@@ -92,9 +91,6 @@ export type Proposals_TargetProjectTypeFragmentType = FragmentType<
 export type Proposals_SelectFragmentType = FragmentType<typeof Proposals_SelectFragment>;
 
 export function ProposalEditor(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   projectTypeFragment: Proposals_TargetProjectTypeFragmentType | undefined;
   selectFragment: Proposals_SelectFragmentType | undefined;
   changedServices: Array<ServiceTab>;
@@ -320,18 +316,18 @@ export function ProposalEditor(props: {
                 content: (
                   <div className="rounded-sm border">
                     <div className="flex items-center justify-end border-b px-2 py-1">
-                      <Link
+                      <button
+                        type="button"
                         className="hover:text-accent ml-2 cursor-pointer p-1"
                         title="Prettify schema"
-                        onClick={e => {
-                          e.preventDefault();
+                        onClick={() => {
                           const prettierSource = prettier(activeService?.source ?? '');
                           setActiveTabSource(prettierSource);
                           editor?.setValue(prettierSource);
                         }}
                       >
                         <WandSparkles className="size-4" />
-                      </Link>
+                      </button>
                       {service.__typename === 'CompositeSchema' && (
                         <Popover
                           trigger={

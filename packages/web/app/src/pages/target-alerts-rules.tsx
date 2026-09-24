@@ -14,6 +14,7 @@ import {
   MetricAlertRuleState,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
@@ -284,12 +285,8 @@ function UsageChip({ used, limit }: { used: number; limit: number }) {
   );
 }
 
-export function TargetAlertsRulesPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
-  const { organizationSlug, projectSlug, targetSlug } = props;
+export function TargetAlertsRulesPage() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const navigate = useNavigate();
 
   const [result] = useQuery({
