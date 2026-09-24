@@ -303,8 +303,6 @@ export function ConnectSchemaModal(props: { isOpen: boolean; toggleModalOpen: ()
     [target?.project.type],
   );
 
-  console.log('proper?', { check: getDocsUrl('/high-availability-cdn') });
-
   return (
     <Dialog
       open={props.isOpen}
