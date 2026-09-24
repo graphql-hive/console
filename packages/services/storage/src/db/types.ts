@@ -167,6 +167,7 @@ export interface graphs {
   config: any;
   created_at: Date;
   id: string;
+  is_backfilled: boolean;
   name: string;
   organization_id: string;
   project_id: string;
