@@ -108,8 +108,8 @@ services:
       timeout: 20s
       retries: 3
     environment:
-      ROOT_ACCESS_KEY: ${MINIO_ROOT_USER}
-      ROOT_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      ROOT_ACCESS_KEY: ${S3_ROOT_USER}
+      ROOT_SECRET_KEY: ${S3_ROOT_PASSWORD}
     volumes:
       - './.hive/versitygw/db:/data'
       - './.hive/versitygw/metadata:/metadata'
@@ -196,12 +196,12 @@ services:
       SERVER_HOST: '${SERVER_HOST:-::}'
       SERVER_HOST_IPV6_ONLY: '${SERVER_HOST_IPV6_ONLY:-0}'
       S3_ENDPOINT: 'http://s3:9000'
-      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_ACCESS_KEY_ID: ${S3_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${S3_ROOT_PASSWORD}
       S3_BUCKET_NAME: artifacts
       S3_AUDIT_LOG_ENDPOINT: 'http://s3:9000'
-      S3_AUDIT_LOG_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      S3_AUDIT_LOG_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_AUDIT_LOG_ACCESS_KEY_ID: ${S3_ROOT_USER}
+      S3_AUDIT_LOG_SECRET_ACCESS_KEY: ${S3_ROOT_PASSWORD}
       S3_AUDIT_LOG_BUCKET_NAME: audit-logs
       CDN_AUTH_PRIVATE_KEY: ${CDN_AUTH_PRIVATE_KEY}
       CDN_API: '1'
