@@ -1,7 +1,6 @@
 import { type MigrationExecutor } from '../pg-migrator';
 
-// type graphs__config = {
-//   type: 'contract';
+// type graphs__config__contract = {
 //   includeTags: Array<string>;
 //   excludeTargs: Array<string>;
 //   removeUnreachableTypesFromPublicApiSchema: boolean;
@@ -9,7 +8,6 @@ import { type MigrationExecutor } from '../pg-migrator';
 // };
 
 // type schema_versions__graph_metadata = {
-//   type: 'contract';
 //   graphId: string;
 //   graphName: string;
 // };
@@ -17,12 +15,17 @@ import { type MigrationExecutor } from '../pg-migrator';
 export default {
   name: '2026.09.25T00-00-00.graphs.ts',
   run: ({ psql }) => psql`
+    CREATE TYPE "hive_graph_type"
+      AS ENUM('BASE', 'CONTRACT')
+    ;
+
     CREATE TABLE "graphs" (
       "id" uuid NOT NULL DEFAULT uuid_generate_v4()
       , "organization_id" uuid NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE
       , "project_id" uuid NOT NULL REFERENCES "projects"("id") ON DELETE CASCADE
       , "target_id" uuid NOT NULL REFERENCES "targets"("id") ON DELETE CASCADE
       , "name" text NOT NULL
+      , "type" hive_graph_type NOT NULL
       , "config" jsonb NOT NULL
       , "source_graph_id" uuid REFERENCES "graphs"("id") ON DELETE CASCADE
       , "is_backfilled" boolean NOT NULL DEFAULT false

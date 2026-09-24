@@ -4,29 +4,50 @@ import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postg
 import { Logger } from '../../shared/providers/logger';
 
 const ContractGraphConfigModel = z.object({
-  type: z.literal('contract'),
   includeTags: z.array(z.string()).nullable(),
   excludeTags: z.array(z.string()).nullable(),
   removeUnreachableTypesFromPublicApiSchema: z.boolean(),
   isDisabled: z.boolean(),
 });
 
-const GraphConfigModel = z.discriminatedUnion('type', [ContractGraphConfigModel]);
-
-const GraphModel = z.object({
+const GraphSharedModel = z.object({
   id: z.string(),
   organizationId: z.string(),
   projectId: z.string(),
   targetId: z.string(),
   name: z.string(),
-  config: GraphConfigModel.nullable(),
-  sourceGraphId: z.string().nullable(),
   isBackfilled: z.boolean(),
   createdAt: z.string(),
 });
 
+const BaseGraphModel = GraphSharedModel.extend({
+  type: z.literal('BASE'),
+  config: z.null(),
+  sourceGraphId: z.null(),
+});
+
+type BaseGraph = z.TypeOf<typeof BaseGraphModel>;
+
+const ContractGraphModel = GraphSharedModel.extend({
+  type: z.literal('CONTRACT'),
+  config: ContractGraphConfigModel,
+  sourceGraphId: z.string(),
+});
+
+type ContractGraph = z.TypeOf<typeof ContractGraphModel>;
+
+const GraphModel = z.discriminatedUnion('type', [BaseGraphModel, ContractGraphModel]);
+
 export type Graph = z.infer<typeof GraphModel>;
-export type GraphConfig = z.infer<typeof GraphConfigModel>;
+
+type CreateGraphFields =
+  | 'organizationId'
+  | 'projectId'
+  | 'targetId'
+  | 'type'
+  | 'name'
+  | 'sourceGraphId'
+  | 'config';
 
 @Injectable({
   scope: Scope.Singleton,
@@ -45,14 +66,7 @@ export class GraphStore {
   }
 
   async createGraph(
-    args: {
-      organizationId: string;
-      projectId: string;
-      targetId: string;
-      name: string;
-      sourceGraphId: string | null;
-      config: GraphConfig | null;
-    },
+    args: Pick<BaseGraph, CreateGraphFields> | Pick<ContractGraph, CreateGraphFields>,
     trx: CommonQueryMethods = this.pg,
   ): Promise<Graph> {
     this.logger.debug(
@@ -71,6 +85,7 @@ export class GraphStore {
           , "project_id"
           , "target_id"
           , "name"
+          , "type"
           , "config"
           , "source_graph_id"
         )
@@ -79,7 +94,8 @@ export class GraphStore {
           , ${args.projectId}
           , ${args.targetId}
           , ${args.name}
-          , ${psql.jsonb(args.config)}
+          , ${args.type}
+          , ${psql.jsonbOrNull(args.config)}
           , ${args.sourceGraphId}
         )
         RETURNING
@@ -139,6 +155,7 @@ const graphFields = psql`
   , "project_id" AS "projectId"
   , "target_id" AS "targetId"
   , "name"
+  , "type"
   , "config"
   , "source_graph_id" AS "sourceGraphId"
   , "is_backfilled" AS "isBackfilled"

@@ -92,12 +92,12 @@ export class Contracts {
         // Only create the graph record if the source graph id already exists
         if (args.sourceGraphId) {
           await this.graphStore.createGraph({
+            type: 'CONTRACT',
             name: `default/${validatedContract.data.contractName}`,
             organizationId: args.organizationId,
             projectId: args.projectId,
             targetId: validatedContract.data.targetId,
             config: {
-              type: 'contract',
               includeTags: validatedContract.data.includeTags,
               excludeTags: validatedContract.data.excludeTags,
               isDisabled: false,

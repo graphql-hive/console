@@ -66,6 +66,7 @@ export class TargetStore {
 
       const defaultGraph = await this.graphStore.createGraph(
         {
+          type: 'BASE',
           name: 'default',
           config: null,
           organizationId: args.organizationId,
