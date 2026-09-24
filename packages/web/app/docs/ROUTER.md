@@ -44,15 +44,16 @@ src/routes/
   anonymous.tsx              /auth/* (pathless `anonymous` parent)
   authenticated.tsx          /, /dev, /manage, /org/new, transfer, oidc-request (pathless `authenticated` parent)
   organization/route.tsx     $organizationSlug layout + index, support, subscription
-  organization/settings.tsx  view/settings and its sections
-  organization/members.tsx   view/members and its sections
+  organization/settings.ts   view/settings and its sections
+  organization/members.ts    view/members and its sections
   project/route.tsx          $projectSlug layout + index, alerts
-  project/settings.tsx       view/settings and its sections
+  project/settings.ts        view/settings and its sections
   target/route.tsx           $targetSlug layout + index (schema)
+  target/settings.ts         settings and its sections
   target/<area>.tsx          one module per secondary tab: checks, explorer, insights, ...
   legacy.ts                  the redirect catalog
   *.spec.ts(x)               the route-level tests (see Testing)
-src/pages/*.tsx              page components: props in, content out, wrapped in <LayoutContent>
+src/pages/*.tsx              page components: content out, wrapped in <LayoutContent>, slugs from useSlugs
 src/components/layouts/      the three layouts (org/project/target) and LayoutContent
 src/lib/testing/             renderAtUrl, the fixture-checking test urql client, fixtures, jsdom mocks
 ```
@@ -62,6 +63,39 @@ and components never import a layout; the route renders it. Both are enforced by
 `@typescript-eslint/no-restricted-imports` in the root `.eslintrc.cjs`.
 
 ## Reading route state
+
+**Where you are comes from the URL, not from props.**
+`useSlugs('organization' | 'project' | 'target')` (`src/lib/hooks/use-slugs.ts`) returns the slugs
+of the page you are on, typed exactly for the scope you ask for, so a target page gets three
+`string`s rather than three guards. A component below that route calls it instead of taking the
+slugs from its parent, and the route stops passing them: most route components are now just
+`component: SomePage`.
+
+```tsx
+const { organizationSlug, projectSlug, targetSlug } = useSlugs('target')
+```
+
+Three kinds of slug stay props, and each has a reason:
+
+- **The slug names something other than the current page.** The target a role is scoped to, the
+  project a table row links to: that is data. `members/resource-selector.tsx` is the example.
+- **The component renders outside that route.** `OrganizationLayout` and the user menu also render
+  in the OIDC interstitial (`$organizationSlug/oidc-request`), which is a sibling route, and
+  `QueryError` renders on `/manage` and `/join/$inviteCode` too. The hook would throw there.
+- **It is not a component.** `laboratory/plugins/target-env.tsx` is a factory the page calls, so the
+  page reads the slugs and hands them over.
+
+A spec that renders one of these components on its own has no router, so it mocks the hook rather
+than mounting one:
+
+```tsx
+vi.mock('@/lib/hooks', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/lib/hooks')>()),
+  useSlugs: () => selector
+}))
+```
+
+For the rest of the route state:
 
 - Inside a route module, use the route object's own hooks: `targetChecksRoute.useParams()`,
   `targetChecksRoute.useSearch()`, `targetChecksRoute.useNavigate()`.
@@ -74,6 +108,9 @@ and components never import a layout; the route renders it. Both are enforced by
   `tree.spec.ts` snapshots every id.
 - `to` paths are typed against the registered router: a typo in a `Link`, `navigate` or `redirect`
   is a compile error. Prefer that over building paths from strings.
+- A link that leaves the app takes `href` and no `to`. `components/ui/link.tsx` renders those as a
+  plain anchor, because the router's `Link` re-resolves a bare `href` as an internal location and
+  drops the origin.
 
 ## Search params
 
@@ -92,11 +129,13 @@ and components never import a layout; the route renders it. Both are enforced by
 
 ### Add a page under a target (a new secondary tab)
 
-1. Write the page in `src/pages/target-thing.tsx`: props in, `<LayoutContent>` around the content,
-   route state via `getRouteApi` if needed. No layout.
+1. Write the page in `src/pages/target-thing.tsx`: `<LayoutContent>` around the content, slugs from
+   `useSlugs('target')`, other route state via `getRouteApi`. No layout, and no slug props.
 2. Add
-   `targetThingRoute = createRoute({ getParentRoute: () => targetRoute, path: 'thing', component })`
-   in `src/routes/target/thing.tsx` and add it to `targetRoute.addChildren([...])` in `tree.ts`.
+   `targetThingRoute = createRoute({ getParentRoute: () => targetRoute, path: 'thing', component: TargetThingPage })`
+   in `src/routes/target/thing.tsx` and add it to `targetRoute.addChildren([...])` in `tree.ts`. The
+   route component is the page itself unless the route carries a parameter of its own, like
+   `$schemaCheckId`, which it then passes as a prop.
 3. Add the item to the target layout's nav (`src/components/layouts/target.tsx`):
    `{ id: 'thing', label: 'Thing', to: '/$organizationSlug/$projectSlug/$targetSlug/thing', params }`.
    Gate it with `visible` if it needs a permission.
