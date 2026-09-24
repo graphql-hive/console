@@ -18,7 +18,7 @@ import { getServiceHost, KnownServices } from '../../testkit/utils';
 
 const s3Client = new S3Client({
   endpoint: 'http://127.0.0.1:9000',
-  region: 'auto',
+  region: 'us-east-1',
   credentials: {
     accessKeyId: 'minioadmin',
     secretAccessKey: 'minioadmin',
