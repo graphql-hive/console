@@ -1,5 +1,9 @@
 import nock from 'nock';
-import { poisonPillMessages } from '../src/metrics';
+import {
+  ingestedOperationsFailures,
+  ingestedOperationsWrites,
+  poisonPillMessages,
+} from '../src/metrics';
 import { createWriter } from '../src/writer';
 
 const clickhouse = {
@@ -84,31 +88,40 @@ test('after the HTTP retries are exhausted it retries the same insert in place u
     .query(true)
     .reply(200, '{}');
   const incSpy = vi.spyOn(poisonPillMessages, 'inc');
+  const writesSpy = vi.spyOn(ingestedOperationsWrites, 'inc');
+  const failuresSpy = vi.spyOn(ingestedOperationsFailures, 'inc');
   const logger = buildLogger();
   const writer = createWriter({ clickhouse, logger });
 
-  await writer.writeOperations(['row'], options);
+  await writer.writeOperations(['row', 'row'], options);
   writer.destroy();
 
   expect(scope.isDone()).toBe(true);
   expect(tokens).toHaveLength(4);
   expect(new Set(tokens)).toEqual(new Set([options.deduplicationToken]));
   expect(incSpy).toHaveBeenCalledTimes(1);
+  expect(failuresSpy).toHaveBeenCalledTimes(1);
+  expect(failuresSpy).toHaveBeenCalledWith(2);
+  expect(writesSpy).toHaveBeenCalledTimes(1);
+  expect(writesSpy).toHaveBeenCalledWith(2);
   expect(logger.error.mock.calls.at(-1)![1]).toEqual(
     'Write failed - offset not committed, retrying the same insert in place',
   );
   expect(logger.error.mock.calls.at(-1)![0]).toMatchObject({
     source: options.source,
     deduplicationToken: options.deduplicationToken,
-    rows: 1,
+    rows: 2,
     attempt: 1,
   });
 
   incSpy.mockRestore();
+  writesSpy.mockRestore();
+  failuresSpy.mockRestore();
 }, 15_000);
 
-test('destroying the writer stops an in-place retry loop', async () => {
+test('destroying the writer stops an in-place retry loop without counting a write', async () => {
   nock('http://clickhouse.test:8123').post('/').query(true).reply(500, 'boom').persist();
+  const writesSpy = vi.spyOn(ingestedOperationsWrites, 'inc');
   const writer = createWriter({ clickhouse, logger: buildLogger() });
 
   const write = writer.writeOperations(['row'], options);
@@ -116,4 +129,19 @@ test('destroying the writer stops an in-place retry loop', async () => {
   writer.destroy();
 
   await expect(write).rejects.toThrow();
+  expect(writesSpy).not.toHaveBeenCalled();
+  writesSpy.mockRestore();
 }, 15_000);
+
+test('the request timeout covers the busy timeout the insert waits for', async () => {
+  const scope = nock('http://clickhouse.test:8123')
+    .post('/')
+    .query(true)
+    .delay(clickhouse.async_insert_busy_timeout_ms + 200)
+    .reply(200, '{}');
+  const writer = createWriter({ clickhouse, logger: buildLogger() });
+
+  await expect(writer.writeOperations(['row'], options)).resolves.toBeUndefined();
+  writer.destroy();
+  expect(scope.isDone()).toBe(true);
+});

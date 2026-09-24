@@ -1,11 +1,31 @@
 import { createHash } from 'node:crypto';
 import type { KafkaMessage } from 'kafkajs';
+import nock from 'nock';
 import { compressZstd, type RawReport } from '@hive/usage-common';
 import { createInflightTracker } from '../src/inflight';
-import { processMessage } from '../src/ingestor';
-import { poisonPillMessages } from '../src/metrics';
+import { createIngestor, processMessage } from '../src/ingestor';
+import { committedOffsetLag, poisonPillMessages } from '../src/metrics';
 import type { createProcessor } from '../src/processor';
 import type { createWriter } from '../src/writer';
+
+const fakeConsumer = vi.hoisted(() => ({
+  connect: vi.fn().mockResolvedValue(undefined),
+  subscribe: vi.fn().mockResolvedValue(undefined),
+  run: vi.fn().mockResolvedValue(undefined),
+  on: vi.fn(),
+  pause: vi.fn(),
+  disconnect: vi.fn().mockResolvedValue(undefined),
+  commitOffsets: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('kafkajs', () => ({
+  Kafka: class {
+    consumer() {
+      return fakeConsumer;
+    }
+  },
+  logLevel: { NOTHING: 0, ERROR: 1, WARN: 2, INFO: 4, DEBUG: 5 },
+}));
 
 const rawReports: RawReport[] = [
   {
@@ -273,4 +293,118 @@ test('a corrupt/unparseable message increments the poison-pill counter and logs'
   expect(debugArg.value).toEqual(corruptMessage.value!.toString('base64'));
 
   incSpy.mockRestore();
+});
+
+describe('createIngestor', () => {
+  const clickhouse = {
+    protocol: 'http',
+    host: 'clickhouse.test',
+    port: 8123,
+    username: 'user',
+    password: 'pass',
+    async_insert_busy_timeout_ms: 100,
+    async_insert_max_data_size: 1000,
+    max_sockets: 5,
+    write_retry_backoff_ms: 10,
+  };
+
+  function build() {
+    fakeConsumer.run.mockClear();
+    fakeConsumer.on.mockClear();
+    fakeConsumer.pause.mockClear();
+    fakeConsumer.disconnect.mockClear();
+    fakeConsumer.commitOffsets.mockClear();
+    const ingestor = createIngestor({
+      logger: { ...buildLogger(), info: vi.fn() },
+      clickhouse,
+      inflight: { maxBytes: 1_000_000, commitIntervalMs: 60_000, shutdownDeadlineMs: 5_000 },
+      kafka: {
+        topic: 'usage_reports',
+        consumerGroup: 'test-group',
+        concurrency: 1,
+        connection: { broker: 'localhost:9092', ssl: false, sasl: null },
+      },
+    });
+    const handlers = () =>
+      Object.fromEntries(fakeConsumer.on.mock.calls.map(([event, handler]) => [event, handler]));
+    return { ingestor, handlers };
+  }
+
+  beforeEach(() => {
+    nock.disableNetConnect();
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    nock.enableNetConnect();
+  });
+
+  test('runs the consumer without auto-commit and reports ready', async () => {
+    const { ingestor } = build();
+
+    await ingestor.start();
+
+    expect(fakeConsumer.run).toHaveBeenCalledTimes(1);
+    expect(fakeConsumer.run.mock.calls[0][0]).toMatchObject({
+      autoCommit: false,
+      partitionsConsumedConcurrently: 1,
+    });
+    expect(ingestor.readiness()).toBe(true);
+  });
+
+  test('commits an acknowledged message on shutdown, after pausing and before disconnecting', async () => {
+    nock('http://clickhouse.test:8123').post('/').query(true).reply(200, '{}').persist();
+    const { ingestor, handlers } = build();
+    const lagSpy = vi.spyOn(committedOffsetLag, 'set');
+    await ingestor.start();
+    const { eachMessage } = fakeConsumer.run.mock.calls[0][0];
+    const message = await buildMessage();
+
+    await eachMessage({
+      topic: 'usage_reports',
+      partition: 0,
+      message,
+      heartbeat,
+      pause: () => () => {},
+    });
+    handlers()['consumer.end_batch_process']({
+      payload: { topic: 'usage_reports', partition: 0, highWatermark: '124' },
+    });
+
+    await ingestor.stop();
+
+    expect(fakeConsumer.pause).toHaveBeenCalledWith([{ topic: 'usage_reports' }]);
+    expect(fakeConsumer.commitOffsets).toHaveBeenCalledWith([
+      { topic: 'usage_reports', partition: 0, offset: '124' },
+    ]);
+    expect(fakeConsumer.pause.mock.invocationCallOrder[0]).toBeLessThan(
+      fakeConsumer.commitOffsets.mock.invocationCallOrder[0],
+    );
+    expect(fakeConsumer.commitOffsets.mock.invocationCallOrder[0]).toBeLessThan(
+      fakeConsumer.disconnect.mock.invocationCallOrder[0],
+    );
+    expect(lagSpy).toHaveBeenLastCalledWith({ partition: '0' }, 0);
+    lagSpy.mockRestore();
+  });
+
+  test('does not commit a message ClickHouse never acknowledged, and disconnects at the deadline', async () => {
+    nock('http://clickhouse.test:8123').post('/').query(true).reply(500, 'boom').persist();
+    const { ingestor, handlers } = build();
+    await ingestor.start();
+    const { eachMessage } = fakeConsumer.run.mock.calls[0][0];
+
+    await eachMessage({
+      topic: 'usage_reports',
+      partition: 0,
+      message: await buildMessage(),
+      heartbeat,
+      pause: () => () => {},
+    });
+    handlers()['consumer.group_join']({ payload: { memberAssignment: { usage_reports: [0] } } });
+
+    await ingestor.stop();
+
+    expect(fakeConsumer.commitOffsets).not.toHaveBeenCalled();
+    expect(fakeConsumer.disconnect).toHaveBeenCalledTimes(1);
+  }, 20_000);
 });
