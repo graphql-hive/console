@@ -20,6 +20,8 @@ const sseClient = createSSEClient({
 
 export const urqlClient = createClient({
   url: env.graphqlPublicEndpoint,
+  // @urql/core 6 sends small queries as GET by default; the API is called with POST only.
+  preferGetMethod: false,
   fetchOptions: {
     headers: {
       'graphql-client-name': 'hive-app',
