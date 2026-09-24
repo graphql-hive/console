@@ -36,8 +36,9 @@ export const networkStatusExchange: Exchange = ({ forward }) => {
     const forward$ = pipe(
       operations$,
       map(op => {
-        // Skip subscription operations
-        if (op.kind === 'subscription') {
+        // Subscriptions are long-lived, and a preload (a route loader run on hover) is not
+        // something the viewer is waiting for; neither shows in the bar.
+        if (op.kind === 'subscription' || op.context.preload === true) {
           return op;
         }
         if (op.kind === 'teardown') {
