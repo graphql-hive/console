@@ -46,9 +46,9 @@ services:
     entrypoint: ['/bin/sh', '-c']
     command:
       - >-
-        mkdir -p /data/artifacts /metadata && exec /usr/local/bin/versitygw --port :9000
-        --webui :9001 --webui-no-tls --region auto --health /minio/health/live --disable-acl posix
-        --sidecar /metadata /data
+        mkdir -p /data/artifacts /metadata && exec /usr/local/bin/versitygw --port :9000 --webui
+        :9001 --webui-no-tls --region auto --health /minio/health/live --disable-acl posix --sidecar
+        /metadata /data
     ports:
       - '9000:9000'
       - '9001:9001'
