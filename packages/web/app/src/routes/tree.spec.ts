@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { createTestClient } from '@/lib/testing/urql';
 import { createMemoryHistory, createRouter } from '@tanstack/react-router';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
@@ -99,7 +100,11 @@ const examples: Record<string, string> = {
 describe('route tree', () => {
   async function build() {
     const { routeTree } = await import('./tree');
-    return createRouter({ routeTree, history: createMemoryHistory() });
+    return createRouter({
+      routeTree,
+      history: createMemoryHistory(),
+      context: { urqlClient: createTestClient() },
+    });
   }
 
   it('registers exactly these routes', { timeout: 30_000 }, async () => {

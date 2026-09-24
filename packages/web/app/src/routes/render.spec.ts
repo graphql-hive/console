@@ -43,12 +43,8 @@ vi.mock('supertokens-auth-react/recipe/session', () => ({
 
 // The layout queries are answered; every other query stays in flight, so pages show their loading
 // branch and the chrome around them is what gets asserted.
-const client = vi.hoisted(() => ({ current: null as null | ReturnType<typeof createTestClient> }));
-vi.mock('@/lib/urql', () => ({
-  get urqlClient() {
-    return client.current;
-  },
-}));
+const client = { current: null as null | ReturnType<typeof createTestClient> };
+const at = (url: string) => renderAtUrl(url, { client: client.current! });
 
 const TARGET = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}`;
 const PROJECT = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}`;
@@ -108,7 +104,7 @@ describe('chrome at every page', () => {
   // The header is owned by the layout route, so moving between sibling pages keeps the same DOM
   // node; a remount would create a new one.
   it('keeps the organization layout mounted across its pages', { timeout: 30_000 }, async () => {
-    const { router } = renderAtUrl(ORGANIZATION);
+    const { router } = at(ORGANIZATION);
     const header = await screen.findByRole('banner');
     await router.navigate({
       to: '/$organizationSlug/view/members',
@@ -123,7 +119,7 @@ describe('chrome at every page', () => {
   });
 
   it('keeps the target layout mounted across its pages', { timeout: 30_000 }, async () => {
-    const { router } = renderAtUrl(`${TARGET}/checks`);
+    const { router } = at(`${TARGET}/checks`);
     const header = await screen.findByRole('banner');
     await router.navigate({
       to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
@@ -144,7 +140,7 @@ describe('chrome at every page', () => {
         },
       },
     });
-    const { router } = renderAtUrl(`${TARGET}/history`);
+    const { router } = at(`${TARGET}/history`);
     await waitFor(() =>
       expect(router.state.location.pathname).toBe(`${TARGET}/history/version-42`),
     );
@@ -152,7 +148,7 @@ describe('chrome at every page', () => {
   });
 
   it('keeps the project layout mounted across its pages', { timeout: 30_000 }, async () => {
-    const { router } = renderAtUrl(PROJECT);
+    const { router } = at(PROJECT);
     const header = await screen.findByRole('banner');
     await router.navigate({
       to: '/$organizationSlug/$projectSlug/view/alerts',
@@ -163,7 +159,7 @@ describe('chrome at every page', () => {
   });
 
   it('renders a missing page inside the chrome, not over it', { timeout: 30_000 }, async () => {
-    renderAtUrl(`${TARGET}/nope`);
+    at(`${TARGET}/nope`);
     const heading = await screen.findByText('Page Not Found');
     expect(screen.getByRole('navigation', { name: 'Secondary' })).toBeTruthy();
     // `h-screen` here would push the 404 a header's height past the bottom of the window.
@@ -172,7 +168,7 @@ describe('chrome at every page', () => {
 
   for (const page of pages) {
     it(`${page.url}: one secondary nav, ${page.current} current`, { timeout: 30_000 }, async () => {
-      renderAtUrl(page.url);
+      at(page.url);
 
       await waitFor(() =>
         expect(document.querySelectorAll('nav[aria-label="Secondary"]')).toHaveLength(1),
@@ -206,7 +202,7 @@ describe('target settings sections', () => {
   function renderSettings(url: string, fixture = targetSettings()) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('TargetSettingsPageQuery', fixture);
-    return renderAtUrl(url);
+    return at(url);
   }
 
   it(
@@ -294,7 +290,7 @@ describe('organization settings sections', () => {
   function renderSettings(url: string, fixture = organizationSettings()) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('OrganizationSettingsPageQuery', fixture);
-    return renderAtUrl(url);
+    return at(url);
   }
 
   it(
@@ -344,7 +340,7 @@ describe('project settings sections', () => {
   function renderSettings(url: string, fixture = projectSettings()) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('ProjectSettingsPageQuery', fixture);
-    return renderAtUrl(url);
+    return at(url);
   }
 
   it(
@@ -402,7 +398,7 @@ describe('members sections', () => {
   function renderMembers(url: string, fixture = organizationMembers()) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('OrganizationMembersPageQuery', fixture);
-    return renderAtUrl(url);
+    return at(url);
   }
 
   it(
@@ -459,7 +455,7 @@ describe('alerts sections', () => {
     client.current.fixtures.set('TargetAlertsPageQuery', {
       target: { __typename: 'Target', id: 'target-1', viewerCanUseMetricAlertRules },
     });
-    return renderAtUrl(url);
+    return at(url);
   }
 
   it(

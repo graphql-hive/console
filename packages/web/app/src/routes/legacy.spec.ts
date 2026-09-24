@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { createTestClient } from '@/lib/testing/urql';
 import { createMemoryHistory } from '@tanstack/react-router';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
@@ -11,7 +12,10 @@ vi.mock(
 
 async function loadAt(url: string) {
   const { createAppRouter } = await import('@/router');
-  const router = createAppRouter({ history: createMemoryHistory({ initialEntries: [url] }) });
+  const router = createAppRouter({
+    history: createMemoryHistory({ initialEntries: [url] }),
+    urqlClient: createTestClient(),
+  });
   await router.load();
   return router;
 }

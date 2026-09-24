@@ -1,3 +1,4 @@
+import type { Client } from 'urql';
 import { createAppRouter } from '@/router';
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router';
 import { render } from '@testing-library/react';
@@ -28,12 +29,15 @@ if (typeof window !== 'undefined' && typeof window.ResizeObserver !== 'function'
 
 /**
  * Renders the real app at `url`: the real route tree, root providers and layouts, in a memory
- * history. Pair it with the module mocks a spec needs for jsdom (`@/env/frontend`, the laboratory
- * package, SuperTokens, and `@/lib/urql` pointed at a `createTestClient`); `vi.mock` has to sit in
- * the spec file itself, so this helper cannot own them.
+ * history, with `client` (a `createTestClient`) in router context. Pair it with the module mocks a
+ * spec needs for jsdom (`@/env/frontend`, the laboratory package, SuperTokens); `vi.mock` has to sit
+ * in the spec file itself, so this helper cannot own them.
  */
-export function renderAtUrl(url: string) {
-  const router = createAppRouter({ history: createMemoryHistory({ initialEntries: [url] }) });
+export function renderAtUrl(url: string, options: { client: Client }) {
+  const router = createAppRouter({
+    history: createMemoryHistory({ initialEntries: [url] }),
+    urqlClient: options.client,
+  });
   const view = render(<RouterProvider router={router} />);
   return { router, ...view };
 }
