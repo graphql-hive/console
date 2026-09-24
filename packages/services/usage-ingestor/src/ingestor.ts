@@ -239,6 +239,24 @@ export function createIngestor(config: {
   };
 }
 
+/**
+ * Hashed so the token stays a fixed size in the query string however many reports a message
+ * carries. Today the usage service assigns the report ids, so the token identifies the
+ * produced message; once clients supply their own ids it will identify the reports
+ * themselves. A message with a report that has no id falls back to its raw bytes so that
+ * such messages never share a token.
+ */
+export function createDeduplicationToken(rawReports: RawReport[], messageValue: Buffer) {
+  const ids = rawReports.map(report => report.id);
+  const hash = createHash('sha256');
+  if (ids.length > 0 && ids.every(id => typeof id === 'string' && id.length > 0)) {
+    hash.update(ids.join(','));
+  } else {
+    hash.update(messageValue);
+  }
+  return hash.digest('hex');
+}
+
 function serializedBytes(rows: string[]) {
   return rows.reduce((sum, row) => sum + row.length, 0);
 }
@@ -247,11 +265,6 @@ function serializedBytes(rows: string[]) {
  * Parses one Kafka message and starts its ClickHouse writes. Resolves as soon as the writes
  * are handed to the in-flight tracker; the tracker commits the offset when they are all
  * acknowledged. Rejects only for a message that cannot be parsed.
- *
- * The deduplication token is a hash of the report ids in the message, hashed so it stays a
- * fixed size in the query string however many reports a message carries. Today the usage
- * service assigns those ids, so the token identifies the produced message; once clients
- * supply their own ids it will identify the reports themselves.
  */
 export async function processMessage({
   processor,
@@ -301,9 +314,7 @@ export async function processMessage({
     throw error;
   }
 
-  const deduplicationToken = createHash('sha256')
-    .update(rawReports.map(report => report.id).join(','))
-    .digest('hex');
+  const deduplicationToken = createDeduplicationToken(rawReports, message.value!);
 
   const {
     registryRecords,

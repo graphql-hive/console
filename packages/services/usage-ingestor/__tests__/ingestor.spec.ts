@@ -3,7 +3,7 @@ import type { KafkaMessage } from 'kafkajs';
 import nock from 'nock';
 import { compressZstd, type RawReport } from '@hive/usage-common';
 import { createInflightTracker } from '../src/inflight';
-import { createIngestor, processMessage } from '../src/ingestor';
+import { createDeduplicationToken, createIngestor, processMessage } from '../src/ingestor';
 import { committedOffsetLag, poisonPillMessages } from '../src/metrics';
 import type { createProcessor } from '../src/processor';
 import type { createWriter } from '../src/writer';
@@ -256,6 +256,31 @@ describe('the offset is committed only once every table has acknowledged', () =>
     expect(onCommit).toHaveBeenCalledWith([
       { topic: 'usage_reports', partition: 0, offset: '124' },
     ]);
+  });
+});
+
+describe('createDeduplicationToken', () => {
+  const bytes = Buffer.from('message-bytes');
+
+  test('hashes the report ids when every report has one', () => {
+    const reports = [{ id: 'a' }, { id: 'b' }] as RawReport[];
+    expect(createDeduplicationToken(reports, bytes)).toEqual(
+      createHash('sha256').update('a,b').digest('hex'),
+    );
+  });
+
+  test('falls back to the message bytes when a report has no id, so such messages never share a token', () => {
+    const missing = [{ id: 'a' }, {}] as RawReport[];
+    const other = Buffer.from('other-message-bytes');
+    expect(createDeduplicationToken(missing, bytes)).toEqual(
+      createHash('sha256').update(bytes).digest('hex'),
+    );
+    expect(createDeduplicationToken(missing, bytes)).not.toEqual(
+      createDeduplicationToken(missing, other),
+    );
+    expect(createDeduplicationToken([], bytes)).toEqual(
+      createHash('sha256').update(bytes).digest('hex'),
+    );
   });
 });
 
