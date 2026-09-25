@@ -2657,11 +2657,9 @@ export class SchemaPublisher {
       changed: [
         {
           id: args.logs.origin[0].actionId,
-          // we do not need a direct link to the previous log
-          previousId: null,
+          previousId: args.logs.target[0]?.actionId ?? null,
           serviceName: null,
-          // we can omit the type for a monolith schema; there is always only one "subgraph"
-          type: null,
+          type: 'changed',
           // there are no service specific changes
           // the changes are already covered via the main graph
           changes: null,
@@ -3289,12 +3287,12 @@ export class SchemaPublisher {
       const actionLog =
         originLogEdges.find(log => log.actionId === originSchemaVersion.actionId)?.node ?? null;
 
-      invariant(actionLog !== null, 'Could not find action log that caused the origin version.');
-
-      meta = {
-        author: actionLog.author,
-        commit: actionLog.commit,
-      };
+      if (actionLog) {
+        meta = {
+          author: actionLog.author,
+          commit: actionLog.commit,
+        };
+      }
     }
 
     // NOTE: We re-use the values (sdl; errors; etc) from the existing origin values were possible to ensure a promotion results in the !!exact state!!

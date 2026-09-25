@@ -1102,7 +1102,7 @@ test.concurrent('promote monolith schema version succeeds', async ({ expect }) =
   });
   expect(promotedVersionDetails.sdl).toContain('a: String!');
 
-  // why not also publish another version just to be sure
+  // why not also promote another version just to be sure
   promoteResult = await schemaVersionPromote(
     {
       source: {

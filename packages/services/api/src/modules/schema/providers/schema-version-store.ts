@@ -321,7 +321,7 @@ export class SchemaVersionStore {
         }
     ),
   ): Promise<SchemaVersion> {
-    const output = await this.pg.transaction('createSchemaVersion', async trx => {
+    const output = await this.pg.transaction('createPublishSchemaVersion', async trx => {
       const newLog = await this.insertPushSchemaLog(trx, {
         author: args.author,
         commit: args.commit,
@@ -1784,22 +1784,13 @@ export type SchemaLogDiffInput = {
     projectId: string;
     type: 'added';
   }>;
-  changed: Array<
-    | {
-        id: string;
-        previousId: string | null;
-        serviceName: string;
-        type: 'changed';
-        changes: Array<SchemaChangeType> | null;
-      }
-    | {
-        id: string;
-        previousId: null;
-        serviceName: null;
-        type: null;
-        changes: null;
-      }
-  >;
+  changed: Array<{
+    id: string;
+    previousId: string | null;
+    serviceName: string | null;
+    type: 'changed';
+    changes: Array<SchemaChangeType> | null;
+  }>;
   unchanged: Array<{ id: string; serviceName: string | null; type: 'unchanged' }>;
 };
 
