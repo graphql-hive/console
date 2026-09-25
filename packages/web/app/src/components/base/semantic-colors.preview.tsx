@@ -1,6 +1,12 @@
+import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { useTheme } from '../theme/theme-provider';
 import { Badge } from './badge/badge';
+import { Button } from './button/button';
+import { Card } from './card/card';
+import { Select, type SelectOption } from './floating/select/select';
+import { Input } from './input/input';
+import { Dialog } from './overlays/dialog/dialog';
 import { StatusDot } from './status-dot/status-dot';
 
 export const nav: NavPath = 'Base/Foundations/SemanticColors';
@@ -191,6 +197,57 @@ export const ControlRaisedConflict = createPreview(() => (
     </div>
   </div>
 ));
+
+const METRICS: SelectOption[] = [
+  { value: 'TRAFFIC', label: 'Total requests' },
+  { value: 'LATENCY:p99', label: 'p99 latency' },
+];
+
+/** Real components on the page and on a raised card; a raised card takes raised controls. */
+export const OnThePage = createPreview(() => {
+  const [metric, setMetric] = useState('TRAFFIC');
+  return (
+    <div className="grid w-[40rem] grid-cols-2 gap-4">
+      <Card title="This is a card on the page" description="Base card: line border, no fill.">
+        <div className="flex flex-col gap-3">
+          <Input placeholder="Input on surface-control" />
+          <Select options={METRICS} value={metric} onValueChange={setMetric} />
+        </div>
+      </Card>
+      <Card
+        variants={{ onSurface: 'raised' }}
+        title="This is a card on a raised surface"
+        description="Raised card: surface-card fill, line-subtle border."
+      >
+        <div className="flex flex-col gap-3">
+          <Input onSurface="raised" placeholder="Input on surface-control-raised" />
+          <Select options={METRICS} value={metric} onValueChange={setMetric} onSurface="raised" />
+          <p className="text-fg-muted text-sm">
+            fg-muted body with <code className="bg-surface-code rounded-sm px-1">surface-code</code>
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+});
+
+/** Opens from a button so the overlay, its backdrop and the floating popup render for real. */
+export const InAnOverlay = createPreview(() => {
+  const [metric, setMetric] = useState('TRAFFIC');
+  return (
+    <Dialog
+      trigger={<Button variant="primary">Open dialog</Button>}
+      title="This is a dialog on surface-overlay"
+      description="Every control in here takes onSurface raised."
+      footer={<Button onSurface="raised">Cancel</Button>}
+    >
+      <div className="flex flex-col gap-3">
+        <Input onSurface="raised" placeholder="Input on surface-control-raised" />
+        <Select options={METRICS} value={metric} onValueChange={setMetric} onSurface="raised" />
+      </div>
+    </Dialog>
+  );
+});
 
 /** The same four states as the components that carry them. */
 export const InComponents = createPreview(() => (
