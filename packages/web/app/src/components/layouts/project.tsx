@@ -20,12 +20,6 @@ import { useRouter } from '@tanstack/react-router';
 import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
 import { ProjectLayoutQuery } from './queries';
 
-export enum Page {
-  Targets = 'targets',
-  Alerts = 'alerts',
-  Settings = 'settings',
-}
-
 export function ProjectLayout({ children }: { children: ReactNode }) {
   const { organizationSlug, projectSlug } = useSlugs('project');
   const params = { organizationSlug, projectSlug };
@@ -60,21 +54,18 @@ export function ProjectLayout({ children }: { children: ReactNode }) {
               currentOrganization && currentProject
                 ? [
                     {
-                      id: Page.Targets,
                       label: 'Targets',
                       to: '/$organizationSlug/$projectSlug',
                       params,
                       exact: true,
                     },
                     {
-                      id: Page.Alerts,
                       label: 'Alerts',
                       visible: currentProject.viewerCanModifyAlerts,
                       to: '/$organizationSlug/$projectSlug/view/alerts',
                       params,
                     },
                     {
-                      id: Page.Settings,
                       label: 'Settings',
                       visible:
                         currentProject.viewerCanModifySettings ||

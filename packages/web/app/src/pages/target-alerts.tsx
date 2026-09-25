@@ -45,20 +45,17 @@ export function TargetAlertsWithNav() {
         variant="list"
         items={[
           {
-            id: 'activity',
             label: 'Alert activity',
             to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
             params: slugs,
             exact: true,
           },
           {
-            id: 'rules',
             label: 'Alert rules',
             to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/rules',
             params: slugs,
           },
           {
-            id: 'create',
             label: 'Create a new alert',
             to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/create',
             params: slugs,

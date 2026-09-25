@@ -18,20 +18,6 @@ import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { Tabs } from '../base/tabs/tabs';
 import { TargetLayoutQuery } from './queries';
 
-export enum Page {
-  Schema = 'schema',
-  Explorer = 'explorer',
-  Checks = 'checks',
-  History = 'history',
-  Insights = 'insights',
-  Traces = 'traces',
-  Laboratory = 'laboratory',
-  Apps = 'apps',
-  Proposals = 'proposals',
-  Alerts = 'alerts',
-  Settings = 'settings',
-}
-
 export const TargetLayout = ({ children }: { children: ReactNode }): ReactElement | null => {
   const params = useSlugs('target');
 
@@ -69,74 +55,63 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
               currentOrganization && currentProject && currentTarget
                 ? [
                     {
-                      id: Page.Schema,
                       label: 'Schema',
                       to: '/$organizationSlug/$projectSlug/$targetSlug',
                       params,
                       exact: true,
                     },
                     {
-                      id: Page.Checks,
                       label: 'Checks',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
                       params,
                     },
                     {
-                      id: Page.Explorer,
                       label: 'Explorer',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
                       params,
                     },
                     {
-                      id: Page.History,
                       label: 'History',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/history',
                       params,
                     },
                     {
-                      id: Page.Insights,
                       label: 'Insights',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
                       params,
                       search: {},
                     },
                     {
-                      id: Page.Traces,
                       label: 'Traces',
                       visible: currentTarget.viewerCanAccessTraces,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
                       params,
                     },
                     {
-                      id: Page.Apps,
                       label: 'Apps',
                       visible: currentTarget.viewerCanViewAppDeployments,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
                       params,
                     },
                     {
-                      id: Page.Laboratory,
                       label: 'Laboratory',
                       visible: currentTarget.viewerCanViewLaboratory,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/laboratory',
                       params,
                     },
                     {
-                      id: Page.Proposals,
                       label: 'Proposals',
                       visible: currentTarget.viewerCanViewSchemaProposals,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
                       params,
                     },
                     {
-                      id: Page.Alerts,
                       label: 'Alerts',
                       visible: currentTarget.viewerCanUseMetricAlertRules,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
                       params,
                     },
                     {
-                      id: Page.Settings,
                       label: 'Settings',
                       visible: currentTarget.viewerCanAccessSettings,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/settings',

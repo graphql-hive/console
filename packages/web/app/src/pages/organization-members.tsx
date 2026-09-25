@@ -171,7 +171,6 @@ export function OrganizationMembersPage() {
               aria-label="Members"
               variant="list"
               items={visible.map(section => ({
-                id: section.id,
                 label: section.label,
                 to: section.to,
                 params: slugs,

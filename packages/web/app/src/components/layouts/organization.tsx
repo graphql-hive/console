@@ -25,13 +25,6 @@ import { RateLimitWarn } from '../organization/billing/RateLimitWarn';
 import { QueryError } from '../ui/query-error';
 import { OrganizationLayoutQuery } from './queries';
 
-export enum Page {
-  Overview = 'overview',
-  Members = 'members',
-  Settings = 'settings',
-  Support = 'support',
-  Subscription = 'subscription',
-}
 export function OrganizationLayout({ children }: { children: ReactNode }): ReactElement | null {
   const { organizationSlug } = useSlugs('organization');
   const [isModalOpen, toggleModalOpen] = useToggle();
@@ -60,21 +53,18 @@ export function OrganizationLayout({ children }: { children: ReactNode }): React
           currentOrganization
             ? [
                 {
-                  id: Page.Overview,
                   label: 'Overview',
                   to: '/$organizationSlug',
                   params: { organizationSlug: currentOrganization.slug },
                   exact: true,
                 },
                 {
-                  id: Page.Members,
                   label: 'Members',
                   visible: currentOrganization.viewerCanSeeMembers,
                   to: '/$organizationSlug/view/members',
                   params: { organizationSlug: currentOrganization.slug },
                 },
                 {
-                  id: Page.Settings,
                   label: 'Settings',
                   visible:
                     currentOrganization.viewerCanAccessSettings ||
@@ -84,14 +74,12 @@ export function OrganizationLayout({ children }: { children: ReactNode }): React
                   params: { organizationSlug: currentOrganization.slug },
                 },
                 {
-                  id: Page.Support,
                   label: 'Support',
                   visible: currentOrganization.viewerCanManageSupportTickets,
                   to: '/$organizationSlug/view/support',
                   params: { organizationSlug: currentOrganization.slug },
                 },
                 {
-                  id: Page.Subscription,
                   label: 'Subscription',
                   visible: getIsStripeEnabled() && currentOrganization.viewerCanDescribeBilling,
                   to: '/$organizationSlug/view/subscription',

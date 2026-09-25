@@ -1381,7 +1381,6 @@ export function TargetSettingsPage() {
               aria-label="Settings"
               variant="list"
               items={visible.map(section => ({
-                id: section.id,
                 label: section.label,
                 to: section.to,
                 params: slugs,

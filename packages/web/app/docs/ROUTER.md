@@ -15,11 +15,11 @@ mounted while you move between siblings; a page is just its content, wrapped in 
 
 **2. A nav is a list of `Link`s; the router decides which one is current.** `Navigation`
 (`src/components/base/navigation/navigation.tsx`) takes items
-`{ id, label, to, params, search?, exact?, visible?, attrs? }` and marks the current one from the
-URL through the router's own active-link rules. There is no `page` prop, no `value`, no route
-metadata and no pathname parsing. The item whose `to` is the parent path itself (Schema at the
-target root, General at `/settings`) carries `exact: true`, because a plain link is current on a
-path prefix.
+`{ label, to, params, search?, exact?, visible?, attrs? }` (the label is also the key, so unique
+within one nav) and marks the current one from the URL through the router's own active-link rules.
+There is no `page` prop, no `value`, no route metadata and no pathname parsing. The item whose `to`
+is the parent path itself (Schema at the target root, General at `/settings`) carries `exact: true`,
+because a plain link is current on a path prefix.
 
 **The rule that makes 2 work: the default section has no marker in the URL.** `/settings` is
 General, `/view/members` is the list, `/alerts` is Activity. Every other section is a path under its

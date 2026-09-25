@@ -515,7 +515,6 @@ function TabbedContent(props: {
   const sections: NavigationItem[] = [
     {
       ...proposalLink,
-      id: Tab.DETAILS,
       label: 'Details',
       icon: List,
       // The default section has no marker in the URL.
@@ -524,14 +523,12 @@ function TabbedContent(props: {
     },
     {
       ...proposalLink,
-      id: Tab.SCHEMA,
       label: 'Schema',
       icon: FileDiffIcon,
       search: { page: 'schema', ...versionSearch },
     },
     {
       ...proposalLink,
-      id: Tab.SUPERGRAPH,
       label: 'Supergraph Preview',
       icon: GraphQLIcon,
       visible: props.isDistributedGraph,
@@ -539,13 +536,12 @@ function TabbedContent(props: {
     },
     {
       ...proposalLink,
-      id: Tab.CHECKS,
       label: 'Checks',
       icon: ChartPie,
       search: { page: 'checks', ...versionSearch },
     },
     // Edit always refers to the latest version, so it carries no version.
-    { ...proposalLink, id: Tab.EDIT, label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
+    { ...proposalLink, label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
   ];
 
   return (
