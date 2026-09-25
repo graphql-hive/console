@@ -26,7 +26,7 @@ export default {
       , "target_id" uuid NOT NULL REFERENCES "targets"("id") ON DELETE CASCADE
       , "name" text NOT NULL
       , "type" hive_graph_type NOT NULL
-      , "config" jsonb NOT NULL
+      , "config" jsonb
       , "source_graph_id" uuid REFERENCES "graphs"("id") ON DELETE CASCADE
       , "is_backfilled" boolean NOT NULL DEFAULT false
       , "created_at" timestamptz NOT NULL DEFAULT now()
