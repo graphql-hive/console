@@ -4,7 +4,7 @@ import { Header } from '@/components/navigation/header';
 import { HiveLink } from '@/components/ui/hive-link';
 import { UserMenu } from '@/components/ui/user-menu';
 import { loadQuery } from '@/lib/route-utils';
-import { createRoute, Outlet } from '@tanstack/react-router';
+import { createRoute, Outlet, useMatch } from '@tanstack/react-router';
 import { authenticatedRoute } from './authenticated';
 
 let viewerLoadedAt = 0;
@@ -20,6 +20,12 @@ export const withHeaderRoute = createRoute({
     void loadQuery(loader, ViewerQuery, {}, 'cache-and-network');
   },
   component: function WithHeaderRoute() {
+    // On the interstitial the organization query answers NEEDS_OIDC and reloads the page; skip it.
+    const interstitial =
+      useMatch({
+        from: '/authenticated/with-header/$organizationSlug/oidc-request',
+        shouldThrow: false,
+      }) !== undefined;
     return (
       <>
         <Header>
@@ -27,7 +33,7 @@ export const withHeaderRoute = createRoute({
             <HiveLink className="size-8" />
             <ScopeSelector />
           </div>
-          <UserMenu />
+          <UserMenu withOrganization={!interstitial} />
         </Header>
         <Outlet />
       </>

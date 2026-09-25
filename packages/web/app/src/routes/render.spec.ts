@@ -179,11 +179,18 @@ describe('chrome at every page', () => {
     expect(screen.getByRole('banner')).toBe(header);
   });
 
-  it('renders the header on the OIDC interstitial', { timeout: 30_000 }, async () => {
-    at(`${ORGANIZATION}/oidc-request?id=oidc-1&redirectToPath=%2F`);
-    await screen.findByRole('banner');
-    expect(screen.getByRole('combobox', { name: /organization/i })).toBeTruthy();
-  });
+  // On the interstitial the organization query answers NEEDS_OIDC, which reloads the page.
+  it(
+    'renders the header on the OIDC interstitial without asking for the organization',
+    { timeout: 30_000 },
+    async () => {
+      at(`${ORGANIZATION}/oidc-request?id=oidc-1&redirectToPath=%2F`);
+      await screen.findByRole('banner');
+      expect(screen.getByRole('combobox', { name: /organization/i })).toBeTruthy();
+      expect(client.current!.seen).toContain('ViewerQuery');
+      expect(client.current!.seen).not.toContain('UserMenu_OrganizationQuery');
+    },
+  );
 
   // The viewer is one request per session; each level fetches only its entity document.
   it('loads the viewer once for the session', { timeout: 30_000 }, async () => {
@@ -214,6 +221,7 @@ describe('chrome at every page', () => {
         'animate-pulse',
       ),
     );
+    expect(client.current!.seen).toContain('UserMenu_OrganizationQuery');
   });
 
   it('renders a missing page inside the chrome, not over it', { timeout: 30_000 }, async () => {

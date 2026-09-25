@@ -78,7 +78,7 @@ const UserMenu_MeFragment = graphql(`
   }
 `);
 
-export function UserMenu() {
+export function UserMenu({ withOrganization = true }: { withOrganization?: boolean }) {
   const docsUrl = getDocsUrl();
   const viewer = useViewer();
   const me = useFragment(UserMenu_MeFragment, viewer.data?.me ?? null);
@@ -90,7 +90,7 @@ export function UserMenu() {
   const [organizationQuery] = useQuery({
     query: UserMenu_OrganizationQuery,
     variables: { organizationSlug: organizationSlug ?? '' },
-    pause: !organizationSlug,
+    pause: !organizationSlug || !withOrganization,
   });
   const currentOrganization = useFragment(
     UserMenu_OrganizationFragment,
