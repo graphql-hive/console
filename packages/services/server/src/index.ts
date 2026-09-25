@@ -366,22 +366,25 @@ export async function main() {
           }
         : null,
       encryptionSecret: env.encryptionSecret,
-      schemaConfig: env.hiveServices.webApp
-        ? {
-            schemaPublishLink(input) {
-              let url = `${env.hiveServices.webApp.url}/${input.organization.slug}/${input.project.slug}/${input.target.slug}`;
+      schemaConfig: {
+        schemaVersionOriginCutoff: env.hiveServices.schema.schemaVersionOriginCutoff,
+        ...(env.hiveServices.webApp
+          ? {
+              schemaPublishLink(input) {
+                let url = `${env.hiveServices.webApp.url}/${input.organization.slug}/${input.project.slug}/${input.target.slug}`;
 
-              if (input.version) {
-                url += `/history/${input.version.id}`;
-              }
+                if (input.version) {
+                  url += `/history/${input.version.id}`;
+                }
 
-              return url;
-            },
-            schemaCheckLink(input) {
-              return `${env.hiveServices.webApp.url}/${input.organization.slug}/${input.project.slug}/${input.target.slug}/checks/${input.schemaCheckId}`;
-            },
-          }
-        : {},
+                return url;
+              },
+              schemaCheckLink(input) {
+                return `${env.hiveServices.webApp.url}/${input.organization.slug}/${input.project.slug}/${input.target.slug}/checks/${input.schemaCheckId}`;
+              },
+            }
+          : {}),
+      },
       oidcIntegrationConfig: new OIDCIntegrationConfig(env.organizationOIDC, env.organizationSCIM),
       supportConfig: env.zendeskSupport,
       pubSub,

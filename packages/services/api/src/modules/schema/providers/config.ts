@@ -1,6 +1,7 @@
 import { InjectionToken, Provider, Scope } from 'graphql-modules';
 
 export interface SchemaModuleConfig {
+  schemaVersionOriginCutoff?: Date;
   schemaPublishLink?(input: {
     organization: {
       slug: string;
