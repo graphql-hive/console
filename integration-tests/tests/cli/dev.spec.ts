@@ -139,6 +139,97 @@ describe('dev', () => {
       await expect(cmd).resolves.toContain('Composition successful');
     },
   );
+
+  test.concurrent(
+    'applies a --header scoped to a service (after --service) only to that service',
+    async ({ expect }) => {
+      const server = await createHTTPGraphQLServer();
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const { secret } = await createTargetAccessToken({});
+      const cli = createCLI({ readwrite: secret, readonly: secret });
+
+      const supergraph = tmpFile('graphql');
+      const cmd = cli.dev({
+        remote: false,
+        services: [
+          {
+            name: 'bar',
+            url: server.url + '/graphql-federation-protected',
+            headers: ['x-auth:AUTH_AUTH_BABY'],
+          },
+          {
+            name: 'baz',
+            url: server.url + '/graphql-federation',
+          },
+        ],
+        write: supergraph.filepath,
+      });
+
+      await expect(cmd).resolves.toContain('Composition successful');
+    },
+  );
+
+  test.concurrent(
+    'does not leak a service-scoped --header to other services',
+    async ({ expect }) => {
+      const server = await createHTTPGraphQLServer();
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const { secret } = await createTargetAccessToken({});
+      const cli = createCLI({ readwrite: secret, readonly: secret });
+
+      const supergraph = tmpFile('graphql');
+      const cmd = cli.dev({
+        remote: false,
+        services: [
+          {
+            name: 'bar',
+            url: server.url + '/graphql-federation-protected',
+            headers: ['x-auth:AUTH_AUTH_BABY'],
+          },
+          {
+            // no header for this service: the scoped header above must not leak here
+            name: 'baz',
+            url: server.url + '/graphql-federation-protected',
+          },
+        ],
+        write: supergraph.filepath,
+      });
+
+      await expect(cmd).rejects.toThrow();
+    },
+  );
+
+  test.concurrent(
+    'a service-scoped --header overrides a global --header of the same name',
+    async ({ expect }) => {
+      const server = await createHTTPGraphQLServer();
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+      const { secret } = await createTargetAccessToken({});
+      const cli = createCLI({ readwrite: secret, readonly: secret });
+
+      const supergraph = tmpFile('graphql');
+      const cmd = cli.dev({
+        remote: false,
+        headers: ['x-auth:WRONG_TOKEN'],
+        services: [
+          {
+            name: 'bar',
+            url: server.url + '/graphql-federation-protected',
+            headers: ['x-auth:AUTH_AUTH_BABY'],
+          },
+        ],
+        write: supergraph.filepath,
+      });
+
+      await expect(cmd).resolves.toContain('Composition successful');
+    },
+  );
 });
 
 describe('dev --remote', () => {

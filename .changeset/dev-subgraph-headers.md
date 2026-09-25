@@ -6,14 +6,23 @@ Add a `--header`/`-H` flag to `hive dev` to attach custom HTTP headers to the in
 requests sent to locally running subgraphs. This allows introspecting subgraphs that require
 authentication.
 
-Headers are supplied in `key:value` format and apply to every subgraph introspected via `--url`
-(services provided via `--schema` are unaffected):
+Headers are supplied in `key:value` format. The position of `--header` relative to `--service`
+determines its scope:
+
+- A `--header` specified **before** the first `--service` is global and applies to every service.
+- A `--header` specified **after** a `--service` applies only to that service (until the next
+  `--service`), and overrides a global header of the same name for that service.
+
+Services provided via `--schema` are not introspected, so headers don't apply to them.
 
 ```shell
 hive dev \
-  --service reviews --url http://localhost:3001/graphql \
-  --service products --url http://localhost:3002/graphql \
-  --header 'Authorization:Bearer YOUR_TOKEN'
+  --header 'X-Foo:shared-value' \
+  --service reviews  --url http://localhost:3001/graphql --header 'Authorization:Bearer REVIEWS_TOKEN' \
+  --service products --url http://localhost:3002/graphql --header 'Authorization:Bearer PRODUCTS_TOKEN'
 ```
 
-The flag is repeatable and applies globally across all services being introspected.
+In this example:
+
+- `reviews` receives `X-Foo:shared-value` and `Authorization:Bearer REVIEWS_TOKEN`
+- `products` receives `X-Foo:shared-value` and `Authorization:Bearer PRODUCTS_TOKEN`

@@ -55,6 +55,7 @@ type ServiceInput = {
   name: ServiceName;
   url: string;
   sdl?: string;
+  headers: Record<string, string>;
 };
 
 type Service = {
@@ -136,7 +137,10 @@ export default class Dev extends Command<typeof Dev> {
     header: Flags.string({
       aliases: ['H'],
       description:
-        'HTTP header to add to the introspection request (in key:value format). Applies to all services introspected from a URL.',
+        'HTTP header to add to a subgraph introspection request (in key:value format).' +
+        ' A --header before any --service applies to all services.' +
+        ' A --header after a --service applies only to that service (until the next --service),' +
+        ' and overrides a global header of the same name for that service.',
       multiple: true,
     }),
     watch: Flags.boolean({
@@ -172,7 +176,7 @@ export default class Dev extends Command<typeof Dev> {
   };
 
   async run() {
-    const { flags } = await this.parse(Dev);
+    const { flags, raw } = await this.parse(Dev);
 
     const { unstable__forceLatest } = flags;
 
@@ -180,28 +184,53 @@ export default class Dev extends Command<typeof Dev> {
       throw new ServiceAndUrlLengthMismatch(flags.service, flags.url);
     }
 
-    const headers = flags.header?.reduce(
-      (acc, header) => {
-        const [key, ...values] = header.split(':');
+    const parseHeaders = (list: string[]): Record<string, string> =>
+      list.reduce(
+        (acc, header) => {
+          const [key, ...values] = header.split(':');
 
-        return {
-          ...acc,
-          [key]: values.join(':'),
-        };
-      },
-      {} as Record<string, string>,
-    );
+          return {
+            ...acc,
+            [key]: values.join(':'),
+          };
+        },
+        {} as Record<string, string>,
+      );
+
+    // Segment --header occurrences by their position relative to --service:
+    // headers before the first --service are global; headers after a --service
+    // are scoped to that service (until the next --service).
+    const globalHeaderList: string[] = [];
+    const perServiceHeaderLists: string[][] = flags.service.map(() => []);
+    let currentServiceIndex = -1;
+    for (const token of raw) {
+      if (token.type !== 'flag') {
+        continue;
+      }
+      if (token.flag === 'service') {
+        currentServiceIndex++;
+      } else if (token.flag === 'header') {
+        if (currentServiceIndex === -1) {
+          globalHeaderList.push(token.input);
+        } else {
+          perServiceHeaderLists[currentServiceIndex].push(token.input);
+        }
+      }
+    }
+    const globalHeaders = parseHeaders(globalHeaderList);
 
     const isRemote = flags.remote === true;
 
     const serviceInputs = flags.service.map((name, i) => {
       const url = flags.url[i];
       const sdl = flags.schema ? flags.schema[i] : undefined;
+      const headers = { ...globalHeaders, ...parseHeaders(perServiceHeaderLists[i]) };
 
       return {
         name,
         url,
         sdl,
+        headers,
       };
     });
 
@@ -243,7 +272,7 @@ export default class Dev extends Command<typeof Dev> {
           throw new MissingRegistryTokenError();
         }
 
-        void this.watch(flags.watchInterval, serviceInputs, headers, services =>
+        void this.watch(flags.watchInterval, serviceInputs, services =>
           this.compose({
             services,
             registry,
@@ -261,7 +290,7 @@ export default class Dev extends Command<typeof Dev> {
         return;
       }
 
-      void this.watch(flags.watchInterval, serviceInputs, headers, services =>
+      void this.watch(flags.watchInterval, serviceInputs, services =>
         this.composeLocally({
           services,
           write: flags.write,
@@ -274,7 +303,7 @@ export default class Dev extends Command<typeof Dev> {
       return;
     }
 
-    const services = await this.resolveServices(serviceInputs, headers);
+    const services = await this.resolveServices(serviceInputs);
 
     if (isRemote) {
       let registry: string, token: string;
@@ -431,14 +460,13 @@ export default class Dev extends Command<typeof Dev> {
   private async watch(
     watchInterval: number,
     serviceInputs: ServiceInput[],
-    headers: Record<string, string> | undefined,
     compose: (services: Service[]) => Promise<void>,
   ) {
     this.logInfo('Watch mode enabled');
 
     let services: ServiceWithSource[];
     try {
-      services = await this.resolveServices(serviceInputs, headers);
+      services = await this.resolveServices(serviceInputs);
       await compose(services);
     } catch (e) {
       throw new UnexpectedError(e);
@@ -455,7 +483,7 @@ export default class Dev extends Command<typeof Dev> {
     let timeoutId: ReturnType<typeof setTimeout>;
     const watch = async () => {
       try {
-        const newServices = await this.resolveServices(serviceInputs, headers);
+        const newServices = await this.resolveServices(serviceInputs);
         if (
           newServices.some(
             service => services.find(s => s.name === service.name)!.sdl !== service.sdl,
@@ -489,10 +517,7 @@ export default class Dev extends Command<typeof Dev> {
     return watchPromise;
   }
 
-  private async resolveServices(
-    services: ServiceInput[],
-    headers: Record<string, string> | undefined,
-  ): Promise<Array<ServiceWithSource>> {
+  private async resolveServices(services: ServiceInput[]): Promise<Array<ServiceWithSource>> {
     return await Promise.all(
       services.map(async input => {
         if (input.sdl) {
@@ -510,7 +535,7 @@ export default class Dev extends Command<typeof Dev> {
         return {
           name: input.name,
           url: input.url,
-          sdl: await this.resolveSdlFromUrl(input.name, input.url, headers),
+          sdl: await this.resolveSdlFromUrl(input.name, input.url, input.headers),
           input: {
             kind: 'url' as const,
             url: input.url,

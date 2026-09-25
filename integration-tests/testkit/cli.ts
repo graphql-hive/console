@@ -310,10 +310,13 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       name: string;
       url: string;
       sdl?: string;
+      /** Headers scoped to this service (rendered after this --service, before the next). */
+      headers?: string[];
     }>;
     remote: boolean;
     write?: string;
     useLatestVersion?: boolean;
+    /** Global headers (rendered before the first --service). */
     headers?: string[];
   }) {
     return dev([
@@ -328,13 +331,14 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       input.write ? `--write ${input.write}` : '',
       ...(input.headers ?? []).map(header => `--header ${header}`),
       ...(await Promise.all(
-        input.services.map(async ({ name, url, sdl }) => {
+        input.services.map(async ({ name, url, sdl, headers }) => {
           return [
             '--service',
             name,
             '--url',
             url,
             ...(sdl ? ['--schema', await generateTmpFile(sdl, 'graphql')] : []),
+            ...(headers ?? []).flatMap(header => ['--header', header]),
           ].join(' ');
         }),
       )),
