@@ -136,14 +136,12 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
           <div className="col-span-4">
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Total calls"
                 icon={GlobeIcon}
                 value={isLoading ? '-' : formatNumber(totalRequests)}
                 caption={`Requests in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
               />
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Requests per minute"
                 icon={ActivityIcon}
                 value={
@@ -160,14 +158,12 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
                 caption={`RPM in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
               />
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Operations"
                 icon={BookIcon}
                 value={isLoading ? '-' : totalOperations}
                 caption="Documents requested by selected client"
               />
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Versions"
                 icon={HistoryIcon}
                 value={isLoading ? '-' : totalVersions}

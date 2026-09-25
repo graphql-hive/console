@@ -758,17 +758,17 @@ function ManageFiltersContent() {
     <>
       <div className="grid grid-cols-3 gap-4">
         <StatCard
-          variants={{ onSurface: 'raised', tone: 'muted' }}
+          variants={{ tone: 'muted' }}
           title="Total Filters"
           value={stats.total.toLocaleString()}
         />
         <StatCard
-          variants={{ onSurface: 'raised', tone: 'muted' }}
+          variants={{ tone: 'muted' }}
           title="Shared Filters"
           value={stats.shared.toLocaleString()}
         />
         <StatCard
-          variants={{ onSurface: 'raised', tone: 'muted' }}
+          variants={{ tone: 'muted' }}
           title="Total Views"
           value={stats.totalViews.toLocaleString()}
         />

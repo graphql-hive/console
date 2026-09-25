@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { Sheet } from './sheet';
 
 describe('Sheet', () => {
@@ -18,6 +18,13 @@ describe('Sheet', () => {
     expect(sheet.className).toContain('right-0');
     expect(sheet.className).toContain('sm:max-w-[800px]');
     expect(screen.getByText('Body').parentElement?.className).toContain('px-6');
+  });
+
+  it('closes from the corner button', () => {
+    const onOpenChange = vi.fn();
+    render(<Sheet open onOpenChange={onOpenChange} title="Span details" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onOpenChange).toHaveBeenCalledWith(false, expect.anything());
   });
 
   it('drops the body inset for edge-to-edge content', () => {

@@ -137,8 +137,6 @@ export const Playground = createPreview({
     },
     width: { type: 'radio', options: ['md', 'lg', 'half'], default: 'md' },
     padding: { type: 'radio', options: ['default', 'none'], default: 'default' },
-    closeButton: { type: 'boolean', default: true },
-    dismissible: { type: 'boolean', default: true },
   }),
   render: v => (
     <Sheet
@@ -147,8 +145,6 @@ export const Playground = createPreview({
       description={v.description}
       width={v.width}
       padding={v.padding}
-      closeButton={v.closeButton}
-      dismissible={v.dismissible}
       footer={<Button variant="primary">Done</Button>}
     >
       <TokenFields />
