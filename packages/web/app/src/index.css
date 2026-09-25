@@ -252,6 +252,12 @@
   --color-surface-control-raised: hsl(var(--surface-control-raised));
   --color-surface-selected: hsl(var(--surface-selected));
   --color-surface-inverse: hsl(var(--surface-inverse));
+  --color-surface-hover: hsl(var(--surface-hover));
+  --color-surface-pressed: hsl(var(--surface-pressed));
+  --color-surface-inset: hsl(var(--surface-inset));
+  --color-surface-code: hsl(var(--surface-code));
+  --color-surface-skeleton: hsl(var(--surface-skeleton));
+  --color-surface-stripe: var(--surface-stripe);
 
   --color-fg: hsl(var(--fg));
   --color-fg-default: hsl(var(--fg-default));
@@ -368,6 +374,12 @@
     --surface-control-raised: var(--neutral-2);
     --surface-selected: var(--neutral-5);
     --surface-inverse: var(--neutral-12);
+    --surface-hover: var(--neutral-4);
+    --surface-pressed: var(--neutral-3);
+    --surface-inset: var(--neutral-1);
+    --surface-code: var(--neutral-3);
+    --surface-skeleton: var(--neutral-3);
+    --surface-stripe: hsl(var(--neutral-2) / 0.6);
 
     --fg: var(--neutral-12);
     --fg-default: var(--neutral-11);
@@ -428,6 +440,9 @@
     --surface-floating: var(--neutral-4);
     --surface-control: var(--neutral-3);
     --surface-control-raised: var(--neutral-4);
+    --surface-pressed: var(--neutral-5);
+    --surface-inset: var(--neutral-2);
+    --surface-stripe: hsl(var(--neutral-3) / 0.6);
     --line-control: var(--neutral-4);
 
     --diff-added: #11362b;
