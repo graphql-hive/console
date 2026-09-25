@@ -355,7 +355,7 @@ class FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader implement
         // otherwise, raise an introspection error because some unknown error happened during introspection.
         // this may be unintuitive, but we don't want to raise an API Error since users may believe our API is the one at fault.
         // We'd rather nudge them to look into their service's behavior.
-        throw new IntrospectionError();
+        throw new IntrospectionError(pointer);
       }
     }
 

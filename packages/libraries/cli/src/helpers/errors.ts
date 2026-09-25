@@ -308,9 +308,10 @@ export class IntrospectionError extends HiveCLIError {
   static readonly title = 'Introspection failed';
   static readonly fix =
     'Make sure the service is running, reachable and allows introspection, or pass the schema file instead of the URL.';
-  constructor(serviceName?: string) {
+  /** @param service The name or URL of the service. */
+  constructor(service?: string) {
     super(
-      `Could not get introspection result from the service${serviceName ? ` '${serviceName}'` : ''}. Make sure introspection is enabled by the server.`,
+      `Could not get introspection result from the service${service ? ` '${service}'` : ''}. Make sure introspection is enabled by the server.`,
     );
   }
 }
@@ -509,10 +510,11 @@ export class SchemaFileNotFoundError extends HiveCLIError {
 export class SchemaFileEmptyError extends HiveCLIError {
   static readonly code = errorCode(ErrorCategory.SCHEMA_CHECK, 1);
   static readonly exitCode = ExitCode.BAD_INIT;
-  static readonly title = 'Empty schema';
-  static readonly fix = 'Make sure the file contains GraphQL type definitions.';
+  static readonly title = 'No type definitions found';
+  static readonly fix =
+    'Make sure the schema contains GraphQL type definitions. In code files, the definitions must be in a template literal tagged with `gql` or `graphql`, or marked with a `/* GraphQL */` comment.';
   constructor(fileName: string) {
-    super(`The schema file "${fileName}" is empty.`);
+    super(`No GraphQL type definitions were found in "${fileName}".`);
   }
 }
 

@@ -102,7 +102,7 @@ export function graphqlRequest(config: {
         if (config.isHiveRegistry) {
           throwRegistryError(config.endpoint, jsonData.errors, requestId);
         } else if (isIntrospectionDisabledError(jsonData.errors[0])) {
-          throw new IntrospectionError();
+          throw new IntrospectionError(config.endpoint);
         }
 
         throw new APIError(
