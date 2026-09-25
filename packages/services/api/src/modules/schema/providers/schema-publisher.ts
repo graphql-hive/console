@@ -81,7 +81,7 @@ import {
   type SchemaInput,
 } from './schema-helper';
 import { SchemaManager } from './schema-manager';
-import { SchemaRevisionStore } from './schema-revision-store';
+import { SchemaRevisionStore, SchemaRevisionUnavailableError } from './schema-revision-store';
 import { SchemaVersionHelper } from './schema-version-helper';
 import {
   SchemaVersionStore,
@@ -1371,6 +1371,13 @@ export class SchemaPublisher {
       );
     }
 
+    if (project.type !== Types.ProjectType.SINGLE && !input.service) {
+      return {
+        __typename: 'SchemaPublishMissingServiceError' as const,
+        message: 'Missing service name',
+      } as const;
+    }
+
     let revisionId: string | null = null;
     let revisionName: string | null = null;
     let resolvedSdl = input.sdl ?? input.schema?.sdl ?? null;
@@ -1413,12 +1420,7 @@ export class SchemaPublisher {
     ]);
 
     if (project.type !== Types.ProjectType.SINGLE) {
-      if (!input.service) {
-        return {
-          __typename: 'SchemaPublishMissingServiceError' as const,
-          message: 'Missing service name',
-        } as const;
-      }
+      invariant(input.service, 'Service name is required for composite projects.');
 
       let serviceExists = false;
       if (latestVersion?.schemas) {
@@ -1518,6 +1520,19 @@ export class SchemaPublisher {
               {
                 message:
                   'Another schema publish is currently in progress. Please retry the publish.',
+              },
+            ],
+          } satisfies PublishResult;
+        }
+
+        if (error instanceof SchemaRevisionUnavailableError) {
+          return {
+            __typename: 'SchemaPublishError',
+            valid: false,
+            changes: [],
+            errors: [
+              {
+                message: `Schema revision '${revisionName}' expired while it was being published. Push the revision again and retry the publish.`,
               },
             ],
           } satisfies PublishResult;

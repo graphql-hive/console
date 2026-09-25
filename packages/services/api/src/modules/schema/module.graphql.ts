@@ -433,6 +433,10 @@ export default gql`
 
   type SchemaPushOk {
     schemaRevision: SchemaRevision!
+    """
+    Whether the push was skipped because the revision already exists with the same schema.
+    """
+    isSkipped: Boolean!
   }
 
   type SchemaPushError {
