@@ -105,7 +105,7 @@ function SchemaCheckIcon(props: {
 }) {
   if (props.hasSchemaCompositionErrors || props.hasUnapprovedBreakingChanges) {
     return (
-      <div className="flex items-center text-red-500">
+      <div className="text-critical flex items-center">
         <XIcon className="inline-block h-4" />{' '}
         {props.hasSchemaCompositionErrors ? 'ERROR' : 'FAILED'}
       </div>
@@ -113,7 +113,7 @@ function SchemaCheckIcon(props: {
   }
   if (props.hasSchemaChanges) {
     return (
-      <div className="flex items-center text-green-500">
+      <div className="text-success flex items-center">
         <CheckIcon className="inline-block h-4" /> PASS
       </div>
     );

@@ -46,7 +46,7 @@ export const IconOnly = createPreview(() => {
       tooltip: 'Warning',
       label: (
         <TriangleAlert
-          className={`size-[15px] ${value === 'warning' ? 'text-orange-500' : 'text-neutral-8'}`}
+          className={`size-[15px] ${value === 'warning' ? 'text-warning' : 'text-neutral-8'}`}
         />
       ),
     },
@@ -55,7 +55,7 @@ export const IconOnly = createPreview(() => {
       tooltip: 'Error',
       label: (
         <CircleX
-          className={`size-[15px] ${value === 'error' ? 'text-red-600' : 'text-neutral-8'}`}
+          className={`size-[15px] ${value === 'error' ? 'text-critical' : 'text-neutral-8'}`}
         />
       ),
     },

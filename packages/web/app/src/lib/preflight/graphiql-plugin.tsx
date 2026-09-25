@@ -55,8 +55,8 @@ export const preflightPlugin: GraphiQLPlugin = {
 const targetRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug');
 
 const classes = {
-  monaco: clsx('*:bg-[#10151f]'),
-  monacoMini: clsx('h-32 *:rounded-md *:bg-[#10151f]'),
+  monaco: clsx('*:bg-editor'),
+  monacoMini: clsx('h-32 *:rounded-md *:bg-editor'),
   icon: clsx('absolute -left-5 top-px'),
 };
 
@@ -576,8 +576,8 @@ function PreflightContent() {
       <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
       <div className="relative">
         {preflight.isEnabled ? null : (
-          <div className="text-neutral-12 absolute inset-0 z-20 flex items-center justify-center bg-[#030711]/90 p-4">
-            <div className="rounded-md bg-[#0f1520] p-4 text-sm">
+          <div className="text-neutral-12 bg-editor-backdrop/90 absolute inset-0 z-20 flex items-center justify-center p-4">
+            <div className="bg-editor rounded-md p-4 text-sm">
               Preflight Script is disabled and will not be executed
             </div>
           </div>
@@ -808,7 +808,7 @@ function PreflightModal({
               </span>
             </Button>
           </div>
-          <div className="flex h-1/2 flex-col bg-[#10151f]">
+          <div className="bg-editor flex h-1/2 flex-col">
             <ScrollArea fill ref={consoleRef} data-cy="console-output">
               <section className="py-2.5 pl-[26px] pr-2.5 font-mono text-xs/[18px]">
                 {logs.map((log, index) => (
@@ -841,9 +841,9 @@ function PreflightModal({
 }
 
 const LOG_COLORS = {
-  error: 'text-red-400',
-  info: 'text-emerald-400',
-  warn: 'text-yellow-400',
+  error: 'text-critical',
+  info: 'text-success',
+  warn: 'text-warning',
   log: 'text-neutral-10',
 };
 

@@ -432,7 +432,7 @@ describe('PolicySettings', () => {
     await act(async () => {
       fireEvent.change(editor(), { target: { value: '{"types":' } });
     });
-    await waitFor(() => expect(editor().className).toContain('border-red-500'));
+    await waitFor(() => expect(editor().className).toContain('border-critical'));
     expect(updateButton().disabled).toBe(true);
 
     // Configs are checked against the rule's JSON Schema by the policy service on save, not here.

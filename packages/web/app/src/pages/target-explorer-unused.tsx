@@ -152,7 +152,7 @@ function InternalUnusedSchemaView(props: {
     return (
       <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
         <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-          <PartyPopperIcon className="size-10 text-emerald-500" />
+          <PartyPopperIcon className="text-success size-10" />
 
           <h3 className="mt-4 text-lg font-semibold">No unused types</h3>
           <p className="text-neutral-10 mb-4 mt-2 text-sm">

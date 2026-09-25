@@ -51,7 +51,7 @@ export function ChangeBlock(props: {
             let icon: ReactNode | undefined;
             if (mergeStatus === MergeStatus.CONFLICT) {
               icon = (
-                <span className="flex items-center justify-end pl-4 text-red-400">
+                <span className="text-critical flex items-center justify-end pl-4">
                   <TriangleAlert className="mr-2 size-4" />
                   CONFLICT
                 </span>

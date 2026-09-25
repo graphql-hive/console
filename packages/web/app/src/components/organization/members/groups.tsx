@@ -365,7 +365,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
                     />
                   ))}
                   <button
-                    className="flex items-center gap-1.5 py-1 text-xs text-amber-500 transition-colors hover:text-amber-400"
+                    className="text-warning hover:text-warning flex items-center gap-1.5 py-1 text-xs transition-colors"
                     onClick={() =>
                       setSheetNode(
                         <ManageGroupMappingSheet

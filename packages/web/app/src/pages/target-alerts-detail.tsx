@@ -215,7 +215,7 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
   if (result.error && !result.data) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center py-28">
-        <div className="text-sm text-red-500">
+        <div className="text-critical text-sm">
           Failed to load alert rule: {result.error.message}
         </div>
       </div>
@@ -323,7 +323,7 @@ function RuleStateLogSection(props: {
   const hasNoData = !data;
   const stateLogStatus =
     result.error && hasNoData ? (
-      <div className="py-4 text-sm text-red-500">
+      <div className="text-critical py-4 text-sm">
         Failed to load status transitions: {result.error.message}
       </div>
     ) : result.fetching && hasNoData ? (

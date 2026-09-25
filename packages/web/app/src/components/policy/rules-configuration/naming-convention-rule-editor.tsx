@@ -72,7 +72,7 @@ export function NamingConventionConfigEditor(props: {
         beforeMount={handleEditorWillMount}
         className={cn(
           'rounded-md border border-transparent',
-          validationErrorMessage ? 'border-red-500' : '',
+          validationErrorMessage ? 'border-critical' : '',
         )}
         width="100%"
         language="json"

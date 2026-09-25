@@ -16,7 +16,7 @@ export function OrganizationOIDCRequestPage(props: { oidcId: string; redirectToP
         <div className="my-6">
           <Card variants={{ onSurface: 'raised' }}>
             <div className="min-h-140 flex flex-col items-center justify-center gap-y-6">
-              <Lock className="size-20 stroke-amber-400" />
+              <Lock className="stroke-warning size-20" />
               <div className="flex flex-col gap-y-2 text-center">
                 <Heading>Single sign-on</Heading>
                 <span className="text-neutral-10 text-center text-sm font-medium">

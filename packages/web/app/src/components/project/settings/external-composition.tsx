@@ -154,7 +154,10 @@ const ExternalCompositionStatus = () => {
           defaultOpen
           trigger={
             <span className="inline-flex">
-              <X className="size-5 cursor-default text-red-500" onClick={e => e.preventDefault()} />
+              <X
+                className="text-critical size-5 cursor-default"
+                onClick={e => e.preventDefault()}
+              />
             </span>
           }
           content={error}
@@ -167,7 +170,7 @@ const ExternalCompositionStatus = () => {
           trigger={
             <span className="inline-flex">
               <Check
-                className="size-5 cursor-default text-green-500"
+                className="text-success size-5 cursor-default"
                 onClick={e => e.preventDefault()}
               />
             </span>

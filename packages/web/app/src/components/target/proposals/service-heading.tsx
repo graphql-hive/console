@@ -34,10 +34,10 @@ export function ServiceHeading(props: {
         <Box className="mr-2 size-4" />
         <span>{props.serviceName}</span>
         {props.type === ServiceHeadingType.NEW ? (
-          <span className="ml-2 text-xs text-green-500">*NEW*</span>
+          <span className="text-success ml-2 text-xs">*NEW*</span>
         ) : null}
         {props.type === ServiceHeadingType.DELETED ? (
-          <span className="ml-2 text-xs text-red-500">*DELETED*</span>
+          <span className="text-critical ml-2 text-xs">*DELETED*</span>
         ) : null}
       </div>
       {showToggleIcon && (

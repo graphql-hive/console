@@ -339,7 +339,7 @@ export function TargetAlertsRulesPage() {
       />
 
       {result.error && !data ? (
-        <div className="flex justify-center py-12 text-sm text-red-500">
+        <div className="text-critical flex justify-center py-12 text-sm">
           Failed to load alert rules: {result.error.message}
         </div>
       ) : result.fetching && !data ? (

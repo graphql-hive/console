@@ -245,7 +245,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                 }
                 content={
                   <span className="flex items-center text-pretty">
-                    <XIcon className="mr-1 size-4 text-red-500" />{' '}
+                    <XIcon className="text-critical mr-1 size-4" />{' '}
                     <span>
                       Cannot copy services JSON because there are no services published for this
                       target.

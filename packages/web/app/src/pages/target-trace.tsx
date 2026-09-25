@@ -75,23 +75,23 @@ function TraceView(props: {
               <div className="absolute left-0 top-6 -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[0])}
               </div>
-              <div className="absolute bottom-0 left-0 h-2 w-px bg-zinc-800" />
+              <div className="bg-line absolute bottom-0 left-0 h-2 w-px" />
               <div className="absolute left-[25%] top-6 -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[1])}
               </div>
-              <div className="absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2 bg-zinc-800" />
+              <div className="bg-line absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2" />
               <div className="absolute left-[50%] top-6 -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[2])}
               </div>
-              <div className="absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2 bg-zinc-800" />
+              <div className="bg-line absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2" />
               <div className="absolute left-[75%] top-6 -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[3])}
               </div>
-              <div className="absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2 bg-zinc-800" />
+              <div className="bg-line absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2" />
               <div className="absolute right-0 top-6 translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[4])}
               </div>
-              <div className="absolute bottom-0 right-0 h-2 w-px -translate-x-1/2 bg-zinc-800" />
+              <div className="bg-line absolute bottom-0 right-0 h-2 w-px -translate-x-1/2" />
             </div>
           </div>
         </div>
@@ -457,8 +457,10 @@ function SpanNode(props: SpanNodeProps) {
       <div
         className={cn(
           'odd:bg-neutral-5/20 hover:bg-neutral-2 pr-8',
-          hasException && 'bg-red-900/20 odd:bg-red-900/20 hover:bg-red-900',
-          highlightedEvent && highlightedEvent.spanId === span.id && 'bg-red-900 odd:bg-red-900',
+          hasException && 'bg-critical-tint odd:bg-critical-tint hover:bg-critical-tint-strong',
+          highlightedEvent &&
+            highlightedEvent.spanId === span.id &&
+            'bg-critical-tint-strong odd:bg-critical-tint-strong',
         )}
       >
         <div className="relative flex h-8 w-full items-center overflow-hidden">
@@ -628,13 +630,13 @@ function SpanNode(props: SpanNodeProps) {
                         <div
                           className={cn(
                             'absolute inset-y-0 w-0.5',
-                            isError ? 'bg-red-500' : 'bg-yellow-500',
+                            isError ? 'bg-critical' : 'bg-warning',
                           )}
                         >
                           <div
                             className={cn(
                               'absolute left-[-3px] top-[-2px] size-2',
-                              isError ? 'bg-red-500' : 'bg-yellow-500',
+                              isError ? 'bg-critical' : 'bg-warning',
                             )}
                           />
                         </div>
@@ -1435,7 +1437,7 @@ function SpanSheet(props: SpanSheetProps) {
         <div className="grid grid-cols-2 gap-4 px-6 pb-4 md:grid-cols-4">
           {/* Duration */}
           <div className="flex items-center space-x-2">
-            <Clock className="size-4 text-blue-500" />
+            <Clock className="text-info size-4" />
             <div>
               <p className="text-neutral-10 text-xs">Duration</p>
               <p className="text-sm font-medium">
@@ -1448,7 +1450,7 @@ function SpanSheet(props: SpanSheetProps) {
           {/* Start Time */}
           {computedSpanMetrics.startNs !== 0n && (
             <div className="flex items-center space-x-2">
-              <Play className="size-4 text-green-500" />
+              <Play className="text-success size-4" />
               <div>
                 <p className="text-neutral-10 text-xs">Start</p>
                 <p className="text-sm font-medium">
@@ -1462,7 +1464,7 @@ function SpanSheet(props: SpanSheetProps) {
           {/* Percentage of Total */}
           {computedSpanMetrics.percentageOfTotal && (
             <div className="flex items-center space-x-2">
-              <PieChart className="size-4 text-purple-500" />
+              <PieChart className="text-accent size-4" />
               <div>
                 <p className="text-neutral-10 text-xs">% of Total</p>
                 <p className="text-sm font-medium"> {computedSpanMetrics.percentageOfTotal}%</p>
@@ -1660,9 +1662,9 @@ function ExceptionTeaser(props: {
   type: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20">
-      <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
-        <span className="font-mono text-xs font-medium text-red-300">{props.type}</span>
+    <div className="border-critical-line bg-critical-tint overflow-hidden rounded-md border">
+      <div className="bg-critical-tint-strong flex items-center justify-between px-3 py-2">
+        <span className="text-critical font-mono text-xs font-medium">{props.type}</span>
         <Badge content={props.name} variants={{ variant: 'critical', size: 'sm', mono: true }} />
       </div>
       <div className="p-3 text-xs">

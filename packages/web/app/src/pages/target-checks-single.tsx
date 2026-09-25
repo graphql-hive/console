@@ -88,13 +88,13 @@ function AnnotatedSDLView(props: {
             className={cn(
               'border-l-5 flex items-center pl-1',
               annotation.metadata.severity === 'warning'
-                ? 'border-yellow-400 bg-yellow-100 text-yellow-800'
+                ? 'border-warning-line bg-warning-tint text-warning'
                 : 'border-critical bg-critical-tint text-critical',
             )}
           >
             <span>{annotation.metadata.message}</span>
             {annotation.metadata.severity === 'warning' ? (
-              <TriangleAlertIcon className="ml-auto mr-2 size-4 text-yellow-800" />
+              <TriangleAlertIcon className="text-warning ml-auto mr-2 size-4" />
             ) : (
               <ShieldAlertIcon className="text-critical ml-auto mr-2 size-4" />
             )}
@@ -362,7 +362,7 @@ const PolicyBlock = (props: {
         {policies.edges.map((edge, key) => (
           <li
             key={key}
-            className={cn(props.type === 'warning' ? 'text-yellow-400' : 'text-critical', 'my-1')}
+            className={cn(props.type === 'warning' ? 'text-warning' : 'text-critical', 'my-1')}
           >
             <span className="text-neutral-10 text-left">
               {labelize(edge.node.message.replace(/\.$/, ''))}{' '}
@@ -1601,7 +1601,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
                 <Tooltip
                   trigger={
                     <span className="inline-flex">
-                      <BadgeCheck className="size-6 text-green-500" />
+                      <BadgeCheck className="text-success size-6" />
                     </span>
                   }
                   content={

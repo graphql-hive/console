@@ -103,24 +103,24 @@ function GitHubIntegration(): ReactElement | null {
           <div>Here's how it will look like in your CI pipeline.</div>
           <div className="my-8 flex w-fit flex-col gap-y-1">
             <div className="flex items-center gap-x-2 pl-1">
-              <CheckIcon className="size-4 text-emerald-500" />
+              <CheckIcon className="text-success size-4" />
               <div className="bg-neutral-12 flex size-6 items-center justify-center rounded-sm">
                 <HiveLogo className="size-4/5" />
               </div>
 
-              <div className="font-semibold text-[#adbac7]">
+              <div className="text-fg-default font-semibold">
                 {organizationSlug} &gt; schema:check &gt; staging
               </div>
               <div className="text-neutral-10">— No changes</div>
             </div>
             <ArrowBigDownDashIcon className="size-6 self-center" />
             <div className="flex items-center gap-x-2 pl-1">
-              <CheckIcon className="size-4 text-emerald-500" />
+              <CheckIcon className="text-success size-4" />
               <div className="bg-neutral-12 flex size-6 items-center justify-center rounded-sm">
                 <HiveLogo className="size-4/5" />
               </div>
 
-              <div className="font-semibold text-[#adbac7]">
+              <div className="text-fg-default font-semibold">
                 {organizationSlug} &gt; schema:check &gt; {projectSlug} &gt; staging
               </div>
               <div className="text-neutral-10">— No changes</div>

@@ -154,9 +154,7 @@ export function SchemaExplorerUsageStats(props: {
                   ) : null}
                   <div>
                     for{' '}
-                    <span className="text-orange-800 dark:text-orange-500">
-                      {availability.toFixed(2)}% Availability
-                    </span>
+                    <span className="text-warning">{availability.toFixed(2)}% Availability</span>
                   </div>
                 </div>
               </div>
@@ -230,7 +228,7 @@ export function SchemaExplorerUsageStats(props: {
                   {usage.usedByClients.map(clientName => (
                     <li key={clientName} className="font-bold">
                       <Link
-                        className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
+                        className="text-warning hover:underline hover:underline-offset-2"
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                         params={{
                           organizationSlug,

@@ -265,6 +265,18 @@
   --color-line-strong: hsl(var(--line-strong));
   --color-line-control: hsl(var(--line-control));
 
+  --color-diff-added: var(--diff-added);
+  --color-diff-added-hover: var(--diff-added-hover);
+  --color-diff-added-gutter: var(--diff-added-gutter);
+  --color-diff-removed: var(--diff-removed);
+  --color-diff-removed-hover: var(--diff-removed-hover);
+  --color-diff-removed-gutter: var(--diff-removed-gutter);
+  --color-diff-removed-strike: var(--diff-removed-strike);
+
+  /* The preflight and laboratory editors are dark in both themes. */
+  --color-editor: #10151f;
+  --color-editor-backdrop: #030711;
+
   --color-card-bg: var(--color-neutral-3);
   --color-card-border: var(--color-neutral-4);
   --color-card-bg-hover: var(--color-neutral-4);
@@ -369,6 +381,14 @@
     --line-subtle: var(--neutral-4);
     --line-strong: var(--neutral-6);
     --line-control: var(--neutral-5);
+
+    --diff-added: #00a77a;
+    --diff-added-hover: #008c66;
+    --diff-added-gutter: rgb(0 91 67 / 0.3);
+    --diff-removed: #561c1d;
+    --diff-removed-hover: #8e1c22;
+    --diff-removed-gutter: rgb(116 23 28 / 0.3);
+    --diff-removed-strike: #998c8b;
   }
 
   .dark {
@@ -407,6 +427,9 @@
     --surface-control: var(--neutral-3);
     --surface-control-raised: var(--neutral-4);
     --line-control: var(--neutral-4);
+
+    --diff-added: #11362b;
+    --diff-added-hover: #005b43;
   }
 
   :root {
@@ -425,7 +448,7 @@
     --hive-laboratory-muted-foreground: var(--neutral-11);
     --hive-laboratory-accent: var(--neutral-4);
     --hive-laboratory-accent-foreground: var(--neutral-11);
-    --hive-laboratory-destructive: var(--red-500);
+    --hive-laboratory-destructive: var(--critical);
     --hive-laboratory-border: var(--neutral-5);
     --hive-laboratory-input: var(--neutral-5);
     --hive-laboratory-ring: var(--ring);
@@ -447,7 +470,7 @@
     --hive-laboratory-muted-foreground: var(--neutral-11);
     --hive-laboratory-accent: var(--neutral-6);
     --hive-laboratory-accent-foreground: var(--neutral-11);
-    --hive-laboratory-destructive: var(--red-500);
+    --hive-laboratory-destructive: var(--critical);
     --hive-laboratory-border: var(--neutral-5);
     --hive-laboratory-input: var(--neutral-5);
     --hive-laboratory-ring: var(--ring);
@@ -515,11 +538,11 @@
   }
 
   .hive-markdown a {
-    @apply text-orange-500 hover:no-underline;
+    @apply text-accent hover:no-underline;
   }
 
   .hive-markdown code {
-    @apply bg-neutral-2 rounded-sm px-2 py-1 text-orange-500;
+    @apply bg-neutral-2 text-accent rounded-sm px-2 py-1;
   }
 
   .hive-loading-indicator {

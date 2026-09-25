@@ -11,7 +11,7 @@ export function TokenExpiration(props: { expiresAt: string | null }) {
     if (text === EXPIRED_TEXT) {
       return (
         <Tooltip
-          trigger={<span className="text-red-500">{text}</span>}
+          trigger={<span className="text-critical">{text}</span>}
           content={expiresDate.toLocaleString()}
           align="start"
         />

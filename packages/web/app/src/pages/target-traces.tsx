@@ -632,7 +632,7 @@ function Filters(
         options={filterOptions['graphql.status'].map(option => ({
           ...option,
           label: (
-            <LabelWithColor className={option.value === 'ok' ? 'bg-green-600' : 'bg-red-600'}>
+            <LabelWithColor className={option.value === 'ok' ? 'bg-success' : 'bg-critical'}>
               {option.label}
             </LabelWithColor>
           ),
@@ -646,7 +646,7 @@ function Filters(
         name="Error Code"
         options={filterOptions['graphql.errorCode'].map(option => ({
           ...option,
-          label: <LabelWithColor className="bg-red-600">{option.label}</LabelWithColor>,
+          label: <LabelWithColor className="bg-critical">{option.label}</LabelWithColor>,
         }))}
         selectedValues={filterSelector('graphql.errorCode')}
         onChange={updateFilter('graphql.errorCode')}

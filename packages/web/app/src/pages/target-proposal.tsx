@@ -426,10 +426,10 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                     trigger={
                       <span className="inline-flex">
                         {proposal?.compositionStatus === 'ERROR' ? (
-                          <XIcon className="text-red-600" />
+                          <XIcon className="text-critical" />
                         ) : null}
                         {proposal?.compositionStatus === 'SUCCESS' ? (
-                          <CheckIcon className="text-emerald-500" />
+                          <CheckIcon className="text-success" />
                         ) : null}
                       </span>
                     }
