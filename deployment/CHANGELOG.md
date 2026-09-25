@@ -1,5 +1,62 @@
 # hive
 
+## 11.15.0
+
+### Minor Changes
+
+- [#8547](https://github.com/graphql-hive/console/pull/8547)
+  [`b0d4e55`](https://github.com/graphql-hive/console/commit/b0d4e557a438059e06bca83406ab4855f5905710)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Replace MinIO with versitygw in the docker compose
+  files, since MinIO's docker images are no longer published. The S3 data volume moves from
+  `.hive/minio` to `.hive/versitygw`; existing objects are not migrated.
+
+  The S3 credentials the community compose file reads from your `.env` are renamed:
+
+  1. Rename `MINIO_ROOT_USER` to `S3_ROOT_USER`
+  2. Rename `MINIO_ROOT_PASSWORD` to `S3_ROOT_PASSWORD`
+
+  The old names are no longer read, so the S3 service and the server would otherwise start with
+  empty credentials.
+
+### Patch Changes
+
+- [#8536](https://github.com/graphql-hive/console/pull/8536)
+  [`c9328ea`](https://github.com/graphql-hive/console/commit/c9328ea8d833b074c0bb607dc67d2d2fd35d7a50)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Upgrades composition library to
+  `v0.27.0` - adds satisfiability checking for `@fromContext` arguments
+
+- [#8540](https://github.com/graphql-hive/console/pull/8540)
+  [`7f86749`](https://github.com/graphql-hive/console/commit/7f867499c4cf8d9e2efbd51138543581e7813f2a)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix usage-ingestor async inserts being written to
+  ClickHouse one Kafka message at a time instead of batched. ClickHouse enables an adaptive
+  async-insert busy timeout by default; it starts at 50ms and only grows when inserts arrive within
+  50ms of each other, so at the ingestor's insert rate the configured
+  `CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS` was never reached and every INSERT was flushed on its
+  own, creating one part per Kafka message per replica in `operations` and in every rollup fed from
+  it. The adaptive timeout is now disabled so the configured busy timeout is a fixed flush interval.
+  Expect roughly one part per busy timeout per replica per rollup instead of one per message; usage
+  data is buffered in ClickHouse memory for up to that timeout before it is written.
+
+- [#8492](https://github.com/graphql-hive/console/pull/8492)
+  [`466b08e`](https://github.com/graphql-hive/console/commit/466b08edb92540ad5f69f3c911c5b96a308bf0e2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add a metric and a logged payload when the usage
+  ingestor hits a corrupt/unparseable usage report. Previously, the message retried silently forever
+  with no way for an operator to notice a stuck partition.
+
+- [#8539](https://github.com/graphql-hive/console/pull/8539)
+  [`edaee3a`](https://github.com/graphql-hive/console/commit/edaee3a4e947354f96c0dda256bf0cebc65239fc)
+  Thanks [@jdolle](https://github.com/jdolle)! - Clarify the wording of the target picker in the
+  Conditional Breaking Changes settings. The section now explains that checked targets are the
+  source of usage data the threshold is measured against, and includes examples such as checking
+  only the production target on a development target.
+
+- [#8448](https://github.com/graphql-hive/console/pull/8448)
+  [`559f1e3`](https://github.com/graphql-hive/console/commit/559f1e320207fba57a401110bc69c2c01a4c1791)
+  Thanks [@jdolle](https://github.com/jdolle)! - Replace the `ZENDESK_SUBDOMAIN` environment
+  variable with `ZENDESK_BASE_URL`. When `ZENDESK_SUPPORT=1`, set
+  `ZENDESK_BASE_URL=https://<subdomain>.zendesk.com` (a trailing slash is ignored). This allows
+  pointing the support integration at a non-Zendesk host, such as a local mock server.
+
 ## 11.14.2
 
 ### Patch Changes
