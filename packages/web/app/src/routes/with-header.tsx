@@ -7,17 +7,21 @@ import { loadQuery } from '@/lib/route-utils';
 import { createRoute, Outlet, useMatch } from '@tanstack/react-router';
 import { authenticatedRoute } from './authenticated';
 
+// The viewer is revalidated at most this often.
+const VIEWER_MAX_AGE_MS = 60_000;
 let viewerLoadedAt = 0;
 
 // Mounted once above the organization, project and target routes; pathless, so URLs are unchanged.
 export const withHeaderRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   id: 'with-header',
-  // Revalidate the viewer at most once a minute.
-  shouldReload: () => Date.now() - viewerLoadedAt >= 60_000,
+  shouldReload: () => Date.now() - viewerLoadedAt >= VIEWER_MAX_AGE_MS,
   loader: loader => {
-    viewerLoadedAt = Date.now();
-    void loadQuery(loader, ViewerQuery, {}, 'cache-and-network');
+    const stale = Date.now() - viewerLoadedAt >= VIEWER_MAX_AGE_MS;
+    if (stale) {
+      viewerLoadedAt = Date.now();
+    }
+    void loadQuery(loader, ViewerQuery, {}, stale ? 'cache-and-network' : 'cache-first');
   },
   component: function WithHeaderRoute() {
     // On the interstitial the organization query answers NEEDS_OIDC and reloads the page; skip it.

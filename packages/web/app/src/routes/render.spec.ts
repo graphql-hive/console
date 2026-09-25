@@ -206,6 +206,14 @@ describe('chrome at every page', () => {
       params: { organizationSlug: SLUGS.organizationSlug },
     });
     await screen.findByRole('link', { name: 'Overview', current: 'page' });
+    // Leaving the header route and coming back mounts it again; the viewer is still fresh.
+    await router.navigate({ to: '/' });
+    await waitFor(() => expect(screen.queryByRole('banner')).toBeNull());
+    await router.navigate({
+      to: '/$organizationSlug',
+      params: { organizationSlug: SLUGS.organizationSlug },
+    });
+    await screen.findByRole('link', { name: 'Overview', current: 'page' });
 
     const seen = client.current!.seen;
     expect(seen.filter(name => name === 'ViewerQuery')).toHaveLength(1);
