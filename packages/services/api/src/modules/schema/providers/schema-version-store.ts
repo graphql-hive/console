@@ -1156,7 +1156,7 @@ export class SchemaVersionStore {
       pageInfo: {
         ...pageInfo,
         get endCursor() {
-          return edges[edges.length - 1].cursor ?? '';
+          return edges[edges.length - 1]?.cursor ?? '';
         },
         get startCursor() {
           return edges[0]?.cursor ?? '';
