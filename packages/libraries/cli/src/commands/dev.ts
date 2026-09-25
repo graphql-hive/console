@@ -18,6 +18,7 @@ import {
   InvalidCompositionResultError,
   InvalidTargetError,
   LocalCompositionError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
   RemoteCompositionError,
@@ -208,8 +209,7 @@ export default class Dev extends Command<typeof Dev> {
             description: Dev.flags['registry.endpoint'].description!,
           });
         } catch (e) {
-          this.logDebug(e);
-          throw new MissingEndpointError();
+          throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
         }
         try {
           token = this.ensure({
@@ -220,8 +220,7 @@ export default class Dev extends Command<typeof Dev> {
             description: Dev.flags['registry.accessToken'].description!,
           });
         } catch (e) {
-          this.logDebug(e);
-          throw new MissingRegistryTokenError();
+          throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
         }
 
         await this.watch(flags.watchInterval, serviceInputs, services =>
@@ -269,8 +268,7 @@ export default class Dev extends Command<typeof Dev> {
           description: Dev.flags['registry.endpoint'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingEndpointError();
+        throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
       }
       try {
         token = this.ensure({
@@ -281,8 +279,7 @@ export default class Dev extends Command<typeof Dev> {
           description: Dev.flags['registry.accessToken'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingRegistryTokenError();
+        throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
       }
 
       return this.compose({

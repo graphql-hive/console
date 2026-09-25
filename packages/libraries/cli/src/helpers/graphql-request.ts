@@ -21,7 +21,7 @@ export function graphqlRequest(config: {
   additionalHeaders?: Record<string, string>;
   version?: string;
   logger?: LegacyLogger;
-  /** Map errors returned by the Hive registry API to dedicated CLI errors. */
+  /** Map errors returned by the Hive registry API, and timeouts, to dedicated CLI errors. */
   isHiveRegistry?: boolean;
 }) {
   const requestHeaders = {
@@ -63,7 +63,7 @@ export function graphqlRequest(config: {
         if (typeof e?.status === 'number') {
           throw new HTTPError(config.endpoint, e.status, e.statusText || e.message);
         }
-        if (isTimeoutError(e)) {
+        if (config.isHiveRegistry && isTimeoutError(e)) {
           throw new RequestTimeoutError(config.endpoint, e?.cause ?? e);
         }
         const sourceError = e?.cause ?? e;

@@ -119,6 +119,8 @@ describe('error catalog', () => {
     expect(error.oclif.exit).toBe(ExitCode.BAD_INIT);
     expect(error.message).toContain('  [120]');
     expect(error.message).toContain('/docs/api-reference/cli#errors-120 ');
+    expect(error.plainMessage).toMatch(/^Invalid slug or ID provided for option "--target"\./);
+    expect(error.plainMessage).not.toContain('[120]');
   });
 
   test('a timeout is a network error with its own code and exit code', () => {

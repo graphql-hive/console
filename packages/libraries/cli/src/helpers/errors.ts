@@ -52,6 +52,8 @@ export abstract class HiveCLIError extends CLIError {
 
   public readonly exitCode: ExitCode;
   public readonly errorCode: number;
+  /** The message without the error code and the link to the documentation. */
+  public readonly plainMessage: string;
 
   constructor(message: string) {
     const meta = new.target as unknown as HiveCLIErrorClass;
@@ -62,6 +64,7 @@ To disable this message set HIVE_NO_ERROR_TIP=1`;
     });
     this.exitCode = meta.exitCode;
     this.errorCode = meta.code;
+    this.plainMessage = message;
   }
 }
 

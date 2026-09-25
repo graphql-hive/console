@@ -9,6 +9,7 @@ import { graphqlEndpoint } from '../../helpers/config';
 import {
   InvalidDocumentsError,
   InvalidTargetError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
   SchemaNotFoundError,
@@ -78,8 +79,7 @@ export default class AppCheck extends Command<typeof AppCheck> {
           description: AppCheck.flags['registry.endpoint'].description!,
         });
       } catch (error) {
-        this.logDebug(error);
-        throw new MissingEndpointError();
+        throw error instanceof MissingArgumentsError ? new MissingEndpointError() : error;
       }
 
       try {
@@ -90,8 +90,7 @@ export default class AppCheck extends Command<typeof AppCheck> {
           description: AppCheck.flags['registry.accessToken'].description!,
         });
       } catch (error) {
-        this.logDebug(error);
-        throw new MissingRegistryTokenError();
+        throw error instanceof MissingArgumentsError ? new MissingRegistryTokenError() : error;
       }
 
       let target: GraphQLSchema.TargetReferenceInput | null = null;

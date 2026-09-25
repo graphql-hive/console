@@ -6,6 +6,7 @@ import {
   InvalidCdnKeyError,
   isAggregateError,
   isTimeoutError,
+  MissingArgumentsError,
   MissingCdnEndpointError,
   MissingCdnKeyError,
   NetworkError,
@@ -45,8 +46,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         description: ArtifactsFetch.flags['cdn.endpoint'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingCdnEndpointError();
+      throw e instanceof MissingArgumentsError ? new MissingCdnEndpointError() : e;
     }
 
     try {
@@ -57,8 +57,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         description: ArtifactsFetch.flags['cdn.accessToken'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingCdnKeyError();
+      throw e instanceof MissingArgumentsError ? new MissingCdnKeyError() : e;
     }
 
     const artifactType = flags.artifact;
