@@ -18,6 +18,7 @@ import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useToast } from '@/components/base/toast/toast';
+import { useTheme } from '@/components/theme/theme-provider';
 import { Subtitle } from '@/components/ui/page';
 import { usePromptManager } from '@/components/ui/prompt';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -69,7 +70,6 @@ function EditorTitle(props: { children: ReactNode; className?: string }) {
 }
 
 const sharedMonacoProps = {
-  theme: 'vs-dark',
   className: classes.monaco,
   options: {
     minimap: { enabled: false },
@@ -95,13 +95,17 @@ const monacoProps = {
   },
   script: {
     ...sharedMonacoProps,
-    theme: 'vs-dark',
     defaultLanguage: 'javascript',
     options: {
       ...sharedMonacoProps.options,
     },
   },
 } satisfies Record<'script' | 'env', ComponentPropsWithoutRef<typeof MonacoEditor>>;
+
+function useMonacoTheme() {
+  const { resolvedTheme } = useTheme();
+  return resolvedTheme === 'dark' ? 'vs-dark' : 'vs';
+}
 
 function exposeMonacoEditorForE2E(name: string, editor: editor.IStandaloneCodeEditor) {
   if (!import.meta.env.DEV) {
@@ -478,6 +482,7 @@ export const PreflightProvider = PreflightContext.Provider;
 
 function PreflightContent() {
   const preflight = useContext(PreflightContext);
+  const monacoTheme = useMonacoTheme();
   if (preflight === null) {
     throw new Error('PreflightContent used outside PreflightContext.Provider');
   }
@@ -586,6 +591,7 @@ function PreflightContent() {
           height={128}
           value={preflight.content}
           {...monacoProps.script}
+          theme={monacoTheme}
           className={cn(classes.monacoMini, 'z-10')}
           wrapperProps={{
             ['data-cy']: 'preflight-editor-mini',
@@ -614,6 +620,7 @@ function PreflightContent() {
         onChange={value => preflight.setEnvironmentVariables(value ?? '')}
         onMount={editor => exposeMonacoEditorForE2E('env-editor-mini', editor)}
         {...monacoProps.env}
+        theme={monacoTheme}
         className={classes.monacoMini}
         wrapperProps={{
           ['data-cy']: 'env-editor-mini',
@@ -650,6 +657,7 @@ function PreflightModal({
   envValue: string;
   onEnvValueChange: (value: string) => void;
 }) {
+  const monacoTheme = useMonacoTheme();
   const scriptEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const envEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const consoleRef = useRef<HTMLDivElement>(null);
@@ -785,6 +793,7 @@ function PreflightModal({
             beforeMount={handleMonacoEditorBeforeMount}
             onMount={handleScriptEditorDidMount}
             {...monacoProps.script}
+            theme={monacoTheme}
             options={{
               ...monacoProps.script.options,
               wordWrap: 'wordWrapColumn',
@@ -826,6 +835,7 @@ function PreflightModal({
             onChange={value => onEnvValueChange(value ?? '')}
             onMount={handleEnvEditorDidMount}
             {...monacoProps.env}
+            theme={monacoTheme}
             options={{
               ...monacoProps.env.options,
               wordWrap: 'wordWrapColumn',
