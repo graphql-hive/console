@@ -1,5 +1,6 @@
 import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
@@ -13,7 +14,6 @@ import { BillingPlanPicker } from '@/components/organization/billing/BillingPlan
 import { formatMillionOrBillion } from '@/components/organization/billing/helpers';
 import { PlanSummary } from '@/components/organization/billing/PlanSummary';
 import { RenderIfStripeAvailable } from '@/components/organization/stripe';
-import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
@@ -267,9 +267,9 @@ function Inner(props: {
 
     if (plan === 'ENTERPRISE') {
       return (
-        <Button type="button" asChild className="mt-2">
-          <a href="mailto:contact@graphql-hive.com">Contact Us</a>
-        </Button>
+        <div className="mt-2">
+          <Button anchor={{ href: 'mailto:contact@graphql-hive.com' }}>Contact Us</Button>
+        </div>
       );
     }
 
@@ -562,13 +562,15 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
 
           {currentOrganization ? (
             <div>
-              <Button asChild>
-                <Link
-                  to="/$organizationSlug/view/subscription"
-                  params={{ organizationSlug: currentOrganization.slug }}
-                >
-                  Subscription usage
-                </Link>
+              <Button
+                render={
+                  <Link
+                    to="/$organizationSlug/view/subscription"
+                    params={{ organizationSlug: currentOrganization.slug }}
+                  />
+                }
+              >
+                Subscription usage
               </Button>
             </div>
           ) : null}

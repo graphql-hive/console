@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { Badge } from '@/components/base/badge/badge';
+import { Button } from '@/components/base/button/button';
 import { Form } from '@/components/base/form/form';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { useToast } from '@/components/base/toast/toast';
-import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { defineStepper } from '@/components/ui/stepper';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -206,7 +206,7 @@ export function CreateProjectAccessTokenSheetContent(
           footer={
             <Stepper.StepperControls>
               <Button
-                variant="secondary"
+                variant="outline"
                 onClick={stepper.prev}
                 disabled={stepper.isFirst || createOrganizationAccessTokenState.fetching}
               >
@@ -214,6 +214,7 @@ export function CreateProjectAccessTokenSheetContent(
               </Button>
               {stepper.isLast ? (
                 <Button
+                  onSurface="raised"
                   onClick={
                     createOrganizationAccessTokenState.fetching ? undefined : createAccessToken
                   }
@@ -224,6 +225,7 @@ export function CreateProjectAccessTokenSheetContent(
                 </Button>
               ) : (
                 <Button
+                  onSurface="raised"
                   onClick={ev => {
                     if (stepper.current.id === 'step-1-general') {
                       void Promise.all([form.trigger('title'), form.trigger('description')]).then(

@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
+import { PlusIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
@@ -11,7 +13,6 @@ import {
   CreateTargetFormSchema,
   type CreateTargetFormValues,
 } from '@/components/target/create-target-form';
-import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { useToggle } from '@/lib/hooks';
@@ -20,7 +21,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
 import { HiveLink } from '../ui/hive-link';
-import { PlusIcon } from '../ui/icon';
 import { ProjectSelector } from './project-selector';
 
 export enum Page {
@@ -149,8 +149,10 @@ export function ProjectLayout({
               currentProject?.viewerCanCreateTarget ? (
                 <>
                   <Button onClick={toggleModalOpen} variant="link">
-                    <PlusIcon size={16} className="mr-2" />
-                    New target
+                    <span className="flex items-center">
+                      <PlusIcon size={16} className="mr-2" />
+                      New target
+                    </span>
                   </Button>
                   <CreateTargetModal
                     organizationSlug={organizationSlug}

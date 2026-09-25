@@ -1,10 +1,10 @@
 import React, { ReactElement, ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
+import { ActivityIcon, UsersIcon } from 'lucide-react';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { PulseIcon, UsersIcon } from '@/components/ui/icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
@@ -169,7 +169,7 @@ export function SchemaExplorerUsageStats(props: {
       <Popover
         trigger={
           <button type="button" aria-label="Usage" className="cursor-help text-xl">
-            <PulseIcon className="h-6 w-auto" />
+            <ActivityIcon className="h-6 w-auto" />
           </button>
         }
         openOnHover
@@ -215,7 +215,7 @@ export function SchemaExplorerUsageStats(props: {
       <Popover
         trigger={
           <button type="button" aria-label="Client usage" className="cursor-help p-1 text-xl">
-            <UsersIcon size={16} className="h-6 w-auto" />
+            <UsersIcon className="size-4" />
           </button>
         }
         openOnHover

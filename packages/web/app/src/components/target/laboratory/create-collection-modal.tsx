@@ -1,8 +1,8 @@
 import { ReactElement, useEffect } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { Button } from '@/components/ui/button';
 import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -221,8 +221,8 @@ export function CreateCollectionModalContent(props: {
         <>
           <Button
             type="button"
-            size="lg"
-            className="w-full justify-center"
+            variant="outline"
+            width="full"
             onClick={() => props.toggleModalOpen()}
           >
             Cancel
@@ -230,9 +230,8 @@ export function CreateCollectionModalContent(props: {
           <Button
             type="submit"
             form={COLLECTION_FORM_ID}
-            size="lg"
-            className="w-full justify-center"
-            variant="primary"
+            width="full"
+            onSurface="raised"
             disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
             data-cy="confirm"
           >

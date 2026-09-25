@@ -1,9 +1,9 @@
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
 export const CreateOrganizationFormSchema = z.object({
@@ -55,8 +55,8 @@ export function CreateOrganizationForm(props: {
           <div className="mt-6 flex items-center">
             <Button
               type="submit"
-              className="w-full"
-              variant="default"
+              width="full"
+              onSurface="raised"
               disabled={!form.formState.isValid}
             >
               {form.formState.isSubmitting ? (

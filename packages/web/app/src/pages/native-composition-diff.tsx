@@ -1,13 +1,12 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
-import { CopyIcon } from 'lucide-react';
+import { CheckIcon, CopyIcon, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
-import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
-import { CheckIcon, XIcon } from '@/components/ui/icon';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { DiffEditor } from '@/components/v2';
 import { graphql } from '@/gql';
@@ -182,11 +181,16 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                       Review other targets to identify the cause of incompatibility
                     </div>
                   ) : null}
-                  <Button variant="link" className="my-4 block p-0" asChild>
-                    <a href="https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility">
+                  <div className="my-4">
+                    <Button
+                      variant="link"
+                      anchor={{
+                        href: 'https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility',
+                      }}
+                    >
                       Learn more about risks and compatibility with other composition libraries
-                    </a>
-                  </Button>
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="w-full">
@@ -212,9 +216,9 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                 onOpenChange={setIsTooltipOpen}
                 maxWidth="screen"
                 trigger={
-                  <span className="inline-flex text-right">
+                  <span className="inline-flex max-w-64 text-right">
                     <Button
-                      className="w-full max-w-64 truncate p-4"
+                      width="full"
                       variant="outline"
                       disabled={!report?.schemaVersion?.schemas.edges.length}
                       onClick={async () => {

@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useState } from 'react';
 import { Fragment } from 'react/jsx-runtime';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { FragmentType } from '@/gql';
 import { ProposalOverview_ReviewCommentsFragment, ReviewComments } from '../Review';
 import { ChangeRow } from './components';

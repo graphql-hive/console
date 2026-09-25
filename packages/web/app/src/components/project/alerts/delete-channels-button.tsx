@@ -1,5 +1,5 @@
 import { useMutation } from 'urql';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/base/button/button';
 import { graphql } from '@/gql';
 
 export const DeleteChannelsButton_DeleteChannelsMutation = graphql(`

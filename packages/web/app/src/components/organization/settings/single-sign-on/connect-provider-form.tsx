@@ -1,5 +1,6 @@
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import {
   Form,
   FormControl,
@@ -9,7 +10,6 @@ import {
   FormMessage,
 } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/ui/button';
 
 /** The endpoints a discovery document must carry, and the only client-side validated fields. */
 export const OIDCMetadataSchema = z.object({
@@ -217,7 +217,7 @@ export function OIDCMetadataUrlForm(props: {
                   disabled={field.disabled || props.isPending}
                 />
               </FormControl>
-              <Button type="submit" className="w-48" disabled={props.isPending}>
+              <Button type="submit" onSurface="raised" disabled={props.isPending}>
                 {props.isPending ? 'Fetching...' : 'Fetch endpoints'}
               </Button>
             </div>

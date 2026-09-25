@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
+import { ChartPie, CheckIcon, FileDiffIcon, List, PencilIcon, XIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import {
@@ -15,7 +16,7 @@ import {
 } from '@/components/target/proposals';
 import { SaveProposalProvider } from '@/components/target/proposals/save-proposal-modal';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
-import { CheckIcon, DiffIcon, EditIcon, GraphQLIcon, XIcon } from '@/components/ui/icon';
+import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -28,7 +29,6 @@ import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { Change } from '@graphql-inspector/core';
 import { errors, patchSchema } from '@graphql-inspector/patch';
 import { NoopError, ValueMismatchError } from '@graphql-inspector/patch/errors';
-import { ListBulletIcon, PieChartIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import {
   ProposalOverview_ChecksFragment,
@@ -529,14 +529,14 @@ function TabbedContent(props: {
       ...proposalLink,
       value: Tab.DETAILS,
       label: 'Details',
-      icon: ListBulletIcon,
+      icon: List,
       search: { page: 'details', ...versionSearch },
     },
     {
       ...proposalLink,
       value: Tab.SCHEMA,
       label: 'Schema',
-      icon: DiffIcon,
+      icon: FileDiffIcon,
       search: { page: 'schema', ...versionSearch },
     },
     {
@@ -551,11 +551,11 @@ function TabbedContent(props: {
       ...proposalLink,
       value: Tab.CHECKS,
       label: 'Checks',
-      icon: PieChartIcon,
+      icon: ChartPie,
       search: { page: 'checks', ...versionSearch },
     },
     // Edit always refers to the latest version, so it carries no version.
-    { ...proposalLink, value: Tab.EDIT, label: 'Edit', icon: EditIcon, search: { page: 'edit' } },
+    { ...proposalLink, value: Tab.EDIT, label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
   ];
 
   return (

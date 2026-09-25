@@ -53,7 +53,7 @@ export default defineConfig({
             { label: 'StatusDot' },
             { label: 'Legend' },
             { label: 'Spinner' },
-            { label: 'Button' },
+            { label: 'Button', children: [{ label: 'Component Examples' }] },
             { label: 'Card' },
             { label: 'StatCard' },
             { label: 'Input', children: [{ label: 'Component Examples' }] },
@@ -120,7 +120,7 @@ export default defineConfig({
     // coverage checklist to migrate through. Entries are deleted as their component lands.
     {
       label: 'Inventory',
-      children: [{ label: 'Button' }, { label: 'Presentational' }, { label: 'V2Leftovers' }],
+      children: [{ label: 'Presentational' }, { label: 'V2Leftovers' }],
     },
     // App components, as opposed to the design-system primitives above. Each preview
     // reproduces a real call site so a base-component change can be judged against the

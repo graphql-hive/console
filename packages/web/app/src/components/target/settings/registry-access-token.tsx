@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { PermissionScopeItem } from '@/components/organization/Permissions';
-import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { InputCopy } from '@/components/ui/input-copy';
 import { graphql } from '@/gql';
@@ -135,7 +135,7 @@ export function ModalContent(props: {
         title="Token successfully created!"
         attrs={{ 'data-cy': 'registry-token-created' }}
         footer={
-          <Button data-cy="close" onClick={props.toggleModalOpen}>
+          <Button data-cy="close" onSurface="raised" onClick={props.toggleModalOpen}>
             Ok, got it!
           </Button>
         }

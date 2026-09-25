@@ -2,6 +2,7 @@ import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { focusRingQuiet } from '@/components/base/shared-styles';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
   ExplorerFilteredEmptyState,
@@ -15,7 +16,6 @@ import {
 } from '@/components/target/explorer/provider';
 import { matchesSubgraphFilter } from '@/components/target/explorer/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
@@ -134,17 +134,19 @@ function InternalDeprecatedSchemaView(props: {
             <Tooltip
               key={letter}
               trigger={
-                <Button
+                <button
+                  type="button"
                   onClick={() => setSelectedLetter(letter)}
-                  variant={letter === activeLetter ? 'secondary' : 'ghost'}
-                  size="sm"
                   className={cn(
-                    'rounded-none px-2 py-1',
-                    letter === activeLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
+                    'inline-flex h-9 items-center px-2 py-1 text-sm font-medium transition-colors',
+                    focusRingQuiet,
+                    letter === activeLetter
+                      ? 'bg-neutral-2 text-accent'
+                      : 'text-neutral-10 hover:bg-neutral-2 hover:text-accent',
                   )}
                 >
                   {letter}
-                </Button>
+                </button>
               }
               content={`${typesGroupedByFirstLetter.get(letter)?.length ?? 0} types`}
             />

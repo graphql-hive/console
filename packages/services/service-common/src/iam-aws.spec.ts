@@ -3,15 +3,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 describe('generatePresignedToken', () => {
   const mockFormatUrl = vi.fn();
   const mockPresign = vi.fn();
+  const mockFromNodeProviderChain = vi.fn();
 
   beforeEach(() => {
     vi.resetModules();
     mockFormatUrl.mockReset();
     mockPresign.mockReset();
+    mockFromNodeProviderChain.mockReset();
+    mockFromNodeProviderChain.mockReturnValue('mock-credential-provider');
 
     // Mock all AWS SDK dynamic imports
     vi.doMock('@aws-sdk/credential-providers', () => ({
-      fromNodeProviderChain: vi.fn(() => 'mock-credential-provider'),
+      fromNodeProviderChain: mockFromNodeProviderChain,
     }));
     vi.doMock('@smithy/protocol-http', () => {
       const MockHttpRequest = vi.fn(function (this: any, opts: any) {
@@ -155,11 +158,9 @@ describe('generatePresignedToken', () => {
     });
 
     it('rejects when the credential provider fails (no credentials available)', async () => {
-      vi.doMock('@aws-sdk/credential-providers', () => ({
-        fromNodeProviderChain: vi.fn(() => {
-          throw new Error('Could not load credentials from any providers');
-        }),
-      }));
+      mockFromNodeProviderChain.mockImplementation(() => {
+        throw new Error('Could not load credentials from any providers');
+      });
 
       const { generatePresignedToken } = await import('./iam-aws');
 

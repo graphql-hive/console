@@ -10,11 +10,12 @@ import {
 } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '@/components/base/badge/badge';
-import { Button as BaseButton } from '@/components/base/button/button';
+import { Button } from '@/components/base/button/button';
 import { SecondaryNavigation } from '@/components/base/navigation/secondary-navigation/secondary-navigation';
+import { focusRingQuiet } from '@/components/base/shared-styles';
 import { Switch } from '@/components/base/switch/switch';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Popover } from '../popover/popover';
 import { Select } from '../select/select';
 import { Tooltip } from './tooltip';
@@ -147,7 +148,7 @@ export const OnButtons = createPreview({
         note="The most common shape. disableHoverablePopup, so it closes as you leave the button."
       >
         <Tooltip
-          trigger={<BaseButton layout="iconOnly" icon={Copy} aria-label="Copy access token" />}
+          trigger={<Button layout="iconOnly" icon={Copy} aria-label="Copy access token" />}
           content="Copy access token"
           disableHoverablePopup
         />
@@ -198,18 +199,19 @@ function LetterStrip() {
         <Tooltip
           key={letter}
           trigger={
-            <Button
+            <button
+              type="button"
               onClick={() => setActiveLetter(letter)}
-              variant={letter === activeLetter ? 'secondary' : 'ghost'}
-              size="sm"
-              className={
+              className={cn(
+                'inline-flex h-9 items-center px-2 py-1 text-sm font-medium transition-colors',
+                focusRingQuiet,
                 letter === activeLetter
-                  ? 'text-accent rounded-none px-2 py-1'
-                  : 'text-neutral-10 hover:text-accent rounded-none px-2 py-1'
-              }
+                  ? 'bg-neutral-2 text-accent'
+                  : 'text-neutral-10 hover:bg-neutral-2 hover:text-accent',
+              )}
             >
               {letter}
-            </Button>
+            </button>
           }
           content={`${counts[letter]} types`}
         />
@@ -416,12 +418,8 @@ function ForcedOpen() {
       onOpenChange={setIsTooltipOpen}
       maxWidth="screen"
       trigger={
-        <span className="inline-flex text-right">
-          <Button
-            className="w-full max-w-64 truncate p-4"
-            variant="outline"
-            disabled={!hasServices}
-          >
+        <span className="inline-flex max-w-64 text-right">
+          <Button width="full" variant="outline" disabled={!hasServices}>
             <Copy className="text-neutral-8 mr-2 size-4" /> Copy services JSON
           </Button>
         </span>
@@ -510,12 +508,7 @@ export const Infotips = createPreview({
           <span className="text-yellow-500">Inactive</span>
           <Popover
             trigger={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="ml-2 text-yellow-500"
-                aria-label="Why inactive"
-              >
+              <Button variant="ghost" size="icon-sm" aria-label="Why inactive">
                 <Info className="size-4" />
               </Button>
             }

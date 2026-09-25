@@ -1,7 +1,6 @@
 import { BookIcon } from 'lucide-react';
-import { SiGithub } from 'react-icons/si';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
-import { HiveLogo } from '@/components/ui/icon';
+import { GitHubIcon, HiveLogo } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { Link, Outlet } from '@tanstack/react-router';
 
@@ -54,7 +53,7 @@ export function AuthPage() {
                         <span className="text-neutral-12 self-baseline">Documentation</span>
                       </ExternalLink>
                       <ExternalLink href="https://github.com/graphql-hive/platform">
-                        <SiGithub className="text-neutral-10 size-4 flex-none" />
+                        <GitHubIcon className="text-neutral-10 size-4 flex-none" />
                         <span className="text-neutral-12 self-baseline">Github</span>
                       </ExternalLink>
                     </div>

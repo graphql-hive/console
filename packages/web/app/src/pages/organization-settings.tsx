@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Button } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
@@ -18,8 +19,7 @@ import {
 import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
 import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
 import { PolicySettings } from '@/components/policy/policy-settings';
-import { Button } from '@/components/ui/button';
-import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
+import { GitHubIcon, SlackIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import {
   NavLayout,
@@ -93,16 +93,14 @@ function GitHubIntegrationSection(props: {
         <GitHubIcon className="mr-2" />
         Disconnect GitHub
       </Button>
-      <Button variant="destructive" asChild>
-        <a href={`/api/github/connect/${organization.slug}`}>Adjust permissions</a>
+      <Button variant="destructive" anchor={{ href: `/api/github/connect/${organization.slug}` }}>
+        Adjust permissions
       </Button>
     </div>
   ) : (
-    <Button variant="default" asChild>
-      <a href={`/api/github/connect/${organization.slug}`}>
-        <GitHubIcon className="mr-2" />
-        Connect GitHub
-      </a>
+    <Button anchor={{ href: `/api/github/connect/${organization.slug}` }}>
+      <GitHubIcon className="mr-2" />
+      Connect GitHub
     </Button>
   );
 }
@@ -140,11 +138,9 @@ function SlackIntegrationSection(props: {
       Disconnect Slack
     </Button>
   ) : (
-    <Button variant="default" asChild>
-      <a href={`/api/slack/connect/${organization.slug}`}>
-        <SlackIcon className="mr-2" />
-        Connect Slack
-      </a>
+    <Button anchor={{ href: `/api/slack/connect/${organization.slug}` }}>
+      <SlackIcon className="mr-2" />
+      Connect Slack
     </Button>
   );
 }
@@ -319,7 +315,7 @@ const OrganizationSettingsContent = (props: {
               text: 'Learn more about the process',
             }}
           />
-          <Button variant="destructive" onClick={toggleTransferModalOpen} className="px-5">
+          <Button variant="destructive" onClick={toggleTransferModalOpen}>
             Transfer Ownership
           </Button>
           <TransferOrganizationOwnershipModal
@@ -351,7 +347,7 @@ const OrganizationSettingsContent = (props: {
               text: 'You can find more information about this process in the documentation',
             }}
           />
-          <Button variant="destructive" onClick={toggleDeleteModalOpen} className="px-5">
+          <Button variant="destructive" onClick={toggleDeleteModalOpen}>
             Delete Organization
           </Button>
           <DeleteOrganizationModal
@@ -372,9 +368,7 @@ const OrganizationSettingsContent = (props: {
               text: 'Learn more',
             }}
           />
-          <Button variant="default" onClick={toggleAuditLogsModalOpen} className="px-5">
-            Export Audit Logs
-          </Button>
+          <Button onClick={toggleAuditLogsModalOpen}>Export Audit Logs</Button>
           <AuditLogsOrganizationModal
             organizationSlug={organization.slug}
             isOpen={isAuditLogsModalOpen}

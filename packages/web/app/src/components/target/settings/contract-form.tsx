@@ -2,7 +2,7 @@ import { useId, useRef, useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Button as BaseButton } from '@/components/base/button/button';
+import { Button } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { itemVariants } from '@/components/base/floating/shared-styles';
@@ -16,7 +16,6 @@ import {
 } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
 import { Label } from '@/components/base/label/label';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
@@ -136,6 +135,7 @@ function TagsField(props: {
           />
           <Button
             type="button"
+            onSurface="raised"
             onClick={() => add(draft)}
             disabled={props.disabled || draft === ''}
           >
@@ -157,7 +157,7 @@ function TagsField(props: {
       </div>
       <div className="flex flex-1 flex-wrap gap-1 pl-3">
         {props.value.map(value => (
-          <BaseButton
+          <Button
             key={value}
             type="button"
             size="compact"
@@ -170,7 +170,7 @@ function TagsField(props: {
           >
             {value}
             <X className="size-3" />
-          </BaseButton>
+          </Button>
         ))}
       </div>
     </div>

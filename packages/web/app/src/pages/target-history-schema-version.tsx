@@ -6,6 +6,7 @@ import {
   CheckIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  CircleCheckIcon,
   CircleIcon,
   Clock,
   DownloadIcon,
@@ -18,14 +19,17 @@ import {
   GitCompareArrows,
   GitCompareIcon,
   Layers,
+  ListIcon,
   ListTree,
   Minus,
   Plus,
   ShieldAlertIcon,
+  TriangleAlertIcon,
   XCircleIcon,
 } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
+import { Button } from '@/components/base/button/button';
 import { CopyChip } from '@/components/base/copy-chip/copy-chip';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { FailureCard, formatCount } from '@/components/base/failure-card/failure-card';
@@ -40,7 +44,6 @@ import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
-import { Button } from '@/components/ui/button';
 import { File, MultiFileDiff } from '@/components/ui/diffs';
 import { Link } from '@/components/ui/link';
 import { QueryError } from '@/components/ui/query-error';
@@ -50,12 +53,6 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
-import {
-  CheckCircledIcon,
-  CubeIcon,
-  ExclamationTriangleIcon,
-  ListBulletIcon,
-} from '@radix-ui/react-icons';
 
 /** A status icon inside a tab, explained on hover. */
 function StatusTooltip(props: { icon: React.ReactNode; label: string }) {
@@ -438,7 +435,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
               {
                 value: 'details',
                 label: 'Summary',
-                icon: ListBulletIcon,
+                icon: ListIcon,
                 content: <div className="space-y-8">{summary}</div>,
               },
               {
@@ -456,7 +453,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
               {
                 value: 'service-schema',
                 label: 'Subgraphs',
-                icon: CubeIcon,
+                icon: BoxIcon,
                 content: (
                   <div className="space-y-8">
                     <GraphVersionSubgraphView subgraphDiffs={schemaVersion.subgraphDiffs} />
@@ -485,7 +482,7 @@ function versionStatus(version: VersionStatusFlags, labels: VersionStatusLabels)
     return { icon: <CheckIcon className="text-success size-3.5" />, label: labels.succeeded };
   }
   return {
-    icon: <ExclamationTriangleIcon className="text-critical size-3.5" />,
+    icon: <TriangleAlertIcon className="text-critical size-3.5" />,
     label: labels.failed,
   };
 }
@@ -508,7 +505,7 @@ const CONTRACT_LABELS: VersionStatusLabels = {
 };
 
 const CONTRACT_STATUS_LEGEND = [
-  { icon: <ExclamationTriangleIcon className="text-critical size-3.5" />, label: 'Failed' },
+  { icon: <TriangleAlertIcon className="text-critical size-3.5" />, label: 'Failed' },
   { icon: <GitCompareIcon className="size-3.5" />, label: 'Schema changed' },
   { icon: <CheckIcon className="text-success size-3.5" />, label: 'Passed' },
 ];
@@ -587,7 +584,7 @@ function DownloadButton(props: { contents: string; fileName: string }) {
       trigger={
         <Button
           variant="ghost"
-          size="xs"
+          size="compact"
           onClick={() => {
             const element = document.createElement('a');
             element.setAttribute(
@@ -600,7 +597,6 @@ function DownloadButton(props: { contents: string; fileName: string }) {
 
             document.body.removeChild(element);
           }}
-          className="text-xs font-normal"
         >
           <DownloadIcon className="mr-1 size-3" /> Download
         </Button>
@@ -723,7 +719,6 @@ function SubgraphCard(props: {
           size="icon-sm"
           variant="ghost"
           onClick={() => setIsCollapsed(isCollapsed => !isCollapsed)}
-          className="ml-2"
         >
           {isCollapsed && <ChevronUpIcon />}
           {!isCollapsed && <ChevronDownIcon />}
@@ -1009,7 +1004,7 @@ function FirstComposableGraphVersion() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CheckCircledIcon className="h-4 w-auto text-emerald-500" />
+        <CircleCheckIcon className="size-4 text-emerald-500" />
         <h2 className="text-neutral-12 text-base font-medium">First composable graph</h2>
       </div>
       <p className="text-neutral-10 text-xs">
@@ -1023,7 +1018,7 @@ function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CheckCircledIcon className="h-4 w-auto text-emerald-500" />
+        <CircleCheckIcon className="size-4 text-emerald-500" />
         <h2 className="text-neutral-12 text-base font-medium">No Graph Changes</h2>
       </div>
       <p className="text-neutral-10 text-xs">There are no public facing changes in the graph.</p>
