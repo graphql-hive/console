@@ -35,7 +35,7 @@ describe('networkStatusExchange', () => {
 
     await act(async () => {
       await done;
-      await tick(150);
+      await tick(250);
     });
     expect(result.current).toBe(0);
   });

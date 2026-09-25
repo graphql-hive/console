@@ -32,13 +32,15 @@ rendering and commits with `replace`, so the old URL never enters history. Every
 exists because a URL moved is an entry in `src/routes/legacy.ts` (see below). Redirects that depend
 on config live on their route (`/auth` → sign-in, `/history` → latest version, `/oidc-request` when
 the provider is off); the one that depends on query data, a viewer landing on a section they may not
-open, uses the `useRedirect` hook inside the layout until data loading moves into the router.
+open, uses the `useRedirect` hook in the page, reading the layout's document through
+`useLayoutQuery`, until data loading moves into the router.
 
 ## Where things live
 
 ```
-src/main.tsx                 mounts the router; the only importer of src/router.ts
-src/router.ts                createAppRouter(): the tree plus search serialization and default boundaries
+src/main.tsx                 creates the router with the real urql client and mounts it
+src/router.ts                createAppRouter({ urqlClient, history? }): the tree, the client in router context,
+                             search serialization and the default boundaries
 src/routes/
   tree.ts                    root.addChildren([...]) mirroring every route's getParentRoute
   root.tsx                   root route, 404, logout, join
@@ -57,7 +59,10 @@ src/routes/
   legacy.ts                  the redirect catalog
   *.spec.ts(x)               the route-level tests (see Testing)
 src/pages/*.tsx              page components: content out, wrapped in <LayoutContent>, slugs from useSlugs
-src/components/layouts/      the three layouts (org/project/target) and LayoutContent
+src/components/layouts/      the three layouts (org/project/target), LayoutContent, ScopeSelector,
+                             and queries.ts: the viewer and layout documents
+src/lib/hooks/               useSlugs, useViewer, useLayoutQuery
+src/lib/route-utils.ts       loadQuery for route loaders, redirectToPathSchema
 src/lib/testing/             renderAtUrl, the fixture-checking test urql client, fixtures, jsdom mocks
 ```
 
@@ -115,6 +120,30 @@ For the rest of the route state:
 - A link that leaves the app takes `href` and no `to`. `components/ui/link.tsx` renders those as a
   plain anchor, because the router's `Link` re-resolves a bare `href` as an internal location and
   drops the origin.
+
+## Data in the chrome
+
+- The urql client rides in router context: `createAppRouter({ urqlClient })` puts it there, the root
+  component provides it to React, and a loader reads it as `context.urqlClient`. Only `src/main.tsx`
+  imports the real client from `@/lib/urql`; `router.spec.ts` fails if a route module does.
+- `authenticated.tsx` checks the session in `beforeLoad`, so a loader never runs for an anonymous
+  visitor; `SessionAuth` still covers a session that expires mid-visit.
+- `ViewerQuery` (`src/components/layouts/queries.ts`) is the signed-in viewer: `me`, the
+  organizations tree the selectors read, `isCDNEnabled`. The `with-header` route's loader loads it
+  once and revalidates it at most once a minute (`VIEWER_MAX_AGE_MS`); `useViewer()` reads it
+  anywhere under the header as a cache hit. It stays fresh through graphcache: renames flow through
+  normalization (the rename mutations return `id slug`); creates, deletes, joins and member removals
+  go through updaters in `src/lib/urql-cache.ts`. Changes made by other people appear within a
+  minute plus a navigation.
+- Each layout runs its entity document (`OrganizationLayoutQuery`, `ProjectLayoutQuery`,
+  `TargetLayoutQuery`: slugs, `viewerCan*`, `latestSchemaVersion.id`, `usageRetentionInDays`). A
+  page under it reads the same document through `useLayoutQuery(scope)` as a cache hit instead of
+  selecting those fields again. `UserMenu` reads the current organization's bits through its own
+  small document, except on the OIDC interstitial, where the organization answers `NEEDS_OIDC`.
+- `loadQuery(loader, document, variables, policy)` (`src/lib/route-utils.ts`) runs a document from a
+  route loader on the client in router context and tags the operation with the loader's `preload`
+  flag, which the progress bar leaves out. Page loaders are the next PR's work, documented in
+  `docs/DATA.md` then.
 
 ## Search params
 
@@ -195,9 +224,9 @@ Run from the repo root: `pnpm vitest run packages/web/app/src/routes`.
 | `router.spec.ts`           | `createAppRouter` has no side effects and owns the default error/not-found boundaries.                                                                       |
 | `lib/testing/urql.spec.ts` | The test client answers by operation name and fails a fixture that no longer covers its document.                                                            |
 
-`renderAtUrl(url)` (`src/lib/testing/router.tsx`) renders the app in a memory history. Specs that
-use it mock `@/env/frontend`, `@graphql-hive/laboratory`, the laboratory storage, SuperTokens and
-`@/lib/urql` (pointed at `createTestClient`); the `vi.mock` calls have to sit in the spec file.
-Fixtures for the layout queries and each settings screen live in `src/lib/testing/fixtures/` and are
-checked against the documents they answer, so a query change that they no longer cover fails with
-the missing paths named.
+`renderAtUrl(url, { client })` (`src/lib/testing/router.tsx`) renders the app in a memory history
+with `client` (a `createTestClient`) in router context. Specs that use it mock `@/env/frontend`,
+`@graphql-hive/laboratory`, the laboratory storage and SuperTokens; the `vi.mock` calls have to sit
+in the spec file. Fixtures for the viewer, layout and user-menu queries and each settings screen
+live in `src/lib/testing/fixtures/` and are checked against the documents they answer, so a query
+change that they no longer cover fails with the missing paths named.

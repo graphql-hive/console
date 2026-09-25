@@ -7,6 +7,13 @@ import type {
   RequestPolicy,
 } from '@urql/core';
 
+declare module '@urql/core' {
+  interface OperationContext {
+    /** Set by `loadQuery` on a route preload; the progress bar leaves those out. */
+    preload?: boolean;
+  }
+}
+
 /**
  * Remove null and undefined values from an object before writing to URL search params.
  *
