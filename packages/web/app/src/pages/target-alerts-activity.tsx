@@ -12,10 +12,11 @@ import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-pollin
 import { DateRangePicker, type Preset } from '@/components/ui/date-range-picker';
 import { graphql } from '@/gql';
 import { MetricAlertRuleSeverity, MetricAlertRuleType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useRollingNow } from '@/lib/hooks/use-rolling-now';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 
 const TargetAlertsActivityPage_RetentionQuery = graphql(`
   query TargetAlertsActivityPage_RetentionQuery(
@@ -107,14 +108,12 @@ const presetLast1Hour: Preset = {
   range: { from: 'now-1h', to: 'now' },
 };
 
-const ACTIVITY_ROUTE = '/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/activity';
+const activityRoute = getRouteApi(
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/with-nav/',
+);
 
-export function TargetAlertsActivityPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
-  const { organizationSlug, projectSlug, targetSlug } = props;
+export function TargetAlertsActivityPage() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   // Mirror the insights pattern: parent fetches the plan-gated retention so
   // the picker's earliest-selectable date is correct on first render. The
   // inner component owns the date-range controller, which would otherwise
@@ -129,25 +128,14 @@ export function TargetAlertsActivityPage(props: {
     return null;
   }
 
-  return (
-    <ActivityView
-      organizationSlug={organizationSlug}
-      projectSlug={projectSlug}
-      targetSlug={targetSlug}
-      retentionInDays={retentionInDays}
-    />
-  );
+  return <ActivityView retentionInDays={retentionInDays} />;
 }
 
-function ActivityView(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  retentionInDays: number;
-}) {
-  const { organizationSlug, projectSlug, targetSlug, retentionInDays } = props;
-  const search = useSearch({ from: ACTIVITY_ROUTE });
-  const navigate = useNavigate();
+function ActivityView(props: { retentionInDays: number }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const { retentionInDays } = props;
+  const search = activityRoute.useSearch();
+  const navigate = activityRoute.useNavigate();
 
   // Populate URL with the default range on first load so refresh and shared
   // links stay in sync. Skipped when from/to are already present.
@@ -269,9 +257,6 @@ function ActivityView(props: {
           key={tableResetKey}
           events={visibleEvents}
           loading={result.fetching && !data}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
         />
       </div>
     </>

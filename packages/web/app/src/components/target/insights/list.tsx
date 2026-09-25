@@ -7,7 +7,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { DateRangeInput, OperationStatsFilterInput } from '@/gql/graphql';
-import { formatDuration } from '@/lib/hooks';
+import { formatDuration, useSlugs } from '@/lib/hooks';
 import type { ColumnDef } from '@tanstack/react-table';
 import { OperationsFallback } from './fallback';
 
@@ -27,20 +27,15 @@ interface Operation {
 
 function OperationsTable({
   operations,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   selectedPeriod,
 }: {
   operations: Operation[];
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   clients: readonly { name: string }[] | null;
   clientFilter: string | null;
   setClientFilter: (filter: string) => void;
   selectedPeriod: { from: string; to: string } | null;
 }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const columns: ColumnDef<Operation, unknown>[] = [
     {
       accessorKey: 'name',
@@ -221,18 +216,12 @@ const OperationsTableContainer_OperationsStatsFragment = graphql(`
 `);
 
 function OperationsTableContainer({
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   clientFilter,
   setClientFilter,
   selectedPeriod,
   ...props
 }: {
   operationStats: FragmentType<typeof OperationsTableContainer_OperationsStatsFragment> | null;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   selectedPeriod: { from: string; to: string } | null;
   clientFilter: string | null;
   setClientFilter: (client: string) => void;
@@ -268,9 +257,6 @@ function OperationsTableContainer({
   return (
     <OperationsTable
       operations={data}
-      organizationSlug={organizationSlug}
-      projectSlug={projectSlug}
-      targetSlug={targetSlug}
       clients={operationStats?.clients.edges.map(edge => edge.node) ?? null}
       clientFilter={clientFilter}
       setClientFilter={setClientFilter}
@@ -308,20 +294,15 @@ const OperationsList_OperationsStatsQuery = graphql(`
 `);
 
 export function OperationsList({
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   period,
   filter,
   selectedPeriod,
 }: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   period: DateRangeInput;
   filter: OperationStatsFilterInput;
   selectedPeriod: null | { to: string; from: string };
 }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [clientFilter, setClientFilter] = useState<string | null>(null);
   const [query, refetchQuery] = useQuery({
     query: OperationsList_OperationsStatsQuery,
@@ -353,9 +334,6 @@ export function OperationsList({
         operationStats={query.data?.target?.operationsStats ?? null}
         setClientFilter={setClientFilter}
         clientFilter={clientFilter}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         selectedPeriod={selectedPeriod}
       />
     </OperationsFallback>

@@ -13,6 +13,7 @@ import {
   NativeFederationCompatibilityStatusType,
   UpdateSchemaCompositionInput,
 } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 const IncrementalNativeCompositionSwitch_TargetFragment = graphql(`
@@ -34,10 +35,9 @@ const IncrementalNativeCompositionSwitch_Mutation = graphql(`
 `);
 
 const IncrementalNativeCompositionSwitch = (props: {
-  organizationSlug: string;
-  projectSlug: string;
   target: FragmentType<typeof IncrementalNativeCompositionSwitch_TargetFragment>;
 }) => {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const target = useFragment(IncrementalNativeCompositionSwitch_TargetFragment, props.target);
   const [mutation, mutate] = useMutation(IncrementalNativeCompositionSwitch_Mutation);
 
@@ -63,8 +63,8 @@ const IncrementalNativeCompositionSwitch = (props: {
                 onCheckedChange={nativeComposition => {
                   void mutate({
                     input: {
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
+                      organizationSlug,
+                      projectSlug,
                       targetSlug: target.slug,
                       nativeComposition,
                     },
@@ -237,12 +237,7 @@ export function NativeCompositionSettings(props: {
           <div>
             <div className="flex flex-row gap-4">
               {project.targets.edges.map(edge => (
-                <IncrementalNativeCompositionSwitch
-                  organizationSlug={organization.slug}
-                  projectSlug={project.slug}
-                  key={edge.node.id}
-                  target={edge.node}
-                />
+                <IncrementalNativeCompositionSwitch key={edge.node.id} target={edge.node} />
               ))}
             </div>
           </div>

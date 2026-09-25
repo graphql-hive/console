@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { useQuery } from 'urql';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
@@ -23,6 +23,7 @@ import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 
 export const TypeRenderFragment = graphql(`
   fragment TypeRenderFragment on GraphQLNamedType {
@@ -42,9 +43,6 @@ export const TypeRenderFragment = graphql(`
 export function TypeRenderer(props: {
   type: FragmentType<typeof TypeRenderFragment>;
   totalRequests?: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
   filteredFallback?: ReactNode;
@@ -62,9 +60,6 @@ export function TypeRenderer(props: {
         <GraphQLObjectTypeComponent
           type={ttype}
           totalRequests={props.totalRequests}
-          targetSlug={props.targetSlug}
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
           warnAboutUnusedArguments={props.warnAboutUnusedArguments}
           warnAboutDeprecatedArguments={props.warnAboutDeprecatedArguments}
         />
@@ -74,53 +69,18 @@ export function TypeRenderer(props: {
         <GraphQLInterfaceTypeComponent
           type={ttype}
           totalRequests={props.totalRequests}
-          targetSlug={props.targetSlug}
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
           warnAboutUnusedArguments={props.warnAboutUnusedArguments}
           warnAboutDeprecatedArguments={props.warnAboutDeprecatedArguments}
         />
       );
     case 'GraphQLUnionType':
-      return (
-        <GraphQLUnionTypeComponent
-          type={ttype}
-          totalRequests={props.totalRequests}
-          targetSlug={props.targetSlug}
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
-        />
-      );
+      return <GraphQLUnionTypeComponent type={ttype} totalRequests={props.totalRequests} />;
     case 'GraphQLEnumType':
-      return (
-        <GraphQLEnumTypeComponent
-          type={ttype}
-          totalRequests={props.totalRequests}
-          targetSlug={props.targetSlug}
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
-        />
-      );
+      return <GraphQLEnumTypeComponent type={ttype} totalRequests={props.totalRequests} />;
     case 'GraphQLInputObjectType':
-      return (
-        <GraphQLInputObjectTypeComponent
-          type={ttype}
-          totalRequests={props.totalRequests}
-          targetSlug={props.targetSlug}
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
-        />
-      );
+      return <GraphQLInputObjectTypeComponent type={ttype} totalRequests={props.totalRequests} />;
     case 'GraphQLScalarType':
-      return (
-        <GraphQLScalarTypeComponent
-          type={ttype}
-          totalRequests={props.totalRequests}
-          targetSlug={props.targetSlug}
-          projectSlug={props.projectSlug}
-          organizationSlug={props.organizationSlug}
-        />
-      );
+      return <GraphQLScalarTypeComponent type={ttype} totalRequests={props.totalRequests} />;
     default:
       return <div>Unknown type: {(ttype as any).__typename}</div>;
   }
@@ -175,20 +135,16 @@ const TargetExplorerTypenamePageQuery = graphql(`
   }
 `);
 
-function TypeExplorerPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  typename: string;
-}) {
+function TypeExplorerPageContent(props: { typename: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { resolvedPeriod, dataRetentionInDays, setDataRetentionInDays } =
     useSchemaExplorerContext();
   const [query] = useQuery({
     query: TargetExplorerTypenamePageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       period: resolvedPeriod,
       typename: props.typename,
     },
@@ -206,7 +162,7 @@ function TypeExplorerPageContent(props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -222,12 +178,8 @@ function TypeExplorerPageContent(props: {
       <ExplorerHeader
         title="Explore"
         description="Insights from the latest version."
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
         period={resolvedPeriod}
         typename={props.typename}
-        variant="all"
         includeSchemaDimensions
         showFilters={!!(latestSchemaVersion && type)}
         subgraphNames={latestSchemaVersion?.explorer?.subgraphNames}
@@ -242,9 +194,6 @@ function TypeExplorerPageContent(props: {
         <TypeRenderer
           totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
           type={type}
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
           filteredFallback={<ExplorerFilteredEmptyState />}
@@ -261,24 +210,14 @@ function TypeExplorerPageContent(props: {
   );
 }
 
-export function TargetExplorerTypePage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  typename: string;
-}) {
+export function TargetExplorerTypePage(props: { typename: string }) {
   return (
     <>
       <Meta title={`Type ${props.typename}`} />
       <SchemaExplorerProvider>
-        <TargetLayout
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          page={Page.Explorer}
-        >
+        <LayoutContent>
           <TypeExplorerPageContent {...props} />
-        </TargetLayout>
+        </LayoutContent>
       </SchemaExplorerProvider>
     </>
   );

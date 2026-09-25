@@ -2,7 +2,6 @@ import { ReactElement, useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
 import { Button } from '@/components/base/button/button';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
@@ -14,8 +13,9 @@ import { Callout } from '@/components/ui/callout';
 import { SubPageLayout } from '@/components/ui/page-content-layout';
 import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   CDN_TOKEN_FORM_ID,
@@ -23,6 +23,10 @@ import {
   CdnTokenFormSchema,
   type CdnTokenFormValues,
 } from './cdn-token-form';
+
+const cdnRoute = getRouteApi(
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
+);
 
 const CDNAccessTokenCreateMutation = graphql(`
   mutation CDNAccessTokens_CDNAccessTokenCreateMutation($input: CreateCdnAccessTokenInput!) {
@@ -46,10 +50,8 @@ export function CreateCDNAccessTokenModal(props: {
   onOpenChangeComplete: (open: boolean) => void;
   onCreateCDNAccessToken: () => void;
   onClose: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [createCdnAccessToken, mutate] = useMutation(CDNAccessTokenCreateMutation);
 
   const form = useForm<CdnTokenFormValues>({
@@ -65,9 +67,9 @@ export function CreateCDNAccessTokenModal(props: {
       input: {
         target: {
           bySelector: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
           },
         },
         alias: values.alias,
@@ -175,10 +177,8 @@ function DeleteCDNAccessTokenModal(props: {
   cdnAccessTokenId: string | null;
   onDeletedAccessTokenId: (deletedAccessTokenId: string) => void;
   onClose: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [deleteCdnAccessToken, mutate] = useMutation(CDNAccessTokenDeleteMutation);
   const { toast } = useToast();
 
@@ -204,9 +204,9 @@ function DeleteCDNAccessTokenModal(props: {
             input: {
               target: {
                 bySelector: {
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                  organizationSlug,
+                  projectSlug,
+                  targetSlug,
                 },
               },
               cdnAccessTokenId: props.cdnAccessTokenId,
@@ -263,37 +263,14 @@ const CDNAccessTokensQuery = graphql(`
   }
 `);
 
-const CDNSearchParams = z.discriminatedUnion('cdn', [
-  z.object({
-    cdn: z.literal('create').optional(),
-  }),
-  z.object({
-    cdn: z.literal('delete'),
-    id: z.string(),
-  }),
-]);
-
-export function CDNAccessTokens(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}): React.ReactElement {
+export function CDNAccessTokens(): React.ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [endCursors, setEndCursors] = useState<Array<string>>([]);
-  const router = useRouter();
-  const searchParamsResult = CDNSearchParams.safeParse(router.latestLocation.search);
-
-  if (!searchParamsResult.success) {
-    console.error('Invalid search params', searchParamsResult.error);
-  }
-
-  const searchParams = searchParamsResult.data ?? { cdn: undefined };
+  const navigate = cdnRoute.useNavigate();
+  const { cdn, id } = cdnRoute.useSearch();
 
   const closeModal = () => {
-    void router.navigate({
-      search: {
-        page: 'cdn',
-      },
-    });
+    void navigate({ search: {} });
   };
 
   const [overlaySession, setOverlaySession] = useState(0);
@@ -307,9 +284,9 @@ export function CDNAccessTokens(props: {
     query: CDNAccessTokensQuery,
     variables: {
       selector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
       first: 10,
       after: endCursors[endCursors.length - 1] ?? null,
@@ -329,7 +306,14 @@ export function CDNAccessTokens(props: {
       />
 
       <div className="my-3.5 flex justify-between">
-        <Button render={<Link search={{ page: 'cdn', cdn: 'create' }} />}>
+        <Button
+          render={
+            <Link
+              from="/$organizationSlug/$projectSlug/$targetSlug/settings/cdn"
+              search={{ cdn: 'create' }}
+            />
+          }
+        >
           Create new CDN token
         </Button>
       </div>
@@ -357,26 +341,20 @@ export function CDNAccessTokens(props: {
 
       <CreateCDNAccessTokenModal
         key={overlaySession}
-        open={searchParams.cdn === 'create'}
+        open={cdn === 'create'}
         onOpenChangeComplete={resetOnClose}
         onCreateCDNAccessToken={() => {
           reexecuteQuery({ requestPolicy: 'network-only' });
         }}
         onClose={closeModal}
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
       />
       <DeleteCDNAccessTokenModal
-        open={searchParams.cdn === 'delete'}
-        cdnAccessTokenId={searchParams.cdn === 'delete' ? searchParams.id : null}
+        open={cdn === 'delete'}
+        cdnAccessTokenId={cdn === 'delete' ? (id ?? null) : null}
         onDeletedAccessTokenId={() => {
           reexecuteQuery({ requestPolicy: 'network-only' });
         }}
         onClose={closeModal}
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
       />
     </SubPageLayout>
   );
@@ -417,7 +395,7 @@ function CdnTokenCreatedCell(props: { token: CdnTokenNode }) {
 
 function CdnTokenDeleteCell(props: { token: CdnTokenNode }) {
   const node = useFragment(CDNAccessTokenRowFragment, props.token);
-  const router = useRouter();
+  const navigate = cdnRoute.useNavigate();
   return (
     <DataTableCell
       kind="icon-button"
@@ -425,13 +403,7 @@ function CdnTokenDeleteCell(props: { token: CdnTokenNode }) {
       label={`Delete ${node.alias}`}
       destructive
       onClick={() => {
-        void router.navigate({
-          search: {
-            page: 'cdn',
-            cdn: 'delete',
-            id: node.id,
-          },
-        });
+        void navigate({ search: { cdn: 'delete', id: node.id } });
       }}
     />
   );

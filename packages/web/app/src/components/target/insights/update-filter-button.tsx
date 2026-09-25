@@ -5,6 +5,7 @@ import { Popover } from '@/components/base/floating/popover/popover';
 import { useToast } from '@/components/base/toast/toast';
 import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';
 
 const InsightsUpdateSavedFilter_Mutation = graphql(`
@@ -41,20 +42,15 @@ const InsightsUpdateSavedFilter_Mutation = graphql(`
 type UpdateFilterButtonProps = {
   activeView: SavedFilterView;
   currentFilters: CurrentFilters;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   onUpdated: () => void;
 };
 
 export function UpdateFilterButton({
   activeView,
   currentFilters,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   onUpdated,
 }: UpdateFilterButtonProps) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [updateResult, updateSavedFilter] = useMutation(InsightsUpdateSavedFilter_Mutation);
   const { toast } = useToast();
@@ -112,7 +108,9 @@ export function UpdateFilterButton({
       align="start"
       title="Update saved filter"
       description={`This will overwrite the current configuration of "${activeView.name}" with your current filter selections.`}
-      trigger={<BaseButton label={`Update "${activeView.name}"`} variant="muted-action" />}
+      trigger={
+        <BaseButton label={`Update "${activeView.name}"`} variant="muted-action" size="compact" />
+      }
       content={
         <div className="flex gap-2">
           <BaseButton

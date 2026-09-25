@@ -4,7 +4,7 @@ import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Filters } from '@/components/base/floating/filter-menu/filters';
 import type { FilterItem } from '@/components/base/floating/filter-menu/types';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
@@ -22,8 +22,13 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
+
+const insightsRoute = getRouteApi(
+  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/insights',
+);
 
 function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
   return {
@@ -106,21 +111,10 @@ const InsightsTrackView_Mutation = graphql(`
   }
 `);
 
-function OperationsView({
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-  dataRetentionInDays,
-}: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  dataRetentionInDays: number;
-}): ReactElement {
-  const search = useSearch({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/insights',
-  });
-  const navigate = useNavigate();
+function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const search = insightsRoute.useSearch();
+  const navigate = insightsRoute.useNavigate();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays,
     defaultPreset: presetLast7Days,
@@ -333,9 +327,6 @@ function OperationsView({
                     excludeOperations: search.excludeOperations ?? false,
                     excludeClientFilters: search.excludeClients ?? false,
                   }}
-                  organizationSlug={organizationSlug}
-                  projectSlug={projectSlug}
-                  targetSlug={targetSlug}
                   onSaved={viewId => {
                     void navigate({
                       search: prev => ({ ...prev, viewId }),
@@ -361,9 +352,6 @@ function OperationsView({
         </div>
       </div>
       <OperationsStats
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         period={dateRangeController.resolvedRange}
         filter={filter}
         dateRangeText={dateRangeController.selectedPreset.label}
@@ -372,9 +360,6 @@ function OperationsView({
       />
       <OperationsList
         period={dateRangeController.resolvedRange}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         filter={filter}
         selectedPeriod={dateRangeController.selectedPreset.range}
       />
@@ -403,24 +388,21 @@ const TargetOperationsPageQuery = graphql(`
   }
 `);
 
-function TargetOperationsPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function TargetOperationsPageContent() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetOperationsPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
 
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -446,32 +428,16 @@ function TargetOperationsPageContent(props: {
     );
   }
 
-  return (
-    <OperationsView
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      dataRetentionInDays={currentOrganization.usageRetentionInDays}
-    />
-  );
+  return <OperationsView dataRetentionInDays={currentOrganization.usageRetentionInDays} />;
 }
 
-export function TargetInsightsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function TargetInsightsPage() {
   return (
     <>
       <Meta title="Insights" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Insights}
-      >
-        <TargetOperationsPageContent {...props} />
-      </TargetLayout>
+      <LayoutContent>
+        <TargetOperationsPageContent />
+      </LayoutContent>
     </>
   );
 }

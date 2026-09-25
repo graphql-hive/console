@@ -8,16 +8,19 @@ import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Separator } from '@/components/base/separator/separator';
 import { ResourceCard } from '@/components/common/resource-card';
-import { Page, ProjectLayout } from '@/components/layouts/project';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { subDays } from '@/lib/date-time';
+import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { UTCDate } from '@date-fns/utc';
-import { Link, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
+
+const projectIndexRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/');
 
 const TargetCard_TargetFragment = graphql(`
   fragment TargetCard_TargetFragment on Target {
@@ -32,9 +35,8 @@ const TargetCard = (props: {
   requestsOverTime: { date: string; value: number }[] | null;
   schemaVersionsCount: number | null;
   days: number;
-  organizationSlug: string;
-  projectSlug: string;
 }): ReactElement => {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const target = useFragment(TargetCard_TargetFragment, props.target);
 
   return (
@@ -49,12 +51,10 @@ const TargetCard = (props: {
         <Link
           className="block pb-5 pt-4"
           to="/$organizationSlug/$projectSlug/$targetSlug"
-          disabled={
-            props.organizationSlug == null || props.projectSlug == null || target?.slug == null
-          }
+          disabled={organizationSlug == null || projectSlug == null || target?.slug == null}
           params={{
-            organizationSlug: props.organizationSlug ?? 'unknown-yet',
-            projectSlug: props.projectSlug ?? 'unknown-yet',
+            organizationSlug: organizationSlug ?? 'unknown-yet',
+            projectSlug: projectSlug ?? 'unknown-yet',
             targetSlug: target?.slug ?? 'unknown-yet',
           }}
         >
@@ -73,9 +73,8 @@ export const ProjectIndexRouteSearch = z.object({
 
 type RouteSearchProps = z.infer<typeof ProjectIndexRouteSearch>;
 
-const ProjectsPageContent = (
-  props: { organizationSlug: string; projectSlug: string } & RouteSearchProps,
-) => {
+const ProjectsPageContent = (props: RouteSearchProps) => {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const period = useRef<{
     from: string;
     to: string;
@@ -102,12 +101,13 @@ const ProjectsPageContent = (
         : // if the sort order is not set, sort in descending order by default
           1;
   const router = useRouter();
+  const navigate = projectIndexRoute.useNavigate();
 
   const [query] = useQuery({
     query: ProjectOverviewPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
+      organizationSlug,
+      projectSlug,
       chartResolution: days, // 14 days = 14 data points
       period: period.current,
     },
@@ -166,7 +166,7 @@ const ProjectsPageContent = (
 
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      void router.navigate({
+      void navigate({
         search(params) {
           return {
             ...params,
@@ -181,11 +181,11 @@ const ProjectsPageContent = (
 
   const onRequestsValueChange = useCallback(
     (value: string) => {
-      void router.navigate({
+      void navigate({
         search(params) {
           return {
             ...params,
-            sortBy: value,
+            sortBy: value as RouteSearchProps['sortBy'],
           };
         },
       });
@@ -194,7 +194,7 @@ const ProjectsPageContent = (
   );
 
   const onSortClick = useCallback(() => {
-    void router.navigate({
+    void navigate({
       search(params) {
         return {
           ...params,
@@ -207,7 +207,7 @@ const ProjectsPageContent = (
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -285,8 +285,6 @@ const ProjectsPageContent = (
                 highestNumberOfRequests={highestNumberOfRequests}
                 requestsOverTime={target.requestsOverTime}
                 schemaVersionsCount={target.schemaVersionsCount}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
               />
             ))
           )
@@ -300,8 +298,6 @@ const ProjectsPageContent = (
                 highestNumberOfRequests={highestNumberOfRequests}
                 requestsOverTime={null}
                 schemaVersionsCount={null}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
               />
             ))}
           </>
@@ -336,26 +332,17 @@ const ProjectOverviewPageQuery = graphql(`
   }
 `);
 
-export function ProjectPage(
-  props: { organizationSlug: string; projectSlug: string } & RouteSearchProps,
-): ReactElement {
+export function ProjectPage(props: RouteSearchProps): ReactElement {
   return (
     <>
       <Meta title="Targets" />
-      <ProjectLayout
-        page={Page.Targets}
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        className="flex justify-between gap-12"
-      >
+      <LayoutContent className="flex justify-between gap-12">
         <ProjectsPageContent
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
           search={props.search}
           sortBy={props.sortBy}
           sortOrder={props.sortOrder}
         />
-      </ProjectLayout>
+      </LayoutContent>
     </>
   );
 }

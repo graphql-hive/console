@@ -6,12 +6,9 @@ import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { OIDCIntegrationConfiguration } from './oidc-integration-configuration';
-
-type SingleSignOnSubPageProps = {
-  organizationSlug: string;
-};
 
 const SingleSignOnSubpageQuery = graphql(`
   query SingleSignOnSubpageQuery($organizationSlug: String!) {
@@ -60,11 +57,12 @@ const enum ConnectSingleSignOnProviderState {
   closing,
 }
 
-export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.ReactNode {
+export function SingleSignOnSubpage(): React.ReactNode {
+  const { organizationSlug } = useSlugs('organization');
   const [query] = useQuery({
     query: SingleSignOnSubpageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
     },
     requestPolicy: 'network-only',
   });

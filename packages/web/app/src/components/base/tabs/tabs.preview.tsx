@@ -10,10 +10,8 @@ export const nav: NavPath = 'Base/Primitives/Tabs';
 
 /**
  * Items in, a tab strip out, with a sliding indicator and panels when the items carry content.
- * Replaces `ui/tabs` for the mounts that are tabs; the ones that are navigation move to
- * `SecondaryNavigation`, the checks and version pages to `TabbedView`, and the laboratory's page
- * switch to `ToggleGroup`. Each look below is drawn with the call sites it would ship at, real
- * copy included.
+ * For navigation use `Navigation`; for a view switch over a page, `TabbedView`. Each look below is
+ * drawn with the call sites it ships at, real copy included.
  */
 
 // ---------------------------------------------------------------------------
@@ -171,25 +169,25 @@ export const Underline = createPreview(() => {
   const [view, setView] = useState('details');
   return (
     <div className="flex flex-col gap-10">
-      <Labelled label="project/settings/composition.tsx (was content variant; the legacy tab was dimmed by className, which base does not do)">
+      <Labelled label="project/settings/composition.tsx">
         <Tabs items={compositionItems(mode)} value={mode} onValueChange={setMode} />
       </Labelled>
-      <Labelled label="layouts/target.tsx, the CDN access dialog (was content variant)">
+      <Labelled label="layouts/target.tsx, the CDN access dialog">
         <Tabs items={GATEWAYS} defaultValue="hive-gateway" />
       </Labelled>
-      <Labelled label="connect-single-sign-on-provider-sheet.tsx (was content variant)">
+      <Labelled label="connect-single-sign-on-provider-sheet.tsx">
         <Tabs items={SSO} defaultValue="discovery" />
       </Labelled>
-      <Labelled label="members/resource-selector.tsx (was content variant)">
+      <Labelled label="members/resource-selector.tsx">
         <Tabs items={ACCESS} defaultValue="granular" />
       </Labelled>
-      <Labelled label="pages/target-history-schema-version.tsx, the version views (was content variant with icons; the page renders the view). Only if the history page stays off TabbedView; with it, these are the band.">
+      <Labelled label="The schema version views, with icons; the page renders the view">
         <div className="flex flex-col">
           <Tabs items={VERSION_VIEWS} value={view} onValueChange={setView} />
           <Copy>The {view} view, rendered by the page.</Copy>
         </div>
       </Labelled>
-      <Labelled label="pages/target-trace.tsx, the span sheet strip (was hand-rolled at text-xs), sm">
+      <Labelled label="pages/target-trace.tsx, the span sheet strip, sm">
         <Tabs items={SPAN_VIEWS} defaultValue="span-attributes" size="sm" />
       </Labelled>
     </div>
@@ -291,7 +289,7 @@ export const Header = createPreview(() => {
 
 /** A column of tabs with the panels beside them: the new-proposal page's sections. */
 export const Vertical = createPreview(() => (
-  <Labelled label="pages/target-proposals-new.tsx (was orientation=vertical with a restyled content list)">
+  <Labelled label="pages/target-proposals-new.tsx">
     <Tabs
       orientation="vertical"
       items={[

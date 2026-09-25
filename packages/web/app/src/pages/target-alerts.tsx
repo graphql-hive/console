@@ -1,16 +1,12 @@
 import { useQuery } from 'urql';
-import { subPageNavigationLinkClasses } from '@/components/navigation/sub-page-navigation-link';
+import { Navigation } from '@/components/base/navigation/navigation';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { Meta } from '@/components/ui/meta';
-import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
+import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { graphql } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
-import { Link, Outlet, useLocation } from '@tanstack/react-router';
-
-const navItems = [
-  { label: 'Alert activity', segment: 'activity' },
-  { label: 'Alert rules', segment: 'rules' },
-  { label: 'Create a new alert', segment: 'create' },
-] as const;
+import { useSlugs } from '@/lib/hooks';
+import { Outlet } from '@tanstack/react-router';
 
 const TargetAlertsPageQuery = graphql(`
   query TargetAlertsPageQuery(
@@ -33,23 +29,11 @@ const TargetAlertsPageQuery = graphql(`
   }
 `);
 
-export function TargetAlertsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
-  const params = {
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
-  };
-
-  const [data] = useQuery({
-    query: TargetAlertsPageQuery,
-    variables: params,
-  });
+/** The gate every alerts page sits behind; the pages with the nav and the rule detail render in it. */
+export function TargetAlertsPage() {
+  const slugs = useSlugs('target');
+  const [data] = useQuery({ query: TargetAlertsPageQuery, variables: slugs });
   const target = data.data?.target;
-  const location = useLocation();
 
   useRedirect({
     entity: target,
@@ -57,7 +41,7 @@ export function TargetAlertsPage(props: {
     redirectTo(router) {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params,
+        params: slugs,
         replace: true,
       });
     },
@@ -67,43 +51,47 @@ export function TargetAlertsPage(props: {
     return null;
   }
 
-  // The detail page (path matches /alerts/{ruleId}) renders full-width without the
-  // secondary nav. The literal segment routes (rules / activity / create) keep the nav.
-  const lastSegment = location.pathname.replace(/\/$/, '').split('/').pop();
-  const literalSegments = new Set(['alerts', 'rules', 'activity', 'create']);
-  const isDetailRoute = !!lastSegment && !literalSegments.has(lastSegment);
-
-  if (isDetailRoute) {
-    return (
-      <>
-        <Meta title="Alerts" />
-        <Outlet />
-      </>
-    );
-  }
-
   return (
-    <>
+    <LayoutContent>
       <Meta title="Alerts" />
-      <PageLayout>
-        <NavLayout>
-          {navItems.map(item => (
-            <Link
-              key={item.segment}
-              to={`/$organizationSlug/$projectSlug/$targetSlug/alerts/${item.segment}`}
-              params={params}
-              className={subPageNavigationLinkClasses.base}
-              activeProps={{ className: subPageNavigationLinkClasses.active }}
-              inactiveProps={{ className: subPageNavigationLinkClasses.inactive }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </NavLayout>
-        <PageLayoutContent>
-          <Outlet />
-        </PageLayoutContent>
-      </PageLayout>
-    </>
+      <Outlet />
+    </LayoutContent>
+  );
+}
+
+/** Activity (the bare URL), rules and create beside their nav. */
+export function TargetAlertsWithNav() {
+  const slugs = useSlugs('target');
+  return (
+    <PageLayout>
+      <Navigation
+        aria-label="Alerts"
+        variant="list"
+        items={[
+          {
+            id: 'activity',
+            label: 'Alert activity',
+            to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
+            params: slugs,
+            exact: true,
+          },
+          {
+            id: 'rules',
+            label: 'Alert rules',
+            to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/rules',
+            params: slugs,
+          },
+          {
+            id: 'create',
+            label: 'Create a new alert',
+            to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/create',
+            params: slugs,
+          },
+        ]}
+      />
+      <PageLayoutContent>
+        <Outlet />
+      </PageLayoutContent>
+    </PageLayout>
   );
 }

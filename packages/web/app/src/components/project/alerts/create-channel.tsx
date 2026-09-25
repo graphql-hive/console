@@ -5,6 +5,7 @@ import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { graphql } from '@/gql';
 import { AlertChannelType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   CHANNEL_FORM_ID,
@@ -41,15 +42,12 @@ export const CreateChannelModal = ({
   isOpen,
   toggleModalOpen,
   onOpenChangeComplete,
-  organizationSlug,
-  projectSlug,
 }: {
   isOpen: boolean;
   toggleModalOpen: () => void;
   onOpenChangeComplete?: (open: boolean) => void;
-  organizationSlug: string;
-  projectSlug: string;
 }): ReactElement => {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const [mutation, mutate] = useMutation(CreateChannel_AddAlertChannelMutation);
   const form = useForm<ChannelFormValues>({
     mode: 'onTouched',

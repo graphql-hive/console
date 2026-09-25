@@ -38,9 +38,6 @@ export function GraphQLFields(props: {
   typeName: string;
   fields: Array<FragmentType<typeof GraphQLFields_FieldFragment>>;
   totalRequests?: number;
-  targetSlug: string;
-  projectSlug: string;
-  organizationSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
 }) {
@@ -114,30 +111,15 @@ export function GraphQLFields(props: {
                       />
                     )}
                     <DeprecationNote deprecationReason={field.deprecationReason}>
-                      <LinkToCoordinatePage
-                        organizationSlug={props.organizationSlug}
-                        projectSlug={props.projectSlug}
-                        targetSlug={props.targetSlug}
-                        coordinate={coordinate}
-                        className="font-semibold"
-                      >
+                      <LinkToCoordinatePage coordinate={coordinate} className="font-semibold">
                         {field.name}
                       </LinkToCoordinatePage>
                     </DeprecationNote>
                     {field.args.length > 0 && (
-                      <GraphQLArguments
-                        organizationSlug={props.organizationSlug}
-                        projectSlug={props.projectSlug}
-                        targetSlug={props.targetSlug}
-                        parentCoordinate={coordinate}
-                        args={field.args}
-                      />
+                      <GraphQLArguments parentCoordinate={coordinate} args={field.args} />
                     )}
                     <span className="mr-1">:</span>
                     <GraphQLTypeAsLink
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      targetSlug={props.targetSlug}
                       className="text-neutral-11 font-semibold"
                       type={field.type}
                     />
@@ -145,22 +127,11 @@ export function GraphQLFields(props: {
                   <div className="flex flex-row items-center">
                     {field.supergraphMetadata && (
                       <div className="ml-1">
-                        <SupergraphMetadataList
-                          targetSlug={props.targetSlug}
-                          projectSlug={props.projectSlug}
-                          organizationSlug={props.organizationSlug}
-                          supergraphMetadata={field.supergraphMetadata}
-                        />
+                        <SupergraphMetadataList supergraphMetadata={field.supergraphMetadata} />
                       </div>
                     )}
                     {typeof totalRequests === 'number' && (
-                      <SchemaExplorerUsageStats
-                        totalRequests={totalRequests}
-                        usage={field.usage}
-                        targetSlug={props.targetSlug}
-                        projectSlug={props.projectSlug}
-                        organizationSlug={props.organizationSlug}
-                      />
+                      <SchemaExplorerUsageStats totalRequests={totalRequests} usage={field.usage} />
                     )}
                   </div>
                 </div>

@@ -5,9 +5,9 @@ import { Button } from '@/components/base/button/button';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
-import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
+import { Tabs } from '@/components/base/tabs/tabs';
 import { Heading } from '@/components/ui/heading';
-import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
+import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { DiffEditor } from '@/components/v2';
 import { graphql } from '@/gql';
 import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
@@ -120,22 +120,23 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
         <div className="col-span-2 flex-none text-right" />
       </div>
       <PageLayout>
-        <NavLayout>
+        <div className="w-48 shrink-0">
           <div className="p-4 text-xs font-bold">View Target</div>
-          {results.map((result, index) => (
-            <SubPageNavigationLink
-              key={index}
-              isActive={page === index}
-              onClick={() => setPage(index)}
-              title={
-                <div className="flex items-center">
+          <Tabs
+            orientation="vertical"
+            value={String(page)}
+            onValueChange={value => setPage(Number(value))}
+            items={results.map((result, index) => ({
+              value: String(index),
+              label: (
+                <span className="flex items-center">
                   <StatusDot color={result?.compatible ? 'success' : 'critical'} />
                   <span className="ml-1">{result?.target?.slug ?? `Target ${index}`}</span>
-                </div>
-              }
-            />
-          ))}
-        </NavLayout>
+                </span>
+              ),
+            }))}
+          />
+        </div>
         <PageLayoutContent>
           {report?.nativeCompositionResult?.errors?.edges?.length ? (
             <>

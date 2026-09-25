@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from 'urql';
 import type { FilterDimension } from '@/components/base/floating/filter-menu/filter-menu';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { useRouter } from '@tanstack/react-router';
 import {
   fromMetadataSelections,
@@ -70,9 +71,6 @@ const EXPLORER_TYPE_ROUTE =
   '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename' as const;
 
 export type ExplorerFilterDimensionsOptions = {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   period: { from: string; to: string };
   /** Set on the type detail route, so the Type dimension reflects the current type. */
   typename?: string;
@@ -93,15 +91,13 @@ export type ExplorerFilterDimensionsOptions = {
  * state of its own.
  */
 export function useExplorerFilterDimensions({
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   period,
   typename,
   subgraphNames,
   metadataAttributes,
   includeSchemaDimensions = false,
 }: ExplorerFilterDimensionsOptions): FilterDimension[] {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const router = useRouter();
   const {
     subgraphs,
@@ -179,6 +175,7 @@ export function useExplorerFilterDimensions({
           placeholder: 'Find field',
           onChange: value => {
             void router.navigate({
+              to: '.',
               search: { ...searchParams, search: value === '' ? undefined : value },
               replace: true,
             });

@@ -28,7 +28,9 @@ export const Link = <TTo extends string = '.'>({
 }: LinkProps<TTo> & {
   as?: 'a';
 }) => {
-  if (props.as === 'a') {
+  // An `href` with no `to` is a link out of the app: the router's Link would re-resolve it as an
+  // internal location and drop the origin, so it renders as a plain anchor.
+  if (props.as === 'a' || (props.href && !('to' in props))) {
     return (
       <a className={cn(linkVariants({ variant, className }))} {...props}>
         {children}
@@ -37,7 +39,6 @@ export const Link = <TTo extends string = '.'>({
   }
 
   return (
-    // @ts-expect-error It's a legacy component and I don't want to spend time fixing a type error
     <RouterLink href="" className={cn(linkVariants({ variant, className }))} {...props}>
       {children}
     </RouterLink>

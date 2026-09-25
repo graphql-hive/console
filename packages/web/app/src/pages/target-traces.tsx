@@ -12,6 +12,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ChartConfig,
   ChartContainer,
@@ -20,19 +21,22 @@ import {
 } from '@/components/ui/chart';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DateRangePicker, Preset, presetLast7Days } from '@/components/ui/date-range-picker';
+import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
-import { usePagedConnection } from '@/lib/hooks';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
-import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
 import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
+
+const tracesRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces');
 
 const chartConfig = {
   ok: {
@@ -100,7 +104,7 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
     [isSelecting],
   );
 
-  const navigate = useNavigate();
+  const navigate = tracesRoute.useNavigate();
 
   // Handle mouse up event to end selection
   const handleMouseUp = useCallback(() => {
@@ -241,12 +245,10 @@ const TracesList = memo(function TracesList(
     pagination: DataTablePaginationProp;
   },
 ) {
-  const router = useRouter();
+  const navigate = tracesRoute.useNavigate();
   const data = useFragment(TracesList_Trace, props.traces);
 
-  const targetRef = useParams({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces',
-  });
+  const targetRef = tracesRoute.useParams();
 
   const rows = useMemo(() => [...data], [data]);
 
@@ -261,7 +263,7 @@ const TracesList = memo(function TracesList(
             mono
             label={row.original.id.substring(0, 8)}
             link={{
-              to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+              to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
               params: {
                 organizationSlug: targetRef.organizationSlug,
                 projectSlug: targetRef.projectSlug,
@@ -482,7 +484,7 @@ const TracesList = memo(function TracesList(
           if (!next) {
             return;
           }
-          void router.navigate({
+          void navigate({
             search(params) {
               return { ...params, sort: next as SortState };
             },
@@ -549,12 +551,13 @@ function Filters(
 
   // Stores the update handlers in a ref to prevent unnecessary re-renders
   const router = useRouter();
+  const navigate = tracesRoute.useNavigate();
   const updateHandlersRef = useRef(new Map<FilterKeys, (value: any) => void>());
   const updateFilter = useCallback(
     <$Key extends FilterKeys>(key: $Key): ((value: FilterState[$Key]) => void) => {
       if (!updateHandlersRef.current.has(key)) {
         const handler = (value: FilterState[$Key]) => {
-          void router.navigate({
+          void navigate({
             search(params) {
               return {
                 ...params,
@@ -574,7 +577,7 @@ function Filters(
   );
 
   const resetFilters = () => {
-    void router.navigate({
+    void navigate({
       search(params) {
         return {
           ...params,
@@ -722,9 +725,6 @@ function Filters(
 type SelectedTraceSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   /** Null until a trace has been selected. */
   traceId: string | null;
 };
@@ -746,13 +746,14 @@ const SelectedTraceSheetQuery = graphql(`
 `);
 
 function SelectedTraceSheet(props: SelectedTraceSheetProps) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [queryResult] = useQuery({
     query: SelectedTraceSheetQuery,
     variables: {
       targetSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
       traceId: props.traceId ?? '',
     },
@@ -818,11 +819,11 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
               size="compact"
               render={
                 <Link
-                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                   params={{
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
+                    organizationSlug,
+                    projectSlug,
+                    targetSlug,
                     traceId: props.traceId,
                   }}
                 />
@@ -834,16 +835,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           </div>
         ) : null}
       </div>
-      {trace && (
-        <ImportedTraceSheet
-          activeSpanId={null}
-          activeSpanTab={null}
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          trace={trace}
-        />
-      )}
+      {trace && <ImportedTraceSheet activeSpanId={null} activeSpanTab={null} trace={trace} />}
     </Sheet>
   );
 }
@@ -947,15 +939,29 @@ const TargetTracesFetchMoreTracesQuery = graphql(`
   }
 `);
 
-export function TargetTracesPageContent(
+export function TargetTracesPage(
   props: SortProps &
     FilterProps & {
       range: Preset['range'] | null;
     },
 ) {
-  const targetRef = useParams({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces',
-  });
+  return (
+    <>
+      <Meta title="Traces" />
+      <LayoutContent>
+        <TargetTracesPageContent {...props} />
+      </LayoutContent>
+    </>
+  );
+}
+
+function TargetTracesPageContent(
+  props: SortProps &
+    FilterProps & {
+      range: Preset['range'] | null;
+    },
+) {
+  const targetRef = tracesRoute.useParams();
 
   const dateRangeController = useDateRangeController({
     // TODO: ressolve retention from account
@@ -1197,9 +1203,6 @@ export function TargetTracesPageContent(
             setSelectedTraceId(null);
           }
         }}
-        organizationSlug={targetRef.organizationSlug}
-        projectSlug={targetRef.projectSlug}
-        targetSlug={targetRef.targetSlug}
         traceId={sheetTraceId}
       />
     </div>

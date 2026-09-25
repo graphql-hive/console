@@ -15,6 +15,7 @@ import { CompositionErrorsPopover } from '@/components/target/history/compositio
 import { Heading } from '@/components/ui/heading';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -136,10 +137,8 @@ type InsightsTarget = DocumentType<
 export function ChangesBlock(
   props: {
     title?: string | React.ReactElement;
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
-    schemaCheckId: string;
+    /** The check being viewed, when there is one: a schema version shows the same changes without. */
+    schemaCheckId?: string;
     conditionBreakingChangeMetadata?: FragmentType<
       typeof ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment
     > | null;
@@ -160,9 +159,6 @@ export function ChangesBlock(
       <div className="list-inside list-disc space-y-2 text-sm/relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
             schemaCheckId={props.schemaCheckId}
             key={key}
             change={null}
@@ -172,9 +168,6 @@ export function ChangesBlock(
         ))}
         {props.changes?.map((change, key) => (
           <ChangeItem
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
             schemaCheckId={props.schemaCheckId}
             key={key}
             change={change}
@@ -192,10 +185,7 @@ function ChangeItem(
     conditionBreakingChangeMetadata: FragmentType<
       typeof ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment
     > | null;
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
-    schemaCheckId: string;
+    schemaCheckId?: string;
   } & (
     | {
         change: FragmentType<typeof ChangesBlock_SchemaChangeFragment>;
@@ -207,6 +197,7 @@ function ChangeItem(
       }
   ),
 ) {
+  const { organizationSlug, projectSlug } = useSlugs('target');
   const cchange = useFragment(ChangesBlock_SchemaChangeFragment, props.change);
   const cchangeWithUsage = useFragment(
     ChangesBlock_SchemaChangeWithUsageFragment,
@@ -290,9 +281,6 @@ function ChangeItem(
             <div className="pb-4 pt-4">
               {change.approval && (
                 <SchemaChangeApproval
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
                   schemaCheckId={props.schemaCheckId}
                   approval={change.approval}
                 />
@@ -323,8 +311,8 @@ function ChangeItem(
                                 className="text-accent_80 hover:text-accent"
                                 to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
                                 params={{
-                                  organizationSlug: props.organizationSlug,
-                                  projectSlug: props.projectSlug,
+                                  organizationSlug,
+                                  projectSlug,
                                   targetSlug: target.target.slug,
                                   coordinate: change.path!.join('.'),
                                 }}
@@ -345,18 +333,14 @@ function ChangeItem(
                     )}
                   </div>
                   <UsageStatisticsPanels
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
                     usageStatistics={change.usageStatistics}
                     targets={metadata.settings.targets}
                   />
-                  {'affectedAppDeployments' in change &&
+                  {props.schemaCheckId &&
+                  'affectedAppDeployments' in change &&
                   change.affectedAppDeployments?.edges?.length ? (
                     <div className="mt-6">
                       <AffectedAppDeploymentsPanel
-                        organizationSlug={props.organizationSlug}
-                        projectSlug={props.projectSlug}
-                        targetSlug={props.targetSlug}
                         schemaCheckId={props.schemaCheckId}
                         coordinate={change.path?.join('.')}
                         connection={change.affectedAppDeployments}
@@ -364,12 +348,10 @@ function ChangeItem(
                     </div>
                   ) : null}
                 </div>
-              ) : 'affectedAppDeployments' in change &&
+              ) : props.schemaCheckId &&
+                'affectedAppDeployments' in change &&
                 change.affectedAppDeployments?.edges?.length ? (
                 <AffectedAppDeploymentsPanel
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
                   schemaCheckId={props.schemaCheckId}
                   coordinate={change.path?.join('.')}
                   connection={change.affectedAppDeployments}
@@ -410,11 +392,10 @@ function trafficColumns<
 }
 
 function UsageStatisticsPanels(props: {
-  organizationSlug: string;
-  projectSlug: string;
   usageStatistics: UsageStatistics;
   targets: InsightsTarget[];
 }) {
+  const { organizationSlug, projectSlug } = useSlugs('target');
   const operationColumns: ColumnDef<AffectedOperation, unknown>[] = [
     {
       id: 'name',
@@ -430,8 +411,8 @@ function UsageStatisticsPanels(props: {
                   link: {
                     to: '/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash' as const,
                     params: {
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
+                      organizationSlug,
+                      projectSlug,
                       targetSlug: target.target.slug,
                       operationName,
                       operationHash: row.original.hash,
@@ -493,19 +474,17 @@ function UsageStatisticsPanels(props: {
 }
 
 function AffectedAppDeploymentsPanel(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   schemaCheckId: string;
   coordinate: string | undefined;
   connection: AffectedDeploymentConnection;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const appVersionLink = (deployment: AffectedDeployment) => ({
     to: '/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion' as const,
     params: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       appName: deployment.name,
       appVersion: deployment.version,
     },
@@ -613,9 +592,9 @@ function AffectedAppDeploymentsPanel(props: {
         <Link
           to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId/affected-deployments"
           params={{
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
             schemaCheckId: props.schemaCheckId,
           }}
           search={{ coordinate: props.coordinate }}
@@ -644,24 +623,15 @@ function ApprovedByBadge(props: {
 
 function SchemaChangeApproval(props: {
   approval: FragmentType<typeof ChangesBlock_SchemaChangeApprovalFragment>;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  schemaCheckId: string;
+  schemaCheckId?: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const approval = useFragment(ChangesBlock_SchemaChangeApprovalFragment, props.approval);
   const approvalName =
     approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
   const approvalDate = format(new Date(approval.approvedAt), 'do MMMM yyyy');
   const schemaCheckPath =
-    '/' +
-    [
-      props.organizationSlug,
-      props.projectSlug,
-      props.targetSlug,
-      'checks',
-      approval.schemaCheckId,
-    ].join('/');
+    '/' + [organizationSlug, projectSlug, targetSlug, 'checks', approval.schemaCheckId].join('/');
 
   return (
     <div className="mb-3">

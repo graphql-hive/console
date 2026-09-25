@@ -6,6 +6,7 @@ import { Button } from '@/components/base/button/button';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import {
@@ -64,13 +65,9 @@ const OrganizationLayoutQuery = graphql(`
 
 export function OrganizationLayout({
   children,
-  page,
-  className,
   organizationSlug,
   minimal,
 }: {
-  page?: Page;
-  className?: string;
   minimal?: boolean;
   organizationSlug: string;
   children: ReactNode;
@@ -113,27 +110,26 @@ export function OrganizationLayout({
         />
       </Header>
       <SecondaryNavigation
-        page={page}
         loading={!currentOrganization}
         links={
           currentOrganization
             ? [
                 {
-                  value: Page.Overview,
+                  id: Page.Overview,
                   label: 'Overview',
                   to: '/$organizationSlug',
                   params: { organizationSlug: currentOrganization.slug },
+                  exact: true,
                 },
                 {
-                  value: Page.Members,
+                  id: Page.Members,
                   label: 'Members',
                   visible: currentOrganization.viewerCanSeeMembers,
                   to: '/$organizationSlug/view/members',
                   params: { organizationSlug: currentOrganization.slug },
-                  search: { page: 'list' },
                 },
                 {
-                  value: Page.Settings,
+                  id: Page.Settings,
                   label: 'Settings',
                   visible:
                     currentOrganization.viewerCanAccessSettings ||
@@ -143,14 +139,14 @@ export function OrganizationLayout({
                   params: { organizationSlug: currentOrganization.slug },
                 },
                 {
-                  value: Page.Support,
+                  id: Page.Support,
                   label: 'Support',
                   visible: currentOrganization.viewerCanManageSupportTickets,
                   to: '/$organizationSlug/view/support',
                   params: { organizationSlug: currentOrganization.slug },
                 },
                 {
-                  value: Page.Subscription,
+                  id: Page.Subscription,
                   label: 'Subscription',
                   visible: getIsStripeEnabled() && currentOrganization.viewerCanDescribeBilling,
                   to: '/$organizationSlug/view/subscription',
@@ -177,24 +173,24 @@ export function OrganizationLayout({
           ) : null
         }
       />
-      <div className="min-h-(--content-height) container pb-7">
-        {currentOrganization ? (
-          <>
-            <ProPlanBilling organization={currentOrganization} />
-            <RateLimitWarn organization={currentOrganization} />
-          </>
-        ) : null}
+      {currentOrganization ? (
+        <div className="container">
+          <ProPlanBilling organization={currentOrganization} />
+          <RateLimitWarn organization={currentOrganization} />
+        </div>
+      ) : null}
 
-        {shouldShowNoOrg ? (
+      {shouldShowNoOrg ? (
+        <LayoutContent>
           <NotFound
             title="Organization not found"
             description="Use the empty dropdown in the header to select an organization to which you have access."
             showBackButton={false}
           />
-        ) : (
-          <div className={className}>{children}</div>
-        )}
-      </div>
+        </LayoutContent>
+      ) : (
+        children
+      )}
     </>
   );
 }

@@ -7,7 +7,7 @@ import { Button } from '@/components/base/button/button';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Separator } from '@/components/base/separator/separator';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { ProjectCard } from '@/components/organization/project-card';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -15,8 +15,11 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { subDays } from '@/lib/date-time';
+import { useSlugs } from '@/lib/hooks';
 import { UTCDate } from '@date-fns/utc';
-import { useRouter } from '@tanstack/react-router';
+import { getRouteApi, useRouter } from '@tanstack/react-router';
+
+const organizationIndexRoute = getRouteApi('/authenticated/$organizationSlug/');
 
 export const OrganizationIndexRouteSearch = z.object({
   search: z.string().optional(),
@@ -54,11 +57,8 @@ const OrganizationProjectsPageQuery = graphql(`
   }
 `);
 
-function OrganizationPageContent(
-  props: {
-    organizationSlug: string;
-  } & RouteSearchProps,
-) {
+function OrganizationPageContent(props: {} & RouteSearchProps) {
+  const { organizationSlug } = useSlugs('organization');
   const days = 14;
   const period = useRef<{
     from: string;
@@ -86,11 +86,12 @@ function OrganizationPageContent(
   }
 
   const router = useRouter();
+  const navigate = organizationIndexRoute.useNavigate();
 
   const [query] = useQuery({
     query: OrganizationProjectsPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
       chartResolution: days, // 14 days = 14 data points
       period: period.current,
     },
@@ -153,7 +154,7 @@ function OrganizationPageContent(
 
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      void router.navigate({
+      void navigate({
         search(params) {
           return {
             ...params,
@@ -168,11 +169,11 @@ function OrganizationPageContent(
 
   const onRequestsValueChange = useCallback(
     (value: string) => {
-      void router.navigate({
+      void navigate({
         search(params) {
           return {
             ...params,
-            sortBy: value,
+            sortBy: value as RouteSearchProps['sortBy'],
           };
         },
       });
@@ -181,7 +182,7 @@ function OrganizationPageContent(
   );
 
   const onSortClick = useCallback(() => {
-    void router.navigate({
+    void navigate({
       search(params) {
         return {
           ...params,
@@ -192,15 +193,11 @@ function OrganizationPageContent(
   }, [router, props.sortOrder]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   return (
-    <OrganizationLayout
-      page={Page.Overview}
-      organizationSlug={props.organizationSlug}
-      className="flex justify-between gap-12"
-    >
+    <LayoutContent className="flex justify-between gap-12">
       <>
         <div className="grow">
           <div className="flex flex-row items-center justify-between py-6">
@@ -287,20 +284,15 @@ function OrganizationPageContent(
           )}
         </div>
       </>
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 
-export function OrganizationPage(
-  props: {
-    organizationSlug: string;
-  } & RouteSearchProps,
-) {
+export function OrganizationPage(props: {} & RouteSearchProps) {
   return (
     <>
       <Meta title="Organization" />
       <OrganizationPageContent
-        organizationSlug={props.organizationSlug}
         search={props.search}
         sortBy={props.sortBy}
         sortOrder={props.sortOrder}

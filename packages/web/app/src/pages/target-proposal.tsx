@@ -3,11 +3,8 @@ import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { ChartPie, CheckIcon, FileDiffIcon, List, PencilIcon, XIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import {
-  SecondaryNavigation,
-  type SecondaryNavigationItem,
-} from '@/components/base/navigation/secondary-navigation/secondary-navigation';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
   Proposal_ChangeFragment,
@@ -25,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { Change } from '@graphql-inspector/core';
 import { errors, patchSchema } from '@graphql-inspector/patch';
@@ -155,9 +153,6 @@ const ReviewSchemaProposalMutation = graphql(/* GraphQL */ `
 `);
 
 export function TargetProposalsSinglePage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   proposalId: string;
   tab?: string;
   version?: string;
@@ -166,35 +161,30 @@ export function TargetProposalsSinglePage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Proposals}
-        className="h-(--content-height) flex min-h-[300px] flex-col pb-0"
-      >
+      <LayoutContent className="h-(--content-height) flex min-h-[300px] flex-col pb-0">
         <ProposalsContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }
 
 const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   // fetch main page details
   const [query, refreshProposal] = useQuery({
     query: ProposalQuery,
     variables: {
       projectRef: {
         bySelector: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
+          organizationSlug,
+          projectSlug,
         },
       },
       targetRef: {
         bySelector: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
       },
       id: props.proposalId,
@@ -400,9 +390,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   className="text-neutral-12"
                   to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                   params={{
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
+                    organizationSlug,
+                    projectSlug,
+                    targetSlug,
                   }}
                 >
                   Schema Proposals
@@ -499,9 +489,6 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
 };
 
 function TabbedContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   proposalId: string;
   version?: string;
   page?: string;
@@ -513,35 +500,38 @@ function TabbedContent(props: {
   me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
   isDistributedGraph: boolean;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const page = props.page ?? Tab.DETAILS;
   const proposalLink = {
     to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
     params: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       proposalId: props.proposalId,
     },
   } as const;
   const versionSearch = props.version ? { version: props.version } : {};
-  const sections: SecondaryNavigationItem[] = [
+  const sections: NavigationItem[] = [
     {
       ...proposalLink,
-      value: Tab.DETAILS,
+      id: Tab.DETAILS,
       label: 'Details',
       icon: List,
-      search: { page: 'details', ...versionSearch },
+      // The default section has no marker in the URL.
+      search: { page: undefined, ...versionSearch },
+      explicitUndefined: true,
     },
     {
       ...proposalLink,
-      value: Tab.SCHEMA,
+      id: Tab.SCHEMA,
       label: 'Schema',
       icon: FileDiffIcon,
       search: { page: 'schema', ...versionSearch },
     },
     {
       ...proposalLink,
-      value: Tab.SUPERGRAPH,
+      id: Tab.SUPERGRAPH,
       label: 'Supergraph Preview',
       icon: GraphQLIcon,
       visible: props.isDistributedGraph,
@@ -549,19 +539,19 @@ function TabbedContent(props: {
     },
     {
       ...proposalLink,
-      value: Tab.CHECKS,
+      id: Tab.CHECKS,
       label: 'Checks',
       icon: ChartPie,
       search: { page: 'checks', ...versionSearch },
     },
     // Edit always refers to the latest version, so it carries no version.
-    { ...proposalLink, value: Tab.EDIT, label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
+    { ...proposalLink, id: Tab.EDIT, label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
   ];
 
   return (
     <div className="w-full">
       <div className="border-neutral-5 border-b">
-        <SecondaryNavigation aria-label="Proposal" value={page} items={sections} size="sm" />
+        <Navigation aria-label="Proposal" items={sections} size="sm" />
       </div>
       <div className="flex grow flex-row pt-4">
         {page === Tab.DETAILS && <TargetProposalDetailsPage {...props} />}
