@@ -205,7 +205,7 @@ test('app:check handles missing and empty operation inputs', async () => {
 
   await expect(
     appCheck(['--registry.accessToken', accessToken, missingOperationsFile]),
-  ).rejects.toThrow(/Unable to find any GraphQL type definitions/);
+  ).rejects.toThrow(/The file does not exist\./);
 
   const emptyOperationsFile = join(tmpdir(), `empty-operations-${Date.now()}.json`);
   await writeFile(emptyOperationsFile, '{}', 'utf-8');

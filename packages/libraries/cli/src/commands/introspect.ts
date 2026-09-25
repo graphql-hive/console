@@ -5,10 +5,11 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../base-command';
 import {
   IntrospectionError,
-  UnexpectedError,
+  InvalidHeaderError,
+  SchemaFileNotFoundError,
   UnsupportedFileExtensionError,
 } from '../helpers/errors';
-import { loadSchema } from '../helpers/schema';
+import { isUrlPointer, loadSchemaSdl } from '../helpers/schema';
 
 export default class Introspect extends Command<typeof Introspect> {
   static description = 'introspects a GraphQL Schema';
@@ -43,35 +44,34 @@ export default class Introspect extends Command<typeof Introspect> {
     const { flags, args } = await this.parse(Introspect);
     const headers = flags.header?.reduce(
       (acc, header) => {
-        const [key, ...values] = header.split(':');
+        const separatorIndex = header.indexOf(':');
+        if (separatorIndex <= 0) {
+          throw new InvalidHeaderError(header, 'Name:Value');
+        }
 
         return {
           ...acc,
-          [key]: values.join(':'),
+          [header.slice(0, separatorIndex).trim()]: header.slice(separatorIndex + 1).trim(),
         };
       },
       {} as Record<string, string>,
     );
 
-    let schema = await loadSchema(
-      !flags['type']
+    let schema = await loadSchemaSdl(args.location, {
+      httpLoadingIntent: !flags['type']
         ? 'first-federation-then-graphql-introspection'
         : flags['type'] === 'federation'
           ? 'only-federation-introspection'
           : 'only-graphql-introspection',
-      args.location,
-      {
-        headers,
-        logger: this.logger,
-      },
-    ).catch(err => {
-      this.logFailure(err);
-      throw new IntrospectionError();
+      headers,
+      logger: this.logger,
+    }).catch(err => {
+      if (isUrlPointer(args.location) && err instanceof SchemaFileNotFoundError) {
+        this.logFailure(err.message);
+        throw new IntrospectionError();
+      }
+      throw err;
     });
-
-    if (!schema) {
-      throw new UnexpectedError('Unable to load schema');
-    }
 
     if (!flags.write) {
       this.log(schema);

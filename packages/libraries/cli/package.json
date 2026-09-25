@@ -24,6 +24,7 @@
   "files": [
     "/bin",
     "/dist",
+    "/errors.json",
     "/oclif.manifest.json"
   ],
   "keywords": [
@@ -33,19 +34,19 @@
     "build": "tsc --build",
     "build:watch": "tsc --build --watch",
     "oclif:pack": "npm pack && pnpm oclif pack tarballs --no-xz",
-    "oclif:readme": "pnpm oclif readme && npx prettier --write README.md",
+    "oclif:readme": "pnpm oclif readme && node scripts/generate-errors.mjs && npx prettier --write README.md",
     "oclif:upload": "pnpm oclif upload tarballs --no-xz",
     "postpack": "rm -f oclif.manifest.json",
     "prebuild": "tsc --build --clean",
-    "prepack": "node scripts/replace-workspace.mjs rimraf lib && tsc -b && oclif manifest && oclif readme",
-    "prepublishOnly": "oclif manifest && oclif readme",
+    "prepack": "node scripts/replace-workspace.mjs rimraf lib && tsc -b && oclif manifest && oclif readme && node scripts/generate-errors.mjs",
+    "prepublishOnly": "oclif manifest && oclif readme && node scripts/generate-errors.mjs",
     "schema:check:federation": "pnpm start schema:check examples/federation.reviews.graphql --service reviews",
     "schema:check:single": "pnpm start schema:check examples/single.graphql",
     "schema:check:stitching": "pnpm start schema:check --service posts examples/stitching.posts.graphql",
     "schema:fetch:subgraphs": "pnpm start schema:fetch --type=subgraphs",
     "schema:publish:federation": "pnpm start schema:publish --service reviews --url http://reviews.graphql-hive.dev/graphql examples/federation.reviews.graphql",
     "start": "./bin/dev",
-    "version": "oclif readme && git add README.md"
+    "version": "oclif readme && node scripts/generate-errors.mjs && git add README.md errors.json"
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*",
@@ -83,6 +84,15 @@
   "oclif": {
     "commands": "./dist/commands",
     "bin": "hive",
+    "exitCodes": {
+      "default": 1,
+      "failedFlagParsing": 3,
+      "failedFlagValidation": 3,
+      "invalidArgsSpec": 3,
+      "nonExistentFlag": 3,
+      "requiredArgs": 3,
+      "unexpectedArgs": 3
+    },
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-update"

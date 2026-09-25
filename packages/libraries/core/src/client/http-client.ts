@@ -207,8 +207,10 @@ export async function makeFetchCall(
         );
       }
 
-      const error = new Error(
+      const error = new HTTPResponseError(
         `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status}.`,
+        response.status,
+        response.statusText,
       );
 
       if (response.status >= 400 && response.status < 500) {
@@ -227,6 +229,18 @@ export async function makeFetchCall(
       factor,
     },
   );
+}
+
+/** Thrown when the final response has a status code that is not accepted by `isRequestOk`. */
+export class HTTPResponseError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly statusText: string,
+  ) {
+    super(message);
+    this.name = 'HTTPResponseError';
+  }
 }
 
 function getErrorMessage(error: unknown): string {
