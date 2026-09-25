@@ -61,6 +61,7 @@ export const TargetLayoutQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
+      usageRetentionInDays
       project: projectBySlug(projectSlug: $projectSlug) {
         id
         slug

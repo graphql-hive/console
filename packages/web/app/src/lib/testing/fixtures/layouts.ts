@@ -102,6 +102,7 @@ const organization = {
   __typename: 'Organization' as const,
   id: 'organization-1',
   slug: SLUGS.organizationSlug,
+  usageRetentionInDays: 30,
   me: organizationMember,
   getStarted,
   billingConfiguration: { __typename: 'BillingConfiguration' as const, hasPaymentIssues: false },
