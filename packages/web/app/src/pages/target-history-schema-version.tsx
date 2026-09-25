@@ -101,7 +101,7 @@ export function TargetHistorySchemaVersionPage(props: { schemaVersionId: string 
 
   if (isLoading) {
     return (
-      <div className="text-neutral-10 flex size-full flex-col items-center justify-center self-center text-sm">
+      <div className="text-fg-secondary flex size-full flex-col items-center justify-center self-center text-sm">
         <Spinner className="mb-3 size-8" />
         Loading schema version...
       </div>
@@ -265,7 +265,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
   // Without contracts there is nothing to pick, but the default graph keeps its status glyph.
   const contractPicker = !contractVersions.length ? (
     schemaVersion.contractVersions?.edges ? (
-      <span className="text-neutral-11 inline-flex items-center gap-1.5 px-2 text-xs">
+      <span className="text-fg-default inline-flex items-center gap-1.5 px-2 text-xs">
         {versionStatusIcon(schemaVersion, DEFAULT_GRAPH_LABELS)}
         Default Graph
       </span>
@@ -975,9 +975,9 @@ function FirstComposableGraphVersion() {
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
         <CircleCheckIcon className="text-success size-4" />
-        <h2 className="text-neutral-12 text-base font-medium">First composable graph</h2>
+        <h2 className="text-fg text-base font-medium">First composable graph</h2>
       </div>
-      <p className="text-neutral-10 text-xs">
+      <p className="text-fg-secondary text-xs">
         Congratulations! This is the first version of the graph that is composable.
       </p>
     </div>
@@ -989,9 +989,9 @@ function NoGraphChanges() {
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
         <CircleCheckIcon className="text-success size-4" />
-        <h2 className="text-neutral-12 text-base font-medium">No Graph Changes</h2>
+        <h2 className="text-fg text-base font-medium">No Graph Changes</h2>
       </div>
-      <p className="text-neutral-10 text-xs">There are no public facing changes in the graph.</p>
+      <p className="text-fg-secondary text-xs">There are no public facing changes in the graph.</p>
     </div>
   );
 }
@@ -1156,7 +1156,7 @@ function SchemaVersionHeader(props: {
   return (
     <header>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-        <h1 className="text-neutral-12 text-xl font-semibold leading-tight">Graph Version</h1>
+        <h1 className="text-fg text-xl font-semibold leading-tight">Graph Version</h1>
         <CopyChip
           value={schemaVersion.id}
           label={
@@ -1167,7 +1167,9 @@ function SchemaVersionHeader(props: {
           }
         />
       </div>
-      <p className="text-neutral-10 mt-1.5 text-sm">Detailed view of the graph version changes.</p>
+      <p className="text-fg-secondary mt-1.5 text-sm">
+        Detailed view of the graph version changes.
+      </p>
       <div className="bg-neutral-2 dark:bg-neutral-3 mt-6 rounded-md border px-5 py-4">
         <DescriptionList
           variants={{ termStyle: 'title', columns: 'auto' }}
@@ -1299,7 +1301,7 @@ const CompositionErrors = (props: {
           <XCircleIcon className="text-critical h-4 w-4" />
         </div>
 
-        <div className="text-neutral-12 min-w-0">
+        <div className="text-fg min-w-0">
           <h3 className="text-sm font-semibold">Supergraph not composable</h3>
           <p className="mt-0.5 text-[12.5px]">
             Errors occurred while attempting to compose the supergraph from its subgraphs.
@@ -1313,19 +1315,19 @@ const CompositionErrors = (props: {
         </span>
       </div>
 
-      <div className="text-neutral-12 flex items-center gap-2 px-5 pt-4">
+      <div className="text-fg flex items-center gap-2 px-5 pt-4">
         <span className="text-sm font-medium">Composition errors</span>
         <CompositionErrorsPopover />
       </div>
 
-      <ul className="divide-neutral-4 divide-y px-1 pb-2">
+      <ul className="divide-line-subtle divide-y px-1 pb-2">
         {compositionErrors.edges.map((err, idx) => (
           <li key={idx} className="flex gap-3 px-4 py-3">
-            <span className="text-neutral-8 mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
+            <span className="text-fg-subtle mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
               {String(idx + 1).padStart(2, '0')}
             </span>
 
-            <p className="text-neutral-12 flex flex-wrap items-baseline gap-y-1 text-sm">
+            <p className="text-fg flex flex-wrap items-baseline gap-y-1 text-sm">
               <CompositionError message={err.node.message} />
             </p>
           </li>
@@ -1436,8 +1438,8 @@ const SchemaVersionSummary_ContractVersionFragment = graphql(`
 function SectionHeader(props: { title: string; subtitle: string }) {
   return (
     <div>
-      <h2 className="text-neutral-12 text-base font-semibold">{props.title}</h2>
-      <p className="text-neutral-10 mt-0.5 text-sm">{props.subtitle}</p>
+      <h2 className="text-fg text-base font-semibold">{props.title}</h2>
+      <p className="text-fg-secondary mt-0.5 text-sm">{props.subtitle}</p>
     </div>
   );
 }
@@ -1772,7 +1774,7 @@ function SubgraphLink(props: { url: string }) {
       href={props.url}
       target="_blank"
       rel="noreferrer"
-      className="text-neutral-11 inline-flex w-fit items-center gap-1 text-xs"
+      className="text-fg-default inline-flex w-fit items-center gap-1 text-xs"
     >
       {props.url}
       <ExternalLink className="h-2.5 w-2.5" />

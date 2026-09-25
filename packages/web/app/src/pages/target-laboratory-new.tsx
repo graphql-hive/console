@@ -914,7 +914,7 @@ export function TargetLaboratoryPage(props: {
           </Button>
         }
       >
-        <p className="text-neutral-11 text-sm">
+        <p className="text-fg-default text-sm">
           You always can switch to the old GraphiQL based Laboratory by using the tab switcher in
           the top left cornder.
         </p>

@@ -134,11 +134,11 @@ const Navigation = (
               {edge.node.meta?.commit ?? edge.node.id}
             </h3>
             {edge.node.meta?.author ? (
-              <div className="text-neutral-10 truncate text-xs font-medium">
+              <div className="text-fg-secondary truncate text-xs font-medium">
                 <span className="overflow-hidden truncate">{edge.node.meta.author}</span>
               </div>
             ) : null}
-            <div className="text-neutral-10 mb-1.5 mt-2.5 flex align-middle text-xs font-medium">
+            <div className="text-fg-secondary mb-1.5 mt-2.5 flex align-middle text-xs font-medium">
               <div
                 className={cn(
                   edge.node.__typename === 'FailedSchemaCheck' ? 'text-critical' : null,
@@ -161,7 +161,7 @@ const Navigation = (
           </Link>
           {edge.node.githubRepository && edge.node.meta ? (
             <a
-              className="text-neutral-10 hover:text-neutral-10 -ml-px text-xs font-medium"
+              className="text-fg-secondary hover:text-fg-secondary -ml-px text-xs font-medium"
               target="_blank"
               rel="noreferrer"
               href={`https://github.com/${edge.node.githubRepository}/commit/${edge.node.meta.commit}`}
@@ -297,7 +297,7 @@ function ChecksPageContent() {
         {hasSchemaChecks && (
           <SchemaChecksSideNav>
             {hasFilteredSchemaChecks ? (
-              <div className="border-neutral-5/50 flex min-h-0 w-[300px] grow flex-col rounded-md border">
+              <div className="border-line/50 flex min-h-0 w-[300px] grow flex-col rounded-md border">
                 <ScrollArea fill>
                   <div className="flex flex-col gap-2.5 p-2.5">
                     {paginationVariables.map((cursor, index) => (
@@ -316,7 +316,7 @@ function ChecksPageContent() {
               </div>
             ) : (
               !isLoading && (
-                <div className="text-neutral-10 my-4 cursor-default text-center text-sm">
+                <div className="text-fg-secondary my-4 cursor-default text-center text-sm">
                   No schema checks found with the current filters
                 </div>
               )

@@ -484,12 +484,12 @@
 
 @layer base {
   * {
-    @apply border-neutral-5;
+    @apply border-line;
   }
 
   #root,
   body {
-    @apply text-neutral-11 dark:bg-neutral-2 bg-neutral-3;
+    @apply text-fg-default bg-surface-page;
   }
 
   button,
@@ -502,7 +502,7 @@
   }
 
   ::placeholder {
-    color: var(--color-neutral-9);
+    color: var(--color-fg-muted);
   }
 }
 

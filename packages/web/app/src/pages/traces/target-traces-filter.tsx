@@ -178,7 +178,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
         <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />
       )}
       {filteredOptions.length === 0 ? (
-        <div className="text-neutral-8 text-center text-sm">No option available</div>
+        <div className="text-fg-subtle text-center text-sm">No option available</div>
       ) : (
         filteredOptions.map((option, index) => (
           <FilterOption
@@ -194,7 +194,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
             }}
           >
             {option.label === '' ? (
-              <span className="text-neutral-10">{'<unknown>'}</span>
+              <span className="text-fg-secondary">{'<unknown>'}</span>
             ) : (
               option.label
             )}
@@ -240,7 +240,7 @@ function Filter(props: { name: string; changes?: number; onReset(): void; childr
                 type="button"
                 aria-label={`Reset ${props.name} filter`}
                 className={cn(
-                  'hover:bg-neutral-2 text-neutral-10 group ml-auto flex h-6 w-8 items-center justify-center rounded-md px-1 text-xs transition-colors',
+                  'hover:bg-neutral-2 text-fg-secondary group ml-auto flex h-6 w-8 items-center justify-center rounded-md px-1 text-xs transition-colors',
                   focusRing,
                 )}
                 onClick={props.onReset}
@@ -326,7 +326,7 @@ export const DurationFilter = memo(
                 onChange={handleMinInputChange}
                 size="compact"
                 mono
-                trailing={<span className="text-neutral-10 font-mono text-xs">ms</span>}
+                trailing={<span className="text-fg-secondary font-mono text-xs">ms</span>}
               />
             </div>
             <div className="space-y-1">
@@ -337,7 +337,7 @@ export const DurationFilter = memo(
                 onChange={handleMaxInputChange}
                 size="compact"
                 mono
-                trailing={<span className="text-neutral-10 font-mono text-xs">ms</span>}
+                trailing={<span className="text-fg-secondary font-mono text-xs">ms</span>}
               />
             </div>
           </div>

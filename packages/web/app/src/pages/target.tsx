@@ -45,7 +45,9 @@ function serviceHeader(schema: CompositeSchema) {
       <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>
         {schema.service ?? 'SDL'}
       </div>
-      {schema.url ? <div className="text-neutral-10 text-xs font-normal">{schema.url}</div> : null}
+      {schema.url ? (
+        <div className="text-fg-secondary text-xs font-normal">{schema.url}</div>
+      ) : null}
     </div>
   );
 }

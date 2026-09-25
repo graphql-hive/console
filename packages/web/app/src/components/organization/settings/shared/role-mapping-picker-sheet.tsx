@@ -73,7 +73,7 @@ export function RoleMappingPickerSheet(props: {
           selectedRoleId={props.selectedRoleId}
           onSelectRoleId={props.onSelectedRoleIdChange}
         />
-        <p className="text-neutral-10 mt-2 text-sm">
+        <p className="text-fg-secondary mt-2 text-sm">
           The role assigned to the user that will grant permissions.
         </p>
         {selectedRole && (
@@ -89,7 +89,7 @@ export function RoleMappingPickerSheet(props: {
         <Heading size="lg" className="mb-1 text-sm">
           Assigned Resources
         </Heading>
-        <p className="text-neutral-10 mt-2 text-sm">
+        <p className="text-fg-secondary mt-2 text-sm">
           Specify the resources on which the permissions will be granted.
         </p>
         <ResourceSelector

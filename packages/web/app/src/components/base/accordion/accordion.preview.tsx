@@ -13,13 +13,13 @@ export const nav: NavPath = 'Base/Primitives/Accordion';
  */
 
 function Copy({ children }: { children: ReactNode }) {
-  return <p className="text-neutral-11 text-sm">{children}</p>;
+  return <p className="text-fg-default text-sm">{children}</p>;
 }
 
 function Labelled(props: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-neutral-10 text-xs">{props.label}</span>
+      <span className="text-fg-secondary text-xs">{props.label}</span>
       {props.children}
     </div>
   );
@@ -100,12 +100,12 @@ export const Controlled = createPreview(() => {
           value: group.value,
           label: group.value,
           trailing: group.selected ? (
-            <span className="text-neutral-10 text-xs">{group.selected} selected</span>
+            <span className="text-fg-secondary text-xs">{group.selected} selected</span>
           ) : undefined,
           content: <Copy>{group.total} permissions in this group.</Copy>,
         }))}
       />
-      <p className="text-neutral-10 mt-3 text-xs">Open: {open.join(', ') || 'none'}</p>
+      <p className="text-fg-secondary mt-3 text-xs">Open: {open.join(', ') || 'none'}</p>
     </div>
   );
 });
@@ -124,12 +124,12 @@ export const Boxed = createPreview(() => (
         value: schema.id,
         label: (
           <div>
-            <div className="text-neutral-12 text-base">{schema.service}</div>
-            <div className="text-neutral-10 text-xs font-normal">{schema.url}</div>
+            <div className="text-fg text-base">{schema.service}</div>
+            <div className="text-fg-secondary text-xs font-normal">{schema.url}</div>
           </div>
         ),
         content: (
-          <pre className="text-neutral-11 font-mono text-xs leading-relaxed">
+          <pre className="text-fg-default font-mono text-xs leading-relaxed">
             {'type Query {\n  me: User\n}'}
           </pre>
         ),
@@ -143,7 +143,7 @@ export const Boxed = createPreview(() => (
  * small, the chevron at the start, and the accent tone to call it out.
  */
 export const SmallAccentDisclosure = createPreview(() => (
-  <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 w-[28rem] rounded-md border p-4">
+  <div className="bg-neutral-2 dark:bg-neutral-3 border-line w-[28rem] rounded-md border p-4">
     <Accordion
       variant="plain"
       size="sm"
@@ -212,7 +212,7 @@ export const WithAction = createPreview(() => {
             />
           ),
           content: (
-            <ul className="text-neutral-11 space-y-1 pl-2 text-sm">
+            <ul className="text-fg-default space-y-1 pl-2 text-sm">
               {collection.operations.map(name => (
                 <li key={name}>{name}</li>
               ))}
@@ -268,7 +268,7 @@ export const Playground = createPreview({
         items={CHANGES.map((change, index) => ({
           value: change.value,
           label: change.label,
-          trailing: index === 0 ? <span className="text-neutral-10 text-xs">2</span> : undefined,
+          trailing: index === 0 ? <span className="text-fg-secondary text-xs">2</span> : undefined,
           content: <Copy>{change.body}</Copy>,
         }))}
       />

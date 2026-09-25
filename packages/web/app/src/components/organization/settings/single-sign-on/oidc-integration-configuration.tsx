@@ -312,7 +312,7 @@ export function OIDCIntegrationConfiguration(props: {
                   term: 'User ID Claim',
                   tooltip: 'The claim that should be used to uniquely identify an user.',
                   description: oidcIntegration.userIdClaim ?? (
-                    <span className="text-neutral-10">none set</span>
+                    <span className="text-fg-secondary">none set</span>
                   ),
                   mono: true,
                 },
@@ -322,7 +322,7 @@ export function OIDCIntegrationConfiguration(props: {
                   description: oidcIntegration.additionalScopes.length ? (
                     oidcIntegration.additionalScopes.join(' ')
                   ) : (
-                    <span className="text-neutral-8">none</span>
+                    <span className="text-fg-subtle">none</span>
                   ),
                   mono: true,
                 },
@@ -752,7 +752,7 @@ function OIDCAccessSettings(props: {
                 <div className="flex items-center justify-between space-x-4">
                   <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                     <p>Organization access restricted to (active) provisioned users</p>
-                    <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                    <p className="text-fg-secondary max-w-[500px] text-xs font-normal leading-snug">
                       Only (active) users provisioned via SCIM can access the organization.
                       <br />
                       <span className="font-bold">
@@ -764,7 +764,7 @@ function OIDCAccessSettings(props: {
                 <div className="flex items-center justify-between space-x-4">
                   <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                     <p>Sync groups via SCIM</p>
-                    <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                    <p className="text-fg-secondary max-w-[500px] text-xs font-normal leading-snug">
                       Groups are provisioned and updated via SCIM.{' '}
                       <Link
                         to="/$organizationSlug/view/members/groups"
@@ -779,7 +779,7 @@ function OIDCAccessSettings(props: {
                 <div className="flex items-center justify-between space-x-4">
                   <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                     <p>Sync users via SCIM</p>
-                    <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                    <p className="text-fg-secondary max-w-[500px] text-xs font-normal leading-snug">
                       Users are provisioned and updated via SCIM.{' '}
                       <Link
                         to="/$organizationSlug/view/members"
@@ -802,7 +802,7 @@ function OIDCAccessSettings(props: {
                         }
                         openOnHover
                         content={
-                          <div className="text-neutral-11 space-y-2 text-sm">
+                          <div className="text-fg-default space-y-2 text-sm">
                             <p>
                               SCIM provisioning matched existing organization members. Review each
                               match before allowing SCIM to manage the account.
@@ -824,7 +824,7 @@ function OIDCAccessSettings(props: {
                 <div className="flex items-center justify-between space-x-4">
                   <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                     <p>Assign permissions via groups</p>
-                    <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
+                    <p className="text-fg-secondary max-w-[500px] text-xs font-normal leading-snug">
                       Assign role mappings to groups to grant permissions to group members.{' '}
                       <Link
                         to="/$organizationSlug/view/members/groups"
@@ -848,7 +848,7 @@ function OIDCAccessSettings(props: {
               <div className="flex items-center justify-between space-x-4">
                 <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                   <p>Require OIDC to Join</p>
-                  <p className="text-neutral-10 text-xs font-normal leading-snug">
+                  <p className="text-fg-secondary text-xs font-normal leading-snug">
                     Restricts new accounts joining the organization to be authenticated via OIDC.
                     <br />
                     <span className="font-bold">
@@ -866,7 +866,7 @@ function OIDCAccessSettings(props: {
               <div className="flex items-center justify-between space-x-4">
                 <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                   <p>Require OIDC to Access</p>
-                  <p className="text-neutral-10 text-xs font-normal leading-snug">
+                  <p className="text-fg-secondary text-xs font-normal leading-snug">
                     Prompt users to authenticate with OIDC before accessing the organization.
                     <br />
                     <span className="font-bold">
@@ -885,7 +885,7 @@ function OIDCAccessSettings(props: {
               <div className="flex items-center justify-between space-x-4">
                 <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                   <p>Require Invitation to Join</p>
-                  <p className="text-neutral-10 text-xs font-normal leading-snug">
+                  <p className="text-fg-secondary text-xs font-normal leading-snug">
                     Restricts only invited OIDC accounts to join the organization.
                   </p>
                 </div>
@@ -906,7 +906,7 @@ function OIDCAccessSettings(props: {
                 <p>Default Member Role</p>
                 <div className="flex items-start justify-between space-x-4">
                   <div className="flex basis-2/3 flex-col md:basis-1/2">
-                    <p className="text-neutral-10 text-xs font-normal leading-snug">
+                    <p className="text-fg-secondary text-xs font-normal leading-snug">
                       This role is assigned to new members who sign in via OIDC.{' '}
                       <span className="font-medium">
                         Only members with the Admin role can modify it.

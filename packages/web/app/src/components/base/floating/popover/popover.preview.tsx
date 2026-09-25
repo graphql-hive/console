@@ -15,10 +15,10 @@ export const Structured = createPreview(() => (
     description="Configure the threshold and notification settings."
     content={
       <div className="space-y-2 text-sm">
-        <div className="text-neutral-11">
+        <div className="text-fg-default">
           Status: <span className="text-success">Normal</span>
         </div>
-        <div className="text-neutral-11">Last evaluated: 2 minutes ago</div>
+        <div className="text-fg-default">Last evaluated: 2 minutes ago</div>
       </div>
     }
   />
@@ -28,7 +28,7 @@ export const Structured = createPreview(() => (
 export const Raw = createPreview(() => (
   <Popover
     trigger={<Button label="Info" />}
-    content={<p className="text-neutral-11 text-sm">A raw popover with custom content.</p>}
+    content={<p className="text-fg-default text-sm">A raw popover with custom content.</p>}
   />
 ));
 
@@ -40,15 +40,15 @@ export const RawPadding = createPreview(() => (
   <div className="flex items-center gap-4">
     <Popover
       trigger={<Button label="Default padding" />}
-      content={<p className="text-neutral-11 text-sm">p-4 around the content.</p>}
+      content={<p className="text-fg-default text-sm">p-4 around the content.</p>}
     />
     <Popover
       trigger={<Button label="No padding" />}
       padding="none"
       content={
-        <ul className="text-neutral-11 text-sm">
+        <ul className="text-fg-default text-sm">
           {['getUser', 'listProjects', 'createTarget'].map(op => (
-            <li key={op} className="border-neutral-5 border-b px-3 py-2 last:border-b-0">
+            <li key={op} className="border-line border-b px-3 py-2 last:border-b-0">
               {op}
             </li>
           ))}
@@ -62,7 +62,7 @@ export const WithArrow = createPreview(() => (
   <Popover
     trigger={<Button label="With arrow" />}
     title="Tooltip-style"
-    content={<p className="text-neutral-11 text-sm">Arrows point back at the trigger.</p>}
+    content={<p className="text-fg-default text-sm">Arrows point back at the trigger.</p>}
     arrow
   />
 ));
@@ -75,27 +75,27 @@ export const Widths = createPreview(() => (
     <Popover
       trigger={<Button label="auto" />}
       width="auto"
-      content={<p className="text-neutral-11 text-sm">Sizes to content.</p>}
+      content={<p className="text-fg-default text-sm">Sizes to content.</p>}
     />
     <Popover
       trigger={<Button label="sm" />}
       width="sm"
-      content={<p className="text-neutral-11 text-sm">w-72, 288px. The raw default.</p>}
+      content={<p className="text-fg-default text-sm">w-72, 288px. The raw default.</p>}
     />
     <Popover
       trigger={<Button label="md" />}
       width="md"
-      content={<p className="text-neutral-11 text-sm">w-80, 320px. The structured default.</p>}
+      content={<p className="text-fg-default text-sm">w-80, 320px. The structured default.</p>}
     />
     <Popover
       trigger={<Button label="lg" />}
       width="lg"
-      content={<p className="text-neutral-11 text-sm">28rem, 448px. Was 450.</p>}
+      content={<p className="text-fg-default text-sm">28rem, 448px. Was 450.</p>}
     />
     <Popover
       trigger={<Button label="xl" />}
       width="xl"
-      content={<p className="text-neutral-11 text-sm">34rem, 544px. Was 550.</p>}
+      content={<p className="text-fg-default text-sm">34rem, 544px. Was 550.</p>}
     />
   </div>
 ));
@@ -105,22 +105,22 @@ export const Sides = createPreview(() => (
     <Popover
       trigger={<Button label="Top" />}
       side="top"
-      content={<p className="text-neutral-11 text-sm">side=&quot;top&quot;</p>}
+      content={<p className="text-fg-default text-sm">side=&quot;top&quot;</p>}
     />
     <Popover
       trigger={<Button label="Right" />}
       side="right"
-      content={<p className="text-neutral-11 text-sm">side=&quot;right&quot;</p>}
+      content={<p className="text-fg-default text-sm">side=&quot;right&quot;</p>}
     />
     <Popover
       trigger={<Button label="Bottom" />}
       side="bottom"
-      content={<p className="text-neutral-11 text-sm">side=&quot;bottom&quot;</p>}
+      content={<p className="text-fg-default text-sm">side=&quot;bottom&quot;</p>}
     />
     <Popover
       trigger={<Button label="Left" />}
       side="left"
-      content={<p className="text-neutral-11 text-sm">side=&quot;left&quot;</p>}
+      content={<p className="text-fg-default text-sm">side=&quot;left&quot;</p>}
     />
   </div>
 ));
@@ -134,13 +134,13 @@ export const NoCloseButton = createPreview(() => (
     <Popover
       trigger={<Button label="With close button" />}
       title="Uncontrolled"
-      content={<p className="text-neutral-11 text-sm">The X closes this.</p>}
+      content={<p className="text-fg-default text-sm">The X closes this.</p>}
     />
     <Popover
       trigger={<Button label="No close button" />}
       title="Read only"
       hideCloseButton
-      content={<p className="text-neutral-11 text-sm">Dismiss by clicking outside.</p>}
+      content={<p className="text-fg-default text-sm">Dismiss by clicking outside.</p>}
     />
   </div>
 ));
@@ -156,9 +156,9 @@ export const AnchoredToSibling = createPreview(() => {
   return (
     <div
       ref={panel}
-      className="bg-neutral-2 dark:bg-neutral-3 border-neutral-5 flex w-72 flex-col gap-3 rounded-md border p-4"
+      className="bg-neutral-2 dark:bg-neutral-3 border-line flex w-72 flex-col gap-3 rounded-md border p-4"
     >
-      <span className="text-neutral-11 text-xs">A panel with a field in it</span>
+      <span className="text-fg-default text-xs">A panel with a field in it</span>
       <div className="flex items-center gap-2">
         <Input value="2026-09-01" readOnly />
         <Button label="Pick" onClick={() => setOpen(o => !o)} />
@@ -172,7 +172,7 @@ export const AnchoredToSibling = createPreview(() => {
         collisionPadding={8}
         width="auto"
         content={
-          <p className="text-neutral-11 text-sm">
+          <p className="text-fg-default text-sm">
             Positioned against the panel, not the Pick button.
           </p>
         }
@@ -210,7 +210,7 @@ export const InputTrigger = createPreview(() => {
           />
         }
         content={
-          <ul className="text-neutral-11 w-48 text-sm">
+          <ul className="text-fg-default w-48 text-sm">
             {tags.map(t => (
               <li key={t} className="hover:bg-neutral-4 cursor-pointer px-3 py-1.5">
                 {t}
@@ -230,16 +230,20 @@ export const InputTrigger = createPreview(() => {
  */
 export const Infotip = createPreview(() => (
   <div className="flex items-center gap-2">
-    <span className="text-neutral-11 text-sm">Resolution count</span>
+    <span className="text-fg-default text-sm">Resolution count</span>
     <Popover
       trigger={
-        <button type="button" aria-label="What resolution count means" className="text-neutral-10">
+        <button
+          type="button"
+          aria-label="What resolution count means"
+          className="text-fg-secondary"
+        >
           <Info className="size-4" />
         </button>
       }
       openOnHover
       content={
-        <p className="text-neutral-11 text-sm">
+        <p className="text-fg-default text-sm">
           The number of times this field was executed. A single request can resolve a field many
           times, or skip it entirely.
         </p>
@@ -256,7 +260,7 @@ export const Modal = createPreview(() => (
       modal
       title="Pick a range"
       content={
-        <p className="text-neutral-11 text-sm">
+        <p className="text-fg-default text-sm">
           Try clicking the other button while this is open: it does nothing until you close this.
         </p>
       }
@@ -276,7 +280,7 @@ export const Playground = createPreview({
           <button
             type="button"
             aria-label="What resolution count means"
-            className="text-neutral-10"
+            className="text-fg-secondary"
           >
             <Info className="size-4" />
           </button>
@@ -290,7 +294,7 @@ export const Playground = createPreview({
     content: {
       type: 'text',
       default: 'Status: Normal. Last evaluated 2 minutes ago.',
-      derive: text => <p className="text-neutral-11 text-sm">{text}</p>,
+      derive: text => <p className="text-fg-default text-sm">{text}</p>,
     },
     hideCloseButton: { type: 'boolean', default: false },
     padding: { type: 'radio', options: ['default', 'none'], default: 'default' },

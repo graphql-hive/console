@@ -96,7 +96,7 @@ function SendInvitation(props: {
     return (
       <>
         <div className="text-critical">Viewer role not found in organization member roles</div>
-        <div className="text-neutral-10">Please contact support.</div>
+        <div className="text-fg-secondary">Please contact support.</div>
       </>
     );
   }
@@ -432,10 +432,10 @@ export function OrganizationInvitations(props: {
       ) : (
         <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
           <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-            <MailQuestionIcon className="text-neutral-10 size-10" />
+            <MailQuestionIcon className="text-fg-secondary size-10" />
 
             <h3 className="mt-4 text-lg font-semibold">No invitations</h3>
-            <p className="text-neutral-10 mb-4 mt-2 text-sm">
+            <p className="text-fg-secondary mb-4 mt-2 text-sm">
               Invitations to join this organization will appear here.
             </p>
           </div>

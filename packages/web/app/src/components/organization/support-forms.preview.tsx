@@ -27,7 +27,7 @@ export const nav: NavPath = 'Components/SupportForms';
 
 function Submitted(props: { values: unknown }) {
   return props.values ? (
-    <pre className="text-neutral-11 mt-4 text-xs">{JSON.stringify(props.values, null, 2)}</pre>
+    <pre className="text-fg-default mt-4 text-xs">{JSON.stringify(props.values, null, 2)}</pre>
   ) : null;
 }
 

@@ -275,7 +275,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
               >
                 Schema Check
               </Link>
-              <span className="text-neutral-10 mx-2">/</span>
+              <span className="text-fg-secondary mx-2">/</span>
               <span>Affected App Deployments</span>
             </span>
           }

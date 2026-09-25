@@ -36,9 +36,7 @@ export const IconOnly = createPreview(() => {
       value: 'off',
       tooltip: 'Disables a rule defined at the organization level',
       label: (
-        <CircleMinus
-          className={`size-[15px] ${value === 'off' ? 'text-neutral-12' : 'text-neutral-8'}`}
-        />
+        <CircleMinus className={`size-[15px] ${value === 'off' ? 'text-fg' : 'text-fg-subtle'}`} />
       ),
     },
     {
@@ -46,7 +44,7 @@ export const IconOnly = createPreview(() => {
       tooltip: 'Warning',
       label: (
         <TriangleAlert
-          className={`size-[15px] ${value === 'warning' ? 'text-warning' : 'text-neutral-8'}`}
+          className={`size-[15px] ${value === 'warning' ? 'text-warning' : 'text-fg-subtle'}`}
         />
       ),
     },
@@ -55,7 +53,7 @@ export const IconOnly = createPreview(() => {
       tooltip: 'Error',
       label: (
         <CircleX
-          className={`size-[15px] ${value === 'error' ? 'text-critical' : 'text-neutral-8'}`}
+          className={`size-[15px] ${value === 'error' ? 'text-critical' : 'text-fg-subtle'}`}
         />
       ),
     },
@@ -107,12 +105,12 @@ export const OnSurface = createPreview(() => {
   );
   return (
     <div className="flex flex-wrap gap-6">
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-4 flex w-[20rem] flex-col items-start gap-3 rounded-md border p-4">
-        <span className="text-neutral-11 text-xs">A card</span>
+      <div className="bg-neutral-2 dark:bg-neutral-3 border-line-subtle flex w-[20rem] flex-col items-start gap-3 rounded-md border p-4">
+        <span className="text-fg-default text-xs">A card</span>
         {pair}
       </div>
-      <div className="bg-neutral-2 dark:bg-neutral-4 border-neutral-5 flex w-[20rem] flex-col items-start gap-3 rounded-md border p-4 shadow-md">
-        <span className="text-neutral-11 text-xs">A floating panel</span>
+      <div className="bg-neutral-2 dark:bg-neutral-4 border-line flex w-[20rem] flex-col items-start gap-3 rounded-md border p-4 shadow-md">
+        <span className="text-fg-default text-xs">A floating panel</span>
         {pair}
       </div>
     </div>

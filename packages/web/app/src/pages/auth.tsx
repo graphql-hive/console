@@ -8,7 +8,7 @@ function ExternalLink(props: { href: string; children: React.ReactNode }) {
   return (
     <a
       href={props.href}
-      className="hover:text-accent text-neutral-12/30 text-control/6 group relative isolate flex flex-none items-center gap-x-3 rounded-lg px-2 py-0.5 font-medium transition-colors"
+      className="hover:text-accent text-fg/30 text-control/6 group relative isolate flex flex-none items-center gap-x-3 rounded-lg px-2 py-0.5 font-medium transition-colors"
     >
       <span className="bg-neutral-4 absolute inset-0 -z-10 scale-75 rounded-lg opacity-0 transition group-hover:scale-100 group-hover:opacity-100" />
       {props.children}
@@ -30,7 +30,7 @@ export function AuthPage() {
             </div>
           ) : (
             <div className="grid h-full min-h-screen items-center justify-center md:grid-cols-2 lg:max-w-none lg:grid-cols-3 lg:px-0">
-              <div className="dark:bg-neutral-3 bg-neutral-2 border-r-neutral-3 text-neutral-12 relative hidden h-full flex-col border-r p-10 lg:flex">
+              <div className="dark:bg-neutral-3 bg-neutral-2 border-r-neutral-3 text-fg relative hidden h-full flex-col border-r p-10 lg:flex">
                 <div className="bg-neutral-1 absolute inset-0" />
                 <Link to="/">
                   <div className="relative z-20 flex items-center text-lg font-medium">
@@ -40,21 +40,21 @@ export function AuthPage() {
                 </Link>
                 <div className="relative flex h-full flex-row items-center justify-center">
                   <div className="max-w-xs md:max-w-none">
-                    <h1 className="text-neutral-12 text-balance font-light md:text-2xl/tight lg:text-3xl/tight">
+                    <h1 className="text-fg text-balance font-light md:text-2xl/tight lg:text-3xl/tight">
                       Open-source <span className="text-accent">GraphQL</span> management platform
                     </h1>
-                    <p className="text-neutral-11 mt-4 text-balance text-sm/6">
+                    <p className="text-fg-default mt-4 text-balance text-sm/6">
                       Prevent breaking changes, monitor performance of your GraphQL API, and manage
                       your API gateway
                     </p>
                     <div className="mt-8 flex flex-wrap justify-center gap-x-1 gap-y-3 sm:gap-x-2 lg:justify-start">
                       <ExternalLink href="https://the-guild.dev/graphql/hive/docs">
-                        <BookIcon className="text-neutral-10 size-4 flex-none" />
-                        <span className="text-neutral-12 self-baseline">Documentation</span>
+                        <BookIcon className="text-fg-secondary size-4 flex-none" />
+                        <span className="text-fg self-baseline">Documentation</span>
                       </ExternalLink>
                       <ExternalLink href="https://github.com/graphql-hive/platform">
-                        <GitHubIcon className="text-neutral-10 size-4 flex-none" />
-                        <span className="text-neutral-12 self-baseline">Github</span>
+                        <GitHubIcon className="text-fg-secondary size-4 flex-none" />
+                        <span className="text-fg self-baseline">Github</span>
                       </ExternalLink>
                     </div>
                   </div>

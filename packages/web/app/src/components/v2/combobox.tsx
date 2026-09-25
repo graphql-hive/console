@@ -44,23 +44,23 @@ export function Combobox(
         ),
         NoOptionsMessage: compProps => (
           <components.NoOptionsMessage {...compProps}>
-            <div className="text-neutral-10 text-xs">
+            <div className="text-fg-secondary text-xs">
               {props.creatable ? 'Start typing to add values' : 'No options'}
             </div>
           </components.NoOptionsMessage>
         ),
       }}
       classNames={{
-        control: () => clsx('bg-neutral-5! border-neutral-5! hover:border-accent! shadow-none!'),
+        control: () => clsx('bg-neutral-5! border-line! hover:border-accent! shadow-none!'),
         valueContainer: () => clsx('bg-neutral-5! rounded-xl!'),
         indicatorsContainer: () => clsx('bg-neutral-5! rounded-xl!'),
         container: () => clsx('bg-neutral-5! rounded-xl! shadow-lg! text-sm!'),
         menu: () => clsx('bg-neutral-5! rounded-xl! shadow-lg! text-xs!'),
         menuList: () => clsx('bg-neutral-5! rounded-lg! text-xs!'),
         option: () => clsx('bg-neutral-5! hover:bg-neutral-2! text-xs! cursor-pointer!'),
-        placeholder: () => clsx('text-neutral-10! text-xs!'),
-        input: () => clsx('text-neutral-10! text-xs!'),
-        multiValue: () => clsx('text-neutral-10! text-xs! bg-neutral-10! font-bold!'),
+        placeholder: () => clsx('text-fg-secondary! text-xs!'),
+        input: () => clsx('text-fg-secondary! text-xs!'),
+        multiValue: () => clsx('text-fg-secondary! text-xs! bg-neutral-10! font-bold!'),
         multiValueRemove: () =>
           clsx('text-neutral-6 text-xs! hover:bg-neutral-11! hover:text-neutral-2!'),
       }}

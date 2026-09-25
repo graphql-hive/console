@@ -229,7 +229,7 @@ function MemberNameCell({ member }: { member: MemberRow }) {
               openOnHover
               width="auto"
               content={
-                <div className="text-neutral-11 text-xs">
+                <div className="text-fg-default text-xs">
                   <div>Provisioned via SCIM</div>
                   <div>
                     External ID:{' '}
@@ -291,7 +291,7 @@ function MemberRoleCell(props: {
               <button
                 type="button"
                 aria-label="About the owner role"
-                className="text-neutral-9 hover:text-neutral-11 inline-flex"
+                className="text-fg-muted hover:text-fg-default inline-flex"
               >
                 <Info className="size-3.5" />
               </button>
@@ -386,7 +386,7 @@ function MemberRoleCell(props: {
             }}
             cancel={{ disabled: confirmManagementState.fetching }}
           >
-            <p className="text-neutral-11 text-sm">
+            <p className="text-fg-default text-sm">
               After confirmation, your identity provider will control this user's status and
               group-based access. Review the pending SCIM values below to avoid removing access
               unintentionally.
@@ -433,7 +433,7 @@ function MemberActionsCell(props: {
         <Tooltip
           trigger={
             <span className="inline-flex">
-              <ShieldCheck size={16} className="text-neutral-8" />
+              <ShieldCheck size={16} className="text-fg-subtle" />
             </span>
           }
           content="Provisioned users can only be updated via the SCIM endpoints."
@@ -736,7 +736,7 @@ export function OrganizationMembers(props: {
           <Link
             to="/$organizationSlug/view/members"
             params={{ organizationSlug: organization.slug }}
-            className="text-neutral-1 hover:text-neutral-8"
+            className="text-fg-inverse hover:text-fg-subtle"
           >
             Show all members
           </Link>

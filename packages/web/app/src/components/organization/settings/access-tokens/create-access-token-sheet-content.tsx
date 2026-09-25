@@ -280,7 +280,7 @@ export function CreateAccessTokenSheetContent(
               'step-4-confirmation': () => (
                 <>
                   <Heading>Confirm and create Access Token</Heading>
-                  <p className="text-neutral-10 text-sm">
+                  <p className="text-fg-secondary text-sm">
                     Please please review the selected permissions and resources to ensure they align
                     with your intended access needs.
                   </p>
@@ -300,7 +300,7 @@ export function CreateAccessTokenSheetContent(
                             <>Granted on all {permissionLevelToResourceName(group.level)}</>
                           ) : (
                             <>
-                              <p className="text-neutral-10">
+                              <p className="text-fg-secondary">
                                 Granted on {permissionLevelToResourceName(group.level)}:
                               </p>
                               <ul className="flex list-none flex-wrap gap-1">

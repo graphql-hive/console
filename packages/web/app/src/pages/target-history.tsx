@@ -310,7 +310,7 @@ function HistoryPageContent() {
             <Subtitle>Recently published versions.</Subtitle>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-5">
-            <div className="border-neutral-5/50 bg-neutral-2/50 flex min-h-0 min-w-[420px] grow flex-col rounded-md border">
+            <div className="border-line/50 bg-neutral-2/50 flex min-h-0 min-w-[420px] grow flex-col rounded-md border">
               <ScrollArea fill>
                 <div className="flex flex-col gap-2.5 p-2.5">
                   {pageVariables.map((variables, i) => (

@@ -17,7 +17,7 @@ export function BackLink({
       to={to}
       params={params}
       search={search}
-      className="text-neutral-10 hover:text-neutral-12 text-control mb-5 inline-flex items-center gap-0.5 transition-colors"
+      className="text-fg-secondary hover:text-fg text-control mb-5 inline-flex items-center gap-0.5 transition-colors"
     >
       <ArrowLeft className="size-3.5" /> {copy}
     </Link>

@@ -79,7 +79,7 @@ export function PolicyListItem(props: {
                   align="start"
                   width="xl"
                   content={
-                    <div className="text-neutral-11">
+                    <div className="text-fg-default">
                       <Markdown content={ruleInfo.description} className="text-sm" />
                       <br />
                       {ruleInfo.documentationUrl ? (
@@ -95,7 +95,7 @@ export function PolicyListItem(props: {
                 <div>
                   <SeverityLevelToggle canTurnOff={props.overridingParentRule} rule={ruleInfo.id} />
                 </div>
-                <div className="[&>*]:border-l-neutral-5 grid grow grid-cols-4 align-middle [&>*]:min-h-[40px] [&>*]:border-l-[1px]">
+                <div className="[&>*]:border-l-line grid grow grid-cols-4 align-middle [&>*]:min-h-[40px] [&>*]:border-l-[1px]">
                   {shouldShowRuleConfig && (
                     <PolicyRuleConfig
                       rule={ruleInfo.id}
@@ -107,7 +107,7 @@ export function PolicyListItem(props: {
               </div>
             ) : null}
             {props.overridingParentRule && enabled ? (
-              <div className="text-neutral-10 mt-4 text-xs font-medium">
+              <div className="text-fg-secondary mt-4 text-xs font-medium">
                 <p className="text-accent mr-2 inline-block text-sm font-medium">!</p>
                 You are {severity === RuleInstanceSeverityLevel.Off ? 'disabling' : 'overriding'} a
                 rule configured at the organization level

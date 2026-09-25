@@ -129,7 +129,7 @@ export function ResourceCard(props: {
                     <div>
                       <h4 className="line-clamp-2 text-lg font-bold">{props.name}</h4>
                       {props.subtitle ? (
-                        <p className="text-neutral-11 text-xs">{props.subtitle}</p>
+                        <p className="text-fg-default text-xs">{props.subtitle}</p>
                       ) : null}
                     </div>
                   ) : (
@@ -147,7 +147,7 @@ export function ResourceCard(props: {
                         <Tooltip
                           trigger={
                             <div className="flex flex-row items-center gap-x-2">
-                              <Globe className="text-neutral-10 size-4" />
+                              <Globe className="text-fg-secondary size-4" />
                               <div className="text-xs">
                                 {requestsInDateRange}{' '}
                                 {pluralize(totalNumberOfRequests, 'request', 'requests')}
@@ -159,7 +159,7 @@ export function ResourceCard(props: {
                         <Tooltip
                           trigger={
                             <div className="flex flex-row items-center gap-x-2">
-                              <History className="text-neutral-10 size-4" />
+                              <History className="text-fg-secondary size-4" />
                               <div className="text-xs">
                                 {schemaVersionsInDateRange}{' '}
                                 {pluralize(totalNumberOfVersions, 'commit', 'commits')}

@@ -16,7 +16,7 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
         <TriangleAlert
           className={clsx(
             'size-4',
-            active ? 'text-warning' : 'text-neutral-8',
+            active ? 'text-warning' : 'text-fg-subtle',
             'hover:text-warning',
           )}
         />
@@ -29,7 +29,7 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
         <CircleX
           className={clsx(
             'size-4',
-            active ? 'text-critical' : 'text-neutral-8',
+            active ? 'text-critical' : 'text-fg-subtle',
             'hover:text-critical',
           )}
         />
@@ -43,11 +43,7 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       label: 'Disables a rule defined at the organization level',
       icon: (active: boolean) => (
         <CircleMinus
-          className={clsx(
-            'size-4',
-            active ? 'text-neutral-12' : 'text-neutral-8',
-            'hover:text-neutral-12',
-          )}
+          className={clsx('size-4', active ? 'text-fg' : 'text-fg-subtle', 'hover:text-fg')}
         />
       ),
     });

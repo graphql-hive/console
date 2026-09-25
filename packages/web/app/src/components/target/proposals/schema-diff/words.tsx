@@ -20,9 +20,9 @@ export function Word(props: WordProps) {
       <span
         className={cn(
           props.kind === 'description' && 'textneutral-8',
-          props.kind === 'field' && 'text-neutral-11',
+          props.kind === 'field' && 'text-fg-default',
           props.kind === 'keyword' && 'text-gray-400',
-          props.kind === 'literal' && 'text-neutral-11',
+          props.kind === 'literal' && 'text-fg-default',
           props.kind === 'location' && 'text-warning',
           props.kind === 'type' && 'text-warning',
         )}

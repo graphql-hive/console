@@ -71,10 +71,10 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
           <>
             <div className="grid">
               <div className="space-y-2 p-4">
-                <h4 className="text-neutral-12 text-sm font-medium leading-none">
+                <h4 className="text-fg text-sm font-medium leading-none">
                   What's new in Hive Console
                 </h4>
-                <p className="text-neutral-11 text-control">
+                <p className="text-fg-default text-control">
                   Find out about the newest features, and enhancements
                 </p>
               </div>
@@ -90,12 +90,12 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
                     key={index}
                   >
                     <time
-                      className="text-neutral-10 mb-1 text-xs font-normal"
+                      className="text-fg-secondary mb-1 text-xs font-normal"
                       dateTime={change.date}
                     >
                       {format(new Date(change.date), 'do MMMM yyyy')}
                     </time>
-                    <h3 className="text-neutral-12 mb-0.5 text-pretty text-sm font-medium hover:underline">
+                    <h3 className="text-fg mb-0.5 text-pretty text-sm font-medium hover:underline">
                       <a
                         target="_blank"
                         rel="noreferrer"
@@ -105,7 +105,7 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
                         {change.title}
                       </a>
                     </h3>
-                    <p className="text-neutral-11 text-control mb-5 text-pretty font-normal">
+                    <p className="text-fg-default text-control mb-5 text-pretty font-normal">
                       {change.description}
                     </p>
                   </li>

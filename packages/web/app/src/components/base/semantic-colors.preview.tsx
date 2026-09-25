@@ -58,20 +58,20 @@ export const Tokens = createPreview(() => (
   <div className="flex flex-col gap-5">
     {STATES.map(state => (
       <div key={state.name} className="grid grid-cols-[6rem_1fr] items-center gap-4">
-        <div className="text-neutral-9 text-2xs font-mono">{state.name}</div>
+        <div className="text-fg-muted text-2xs font-mono">{state.name}</div>
         <div className="flex items-center gap-4">
           <div className="flex gap-1">
             {[state.solid, ...state.steps].map((cls, index) => (
               <div key={cls} className="flex flex-col items-center gap-1">
-                <div className={`border-neutral-5 size-9 rounded-sm border ${cls}`} />
-                <span className="text-neutral-9 text-2xs font-mono">
+                <div className={`border-line size-9 rounded-sm border ${cls}`} />
+                <span className="text-fg-muted text-2xs font-mono">
                   {STEP_LABELS[index] || 'solid'}
                 </span>
               </div>
             ))}
           </div>
           <span className={`${state.text} text-sm font-medium`}>Aa</span>
-          <span className="text-neutral-9 text-2xs">{state.use}</span>
+          <span className="text-fg-muted text-2xs">{state.use}</span>
         </div>
       </div>
     ))}
@@ -180,7 +180,7 @@ export const ControlRaisedConflict = createPreview(() => (
     <div className="bg-surface-control-raised border-line-control text-fg-subtle rounded-sm border px-3 py-2 text-sm">
       Input raised (n2 / n4)
     </div>
-    <div className="bg-neutral-1 border-neutral-5 dark:bg-neutral-5 dark:border-neutral-6 text-fg-subtle rounded-sm border px-3 py-2 text-sm">
+    <div className="bg-neutral-1 border-line dark:bg-neutral-5 dark:border-line-strong text-fg-subtle rounded-sm border px-3 py-2 text-sm">
       controlSurface raised (n1 / n5)
     </div>
   </div>
@@ -191,7 +191,7 @@ export const InComponents = createPreview(() => (
   <div className="flex flex-col gap-3">
     {STATES.map(state => (
       <div key={state.name} className="flex items-center gap-4 text-sm">
-        <span className="text-neutral-9 text-2xs w-16 font-mono">{state.name}</span>
+        <span className="text-fg-muted text-2xs w-16 font-mono">{state.name}</span>
         <StatusDot color={state.name} />
         <Badge content={state.name} variants={{ variant: state.name }} />
         <Badge content={state.name} variants={{ variant: state.name, size: 'sm', mono: true }} />

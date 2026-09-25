@@ -88,12 +88,12 @@ function CheckItem(props: {
           <div className="truncate">{props.serviceName || 'single schema'}</div>
         </div>
       </div>
-      <div className="text-neutral-10 truncate text-center">{props.commit}</div>
+      <div className="text-fg-secondary truncate text-center">{props.commit}</div>
       <div className="col-start-2 flex items-center sm:col-start-4 sm:justify-self-end">
         <CalendarIcon className="h-3" />
         <TimeAgo date={props.createdAt} />
       </div>
-      <div className="text-neutral-10 truncate pr-4 text-right">{props.author ?? ''}</div>
+      <div className="text-fg-secondary truncate pr-4 text-right">{props.author ?? ''}</div>
     </Link>
   );
 }
@@ -119,7 +119,7 @@ function SchemaCheckIcon(props: {
     );
   }
   return (
-    <div className="text-neutral-10 flex items-center">
+    <div className="text-fg-secondary flex items-center">
       <Diamond className="mr-2 size-4" /> NO CHANGE
     </div>
   );

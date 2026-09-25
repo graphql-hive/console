@@ -219,7 +219,7 @@ export const Typography = createPreview({
         origin="ui"
         note="Text's only call site, and it does not work. It asks for arrangement='block', but the component destructures color/size/weight/align and calls textVariants({ color, size, weight, align }) - arrangement is never passed through. It also never forwards `as`, so this renders as an inline span. The centring below comes from align, not from block."
       >
-        <div className="border-neutral-5 w-[28rem] rounded-md border border-dashed p-3">
+        <div className="border-line w-[28rem] rounded-md border border-dashed p-3">
           <Text arrangement="block" align="center" size="small" color="secondary">
             Don&apos;t have an account?{' '}
             <a href="#" className="text-accent underline">
@@ -261,22 +261,22 @@ export const Loading = createPreview({
       >
         <div className="flex w-[28rem] flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <span className="text-neutral-10 text-xs">h-10 w-1/4 — 6 uses</span>
+            <span className="text-fg-secondary text-xs">h-10 w-1/4 — 6 uses</span>
             <Skeleton className="h-10 w-1/4" />
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-neutral-10 text-xs">h-10 w-1/2 — 3 uses</span>
+            <span className="text-fg-secondary text-xs">h-10 w-1/2 — 3 uses</span>
             <Skeleton className="h-10 w-1/2" />
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-neutral-10 text-xs">
+            <span className="text-fg-secondary text-xs">
               inline-block h-5 w-[150px] — 3 uses, inline in a sentence
             </span>
             <Skeleton className="inline-block h-5 w-[150px]" />
           </div>
           <div className="flex items-center gap-2">
             <Skeleton className="size-9 rounded-full" />
-            <span className="text-neutral-10 text-xs">size-9 rounded-full — an avatar</span>
+            <span className="text-fg-secondary text-xs">size-9 rounded-full — an avatar</span>
           </div>
         </div>
       </CallSite>
@@ -284,20 +284,20 @@ export const Loading = createPreview({
       <CallSite
         source="35 render sites across 24 files"
         origin="ui"
-        note="Spinner has no size prop at all - only className - so 8 call sites resize it: mb-3 size-8, mr-2 size-4, mr-1 size-4, text-neutral-1 size-6. The other 27 take size-6 and the accent colour. The three sizes below are all that the app actually needs."
+        note="Spinner has no size prop at all - only className - so 8 call sites resize it: mb-3 size-8, mr-2 size-4, mr-1 size-4, text-fg-inverse size-6. The other 27 take size-6 and the accent colour. The three sizes below are all that the app actually needs."
       >
         <div className="flex items-center gap-8">
           <div className="flex flex-col items-center gap-2">
             <Spinner className="mr-1 size-4" />
-            <span className="text-neutral-10 text-xs">size-4, inside a button</span>
+            <span className="text-fg-secondary text-xs">size-4, inside a button</span>
           </div>
           <div className="flex flex-col items-center gap-2">
             <Spinner />
-            <span className="text-neutral-10 text-xs">size-6, the default</span>
+            <span className="text-fg-secondary text-xs">size-6, the default</span>
           </div>
           <div className="flex flex-col items-center gap-2">
             <Spinner className="mb-3 size-8" />
-            <span className="text-neutral-10 text-xs">size-8, a full-page load</span>
+            <span className="text-fg-secondary text-xs">size-8, a full-page load</span>
           </div>
         </div>
       </CallSite>
@@ -341,7 +341,7 @@ export const StatPreview = createPreview({
         origin="v2"
         note="A name collision worth knowing about before migrating. That page defines its OWN Stat - `<Stat label value additionalValue />` - which shadows v2/stat entirely and accounts for 6 of the 13 <Stat> matches a naive grep returns. v2/stat has 7 real render sites, not 13."
       >
-        <div className="border-neutral-5 text-neutral-11 rounded-md border border-dashed p-3 text-xs">
+        <div className="border-line text-fg-default rounded-md border border-dashed p-3 text-xs">
           Not rendered: it is a page-local component, not a shared primitive. Migrating v2/stat does
           not touch it.
         </div>

@@ -79,26 +79,26 @@ function DetailsView({ contract }: { contract: string }) {
   return (
     <div className="flex flex-col gap-6 text-sm">
       <div>
-        <div className="text-neutral-12 mb-3 flex items-center gap-2 font-medium">
+        <div className="text-fg mb-3 flex items-center gap-2 font-medium">
           Breaking Changes
-          <Info className="text-neutral-10 size-3.5" />
+          <Info className="text-fg-secondary size-3.5" />
         </div>
-        <div className="border-neutral-5 flex items-center justify-between border-b py-2">
-          <span className="text-neutral-11">
+        <div className="border-line flex items-center justify-between border-b py-2">
+          <span className="text-fg-default">
             Field <Badge content="Node.id" variants={{ variant: 'secondary', mono: true }} />{' '}
             changed type from{' '}
             <Badge content="ID!" variants={{ variant: 'secondary', mono: true }} /> to{' '}
             <Badge content="ID" variants={{ variant: 'secondary', mono: true }} /> in {contract}
           </span>
-          <ChevronDown className="text-neutral-10 size-4" />
+          <ChevronDown className="text-fg-secondary size-4" />
         </div>
       </div>
-      <div className="text-neutral-11 flex flex-col gap-2">
+      <div className="text-fg-default flex flex-col gap-2">
         <p>
           Get more out of schema checks by enabling conditional breaking changes based on usage
           data.
         </p>
-        <a href="#" className="hover:text-neutral-12 inline-flex items-center gap-2">
+        <a href="#" className="hover:text-fg inline-flex items-center gap-2">
           <BookOpen className="size-4" />
           Learn more about conditional breaking changes.
           <ExternalLink className="size-3" />
@@ -110,7 +110,7 @@ function DetailsView({ contract }: { contract: string }) {
 
 function SchemaView() {
   return (
-    <pre className="text-neutral-11 font-mono text-xs leading-relaxed">
+    <pre className="text-fg-default font-mono text-xs leading-relaxed">
       {'type Query {\n  node(id: ID!): Node\n  viewer: User\n}\n\ninterface Node {\n  id: ID\n}'}
     </pre>
   );
@@ -159,20 +159,18 @@ export const ChecksPage = createPreview(() => {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-neutral-12 text-xl font-medium">
-          Check 5843350d-f323-4ff3-8dcf-a30bd48f451f
-        </h2>
-        <p className="text-neutral-10 text-sm">Detailed view of the schema check</p>
+        <h2 className="text-fg text-xl font-medium">Check 5843350d-f323-4ff3-8dcf-a30bd48f451f</h2>
+        <p className="text-fg-secondary text-sm">Detailed view of the schema check</p>
       </div>
-      <div className="border-neutral-5 bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between rounded-md border px-5 py-4">
+      <div className="border-line bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between rounded-md border px-5 py-4">
         <div className="flex gap-24">
           <div>
-            <div className="text-neutral-10 text-xs">Status</div>
+            <div className="text-fg-secondary text-xs">Status</div>
             <div className="text-critical text-sm font-medium">Failed</div>
           </div>
           <div>
-            <div className="text-neutral-10 text-xs">Triggered 3d ago</div>
-            <div className="text-neutral-12 text-sm">by User</div>
+            <div className="text-fg-secondary text-xs">Triggered 3d ago</div>
+            <div className="text-fg text-sm">by User</div>
           </div>
         </div>
         <Button variant="destructive">Approve</Button>
@@ -226,7 +224,7 @@ export const Playground = createPreview({
           value: 'changes',
           label: 'Changes',
           content: (
-            <div className="text-neutral-11 divide-neutral-5 divide-y text-sm">
+            <div className="text-fg-default divide-line divide-y text-sm">
               <div className="px-5 py-3">Field Node.id changed type from ID! to ID</div>
               <div className="px-5 py-3">Field User.email was removed</div>
             </div>
