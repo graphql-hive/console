@@ -17,10 +17,12 @@ const schemaPushMutation = graphql(/* GraphQL */ `
   mutation CLI_SchemaPushMutation($input: SchemaPushInput!) {
     schemaPush(input: $input) {
       ok {
+        isSkipped
         schemaRevision {
           service
           revision
           digest
+          expiresAt
         }
       }
       error {
@@ -40,7 +42,8 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
         'The target to push against as "$organizationSlug/$projectSlug/$targetSlug" or a target UUID.',
     }),
     service: Flags.string({
-      description: 'service name (required for distributed schemas)',
+      description:
+        'service name (required for federation and stitching projects, ignored for single-schema projects)',
     }),
     revision: Flags.string({
       required: true,
@@ -130,13 +133,30 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
         throw new APIError('Schema push returned no result.');
       }
 
-      const revision = result.schemaPush.ok.schemaRevision;
-      this.logSuccess('Schema revision pushed.');
+      const { isSkipped, schemaRevision: revision } = result.schemaPush.ok;
+      const revisionName = `${revision.service ? `${revision.service}@` : ''}${revision.revision}`;
+
+      if (flags.service && !revision.service) {
+        this.warn(
+          `The "--service" flag was ignored, because the project uses a single schema without services.`,
+        );
+      }
+
+      if (isSkipped) {
+        this.warn(
+          `Schema revision "${revisionName}" already exists with the same schema. Skipping...`,
+        );
+      } else {
+        this.logSuccess('Schema revision pushed.');
+      }
       if (revision.service) {
         this.logInfo(`Service: ${revision.service}`);
       }
       this.logInfo(`Revision: ${revision.revision}`);
       this.logInfo(`Digest: ${revision.digest}`);
+      if (revision.expiresAt) {
+        this.logInfo(`Expires: ${revision.expiresAt} (unless published before then)`);
+      }
     } catch (error) {
       if (error instanceof Errors.CLIError) {
         throw error;

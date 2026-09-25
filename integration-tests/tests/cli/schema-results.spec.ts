@@ -290,3 +290,33 @@ describe('schema:publish', () => {
     expect(result.requests).toHaveLength(0);
   });
 });
+
+describe('schema:push', () => {
+  test('pushing an existing revision with the same schema is skipped', async () => {
+    const result = await runAgainstRegistry(
+      () => ({
+        data: {
+          schemaPush: {
+            ok: {
+              isSkipped: true,
+              schemaRevision: {
+                service: 'products',
+                revision: 'abc',
+                digest: 'hive-sdl-v1:sha256:123',
+                expiresAt: '2026-10-24T00:00:00.000Z',
+              },
+            },
+            error: null,
+          },
+        },
+      }),
+      ['schema:push', '$SCHEMA', '--target', 'org/project/target', '--revision', 'abc'],
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toContain(
+      'Schema revision "products@abc" already exists with the same schema. Skipping...',
+    );
+    expect(result.stdout).toContain('Expires: 2026-10-24T00:00:00.000Z');
+  });
+});

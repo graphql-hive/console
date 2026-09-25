@@ -159,5 +159,64 @@ describe.each([
       );
       expect(conflictMessage).toContain('[115]');
     });
+
+    test.concurrent('pushing the same revision again is skipped', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { target, createTargetAccessToken } = await createProject(projectType);
+      const { secret } = await createTargetAccessToken({ mode: 'readWrite' });
+      const pushArgs = [
+        '--registry.accessToken',
+        secret,
+        '--target',
+        target.id,
+        '--revision',
+        revision,
+        ...serviceArgs,
+        'fixtures/init-schema.graphql',
+      ];
+
+      await expect(schemaPush(pushArgs)).resolves.toContain('Schema revision pushed.');
+
+      const repeatedPush = await schemaPush(pushArgs);
+      expect(repeatedPush).not.toContain('Schema revision pushed.');
+      expect(repeatedPush).toContain(`Revision: ${revision}`);
+    });
   },
 );
+
+test('schema:publish --revision without --service reports the missing service', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target, createTargetAccessToken } = await createProject(ProjectType.Federation);
+  const { secret } = await createTargetAccessToken({ mode: 'readWrite' });
+
+  await schemaPush([
+    '--registry.accessToken',
+    secret,
+    '--target',
+    target.id,
+    '--revision',
+    'v1',
+    '--service',
+    'products',
+    'fixtures/init-schema.graphql',
+  ]);
+
+  const publish = schemaPublish([
+    '--registry.accessToken',
+    secret,
+    '--target',
+    target.id,
+    '--author',
+    'HiveCLI',
+    '--commit',
+    'v1',
+    '--revision',
+    'v1',
+  ]);
+  await expect(publish).rejects.toThrow('Missing service name');
+  await expect(publish).rejects.toThrow('[302]');
+});
