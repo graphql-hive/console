@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { CircleHelp, Copy } from 'lucide-react';
+import { CircleHelp, Copy, Info } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../../button/button';
+import { Popover } from '../popover/popover';
 import { Tooltip } from './tooltip';
 
 export const nav: NavPath = 'Base/Floating/Tooltip';
@@ -196,6 +197,48 @@ export const DisabledControl = createPreview(() => (
       }
       content="The wrapper takes the hover."
     />
+  </div>
+));
+
+/** Info icons are a Popover with `openOnHover`, not a Tooltip, so touch and keyboard can open them. */
+export const Infotip = createPreview(() => (
+  <div className="flex items-center gap-6">
+    <Popover
+      trigger={
+        <button type="button" aria-label="Why this cannot be assigned">
+          <Info className="size-4" />
+        </button>
+      }
+      openOnHover
+      content={
+        <p className="text-neutral-11 text-sm">
+          Your membership has insufficient authority for assigning this permission.
+        </p>
+      }
+    />
+    <div className="flex items-center">
+      <span className="text-yellow-500">Inactive</span>
+      <Popover
+        trigger={
+          <Button variant="ghost" size="icon-sm" aria-label="Why inactive">
+            <Info className="size-4" />
+          </Button>
+        }
+        openOnHover
+        width="lg"
+        content={
+          <div className="text-neutral-11 text-sm font-normal">
+            <p>
+              This Contract is no longer active and no more contract versions or contract checks
+              will be published for it.
+            </p>
+            <p className="mt-1">
+              It is not possible to enable a contract again. Please create a new contract instead.
+            </p>
+          </div>
+        }
+      />
+    </div>
   </div>
 ));
 
