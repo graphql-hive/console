@@ -278,10 +278,7 @@ function Inner(props: {
       return (
         <>
           <div className="my-8 flex flex-row gap-6">
-            <BillingPaymentMethodForm
-              className="w-1/2"
-              onValidationChange={setPaymentDetailsValid}
-            />
+            <BillingPaymentMethodForm onValidationChange={setPaymentDetailsValid} />
             <div className="w-1/2">
               {plan === BillingPlanType.Pro && plan !== organization.plan ? (
                 <div>
