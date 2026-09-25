@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { type ReactNode } from 'react';
-import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
+import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
 import { organizationMembers } from '@/lib/testing/fixtures/organization-members';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
 import { projectSettings } from '@/lib/testing/fixtures/project-settings';
@@ -28,6 +28,11 @@ vi.mock('supertokens-auth-react', async importOriginal => ({
   default: { init: () => {} },
   SuperTokensWrapper: (props: { children: ReactNode }) => props.children,
 }));
+// The OIDC interstitial redirects away unless the provider is on.
+vi.mock('@/lib/supertokens/thirdparty', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/lib/supertokens/thirdparty')>()),
+  isProviderEnabled: () => true,
+}));
 vi.mock('supertokens-auth-react/recipe/session', () => ({
   default: {
     doesSessionExist: async () => true,
@@ -43,12 +48,8 @@ vi.mock('supertokens-auth-react/recipe/session', () => ({
 
 // The layout queries are answered; every other query stays in flight, so pages show their loading
 // branch and the chrome around them is what gets asserted.
-const client = vi.hoisted(() => ({ current: null as null | ReturnType<typeof createTestClient> }));
-vi.mock('@/lib/urql', () => ({
-  get urqlClient() {
-    return client.current;
-  },
-}));
+const client = { current: null as null | ReturnType<typeof createTestClient> };
+const at = (url: string) => renderAtUrl(url, { client: client.current! });
 
 const TARGET = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}`;
 const PROJECT = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}`;
@@ -108,7 +109,7 @@ describe('chrome at every page', () => {
   // The header is owned by the layout route, so moving between sibling pages keeps the same DOM
   // node; a remount would create a new one.
   it('keeps the organization layout mounted across its pages', { timeout: 30_000 }, async () => {
-    const { router } = renderAtUrl(ORGANIZATION);
+    const { router } = at(ORGANIZATION);
     const header = await screen.findByRole('banner');
     await router.navigate({
       to: '/$organizationSlug/view/members',
@@ -123,7 +124,7 @@ describe('chrome at every page', () => {
   });
 
   it('keeps the target layout mounted across its pages', { timeout: 30_000 }, async () => {
-    const { router } = renderAtUrl(`${TARGET}/checks`);
+    const { router } = at(`${TARGET}/checks`);
     const header = await screen.findByRole('banner');
     await router.navigate({
       to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
@@ -144,7 +145,7 @@ describe('chrome at every page', () => {
         },
       },
     });
-    const { router } = renderAtUrl(`${TARGET}/history`);
+    const { router } = at(`${TARGET}/history`);
     await waitFor(() =>
       expect(router.state.location.pathname).toBe(`${TARGET}/history/version-42`),
     );
@@ -152,7 +153,7 @@ describe('chrome at every page', () => {
   });
 
   it('keeps the project layout mounted across its pages', { timeout: 30_000 }, async () => {
-    const { router } = renderAtUrl(PROJECT);
+    const { router } = at(PROJECT);
     const header = await screen.findByRole('banner');
     await router.navigate({
       to: '/$organizationSlug/$projectSlug/view/alerts',
@@ -162,8 +163,77 @@ describe('chrome at every page', () => {
     expect(screen.getByRole('banner')).toBe(header);
   });
 
+  it('keeps the header mounted across levels', { timeout: 30_000 }, async () => {
+    const { router } = at(TARGET);
+    const header = await screen.findByRole('banner');
+    await router.navigate({
+      to: '/$organizationSlug/$projectSlug',
+      params: { organizationSlug: SLUGS.organizationSlug, projectSlug: SLUGS.projectSlug },
+    });
+    await screen.findByRole('link', { name: 'Targets', current: 'page' });
+    await router.navigate({
+      to: '/$organizationSlug',
+      params: { organizationSlug: SLUGS.organizationSlug },
+    });
+    await screen.findByRole('link', { name: 'Overview', current: 'page' });
+    expect(screen.getByRole('banner')).toBe(header);
+  });
+
+  // On the interstitial the organization query answers NEEDS_OIDC, which reloads the page.
+  it(
+    'renders the header on the OIDC interstitial without asking for the organization',
+    { timeout: 30_000 },
+    async () => {
+      at(`${ORGANIZATION}/oidc-request?id=oidc-1&redirectToPath=%2F`);
+      await screen.findByRole('banner');
+      expect(screen.getByRole('combobox', { name: /organization/i })).toBeTruthy();
+      expect(client.current!.seen).toContain('ViewerQuery');
+      expect(client.current!.seen).not.toContain('UserMenu_OrganizationQuery');
+    },
+  );
+
+  // The viewer is one request per session; each level fetches only its entity document.
+  it('loads the viewer once for the session', { timeout: 30_000 }, async () => {
+    const { router } = at(TARGET);
+    await screen.findByRole('banner');
+    await router.navigate({
+      to: '/$organizationSlug/$projectSlug',
+      params: { organizationSlug: SLUGS.organizationSlug, projectSlug: SLUGS.projectSlug },
+    });
+    await screen.findByRole('link', { name: 'Targets', current: 'page' });
+    await router.navigate({
+      to: '/$organizationSlug',
+      params: { organizationSlug: SLUGS.organizationSlug },
+    });
+    await screen.findByRole('link', { name: 'Overview', current: 'page' });
+    // Leaving the header route and coming back mounts it again; the viewer is still fresh.
+    await router.navigate({ to: '/' });
+    await waitFor(() => expect(screen.queryByRole('banner')).toBeNull());
+    await router.navigate({
+      to: '/$organizationSlug',
+      params: { organizationSlug: SLUGS.organizationSlug },
+    });
+    await screen.findByRole('link', { name: 'Overview', current: 'page' });
+
+    const seen = client.current!.seen;
+    expect(seen.filter(name => name === 'ViewerQuery')).toHaveLength(1);
+    expect(seen).toContain('ProjectLayoutQuery');
+    expect(seen).toContain('OrganizationLayoutQuery');
+  });
+
+  it('shows the user menu for the current organization', { timeout: 30_000 }, async () => {
+    at(ORGANIZATION);
+    // The trigger pulses until the current organization is known.
+    await waitFor(() =>
+      expect(document.querySelector('[data-cy="user-menu-trigger"]')?.className).not.toContain(
+        'animate-pulse',
+      ),
+    );
+    expect(client.current!.seen).toContain('UserMenu_OrganizationQuery');
+  });
+
   it('renders a missing page inside the chrome, not over it', { timeout: 30_000 }, async () => {
-    renderAtUrl(`${TARGET}/nope`);
+    at(`${TARGET}/nope`);
     const heading = await screen.findByText('Page Not Found');
     expect(screen.getByRole('navigation', { name: 'Secondary' })).toBeTruthy();
     // `h-screen` here would push the 404 a header's height past the bottom of the window.
@@ -172,7 +242,7 @@ describe('chrome at every page', () => {
 
   for (const page of pages) {
     it(`${page.url}: one secondary nav, ${page.current} current`, { timeout: 30_000 }, async () => {
-      renderAtUrl(page.url);
+      at(page.url);
 
       await waitFor(() =>
         expect(document.querySelectorAll('nav[aria-label="Secondary"]')).toHaveLength(1),
@@ -206,7 +276,7 @@ describe('target settings sections', () => {
   function renderSettings(url: string, fixture = targetSettings()) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('TargetSettingsPageQuery', fixture);
-    return renderAtUrl(url);
+    return at(url);
   }
 
   it(
@@ -294,7 +364,7 @@ describe('organization settings sections', () => {
   function renderSettings(url: string, fixture = organizationSettings()) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('OrganizationSettingsPageQuery', fixture);
-    return renderAtUrl(url);
+    return at(url);
   }
 
   it(
@@ -344,7 +414,7 @@ describe('project settings sections', () => {
   function renderSettings(url: string, fixture = projectSettings()) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('ProjectSettingsPageQuery', fixture);
-    return renderAtUrl(url);
+    return at(url);
   }
 
   it(
@@ -402,7 +472,7 @@ describe('members sections', () => {
   function renderMembers(url: string, fixture = organizationMembers()) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('OrganizationMembersPageQuery', fixture);
-    return renderAtUrl(url);
+    return at(url);
   }
 
   it(
@@ -456,10 +526,13 @@ describe('alerts sections', () => {
 
   function renderAlerts(url: string, viewerCanUseMetricAlertRules = true) {
     client.current = createTestClient(layoutFixtures());
-    client.current.fixtures.set('TargetAlertsPageQuery', {
-      target: { __typename: 'Target', id: 'target-1', viewerCanUseMetricAlertRules },
-    });
-    return renderAtUrl(url);
+    const layout = targetLayout();
+    layout.organization.project.target = {
+      ...layout.organization.project.target,
+      viewerCanUseMetricAlertRules,
+    };
+    client.current.fixtures.set('TargetLayoutQuery', layout);
+    return at(url);
   }
 
   it(
@@ -489,4 +562,50 @@ describe('alerts sections', () => {
     const { router } = renderAlerts(`${ALERTS}/rules`, false);
     await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
   });
+
+  it(
+    'reads the permission from the layout, not a document of its own',
+    { timeout: 30_000 },
+    async () => {
+      renderAlerts(ALERTS);
+      await sectionNav('Alerts');
+      const seen = client.current!.seen;
+      expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
+      expect(seen).not.toContain('TargetAlertsPageQuery');
+    },
+  );
+});
+
+describe('insights', () => {
+  const INSIGHTS = `${TARGET}/insights`;
+  const emptyState = /waiting for your first collected operation/;
+
+  it('shows nothing until its own query has answered', { timeout: 30_000 }, async () => {
+    at(INSIGHTS);
+    await screen.findByRole('link', { name: 'Insights', current: 'page' });
+    expect(screen.queryByText(emptyState)).toBeNull();
+  });
+
+  it('shows the empty state for a target without operations', { timeout: 30_000 }, async () => {
+    client.current!.fixtures.set('TargetOperationsPageQuery', {
+      __typename: 'Query',
+      hasCollectedOperations: false,
+    });
+    at(INSIGHTS);
+    expect(await screen.findByText(emptyState)).toBeTruthy();
+  });
+});
+
+describe('proposals', () => {
+  it(
+    'reads the permission from the layout, not a document of its own',
+    { timeout: 30_000 },
+    async () => {
+      at(`${TARGET}/proposals`);
+      await screen.findByRole('link', { name: 'Proposals', current: 'page' });
+      const seen = client.current!.seen;
+      expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
+      expect(seen).not.toContain('TargetProposalsQuery');
+    },
+  );
 });

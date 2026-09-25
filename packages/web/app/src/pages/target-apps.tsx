@@ -12,11 +12,13 @@ import { Spinner } from '@/components/ui/spinner';
 import { graphql, useFragment, type DocumentType } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { usePagedConnection, useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, usePagedConnection, useSlugs } from '@/lib/hooks';
 import { getRouteApi } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
-const appsRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/apps');
+const appsRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/apps',
+);
 
 export const TargetAppsSortSchema = z.object({
   field: z.enum(['CREATED_AT', 'ACTIVATED_AT', 'LAST_USED']),
@@ -47,9 +49,6 @@ const TargetAppsViewQuery = graphql(`
     $after: String
     $sort: AppDeploymentsSortInput
   ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-    }
     target(
       reference: {
         bySelector: {
@@ -68,7 +67,6 @@ const TargetAppsViewQuery = graphql(`
         id
         type
       }
-      viewerCanViewAppDeployments
       appDeployments(first: 20, after: $after, sort: $sort) {
         total
         pageInfo {
@@ -164,11 +162,11 @@ function TargetAppsView(props: { sorting: SortState }) {
   });
   const sortingState = [{ id: props.sorting.field, desc: props.sorting.direction === 'DESC' }];
 
-  const project = data.data?.target;
+  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
 
   useRedirect({
-    entity: project,
-    canAccess: project?.viewerCanViewAppDeployments === true,
+    entity: layoutTarget,
+    canAccess: layoutTarget?.viewerCanViewAppDeployments === true,
     redirectTo(router) {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
@@ -188,7 +186,7 @@ function TargetAppsView(props: { sorting: SortState }) {
     );
   }
 
-  if (project?.viewerCanViewAppDeployments === false) {
+  if (layoutTarget?.viewerCanViewAppDeployments === false) {
     return null;
   }
 

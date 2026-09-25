@@ -7,20 +7,17 @@ const TARGET = { organizationSlug: 'a', projectSlug: 'b', targetSlug: 'c' };
 
 const TARGET_ITEMS: NavigationItem[] = [
   {
-    id: 'schema',
     label: 'Schema',
     to: '/$organizationSlug/$projectSlug/$targetSlug',
     params: TARGET,
     exact: true,
   },
   {
-    id: 'checks',
     label: 'Checks',
     to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
     params: TARGET,
   },
   {
-    id: 'settings',
     label: 'Settings',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
     params: TARGET,
@@ -30,7 +27,6 @@ const TARGET_ITEMS: NavigationItem[] = [
 
 const PROPOSAL_ITEMS: NavigationItem[] = [
   {
-    id: 'details',
     label: 'Details',
     to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
     params: { ...TARGET, proposalId: 'p' },
@@ -38,7 +34,6 @@ const PROPOSAL_ITEMS: NavigationItem[] = [
     explicitUndefined: true,
   },
   {
-    id: 'schema',
     label: 'Schema',
     to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
     params: { ...TARGET, proposalId: 'p' },

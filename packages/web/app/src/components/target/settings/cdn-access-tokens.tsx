@@ -25,7 +25,7 @@ import {
 } from './cdn-token-form';
 
 const cdnRoute = getRouteApi(
-  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
 );
 
 const CDNAccessTokenCreateMutation = graphql(`

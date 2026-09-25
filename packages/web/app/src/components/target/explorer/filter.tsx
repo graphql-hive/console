@@ -62,7 +62,6 @@ export function SchemaVariantFilter() {
       variant="pill"
       size="sm"
       items={variants.map(variant => ({
-        id: variant.value,
         label: variant.label,
         tooltip: variant.tooltip,
         to: variant.pathname,

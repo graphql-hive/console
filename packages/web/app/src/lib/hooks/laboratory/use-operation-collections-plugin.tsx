@@ -30,7 +30,9 @@ import { useCurrentOperation } from './use-current-operation';
 import { useSyncOperationState } from './use-sync-operation-state';
 
 // The accordion hands out no ref, so the operation opened from the URL is found by id instead.
-const targetRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug');
+const targetRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug',
+);
 
 const COLLECTIONS_ID = 'laboratory-collections';
 
@@ -93,7 +95,6 @@ export const TargetLaboratoryPageQuery = graphql(`
         id
         sdl
       }
-      viewerCanViewLaboratory
       viewerCanModifyLaboratory
       ...PreflightScript_TargetFragment
     }

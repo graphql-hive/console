@@ -23,38 +23,32 @@ const TARGET_PATH = '/the-guild/gateway/production';
 const TARGET_ITEMS: NavigationItem[] = [
   // The root item: without `exact` its path is a prefix of every other target page.
   {
-    id: 'schema',
     label: 'Schema',
     to: '/$organizationSlug/$projectSlug/$targetSlug',
     params: TARGET,
     exact: true,
   },
   {
-    id: 'checks',
     label: 'Checks',
     to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
     params: TARGET,
   },
   {
-    id: 'explorer',
     label: 'Explorer',
     to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
     params: TARGET,
   },
   {
-    id: 'insights',
     label: 'Insights',
     to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
     params: TARGET,
   },
   {
-    id: 'apps',
     label: 'Apps',
     to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
     params: TARGET,
   },
   {
-    id: 'settings',
     label: 'Settings',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
     params: TARGET,
@@ -77,7 +71,6 @@ export const RootItem = createPreview(() => (
 
 const EXPLORER_ITEMS: NavigationItem[] = [
   {
-    id: 'all',
     label: 'All',
     tooltip: 'Shows all types, including unused and deprecated ones',
     to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
@@ -85,14 +78,12 @@ const EXPLORER_ITEMS: NavigationItem[] = [
     exact: true,
   },
   {
-    id: 'unused',
     label: 'Unused',
     tooltip: 'Shows only types that are not used in any operation',
     to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/unused',
     params: TARGET,
   },
   {
-    id: 'deprecated',
     label: 'Deprecated',
     tooltip: 'Shows only types that are marked as deprecated',
     to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated',
@@ -119,7 +110,6 @@ const PROPOSAL_ITEMS: NavigationItem[] = [
   // while the URL has no `page` at all.
   {
     ...proposalLink,
-    id: 'details',
     label: 'Details',
     icon: ListIcon,
     search: { page: undefined, version: 'v3' },
@@ -127,19 +117,17 @@ const PROPOSAL_ITEMS: NavigationItem[] = [
   },
   {
     ...proposalLink,
-    id: 'schema',
     label: 'Schema',
     icon: FileDiffIcon,
     search: { page: 'schema', version: 'v3' },
   },
   {
     ...proposalLink,
-    id: 'checks',
     label: 'Checks',
     icon: ChartPieIcon,
     search: { page: 'checks', version: 'v3' },
   },
-  { ...proposalLink, id: 'edit', label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
+  { ...proposalLink, label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
 ];
 
 /** Sections driven by a search param, with icons, at sm: the proposal page on its default section. */
@@ -158,21 +146,18 @@ export const SectionsSchema = createPreview(() => (
 
 const ALERTS_ITEMS: NavigationItem[] = [
   {
-    id: 'activity',
     label: 'Alert activity',
     to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
     params: TARGET,
     exact: true,
   },
   {
-    id: 'rules',
     label: 'Alert rules',
     to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/rules',
     params: TARGET,
     attrs: { 'data-cy': 'alerts-rules-link' },
   },
   {
-    id: 'create',
     label: 'Create a new alert',
     to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/create',
     params: TARGET,
@@ -210,7 +195,7 @@ export const Gated = createPreview(() => (
   <RouterAt path={`${TARGET_PATH}/checks`}>
     <Navigation
       aria-label="Target"
-      items={TARGET_ITEMS.map(item => ({ ...item, visible: item.id !== 'settings' }))}
+      items={TARGET_ITEMS.map(item => ({ ...item, visible: item.label !== 'Settings' }))}
     />
   </RouterAt>
 ));

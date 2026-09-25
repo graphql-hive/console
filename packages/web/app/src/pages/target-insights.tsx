@@ -22,12 +22,12 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
-import { useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
 
 const insightsRoute = getRouteApi(
-  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/insights',
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights',
 );
 
 function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
@@ -373,11 +373,6 @@ const TargetOperationsPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      usageRetentionInDays
-    }
     hasCollectedOperations(
       selector: {
         organizationSlug: $organizationSlug
@@ -398,6 +393,7 @@ function TargetOperationsPageContent() {
       targetSlug,
     },
   });
+  const layout = useLayoutQuery('target');
 
   if (query.error) {
     return (
@@ -409,10 +405,12 @@ function TargetOperationsPageContent() {
     );
   }
 
-  const currentOrganization = query.data?.organization;
+  const currentOrganization = layout.data?.organization;
   const hasCollectedOperations = query.data?.hasCollectedOperations === true;
 
-  if (!currentOrganization) {
+  // The layout's document is usually cached, so only the page's own answer says whether to show
+  // the empty state.
+  if (!currentOrganization || !query.data) {
     return null;
   }
 

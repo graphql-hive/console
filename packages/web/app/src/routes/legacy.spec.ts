@@ -1,22 +1,36 @@
 // @vitest-environment jsdom
+import { createTestClient } from '@/lib/testing/urql';
 import { createMemoryHistory } from '@tanstack/react-router';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
+// Signed in unless a case says otherwise: the authenticated gate runs before every redirect below.
+const sessionExists = vi.hoisted(() => ({ current: true }));
+vi.mock('supertokens-auth-react/recipe/session', () => ({
+  default: { doesSessionExist: async () => sessionExists.current },
+  SessionAuth: (props: { children: unknown }) => props.children,
+}));
 vi.mock('@graphql-hive/laboratory', () => import('@/lib/testing/mocks/laboratory'));
 vi.mock(
   '@/lib/laboratory-history-storage',
   () => import('@/lib/testing/mocks/laboratory-history-storage'),
 );
 
-async function loadAt(url: string) {
+async function loadAt(url: string, client = createTestClient()) {
   const { createAppRouter } = await import('@/router');
-  const router = createAppRouter({ history: createMemoryHistory({ initialEntries: [url] }) });
+  const router = createAppRouter({
+    history: createMemoryHistory({ initialEntries: [url] }),
+    urqlClient: client,
+  });
   await router.load();
   return router;
 }
 
 describe('legacy URLs', () => {
+  beforeEach(() => {
+    sessionExists.current = true;
+  });
+
   it('has an entry for every old URL shape', { timeout: 30_000 }, async () => {
     const { legacyPaths, legacySearch } = await import('./legacy');
     expect(legacyPaths.map(entry => entry.path)).toMatchInlineSnapshot(`
@@ -85,6 +99,21 @@ describe('legacy URLs', () => {
 
       const oidc = await loadAt(`/acme/oidc-request?id=oidc-1&redirectToPath=${encoded}`);
       expect(oidc.state.location.pathname).toBe('/');
+    },
+  );
+
+  it(
+    'sends a signed-out visitor to sign in, before any loader runs',
+    { timeout: 30_000 },
+    async () => {
+      sessionExists.current = false;
+      const client = createTestClient();
+
+      const router = await loadAt('/acme/shop/prod', client);
+
+      expect(router.state.location.pathname).toBe('/auth/sign-in');
+      expect(router.state.location.search).toEqual({ redirectToPath: '/acme/shop/prod' });
+      expect(client.seen).toEqual([]);
     },
   );
 });

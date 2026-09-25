@@ -1,5 +1,4 @@
 import { DiffsWorkerPoolProvider } from '@/components/theme/diffs-worker-pool-provider';
-import { urqlClient } from '@/lib/urql';
 import { TargetHistoryLatestVersionQuery, TargetHistoryPage } from '@/pages/target-history';
 import { TargetHistorySchemaVersionPage } from '@/pages/target-history-schema-version';
 import { createRoute, redirect } from '@tanstack/react-router';
@@ -16,8 +15,10 @@ export const targetHistoryRoute = createRoute({
 export const targetHistoryIndexRoute = createRoute({
   getParentRoute: () => targetHistoryRoute,
   path: '/',
-  beforeLoad: async ({ params }) => {
-    const result = await urqlClient.query(TargetHistoryLatestVersionQuery, params).toPromise();
+  beforeLoad: async ({ context, params }) => {
+    const result = await context.urqlClient
+      .query(TargetHistoryLatestVersionQuery, params)
+      .toPromise();
     const versionId = result.data?.organization?.project?.target?.latestSchemaVersion?.id;
     if (versionId) {
       throw redirect({

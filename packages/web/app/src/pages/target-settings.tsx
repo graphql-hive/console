@@ -1248,7 +1248,7 @@ function TargetInfo(props: { targetId: string }) {
   );
 }
 
-const SETTINGS = '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings';
+const SETTINGS = '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/settings';
 
 type SectionId =
   | 'general'
@@ -1381,7 +1381,6 @@ export function TargetSettingsPage() {
               aria-label="Settings"
               variant="list"
               items={visible.map(section => ({
-                id: section.id,
                 label: section.label,
                 to: section.to,
                 params: slugs,

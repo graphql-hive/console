@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { TypedDocumentNode } from 'urql';
 import type { CreateProjectMutation } from '@/components/layouts/organization';
 import type { CreateTarget_CreateTargetMutation } from '@/components/layouts/project';
+import type { OrganizationMemberRow_DeleteMember } from '@/components/organization/members/list';
 import type { CreateAlertModal_AddAlertMutation } from '@/components/project/alerts/create-alert';
 import type { CreateChannel_AddAlertChannelMutation } from '@/components/project/alerts/create-channel';
 import type { DeleteAlertsButton_DeleteAlertsMutation } from '@/components/project/alerts/delete-alerts-button';
@@ -14,6 +15,7 @@ import type { DeleteOperationMutationType } from '@/components/target/laboratory
 import type { CreateAccessToken_CreateTokenMutation } from '@/components/target/settings/registry-access-token';
 import { graphql } from '@/gql';
 import { CollectionsQuery } from '@/lib/hooks/laboratory/use-collections';
+import type { JoinOrganizationPage_JoinOrganizationMutation } from '@/pages/organization-join';
 import type { CreateOrganizationMutation } from '@/pages/organization-new';
 import type { DeleteOrganizationDocument } from '@/pages/organization-settings';
 import type { DeleteProjectMutation } from '@/pages/project-settings';
@@ -91,6 +93,22 @@ const createOrganization: TypedDocumentNodeUpdateResolver<typeof CreateOrganizat
   cache.invalidate('Query', 'organizations');
 };
 
+// The viewer's organizations are one session-level document; a join has to reach it.
+const joinOrganization: TypedDocumentNodeUpdateResolver<
+  typeof JoinOrganizationPage_JoinOrganizationMutation
+> = ({ joinOrganization }, _args, cache) => {
+  if (joinOrganization.__typename === 'OrganizationPayload') {
+    cache.invalidate('Query', 'organizations');
+  }
+};
+
+// The removed member may be the viewer; one viewer refetch after a rare action beats a cache lookup.
+const deleteOrganizationMember: TypedDocumentNodeUpdateResolver<
+  typeof OrganizationMemberRow_DeleteMember
+> = (_data, _args, cache) => {
+  cache.invalidate('Query', 'organizations');
+};
+
 const deleteOrganization: TypedDocumentNodeUpdateResolver<typeof DeleteOrganizationDocument> = (
   { deleteOrganization },
   _args,
@@ -145,6 +163,9 @@ const createTarget: TypedDocumentNodeUpdateResolver<typeof CreateTarget_CreateTa
 
   const target = createTarget.ok.createdTarget;
   const { selector } = createTarget.ok;
+
+  // The selector tree reads Project.targets, which the patch below misses.
+  cache.invalidate({ __typename: 'Project', id: target.project.id }, 'targets');
 
   updateQuery(
     cache,
@@ -419,6 +440,8 @@ const updateMetricAlertRule: UpdateResolver = (_result, args, cache) => {
 // UpdateResolver
 export const Mutation = {
   createOrganization,
+  joinOrganization,
+  deleteOrganizationMember,
   deleteOrganization,
   createProject,
   deleteProject,

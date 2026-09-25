@@ -1,4 +1,18 @@
 import { z } from 'zod';
+import type {
+  AnyVariables,
+  Client,
+  DocumentInput,
+  OperationResult,
+  RequestPolicy,
+} from '@urql/core';
+
+declare module '@urql/core' {
+  interface OperationContext {
+    /** Set by `loadQuery` on a route preload; the progress bar leaves those out. */
+    preload?: boolean;
+  }
+}
 
 /**
  * Remove null and undefined values from an object before writing to URL search params.
@@ -35,3 +49,24 @@ export const redirectToPathSchema = z
   .string()
   .optional()
   .transform(value => (value !== undefined && isSafeRedirectPath(value) ? value : '/'));
+
+/** What a route loader receives that `loadQuery` needs: the client in router context, and whether this run is a preload. */
+export type LoaderContext = { context: { urqlClient: Client }; preload: boolean };
+
+/**
+ * Runs `document` from a route loader through the app's cache and resolves on the first settled
+ * result. Await it for what the page shows first, `void` it for what the page only warms; either
+ * way the page's own `useQuery` with the same variables is then a cache hit. The result is never a
+ * rejection: an error result is not cached, and the page surfaces it through `QueryError` as today.
+ * The preload flag rides on the operation so a hover preload does not drive the top progress bar.
+ */
+export function loadQuery<Data, Variables extends AnyVariables>(
+  loader: LoaderContext,
+  document: DocumentInput<Data, Variables>,
+  variables: Variables,
+  requestPolicy: RequestPolicy = 'cache-first',
+): Promise<OperationResult<Data, Variables>> {
+  return loader.context.urqlClient
+    .query(document, variables, { requestPolicy, preload: loader.preload })
+    .toPromise();
+}

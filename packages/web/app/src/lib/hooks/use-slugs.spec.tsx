@@ -21,8 +21,13 @@ function routerAt(url: string, leaf: () => React.ReactNode, onError?: () => Reac
     id: 'authenticated',
     component: Outlet,
   });
-  const organization = createRoute({
+  const withHeader = createRoute({
     getParentRoute: () => authenticated,
+    id: 'with-header',
+    component: Outlet,
+  });
+  const organization = createRoute({
+    getParentRoute: () => withHeader,
     path: '$organizationSlug',
     component: Outlet,
   });
@@ -44,7 +49,9 @@ function routerAt(url: string, leaf: () => React.ReactNode, onError?: () => Reac
   return createRouter({
     routeTree: root.addChildren([
       authenticated.addChildren([
-        organization.addChildren([organizationIndex, project.addChildren([target])]),
+        withHeader.addChildren([
+          organization.addChildren([organizationIndex, project.addChildren([target])]),
+        ]),
       ]),
     ]),
     history: createMemoryHistory({ initialEntries: [url] }),

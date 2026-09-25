@@ -102,22 +102,19 @@ function ChromeBar(props: { children: ReactNode }) {
 
 const ORGANIZATION_LINKS: NavigationItem[] = [
   {
-    id: 'overview',
     label: 'Overview',
     to: '/$organizationSlug',
     params: ORGANIZATION,
     exact: true,
   },
-  { id: 'members', label: 'Members', to: '/$organizationSlug/view/members', params: ORGANIZATION },
+  { label: 'Members', to: '/$organizationSlug/view/members', params: ORGANIZATION },
   {
-    id: 'settings',
     label: 'Settings',
     to: '/$organizationSlug/view/settings',
     params: ORGANIZATION,
   },
-  { id: 'support', label: 'Support', to: '/$organizationSlug/view/support', params: ORGANIZATION },
+  { label: 'Support', to: '/$organizationSlug/view/support', params: ORGANIZATION },
   {
-    id: 'subscription',
     label: 'Subscription',
     to: '/$organizationSlug/view/subscription',
     params: ORGANIZATION,
@@ -126,20 +123,17 @@ const ORGANIZATION_LINKS: NavigationItem[] = [
 
 const PROJECT_LINKS: NavigationItem[] = [
   {
-    id: 'targets',
     label: 'Targets',
     to: '/$organizationSlug/$projectSlug',
     params: PROJECT,
     exact: true,
   },
   {
-    id: 'alerts',
     label: 'Alerts',
     to: '/$organizationSlug/$projectSlug/view/alerts',
     params: PROJECT,
   },
   {
-    id: 'settings',
     label: 'Settings',
     to: '/$organizationSlug/$projectSlug/view/settings',
     params: PROJECT,
@@ -148,69 +142,58 @@ const PROJECT_LINKS: NavigationItem[] = [
 
 const TARGET_LINKS: NavigationItem[] = [
   {
-    id: 'schema',
     label: 'Schema',
     to: '/$organizationSlug/$projectSlug/$targetSlug',
     params: TARGET,
     exact: true,
   },
   {
-    id: 'checks',
     label: 'Checks',
     to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
     params: TARGET,
   },
   {
-    id: 'explorer',
     label: 'Explorer',
     to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
     params: TARGET,
   },
   {
-    id: 'history',
     label: 'History',
     to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
     params: { ...TARGET, versionId: 'v42' },
   },
   {
-    id: 'insights',
     label: 'Insights',
     to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
     params: TARGET,
     search: {},
   },
   {
-    id: 'traces',
     label: 'Traces',
     to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
     params: TARGET,
   },
   {
-    id: 'apps',
     label: 'Apps',
     to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
     params: TARGET,
   },
   {
-    id: 'laboratory',
     label: 'Laboratory',
     to: '/$organizationSlug/$projectSlug/$targetSlug/laboratory',
     params: TARGET,
   },
   {
-    id: 'proposals',
     label: 'Proposals',
     to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
     params: TARGET,
   },
   {
-    id: 'alerts',
     label: 'Alerts',
     to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
     params: TARGET,
   },
   {
-    id: 'settings',
     label: 'Settings',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
     params: TARGET,
@@ -314,7 +297,6 @@ export const ExplorerFilter = createPreview({
           size="sm"
           items={[
             {
-              id: 'all',
               label: 'All',
               tooltip: 'Shows all types, including unused and deprecated ones',
               to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
@@ -323,7 +305,6 @@ export const ExplorerFilter = createPreview({
               exact: true,
             },
             {
-              id: 'unused',
               label: 'Unused',
               tooltip: 'Shows only types that are not used in any operation',
               to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/unused',
@@ -331,7 +312,6 @@ export const ExplorerFilter = createPreview({
               search: {},
             },
             {
-              id: 'deprecated',
               label: 'Deprecated',
               tooltip: 'Shows only types that are marked as deprecated',
               to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated',
@@ -355,7 +335,6 @@ const versionSearch = { version: 'v3' };
 const PROPOSAL_SECTIONS: NavigationItem[] = [
   {
     ...proposalLink,
-    id: 'details',
     label: 'Details',
     icon: ListIcon,
     search: { page: undefined, ...versionSearch },
@@ -363,14 +342,12 @@ const PROPOSAL_SECTIONS: NavigationItem[] = [
   },
   {
     ...proposalLink,
-    id: 'schema',
     label: 'Schema',
     icon: FileDiffIcon,
     search: { page: 'schema', ...versionSearch },
   },
   {
     ...proposalLink,
-    id: 'supergraph',
     label: 'Supergraph Preview',
     icon: GraphQLIcon,
     visible: true,
@@ -378,13 +355,12 @@ const PROPOSAL_SECTIONS: NavigationItem[] = [
   },
   {
     ...proposalLink,
-    id: 'checks',
     label: 'Checks',
     icon: ChartPieIcon,
     search: { page: 'checks', ...versionSearch },
   },
   // Edit always refers to the latest version, so it carries no version.
-  { ...proposalLink, id: 'edit', label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
+  { ...proposalLink, label: 'Edit', icon: PencilIcon, search: { page: 'edit' } },
 ];
 
 export const ProposalSections = createPreview({
@@ -443,20 +419,17 @@ export const AlertsSections = createPreview({
         path={`${TARGET_PATH}/alerts/rules`}
         items={[
           {
-            id: 'activity',
             label: 'Alert activity',
             to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
             params: TARGET,
             exact: true,
           },
           {
-            id: 'rules',
             label: 'Alert rules',
             to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/rules',
             params: TARGET,
           },
           {
-            id: 'create',
             label: 'Create a new alert',
             to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/create',
             params: TARGET,
@@ -469,7 +442,6 @@ export const AlertsSections = createPreview({
 
 const TARGET_SETTINGS: NavigationItem[] = [
   {
-    id: 'general',
     label: 'General',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
     params: TARGET,
@@ -477,35 +449,30 @@ const TARGET_SETTINGS: NavigationItem[] = [
     attrs: { 'data-cy': 'target-settings-general-link' },
   },
   {
-    id: 'base-schema',
     label: 'Base Schema',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/base-schema',
     params: TARGET,
     attrs: { 'data-cy': 'target-settings-base-schema-link' },
   },
   {
-    id: 'breaking-changes',
     label: 'Breaking Changes',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/breaking-changes',
     params: TARGET,
     attrs: { 'data-cy': 'target-settings-breaking-changes-link' },
   },
   {
-    id: 'schema-contracts',
     label: 'Schema Contracts',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/schema-contracts',
     params: TARGET,
     attrs: { 'data-cy': 'target-settings-schema-contracts-link' },
   },
   {
-    id: 'registry-token',
     label: 'Registry Tokens',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/registry-token',
     params: TARGET,
     attrs: { 'data-cy': 'target-settings-registry-token-link' },
   },
   {
-    id: 'cdn',
     label: 'CDN Tokens',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
     params: TARGET,
@@ -515,32 +482,27 @@ const TARGET_SETTINGS: NavigationItem[] = [
 
 const ORGANIZATION_SETTINGS: NavigationItem[] = [
   {
-    id: 'general',
     label: 'General',
     to: '/$organizationSlug/view/settings',
     params: ORGANIZATION,
     exact: true,
   },
   {
-    id: 'policy',
     label: 'Policy',
     to: '/$organizationSlug/view/settings/policy',
     params: ORGANIZATION,
   },
   {
-    id: 'sso',
     label: 'SSO / SCIM',
     to: '/$organizationSlug/view/settings/sso',
     params: ORGANIZATION,
   },
   {
-    id: 'access-tokens',
     label: 'Access Tokens',
     to: '/$organizationSlug/view/settings/access-tokens',
     params: ORGANIZATION,
   },
   {
-    id: 'personal-access-tokens',
     label: 'Personal Access Tokens',
     to: '/$organizationSlug/view/settings/personal-access-tokens',
     params: ORGANIZATION,
@@ -549,26 +511,22 @@ const ORGANIZATION_SETTINGS: NavigationItem[] = [
 
 const PROJECT_SETTINGS: NavigationItem[] = [
   {
-    id: 'general',
     label: 'General',
     to: '/$organizationSlug/$projectSlug/view/settings',
     params: PROJECT,
     exact: true,
   },
   {
-    id: 'policy',
     label: 'Policy',
     to: '/$organizationSlug/$projectSlug/view/settings/policy',
     params: PROJECT,
   },
   {
-    id: 'composition',
     label: 'Composition',
     to: '/$organizationSlug/$projectSlug/view/settings/composition',
     params: PROJECT,
   },
   {
-    id: 'access-tokens',
     label: 'Access Tokens',
     to: '/$organizationSlug/$projectSlug/view/settings/access-tokens',
     params: PROJECT,
@@ -631,26 +589,22 @@ export const MembersSections = createPreview({
         path="/the-guild/view/members/roles"
         items={[
           {
-            id: 'list',
             label: 'Members',
             to: '/$organizationSlug/view/members',
             params: ORGANIZATION,
             exact: true,
           },
           {
-            id: 'roles',
             label: 'Roles',
             to: '/$organizationSlug/view/members/roles',
             params: ORGANIZATION,
           },
           {
-            id: 'groups',
             label: 'Groups',
             to: '/$organizationSlug/view/members/groups',
             params: ORGANIZATION,
           },
           {
-            id: 'invitations',
             label: 'Invitations',
             to: '/$organizationSlug/view/members/invitations',
             params: ORGANIZATION,

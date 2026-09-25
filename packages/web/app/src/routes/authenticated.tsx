@@ -1,14 +1,10 @@
-import { z } from 'zod';
+import Session from 'supertokens-auth-react/recipe/session';
 import { authenticated } from '@/components/authenticated-container';
-import { OrganizationLayout } from '@/components/layouts/organization';
-import { redirectToPathSchema } from '@/lib/route-utils';
-import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
 import { DevPage } from '@/pages/dev';
 import { IndexPage } from '@/pages/index';
 import { ManagePage } from '@/pages/manage';
 import { NativeCompositionDiff } from '@/pages/native-composition-diff';
 import { NewOrgPage } from '@/pages/organization-new';
-import { OrganizationOIDCRequestPage } from '@/pages/organization-oidc-request';
 import { OrganizationTransferPage } from '@/pages/organization-transfer';
 import { createRoute, Outlet, redirect } from '@tanstack/react-router';
 import { root } from './root';
@@ -16,6 +12,14 @@ import { root } from './root';
 export const authenticatedRoute = createRoute({
   getParentRoute: () => root,
   id: 'authenticated',
+  // Loaders run before render, so an anonymous visitor is turned away here, not by `SessionAuth`.
+  beforeLoad: async ({ location }) => {
+    if (!(await Session.doesSessionExist())) {
+      throw redirect({ to: '/auth', search: { redirectToPath: location.href } });
+    }
+  },
+  // Never a pending boundary: the async check would otherwise hide the header behind a skeleton.
+  pendingMs: Infinity,
   component: authenticated(function AuthenticatedRoute() {
     return <Outlet />;
   }),
@@ -60,34 +64,5 @@ export const transferOrganizationRoute = createRoute({
   component: function TransferOrganizationRoute() {
     const { organizationSlug, code } = transferOrganizationRoute.useParams();
     return <OrganizationTransferPage organizationSlug={organizationSlug} code={code} />;
-  },
-});
-
-const OrganizationOIDCRequestRouteSearch = z.object({
-  id: z.string({ required_error: 'OIDC ID is required' }),
-  redirectToPath: redirectToPathSchema,
-});
-export const organizationOIDCRequestRoute = createRoute({
-  // An auth interstitial, not an organization page: it sits outside the organization route and
-  // renders the minimal chrome itself.
-  getParentRoute: () => authenticatedRoute,
-  path: '$organizationSlug/oidc-request',
-  validateSearch(search) {
-    return OrganizationOIDCRequestRouteSearch.parse(search);
-  },
-  // Without an OIDC provider there is nothing to ask; carry on to where the viewer was headed.
-  beforeLoad: ({ search }) => {
-    if (!isProviderEnabled('oidc')) {
-      throw redirect({ to: search.redirectToPath });
-    }
-  },
-  component: function OrganizationOIDCRequestRoute() {
-    const { organizationSlug } = organizationOIDCRequestRoute.useParams();
-    const { id, redirectToPath } = organizationOIDCRequestRoute.useSearch();
-    return (
-      <OrganizationLayout organizationSlug={organizationSlug} minimal>
-        <OrganizationOIDCRequestPage oidcId={id} redirectToPath={redirectToPath} />
-      </OrganizationLayout>
-    );
   },
 });

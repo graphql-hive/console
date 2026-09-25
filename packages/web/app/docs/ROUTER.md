@@ -6,19 +6,20 @@ router is [TanStack Router](https://tanstack.com/router) in code-based mode: rou
 
 ## Two patterns and one rule
 
-**1. A route owns its layout and renders `<Outlet/>` inside it.** The organization, project and
-target routes render their header and secondary nav around the outlet; their pages render inside it
-and know nothing about the chrome. The same shape repeats one level down: a settings route renders
-the sections nav around an outlet, and each section is a child route. Chrome mounts once and stays
+**1. A route owns its layout and renders `<Outlet/>` inside it.** The pathless `with-header` route
+renders the header (selector, user menu) once above the organization, project and target routes;
+each of those renders its secondary nav around the outlet; their pages render inside it and know
+nothing about the chrome. The same shape repeats one level down: a settings route renders the
+sections nav around an outlet, and each section is a child route. Chrome mounts once and stays
 mounted while you move between siblings; a page is just its content, wrapped in `<LayoutContent>`.
 
 **2. A nav is a list of `Link`s; the router decides which one is current.** `Navigation`
 (`src/components/base/navigation/navigation.tsx`) takes items
-`{ id, label, to, params, search?, exact?, visible?, attrs? }` and marks the current one from the
-URL through the router's own active-link rules. There is no `page` prop, no `value`, no route
-metadata and no pathname parsing. The item whose `to` is the parent path itself (Schema at the
-target root, General at `/settings`) carries `exact: true`, because a plain link is current on a
-path prefix.
+`{ label, to, params, search?, exact?, visible?, attrs? }` (the label is also the key, so unique
+within one nav) and marks the current one from the URL through the router's own active-link rules.
+There is no `page` prop, no `value`, no route metadata and no pathname parsing. The item whose `to`
+is the parent path itself (Schema at the target root, General at `/settings`) carries `exact: true`,
+because a plain link is current on a path prefix.
 
 **The rule that makes 2 work: the default section has no marker in the URL.** `/settings` is
 General, `/view/members` is the list, `/alerts` is Activity. Every other section is a path under its
@@ -31,18 +32,22 @@ rendering and commits with `replace`, so the old URL never enters history. Every
 exists because a URL moved is an entry in `src/routes/legacy.ts` (see below). Redirects that depend
 on config live on their route (`/auth` → sign-in, `/history` → latest version, `/oidc-request` when
 the provider is off); the one that depends on query data, a viewer landing on a section they may not
-open, uses the `useRedirect` hook inside the layout until data loading moves into the router.
+open, uses the `useRedirect` hook in the page, reading the layout's document through
+`useLayoutQuery`, until data loading moves into the router.
 
 ## Where things live
 
 ```
-src/main.tsx                 mounts the router; the only importer of src/router.ts
-src/router.ts                createAppRouter(): the tree plus search serialization and default boundaries
+src/main.tsx                 creates the router with the real urql client and mounts it
+src/router.ts                createAppRouter({ urqlClient, history? }): the tree, the client in router context,
+                             search serialization and the default boundaries
 src/routes/
   tree.ts                    root.addChildren([...]) mirroring every route's getParentRoute
   root.tsx                   root route, 404, logout, join
   anonymous.tsx              /auth/* (pathless `anonymous` parent)
-  authenticated.tsx          /, /dev, /manage, /org/new, transfer, oidc-request (pathless `authenticated` parent)
+  authenticated.tsx          /, /dev, /manage, /org/new, transfer (pathless `authenticated` parent: the session gate)
+  with-header.tsx            the header, once, above the routes below (pathless `with-header` parent)
+  oidc-request.tsx           $organizationSlug/oidc-request, the OIDC interstitial
   organization/route.tsx     $organizationSlug layout + index, support, subscription
   organization/settings.ts   view/settings and its sections
   organization/members.ts    view/members and its sections
@@ -54,7 +59,10 @@ src/routes/
   legacy.ts                  the redirect catalog
   *.spec.ts(x)               the route-level tests (see Testing)
 src/pages/*.tsx              page components: content out, wrapped in <LayoutContent>, slugs from useSlugs
-src/components/layouts/      the three layouts (org/project/target) and LayoutContent
+src/components/layouts/      the three layouts (org/project/target), LayoutContent, ScopeSelector,
+                             and queries.ts: the viewer and layout documents
+src/lib/hooks/               useSlugs, useViewer, useLayoutQuery
+src/lib/route-utils.ts       loadQuery for route loaders, redirectToPathSchema
 src/lib/testing/             renderAtUrl, the fixture-checking test urql client, fixtures, jsdom mocks
 ```
 
@@ -79,11 +87,10 @@ Three kinds of slug stay props, and each has a reason:
 
 - **The slug names something other than the current page.** The target a role is scoped to, the
   project a table row links to: that is data. `members/resource-selector.tsx` is the example.
-- **The component renders outside that route.** `OrganizationLayout` and the user menu also render
-  in the OIDC interstitial (`$organizationSlug/oidc-request`), which is a sibling route, and
-  `QueryError` renders on `/manage` and `/join/$inviteCode` too. Asking for a scope you do not sit
-  under errors into the route's error boundary rather than returning a blank slug, so the page shows
-  the error screen (`use-slugs.spec.tsx` pins this).
+- **The component renders outside that route.** `QueryError` renders on `/manage` and
+  `/join/$inviteCode` too. Asking for a scope you do not sit under errors into the route's error
+  boundary rather than returning a blank slug, so the page shows the error screen
+  (`use-slugs.spec.tsx` pins this).
 - **It is not a component.** `laboratory/plugins/target-env.tsx` is a factory the page calls, so the
   page reads the slugs and hands them over.
 
@@ -105,14 +112,38 @@ For the rest of the route state:
   `useSearch({ from })` with a bare string or an un-anchored `useNavigate()`; those type against the
   root and lose the route's search schema.
 - Route ids are the path from the root with pathless parents as segments and a trailing `/` for
-  index routes: `/authenticated/$organizationSlug/view/members/` is the members list,
-  `/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/with-nav/` is Activity.
-  `tree.spec.ts` snapshots every id.
+  index routes: `/authenticated/with-header/$organizationSlug/view/members/` is the members list,
+  `/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/alerts/with-nav/` is
+  Activity. `tree.spec.ts` snapshots every id.
 - `to` paths are typed against the registered router: a typo in a `Link`, `navigate` or `redirect`
   is a compile error. Prefer that over building paths from strings.
 - A link that leaves the app takes `href` and no `to`. `components/ui/link.tsx` renders those as a
   plain anchor, because the router's `Link` re-resolves a bare `href` as an internal location and
   drops the origin.
+
+## Data in the chrome
+
+- The urql client rides in router context: `createAppRouter({ urqlClient })` puts it there, the root
+  component provides it to React, and a loader reads it as `context.urqlClient`. Only `src/main.tsx`
+  imports the real client from `@/lib/urql`; `router.spec.ts` fails if a route module does.
+- `authenticated.tsx` checks the session in `beforeLoad`, so a loader never runs for an anonymous
+  visitor; `SessionAuth` still covers a session that expires mid-visit.
+- `ViewerQuery` (`src/components/layouts/queries.ts`) is the signed-in viewer: `me`, the
+  organizations tree the selectors read, `isCDNEnabled`. The `with-header` route's loader loads it
+  once and revalidates it at most once a minute (`VIEWER_MAX_AGE_MS`); `useViewer()` reads it
+  anywhere under the header as a cache hit. It stays fresh through graphcache: renames flow through
+  normalization (the rename mutations return `id slug`); creates, deletes, joins and member removals
+  go through updaters in `src/lib/urql-cache.ts`. Changes made by other people appear within a
+  minute plus a navigation.
+- Each layout runs its entity document (`OrganizationLayoutQuery`, `ProjectLayoutQuery`,
+  `TargetLayoutQuery`: slugs, `viewerCan*`, `latestSchemaVersion.id`, `usageRetentionInDays`). A
+  page under it reads the same document through `useLayoutQuery(scope)` as a cache hit instead of
+  selecting those fields again. `UserMenu` reads the current organization's bits through its own
+  small document, except on the OIDC interstitial, where the organization answers `NEEDS_OIDC`.
+- `loadQuery(loader, document, variables, policy)` (`src/lib/route-utils.ts`) runs a document from a
+  route loader on the client in router context and tags the operation with the loader's `preload`
+  flag, which the progress bar leaves out. Page loaders are the next PR's work, documented in
+  `docs/DATA.md` then.
 
 ## Search params
 
@@ -193,9 +224,9 @@ Run from the repo root: `pnpm vitest run packages/web/app/src/routes`.
 | `router.spec.ts`           | `createAppRouter` has no side effects and owns the default error/not-found boundaries.                                                                       |
 | `lib/testing/urql.spec.ts` | The test client answers by operation name and fails a fixture that no longer covers its document.                                                            |
 
-`renderAtUrl(url)` (`src/lib/testing/router.tsx`) renders the app in a memory history. Specs that
-use it mock `@/env/frontend`, `@graphql-hive/laboratory`, the laboratory storage, SuperTokens and
-`@/lib/urql` (pointed at `createTestClient`); the `vi.mock` calls have to sit in the spec file.
-Fixtures for the layout queries and each settings screen live in `src/lib/testing/fixtures/` and are
-checked against the documents they answer, so a query change that they no longer cover fails with
-the missing paths named.
+`renderAtUrl(url, { client })` (`src/lib/testing/router.tsx`) renders the app in a memory history
+with `client` (a `createTestClient`) in router context. Specs that use it mock `@/env/frontend`,
+`@graphql-hive/laboratory`, the laboratory storage and SuperTokens; the `vi.mock` calls have to sit
+in the spec file. Fixtures for the viewer, layout and user-menu queries and each settings screen
+live in `src/lib/testing/fixtures/` and are checked against the documents they answer, so a query
+change that they no longer cover fails with the missing paths named.
