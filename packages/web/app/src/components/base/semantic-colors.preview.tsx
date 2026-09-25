@@ -88,6 +88,12 @@ const SURFACES = [
   { token: 'surface-control-raised', cls: 'bg-surface-control-raised', light: 2, dark: 4 },
   { token: 'surface-selected', cls: 'bg-surface-selected', light: 5, dark: 5 },
   { token: 'surface-inverse', cls: 'bg-surface-inverse', light: 12, dark: 12 },
+  { token: 'surface-hover', cls: 'bg-surface-hover', light: 4, dark: 4 },
+  { token: 'surface-pressed', cls: 'bg-surface-pressed', light: 3, dark: 5 },
+  { token: 'surface-inset', cls: 'bg-surface-inset', light: 1, dark: 2 },
+  { token: 'surface-code', cls: 'bg-surface-code', light: 3, dark: 3 },
+  { token: 'surface-skeleton', cls: 'bg-surface-skeleton', light: 3, dark: 3 },
+  { token: 'surface-stripe', cls: 'bg-surface-stripe', light: 2, dark: 3 },
 ];
 
 const FOREGROUNDS = [
