@@ -883,6 +883,14 @@ export default gql`
 
   type GitHubSchemaCheckSuccess {
     message: String!
+    """
+    Whether the schema check passed. The same result is reported on the GitHub check-run.
+    """
+    valid: Boolean!
+    """
+    The schema check that was stored for this check.
+    """
+    schemaCheck: SchemaCheck
   }
 
   type GitHubSchemaCheckError {

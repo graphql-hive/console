@@ -36,6 +36,20 @@ async function exec(cmd: string, env?: Record<string, string>) {
   return outout.stdout;
 }
 
+/**
+ * Returns the error output of a CLI command that is expected to fail.
+ * The CLI wraps error messages at the terminal width, so the wrapped lines are joined.
+ */
+export async function cliErrorMessage(command: Promise<unknown>): Promise<string> {
+  const message = await command.then(
+    () => {
+      throw new Error('Expected the CLI command to fail.');
+    },
+    (error: Error) => error.message,
+  );
+  return message.replace(/\s*\n\s*›\s+/g, ' ');
+}
+
 export async function schemaPublish(args: string[]) {
   const registryAddress = await getServiceHost('server', 8082);
   return await exec(

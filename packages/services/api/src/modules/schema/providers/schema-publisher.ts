@@ -1,4 +1,8 @@
 import { createHash } from 'node:crypto';
+import type {
+  FailedSchemaCheckMapper,
+  SuccessfulSchemaCheckMapper,
+} from '../module.graphql.mappers';
 import stringify from 'fast-json-stable-stringify';
 import { GraphQLError, parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
@@ -991,6 +995,14 @@ export class SchemaPublisher {
       this.logger.info('created skipped schema check. (schemaCheckId=%s)', schemaCheck.id);
     }
 
+    const schemaCheckSelector = {
+      organizationId: target.orgId,
+      projectId: target.projectId,
+    };
+    const graphQLSchemaCheck = schemaCheck
+      ? toGraphQLSchemaCheck(schemaCheckSelector, schemaCheck)
+      : null;
+
     if (githubCheckRun) {
       if (checkResult.conclusion === SchemaCheckConclusion.Success) {
         const failedContractCompositionCount =
@@ -1015,6 +1027,7 @@ export class SchemaPublisher {
           compositionErrors: null,
           errors: null,
           schemaCheckId: schemaCheck?.id ?? null,
+          schemaCheck: graphQLSchemaCheck,
           githubCheckRun: githubCheckRun,
           failedContractCompositionCount,
         });
@@ -1038,6 +1051,7 @@ export class SchemaPublisher {
           warnings: checkResult.reason.schemaPolicy?.warnings ?? [],
           errors,
           schemaCheckId: schemaCheck?.id ?? null,
+          schemaCheck: graphQLSchemaCheck,
           githubCheckRun: githubCheckRun,
           failedContractCompositionCount,
         });
@@ -1069,6 +1083,7 @@ export class SchemaPublisher {
           compositionErrors: null,
           errors: null,
           schemaCheckId: schemaCheck?.id ?? null,
+          schemaCheck: graphQLSchemaCheck,
           githubCheckRun: githubCheckRun,
           failedContractCompositionCount,
         });
@@ -1087,6 +1102,7 @@ export class SchemaPublisher {
         warnings: null,
         errors: null,
         schemaCheckId: schemaCheck?.id ?? null,
+        schemaCheck: graphQLSchemaCheck,
         githubCheckRun: githubCheckRun,
         failedContractCompositionCount: 0,
       });
@@ -1095,11 +1111,6 @@ export class SchemaPublisher {
     if (schemaCheck == null) {
       throw new Error('Invalid state. Schema check can not be null at this point.');
     }
-
-    const schemaCheckSelector = {
-      organizationId: target.orgId,
-      projectId: target.projectId,
-    };
 
     if (checkResult.conclusion === SchemaCheckConclusion.Success) {
       increaseSchemaCheckCountMetric('accepted');
@@ -3423,6 +3434,7 @@ export class SchemaPublisher {
     errors,
     warnings,
     schemaCheckId,
+    schemaCheck,
     ...args
   }: {
     organization: Organization;
@@ -3450,6 +3462,7 @@ export class SchemaPublisher {
       message: string;
     }> | null;
     schemaCheckId: string | null;
+    schemaCheck: SuccessfulSchemaCheckMapper | FailedSchemaCheckMapper | null;
     failedContractCompositionCount: number;
   }) {
     try {
@@ -3517,13 +3530,15 @@ export class SchemaPublisher {
       return {
         __typename: 'GitHubSchemaCheckSuccess' as const,
         message: 'Check-run created',
+        valid: conclusion === SchemaCheckConclusion.Success,
+        schemaCheck,
         checkRun,
       };
     } catch (error: any) {
       Sentry.captureException(error);
       return {
         __typename: 'GitHubSchemaCheckError' as const,
-        message: `Failed to create the check-run`,
+        message: 'The schema check ran, but the GitHub check-run could not be updated.',
       };
     }
   }

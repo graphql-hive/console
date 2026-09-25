@@ -1,0 +1,440 @@
+{
+  "exitCodes": [
+    {
+      "code": 0,
+      "name": "SUCCESS",
+      "description": "The command succeeded."
+    },
+    {
+      "code": 1,
+      "name": "ERROR",
+      "description": "The command ran, but the operation failed."
+    },
+    {
+      "code": 2,
+      "name": "TIMED_OUT",
+      "description": "A request timed out. The operation may still have completed on the server."
+    },
+    {
+      "code": 3,
+      "name": "BAD_INIT",
+      "description": "The command could not start because of invalid input or setup, such as arguments, flags, files or configuration."
+    }
+  ],
+  "errors": [
+    {
+      "code": 100,
+      "name": "InvalidConfigError",
+      "title": "Invalid configuration file",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Fix the reported problem in `hive.json` (or the file set with `HIVE_CONFIG`). Supported keys are `registry.endpoint`, `registry.accessToken`, `registry.headers`, `cdn.endpoint` and `cdn.accessToken`. When `HIVE_SPACE` is set, the file must contain a top-level key with that name.",
+      "anchor": "errors-100"
+    },
+    {
+      "code": 101,
+      "name": "InvalidCommandError",
+      "title": "Unknown command",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Run `hive help` to list the available commands and check the spelling.",
+      "anchor": "errors-101"
+    },
+    {
+      "code": 102,
+      "name": "MissingArgumentsError",
+      "title": "Missing required argument",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Provide the listed arguments or flags. Organization access tokens always require the `--target` flag.",
+      "anchor": "errors-102"
+    },
+    {
+      "code": 103,
+      "name": "MissingRegistryTokenError",
+      "title": "Missing registry access token",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Pass `--registry.accessToken`, set `HIVE_TOKEN`, or set `registry.accessToken` in `hive.json`.",
+      "anchor": "errors-103"
+    },
+    {
+      "code": 104,
+      "name": "MissingCdnKeyError",
+      "title": "Missing CDN access token",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Pass `--cdn.accessToken`, set `HIVE_CDN_ACCESS_TOKEN`, or set `cdn.accessToken` in `hive.json`.",
+      "anchor": "errors-104"
+    },
+    {
+      "code": 105,
+      "name": "MissingEndpointError",
+      "title": "Missing registry endpoint",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Pass `--registry.endpoint`, set `HIVE_REGISTRY`, or set `registry.endpoint` in `hive.json`. Make sure `HIVE_REGISTRY` is not set to an empty string.",
+      "anchor": "errors-105"
+    },
+    {
+      "code": 106,
+      "name": "InvalidRegistryTokenError",
+      "title": "Invalid registry access token",
+      "category": "Generic",
+      "exitCode": 1,
+      "fix": "Create a new access token, and check that the access token and the registry endpoint belong to the same Hive instance.",
+      "anchor": "errors-106"
+    },
+    {
+      "code": 107,
+      "name": "InvalidCdnKeyError",
+      "title": "Invalid CDN access token",
+      "category": "Generic",
+      "exitCode": 1,
+      "fix": "Create a new CDN access token for the target, and check that it belongs to the same target as the CDN endpoint.",
+      "anchor": "errors-107"
+    },
+    {
+      "code": 108,
+      "name": "MissingCdnEndpointError",
+      "title": "Missing CDN endpoint",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Pass `--cdn.endpoint`, set `HIVE_CDN_ENDPOINT`, or set `cdn.endpoint` in `hive.json`.",
+      "anchor": "errors-108"
+    },
+    {
+      "code": 109,
+      "name": "MissingEnvironmentError",
+      "title": "Missing environment variable",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Set the listed environment variables. With `--github`, run the command in GitHub Actions or set `GITHUB_REPOSITORY`.",
+      "anchor": "errors-109"
+    },
+    {
+      "code": 110,
+      "name": "CommitRequiredError",
+      "title": "Missing commit",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Pass `--commit` (or set `HIVE_COMMIT` for `schema:publish`), or run the command inside a git repository.",
+      "anchor": "errors-110"
+    },
+    {
+      "code": 111,
+      "name": "GithubRepositoryRequiredError",
+      "title": "Missing GitHub repository",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Run the command in GitHub Actions, where `GITHUB_REPOSITORY` is set, or in a CI environment that exposes the repository.",
+      "anchor": "errors-111"
+    },
+    {
+      "code": 112,
+      "name": "AuthorRequiredError",
+      "title": "Missing author",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Pass `--author` (or set `HIVE_AUTHOR` for `schema:publish`), or run the command inside a git repository with a configured user.",
+      "anchor": "errors-112"
+    },
+    {
+      "code": 113,
+      "name": "HTTPError",
+      "title": "HTTP error response",
+      "category": "Generic",
+      "exitCode": 1,
+      "fix": "A 4xx status usually means a wrong endpoint or a rejected request: check the endpoint URL and credentials. A 5xx status means the server failed: retry later.",
+      "anchor": "errors-113"
+    },
+    {
+      "code": 114,
+      "name": "NetworkError",
+      "title": "Network error",
+      "category": "Generic",
+      "exitCode": 1,
+      "fix": "The request did not complete. Check the network connection, DNS, proxy and TLS settings, and the endpoint URL, then retry.",
+      "anchor": "errors-114"
+    },
+    {
+      "code": 115,
+      "name": "APIError",
+      "title": "API error",
+      "category": "Generic",
+      "exitCode": 1,
+      "fix": "Read the message returned by the Hive API. Include the request ID when contacting support.",
+      "anchor": "errors-115"
+    },
+    {
+      "code": 116,
+      "name": "IntrospectionError",
+      "title": "Introspection failed",
+      "category": "Generic",
+      "exitCode": 1,
+      "fix": "Make sure the service is running, reachable and allows introspection, or pass the schema file instead of the URL.",
+      "anchor": "errors-116"
+    },
+    {
+      "code": 117,
+      "name": "UnsupportedFileExtensionError",
+      "title": "Unsupported file extension",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Use one of the supported file extensions listed in the message.",
+      "anchor": "errors-117"
+    },
+    {
+      "code": 118,
+      "name": "FileMissingError",
+      "title": "File not found",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Check that the path or glob matches at least one readable file.",
+      "anchor": "errors-118"
+    },
+    {
+      "code": 119,
+      "name": "InvalidFileContentsError",
+      "title": "Invalid file contents",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Make sure the file is readable and contains valid content in the expected format.",
+      "anchor": "errors-119"
+    },
+    {
+      "code": 120,
+      "name": "InvalidTargetError",
+      "title": "Invalid target",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Pass the target as a slug in the form `organization/project/target`, or as a target UUID.",
+      "anchor": "errors-120"
+    },
+    {
+      "code": 121,
+      "name": "InvalidFederationSubgraphError",
+      "title": "Not a Federation subgraph",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Point the URL at a Federation subgraph that exposes `Query._service.sdl`, or pass the schema file instead.",
+      "anchor": "errors-121"
+    },
+    {
+      "code": 122,
+      "name": "InvalidVersionIdError",
+      "title": "Invalid schema version ID",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Pass the ID of a schema version from the same project as the target.",
+      "anchor": "errors-122"
+    },
+    {
+      "code": 123,
+      "name": "ConflictingOptionsError",
+      "title": "Conflicting options",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Provide only one of the listed options.",
+      "anchor": "errors-123"
+    },
+    {
+      "code": 124,
+      "name": "AccessDeniedError",
+      "title": "Access denied",
+      "category": "Generic",
+      "exitCode": 1,
+      "fix": "Grant the named permission to the access token, check that `--target` points at an existing target the token can access, or use an organization access token.",
+      "anchor": "errors-124"
+    },
+    {
+      "code": 125,
+      "name": "UnsupportedServerError",
+      "title": "Unsupported Hive server version",
+      "category": "Generic",
+      "exitCode": 1,
+      "fix": "Upgrade the Hive server to a version that supports this CLI version, or use an older CLI version that matches the server. Nothing was executed on the server.",
+      "anchor": "errors-125"
+    },
+    {
+      "code": 126,
+      "name": "RequestTimeoutError",
+      "title": "Request timed out",
+      "category": "Generic",
+      "exitCode": 2,
+      "fix": "The operation may have completed on the server. Check its result, for example in Hive Console or with `hive schema:fetch`, before retrying.",
+      "anchor": "errors-126"
+    },
+    {
+      "code": 127,
+      "name": "InvalidInputError",
+      "title": "Invalid command input",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Check the arguments and flags with `hive help <command>`.",
+      "anchor": "errors-127"
+    },
+    {
+      "code": 128,
+      "name": "InvalidHeaderError",
+      "title": "Invalid header",
+      "category": "Generic",
+      "exitCode": 3,
+      "fix": "Use the `Name=Value` format for `--registry.header` and the `Name:Value` format for `--header`.",
+      "anchor": "errors-128"
+    },
+    {
+      "code": 199,
+      "name": "UnexpectedError",
+      "title": "Unexpected error",
+      "category": "Generic",
+      "exitCode": 1,
+      "fix": "Re-run the command with `DEBUG=*` for more details, and report the output if the problem persists.",
+      "anchor": "errors-199"
+    },
+    {
+      "code": 200,
+      "name": "SchemaFileNotFoundError",
+      "title": "Schema not found",
+      "category": "Schema check",
+      "exitCode": 3,
+      "fix": "Check the file path, glob or URL. For a URL, make sure the service is reachable.",
+      "anchor": "errors-200"
+    },
+    {
+      "code": 201,
+      "name": "SchemaFileEmptyError",
+      "title": "No type definitions found",
+      "category": "Schema check",
+      "exitCode": 3,
+      "fix": "Make sure the schema contains GraphQL type definitions. In code files, the definitions must be in a template literal tagged with `gql` or `graphql`, or marked with a `/* GraphQL */` comment.",
+      "anchor": "errors-201"
+    },
+    {
+      "code": 202,
+      "name": "SchemaCheckFailedError",
+      "title": "Schema check failed",
+      "category": "Schema check",
+      "exitCode": 1,
+      "fix": "Review the errors and breaking changes in the output or the linked report. Fix them, approve expected breaking changes in Hive Console, or use `--forceSafe`.",
+      "anchor": "errors-202"
+    },
+    {
+      "code": 203,
+      "name": "SchemaCheckApprovalFailedError",
+      "title": "Schema check approval failed",
+      "category": "Schema check",
+      "exitCode": 1,
+      "fix": "Make sure the access token has the `schemaCheck:approve` permission and that the failed schema check was stored by the registry.",
+      "anchor": "errors-203"
+    },
+    {
+      "code": 300,
+      "name": "SchemaPublishFailedError",
+      "title": "Schema publish failed",
+      "category": "Schema publish",
+      "exitCode": 1,
+      "fix": "The schema was rejected and nothing was stored. Fix the reported errors and publish again.",
+      "anchor": "errors-300"
+    },
+    {
+      "code": 301,
+      "name": "InvalidSDLError",
+      "title": "Invalid SDL",
+      "category": "Schema publish",
+      "exitCode": 3,
+      "fix": "Fix the GraphQL syntax error at the reported location.",
+      "anchor": "errors-301"
+    },
+    {
+      "code": 302,
+      "name": "SchemaPublishMissingServiceError",
+      "title": "Missing service name",
+      "category": "Schema publish",
+      "exitCode": 3,
+      "fix": "Pass `--service <name>`. Federation and schema stitching projects require a service name.",
+      "anchor": "errors-302"
+    },
+    {
+      "code": 303,
+      "name": "SchemaPublishMissingUrlError",
+      "title": "Missing service URL",
+      "category": "Schema publish",
+      "exitCode": 3,
+      "fix": "Pass `--url <url>`. A service needs a URL the first time it is published, and the URL must be valid.",
+      "anchor": "errors-303"
+    },
+    {
+      "code": 400,
+      "name": "PersistedOperationsMalformedError",
+      "title": "Malformed persisted documents",
+      "category": "App create",
+      "exitCode": 3,
+      "fix": "Use a GraphQL Code Generator, Relay or Apollo persisted query manifest, a directory of `.graphql` files, or a glob that matches `.graphql` files containing operations.",
+      "anchor": "errors-400"
+    },
+    {
+      "code": 500,
+      "name": "SchemaNotFoundError",
+      "title": "Schema not found in the registry",
+      "category": "Artifact fetch",
+      "exitCode": 1,
+      "fix": "Publish a schema to the target first, or check the target, the commit and the `--type` value.",
+      "anchor": "errors-500"
+    },
+    {
+      "code": 501,
+      "name": "InvalidSchemaError",
+      "title": "Schema version is not valid",
+      "category": "Artifact fetch",
+      "exitCode": 1,
+      "fix": "The requested schema version is not valid. Use a different commit, or fix and publish the schema again.",
+      "anchor": "errors-501"
+    },
+    {
+      "code": 600,
+      "name": "ServiceAndUrlLengthMismatch",
+      "title": "Service and URL count mismatch",
+      "category": "Dev",
+      "exitCode": 3,
+      "fix": "Pass exactly one `--url` for every `--service`.",
+      "anchor": "errors-600"
+    },
+    {
+      "code": 601,
+      "name": "LocalCompositionError",
+      "title": "Local composition failed",
+      "category": "Dev",
+      "exitCode": 1,
+      "fix": "Fix the composition errors in the listed subgraphs.",
+      "anchor": "errors-601"
+    },
+    {
+      "code": 602,
+      "name": "RemoteCompositionError",
+      "title": "Remote composition failed",
+      "category": "Dev",
+      "exitCode": 1,
+      "fix": "Fix the composition errors in the listed subgraphs.",
+      "anchor": "errors-602"
+    },
+    {
+      "code": 603,
+      "name": "InvalidCompositionResultError",
+      "title": "Invalid composition result",
+      "category": "Dev",
+      "exitCode": 1,
+      "fix": "The composed supergraph is invalid. Report the output as a bug.",
+      "anchor": "errors-603"
+    },
+    {
+      "code": 700,
+      "name": "InvalidDocumentsError",
+      "title": "Invalid operations",
+      "category": "Operations check",
+      "exitCode": 1,
+      "fix": "Fix the listed operations so that they are valid against the schema.",
+      "anchor": "errors-700"
+    }
+  ]
+}

@@ -147,7 +147,8 @@ describe('Schema policy checks', () => {
       const message = stripAnsi(rawMessage);
 
       expect(message).toContain(`Detected 1 error`);
-      expect(message.split('\n').slice(1)).toEqual([
+      expect(message).toContain('Schema check failed.  [202]');
+      expect(message.slice(message.indexOf('✖')).split('\n')).toEqual([
         '✖ Detected 1 error',
         '',
         '   - Description is required for type User (source: policy-require-description)',
@@ -246,7 +247,8 @@ describe('Schema policy checks', () => {
       const message = stripAnsi(rawMessage);
 
       expect(message).toContain(`Detected 2 errors`);
-      expect(message.split('\n').slice(1)).toEqual([
+      expect(message).toContain('Schema check failed.  [202]');
+      expect(message.slice(message.indexOf('✖')).split('\n')).toEqual([
         '✖ Detected 2 errors',
         '',
         '   - Description is required for type Query (source: policy-require-description)',
@@ -312,7 +314,8 @@ describe('Schema policy checks', () => {
 
       expect(message).toContain(`Detected 2 errors`);
       expect(message).toContain(`Detected 1 warning`);
-      expect(message.split('\n').slice(1)).toEqual([
+      expect(message).toContain('Schema check failed.  [202]');
+      expect(message.slice(message.indexOf('✖')).split('\n')).toEqual([
         '✖ Detected 2 errors',
         '',
         '   - Description is required for type Query (source: policy-require-description)',

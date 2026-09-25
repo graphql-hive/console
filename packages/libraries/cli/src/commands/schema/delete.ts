@@ -6,6 +6,7 @@ import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
   InvalidTargetError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
   UnexpectedError,
@@ -123,8 +124,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
           description: SchemaDelete.flags['registry.endpoint'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingEndpointError();
+        throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
       }
       try {
         accessToken = this.ensure({
@@ -135,8 +135,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
           description: SchemaDelete.flags['registry.accessToken'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingRegistryTokenError();
+        throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
       }
 
       let target: GraphQLSchema.TargetReferenceInput | null = null;

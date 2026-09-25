@@ -8,6 +8,7 @@ import { graphqlEndpoint } from '../../helpers/config';
 import {
   InvalidDocumentsError,
   InvalidTargetError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
   SchemaNotFoundError,
@@ -111,8 +112,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
           description: OperationsCheck.flags['registry.endpoint'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingEndpointError();
+        throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
       }
 
       try {
@@ -124,8 +124,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
           description: OperationsCheck.flags['registry.accessToken'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingRegistryTokenError();
+        throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
       }
 
       let target: GraphQLSchema.TargetReferenceInput | null = null;

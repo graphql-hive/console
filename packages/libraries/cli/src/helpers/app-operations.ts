@@ -5,8 +5,11 @@ import { print } from 'graphql';
 import { z } from 'zod';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import { loadDocuments } from '@graphql-tools/load';
-import { Errors } from '@oclif/core';
-import { PersistedOperationsMalformedError } from './errors';
+import {
+  FileMissingError,
+  InvalidFileContentsError,
+  PersistedOperationsMalformedError,
+} from './errors';
 
 const ManifestModel = z.record(z.string());
 
@@ -36,7 +39,12 @@ export async function loadAppOperations(file: string): Promise<{
   })();
 
   if (isFile) {
-    const input: unknown = JSON.parse(await fs.readFile(file, 'utf8'));
+    let input: unknown;
+    try {
+      input = JSON.parse(await fs.readFile(file, 'utf8'));
+    } catch {
+      throw new InvalidFileContentsError(file, 'JSON persisted operations manifest');
+    }
     const manifestValidationResult = ManifestModel.safeParse(input);
     let entries: Array<[string, string]>;
 
@@ -82,13 +90,20 @@ export async function loadAppOperations(file: string): Promise<{
       loaders: [new GraphQLFileLoader()],
     });
   } catch (error) {
-    throw new Errors.CLIError(
-      `Failed to load GraphQL files from "${relative(process.cwd(), file)}": ${String(error)}`,
+    if (error instanceof Error && error.name === 'NoTypeDefinitionsFound') {
+      throw new FileMissingError(
+        relative(process.cwd(), file),
+        file.endsWith('.json') ? 'The file does not exist.' : 'No .graphql files found.',
+      );
+    }
+    throw new FileMissingError(
+      relative(process.cwd(), file),
+      `Failed to load GraphQL files: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 
   if (sources.length === 0) {
-    throw new Errors.CLIError(`No .graphql files found in "${relative(process.cwd(), file)}".`);
+    throw new FileMissingError(relative(process.cwd(), file), 'No .graphql files found.');
   }
 
   sources.sort((a, b) => (a.location ?? '').localeCompare(b.location ?? ''));
@@ -121,8 +136,9 @@ export async function loadAppOperations(file: string): Promise<{
   }
 
   if (Object.keys(manifest).length === 0) {
-    throw new Errors.CLIError(
-      `No valid GraphQL operations found in "${relative(process.cwd(), file)}".`,
+    throw new PersistedOperationsMalformedError(
+      relative(process.cwd(), file),
+      'No valid GraphQL operations found.',
     );
   }
 

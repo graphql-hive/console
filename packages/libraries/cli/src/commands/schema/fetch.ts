@@ -8,6 +8,7 @@ import { graphqlEndpoint } from '../../helpers/config';
 import {
   InvalidSchemaError,
   InvalidTargetError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
   SchemaNotFoundError,
@@ -149,8 +150,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
         description: SchemaFetch.flags['registry.endpoint'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingEndpointError();
+      throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
     }
     try {
       accessToken = this.ensure({
@@ -161,8 +161,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
         description: SchemaFetch.flags['registry.accessToken'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingRegistryTokenError();
+      throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
     }
 
     const { commit } = args;

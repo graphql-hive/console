@@ -1,5 +1,5 @@
 import { ProjectType } from 'testkit/gql/graphql';
-import { schemaPublish, schemaPush } from '../../testkit/cli';
+import { cliErrorMessage, schemaPublish, schemaPush } from '../../testkit/cli';
 import { initSeed } from '../../testkit/seed';
 
 test('schema:publish requires a file or revision', async ({ expect }) => {
@@ -142,19 +142,22 @@ describe.each([
         'fixtures/init-schema.graphql',
       ]);
 
-      const conflictingPush = schemaPush([
-        '--registry.accessToken',
-        secret,
-        '--target',
-        target.id,
-        '--revision',
-        revision,
-        ...serviceArgs,
-        'fixtures/nonbreaking-schema.graphql',
-      ]);
-      await expect(conflictingPush).rejects.toThrow(`Revision '${identifier}' already exists`);
-      await expect(conflictingPush).rejects.toThrow('with a different');
-      await expect(conflictingPush).rejects.toThrow('schema.');
+      const conflictMessage = await cliErrorMessage(
+        schemaPush([
+          '--registry.accessToken',
+          secret,
+          '--target',
+          target.id,
+          '--revision',
+          revision,
+          ...serviceArgs,
+          'fixtures/nonbreaking-schema.graphql',
+        ]),
+      );
+      expect(conflictMessage).toContain(
+        `Revision rejected by the server: Revision '${identifier}' already exists with a different schema.`,
+      );
+      expect(conflictMessage).toContain('[115]');
     });
   },
 );

@@ -5,6 +5,7 @@ import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
 import {
   InvalidRegistryTokenError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
 } from '../helpers/errors';
@@ -78,8 +79,7 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
         description: WhoAmI.flags['registry.endpoint'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingEndpointError();
+      throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
     }
 
     try {
@@ -91,8 +91,7 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
         description: WhoAmI.flags['registry.accessToken'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingRegistryTokenError();
+      throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
     }
 
     const result = await this.registryApi(registry, token).request({

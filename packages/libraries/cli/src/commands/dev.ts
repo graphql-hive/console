@@ -18,15 +18,15 @@ import {
   InvalidCompositionResultError,
   InvalidTargetError,
   LocalCompositionError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
   RemoteCompositionError,
   ServiceAndUrlLengthMismatch,
   UnexpectedError,
 } from '../helpers/errors';
-import { loadSchema } from '../helpers/schema';
+import { loadSchema, loadSchemaSdl } from '../helpers/schema';
 import * as TargetInput from '../helpers/target-input';
-import { invariant } from '../helpers/validation';
 
 const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
   mutation CLI_SchemaComposeMutation($input: SchemaComposeInput!) {
@@ -209,8 +209,7 @@ export default class Dev extends Command<typeof Dev> {
             description: Dev.flags['registry.endpoint'].description!,
           });
         } catch (e) {
-          this.logDebug(e);
-          throw new MissingEndpointError();
+          throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
         }
         try {
           token = this.ensure({
@@ -221,11 +220,10 @@ export default class Dev extends Command<typeof Dev> {
             description: Dev.flags['registry.accessToken'].description!,
           });
         } catch (e) {
-          this.logDebug(e);
-          throw new MissingRegistryTokenError();
+          throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
         }
 
-        void this.watch(flags.watchInterval, serviceInputs, services =>
+        await this.watch(flags.watchInterval, serviceInputs, services =>
           this.compose({
             services,
             registry,
@@ -243,7 +241,7 @@ export default class Dev extends Command<typeof Dev> {
         return;
       }
 
-      void this.watch(flags.watchInterval, serviceInputs, services =>
+      await this.watch(flags.watchInterval, serviceInputs, services =>
         this.composeLocally({
           services,
           write: flags.write,
@@ -270,8 +268,7 @@ export default class Dev extends Command<typeof Dev> {
           description: Dev.flags['registry.endpoint'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingEndpointError();
+        throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
       }
       try {
         token = this.ensure({
@@ -282,8 +279,7 @@ export default class Dev extends Command<typeof Dev> {
           description: Dev.flags['registry.accessToken'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingRegistryTokenError();
+        throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
       }
 
       return this.compose({
@@ -422,7 +418,7 @@ export default class Dev extends Command<typeof Dev> {
       services = await this.resolveServices(serviceInputs);
       await compose(services);
     } catch (e) {
-      throw new UnexpectedError(e);
+      throw e instanceof HiveCLIError ? e : new UnexpectedError(e);
     }
 
     this.logInfo('Watching for changes');
@@ -447,7 +443,7 @@ export default class Dev extends Command<typeof Dev> {
           services = newServices;
         }
       } catch (error) {
-        this.logFailure(new UnexpectedError(error));
+        this.logFailure(error instanceof HiveCLIError ? error : new UnexpectedError(error));
       }
 
       timeoutId = setTimeout(watch, watchInterval);
@@ -499,12 +495,10 @@ export default class Dev extends Command<typeof Dev> {
   }
 
   private async resolveSdlFromPath(path: string) {
-    const sdl = await loadSchema(null, path, {
+    return await loadSchemaSdl(path, {
+      httpLoadingIntent: null,
       logger: this.logger,
     });
-    invariant(typeof sdl === 'string' && sdl.length > 0, `Read empty schema from ${path}`);
-
-    return sdl;
   }
 
   private async resolveSdlFromUrl(serviceName: string, url: string) {

@@ -3,10 +3,15 @@ import { Flags } from '@oclif/core';
 import Command from '../../base-command';
 import {
   HTTPError,
+  InvalidCdnKeyError,
   isAggregateError,
+  isTimeoutError,
+  MissingArgumentsError,
   MissingCdnEndpointError,
   MissingCdnKeyError,
   NetworkError,
+  RequestTimeoutError,
+  SchemaNotFoundError,
   UnexpectedError,
 } from '../../helpers/errors';
 
@@ -41,8 +46,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         description: ArtifactsFetch.flags['cdn.endpoint'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingCdnEndpointError();
+      throw e instanceof MissingArgumentsError ? new MissingCdnEndpointError() : e;
     }
 
     try {
@@ -53,8 +57,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         description: ArtifactsFetch.flags['cdn.accessToken'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingCdnKeyError();
+      throw e instanceof MissingArgumentsError ? new MissingCdnKeyError() : e;
     }
 
     const artifactType = flags.artifact;
@@ -86,21 +89,24 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
           : undefined,
       });
     } catch (e: any) {
+      if (typeof e?.status === 'number') {
+        if (e.status === 401 || e.status === 403) {
+          throw new InvalidCdnKeyError();
+        }
+        if (e.status === 404) {
+          throw new SchemaNotFoundError();
+        }
+        throw new HTTPError(url.toString(), e.status, e.statusText || e.message);
+      }
+      if (isTimeoutError(e)) {
+        throw new RequestTimeoutError(url.toString(), e?.cause ?? e);
+      }
       const sourceError = e?.cause ?? e;
       if (isAggregateError(sourceError)) {
         throw new NetworkError(sourceError.errors[0]?.message);
       } else {
         throw new NetworkError(sourceError);
       }
-    }
-
-    if (!response.ok) {
-      const responseBody = await response.text();
-      throw new HTTPError(
-        url.toString(),
-        response.status,
-        responseBody ?? response.statusText ?? 'Invalid status code for HTTP call',
-      );
     }
 
     try {
