@@ -1308,7 +1308,7 @@ const CompositionErrors = (props: {
           </p>
         </div>
 
-        <span className="focus:ring-ring text-2xs border-critical-line bg-critical-tint text-critical ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
+        <span className="focus:ring-accent text-2xs border-critical-line bg-critical-tint text-critical ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
           <span className="bg-critical mr-1 h-1.5 w-1.5 rounded-full" />
           {compositionErrors.edges.length} error
           {compositionErrors.edges.length === 1 ? '' : 's'}

@@ -21,7 +21,7 @@ export function Word(props: WordProps) {
         className={cn(
           props.kind === 'description' && 'text-fg-subtle',
           props.kind === 'field' && 'text-fg-default',
-          props.kind === 'keyword' && 'text-gray-400',
+          props.kind === 'keyword' && 'text-fg-secondary',
           props.kind === 'literal' && 'text-fg-default',
           props.kind === 'location' && 'text-warning',
           props.kind === 'type' && 'text-warning',

@@ -520,11 +520,6 @@ function LaboratoryPageContent(props: {
       </div>
       <Helmet>
         <style key="laboratory">{`
-          .graphiql-container,
-          .graphiql-dialog a {
-            --color-neutral-11: 40, 89%, 60% !important;
-          }
-
           .graphiql-container {
             overflow: unset; /* remove default overflow */
           }
