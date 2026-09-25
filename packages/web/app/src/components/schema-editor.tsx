@@ -13,7 +13,7 @@ import 'monaco-editor/esm/vs/basic-languages/graphql/graphql.contribution.js';
 // the policy naming-convention rule editor, which configures JSON schema
 // diagnostics in `beforeMount`.
 import 'monaco-editor/esm/vs/language/json/monaco.contribution.js';
-import { useTheme } from '@/components/theme/theme-provider';
+import { useMonacoTheme } from '@/components/theme/theme-provider';
 import {
   loader,
   DiffEditor as MonacoDiffEditor,
@@ -36,15 +36,11 @@ const LazySchemaEditor = lazy(async () => {
   return { default: SchemaEditor };
 });
 
-/**
- * Defaults Monaco's theme to the app's resolved theme ("vs-light" / "vs-dark"),
- * so call sites don't each have to wire up `useTheme`. Passing `theme`
- * explicitly still wins.
- */
+/** Defaults Monaco's theme to the app theme; passing `theme` explicitly still wins. */
 export function SchemaEditor(props: SchemaEditorProps) {
-  const { resolvedTheme } = useTheme();
+  const monacoTheme = useMonacoTheme();
 
-  return <LazySchemaEditor theme={`vs-${resolvedTheme}`} {...props} />;
+  return <LazySchemaEditor theme={monacoTheme} {...props} />;
 }
 
 export type { SchemaEditorProps };
