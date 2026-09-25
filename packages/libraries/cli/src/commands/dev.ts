@@ -55,6 +55,7 @@ type ServiceInput = {
   name: ServiceName;
   url: string;
   sdl?: string;
+  headers: Record<string, string>;
 };
 
 type Service = {
@@ -76,6 +77,59 @@ type ServiceWithSource = {
         kind: 'url';
         url: string;
       };
+};
+
+/** Mirrors oclif's `ParsingToken` (not re-exported from `@oclif/core`'s public types). */
+type CLIParsingToken =
+  | { type: 'arg'; arg: string; input: string }
+  | { type: 'flag'; flag: string; input: string };
+
+/** Parse `key:value` header strings into a record. On duplicate keys, the last one wins. */
+const parseHeaders = (list: string[]): Record<string, string> =>
+  list.reduce(
+    (acc, header) => {
+      const [key, ...values] = header.split(':');
+
+      return {
+        ...acc,
+        [key]: values.join(':'),
+      };
+    },
+    {} as Record<string, string>,
+  );
+
+/**
+ * Segment raw `--header` occurrences by their position relative to `--service`:
+ * headers before the first `--service` are global; headers after a `--service` are
+ * scoped to that service (until the next `--service`, or the end of the arguments).
+ *
+ * Relies on oclif emitting one ordered token per `--service` occurrence, so the nth
+ * `--service` token lines up with `flags.service[n]` (and thus `perService[n]`).
+ */
+const segmentHeadersByService = (
+  raw: readonly CLIParsingToken[],
+  serviceCount: number,
+): { global: string[]; perService: string[][] } => {
+  const global: string[] = [];
+  const perService: string[][] = Array.from({ length: serviceCount }, () => []);
+
+  let currentServiceIndex = -1;
+  for (const token of raw) {
+    if (token.type !== 'flag') {
+      continue;
+    }
+    if (token.flag === 'service') {
+      currentServiceIndex++;
+    } else if (token.flag === 'header') {
+      if (currentServiceIndex === -1) {
+        global.push(token.input);
+      } else {
+        perService[currentServiceIndex].push(token.input);
+      }
+    }
+  }
+
+  return { global, perService };
 };
 
 export default class Dev extends Command<typeof Dev> {
@@ -133,6 +187,17 @@ export default class Dev extends Command<typeof Dev> {
       helpValue: '<filepath>',
       dependsOn: ['service'],
     }),
+    header: Flags.string({
+      aliases: ['H'],
+      description:
+        'HTTP header to add to a subgraph introspection request (in key:value format).' +
+        ' A --header before any --service applies to all services (global).' +
+        ' A --header placed after a --service applies only to that service, until the next' +
+        ' --service is encountered, and overrides a global header of the same name for that' +
+        ' service. This includes headers placed after the LAST --service: they scope only to' +
+        ' that final service, not to all services.',
+      multiple: true,
+    }),
     watch: Flags.boolean({
       description: 'Watch mode',
       default: false,
@@ -166,7 +231,7 @@ export default class Dev extends Command<typeof Dev> {
   };
 
   async run() {
-    const { flags } = await this.parse(Dev);
+    const { flags, raw } = await this.parse(Dev);
 
     const { unstable__forceLatest } = flags;
 
@@ -174,16 +239,24 @@ export default class Dev extends Command<typeof Dev> {
       throw new ServiceAndUrlLengthMismatch(flags.service, flags.url);
     }
 
+    const { global: globalHeaderList, perService: perServiceHeaderLists } = segmentHeadersByService(
+      raw,
+      flags.service.length,
+    );
+    const globalHeaders = parseHeaders(globalHeaderList);
+
     const isRemote = flags.remote === true;
 
     const serviceInputs = flags.service.map((name, i) => {
       const url = flags.url[i];
       const sdl = flags.schema ? flags.schema[i] : undefined;
+      const headers = { ...globalHeaders, ...parseHeaders(perServiceHeaderLists[i]) };
 
       return {
         name,
         url,
         sdl,
+        headers,
       };
     });
 
@@ -488,7 +561,7 @@ export default class Dev extends Command<typeof Dev> {
         return {
           name: input.name,
           url: input.url,
-          sdl: await this.resolveSdlFromUrl(input.name, input.url),
+          sdl: await this.resolveSdlFromUrl(input.name, input.url, input.headers),
           input: {
             kind: 'url' as const,
             url: input.url,
@@ -507,9 +580,14 @@ export default class Dev extends Command<typeof Dev> {
     return sdl;
   }
 
-  private async resolveSdlFromUrl(serviceName: string, url: string) {
+  private async resolveSdlFromUrl(
+    serviceName: string,
+    url: string,
+    headers: Record<string, string> | undefined,
+  ) {
     const sdl = await loadSchema('only-federation-introspection', url, {
       logger: this.logger,
+      headers,
     }).catch(err => {
       this.logFailure(err);
       throw err;
