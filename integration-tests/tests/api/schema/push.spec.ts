@@ -443,6 +443,63 @@ test.concurrent('rejects an invalid service name', async ({ expect }) => {
   expect(push.schemaPush.error?.message).toContain('Invalid service name.');
 });
 
+test.concurrent('accepts an invalid service name of an existing service', async ({ expect }) => {
+  const seed = initSeed();
+  const { createOrg } = await seed.createOwner();
+  const { createProject } = await createOrg();
+  const { target, createTargetAccessToken } = await createProject(ProjectType.Federation);
+  const token = await createTargetAccessToken({ mode: 'readWrite' });
+  const targetReference = { byId: target.id } as const;
+  const sdl = 'type Query { one: String }';
+
+  const initialPublish = await execute({
+    document: SchemaPublish,
+    token: token.secret,
+    variables: {
+      input: {
+        target: targetReference,
+        service: 'products',
+        url: 'https://products.example.com/graphql',
+        author: 'Test',
+        commit: 'initial',
+        schema: { sdl },
+      },
+    },
+  }).then(result => result.expectNoGraphQLErrors());
+  expect(initialPublish.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+  // Services created before the naming rules existed can have names that are not valid anymore.
+  await using connection = await seed.createDbConnection();
+  await connection.pool.query(psql`
+    UPDATE "schema_log"
+    SET "service_name" = '1-legacy'
+    WHERE "target_id" = ${target.id} AND "service_name" = 'products'
+  `);
+
+  const push = await schemaPush(
+    { target: targetReference, service: '1-legacy', revision: 'v1', sdl },
+    token.secret,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(push.schemaPush.error).toBeNull();
+  expect(push.schemaPush.ok?.schemaRevision.service).toBe('1-legacy');
+
+  const publish = await execute({
+    document: SchemaPublish,
+    token: token.secret,
+    variables: {
+      input: {
+        target: targetReference,
+        service: '1-legacy',
+        author: 'Test',
+        commit: 'v1',
+        schema: { revision: 'v1' },
+      },
+    },
+  }).then(result => result.expectNoGraphQLErrors());
+  expect(publish.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+});
+
 test.concurrent(
   'publishing a revision without a service in a federation project reports the missing service',
   async ({ expect }) => {

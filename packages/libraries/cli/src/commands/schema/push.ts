@@ -5,6 +5,7 @@ import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
   InvalidTargetError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
   UnexpectedError,
@@ -91,8 +92,7 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
           description: SchemaPush.flags['registry.endpoint'].description!,
         });
       } catch (error) {
-        this.logDebug(error);
-        throw new MissingEndpointError();
+        throw error instanceof MissingArgumentsError ? new MissingEndpointError() : error;
       }
       try {
         accessToken = this.ensure({
@@ -103,8 +103,7 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
           description: SchemaPush.flags['registry.accessToken'].description!,
         });
       } catch (error) {
-        this.logDebug(error);
-        throw new MissingRegistryTokenError();
+        throw error instanceof MissingArgumentsError ? new MissingRegistryTokenError() : error;
       }
 
       const target = TargetInput.parse(flags.target);

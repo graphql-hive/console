@@ -369,6 +369,18 @@ test.concurrent('error is thrown when _service exists but fails', async ({ expec
 });
 
 test.concurrent(
+  'error is thrown when _service exists but fails and federation is explicitly defined',
+  async ({ expect }) => {
+    const server = await createHTTPGraphQLServer();
+    const command = introspect([server.url + '/graphql-bad-service', '--type', 'federation']);
+
+    await expect(command).rejects.toThrow('Could not get introspection result from the service.');
+    await expect(command).rejects.toThrow('[116]');
+    await expect(command).rejects.not.toThrow('[115]');
+  },
+);
+
+test.concurrent(
   'federation can be introspected when explicitly defined even if introspection is disabled',
   async ({ expect }) => {
     const server = await createHTTPGraphQLServer();

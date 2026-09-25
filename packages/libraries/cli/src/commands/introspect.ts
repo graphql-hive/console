@@ -4,9 +4,10 @@ import { buildSchema, introspectionFromSchema } from 'graphql';
 import { Args, Flags } from '@oclif/core';
 import Command from '../base-command';
 import {
+  HiveCLIError,
   IntrospectionError,
+  InvalidFederationSubgraphError,
   InvalidHeaderError,
-  SchemaFileNotFoundError,
   UnsupportedFileExtensionError,
 } from '../helpers/errors';
 import { isUrlPointer, loadSchemaSdl } from '../helpers/schema';
@@ -66,8 +67,11 @@ export default class Introspect extends Command<typeof Introspect> {
       headers,
       logger: this.logger,
     }).catch(err => {
-      if (isUrlPointer(args.location) && err instanceof SchemaFileNotFoundError) {
-        this.logFailure(err.message);
+      if (
+        isUrlPointer(args.location) &&
+        !(err instanceof IntrospectionError || err instanceof InvalidFederationSubgraphError)
+      ) {
+        this.logFailure(err instanceof HiveCLIError ? err.plainMessage : String(err));
         throw new IntrospectionError();
       }
       throw err;

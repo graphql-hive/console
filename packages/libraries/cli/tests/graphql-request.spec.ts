@@ -130,6 +130,17 @@ describe('non-registry requests', () => {
     ]);
     expect(await requestError(false)).toBeInstanceOf(APIError);
   });
+
+  test('a timeout is a network error', async () => {
+    const timeout = new Error('The operation was aborted due to timeout');
+    timeout.name = 'TimeoutError';
+    post.mockRejectedValue(new Error('Unexpected HTTP error.', { cause: timeout }));
+
+    const error = await requestError(false);
+    expect(error).toBeInstanceOf(NetworkError);
+    expect(error).not.toBeInstanceOf(RequestTimeoutError);
+    expect(error.exitCode).toBe(1);
+  });
 });
 
 describe('transport errors', () => {

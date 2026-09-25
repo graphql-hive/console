@@ -22,9 +22,9 @@ and schema publish results accurately when using `--github`.
 - Error codes are now unique: `InvalidVersionIdError` is now `[122]` and `ConflictingOptionsError`
   is now `[123]` (both were `[121]`).
 - An invalid `hive.json`, a file set with `HIVE_CONFIG` that does not exist, or an unknown
-  `HIVE_SPACE` now fails with error `[100]`. Previously the configuration was silently ignored and
-  the CLI fell back to the default registry endpoint. The legacy `{ "registry": "...", "token": "..." }`
-  format is read correctly again.
+  `HIVE_SPACE` now fails with error `[100]`. Previously the configuration was silently ignored, so
+  the CLI fell back to the default registry endpoint or reported a missing access token. The legacy
+  `{ "registry": "...", "token": "..." }` format is read correctly again.
 - Passing both a schema file and `--revision` to `hive schema:publish` now fails with error `[123]`
   instead of ignoring the file.
 - `--github` for `schema:check` and `schema:publish`, and `hive schema:push`, need a Hive server that
@@ -36,8 +36,9 @@ and schema publish results accurately when using `--github`.
 - `[124]` Access denied: the access token is missing the named permission, or the target does not
   exist or is not accessible to the token. Previously reported as `[115]`.
 - `[125]` Unsupported Hive server version: the server does not know a field the CLI sends.
-- `[126]` Request timed out. The operation may still have completed on the server, so check the
-  result before retrying. Other network errors remain `[114]`.
+- `[126]` A request to the Hive registry or CDN timed out. The operation may still have completed
+  on the server, so check the result before retrying. Other network errors, including timeouts while
+  introspecting a GraphQL service, remain `[114]`.
 - `[127]` Invalid command input, `[128]` invalid header.
 - `[202]` Schema check failed, `[203]` schema check approval failed, `[204]` `--forceSafe` requires a
   target slug.
@@ -45,6 +46,8 @@ and schema publish results accurately when using `--github`.
 Other errors that were previously reported as unexpected (`[199]`) or without a code now use the
 matching code, for example a missing or empty schema file (`[200]`, `[201]`), invalid SDL in
 `schema:check` (`[301]`), an invalid CDN access token (`[107]`) and HTTP error responses (`[113]`).
+`hive introspect` reports a missing, empty or invalid schema file as `[200]`, `[201]` or `[301]`, and
+keeps `[116]` for GraphQL services that cannot be introspected.
 Invalid registry access tokens that expired are reported as `[106]`.
 
 **New features**

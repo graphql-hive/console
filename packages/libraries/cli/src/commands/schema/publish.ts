@@ -251,8 +251,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           description: SchemaPublish.flags['registry.endpoint'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingEndpointError();
+        throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
       }
       try {
         accessToken = this.ensure({
@@ -263,8 +262,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           description: SchemaPublish.flags['registry.accessToken'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingRegistryTokenError();
+        throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
       }
       const service = flags.service;
       const url = flags.url;

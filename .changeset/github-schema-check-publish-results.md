@@ -13,8 +13,8 @@ and fix how schema revisions are pushed.
   says that the schema was published.
 - `SchemaPushOk` now has an `isSkipped` field. Pushing a revision that already exists with the same
   schema is skipped, and reported as such.
-- Schema push now rejects invalid service names, instead of accepting them and failing when the
-  revision is published.
+- Schema push now rejects invalid names for new services, like schema check and publish, instead of
+  accepting them and failing when the revision is published.
 - Schema push now ignores the service name for single-schema projects, like schema publish does.
 - A revision that expired before it was published can now be pushed again. Previously the push
   succeeded or reported a conflict, but publishing the revision failed.

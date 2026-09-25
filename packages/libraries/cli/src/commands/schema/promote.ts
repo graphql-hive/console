@@ -91,8 +91,7 @@ export default class SchemaPromote extends Command<typeof SchemaPromote> {
           description: SchemaPromote.flags['registry.endpoint'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingEndpointError();
+        throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
       }
       try {
         accessToken = this.ensure({
@@ -103,8 +102,7 @@ export default class SchemaPromote extends Command<typeof SchemaPromote> {
           description: SchemaPromote.flags['registry.accessToken'].description!,
         });
       } catch (e) {
-        this.logDebug(e);
-        throw new MissingRegistryTokenError();
+        throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
       }
 
       let toTarget: GraphQLSchema.TargetReferenceInput | null = null;
