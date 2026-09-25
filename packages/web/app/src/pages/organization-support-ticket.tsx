@@ -110,14 +110,14 @@ function Comment({ node }: { node: FragmentType<typeof Comment_SupportTicketComm
         trigger={
           <div
             className={cn(
-              'text-neutral-11 bg-neutral-5 inline-block max-w-[70%] rounded-lg p-2 text-left',
+              'text-fg-default bg-neutral-5 inline-block max-w-[70%] rounded-lg p-2 text-left',
               isSupport ? 'rounded-br-none' : 'rounded-bl-none',
             )}
           >
             {comment.body}
           </div>
         }
-        content={<TimeAgo date={comment.createdAt} className="text-neutral-10" />}
+        content={<TimeAgo date={comment.createdAt} className="text-fg-secondary" />}
         side="bottom"
       />
       {isSupport ? (
@@ -167,7 +167,7 @@ function SupportTicket(props: {
     <>
       <div className="py-6">
         <div className="flex flex-row items-start justify-between gap-x-6">
-          <div className="border-neutral-5 flex-1 border-r pr-6">
+          <div className="border-line flex-1 border-r pr-6">
             <Title className="flex flex-row items-center gap-x-2">
               <Link
                 to="/$organizationSlug/view/support"
@@ -178,7 +178,7 @@ function SupportTicket(props: {
               >
                 Tickets
               </Link>
-              <span className="text-neutral-10 text-lg font-semibold tracking-tight">
+              <span className="text-fg-secondary text-lg font-semibold tracking-tight">
                 <ChevronRightIcon className="size-4" />
               </span>
               <span>{ticket.subject}</span>
@@ -197,27 +197,27 @@ function SupportTicket(props: {
           <div className="w-1/3 shrink-0 text-sm">
             <div className="flex flex-col gap-y-6 text-left">
               <div className="space-y-0">
-                <div className="text-neutral-12 font-semibold">Support Ticket ID</div>
-                <div className="text-neutral-10">{ticket.id}</div>
+                <div className="text-fg font-semibold">Support Ticket ID</div>
+                <div className="text-fg-secondary">{ticket.id}</div>
               </div>
               <div className="space-y-0">
-                <div className="text-neutral-12 font-semibold">Status</div>
-                <div className="text-neutral-10">
+                <div className="text-fg font-semibold">Status</div>
+                <div className="text-fg-secondary">
                   {ticket.status}
                   <div className="text-xs">{statusDescription[ticket.status]}</div>
                 </div>
               </div>
               <div className="space-y-0">
-                <div className="text-neutral-12 font-semibold">Priority</div>
-                <div className="text-neutral-10">
+                <div className="text-fg font-semibold">Priority</div>
+                <div className="text-fg-secondary">
                   {ticket.priority}
                   <div className="text-xs">{priorityDescription[ticket.priority]}</div>
                 </div>
               </div>
               <div className="space-y-0">
-                <div className="text-neutral-12 font-semibold">Last updated</div>
+                <div className="text-fg font-semibold">Last updated</div>
                 <div>
-                  <TimeAgo date={ticket.updatedAt} className="text-neutral-10 text-xs" />
+                  <TimeAgo date={ticket.updatedAt} className="text-fg-secondary text-xs" />
                 </div>
               </div>
             </div>

@@ -59,21 +59,21 @@ export const ConnectLabModalContent = (props: {
       <div className="flex flex-col gap-4">
         {props?.isCDNEnabled ? (
           <div>
-            <h3 className="text-neutral-12 text-sm">High-availability CDN:</h3>
+            <h3 className="text-fg text-sm">High-availability CDN:</h3>
             <Callout className="mt-2" type="info">
               If you want to consume the GraphQL schema for a tool like GraphQL Code Generator, we
               instead recommend using the high-availability CDN instead.
             </Callout>
           </div>
         ) : null}
-        <span className="text-neutral-12 text-sm">You can use the following endpoint:</span>
+        <span className="text-fg text-sm">You can use the following endpoint:</span>
         <InputCopy value={props.endpoint} onSurface="raised" />
-        <span className="text-neutral-12 text-sm">
+        <span className="text-fg text-sm">
           To authenticate, use the following HTTP headers, with a token that has `target:read`
           scope:
         </span>
         {/* A header line with a link inside, not a pill: a code block rather than a Badge. */}
-        <code className="bg-neutral-4 text-neutral-11 inline-flex items-center gap-x-1 rounded-sm p-2 text-sm">
+        <code className="bg-neutral-4 text-fg-default inline-flex items-center gap-x-1 rounded-sm p-2 text-sm">
           X-Hive-Key:
           <Link
             as="a"
@@ -86,7 +86,7 @@ export const ConnectLabModalContent = (props: {
             YOUR_TOKEN_HERE
           </Link>
         </code>
-        <p className="text-neutral-10 text-sm">
+        <p className="text-fg-secondary text-sm">
           Read the{' '}
           <Link as="a" variant="primary" target="_blank" rel="noreferrer" href={props.docsUrl}>
             Managing Tokens

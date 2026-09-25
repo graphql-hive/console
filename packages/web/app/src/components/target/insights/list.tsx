@@ -71,7 +71,7 @@ function OperationsTable({
                 }
                 openOnHover
                 content={
-                  <p className="text-neutral-11 text-sm">
+                  <p className="text-fg-default text-sm">
                     Anonymous operation detected. Naming your operations is a recommended practice
                   </p>
                 }

@@ -61,7 +61,7 @@ export function CreateOrganizationForm(props: {
             >
               {form.formState.isSubmitting ? (
                 <>
-                  <Spinner className="text-neutral-1 size-6" />
+                  <Spinner className="text-fg-inverse size-6" />
                   <span className="ml-4">Creating...</span>
                 </>
               ) : (

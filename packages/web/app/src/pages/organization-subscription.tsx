@@ -155,7 +155,7 @@ function SubscriptionPageContent() {
           </Card>
           <div className="mt-8">
             <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Current Usage">
-              <p className="text-neutral-10 text-sm">
+              <p className="text-fg-secondary text-sm">
                 {DateFormatter.format(start)} — {DateFormatter.format(end)}
               </p>
               <div className="mt-4">

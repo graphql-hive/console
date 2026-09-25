@@ -74,10 +74,10 @@ export function ReviewComment(props: {
   return (
     <>
       <div className={cn(!props.first && 'pl-4', 'flex grow flex-row align-middle')}>
-        <div className="text-neutral-10 flex grow font-bold">{comment.author ?? 'Unknown'}</div>
+        <div className="text-fg-secondary flex grow font-bold">{comment.author ?? 'Unknown'}</div>
         <div className="flex text-xs">
           {!!comment.updatedAt && 'updated '}
-          <TimeAgo date={comment.updatedAt ?? comment.createdAt} className="text-neutral-10" />
+          <TimeAgo date={comment.updatedAt ?? comment.createdAt} className="text-fg-secondary" />
         </div>
       </div>
       <div className="mt-2 flex-row">{comment.body}</div>

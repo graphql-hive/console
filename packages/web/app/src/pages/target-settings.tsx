@@ -1638,7 +1638,7 @@ function JustSavedIndicator() {
 
 function SavedLabel() {
   return (
-    <div className="text-neutral-10 inline-flex flex-row items-center gap-1 italic subpixel-antialiased">
+    <div className="text-fg-secondary inline-flex flex-row items-center gap-1 italic subpixel-antialiased">
       <SavedIndicator />
       <span>All changes saved</span>
     </div>
@@ -1646,7 +1646,7 @@ function SavedLabel() {
 }
 
 function SavedIndicator() {
-  return <Check className="text-neutral-10 size-5" />;
+  return <Check className="text-fg-secondary size-5" />;
 }
 
 function UnsavedChangesLabel() {

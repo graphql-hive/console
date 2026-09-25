@@ -4,8 +4,8 @@ describe('cn', () => {
   it('keeps a text colour next to one of the theme font sizes', () => {
     // Regression: tailwind-merge read `text-control` and `text-2xs` as colours and dropped the
     // colour merged with them, so every base field rendered in its inherited colour.
-    expect(cn('text-neutral-12 h-9 text-control')).toBe('text-neutral-12 h-9 text-control');
-    expect(cn('text-neutral-12 text-2xs font-mono')).toBe('text-neutral-12 text-2xs font-mono');
+    expect(cn('text-fg h-9 text-control')).toBe('text-fg h-9 text-control');
+    expect(cn('text-fg text-2xs font-mono')).toBe('text-fg text-2xs font-mono');
   });
 
   it('still resolves a font size conflict to the last one', () => {
@@ -14,8 +14,6 @@ describe('cn', () => {
   });
 
   it('still resolves a colour conflict to the last one', () => {
-    expect(cn('text-neutral-11 text-control', 'text-neutral-12')).toBe(
-      'text-control text-neutral-12',
-    );
+    expect(cn('text-fg-default text-control', 'text-fg')).toBe('text-control text-fg');
   });
 });

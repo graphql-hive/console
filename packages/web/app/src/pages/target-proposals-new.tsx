@@ -126,7 +126,7 @@ function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
           subPageTitle={
             <span className="flex items-center">
               <Link
-                className="text-neutral-12"
+                className="text-fg"
                 to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                 params={{
                   organizationSlug,
@@ -136,7 +136,7 @@ function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
               >
                 Schema Proposals
               </Link>{' '}
-              <span className="text-neutral-10 inline-block px-2 italic">/</span> New
+              <span className="text-fg-secondary inline-block px-2 italic">/</span> New
             </span>
           }
           description="Collaborate on schema changes to reduce friction during development."

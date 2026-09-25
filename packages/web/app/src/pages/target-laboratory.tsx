@@ -704,7 +704,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
             {props.logs.length === 0 ? (
               <div
                 data-cy="empty-state"
-                className="text-neutral-10 flex flex-col items-center justify-center"
+                className="text-fg-secondary flex flex-col items-center justify-center"
               >
                 <p>No logs available</p>
                 <p>Execute a query to see logs</p>

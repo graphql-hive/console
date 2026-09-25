@@ -108,7 +108,7 @@ function InternalDeprecatedSchemaView(props: {
           <PartyPopperIcon className="text-success size-10" />
 
           <h3 className="mt-4 text-lg font-semibold">No deprecations found</h3>
-          <p className="text-neutral-10 mb-4 mt-2 text-sm">
+          <p className="text-fg-secondary mb-4 mt-2 text-sm">
             It looks like you are maintaining your schema well, congratulations!
           </p>
         </div>
@@ -140,7 +140,7 @@ function InternalDeprecatedSchemaView(props: {
                     focusRingQuiet,
                     letter === activeLetter
                       ? 'bg-neutral-2 text-accent'
-                      : 'text-neutral-10 hover:bg-neutral-2 hover:text-accent',
+                      : 'text-fg-secondary hover:bg-neutral-2 hover:text-accent',
                   )}
                 >
                   {letter}

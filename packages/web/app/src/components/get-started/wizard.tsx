@@ -92,7 +92,7 @@ function Task({
       target="_blank"
       rel="noreferrer"
       className={cn(
-        'border-neutral-5 hover:bg-neutral-5 bg-neutral-4 relative block rounded-lg border p-4',
+        'border-line hover:bg-neutral-5 bg-neutral-4 relative block rounded-lg border p-4',
         completed ? 'opacity-70' : null,
       )}
     >
@@ -103,8 +103,8 @@ function Task({
           <Circle className="text-accent size-5" />
         )}
         <div className="w-0 flex-1">
-          <p className="text-neutral-12 font-medium leading-5">{title}</p>
-          <p className="text-neutral-10 mt-1 text-sm">{description}</p>
+          <p className="text-fg font-medium leading-5">{title}</p>
+          <p className="text-fg-secondary mt-1 text-sm">{description}</p>
         </div>
       </div>
     </a>

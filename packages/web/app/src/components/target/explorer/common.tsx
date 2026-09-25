@@ -26,7 +26,10 @@ export function Description(props: { description: string }) {
         hidden: !isDescriptionsVisible,
       })}
     >
-      <Markdown className={clsx('text-neutral-10 text-left text-sm')} content={props.description} />
+      <Markdown
+        className={clsx('text-fg-secondary text-left text-sm')}
+        content={props.description}
+      />
     </div>
   );
 }
@@ -182,12 +185,12 @@ export function SchemaExplorerUsageStats(props: {
                 <ul>
                   <li>
                     This {kindLabel} has been queried in{' '}
-                    <span className="text-neutral-12 font-medium">{formatNumber(usage.total)}</span>{' '}
+                    <span className="text-fg font-medium">{formatNumber(usage.total)}</span>{' '}
                     requests.
                   </li>
                   <li>
-                    <span className="text-neutral-12 font-medium">{toDecimal(percentage)}%</span> of
-                    all requests use this {kindLabel}.
+                    <span className="text-fg font-medium">{toDecimal(percentage)}%</span> of all
+                    requests use this {kindLabel}.
                   </li>
                 </ul>
 
@@ -298,7 +301,7 @@ export function DeprecationNote(props: {
       content={
         <>
           <div className="mb-2">Deprecation reason</div>
-          <Markdown className="text-neutral-10" content={props.deprecationReason} />
+          <Markdown className="text-fg-secondary" content={props.deprecationReason} />
         </>
       }
     />
@@ -326,11 +329,11 @@ export function GraphQLTypeCard(props: {
   }
 
   return (
-    <div className="border-neutral-5 rounded-md border-2">
+    <div className="border-line rounded-md border-2">
       <div className="flex flex-row justify-between p-4">
         <div>
           <div className="flex flex-row items-center gap-2">
-            <div className="text-neutral-10 font-normal">{props.kind}</div>
+            <div className="text-fg-secondary font-normal">{props.kind}</div>
             <div className="font-semibold">
               <GraphQLTypeAsLink type={props.name} />
             </div>
@@ -338,7 +341,7 @@ export function GraphQLTypeCard(props: {
           {props.description && <Description description={props.description} />}
         </div>
         {Array.isArray(props.implements) && props.implements.length > 0 && (
-          <div className="text-neutral-10 flex flex-row items-center text-sm">
+          <div className="text-fg-secondary flex flex-row items-center text-sm">
             <div className="mx-2">implements</div>
             <div className="flex flex-row gap-2">
               {props.implements.map(t => (
@@ -383,7 +386,7 @@ export function GraphQLTypeCardListItem(props: {
 
 export function ExplorerFilteredEmptyState() {
   return (
-    <div className="text-neutral-10 border-neutral-5 rounded-md border border-dashed px-4 py-8 text-center text-sm">
+    <div className="text-fg-secondary border-line rounded-md border border-dashed px-4 py-8 text-center text-sm">
       No schema coordinates match the active filters.
     </div>
   );
@@ -412,12 +415,9 @@ export function GraphQLInputFields(props: {
           <GraphQLTypeCardListItem key={field.name} index={i}>
             <div>
               <div className="flex w-full flex-row items-center justify-between">
-                <div className="text-neutral-10">
+                <div className="text-fg-secondary">
                   <DeprecationNote deprecationReason={field.deprecationReason}>
-                    <LinkToCoordinatePage
-                      coordinate={coordinate}
-                      className="text-neutral-12 font-semibold"
-                    >
+                    <LinkToCoordinatePage coordinate={coordinate} className="text-fg font-semibold">
                       {field.name}
                     </LinkToCoordinatePage>
                   </DeprecationNote>
@@ -473,7 +473,7 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
             >
               Visit in <span className="font-medium">Explorer</span>
             </Link>
-            <span className="text-neutral-10 text-xs"> - displays a full type</span>
+            <span className="text-fg-secondary text-xs"> - displays a full type</span>
           </p>
           <p>
             <Link
@@ -489,7 +489,7 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
             >
               Visit in <span className="font-medium">Insights</span>
             </Link>
-            <span className="text-neutral-10 text-xs"> - usage insights</span>
+            <span className="text-fg-secondary text-xs"> - usage insights</span>
           </p>
         </div>
       }

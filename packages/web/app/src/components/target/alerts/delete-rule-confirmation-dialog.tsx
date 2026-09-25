@@ -41,9 +41,8 @@ export function DeleteRuleConfirmationDialog(props: DeleteRuleConfirmationDialog
       title="Delete this alert rule?"
       description={
         <>
-          This will permanently delete{' '}
-          <span className="text-neutral-12 font-medium">{props.ruleName}</span>, its incident
-          history, and state-log entries. This cannot be undone.
+          This will permanently delete <span className="text-fg font-medium">{props.ruleName}</span>
+          , its incident history, and state-log entries. This cannot be undone.
         </>
       }
       confirm={{

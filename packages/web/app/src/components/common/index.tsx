@@ -34,8 +34,8 @@ export const Page = ({
     <div className={cn('relative flex h-full flex-col', className)}>
       <div className="flex shrink-0 flex-row items-center justify-between p-4">
         <div>
-          <h2 className="text-neutral-1 text-xl font-bold">{title}title</h2>
-          <span className="text-neutral-8 mt-2 text-sm">{subtitle}</span>
+          <h2 className="text-fg-inverse text-xl font-bold">{title}title</h2>
+          <span className="text-fg-subtle mt-2 text-sm">{subtitle}</span>
         </div>
         <div className="flex flex-row items-center space-x-2">{actions}</div>
       </div>
@@ -46,17 +46,17 @@ export const Page = ({
 
 export const Section = {
   Title: ({ className, children, ...props }: ComponentProps<'h3'>): ReactElement => (
-    <h3 className={cn('text-neutral-11 text-base font-bold', className)} {...props}>
+    <h3 className={cn('text-fg-default text-base font-bold', className)} {...props}>
       {children}
     </h3>
   ),
   BigTitle: ({ className, children, ...props }: ComponentProps<'h2'>): ReactElement => (
-    <h2 className={cn('text-neutral-11 text-base font-bold', className)} {...props}>
+    <h2 className={cn('text-fg-default text-base font-bold', className)} {...props}>
       {children}
     </h2>
   ),
   Subtitle: ({ className, children, ...props }: ComponentProps<'div'>): ReactElement => (
-    <div className={cn('text-neutral-10 text-sm', className)} {...props}>
+    <div className={cn('text-fg-secondary text-sm', className)} {...props}>
       {children}
     </div>
   ),

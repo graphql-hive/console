@@ -581,7 +581,7 @@ function PreflightContent() {
       <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
       <div className="relative">
         {preflight.isEnabled ? null : (
-          <div className="text-neutral-12 bg-editor-backdrop/90 absolute inset-0 z-20 flex items-center justify-center p-4">
+          <div className="text-fg bg-editor-backdrop/90 absolute inset-0 z-20 flex items-center justify-center p-4">
             <div className="bg-editor rounded-md p-4 text-sm">
               Preflight Script is disabled and will not be executed
             </div>
@@ -733,7 +733,7 @@ function PreflightModal({
       }
       footer={
         <>
-          <p className="text-neutral-11 me-auto flex items-center gap-2 text-sm">
+          <p className="text-fg-default me-auto flex items-center gap-2 text-sm">
             <InfoIcon className="size-4 shrink-0" />
             Changes made to this Preflight Script will apply to all users on your team using this
             target.
@@ -854,7 +854,7 @@ const LOG_COLORS = {
   error: 'text-critical',
   info: 'text-success',
   warn: 'text-warning',
-  log: 'text-neutral-10',
+  log: 'text-fg-secondary',
 };
 
 export function LogLine({ log }: { log: LogRecord }) {

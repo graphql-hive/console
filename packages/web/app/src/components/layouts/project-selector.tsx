@@ -56,7 +56,7 @@ export function ProjectSelector(props: {
       )}
       {projectEdges?.length && currentProject ? (
         <>
-          <div className="text-neutral-10 italic">/</div>
+          <div className="text-fg-secondary italic">/</div>
           <Select
             aria-label="Project"
             options={projectEdges.map(edge => ({ value: edge.node.slug, label: edge.node.slug }))}

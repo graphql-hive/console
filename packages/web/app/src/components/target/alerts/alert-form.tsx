@@ -831,7 +831,7 @@ export function AlertForm(props: AlertFormProps) {
                     )}
                   />
                 </div>
-                <p className="text-neutral-10 text-control">
+                <p className="text-fg-secondary text-control">
                   {isPercentageChange
                     ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. With "${
                         watchedValues.direction === 'BELOW' ? 'a Decrease' : 'an Increase'
@@ -921,7 +921,7 @@ export function AlertForm(props: AlertFormProps) {
                                 tooltip={
                                   <>
                                     Wait for the condition to exist for{' '}
-                                    <span className="text-neutral-12 font-medium">
+                                    <span className="text-fg font-medium">
                                       {field.value || '0'}
                                     </span>{' '}
                                     minutes before firing. Helps prevent false alarms from brief

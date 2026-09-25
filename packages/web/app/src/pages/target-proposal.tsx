@@ -387,7 +387,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
             subPageTitle={
               <span className="flex items-center">
                 <Link
-                  className="text-neutral-12"
+                  className="text-fg"
                   to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                   params={{
                     organizationSlug,
@@ -397,7 +397,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 >
                   Schema Proposals
                 </Link>{' '}
-                <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
+                <span className="text-fg-secondary inline-block px-2 italic">/</span>{' '}
                 {/* @todo use query data to show loading */}
                 {props.proposalId ? (
                   `${props.proposalId}`
@@ -475,7 +475,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 {proposal.description ? (
                   <div className="w-full border-l-2 p-4">{proposal.description}</div>
                 ) : null}
-                <div className="text-neutral-10 mt-4 pr-2 text-right text-xs">
+                <div className="text-fg-secondary mt-4 pr-2 text-right text-xs">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
               </div>
@@ -550,7 +550,7 @@ function TabbedContent(props: {
 
   return (
     <div className="w-full">
-      <div className="border-neutral-5 border-b">
+      <div className="border-line border-b">
         <Navigation aria-label="Proposal" items={sections} size="sm" />
       </div>
       <div className="flex grow flex-row pt-4">

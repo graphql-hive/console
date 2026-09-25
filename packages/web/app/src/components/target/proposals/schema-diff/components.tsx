@@ -40,7 +40,7 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
       <table
         aria-label="change-document"
         className={cn(
-          'text-neutral-12 min-w-full cursor-default whitespace-pre font-mono text-sm',
+          'text-fg min-w-full cursor-default whitespace-pre font-mono text-sm',
           props.className,
         )}
       >

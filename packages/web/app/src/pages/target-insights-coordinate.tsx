@@ -397,7 +397,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                 )}
               </AutoSizer>
               <div className={cn('pt-5', showFieldLevelMetrics ? 'show' : 'hidden')}>
-                <p className="text-neutral-10 text-control pb-4">
+                <p className="text-fg-secondary text-control pb-4">
                   Number of times the coordinate {props.coordinate} has resolved over time
                 </p>
                 <AutoSizer disableHeight>
@@ -500,7 +500,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                       ({ node: operation }) => (
                         <Link
                           key={operation.id}
-                          className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                          className="text-fg-default hover:text-fg-default hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                           params={{
                             organizationSlug,
@@ -543,7 +543,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                       ({ node: client }) => (
                         <Link
                           key={client.name}
-                          className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                          className="text-fg-default hover:text-fg-default hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                           params={{
                             organizationSlug,

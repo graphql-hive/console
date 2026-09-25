@@ -198,7 +198,7 @@ function ApproveFailedSchemaCheckModal(props: {
     return (
       <div className="space-y-2">
         <h4 className="font-medium leading-none">Oops. Something unexpected happened</h4>
-        <p className="text-neutral-10 text-sm">{mutation.error.message}</p>
+        <p className="text-fg-secondary text-sm">{mutation.error.message}</p>
         <div className="text-right">
           <Button onSurface="raised" onClick={props.onClose}>
             Close
@@ -212,7 +212,7 @@ function ApproveFailedSchemaCheckModal(props: {
     return (
       <div className="space-y-2">
         <h4 className="font-medium leading-none">Approval failed</h4>
-        <p className="text-neutral-10 text-sm">
+        <p className="text-fg-secondary text-sm">
           {mutation.data.approveFailedSchemaCheck.error.message}
         </p>
         <div className="text-right">
@@ -243,9 +243,9 @@ function ApproveFailedSchemaCheckModal(props: {
     <div className="space-y-2">
       <h4 className="font-medium leading-none">Finish your approval</h4>
       <div>
-        <p className="text-neutral-10 text-sm">Acknowledge and accept breaking changes.</p>
+        <p className="text-fg-secondary text-sm">Acknowledge and accept breaking changes.</p>
         {props?.contextId ? (
-          <p className="text-neutral-10 text-sm">
+          <p className="text-fg-secondary text-sm">
             Approval applies to all future changes within the context of a pull request or branch
             lifecycle: <span className="font-medium">{props?.contextId}</span>
           </p>
@@ -304,7 +304,7 @@ const BreakingChangesTitle = () => {
         align="start"
         width="xl"
         content={
-          <div className="text-neutral-11 font-normal">
+          <div className="text-fg-default font-normal">
             <h5 className="mb-1 text-lg font-bold">Breaking Changes</h5>
             <p className="mb-2 text-sm">Schema changes that can potentially break clients.</p>
             <h6 className="mb-1 font-bold">Breaking Change Approval</h6>
@@ -336,7 +336,7 @@ const PolicyInfo = () => {
       align="start"
       width="auto"
       content={
-        <p className="text-neutral-11 text-sm">
+        <p className="text-fg-default text-sm">
           Schema policy checks run on the composed API schema. Line numbers
           <br />
           reflect that and will not match the lines from the source schema.
@@ -355,7 +355,7 @@ const PolicyBlock = (props: {
   const policies = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.policies);
   return (
     <div>
-      <h2 className="text-neutral-10 mb-3 text-sm font-bold">
+      <h2 className="text-fg-secondary mb-3 text-sm font-bold">
         {props.title} <PolicyInfo />
       </h2>
       <ul className="list-inside list-disc pl-3 text-sm/relaxed">
@@ -364,12 +364,12 @@ const PolicyBlock = (props: {
             key={key}
             className={cn(props.type === 'warning' ? 'text-warning' : 'text-critical', 'my-1')}
           >
-            <span className="text-neutral-10 text-left">
+            <span className="text-fg-secondary text-left">
               {labelize(edge.node.message.replace(/\.$/, ''))}{' '}
             </span>
             {edge.node.start?.line ? (
               <span
-                className="text-neutral-9 ml-1 cursor-default text-xs hover:underline"
+                className="text-fg-muted ml-1 cursor-default text-xs hover:underline"
                 onClick={() => props.goToline?.(edge.node.start?.line || undefined)}
               >
                 on line {edge.node.start.line}
@@ -388,8 +388,8 @@ const PolicyBlock = (props: {
               openOnHover
               width="auto"
               content={
-                <p className="text-neutral-11 text-sm">
-                  rule: <span className="text-neutral-12">{edge.node.ruleId}</span>
+                <p className="text-fg-default text-sm">
+                  rule: <span className="text-fg">{edge.node.ruleId}</span>
                 </p>
               }
             />
@@ -437,7 +437,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
 
   if (!schemaCheck.conditionalBreakingChangeMetadata) {
     return (
-      <div className="text-neutral-10 mb-5 mt-10 text-sm">
+      <div className="text-fg-secondary mb-5 mt-10 text-sm">
         Get more out of schema checks by enabling conditional breaking changes based on usage data.
         <br />
         <DocsLink
@@ -457,10 +457,10 @@ function ConditionalBreakingChangesMetadataSection(props: {
   const allTargets = schemaCheck.conditionalBreakingChangeMetadata.settings.targets;
 
   return (
-    <div className="text-neutral-10 mb-5 mt-10 text-sm">
+    <div className="text-fg-secondary mb-5 mt-10 text-sm">
       <p>
         Based on{' '}
-        <span className="text-neutral-12">
+        <span className="text-fg">
           {schemaCheck.conditionalBreakingChangeMetadata.usage.totalRequestCountFormatted} requests
         </span>{' '}
         from target
@@ -469,7 +469,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
           <>
             {allTargets.map((target, index) => (
               <Fragment key={target.slug}>
-                <span className="text-neutral-12">{target.slug}</span>
+                <span className="text-fg">{target.slug}</span>
                 {index === allTargets.length - 1 ? null : ', '}
               </Fragment>
             ))}
@@ -479,7 +479,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
           <>
             {truncatedTargets.map((target, index) => (
               <Fragment key={target.slug}>
-                <span className="text-neutral-12">{target.slug}</span>
+                <span className="text-fg">{target.slug}</span>
                 {index === truncatedTargets.length - 1 ? null : ', '}
               </Fragment>
             ))}
@@ -488,12 +488,14 @@ function ConditionalBreakingChangesMetadataSection(props: {
               trigger={<Button variant="link">{excludedTargets.length} more</Button>}
               content={
                 <div className="p-2">
-                  <h4 className="text-neutral-12 mb-2 text-sm font-semibold">All Targets</h4>
+                  <h4 className="text-fg mb-2 text-sm font-semibold">All Targets</h4>
                   <ScrollArea height="sm">
-                    <div className="divide-neutral-5 grid grid-cols-1 divide-y">
+                    <div className="divide-line grid grid-cols-1 divide-y">
                       {allTargets.map((target, index) => (
                         <div key={index} className="py-2">
-                          <div className="text-neutral-10 line-clamp-3 text-sm">{target.slug}</div>
+                          <div className="text-fg-secondary line-clamp-3 text-sm">
+                            {target.slug}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -505,11 +507,11 @@ function ConditionalBreakingChangesMetadataSection(props: {
         )}
         . <br />
         Usage data ranges from{' '}
-        <span className="text-neutral-12">
+        <span className="text-fg">
           {format(schemaCheck.conditionalBreakingChangeMetadata.period.from, 'do MMM yyyy HH:mm')}
         </span>{' '}
         to{' '}
-        <span className="text-neutral-12">
+        <span className="text-fg">
           {format(schemaCheck.conditionalBreakingChangeMetadata.period.to, 'do MMM yyyy HH:mm')} (
           {format(schemaCheck.conditionalBreakingChangeMetadata.period.to, 'z')})
         </span>{' '}
@@ -1211,7 +1213,7 @@ function SchemaChecksView(props: {
   const contractChecks = schemaCheck.contractChecks?.edges ?? [];
   // Without contracts there is nothing to pick, but the default graph keeps its status glyph.
   const contractPicker = !contractChecks.length ? (
-    <span className="text-neutral-11 inline-flex items-center gap-1.5 px-2 text-xs">
+    <span className="text-fg-default inline-flex items-center gap-1.5 px-2 text-xs">
       {checkStatusIcon(schemaCheck, 'Schema changed')}
       Default Graph
     </span>
@@ -1480,7 +1482,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
   if (query.fetching || query.stale) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center self-center">
-        <div className="text-neutral-10 flex flex-col items-center text-sm">
+        <div className="text-fg-secondary flex flex-col items-center text-sm">
           <Spinner className="mb-3 size-8" />
           Loading Schema Check...
         </div>
@@ -1596,7 +1598,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
         </div>
         {schemaCheck.__typename === 'SuccessfulSchemaCheck' && schemaCheck.isApproved ? (
           <div className="py-6">
-            <div className="border-neutral-2 text-neutral-10 flex flex-row items-center gap-x-6 rounded-md border p-4 font-medium">
+            <div className="border-neutral-2 text-fg-secondary flex flex-row items-center gap-x-6 rounded-md border p-4 font-medium">
               <div>
                 <Tooltip
                   trigger={
@@ -1621,14 +1623,14 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
                     schemaCheck.cliApprovalMetadata?.displayName ??
                     'unknown'}
                 </p>
-                <p className="text-neutral-10 text-sm">
+                <p className="text-fg-secondary text-sm">
                   {schemaCheck.approvedBy?.email ??
                     schemaCheck.cliApprovalMetadata?.email ??
                     'unknown'}
                 </p>
               </div>
               {schemaCheck.approvalComment ? (
-                <div className="text-neutral-12 text-sm italic">
+                <div className="text-fg text-sm italic">
                   <span>„ </span>
                   {schemaCheck.approvalComment}
                   <span> ”</span>

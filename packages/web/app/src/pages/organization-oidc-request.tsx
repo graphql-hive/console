@@ -19,7 +19,7 @@ export function OrganizationOIDCRequestPage(props: { oidcId: string; redirectToP
               <Lock className="stroke-warning size-20" />
               <div className="flex flex-col gap-y-2 text-center">
                 <Heading>Single sign-on</Heading>
-                <span className="text-neutral-10 text-center text-sm font-medium">
+                <span className="text-fg-secondary text-center text-sm font-medium">
                   To access the organization's resources, authenticate your account with single
                   sign-on.
                 </span>

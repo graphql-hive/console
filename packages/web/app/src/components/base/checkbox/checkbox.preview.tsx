@@ -52,7 +52,7 @@ export const SelectAll = createPreview(() => {
 
   return (
     <div className="text-control flex w-64 flex-col gap-3">
-      <label className="border-neutral-5 flex items-center gap-2 border-b pb-3 font-medium">
+      <label className="border-line flex items-center gap-2 border-b pb-3 font-medium">
         <Checkbox
           checked={allChecked}
           indeterminate={selected.length > 0 && !allChecked}

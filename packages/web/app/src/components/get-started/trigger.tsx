@@ -45,8 +45,8 @@ export function GetStartedProgress(props: {
           props.className,
         )}
       >
-        <div className="text-neutral-11 text-sm font-medium">Get Started</div>
-        <div className="text-neutral-10 text-xs">
+        <div className="text-fg-default text-sm font-medium">Get Started</div>
+        <div className="text-fg-secondary text-xs">
           {remaining} remaining task{remaining > 1 ? 's' : ''}
         </div>
         <div>

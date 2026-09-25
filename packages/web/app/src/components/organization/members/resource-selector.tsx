@@ -818,7 +818,7 @@ export function ResourceSelector(props: {
                         <div className="flex h-full flex-1 flex-col border">
                           <ScrollArea axis="both" fill>
                             <div className="flex flex-col pt-2">
-                              <div className="text-neutral-10 mb-1 px-2 text-xs uppercase">
+                              <div className="text-fg-secondary mb-1 px-2 text-xs uppercase">
                                 access granted
                               </div>
                               {projectState.selected.length ? (
@@ -845,7 +845,7 @@ export function ResourceSelector(props: {
                               ) : (
                                 <div className="px-2 text-xs">None selected</div>
                               )}
-                              <div className="text-neutral-10 mb-1 mt-3 px-2 text-xs uppercase">
+                              <div className="text-fg-secondary mb-1 mt-3 px-2 text-xs uppercase">
                                 not selected
                               </div>
                               {projectState.notSelected.length ? (
@@ -875,18 +875,18 @@ export function ResourceSelector(props: {
                         <ScrollArea axis="both" fill>
                           <div className="flex flex-col pt-2">
                             {targetState === null ? (
-                              <div className="text-neutral-10 px-2 text-sm">
+                              <div className="text-fg-secondary px-2 text-sm">
                                 Select a project for adjusting the target access.
                               </div>
                             ) : (
                               <>
                                 {targetState.selection === '*' ? (
-                                  <div className="text-neutral-10 px-2 text-xs">
+                                  <div className="text-fg-secondary px-2 text-xs">
                                     Access to all targets of project granted.
                                   </div>
                                 ) : (
                                   <>
-                                    <div className="text-neutral-10 mb-1 px-2 text-xs uppercase">
+                                    <div className="text-fg-secondary mb-1 px-2 text-xs uppercase">
                                       access granted
                                     </div>
                                     {targetState.selection.selected.length ? (
@@ -922,7 +922,7 @@ export function ResourceSelector(props: {
                                     ) : (
                                       <div className="px-2 text-xs">None selected</div>
                                     )}
-                                    <div className="text-neutral-10 mb-1 mt-3 px-2 text-xs uppercase">
+                                    <div className="text-fg-secondary mb-1 mt-3 px-2 text-xs uppercase">
                                       Not selected
                                     </div>
                                     {targetState.selection.notSelected.length ? (
@@ -955,26 +955,26 @@ export function ResourceSelector(props: {
                               <div className="py-2">
                                 {projectState.activeProject?.projectSelection.targets.mode ===
                                 GraphQLSchema.ResourceAssignmentModeType.All ? (
-                                  <div className="text-neutral-10 px-2 text-xs">
+                                  <div className="text-fg-secondary px-2 text-xs">
                                     Access to all services of projects targets granted.
                                   </div>
                                 ) : serviceState === null ? (
-                                  <div className="text-neutral-10 px-2 text-xs">
+                                  <div className="text-fg-secondary px-2 text-xs">
                                     Select a target for adjusting the service access.
                                   </div>
                                 ) : (
                                   <>
                                     {serviceState === 'none' ? (
-                                      <div className="text-neutral-10 px-2 text-xs">
+                                      <div className="text-fg-secondary px-2 text-xs">
                                         Project is monolithic and has no services.
                                       </div>
                                     ) : serviceState.selection === '*' ? (
-                                      <div className="text-neutral-10 px-2 text-xs">
+                                      <div className="text-fg-secondary px-2 text-xs">
                                         Access to all services in target granted.
                                       </div>
                                     ) : (
                                       <>
-                                        <div className="text-neutral-10 mb-1 px-2 text-xs uppercase">
+                                        <div className="text-fg-secondary mb-1 px-2 text-xs uppercase">
                                           access granted
                                         </div>
                                         {serviceState.selection.selected.length ? (
@@ -991,7 +991,7 @@ export function ResourceSelector(props: {
                                         ) : (
                                           <div className="px-2 text-xs">None</div>
                                         )}
-                                        <div className="text-neutral-10 mb-1 mt-3 px-2 text-xs uppercase">
+                                        <div className="text-fg-secondary mb-1 mt-3 px-2 text-xs uppercase">
                                           Not selected
                                         </div>
                                         {serviceState.selection.notSelected.map(serviceName => (
@@ -1099,22 +1099,22 @@ export function ResourceSelector(props: {
                               <div className="py-2">
                                 {projectState.activeProject?.projectSelection.targets.mode ===
                                 GraphQLSchema.ResourceAssignmentModeType.All ? (
-                                  <div className="text-neutral-10 px-2 text-xs">
+                                  <div className="text-fg-secondary px-2 text-xs">
                                     Access to all apps of projects targets granted.
                                   </div>
                                 ) : appsState === null ? (
-                                  <div className="text-neutral-10 px-2 text-xs">
+                                  <div className="text-fg-secondary px-2 text-xs">
                                     Select a target for adjusting the apps access.
                                   </div>
                                 ) : (
                                   <>
                                     {appsState.selection === '*' ? (
-                                      <div className="text-neutral-10 px-2 text-xs">
+                                      <div className="text-fg-secondary px-2 text-xs">
                                         Access to all apps in target granted.
                                       </div>
                                     ) : (
                                       <>
-                                        <div className="text-neutral-10 mb-1 px-2 text-xs uppercase">
+                                        <div className="text-fg-secondary mb-1 px-2 text-xs uppercase">
                                           access granted
                                         </div>
                                         {appsState.selection.selected.length ? (
@@ -1131,7 +1131,7 @@ export function ResourceSelector(props: {
                                         ) : (
                                           <div className="px-2 text-xs">None</div>
                                         )}
-                                        <div className="text-neutral-10 mb-1 mt-3 px-2 text-xs uppercase">
+                                        <div className="text-fg-secondary mb-1 mt-3 px-2 text-xs uppercase">
                                           Not selected
                                         </div>
                                         {appsState.selection.notSelected.map(serviceName => (
@@ -1212,7 +1212,7 @@ function RowItem(props: {
 }) {
   return (
     <div
-      className="data-[active=true]:bg-neutral-10 data-[active=true]:text-neutral-1 flex cursor-pointer items-center space-x-1 px-2 py-1 data-[active=true]:cursor-default"
+      className="data-[active=true]:bg-neutral-10 data-[active=true]:text-fg-inverse flex cursor-pointer items-center space-x-1 px-2 py-1 data-[active=true]:cursor-default"
       data-active={props.isActive}
     >
       <span className="grow text-sm" onClick={props.onClick}>
@@ -1231,7 +1231,7 @@ function RowItem(props: {
               <XIcon
                 size={12}
                 data-active={props.isActive}
-                className="text-neutral-10 data-[active=true]:text-neutral-2"
+                className="text-fg-secondary data-[active=true]:text-neutral-2"
               />
             </button>
           }

@@ -221,7 +221,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
                 <button
                   type="button"
                   aria-label="Destinations"
-                  className="text-neutral-9 hover:text-neutral-11 inline-flex"
+                  className="text-fg-muted hover:text-fg-default inline-flex"
                   // The row opens the rule; a click on the icon only means the popover.
                   onClick={event => event.stopPropagation()}
                 >
@@ -234,10 +234,10 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
                 <div className="space-y-1 text-xs">
                   {channels.map(c => (
                     <div key={c.id} className="flex items-center gap-2">
-                      <span className="text-neutral-10">
+                      <span className="text-fg-secondary">
                         {CHANNEL_TYPE_LABEL[c.type] ?? c.type}
                       </span>
-                      <span className="text-neutral-12 font-mono">{c.detail ?? c.name}</span>
+                      <span className="text-fg font-mono">{c.detail ?? c.name}</span>
                     </div>
                   ))}
                 </div>
@@ -269,7 +269,7 @@ function UsageChip({ used, limit }: { used: number; limit: number }) {
       ? 'border-critical-line bg-critical-tint-subtle text-critical'
       : ratio >= 0.8
         ? 'border-warning-line bg-warning-tint text-warning'
-        : 'border-neutral-5 bg-neutral-3 text-neutral-11';
+        : 'border-line bg-neutral-3 text-fg-default';
   const label = `${used} / ${limit} rules`;
   const title =
     used >= limit

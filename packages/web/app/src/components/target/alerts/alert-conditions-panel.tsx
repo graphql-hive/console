@@ -126,17 +126,17 @@ export type AlertConditionsPanelProps = {
 
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
-    <span className="text-neutral-12 text-2xs inline-flex items-center gap-1 font-mono">
+    <span className="text-fg text-2xs inline-flex items-center gap-1 font-mono">
       <TimeAgo date={iso} />
       <Popover
         trigger={
-          <button type="button" aria-label="Exact time" className="text-neutral-10 inline-flex">
+          <button type="button" aria-label="Exact time" className="text-fg-secondary inline-flex">
             <Info className="size-3" />
           </button>
         }
         openOnHover
         width="auto"
-        content={<span className="text-neutral-11 text-xs">{new Date(iso).toUTCString()}</span>}
+        content={<span className="text-fg-default text-xs">{new Date(iso).toUTCString()}</span>}
       />
     </span>
   );
@@ -203,8 +203,8 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
   );
 
   return (
-    <div className="border-neutral-5 bg-neutral-2 space-y-6 border-l px-5 py-3">
-      <h2 className="text-neutral-12 mb-2 block text-sm font-semibold">Alert conditions</h2>
+    <div className="border-line bg-neutral-2 space-y-6 border-l px-5 py-3">
+      <h2 className="text-fg mb-2 block text-sm font-semibold">Alert conditions</h2>
 
       <DescriptionList
         rows={[
@@ -267,10 +267,10 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
         ]}
       />
 
-      <div className="border-neutral-5 flex items-center justify-between border-y py-4">
+      <div className="border-line flex items-center justify-between border-y py-4">
         <span className="flex flex-col gap-0.5">
-          <span className="text-neutral-12 text-sm font-medium">Alert status</span>
-          <span className="text-neutral-10 text-xs">
+          <span className="text-fg text-sm font-medium">Alert status</span>
+          <span className="text-fg-secondary text-xs">
             {rule.enabled
               ? 'Evaluating conditions and sending notifications'
               : "Paused (conditions aren't evaluated)"}

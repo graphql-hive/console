@@ -57,7 +57,7 @@ const SubPageLayoutHeader = ({
 }: SubPageLayoutHeaderProps) => {
   const header = (
     <div className="max-w-[600px] space-y-2">
-      <h3 className="text-neutral-12 text-lg font-medium">{subPageTitle}</h3>
+      <h3 className="text-fg text-lg font-medium">{subPageTitle}</h3>
       {typeof description === 'string' ? <p>{description}</p> : description}
       {docsLink && <DocsLink {...docsLink} />}
     </div>

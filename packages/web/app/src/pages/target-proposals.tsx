@@ -157,7 +157,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
         ) : null}
       </div>
 
-      <div className="border-neutral-5/50 bg-neutral-2/50 min-h-full gap-2.5 rounded-md border p-2.5">
+      <div className="border-line/50 bg-neutral-2/50 min-h-full gap-2.5 rounded-md border p-2.5">
         {pageVariables.map(({ after }, i) => (
           <ProposalsListPage
             key={after ?? i}
@@ -253,15 +253,15 @@ const ProposalsListPage = (props: {
               <div className="flex flex-row items-start">
                 <div className="flex min-w-0 grow flex-col">
                   <div className="mr-6 flex min-w-0 flex-row gap-1 text-sm md:text-base">
-                    <span className="text-neutral-11 mr-6 truncate font-semibold">
+                    <span className="text-fg-default mr-6 truncate font-semibold">
                       {proposal.title}
                     </span>
                     <span className="text-neutral-2 flex items-center">
                       <StatusDot color={stageToColor(proposal.stage)} />
                     </span>
-                    <span className="text-neutral-10">{proposal.stage}</span>
+                    <span className="text-fg-secondary">{proposal.stage}</span>
                   </div>
-                  <div className="text-neutral-10 mb-1.5 mt-2 flex flex-col gap-x-1 align-middle text-xs font-medium md:flex-row">
+                  <div className="text-fg-secondary mb-1.5 mt-2 flex flex-col gap-x-1 align-middle text-xs font-medium md:flex-row">
                     <div className="truncate">
                       proposed <TimeAgo date={proposal.updatedAt} />
                     </div>
@@ -270,7 +270,7 @@ const ProposalsListPage = (props: {
                 </div>
                 {/* <div
                   className={cn(
-                    'hidden items-center justify-end gap-1 text-right text-neutral-10 sm:flex',
+                    'hidden items-center justify-end gap-1 text-right text-fg-secondary sm:flex',
                   )}
                 >
                   <span>{proposal.commentsCount}</span>

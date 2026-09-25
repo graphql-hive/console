@@ -80,7 +80,7 @@ export function AppDeploymentProtectionForm(props: {
   });
 
   return (
-    <div className={cn('text-neutral-10', !props.enabled && 'pointer-events-none opacity-25')}>
+    <div className={cn('text-fg-secondary', !props.enabled && 'pointer-events-none opacity-25')}>
       <Form form={form} onSubmit={props.onSubmit}>
         <div className="space-y-4">
           <div>
@@ -124,7 +124,7 @@ export function AppDeploymentProtectionForm(props: {
               </div>
             </div>
           </div>
-          <div className="text-neutral-11 text-sm">
+          <div className="text-fg-default text-sm">
             The creation date check always applies. The inactivity and traffic checks only apply if
             the app deployment has usage data.
           </div>
