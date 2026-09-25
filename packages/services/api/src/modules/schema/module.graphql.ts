@@ -433,6 +433,10 @@ export default gql`
 
   type SchemaPushOk {
     schemaRevision: SchemaRevision!
+    """
+    Whether the push was skipped because the revision already exists with the same schema.
+    """
+    isSkipped: Boolean!
   }
 
   type SchemaPushError {
@@ -883,6 +887,14 @@ export default gql`
 
   type GitHubSchemaCheckSuccess {
     message: String!
+    """
+    Whether the schema check passed. The same result is reported on the GitHub check-run.
+    """
+    valid: Boolean!
+    """
+    The schema check that was stored for this check.
+    """
+    schemaCheck: SchemaCheck
   }
 
   type GitHubSchemaCheckError {
@@ -891,6 +903,19 @@ export default gql`
 
   type GitHubSchemaPublishSuccess {
     message: String!
+    """
+    Whether the schema is valid. Has the same meaning as 'SchemaPublishSuccess.valid'.
+    """
+    valid: Boolean!
+    """
+    Whether the publish was rejected, in which case no schema version was stored.
+    Corresponds to a 'SchemaPublishError' when the GitHub integration is not used.
+    """
+    rejected: Boolean!
+    """
+    Link to the schema version in Hive Console, if a schema version is available.
+    """
+    linkToWebsite: String
   }
 
   type GitHubSchemaPublishError {

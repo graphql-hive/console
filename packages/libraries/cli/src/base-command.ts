@@ -1,12 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { env } from 'node:process';
 import { Logger } from '@graphql-hive/core';
-import { Command, Flags, Interfaces } from '@oclif/core';
+import { Command, Errors, Flags, Interfaces } from '@oclif/core';
+import { CLIParseError } from '@oclif/core/lib/parser/errors';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
 import {
   FileMissingError,
+  HiveCLIError,
   InvalidFileContentsError,
+  InvalidHeaderError,
+  InvalidInputError,
   MissingArgumentsError,
+  UnexpectedError,
 } from './helpers/errors';
 import { graphqlRequest } from './helpers/graphql-request';
 import { Texture } from './helpers/texture/texture';
@@ -64,6 +69,17 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     });
     this.flags = flags as Flags<T>;
     this.args = args as Args<T>;
+  }
+
+  /** Every failure is reported with a CLI error code. */
+  protected async catch(error: Error & { exitCode?: number }): Promise<unknown> {
+    if (error instanceof HiveCLIError || error instanceof Errors.ExitError) {
+      return super.catch(error);
+    }
+    if (error instanceof CLIParseError) {
+      return super.catch(new InvalidInputError(error));
+    }
+    return super.catch(new UnexpectedError(error));
   }
 
   protected logger: Logger = {
@@ -186,7 +202,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
       (this.flags['registry.header'] ?? []).map(header => {
         const separatorIndex = header.indexOf('=');
         if (separatorIndex <= 0) {
-          throw new Error(`Invalid registry header "${header}". Expected Name=Value.`);
+          throw new InvalidHeaderError(header, 'Name=Value');
         }
 
         return [header.slice(0, separatorIndex), header.slice(separatorIndex + 1)];
@@ -205,6 +221,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
       additionalHeaders: requestHeaders,
       version: this.config.version,
       logger: this.logger,
+      isHiveRegistry: true,
     });
   }
 

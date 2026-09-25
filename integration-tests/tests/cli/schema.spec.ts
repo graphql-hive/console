@@ -762,10 +762,11 @@ test.concurrent(
       exitCode------------------------------------------:
       1
       stderr--------------------------------------------:
-       ›   Error: No access (reason: "Missing permission for performing
-       ›   'schemaVersion:publish' on resource")  (Request ID: __REQUEST_ID__)  [115]
-       ›   > See https://__URL__ for
-       ›    a complete list of error codes and recommended fixes.
+       ›   Error: Access denied: the access token is missing the
+       ›   "schemaVersion:publish" permission, or the target does not exist or is not
+       ›    accessible to this token.  (Request ID: __REQUEST_ID__)  [124]
+       ›   > See https://__URL__
+       ›    for a complete list of error codes and recommended fixes.
        ›   To disable this message set HIVE_NO_ERROR_TIP=1
        ›   Reference: __ID__
       stdout--------------------------------------------:
@@ -811,6 +812,10 @@ test('schema:check gives correct error message for missing `--service` name flag
      ›   command on a 'pull_request' or 'merge_group' event?
      ›   See https://__URL__
      ›   b-workflow-for-ci
+     ›   Error: Schema check failed.  [202]
+     ›   > See https://__URL__
+     ›    for a complete list of error codes and recommended fixes.
+     ›   To disable this message set HIVE_NO_ERROR_TIP=1
     stdout--------------------------------------------:
     ✖ Detected 1 error
 
@@ -848,8 +853,8 @@ test('schema:check without `--target` flag fails for organization access token',
      ›   slug following the format "$organizationSlug/$projectSlug/$targetSlug"
      ›   (e.g "the-guild/graphql-hive/staging") or an UUID (e.g.
      ›   "a0f4c605-6541-4350-8cfe-b31f21a4bf80").  [102]
-     ›   > See https://__URL__ for
-     ›    a complete list of error codes and recommended fixes.
+     ›   > See https://__URL__
+     ›    for a complete list of error codes and recommended fixes.
      ›   To disable this message set HIVE_NO_ERROR_TIP=1
     stdout--------------------------------------------:
     __NONE__
@@ -920,8 +925,8 @@ test('schema:publish without `--target` flag fails for organization access token
      ›   slug following the format "$organizationSlug/$projectSlug/$targetSlug"
      ›   (e.g "the-guild/graphql-hive/staging") or an UUID (e.g.
      ›   "a0f4c605-6541-4350-8cfe-b31f21a4bf80").  [102]
-     ›   > See https://__URL__ for
-     ›    a complete list of error codes and recommended fixes.
+     ›   > See https://__URL__
+     ›    for a complete list of error codes and recommended fixes.
      ›   To disable this message set HIVE_NO_ERROR_TIP=1
     stdout--------------------------------------------:
     __NONE__
@@ -1085,7 +1090,10 @@ test.concurrent(
       exitCode------------------------------------------:
       1
       stderr--------------------------------------------:
-      __NONE__
+       ›   Error: Schema check failed.  [202]
+       ›   > See https://__URL__
+       ›    for a complete list of error codes and recommended fixes.
+       ›   To disable this message set HIVE_NO_ERROR_TIP=1
       stdout--------------------------------------------:
       ✖ Detected 1 error
 

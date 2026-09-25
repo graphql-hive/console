@@ -5,6 +5,7 @@ import { graphql } from '../../gql';
 import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
+  APIError,
   ConflictingOptionsError,
   InvalidTargetError,
   InvalidVersionIdError,
@@ -168,8 +169,7 @@ export default class SchemaPromote extends Command<typeof SchemaPromote> {
       });
 
       if (result.schemaVersionPromote.error) {
-        this.logFailure(result.schemaVersionPromote.error.message);
-        this.exit(1);
+        throw new APIError(result.schemaVersionPromote.error.message);
       }
 
       if (result.schemaVersionPromote.ok) {

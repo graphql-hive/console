@@ -5,7 +5,10 @@ exports[`FEDERATION > can publish a schema with breaking, warning and safe chang
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -39,7 +42,10 @@ exports[`FEDERATION > can publish and check a schema with target:registry:read a
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -113,7 +119,10 @@ exports[`FEDERATION > check validates the service name > onlyNumbers 1`] = `
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -127,7 +136,10 @@ exports[`FEDERATION > check validates the service name > specialCharacters 1`] =
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -151,8 +163,8 @@ exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
  ›   Error: Schema publish failed.  [300]
- ›   > See https://__URL__ for
- ›    a complete list of error codes and recommended fixes.
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
@@ -168,8 +180,8 @@ exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
  ›   Error: Schema publish failed.  [300]
- ›   > See https://__URL__ for
- ›    a complete list of error codes and recommended fixes.
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
@@ -194,8 +206,8 @@ exitCode------------------------------------------:
 stderr--------------------------------------------:
  ›   Error: The SDL is not valid at line 1, column 1:
  ›    Syntax Error: Unexpected Name "iliketurtles".  [301]
- ›   > See https://__URL__ for
- ›    a complete list of error codes and recommended fixes.
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__
@@ -224,7 +236,10 @@ exports[`FEDERATION > schema:check should throw on corrupted schema > schemaChec
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -268,10 +283,10 @@ exports[`FEDERATION > schema:publish should see Invalid Token error when token i
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
- ›   Error: A valid registry token is required to perform the action. The
- ›   registry token used does not exist or has been revoked.  [106]
- ›   > See https://__URL__ for
- ›    a complete list of error codes and recommended fixes.
+ ›   Error: The registry access token was rejected. It does not exist, has
+ ›   expired, or has been revoked.  [106]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__
@@ -282,7 +297,10 @@ exports[`SINGLE > can publish a schema with breaking, warning and safe changes >
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -316,7 +334,10 @@ exports[`SINGLE > can publish and check a schema with target:registry:read acces
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -360,8 +381,8 @@ exitCode------------------------------------------:
 stderr--------------------------------------------:
  ›   Error: The SDL is not valid at line 1, column 1:
  ›    Syntax Error: Unexpected Name "iliketurtles".  [301]
- ›   > See https://__URL__ for
- ›    a complete list of error codes and recommended fixes.
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__
@@ -372,7 +393,10 @@ exports[`SINGLE > schema:check rejects a \`--url\` argument in single projects 1
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -395,7 +419,10 @@ exports[`SINGLE > schema:check should throw on corrupted schema > schemaCheck 1`
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -439,10 +466,10 @@ exports[`SINGLE > schema:publish should see Invalid Token error when token is in
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
- ›   Error: A valid registry token is required to perform the action. The
- ›   registry token used does not exist or has been revoked.  [106]
- ›   > See https://__URL__ for
- ›    a complete list of error codes and recommended fixes.
+ ›   Error: The registry access token was rejected. It does not exist, has
+ ›   expired, or has been revoked.  [106]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__
@@ -453,7 +480,10 @@ exports[`STITCHING > can publish a schema with breaking, warning and safe change
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -487,7 +517,10 @@ exports[`STITCHING > can publish and check a schema with target:registry:read ac
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -545,7 +578,10 @@ exports[`STITCHING > check validates the service name > onlyNumbers 1`] = `
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -559,7 +595,10 @@ exports[`STITCHING > check validates the service name > specialCharacters 1`] = 
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
 
@@ -583,8 +622,8 @@ exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
  ›   Error: Schema publish failed.  [300]
- ›   > See https://__URL__ for
- ›    a complete list of error codes and recommended fixes.
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
@@ -600,8 +639,8 @@ exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
  ›   Error: Schema publish failed.  [300]
- ›   > See https://__URL__ for
- ›    a complete list of error codes and recommended fixes.
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 1 error
@@ -626,8 +665,8 @@ exitCode------------------------------------------:
 stderr--------------------------------------------:
  ›   Error: The SDL is not valid at line 1, column 1:
  ›    Syntax Error: Unexpected Name "iliketurtles".  [301]
- ›   > See https://__URL__ for
- ›    a complete list of error codes and recommended fixes.
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__
@@ -656,7 +695,10 @@ exports[`STITCHING > schema:check should throw on corrupted schema > schemaCheck
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
-__NONE__
+ ›   Error: Schema check failed.  [202]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 ✖ Detected 2 errors
 
@@ -705,10 +747,10 @@ exports[`STITCHING > schema:publish should see Invalid Token error when token is
 exitCode------------------------------------------:
 1
 stderr--------------------------------------------:
- ›   Error: A valid registry token is required to perform the action. The
- ›   registry token used does not exist or has been revoked.  [106]
- ›   > See https://__URL__ for
- ›    a complete list of error codes and recommended fixes.
+ ›   Error: The registry access token was rejected. It does not exist, has
+ ›   expired, or has been revoked.  [106]
+ ›   > See https://__URL__
+ ›    for a complete list of error codes and recommended fixes.
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__

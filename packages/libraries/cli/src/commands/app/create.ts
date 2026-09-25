@@ -118,7 +118,12 @@ export default class AppCreate extends Command<typeof AppCreate> {
     });
 
     if (result.createAppDeployment.error) {
-      throw new APIError(result.createAppDeployment.error.message);
+      const { message, details } = result.createAppDeployment.error;
+      const reasons = [
+        details?.appName ? `--name: ${details.appName}` : null,
+        details?.appVersion ? `--version: ${details.appVersion}` : null,
+      ].filter(Boolean);
+      throw new APIError(reasons.length ? `${message}\n${reasons.join('\n')}` : message);
     }
 
     if (!result.createAppDeployment.ok) {
@@ -243,6 +248,10 @@ const CreateAppDeploymentMutation = graphql(/* GraphQL */ `
       }
       error {
         message
+        details {
+          appName
+          appVersion
+        }
       }
     }
   }
