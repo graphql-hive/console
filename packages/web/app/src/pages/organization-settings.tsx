@@ -1,28 +1,23 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
 import { Button } from '@/components/base/button/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Navigation } from '@/components/base/navigation/navigation';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
-import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
-import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   AuditLogsForm,
   AuditLogsFormSchema,
   type AuditLogsFormValues,
 } from '@/components/organization/settings/audit-logs-form';
-import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
-import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { GitHubIcon, SlackIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import {
-  NavLayout,
   PageLayout,
   PageLayoutContent,
   SubPageLayout,
@@ -34,9 +29,15 @@ import { TransferOrganizationOwnershipModal } from '@/components/v2/modals';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from '@tanstack/react-router';
+import {
+  Outlet,
+  useChildMatches,
+  useRouter,
+  type RegisteredRouter,
+  type RouteIds,
+} from '@tanstack/react-router';
 
 const DeleteSlackIntegrationMutation = graphql(`
   mutation Integrations_DeleteSlackIntegration($input: OrganizationSelectorInput!) {
@@ -185,8 +186,8 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
 
 const OrganizationSettingsContent = (props: {
   organization: FragmentType<typeof SettingsPageRenderer_OrganizationFragment>;
-  organizationSlug: string;
 }) => {
+  const { organizationSlug } = useSlugs('organization');
   const organization = useFragment(SettingsPageRenderer_OrganizationFragment, props.organization);
   const router = useRouter();
   const [isDeleteModalOpen, toggleDeleteModalOpen] = useToggle();
@@ -210,7 +211,7 @@ const OrganizationSettingsContent = (props: {
       try {
         const result = await slugMutate({
           input: {
-            organizationSlug: props.organizationSlug,
+            organizationSlug,
             slug: data.slug,
           },
         });
@@ -242,7 +243,7 @@ const OrganizationSettingsContent = (props: {
         });
       }
     },
-    [slugMutate, props.organizationSlug],
+    [slugMutate, organizationSlug],
   );
 
   return (
@@ -351,7 +352,6 @@ const OrganizationSettingsContent = (props: {
             Delete Organization
           </Button>
           <DeleteOrganizationModal
-            organizationSlug={props.organizationSlug}
             isOpen={isDeleteModalOpen}
             toggleModalOpen={toggleDeleteModalOpen}
           />
@@ -370,7 +370,6 @@ const OrganizationSettingsContent = (props: {
           />
           <Button onClick={toggleAuditLogsModalOpen}>Export Audit Logs</Button>
           <AuditLogsOrganizationModal
-            organizationSlug={organization.slug}
             isOpen={isAuditLogsModalOpen}
             toggleModalOpen={toggleAuditLogsModalOpen}
           />
@@ -513,157 +512,152 @@ const OrganizationSettingsPageQuery = graphql(`
   }
 `);
 
-export const OrganizationSettingsPageEnum = z.enum([
-  'general',
-  'sso',
-  'policy',
-  'access-tokens',
-  'personal-access-tokens',
-]);
-export type OrganizationSettingsSubPage = z.TypeOf<typeof OrganizationSettingsPageEnum>;
+const SETTINGS = '/authenticated/$organizationSlug/view/settings';
 
-function SettingsPageContent(props: {
-  organizationSlug: string;
-  page?: OrganizationSettingsSubPage;
-}) {
-  const router = useRouter();
-  const [query] = useQuery({
-    query: OrganizationSettingsPageQuery,
-    variables: {
-      organizationSlug: props.organizationSlug,
-    },
-  });
+type SectionId = 'general' | 'policy' | 'sso' | 'access-tokens' | 'personal-access-tokens';
 
+type Section = {
+  id: SectionId;
+  label: string;
+  routeId: RouteIds<RegisteredRouter['routeTree']>;
+  to: `/$organizationSlug/view/settings${'' | `/${Exclude<SectionId, 'general'>}`}`;
+  exact?: boolean;
+};
+
+/**
+ * The sections in nav order, with the route each renders under; the permission gate compares the
+ * matched child route against the items the viewer may see. The bare URL is General.
+ */
+const sections: readonly Section[] = [
+  {
+    id: 'general',
+    label: 'General',
+    routeId: `${SETTINGS}/`,
+    to: '/$organizationSlug/view/settings',
+    exact: true,
+  },
+  {
+    id: 'policy',
+    label: 'Policy',
+    routeId: `${SETTINGS}/policy`,
+    to: '/$organizationSlug/view/settings/policy',
+  },
+  {
+    id: 'sso',
+    label: 'SSO / SCIM',
+    routeId: `${SETTINGS}/sso`,
+    to: '/$organizationSlug/view/settings/sso',
+  },
+  {
+    id: 'access-tokens',
+    label: 'Access Tokens',
+    routeId: `${SETTINGS}/access-tokens`,
+    to: '/$organizationSlug/view/settings/access-tokens',
+  },
+  {
+    id: 'personal-access-tokens',
+    label: 'Personal Access Tokens',
+    routeId: `${SETTINGS}/personal-access-tokens`,
+    to: '/$organizationSlug/view/settings/personal-access-tokens',
+  },
+];
+
+export function OrganizationSettingsPage() {
+  const slugs = useSlugs('organization');
+  const { organizationSlug } = slugs;
+  const [query] = useQuery({ query: OrganizationSettingsPageQuery, variables: slugs });
   const currentOrganization = query.data?.organization;
 
-  const subPages = useMemo(() => {
-    const pages: Array<{
-      key: OrganizationSettingsSubPage;
-      title: string;
-    }> = [];
-
+  const visible = useMemo(() => {
+    const ids = new Set<SectionId>(['policy']);
     if (currentOrganization?.viewerCanAccessSettings) {
-      pages.push({
-        key: 'general',
-        title: 'General',
-      });
+      ids.add('general');
     }
-
-    pages.push({
-      key: 'policy',
-      title: 'Policy',
-    });
-
     if (currentOrganization?.viewerCanManageOIDCIntegration) {
-      pages.push({
-        key: 'sso',
-        title: 'SSO / SCIM',
-      });
+      ids.add('sso');
     }
-
     if (currentOrganization?.viewerCanManageAccessTokens) {
-      pages.push({
-        key: 'access-tokens',
-        title: 'Access Tokens',
-      });
+      ids.add('access-tokens');
     }
-
     if (currentOrganization?.viewerCanManagePersonalAccessTokens) {
-      pages.push({
-        key: 'personal-access-tokens',
-        title: 'Personal Access Tokens',
-      });
+      ids.add('personal-access-tokens');
     }
-
-    return pages;
+    return sections.filter(section => ids.has(section.id));
   }, [currentOrganization]);
 
-  const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
+  const sectionRouteId = useChildMatches({ select: matches => matches.at(-1)?.routeId });
+  const allowed = visible.some(section => section.routeId === sectionRouteId);
 
+  // A section the viewer may not open falls back to the first one they may, else the organization.
   useRedirect({
-    canAccess: resolvedPage !== undefined,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug',
-        params: {
-          organizationSlug: props.organizationSlug,
-        },
-      });
-    },
+    canAccess: allowed,
     entity: currentOrganization,
+    redirectTo: router => {
+      const fallback = visible.at(0);
+      void router.navigate(
+        fallback
+          ? { to: fallback.to, params: slugs, replace: true }
+          : { to: '/$organizationSlug', params: slugs, replace: true },
+      );
+    },
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
-  if (!resolvedPage || !currentOrganization) {
-    return null;
-  }
-
-  return (
-    <OrganizationLayout
-      page={Page.Settings}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
-      <PageLayout>
-        <NavLayout>
-          {subPages.map(subPage => {
-            return (
-              <SubPageNavigationLink
-                dataCy={`link-${subPage.key}`}
-                key={subPage.key}
-                isActive={resolvedPage.key === subPage.key}
-                onClick={() => {
-                  void router.navigate({
-                    search: {
-                      page: subPage.key,
-                    },
-                  });
-                }}
-                title={subPage.title}
-              />
-            );
-          })}
-        </NavLayout>
-        <PageLayoutContent>
-          <div className="space-y-12">
-            {resolvedPage.key === 'general' ? (
-              <OrganizationSettingsContent
-                organizationSlug={props.organizationSlug}
-                organization={currentOrganization}
-              />
-            ) : null}
-            {resolvedPage.key === 'sso' ? (
-              <SingleSignOnSubpage organizationSlug={props.organizationSlug} />
-            ) : null}
-            {resolvedPage.key === 'policy' ? (
-              <OrganizationPolicySettings organization={currentOrganization} />
-            ) : null}
-            {resolvedPage.key === 'access-tokens' ? (
-              <AccessTokensSubPage organizationSlug={props.organizationSlug} />
-            ) : null}
-            {resolvedPage.key === 'personal-access-tokens' ? (
-              <PersonalAccessTokensSubPage organizationSlug={props.organizationSlug} />
-            ) : null}
-          </div>
-        </PageLayoutContent>
-      </PageLayout>
-    </OrganizationLayout>
-  );
-}
-
-export function OrganizationSettingsPage(props: {
-  organizationSlug: string;
-  page?: OrganizationSettingsSubPage;
-}) {
   return (
     <>
       <Meta title="Organization settings" />
-      <SettingsPageContent organizationSlug={props.organizationSlug} page={props.page} />
+      {allowed && currentOrganization ? (
+        <LayoutContent className="flex flex-col gap-y-10">
+          <PageLayout>
+            <Navigation
+              aria-label="Settings"
+              variant="list"
+              items={visible.map(section => ({
+                id: section.id,
+                label: section.label,
+                to: section.to,
+                params: slugs,
+                exact: section.exact,
+                attrs: { 'data-cy': `link-${section.id}` },
+              }))}
+            />
+            <PageLayoutContent>
+              <div className="space-y-12">
+                <Outlet />
+              </div>
+            </PageLayoutContent>
+          </PageLayout>
+        </LayoutContent>
+      ) : null}
     </>
   );
+}
+
+export function OrganizationSettingsGeneralSection() {
+  const [query] = useQuery({
+    query: OrganizationSettingsPageQuery,
+    variables: useSlugs('organization'),
+  });
+  const currentOrganization = query.data?.organization;
+  if (!currentOrganization) {
+    return null;
+  }
+  return <OrganizationSettingsContent organization={currentOrganization} />;
+}
+
+export function OrganizationSettingsPolicySection() {
+  const [query] = useQuery({
+    query: OrganizationSettingsPageQuery,
+    variables: useSlugs('organization'),
+  });
+  const currentOrganization = query.data?.organization;
+  if (!currentOrganization) {
+    return null;
+  }
+  return <OrganizationPolicySettings organization={currentOrganization} />;
 }
 
 export const DeleteOrganizationDocument = graphql(`
@@ -680,12 +674,8 @@ export const DeleteOrganizationDocument = graphql(`
   }
 `);
 
-export function DeleteOrganizationModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-}) {
-  const { organizationSlug } = props;
+export function DeleteOrganizationModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
+  const { organizationSlug } = useSlugs('organization');
   const [, mutate] = useMutation(DeleteOrganizationDocument);
   const { toast } = useToast();
   const router = useRouter();
@@ -758,12 +748,8 @@ const AuditLogsOrganizationSettingsPageMutation = graphql(`
   }
 `);
 
-function AuditLogsOrganizationModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-}) {
-  const { organizationSlug: organization } = props;
+function AuditLogsOrganizationModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
+  const { organizationSlug: organization } = useSlugs('organization');
   const { toast } = useToast();
   const [, exportAuditLogs] = useMutation(AuditLogsOrganizationSettingsPageMutation);
 

@@ -1,6 +1,7 @@
 import { Box, CalendarIcon, CheckIcon, Diamond, XIcon } from 'lucide-react';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
@@ -29,9 +30,6 @@ export const ProposalOverview_ChecksFragment = graphql(/* GraphQL */ `
 `);
 
 export function TargetProposalChecksPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   proposalId: string;
   checks: FragmentType<typeof ProposalOverview_ChecksFragment> | null;
 }) {
@@ -56,9 +54,6 @@ export function TargetProposalChecksPage(props: {
 }
 
 function CheckItem(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   id: string;
   commit: string;
   author?: string | null;
@@ -69,13 +64,14 @@ function CheckItem(props: {
   hasSchemaChanges: boolean;
   className?: string | boolean;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   return (
     <Link
       to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId"
       params={{
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
         schemaCheckId: props.id,
       }}
       className={cn(

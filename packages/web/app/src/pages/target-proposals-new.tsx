@@ -19,7 +19,7 @@ import { Label } from '@/components/base/label/label';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { Textarea } from '@/components/base/textarea/textarea';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
 import { ProposalEditor, ServiceTab } from '@/components/target/proposals/editor';
 import {
@@ -34,6 +34,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
 import { Link } from '@tanstack/react-router';
@@ -102,32 +103,21 @@ const ProposalsNewProposalQuery = graphql(`
   }
 `);
 
-export function TargetProposalsNewPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function TargetProposalsNewPage() {
   return (
     <>
       <Meta title="Schema proposals" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Proposals}
-        className="h-(--content-height) flex min-h-[300px] flex-col pb-0"
-      >
+      <LayoutContent className="h-(--content-height) flex min-h-[300px] flex-col pb-0">
         <SaveProposalProvider>
-          <ProposalsNewContent {...props} />
+          <ProposalsNewContent />
         </SaveProposalProvider>
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }
 
-function ProposalsNewHeading(
-  props: Parameters<typeof TargetProposalsNewPage>[0] & { sideContent?: ReactNode },
-) {
+function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   return (
     <div className="flex py-6">
       <div className="flex-1">
@@ -139,9 +129,9 @@ function ProposalsNewHeading(
                 className="text-neutral-12"
                 to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                 params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                  organizationSlug,
+                  projectSlug,
+                  targetSlug,
                 }}
               >
                 Schema Proposals
@@ -267,17 +257,16 @@ function ConfirmationModal(props: {
   );
 }
 
-function ProposalsNewContent(
-  props: Parameters<typeof TargetProposalsNewPage>[0] & { page?: string },
-) {
+function ProposalsNewContent(props: { page?: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ProposalsNewProposalQuery,
     variables: {
       targetReference: {
         bySelector: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
       },
     },
@@ -384,9 +373,9 @@ function ProposalsNewContent(
             input: {
               target: {
                 bySelector: {
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                  organizationSlug,
+                  projectSlug,
+                  targetSlug,
                 },
               },
               title: payload?.title ?? '',
@@ -402,9 +391,9 @@ function ProposalsNewContent(
               await saveChanges({
                 author: query.data.me.displayName ?? null,
                 changes: changedServices,
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 schemaProposalId,
               });
             } catch (e) {
@@ -545,7 +534,7 @@ function ProposalsNewContent(
   if (query.error) {
     return (
       <>
-        <ProposalsNewHeading {...props} />
+        <ProposalsNewHeading />
         <Callout type="error" className="mx-auto w-2/3">
           <b>Oops, something went wrong.</b>
           <br />
@@ -603,9 +592,6 @@ function ProposalsNewContent(
               <Spinner />
             ) : (
               <ProposalEditor
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
                 changedServices={changedServices}
                 setChangedServices={setChangedServices}
                 existingServices={existingServices ?? []}

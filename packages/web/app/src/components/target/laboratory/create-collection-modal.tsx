@@ -4,6 +4,7 @@ import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   COLLECTION_FORM_ID,
@@ -112,10 +113,8 @@ export function CreateCollectionModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
   collectionId?: string;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { isOpen, toggleModalOpen, collectionId } = props;
   const [mutationCreate, mutateCreate] = useMutation(CreateCollectionMutation);
   const [mutationUpdate, mutateUpdate] = useMutation(UpdateCollectionMutation);
@@ -125,9 +124,9 @@ export function CreateCollectionModal(props: {
     variables: {
       id: collectionId!,
       selector: {
-        targetSlug: props.targetSlug,
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
+        targetSlug,
+        organizationSlug,
+        projectSlug,
       },
     },
     pause: !collectionId,
@@ -161,9 +160,9 @@ export function CreateCollectionModal(props: {
     const { error } = collectionId
       ? await mutateUpdate({
           selector: {
-            targetSlug: props.targetSlug,
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
+            targetSlug,
+            organizationSlug,
+            projectSlug,
           },
           input: {
             collectionId,
@@ -173,9 +172,9 @@ export function CreateCollectionModal(props: {
         })
       : await mutateCreate({
           selector: {
-            targetSlug: props.targetSlug,
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
+            targetSlug,
+            organizationSlug,
+            projectSlug,
           },
           input: values,
         });

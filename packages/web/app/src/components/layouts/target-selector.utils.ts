@@ -17,7 +17,7 @@ export function resolveTargetSwitchTo(
       sectionTo = fullPath;
     }
   }
-  // Flat detail routes (e.g. /trace/$traceId) have no section parent in the match chain; recover
+  // Flat detail routes (e.g. /traces/$traceId) have no section parent in the match chain; recover
   // the section from the leaf's first segment when it is a real route.
   if (sectionTo === TARGET_ROUTE_PREFIX) {
     const [, firstSegment] = leafFullPath.slice(TARGET_ROUTE_PREFIX.length).split('/');

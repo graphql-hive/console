@@ -27,6 +27,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
@@ -389,9 +390,6 @@ export function ruleToFormDefaults(rule: AlertFormRuleSeed): AlertFormValues {
 }
 
 type AlertFormProps = {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   defaultValues?: AlertFormValues;
   showPreview?: boolean;
   /** When true, the "Advanced settings" accordion is expanded by default. */
@@ -402,9 +400,6 @@ type AlertFormProps = {
 
 export function AlertForm(props: AlertFormProps) {
   const {
-    organizationSlug,
-    projectSlug,
-    targetSlug,
     defaultValues,
     showPreview = false,
     expandAdvanced = false,
@@ -412,6 +407,7 @@ export function AlertForm(props: AlertFormProps) {
     onCancel,
     mode,
   } = props;
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { toast } = useToast();
 
   // Matches the link the workflows notifier builds (buildAlertUrl in

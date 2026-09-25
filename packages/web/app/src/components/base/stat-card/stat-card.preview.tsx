@@ -22,18 +22,9 @@ const ICONS = {
   frown: FrownIcon,
 };
 
-/**
- * The shape all 17 insights stat cards share. Every one of them is `raised`: the pages that set
- * `bg-neutral-2/50` and the one that took ui/card's default fill both land on the same surface.
- */
+/** The shape all the insights stat cards share, always on a raised Card. */
 export const Default = createPreview(() => (
-  <StatCard
-    variants={{ onSurface: 'raised' }}
-    title="Requests"
-    icon={GlobeIcon}
-    value="482,100"
-    caption="Total requests served"
-  />
+  <StatCard title="Requests" icon={GlobeIcon} value="482,100" caption="Total requests served" />
 ));
 
 /**
@@ -43,28 +34,27 @@ export const Default = createPreview(() => (
 export const Tones = createPreview(() => (
   <div className="grid w-[46rem] grid-cols-2 gap-4">
     <StatCard
-      variants={{ onSurface: 'raised' }}
       title="Requests (default)"
       icon={GlobeIcon}
       value="482,100"
       caption="Total requests served"
     />
     <StatCard
-      variants={{ onSurface: 'raised', tone: 'muted' }}
+      variants={{ tone: 'muted' }}
       title="Requests (muted)"
       icon={GlobeIcon}
       value="482,100"
       caption="Total requests served"
     />
     <StatCard
-      variants={{ onSurface: 'raised', tone: 'success' }}
+      variants={{ tone: 'success' }}
       title="Success rate"
       icon={SmileIcon}
       value="99.2%"
       caption="Successful requests in last 7 days"
     />
     <StatCard
-      variants={{ onSurface: 'raised', tone: 'danger' }}
+      variants={{ tone: 'danger' }}
       title="Failure rate"
       icon={FrownIcon}
       value="0.8%"
@@ -75,13 +65,12 @@ export const Tones = createPreview(() => (
 
 /** The manage-filters outlier: muted title, no icon, no caption. */
 export const NoIconNoCaption = createPreview(() => (
-  <StatCard variants={{ onSurface: 'raised', tone: 'muted' }} title="Total Filters" value="18" />
+  <StatCard variants={{ tone: 'muted' }} title="Total Filters" value="18" />
 ));
 
 /** The coordinate page suffixes the figure with an error count, so `value` takes a node. */
 export const NodeValue = createPreview(() => (
   <StatCard
-    variants={{ onSurface: 'raised' }}
     title="Total resolutions"
     icon={GlobeIcon}
     value={
@@ -100,7 +89,6 @@ export const NodeValue = createPreview(() => (
  */
 export const WithHint = createPreview(() => (
   <StatCard
-    variants={{ onSurface: 'raised' }}
     title="Total resolutions"
     icon={GlobeIcon}
     hint={
@@ -127,7 +115,6 @@ export const WithHint = createPreview(() => (
 export const LongTitle = createPreview(() => (
   <div className="w-[15rem]">
     <StatCard
-      variants={{ onSurface: 'raised' }}
       title="Relative Request Frequency"
       icon={PercentIcon}
       value="15.1%"
@@ -142,57 +129,36 @@ export const LongTitle = createPreview(() => (
  */
 export const InsightsRow = createPreview(() => (
   <div className="grid w-[62rem] grid-cols-4 gap-4">
+    <StatCard title="Requests" icon={GlobeIcon} value="482,100" caption="Total requests served" />
     <StatCard
-      variants={{ onSurface: 'raised' }}
-      title="Requests"
-      icon={GlobeIcon}
-      value="482,100"
-      caption="Total requests served"
-    />
-    <StatCard
-      variants={{ onSurface: 'raised' }}
       title="Requests per minute"
       icon={ActivityIcon}
       value="1.2k"
       caption="Throughput in last 7 days"
     />
     <StatCard
-      variants={{ onSurface: 'raised' }}
       title="Relative Request Frequency"
       icon={PercentIcon}
       value="15.1%"
       caption="The impact on the overall API traffic"
     />
     <StatCard
-      variants={{ onSurface: 'raised', tone: 'success' }}
+      variants={{ tone: 'success' }}
       title="Success rate"
       icon={SmileIcon}
       value="99.2%"
       caption="Successful requests in last 7 days"
     />
+    <StatCard title="p99" icon={GaugeIcon} value="284ms" caption="Latency p99 in last 7 days" />
+    <StatCard title="p95" icon={GaugeIcon} value="190ms" caption="Latency p95 in last 7 days" />
     <StatCard
-      variants={{ onSurface: 'raised' }}
-      title="p99"
-      icon={GaugeIcon}
-      value="284ms"
-      caption="Latency p99 in last 7 days"
-    />
-    <StatCard
-      variants={{ onSurface: 'raised' }}
-      title="p95"
-      icon={GaugeIcon}
-      value="190ms"
-      caption="Latency p95 in last 7 days"
-    />
-    <StatCard
-      variants={{ onSurface: 'raised' }}
       title="Operations"
       icon={BookIcon}
       value="18"
       caption="Distinct GraphQL operations in last 7 days"
     />
     <StatCard
-      variants={{ onSurface: 'raised', tone: 'danger' }}
+      variants={{ tone: 'danger' }}
       title="Failure rate"
       icon={FrownIcon}
       value="0.8%"
@@ -204,7 +170,6 @@ export const InsightsRow = createPreview(() => (
 export const Playground = createPreview({
   controls: controlsFor(StatCard, {
     variants: {
-      onSurface: { type: 'radio', options: ['base', 'raised'], default: 'raised' },
       tone: {
         type: 'radio',
         options: ['default', 'success', 'danger', 'muted'],

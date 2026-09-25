@@ -2,13 +2,14 @@ import { useMemo, useRef, useState } from 'react';
 import { useQuery } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -117,20 +118,18 @@ const EMPTY_PAGE = {
 };
 
 function TargetChecksAffectedDeploymentsContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   schemaCheckId: string;
   coordinate?: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [endCursors, setEndCursors] = useState<string[]>([]);
 
   const [data] = useQuery({
     query: AffectedDeploymentsQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       schemaCheckId: props.schemaCheckId,
       first: PAGE_SIZE,
       after: endCursors[endCursors.length - 1] ?? null,
@@ -189,20 +188,16 @@ function TargetChecksAffectedDeploymentsContent(props: {
 
   if (data.error) {
     return (
-      <QueryError
-        organizationSlug={props.organizationSlug}
-        error={data.error}
-        showLogoutButton={false}
-      />
+      <QueryError organizationSlug={organizationSlug} error={data.error} showLogoutButton={false} />
     );
   }
 
   const appVersionLink = (deployment: AffectedDeployment) => ({
     to: '/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion' as const,
     params: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       appName: deployment.name,
       appVersion: deployment.version,
     },
@@ -271,9 +266,9 @@ function TargetChecksAffectedDeploymentsContent(props: {
               <Link
                 to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId"
                 params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                  organizationSlug,
+                  projectSlug,
+                  targetSlug,
                   schemaCheckId: props.schemaCheckId,
                 }}
                 className="text-orange-500 hover:underline"
@@ -344,21 +339,12 @@ function TargetChecksAffectedDeploymentsContent(props: {
 }
 
 export function TargetChecksAffectedDeploymentsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   schemaCheckId: string;
   coordinate?: string;
 }) {
   return (
-    <TargetLayout
-      targetSlug={props.targetSlug}
-      projectSlug={props.projectSlug}
-      organizationSlug={props.organizationSlug}
-      page={Page.Checks}
-      className="min-h-(--min-h-content)"
-    >
+    <LayoutContent className="min-h-(--min-h-content)">
       <TargetChecksAffectedDeploymentsContent {...props} />
-    </TargetLayout>
+    </LayoutContent>
   );
 }

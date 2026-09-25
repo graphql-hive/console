@@ -5,8 +5,7 @@ export const nav: NavPath = 'Base/Primitives/Badge';
 
 /**
  * Three neutral variants and four semantic ones. The semantic pills are tinted, a 10% fill of the
- * token under its text, which is what `v2/tag` did and what the traces Ok / Error pills built by
- * hand; the solid emerald, yellow and red fills of `ui/badge` are gone.
+ * token under its text.
  */
 export const Variants = createPreview(() => (
   <div className="flex flex-wrap items-center gap-3">

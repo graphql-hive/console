@@ -1,5 +1,9 @@
 import 'regenerator-runtime/runtime';
 import ReactDOM from 'react-dom/client';
+import SuperTokens from 'supertokens-auth-react';
+import { frontendConfig } from '@/config/supertokens/frontend';
+import { env } from '@/env/frontend';
+import { init } from '@sentry/react';
 import { RouterProvider } from '@tanstack/react-router';
 import './index.css';
 import { clearChunkReloadFlag, isChunkLoadError, reloadOnChunkError } from './lib/chunk-error';
@@ -10,6 +14,41 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;
   }
+}
+
+// App-wide side effects live here, not in the router module, so the route tree can be imported
+// (tests, previews) without initializing SuperTokens or Sentry.
+SuperTokens.init(frontendConfig());
+if (env.sentry) {
+  init({
+    dsn: env.sentry.dsn,
+    enabled: true,
+    dist: 'webapp',
+    release: env.release,
+    environment: env.environment,
+    ignoreErrors: [
+      // Suppress specific monaco editor internal errors
+      "Failed to execute 'setStart' on 'Range'",
+      "Failed to execute 'setEnd' on 'Range'",
+      /TextModel got disposed/,
+      // Stale chunk errors after deployments — handled by auto-reload below
+      /Failed to fetch dynamically imported module/,
+      /Importing a module script failed/,
+    ],
+    beforeSend(event) {
+      const isMonacoError = event.exception?.values?.some(exception =>
+        exception.stacktrace?.frames?.some(frame => frame.filename?.includes('monaco-editor')),
+      );
+
+      if (isMonacoError) {
+        for (const exception of event.exception?.values ?? []) {
+          exception.value &&= `[Monaco] ${exception.value}`;
+        }
+      }
+
+      return event;
+    },
+  });
 }
 
 Error.stackTraceLimit = 15;

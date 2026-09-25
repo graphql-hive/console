@@ -17,7 +17,7 @@ export const Horizontal = createPreview(() => (
 /**
  * The toolbar above the projects and targets lists: search, a divider, sort. The divider is a
  * control's height (32px) so it reads as part of the row; the spacing around it is the row's
- * gap, where the old one carried its own margin.
+ * gap.
  */
 export const InToolbar = createPreview(() => {
   const [sortBy, setSortBy] = useState('requests');

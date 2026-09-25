@@ -10,6 +10,7 @@ import { InputCopy } from '@/components/ui/input-copy';
 import { graphql } from '@/gql';
 import { TargetAccessScope } from '@/gql/graphql';
 import { RegistryAccessScope } from '@/lib/access/common';
+import { useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   RegistryTokenForm,
@@ -42,13 +43,7 @@ export const CreateAccessToken_CreateTokenMutation = graphql(`
   }
 `);
 
-export function CreateAccessTokenModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function CreateAccessTokenModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
   const [session, setSession] = useState(0);
 
   return (
@@ -60,9 +55,6 @@ export function CreateAccessTokenModal(props: {
           setSession(s => s + 1);
         }
       }}
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
       toggleModalOpen={props.toggleModalOpen}
     />
   );
@@ -83,11 +75,9 @@ function getFinalTargetAccessScopes(
 export function ModalContent(props: {
   open: boolean;
   onOpenChangeComplete?: (open: boolean) => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   toggleModalOpen: () => void;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { toast } = useToast();
   const [selectedScope, setSelectedScope] = useState<'no-access' | TargetAccessScope>('no-access');
 
@@ -104,9 +94,9 @@ export function ModalContent(props: {
   async function onSubmit(values: RegistryTokenFormValues) {
     const { error } = await mutate({
       input: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
         name: values.tokenDescription,
         organizationScopes: [],
         projectScopes: [],

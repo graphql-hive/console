@@ -37,9 +37,6 @@ const GraphQLUnionTypeComponent_TypeFragment = graphql(`
 export function GraphQLUnionTypeComponent(props: {
   type: FragmentType<typeof GraphQLUnionTypeComponent_TypeFragment>;
   totalRequests?: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
   const ttype = useFragment(GraphQLUnionTypeComponent_TypeFragment, props.type);
   const { subgraphs } = useSchemaExplorerContext();
@@ -52,9 +49,6 @@ export function GraphQLUnionTypeComponent(props: {
       kind="union"
       description={ttype.description}
       supergraphMetadata={ttype.supergraphMetadata}
-      targetSlug={props.targetSlug}
-      projectSlug={props.projectSlug}
-      organizationSlug={props.organizationSlug}
     >
       {members.length === 0 ? (
         <ExplorerFilteredEmptyState />
@@ -62,28 +56,14 @@ export function GraphQLUnionTypeComponent(props: {
         <div className="flex flex-col">
           {members.map((member, i) => (
             <GraphQLTypeCardListItem key={member.name} index={i}>
-              <GraphQLTypeAsLink
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                className="text-neutral-11 font-semibold"
-                type={member.name}
-              />
+              <GraphQLTypeAsLink className="text-neutral-11 font-semibold" type={member.name} />
               {member.supergraphMetadata && (
-                <SupergraphMetadataList
-                  targetSlug={props.targetSlug}
-                  projectSlug={props.projectSlug}
-                  organizationSlug={props.organizationSlug}
-                  supergraphMetadata={member.supergraphMetadata}
-                />
+                <SupergraphMetadataList supergraphMetadata={member.supergraphMetadata} />
               )}
               {typeof props.totalRequests === 'number' && (
                 <SchemaExplorerUsageStats
                   totalRequests={props.totalRequests}
                   usage={member.usage}
-                  targetSlug={props.targetSlug}
-                  projectSlug={props.projectSlug}
-                  organizationSlug={props.organizationSlug}
                 />
               )}
             </GraphQLTypeCardListItem>

@@ -29,14 +29,14 @@ import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useClipboard } from '@/lib/hooks';
+import { useClipboard, useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -53,9 +53,6 @@ function TraceView(props: {
   rootSpan: SpanFragmentWithChildren;
   serviceNames: string[];
   totalTraceDuration: bigint;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   traceId: string;
 }) {
   const [width] = useWidthSync();
@@ -106,9 +103,6 @@ function TraceView(props: {
             rootSpan={props.rootSpan}
             highlightedServiceName={highlightedServiceName}
             serviceNames={props.serviceNames}
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
             traceId={props.traceId}
           />
         </div>
@@ -339,9 +333,6 @@ function TraceTree(props: {
   rootSpan: SpanFragmentWithChildren;
   leftPanelWidth: number;
   serviceNames: Array<string>;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   traceId: string;
 }) {
   const rootSpan = useFragment(SpanFragment, props.rootSpan.span);
@@ -368,9 +359,6 @@ function TraceTree(props: {
         color={rootTraceColor}
         serviceName={null}
         isLastChild={false}
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
         traceId={props.traceId}
       />
     </div>
@@ -389,9 +377,6 @@ type SpanNodeProps = {
   parentColor: string | null;
   serviceName: string | null;
   isLastChild: boolean;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   traceId: string;
 };
 
@@ -431,6 +416,7 @@ function NodeElement(props: NodeElementProps) {
 }
 
 function SpanNode(props: SpanNodeProps) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const span = useFragment(SpanFragment, props.span.span);
 
   const [collapsed, setCollapsed] = useState(false);
@@ -529,11 +515,11 @@ function SpanNode(props: SpanNodeProps) {
                     'relative flex h-full grow cursor-pointer items-center overflow-hidden',
                     isDimmed ? 'opacity-25' : '',
                   )}
-                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                   params={{
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
+                    organizationSlug,
+                    projectSlug,
+                    targetSlug,
                     traceId: props.traceId,
                   }}
                   search={{ activeSpanId: span.id }}
@@ -629,11 +615,11 @@ function SpanNode(props: SpanNodeProps) {
                         'absolute inset-y-0 z-50 translate-x-[-50%] cursor-pointer px-1',
                       )}
                       style={{ left: `${leftPercentage}%` }}
-                      to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                      to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                       params={{
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
+                        organizationSlug,
+                        projectSlug,
+                        targetSlug,
                         traceId: props.traceId,
                       }}
                       search={{ activeSpanId: span.id, activeSpanTab: 'events' }}
@@ -705,9 +691,6 @@ function SpanNode(props: SpanNodeProps) {
                   color={serviceName ? stringToHSL(serviceName) : props.color}
                   serviceName={serviceName}
                   isLastChild={isLastChild}
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
                   traceId={props.traceId}
                 />
               );
@@ -733,9 +716,6 @@ type TraceSheetProps = {
   trace: FragmentType<typeof TraceSheet_TraceFragment>;
   activeSpanId: string | null;
   activeSpanTab: string | null;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 };
 
 type HighlightedEvent = {
@@ -747,6 +727,7 @@ const HighlightedEventContext = createContext(null as null | HighlightedEvent);
 const ActiveSpanIdContext = createContext(null as null | string);
 
 export function TraceSheet(props: TraceSheetProps) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [activeView, setActiveView] = useState<
     'span-attributes' | 'resource-attributes' | 'events' | 'operation'
   >('span-attributes');
@@ -780,7 +761,7 @@ export function TraceSheet(props: TraceSheetProps) {
   );
 
   const navigate = useNavigate({
-    from: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+    from: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
   });
 
   return (
@@ -795,9 +776,6 @@ export function TraceSheet(props: TraceSheetProps) {
                     rootSpan={rootSpan}
                     serviceNames={trace.subgraphs ?? []}
                     totalTraceDuration={totalTraceDuration}
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
                     traceId={trace.id}
                   />
                 </ActiveSpanIdContext.Provider>
@@ -886,11 +864,11 @@ export function TraceSheet(props: TraceSheetProps) {
                         ) : (
                           events.map(event => (
                             <Link
-                              to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                              to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                               params={{
-                                organizationSlug: props.organizationSlug,
-                                projectSlug: props.projectSlug,
-                                targetSlug: props.targetSlug,
+                                organizationSlug,
+                                projectSlug,
+                                targetSlug,
                                 traceId: trace.id,
                               }}
                               search={{ activeSpanId: event.spanId, activeSpanTab: 'events' }}
@@ -950,13 +928,10 @@ export function TraceSheet(props: TraceSheetProps) {
         }
         onClose={() =>
           navigate({
-            to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+            to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
             search: {},
           })
         }
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
         traceId={trace.id}
         activeTab={props.activeSpanTab}
       />
@@ -990,20 +965,18 @@ const TargetInsightsNewPageContent_TraceQuery = graphql(/* GraphQL */ `
 `);
 
 function TargetInsightsNewPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   traceId: string;
   activeSpanId: string | null;
   activeSpanTab: string | null;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [result] = useQuery({
     query: TargetInsightsNewPageContent_TraceQuery,
     variables: {
       targetSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
       traceId: props.traceId,
     },
@@ -1021,9 +994,9 @@ function TargetInsightsNewPageContent(props: {
             <Link
               to="/$organizationSlug/$projectSlug/$targetSlug/traces"
               params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
               }}
             >
               Traces
@@ -1076,9 +1049,6 @@ function TargetInsightsNewPageContent(props: {
       />
       {trace && (
         <TraceSheet
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
           trace={trace}
           activeSpanId={props.activeSpanId}
           activeSpanTab={props.activeSpanTab}
@@ -1095,22 +1065,13 @@ function TargetInsightsNewPageContent(props: {
 }
 
 export function TargetTracePage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   traceId: string;
   activeSpanId: string | null;
   activeSpanTab: string | null;
 }) {
   return (
     <>
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Traces}
-        className="flex flex-col"
-      >
+      <LayoutContent className="flex flex-col">
         <div className="flex flex-1 flex-col">
           <AutoSizer disableWidth>
             {size => (
@@ -1120,7 +1081,7 @@ export function TargetTracePage(props: {
             )}
           </AutoSizer>
         </div>
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }
@@ -1375,14 +1336,12 @@ type SpanSheetProps = {
   span: FragmentType<typeof SpanSheet_SpanFragment> | null;
   computedSpanMetrics: ComputedSpanMetrics | null;
   onClose: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   traceId: string;
   activeTab: string | null;
 };
 
 function SpanSheet(props: SpanSheetProps) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const currentSpan = useFragment(SpanSheet_SpanFragment, props.span);
   // The last span stays up through the close transition.
   const span = useKeepPreviousData(currentSpan ?? undefined, !props.open);
@@ -1452,11 +1411,11 @@ function SpanSheet(props: SpanSheetProps) {
               size="compact"
               render={
                 <Link
-                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                   params={{
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
+                    organizationSlug,
+                    projectSlug,
+                    targetSlug,
                     traceId: props.traceId,
                   }}
                   search={{ activeSpanId: span.parentId }}

@@ -14,6 +14,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
@@ -115,9 +116,6 @@ export type AlertConditionsPanelProps = {
     updatedAt: string;
     updatedBy?: User;
   };
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   /**
    * Called after the user confirms a delete via the Delete-rule dialog. The
    * page that hosts this panel is responsible for navigation (typically back
@@ -154,13 +152,8 @@ function UserCell({ user }: { user: User }) {
   );
 }
 
-export function AlertConditionsPanel({
-  rule,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-  onRuleDeleted,
-}: AlertConditionsPanelProps) {
+export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPanelProps) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const metricLabel =
     rule.type === MetricAlertRuleType.Latency && rule.metric
       ? `${rule.metric.toLowerCase()} latency`
@@ -283,44 +276,18 @@ export function AlertConditionsPanel({
               : "Paused (conditions aren't evaluated)"}
           </span>
         </span>
-        <AlertRuleEnabledToggle
-          ruleId={rule.id}
-          enabled={rule.enabled}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-        />
+        <AlertRuleEnabledToggle ruleId={rule.id} enabled={rule.enabled} />
       </div>
 
       <div className="flex items-center gap-2">
-        <ModifyAlertSheet
-          rule={rule}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
-        />
-        <DeleteRuleButton
-          ruleId={rule.id}
-          ruleName={rule.name}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          onDeleted={onRuleDeleted}
-        />
+        <ModifyAlertSheet rule={rule} />
+        <DeleteRuleButton ruleId={rule.id} ruleName={rule.name} onDeleted={onRuleDeleted} />
       </div>
     </div>
   );
 }
 
-function ModifyAlertSheet({
-  rule,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-}: {
-  rule: AlertConditionsPanelProps['rule'];
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function ModifyAlertSheet({ rule }: { rule: AlertConditionsPanelProps['rule'] }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -334,9 +301,6 @@ function ModifyAlertSheet({
       <AlertForm
         mode="edit"
         ruleId={rule.id}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         defaultValues={ruleToFormDefaults(rule)}
         onSuccess={() => setOpen(false)}
         onCancel={() => setOpen(false)}
@@ -348,14 +312,10 @@ function ModifyAlertSheet({
 function DeleteRuleButton({
   ruleId,
   ruleName,
-  organizationSlug,
-  projectSlug,
   onDeleted,
 }: {
   ruleId: string;
   ruleName: string;
-  organizationSlug: string;
-  projectSlug: string;
   onDeleted?: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -366,8 +326,6 @@ function DeleteRuleButton({
         open={open}
         ruleId={ruleId}
         ruleName={ruleName}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
         onCancel={() => setOpen(false)}
         onConfirm={() => {
           setOpen(false);

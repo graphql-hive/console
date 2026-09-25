@@ -8,14 +8,14 @@ import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
-import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
+import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { pick } from '@/lib/object';
 import { useChartStyles } from '@/lib/utils';
@@ -56,13 +56,8 @@ const ClientView_ClientStatsQuery = graphql(`
   }
 `);
 
-function ClientView(props: {
-  clientName: string;
-  dataRetentionInDays: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function ClientView(props: { clientName: string; dataRetentionInDays: number }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { styles, colors } = useChartStyles();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: props.dataRetentionInDays,
@@ -73,9 +68,9 @@ function ClientView(props: {
     query: ClientView_ClientStatsQuery,
     variables: {
       targetSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
       period: dateRangeController.resolvedRange,
       clientName: props.clientName,
@@ -106,7 +101,7 @@ function ClientView(props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -141,14 +136,12 @@ function ClientView(props: {
           <div className="col-span-4">
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Total calls"
                 icon={GlobeIcon}
                 value={isLoading ? '-' : formatNumber(totalRequests)}
                 caption={`Requests in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
               />
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Requests per minute"
                 icon={ActivityIcon}
                 value={
@@ -165,14 +158,12 @@ function ClientView(props: {
                 caption={`RPM in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
               />
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Operations"
                 icon={BookIcon}
                 value={isLoading ? '-' : totalOperations}
                 caption="Documents requested by selected client"
               />
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Versions"
                 icon={HistoryIcon}
                 value={isLoading ? '-' : totalVersions}
@@ -270,9 +261,9 @@ function ClientView(props: {
                         className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                         params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
+                          organizationSlug,
+                          projectSlug,
+                          targetSlug,
                           operationName: operation.name,
                           operationHash: operation.operationHash ?? '_',
                         }}
@@ -350,25 +341,21 @@ const ClientInsightsPageQuery = graphql(`
   }
 `);
 
-function ClientInsightsPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  name: string;
-}) {
+function ClientInsightsPageContent(props: { name: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ClientInsightsPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
 
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -397,30 +384,17 @@ function ClientInsightsPageContent(props: {
     <ClientView
       clientName={props.name}
       dataRetentionInDays={currentOrganization.usageRetentionInDays}
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
     />
   );
 }
 
-export function TargetInsightsClientPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  name: string;
-}) {
+export function TargetInsightsClientPage(props: { name: string }) {
   return (
     <>
       <Meta title={`${props.name} - client`} />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Insights}
-      >
-        <ClientInsightsPageContent {...props} />
-      </TargetLayout>
+      <LayoutContent>
+        <ClientInsightsPageContent name={props.name} />
+      </LayoutContent>
     </>
   );
 }

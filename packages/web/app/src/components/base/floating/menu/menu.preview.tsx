@@ -350,6 +350,70 @@ export const Compact = createPreview(() => (
   />
 ));
 
+const unset = (value: string) => (value === 'unset' ? undefined : value);
+
+export const Playground = createPreview({
+  controls: {
+    side: { type: 'radio', options: ['bottom', 'top', 'left', 'right'], default: 'bottom' },
+    align: { type: 'radio', options: ['start', 'center', 'end'], default: 'start' },
+    minWidth: {
+      type: 'select',
+      options: ['unset', 'none', 'default', 'sm', 'md'],
+      default: 'unset',
+      derive: unset,
+    },
+    maxWidth: {
+      type: 'select',
+      options: ['unset', 'none', 'default', 'sm', 'lg'],
+      default: 'unset',
+      derive: unset,
+    },
+    width: { type: 'select', options: ['unset', 'none', 'sm'], default: 'unset', derive: unset },
+    header: { type: 'boolean', default: true },
+    indicator: { type: 'radio', options: ['check', 'switch'], default: 'check' },
+    externalLink: { type: 'boolean', default: true },
+    destructive: { type: 'boolean', default: true },
+  },
+  render: v => {
+    const [compact, setCompact] = useState(false);
+    const sections: MenuSection[] = [
+      [v.header && { kind: 'header', title: 'User', subtitle: 'user@the-guild.dev' }],
+      [
+        { label: 'Settings', icon: Settings },
+        { label: 'Copy link', icon: Copy, variant: 'action' },
+        {
+          kind: 'link',
+          label: 'Documentation',
+          icon: FileText,
+          href: 'https://the-guild.dev/graphql/hive/docs',
+          external: v.externalLink,
+        },
+      ],
+      [
+        {
+          kind: 'checkbox',
+          label: 'Compact rows',
+          checked: compact,
+          onCheckedChange: setCompact,
+          indicator: v.indicator as 'check' | 'switch',
+        },
+      ],
+      [v.destructive && { label: 'Log out', icon: LogOut, variant: 'destructiveAction' }],
+    ];
+    return (
+      <Menu
+        trigger={<Button label="Open menu" />}
+        side={v.side as 'bottom'}
+        align={v.align as 'start'}
+        minWidth={v.minWidth as 'default' | undefined}
+        maxWidth={v.maxWidth as 'default' | undefined}
+        width={v.width as 'sm' | undefined}
+        sections={sections}
+      />
+    );
+  },
+});
+
 /**
  * Falsy entries are dropped and an empty section is skipped, separators included, so a row can be
  * written as `cond && {…}` without the call site filtering first. Only two rows render here.

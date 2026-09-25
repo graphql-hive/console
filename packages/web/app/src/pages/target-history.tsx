@@ -4,13 +4,14 @@ import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link, Outlet, useParams } from '@tanstack/react-router';
 
@@ -86,17 +87,15 @@ function ListPage(props: {
   isLastPage: boolean;
   onLoadMore: (after: string) => void;
   versionId?: string;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { variables, isLastPage, onLoadMore, versionId } = props;
   const [versionsQuery] = useQuery({
     query: HistoryPage_VersionsPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       ...variables,
     },
     requestPolicy: 'cache-and-network',
@@ -117,9 +116,9 @@ function ListPage(props: {
           )}
           to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
           params={{
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
             versionId: version.id,
           }}
         >
@@ -221,7 +220,32 @@ function ListPage(props: {
   );
 }
 
-export const TargetHistoryPageQuery = graphql(`
+/**
+ * Selected along the same path as the target layout's query, so once the layout has loaded,
+ * graphcache answers this without a request and the bare /history URL redirects at once.
+ */
+export const TargetHistoryLatestVersionQuery = graphql(`
+  query TargetHistoryLatestVersionQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+  ) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      project: projectBySlug(projectSlug: $projectSlug) {
+        id
+        target: targetBySlug(targetSlug: $targetSlug) {
+          id
+          latestSchemaVersion {
+            id
+          }
+        }
+      }
+    }
+  }
+`);
+
+const TargetHistoryPageQuery = graphql(`
   query TargetHistoryPageQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -248,17 +272,14 @@ export const TargetHistoryPageQuery = graphql(`
   }
 `);
 
-function HistoryPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function HistoryPageContent() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetHistoryPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
   const [pageVariables, setPageVariables] = useState([{ first: 10, after: null as string | null }]);
@@ -272,7 +293,7 @@ function HistoryPageContent(props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -301,9 +322,6 @@ function HistoryPageContent(props: {
                         setPageVariables([...pageVariables, { after, first: 10 }]);
                       }}
                       versionId={versionId}
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      targetSlug={props.targetSlug}
                     />
                   ))}
                 </div>
@@ -332,23 +350,13 @@ function HistoryPageContent(props: {
   );
 }
 
-export function TargetHistoryPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function TargetHistoryPage() {
   return (
     <>
       <Meta title="History" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.History}
-        className="flex flex-row gap-x-6"
-      >
-        <HistoryPageContent {...props} />
-      </TargetLayout>
+      <LayoutContent className="flex flex-row gap-x-6">
+        <HistoryPageContent />
+      </LayoutContent>
     </>
   );
 }
