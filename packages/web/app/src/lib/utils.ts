@@ -87,6 +87,9 @@ function readChartStyles() {
     colors: {
       ...readResolvedColors(),
       primary: cssVarHex(s, '--chart-1'),
+      /** Area fill gradient for a primary series, top and bottom. */
+      primaryAreaFrom: cssVarRgba(s, '--chart-1', 0.2),
+      primaryAreaTo: cssVarRgba(s, '--chart-1', 0),
       error: cssVarHex(s, '--chart-2'),
       p75: cssVarHex(s, '--chart-3'),
       p90: cssVarHex(s, '--chart-4'),

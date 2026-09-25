@@ -7,7 +7,7 @@ import { Card } from '@/components/base/card/card';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { subDays } from '@/lib/date-time';
 import { useFormattedNumber } from '@/lib/hooks';
-import { pluralize } from '@/lib/utils';
+import { pluralize, useChartStyles } from '@/lib/utils';
 
 export function ResourceCard(props: {
   /** Names the resource in the schema-versions tooltip, and reserves a skeleton line for `subtitle`. */
@@ -23,6 +23,7 @@ export function ResourceCard(props: {
   days: number;
 }) {
   const { highestNumberOfRequests } = props;
+  const { colors } = useChartStyles();
 
   const requests = useMemo(() => {
     if (props.requestsOverTime?.length) {
@@ -59,7 +60,7 @@ export function ResourceCard(props: {
                         style={{ width: size.width, height: 90 }}
                         option={{
                           animation: props.name != null,
-                          color: ['#f4b740'],
+                          color: [colors.primary],
                           grid: {
                             left: 0,
                             top: 10,
@@ -105,11 +106,11 @@ export function ResourceCard(props: {
                                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                                   {
                                     offset: 0,
-                                    color: 'rgba(244, 184, 64, 0.20)',
+                                    color: colors.primaryAreaFrom,
                                   },
                                   {
                                     offset: 1,
-                                    color: 'rgba(244, 184, 64, 0)',
+                                    color: colors.primaryAreaTo,
                                   },
                                 ]),
                               },

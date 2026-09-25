@@ -6,7 +6,6 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DataWrapper, Stat } from '@/components/v2';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
-import { theme } from '@/lib/charts';
 import { useChartStyles } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -64,7 +63,6 @@ function CollectedOperationsOverTime(props: {
       {size => (
         <ReactECharts
           style={{ width: size.width, height: 200 }}
-          theme={theme.theme}
           option={{
             ...chartStyles,
             grid: {

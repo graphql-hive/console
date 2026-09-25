@@ -87,7 +87,7 @@ function SubscriptionPageContent() {
 
   const organization = useFragment(SubscriptionPage_OrganizationFragment, currentOrganization);
   const queryForBilling = useFragment(SubscriptionPage_QueryFragment, query.data);
-  const { styles } = useChartStyles();
+  const { styles, colors } = useChartStyles();
 
   const monthlyUsage = query.data?.monthlyUsage ?? [];
   const monthlyUsagePoints: [string, number][] = useMemo(
@@ -209,7 +209,7 @@ function SubscriptionPageContent() {
                               },
                               splitLine: {
                                 lineStyle: {
-                                  color: '#595959',
+                                  color: colors.gridSubtle,
                                   type: 'dashed',
                                 },
                               },
@@ -221,7 +221,7 @@ function SubscriptionPageContent() {
                               name: 'Events',
                               showSymbol: false,
                               boundaryGap: false,
-                              color: '#595959',
+                              color: colors.line,
                               areaStyle: {},
                               emphasis: {
                                 focus: 'series',
