@@ -671,3 +671,52 @@ export const Cells = createPreview(() => (
     />
   </div>
 ));
+
+export const Playground = createPreview({
+  controls: {
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
+    striped: { type: 'boolean', default: true },
+    bordered: { type: 'boolean', default: true },
+    rows: { type: 'range', default: 12, min: 0, max: CHECKS.length },
+    pagination: { type: 'radio', options: ['client', 'none'], default: 'client' },
+    pageSize: { type: 'number', default: 8, min: 1 },
+    loading: { type: 'boolean', default: false },
+    footer: { type: 'boolean', default: false },
+  },
+  render: v => {
+    const data = CHECKS.slice(0, v.rows);
+    return (
+      <div
+        className={
+          v.onSurface === 'raised'
+            ? 'bg-neutral-3 border-neutral-5 w-[56rem] rounded-md border p-6'
+            : 'w-[52rem]'
+        }
+      >
+        <DataTable
+          data={data}
+          columns={COLUMNS}
+          getRowId={row => row.id}
+          loading={v.loading}
+          variants={{
+            onSurface: v.onSurface as 'base' | 'raised',
+            striped: v.striped,
+            bordered: v.bordered,
+          }}
+          pagination={
+            v.pagination === 'client' ? { kind: 'client', pageSize: v.pageSize } : { kind: 'none' }
+          }
+          footer={
+            v.footer
+              ? {
+                  label: 'Total changes',
+                  value: data.reduce((sum, check) => sum + check.changes, 0),
+                }
+              : undefined
+          }
+          emptyMessage="No schema checks have run for this target yet."
+        />
+      </div>
+    );
+  },
+});

@@ -69,6 +69,7 @@ export const Playground = createPreview({
   controls: controlsFor(Textarea, {
     placeholder: { type: 'text', default: 'Enter a description' },
     onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
+    width: { type: 'select', options: ['full', 'md', 'sm', 'xs'], default: 'full' },
     autoSize: { type: 'boolean', default: false },
     mono: { type: 'boolean', default: false },
     invalid: { type: 'boolean', default: false },
@@ -79,6 +80,7 @@ export const Playground = createPreview({
       <Textarea
         placeholder={v.placeholder}
         onSurface={v.onSurface}
+        width={v.width}
         autoSize={v.autoSize}
         mono={v.mono}
         invalid={v.invalid}

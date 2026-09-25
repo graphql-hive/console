@@ -54,6 +54,9 @@ function FilterHarness({
   valuesLabel,
   initial = [],
   withExcludeMode = false,
+  disabled,
+  singleSelect,
+  alwaysShowSearch,
 }: {
   items: FilterItem[];
   label: string;
@@ -61,6 +64,9 @@ function FilterHarness({
   valuesLabel?: string;
   initial?: FilterSelection[];
   withExcludeMode?: boolean;
+  disabled?: boolean;
+  singleSelect?: boolean;
+  alwaysShowSearch?: boolean;
 }) {
   const [selected, setSelected] = useState<FilterSelection[]>(initial);
   const [exclude, setExclude] = useState(false);
@@ -79,6 +85,9 @@ function FilterHarness({
         valuesLabel={valuesLabel}
         excludeMode={withExcludeMode ? exclude : undefined}
         onExcludeModeChange={withExcludeMode ? setExclude : undefined}
+        disabled={disabled}
+        singleSelect={singleSelect}
+        alwaysShowSearch={alwaysShowSearch}
       />
       <div>
         <div className="text-neutral-8 mb-2 text-xs font-medium uppercase tracking-wider">
@@ -125,3 +134,37 @@ export const FlatItems = createPreview(() => (
     initial={[{ name: 'Breaking', values: null }]}
   />
 ));
+
+export const Playground = createPreview({
+  controls: {
+    items: { type: 'radio', options: ['clients', 'severities'], default: 'clients' },
+    excludeMode: { type: 'boolean', default: false },
+    singleSelect: { type: 'boolean', default: false },
+    alwaysShowSearch: { type: 'boolean', default: false },
+    disabled: { type: 'boolean', default: false },
+  },
+  render: v =>
+    v.items === 'clients' ? (
+      <FilterHarness
+        key="clients"
+        items={CLIENTS}
+        label="Client"
+        valuesLabel="versions"
+        withExcludeMode={v.excludeMode}
+        singleSelect={v.singleSelect}
+        alwaysShowSearch={v.alwaysShowSearch}
+        disabled={v.disabled}
+      />
+    ) : (
+      <FilterHarness
+        key="severities"
+        items={SEVERITIES}
+        label="Severity"
+        labelPlural="severities"
+        withExcludeMode={v.excludeMode}
+        singleSelect={v.singleSelect}
+        alwaysShowSearch={v.alwaysShowSearch}
+        disabled={v.disabled}
+      />
+    ),
+});

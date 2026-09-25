@@ -69,3 +69,54 @@ export const Extremes = createPreview(() => (
     <Slider min={0} max={10} value={10} onValueChange={() => {}} aria-label="Maximum" />
   </div>
 ));
+
+export const Playground = createPreview({
+  controls: {
+    range: { type: 'boolean', default: false },
+    min: { type: 'number', default: 0 },
+    max: { type: 'number', default: 100 },
+    step: { type: 'number', default: 1, min: 1 },
+    disabled: { type: 'boolean', default: false },
+  },
+  // Keyed so switching between one and two thumbs starts from a value of the right shape.
+  render: v => <SliderPlayground key={String(v.range)} {...v} />,
+});
+
+function SliderPlayground(props: {
+  range: boolean;
+  min: number;
+  max: number;
+  step: number;
+  disabled: boolean;
+}) {
+  const [single, setSingle] = useState(props.min);
+  const [range, setRange] = useState<[number, number]>([props.min, props.max]);
+  return (
+    <div className="flex w-[28rem] flex-col gap-2">
+      {props.range ? (
+        <Slider
+          value={range}
+          onValueChange={setRange}
+          min={props.min}
+          max={props.max}
+          step={props.step}
+          disabled={props.disabled}
+          aria-label="Range"
+        />
+      ) : (
+        <Slider
+          value={single}
+          onValueChange={setSingle}
+          min={props.min}
+          max={props.max}
+          step={props.step}
+          disabled={props.disabled}
+          aria-label="Value"
+        />
+      )}
+      <span className="text-neutral-11 font-mono text-xs">
+        {props.range ? `${range[0]} to ${range[1]}` : single}
+      </span>
+    </div>
+  );
+}
