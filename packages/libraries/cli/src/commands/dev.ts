@@ -79,6 +79,59 @@ type ServiceWithSource = {
       };
 };
 
+/** Mirrors oclif's `ParsingToken` (not re-exported from `@oclif/core`'s public types). */
+type CLIParsingToken =
+  | { type: 'arg'; arg: string; input: string }
+  | { type: 'flag'; flag: string; input: string };
+
+/** Parse `key:value` header strings into a record. On duplicate keys, the last one wins. */
+const parseHeaders = (list: string[]): Record<string, string> =>
+  list.reduce(
+    (acc, header) => {
+      const [key, ...values] = header.split(':');
+
+      return {
+        ...acc,
+        [key]: values.join(':'),
+      };
+    },
+    {} as Record<string, string>,
+  );
+
+/**
+ * Segment raw `--header` occurrences by their position relative to `--service`:
+ * headers before the first `--service` are global; headers after a `--service` are
+ * scoped to that service (until the next `--service`, or the end of the arguments).
+ *
+ * Relies on oclif emitting one ordered token per `--service` occurrence, so the nth
+ * `--service` token lines up with `flags.service[n]` (and thus `perService[n]`).
+ */
+const segmentHeadersByService = (
+  raw: readonly CLIParsingToken[],
+  serviceCount: number,
+): { global: string[]; perService: string[][] } => {
+  const global: string[] = [];
+  const perService: string[][] = Array.from({ length: serviceCount }, () => []);
+
+  let currentServiceIndex = -1;
+  for (const token of raw) {
+    if (token.type !== 'flag') {
+      continue;
+    }
+    if (token.flag === 'service') {
+      currentServiceIndex++;
+    } else if (token.flag === 'header') {
+      if (currentServiceIndex === -1) {
+        global.push(token.input);
+      } else {
+        perService[currentServiceIndex].push(token.input);
+      }
+    }
+  }
+
+  return { global, perService };
+};
+
 export default class Dev extends Command<typeof Dev> {
   static description = [
     'Develop and compose Supergraph with your local services.',
@@ -186,39 +239,8 @@ export default class Dev extends Command<typeof Dev> {
       throw new ServiceAndUrlLengthMismatch(flags.service, flags.url);
     }
 
-    const parseHeaders = (list: string[]): Record<string, string> =>
-      list.reduce(
-        (acc, header) => {
-          const [key, ...values] = header.split(':');
-
-          return {
-            ...acc,
-            [key]: values.join(':'),
-          };
-        },
-        {} as Record<string, string>,
-      );
-
-    // Segment --header occurrences by their position relative to --service:
-    // headers before the first --service are global; headers after a --service
-    // are scoped to that service (until the next --service).
-    const globalHeaderList: string[] = [];
-    const perServiceHeaderLists: string[][] = flags.service.map(() => []);
-    let currentServiceIndex = -1;
-    for (const token of raw) {
-      if (token.type !== 'flag') {
-        continue;
-      }
-      if (token.flag === 'service') {
-        currentServiceIndex++;
-      } else if (token.flag === 'header') {
-        if (currentServiceIndex === -1) {
-          globalHeaderList.push(token.input);
-        } else {
-          perServiceHeaderLists[currentServiceIndex].push(token.input);
-        }
-      }
-    }
+    const { global: globalHeaderList, perService: perServiceHeaderLists } =
+      segmentHeadersByService(raw, flags.service.length);
     const globalHeaders = parseHeaders(globalHeaderList);
 
     const isRemote = flags.remote === true;

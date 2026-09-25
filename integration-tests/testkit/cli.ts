@@ -329,7 +329,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
           ]
         : []),
       input.write ? `--write ${input.write}` : '',
-      ...(input.headers ?? []).map(header => `--header ${header}`),
+      ...(input.headers ?? []).flatMap(header => ['--header', header]),
       ...(await Promise.all(
         input.services.map(async ({ name, url, sdl, headers }) => {
           return [
