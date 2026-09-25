@@ -1316,7 +1316,7 @@ export class SchemaVersionStore {
       latestVersion: SchemaVersion | null;
       latestValidVersion: SchemaVersion | null;
     };
-    actionLog: SchemaLog;
+    meta: SchemaVersionMeta | null;
     schemaLogs: SchemaLogDiffInput;
     publicSchemaChanges: Array<SchemaChangeType> | null;
     supergraphSchemaChanges: Array<SchemaChangeType> | null;
@@ -1324,16 +1324,6 @@ export class SchemaVersionStore {
     conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
   }) {
     return await this.pg.transaction('createPromotionSchemaVersion', async trx => {
-      let meta: SchemaVersionMeta | null = args.origin.version.meta;
-      // when the "origin" is null "meta" is null as well (as those properties were introduced in the same update)
-      // in that case we need to retrieve the meta from the action_id
-      if (!meta) {
-        meta = {
-          author: args.actionLog.author,
-          commit: args.actionLog.commit,
-        };
-      }
-
       const schemaVersion = await this.insertSchemaVersion(trx, {
         isComposable: args.origin.version.isComposable,
         targetId: args.target.target.id,
@@ -1352,7 +1342,7 @@ export class SchemaVersionStore {
         supergraphChanges: args.supergraphSchemaChanges,
         schemaCompositionErrors: args.origin.version.schemaCompositionErrors,
         github: args.origin.version.github,
-        meta,
+        meta: args.meta,
         tags: args.origin.version.tags,
         schemaMetadata: args.origin.version.schemaMetadata,
         metadataAttributes: args.origin.version.metadataAttributes,
@@ -1607,19 +1597,17 @@ const SchemaVersionOriginPromotionModel = z.object({
 
 // type SchemaVersionOriginPromotion = z.TypeOf<typeof SchemaVersionOriginPromotionModel>;
 
+const SchemaVersionOriginPublishServiceModel = z.object({
+  name: z.string(),
+  versionId: z.string(),
+  revision: z.string().nullable().optional(),
+});
+
 const SchemaVersionOriginPublishModel = z.object({
   type: z.literal('publish'),
   revision: z.string().nullable().optional(),
   /** This is nullable in case it is a monolith. */
-  services: z
-    .array(
-      z.object({
-        name: z.string(),
-        versionId: z.string(),
-        revision: z.string().nullable().optional(),
-      }),
-    )
-    .nullable(),
+  services: z.tuple([SchemaVersionOriginPublishServiceModel]).nullable(),
 });
 
 const SchemaVersionOriginDeleteModel = z.object({
@@ -1646,7 +1634,7 @@ const SchemaVersionMetaModel = z.object({
   commit: z.string().nullable(),
 });
 
-type SchemaVersionMeta = z.TypeOf<typeof SchemaVersionMetaModel>;
+export type SchemaVersionMeta = z.TypeOf<typeof SchemaVersionMetaModel>;
 
 type SchemaVersionOrigin = z.TypeOf<typeof SchemaVersionOriginModel>;
 
