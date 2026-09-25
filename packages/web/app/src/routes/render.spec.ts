@@ -7,6 +7,8 @@ import { projectSettings } from '@/lib/testing/fixtures/project-settings';
 import { targetSettings } from '@/lib/testing/fixtures/target-settings';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
+import { createAppRouter } from '@/router';
+import { createMemoryHistory } from '@tanstack/react-router';
 import { screen, waitFor, within } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
@@ -572,6 +574,42 @@ describe('alerts sections', () => {
       const seen = client.current!.seen;
       expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
       expect(seen).not.toContain('TargetAlertsPageQuery');
+    },
+  );
+});
+
+describe('layout loaders', () => {
+  async function loadedAt(url: string) {
+    const client = createTestClient(layoutFixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({ initialEntries: [url] }),
+      urqlClient: client,
+    });
+    await router.load();
+    return client;
+  }
+
+  // Loaded but not rendered: the requests can only have come from the loaders.
+  it.each([
+    [
+      `${ORGANIZATION}/view/settings`,
+      'OrganizationLayoutQuery',
+      { organizationSlug: SLUGS.organizationSlug },
+    ],
+    [
+      `${PROJECT}/view/settings`,
+      'ProjectLayoutQuery',
+      { organizationSlug: SLUGS.organizationSlug, projectSlug: SLUGS.projectSlug },
+    ],
+    [`${TARGET}/checks/check-1`, 'TargetLayoutQuery', SLUGS],
+  ])(
+    '%s starts %s with exactly its layout variables before render',
+    { timeout: 30_000 },
+    async (url, name, variables) => {
+      const client = await loadedAt(url);
+      expect(client.seen).toContain('ViewerQuery');
+      const operation = client.operations.find((_, index) => client.seen[index] === name);
+      expect(operation?.variables).toEqual(variables);
     },
   );
 });
