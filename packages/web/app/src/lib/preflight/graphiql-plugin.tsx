@@ -18,7 +18,7 @@ import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useToast } from '@/components/base/toast/toast';
-import { useTheme } from '@/components/theme/theme-provider';
+import { useMonacoTheme } from '@/components/theme/theme-provider';
 import { Subtitle } from '@/components/ui/page';
 import { usePromptManager } from '@/components/ui/prompt';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -101,11 +101,6 @@ const monacoProps = {
     },
   },
 } satisfies Record<'script' | 'env', ComponentPropsWithoutRef<typeof MonacoEditor>>;
-
-function useMonacoTheme() {
-  const { resolvedTheme } = useTheme();
-  return resolvedTheme === 'dark' ? 'vs-dark' : 'vs';
-}
 
 function exposeMonacoEditorForE2E(name: string, editor: editor.IStandaloneCodeEditor) {
   if (!import.meta.env.DEV) {

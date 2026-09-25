@@ -6,7 +6,7 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Label } from '@/components/base/label/label';
 import { Switch } from '@/components/base/switch/switch';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
-import { useTheme } from '@/components/theme/theme-provider';
+import { useMonacoTheme } from '@/components/theme/theme-provider';
 import type { Monaco, MonacoDiffEditor as OriginalMonacoDiffEditor } from '@monaco-editor/react';
 import { Spinner } from '../ui/spinner';
 
@@ -21,7 +21,7 @@ export const DiffEditor = (props: {
   onMount?: (editor: editor.IStandaloneCodeEditor) => void;
   onChange?: (source: string | undefined) => void;
 }): ReactElement => {
-  const { resolvedTheme } = useTheme();
+  const monacoTheme = useMonacoTheme();
   const [showDiff, setShowDiff] = useState<boolean>(true);
   const editorRef = useRef<OriginalMonacoDiffEditor | null>(null);
   const modelsRef = useRef<{
@@ -122,8 +122,7 @@ export const DiffEditor = (props: {
       </div>
       {showDiff ? (
         <MonacoDiffEditor
-          // this outputs either "vs-light" or "vs-dark"
-          theme={`vs-${resolvedTheme}`}
+          theme={monacoTheme}
           width="100%"
           height="70vh"
           language="graphql"
@@ -143,8 +142,7 @@ export const DiffEditor = (props: {
         />
       ) : (
         <MonacoEditor
-          // this outputs either "vs-light" or "vs-dark"
-          theme={`vs-${resolvedTheme}`}
+          theme={monacoTheme}
           width="100%"
           height="70vh"
           language="graphql"
