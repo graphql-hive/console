@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { TypedDocumentNode } from 'urql';
 import type { CreateProjectMutation } from '@/components/layouts/organization';
 import type { CreateTarget_CreateTargetMutation } from '@/components/layouts/project';
+import type { OrganizationMemberRow_DeleteMember } from '@/components/organization/members/list';
 import type { CreateAlertModal_AddAlertMutation } from '@/components/project/alerts/create-alert';
 import type { CreateChannel_AddAlertChannelMutation } from '@/components/project/alerts/create-channel';
 import type { DeleteAlertsButton_DeleteAlertsMutation } from '@/components/project/alerts/delete-alerts-button';
@@ -99,6 +100,13 @@ const joinOrganization: TypedDocumentNodeUpdateResolver<
   if (joinOrganization.__typename === 'OrganizationPayload') {
     cache.invalidate('Query', 'organizations');
   }
+};
+
+// The removed member may be the viewer; one viewer refetch after a rare action beats a cache lookup.
+const deleteOrganizationMember: TypedDocumentNodeUpdateResolver<
+  typeof OrganizationMemberRow_DeleteMember
+> = (_data, _args, cache) => {
+  cache.invalidate('Query', 'organizations');
 };
 
 const deleteOrganization: TypedDocumentNodeUpdateResolver<typeof DeleteOrganizationDocument> = (
@@ -433,6 +441,7 @@ const updateMetricAlertRule: UpdateResolver = (_result, args, cache) => {
 export const Mutation = {
   createOrganization,
   joinOrganization,
+  deleteOrganizationMember,
   deleteOrganization,
   createProject,
   deleteProject,

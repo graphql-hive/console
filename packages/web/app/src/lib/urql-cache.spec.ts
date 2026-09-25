@@ -53,6 +53,32 @@ describe('joinOrganization updater', () => {
   });
 });
 
+describe('deleteOrganizationMember updater', () => {
+  it(
+    "invalidates the viewer's organizations in case the member was the viewer",
+    { timeout: 30_000 },
+    async () => {
+      const { Mutation } = await import('./urql-cache');
+      const cache = { invalidate: vi.fn(), updateQuery: vi.fn() };
+
+      Mutation.deleteOrganizationMember(
+        {
+          __typename: 'Mutation',
+          deleteOrganizationMember: {
+            __typename: 'OrganizationPayload',
+            organization: { __typename: 'Organization', id: 'organization-1' },
+          },
+        },
+        { input: { organizationSlug: 'acme', userId: 'user-1' } },
+        cache as unknown as Cache,
+        {} as never,
+      );
+
+      expect(cache.invalidate).toHaveBeenCalledWith('Query', 'organizations');
+    },
+  );
+});
+
 describe('createTarget updater', () => {
   it(
     "invalidates the project's targets so the selector tree refetches",

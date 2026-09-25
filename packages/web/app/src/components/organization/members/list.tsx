@@ -125,7 +125,7 @@ export const authProviderToIconAndTextMap: Record<
   },
 };
 
-const OrganizationMemberRow_DeleteMember = graphql(`
+export const OrganizationMemberRow_DeleteMember = graphql(`
   mutation OrganizationMemberRow_DeleteMember($input: OrganizationMemberInput!) {
     deleteOrganizationMember(input: $input) {
       organization {
