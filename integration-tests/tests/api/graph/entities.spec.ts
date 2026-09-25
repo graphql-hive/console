@@ -85,9 +85,14 @@ test.concurrent('disabling a contract deletes its contract graph', async ({ expe
     await graphStore.findGraphForTargetIdByName(target.id, 'default/my-contract'),
   ).not.toBeNull();
 
-  const disableResult = await disableContract({ contractId: contract.id }, ownerToken).then(r =>
-    r.expectNoGraphQLErrors(),
-  );
+  const disableResult = await disableContract(
+    {
+      contract: {
+        byId: contract.id,
+      },
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
 
   expect(disableResult.disableContract.error).toBeNull();
   expect(disableResult.disableContract.ok?.disabledContract.isDisabled).toBe(true);
