@@ -6,10 +6,11 @@ router is [TanStack Router](https://tanstack.com/router) in code-based mode: rou
 
 ## Two patterns and one rule
 
-**1. A route owns its layout and renders `<Outlet/>` inside it.** The organization, project and
-target routes render their header and secondary nav around the outlet; their pages render inside it
-and know nothing about the chrome. The same shape repeats one level down: a settings route renders
-the sections nav around an outlet, and each section is a child route. Chrome mounts once and stays
+**1. A route owns its layout and renders `<Outlet/>` inside it.** The pathless `with-header` route
+renders the header (selector, user menu) once above the organization, project and target routes;
+each of those renders its secondary nav around the outlet; their pages render inside it and know
+nothing about the chrome. The same shape repeats one level down: a settings route renders the
+sections nav around an outlet, and each section is a child route. Chrome mounts once and stays
 mounted while you move between siblings; a page is just its content, wrapped in `<LayoutContent>`.
 
 **2. A nav is a list of `Link`s; the router decides which one is current.** `Navigation`
@@ -42,7 +43,9 @@ src/routes/
   tree.ts                    root.addChildren([...]) mirroring every route's getParentRoute
   root.tsx                   root route, 404, logout, join
   anonymous.tsx              /auth/* (pathless `anonymous` parent)
-  authenticated.tsx          /, /dev, /manage, /org/new, transfer, oidc-request (pathless `authenticated` parent)
+  authenticated.tsx          /, /dev, /manage, /org/new, transfer (pathless `authenticated` parent: the session gate)
+  with-header.tsx            the header, once, above the routes below (pathless `with-header` parent)
+  oidc-request.tsx           $organizationSlug/oidc-request, the OIDC interstitial
   organization/route.tsx     $organizationSlug layout + index, support, subscription
   organization/settings.ts   view/settings and its sections
   organization/members.ts    view/members and its sections
@@ -79,11 +82,10 @@ Three kinds of slug stay props, and each has a reason:
 
 - **The slug names something other than the current page.** The target a role is scoped to, the
   project a table row links to: that is data. `members/resource-selector.tsx` is the example.
-- **The component renders outside that route.** `OrganizationLayout` and the user menu also render
-  in the OIDC interstitial (`$organizationSlug/oidc-request`), which is a sibling route, and
-  `QueryError` renders on `/manage` and `/join/$inviteCode` too. Asking for a scope you do not sit
-  under errors into the route's error boundary rather than returning a blank slug, so the page shows
-  the error screen (`use-slugs.spec.tsx` pins this).
+- **The component renders outside that route.** `QueryError` renders on `/manage` and
+  `/join/$inviteCode` too. Asking for a scope you do not sit under errors into the route's error
+  boundary rather than returning a blank slug, so the page shows the error screen
+  (`use-slugs.spec.tsx` pins this).
 - **It is not a component.** `laboratory/plugins/target-env.tsx` is a factory the page calls, so the
   page reads the slugs and hands them over.
 
@@ -105,9 +107,9 @@ For the rest of the route state:
   `useSearch({ from })` with a bare string or an un-anchored `useNavigate()`; those type against the
   root and lose the route's search schema.
 - Route ids are the path from the root with pathless parents as segments and a trailing `/` for
-  index routes: `/authenticated/$organizationSlug/view/members/` is the members list,
-  `/authenticated/$organizationSlug/$projectSlug/$targetSlug/alerts/with-nav/` is Activity.
-  `tree.spec.ts` snapshots every id.
+  index routes: `/authenticated/with-header/$organizationSlug/view/members/` is the members list,
+  `/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/alerts/with-nav/` is
+  Activity. `tree.spec.ts` snapshots every id.
 - `to` paths are typed against the registered router: a typo in a `Link`, `navigate` or `redirect`
   is a compile error. Prefer that over building paths from strings.
 - A link that leaves the app takes `href` and no `to`. `components/ui/link.tsx` renders those as a

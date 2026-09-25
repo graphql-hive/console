@@ -16,7 +16,9 @@ import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { getRouteApi } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
-const appsRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/apps');
+const appsRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/apps',
+);
 
 export const TargetAppsSortSchema = z.object({
   field: z.enum(['CREATED_AT', 'ACTIVATED_AT', 'LAST_USED']),

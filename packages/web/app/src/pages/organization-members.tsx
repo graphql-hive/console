@@ -22,7 +22,7 @@ import {
   type RouteIds,
 } from '@tanstack/react-router';
 
-const membersListRoute = getRouteApi('/authenticated/$organizationSlug/view/members/');
+const membersListRoute = getRouteApi('/authenticated/with-header/$organizationSlug/view/members/');
 
 const OrganizationMembersPage_OrganizationFragment = graphql(`
   fragment OrganizationMembersPage_OrganizationFragment on Organization {
@@ -66,7 +66,7 @@ function membersVariables(
   return { organizationSlug, first: PAGE_SIZE, ...list };
 }
 
-const MEMBERS = '/authenticated/$organizationSlug/view/members';
+const MEMBERS = '/authenticated/with-header/$organizationSlug/view/members';
 
 type SectionId = 'list' | 'roles' | 'groups' | 'invitations';
 

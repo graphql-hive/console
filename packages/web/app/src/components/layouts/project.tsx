@@ -6,22 +6,18 @@ import { Button } from '@/components/base/button/button';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
-import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import {
   CreateTargetForm,
   CreateTargetFormSchema,
   type CreateTargetFormValues,
 } from '@/components/target/create-target-form';
-import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
-import { HiveLink } from '../ui/hive-link';
-import { ProjectSelector } from './project-selector';
 import { ProjectLayoutQuery } from './queries';
 
 export enum Page {
@@ -48,18 +44,6 @@ export function ProjectLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <Header>
-        <div className="flex flex-row items-center gap-4">
-          <HiveLink className="size-8" />
-          <ProjectSelector
-            currentOrganizationSlug={organizationSlug}
-            currentProjectSlug={projectSlug}
-          />
-        </div>
-        <div>
-          <UserMenu />
-        </div>
-      </Header>
       {query.fetching === false &&
       query.stale === false &&
       (currentProject === null || currentOrganization === null) ? (

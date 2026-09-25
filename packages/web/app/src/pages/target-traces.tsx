@@ -36,7 +36,9 @@ import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
 import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
 
-const tracesRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces');
+const tracesRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces',
+);
 
 const chartConfig = {
   ok: {

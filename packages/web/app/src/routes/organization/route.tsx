@@ -5,15 +5,14 @@ import { OrganizationSubscriptionManagePage } from '@/pages/organization-subscri
 import { OrganizationSupportPage } from '@/pages/organization-support';
 import { OrganizationSupportTicketPage } from '@/pages/organization-support-ticket';
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { authenticatedRoute } from '../authenticated';
+import { withHeaderRoute } from '../with-header';
 
 export const organizationRoute = createRoute({
-  getParentRoute: () => authenticatedRoute,
+  getParentRoute: () => withHeaderRoute,
   path: '$organizationSlug',
   component: function OrganizationRoute() {
-    const { organizationSlug } = organizationRoute.useParams();
     return (
-      <OrganizationLayout organizationSlug={organizationSlug}>
+      <OrganizationLayout>
         <Outlet />
       </OrganizationLayout>
     );

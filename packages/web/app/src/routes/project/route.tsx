@@ -2,10 +2,10 @@ import { ProjectLayout } from '@/components/layouts/project';
 import { ProjectIndexRouteSearch, ProjectPage } from '@/pages/project';
 import { ProjectAlertsPage } from '@/pages/project-alerts';
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { authenticatedRoute } from '../authenticated';
+import { withHeaderRoute } from '../with-header';
 
 export const projectRoute = createRoute({
-  getParentRoute: () => authenticatedRoute,
+  getParentRoute: () => withHeaderRoute,
   path: '$organizationSlug/$projectSlug',
   component: function ProjectRoute() {
     return (

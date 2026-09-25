@@ -28,6 +28,11 @@ vi.mock('supertokens-auth-react', async importOriginal => ({
   default: { init: () => {} },
   SuperTokensWrapper: (props: { children: ReactNode }) => props.children,
 }));
+// The OIDC interstitial redirects away unless the provider is on.
+vi.mock('@/lib/supertokens/thirdparty', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/lib/supertokens/thirdparty')>()),
+  isProviderEnabled: () => true,
+}));
 vi.mock('supertokens-auth-react/recipe/session', () => ({
   default: {
     doesSessionExist: async () => true,
@@ -156,6 +161,28 @@ describe('chrome at every page', () => {
     });
     await screen.findByRole('link', { name: 'Alerts', current: 'page' });
     expect(screen.getByRole('banner')).toBe(header);
+  });
+
+  it('keeps the header mounted across levels', { timeout: 30_000 }, async () => {
+    const { router } = at(TARGET);
+    const header = await screen.findByRole('banner');
+    await router.navigate({
+      to: '/$organizationSlug/$projectSlug',
+      params: { organizationSlug: SLUGS.organizationSlug, projectSlug: SLUGS.projectSlug },
+    });
+    await screen.findByRole('link', { name: 'Targets', current: 'page' });
+    await router.navigate({
+      to: '/$organizationSlug',
+      params: { organizationSlug: SLUGS.organizationSlug },
+    });
+    await screen.findByRole('link', { name: 'Overview', current: 'page' });
+    expect(screen.getByRole('banner')).toBe(header);
+  });
+
+  it('renders the header on the OIDC interstitial', { timeout: 30_000 }, async () => {
+    at(`${ORGANIZATION}/oidc-request?id=oidc-1&redirectToPath=%2F`);
+    await screen.findByRole('banner');
+    expect(screen.getByRole('combobox', { name: /organization/i })).toBeTruthy();
   });
 
   // The viewer is one request per session; each level fetches only its entity document.

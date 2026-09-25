@@ -431,7 +431,7 @@ const ProjectSettingsPageQuery = graphql(`
   }
 `);
 
-const SETTINGS = '/authenticated/$organizationSlug/$projectSlug/view/settings';
+const SETTINGS = '/authenticated/with-header/$organizationSlug/$projectSlug/view/settings';
 
 type SectionId = 'general' | 'policy' | 'composition' | 'access-tokens';
 

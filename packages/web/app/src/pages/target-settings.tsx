@@ -1248,7 +1248,7 @@ function TargetInfo(props: { targetId: string }) {
   );
 }
 
-const SETTINGS = '/authenticated/$organizationSlug/$projectSlug/$targetSlug/settings';
+const SETTINGS = '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/settings';
 
 type SectionId =
   | 'general'

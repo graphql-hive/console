@@ -7,26 +7,22 @@ import { NotFound } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
-import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import {
   CreateProjectForm,
   CreateProjectFormSchema,
   type CreateProjectFormValues,
 } from '@/components/project/create-project-form';
-import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { ProPlanBilling } from '../organization/billing/ProPlanBillingWarm';
 import { RateLimitWarn } from '../organization/billing/RateLimitWarn';
-import { HiveLink } from '../ui/hive-link';
 import { QueryError } from '../ui/query-error';
-import { OrganizationSelector } from './organization-selectors';
 import { OrganizationLayoutQuery } from './queries';
 
 export enum Page {
@@ -36,22 +32,12 @@ export enum Page {
   Support = 'support',
   Subscription = 'subscription',
 }
-export function OrganizationLayout({
-  children,
-  organizationSlug,
-  minimal,
-}: {
-  minimal?: boolean;
-  organizationSlug: string;
-  children: ReactNode;
-}): ReactElement | null {
+export function OrganizationLayout({ children }: { children: ReactNode }): ReactElement | null {
+  const { organizationSlug } = useSlugs('organization');
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
     query: OrganizationLayoutQuery,
-    variables: {
-      organizationSlug,
-      minimal: minimal ?? false,
-    },
+    variables: { organizationSlug },
     requestPolicy: 'cache-first',
   });
 
@@ -64,17 +50,10 @@ export function OrganizationLayout({
 
   // Only show the null state state if the query has finished fetching and data is not stale
   // This prevents showing null state when switching between orgs with cached data
-  const shouldShowNoOrg = !query.fetching && !query.stale && !currentOrganization && !minimal;
+  const shouldShowNoOrg = !query.fetching && !query.stale && !currentOrganization;
 
   return (
     <>
-      <Header>
-        <div className="flex flex-row items-center gap-4">
-          <HiveLink className="size-8" />
-          <OrganizationSelector currentOrganizationSlug={organizationSlug} />
-        </div>
-        <UserMenu />
-      </Header>
       <SecondaryNavigation
         loading={!currentOrganization}
         links={

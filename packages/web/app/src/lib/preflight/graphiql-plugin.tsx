@@ -52,7 +52,9 @@ export const preflightPlugin: GraphiQLPlugin = {
   content: PreflightContent,
 };
 
-const targetRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug');
+const targetRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug',
+);
 
 const classes = {
   monaco: clsx('*:bg-[#10151f]'),

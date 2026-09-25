@@ -27,7 +27,7 @@ import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
 
 const insightsRoute = getRouteApi(
-  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/insights',
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights',
 );
 
 function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {

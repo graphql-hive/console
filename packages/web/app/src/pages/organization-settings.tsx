@@ -512,7 +512,7 @@ const OrganizationSettingsPageQuery = graphql(`
   }
 `);
 
-const SETTINGS = '/authenticated/$organizationSlug/view/settings';
+const SETTINGS = '/authenticated/with-header/$organizationSlug/view/settings';
 
 type SectionId = 'general' | 'policy' | 'sso' | 'access-tokens' | 'personal-access-tokens';
 

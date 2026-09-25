@@ -6,12 +6,9 @@ import { Select } from '@/components/base/floating/select/select';
 import { Label } from '@/components/base/label/label';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
-import { HiveLink } from '@/components/ui/hive-link';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link as UiLink } from '@/components/ui/link';
-import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
@@ -20,7 +17,6 @@ import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { Tabs } from '../base/tabs/tabs';
 import { TargetLayoutQuery } from './queries';
-import { TargetSelector } from './target-selector';
 
 export enum Page {
   Schema = 'schema',
@@ -38,7 +34,6 @@ export enum Page {
 
 export const TargetLayout = ({ children }: { children: ReactNode }): ReactElement | null => {
   const params = useSlugs('target');
-  const { organizationSlug, projectSlug, targetSlug } = params;
 
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
@@ -58,20 +53,6 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
 
   return (
     <>
-      <Header>
-        <div className="flex flex-row items-center gap-4">
-          <HiveLink className="size-8" />
-          <TargetSelector
-            currentOrganizationSlug={organizationSlug}
-            currentProjectSlug={projectSlug}
-            currentTargetSlug={targetSlug}
-          />
-        </div>
-        <div>
-          <UserMenu />
-        </div>
-      </Header>
-
       {query.fetching === false &&
       query.stale === false &&
       (currentProject === null || currentOrganization === null || currentTarget === null) ? (

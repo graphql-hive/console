@@ -18,8 +18,8 @@ export const ViewerQuery = graphql(`
 `);
 
 export const OrganizationLayoutQuery = graphql(`
-  query OrganizationLayoutQuery($organizationSlug: String!, $minimal: Boolean!) {
-    organizationBySlug(organizationSlug: $organizationSlug) @skip(if: $minimal) {
+  query OrganizationLayoutQuery($organizationSlug: String!) {
+    organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
       viewerCanCreateProject

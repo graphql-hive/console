@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { getRouteApi, useNavigate, useSearch } from '@tanstack/react-router';
 
 const proposalsRoute = getRouteApi(
-  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/proposals',
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/proposals',
 );
 
 const TargetProposalsQuery = graphql(`
