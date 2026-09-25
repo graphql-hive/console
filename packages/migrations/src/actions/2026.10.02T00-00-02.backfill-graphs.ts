@@ -43,7 +43,7 @@ export default {
       , 'CONTRACT'
       , 'default/' || "contracts"."contract_name"
       , jsonb_build_object(
-        , 'includeTags', "contracts"."include_tags"
+        'includeTags', "contracts"."include_tags"
         , 'excludeTags', "contracts"."exclude_tags"
         , 'removeUnreachableTypesFromPublicApiSchema', "contracts"."remove_unreachable_types_from_public_api_schema"
         , 'isDisabled', false
