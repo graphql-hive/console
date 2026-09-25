@@ -465,6 +465,12 @@ const CELL_ROWS: CellRow[] = [
     note: '',
   },
   {
+    id: 'number-compact',
+    kind: 'number, format=compact',
+    sample: <DataTableCell kind="number" value={1_234_567} format="compact" />,
+    note: 'For a column scanned for magnitude.',
+  },
+  {
     id: 'time',
     kind: 'time, mode=relative',
     sample: <DataTableCell kind="time" date={CHECKS[3].ranAt} />,
@@ -475,6 +481,12 @@ const CELL_ROWS: CellRow[] = [
     kind: 'time, mode=absolute',
     sample: <DataTableCell kind="time" date={CHECKS[3].ranAt} mode="absolute" />,
     note: '',
+  },
+  {
+    id: 'time-date',
+    kind: 'time, mode=date',
+    sample: <DataTableCell kind="time" date={CHECKS[3].ranAt} mode="date" />,
+    note: 'The day alone.',
   },
   {
     id: 'time-info',
@@ -495,6 +507,17 @@ const CELL_ROWS: CellRow[] = [
     kind: 'link, tone=accent, mono',
     sample: <DataTableCell kind="link" label="a91f_GetCart" href="#" tone="accent" mono />,
     note: '',
+  },
+  {
+    id: 'truncate',
+    kind: 'text / link, truncate',
+    sample: (
+      <span className="flex w-40 flex-col">
+        <DataTableCell kind="text" value="hive-schema-registry-worker" truncate />
+        <DataTableCell kind="link" label="hive-schema-registry-worker" href="#" truncate />
+      </span>
+    ),
+    note: 'Cut at the column width; the full value is the title.',
   },
   {
     id: 'link-out',
@@ -544,6 +567,34 @@ const CELL_ROWS: CellRow[] = [
     note: 'One or a wrapped list.',
   },
   {
+    id: 'badge-max',
+    kind: 'badge, max=2',
+    sample: (
+      <DataTableCell
+        kind="badge"
+        max={2}
+        items={[
+          { content: 'platform' },
+          { content: 'billing' },
+          { content: 'support' },
+          { content: 'security' },
+        ]}
+      />
+    ),
+    note: 'The rest collapse into a +N badge that lists them.',
+  },
+  {
+    id: 'boolean',
+    kind: 'boolean',
+    sample: (
+      <span className="flex gap-3">
+        <DataTableCell kind="boolean" value />
+        <DataTableCell kind="boolean" value={false} />
+      </span>
+    ),
+    note: '',
+  },
+  {
     id: 'status-dot',
     kind: 'status, dot',
     sample: <DataTableCell kind="status" label="Critical" dot="critical" />,
@@ -583,6 +634,12 @@ const CELL_ROWS: CellRow[] = [
     kind: 'avatar',
     sample: <DataTableCell kind="avatar" name="Ada Lovelace" />,
     note: 'Initials from the name, size xs.',
+  },
+  {
+    id: 'avatar-strikethrough',
+    kind: 'avatar, strikethrough',
+    sample: <DataTableCell kind="avatar" name="Grace Hopper" strikethrough />,
+    note: 'A disabled member.',
   },
   {
     id: 'copy',
@@ -671,3 +728,52 @@ export const Cells = createPreview(() => (
     />
   </div>
 ));
+
+export const Playground = createPreview({
+  controls: {
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
+    striped: { type: 'boolean', default: true },
+    bordered: { type: 'boolean', default: true },
+    rows: { type: 'range', default: 12, min: 0, max: CHECKS.length },
+    pagination: { type: 'radio', options: ['client', 'none'], default: 'client' },
+    pageSize: { type: 'number', default: 8, min: 1 },
+    loading: { type: 'boolean', default: false },
+    footer: { type: 'boolean', default: false },
+  },
+  render: v => {
+    const data = CHECKS.slice(0, v.rows);
+    return (
+      <div
+        className={
+          v.onSurface === 'raised'
+            ? 'bg-neutral-3 border-neutral-5 w-[56rem] rounded-md border p-6'
+            : 'w-[52rem]'
+        }
+      >
+        <DataTable
+          data={data}
+          columns={COLUMNS}
+          getRowId={row => row.id}
+          loading={v.loading}
+          variants={{
+            onSurface: v.onSurface as 'base' | 'raised',
+            striped: v.striped,
+            bordered: v.bordered,
+          }}
+          pagination={
+            v.pagination === 'client' ? { kind: 'client', pageSize: v.pageSize } : { kind: 'none' }
+          }
+          footer={
+            v.footer
+              ? {
+                  label: 'Total changes',
+                  value: data.reduce((sum, check) => sum + check.changes, 0),
+                }
+              : undefined
+          }
+          emptyMessage="No schema checks have run for this target yet."
+        />
+      </div>
+    );
+  },
+});

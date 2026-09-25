@@ -1,7 +1,7 @@
 import { type ComponentType, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { InfoIcon } from 'lucide-react';
-import { Card, cardVariants } from '@/components/base/card/card';
+import { Card } from '@/components/base/card/card';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 
 const statTitleVariants = cva('text-sm font-medium', {
@@ -26,12 +26,12 @@ type StatCardProps = {
   icon?: ComponentType<{ className?: string }>;
   /** Renders an info icon after the title, explaining how the metric is derived. */
   hint?: ReactNode;
-  variants?: VariantProps<typeof cardVariants> & VariantProps<typeof statTitleVariants>;
+  variants?: VariantProps<typeof statTitleVariants>;
 };
 
 export function StatCard({ title, value, caption, icon: Icon, hint, variants }: StatCardProps) {
   return (
-    <Card variants={variants}>
+    <Card variants={{ onSurface: 'raised' }}>
       <div className="flex flex-row items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <h3 className={statTitleVariants({ ...variants })}>{title}</h3>

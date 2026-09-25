@@ -77,13 +77,7 @@ function RequestsStats({
   const value = useFormattedNumber(requests);
 
   return (
-    <StatCard
-      variants={{ onSurface: 'raised' }}
-      title="Requests"
-      icon={GlobeIcon}
-      value={value}
-      caption="Total requests served"
-    />
+    <StatCard title="Requests" icon={GlobeIcon} value={value} caption="Total requests served" />
   );
 }
 
@@ -98,7 +92,6 @@ function UniqueOperationsStats({
 
   return (
     <StatCard
-      variants={{ onSurface: 'raised' }}
       title="Operations"
       icon={BookIcon}
       value={value}
@@ -121,7 +114,6 @@ function OperationRelativeFrequency({
 
   return (
     <StatCard
-      variants={{ onSurface: 'raised' }}
       title="Relative Request Frequency"
       icon={PercentIcon}
       value={rate}
@@ -143,7 +135,6 @@ function PercentileStats({
 
   return (
     <StatCard
-      variants={{ onSurface: 'raised' }}
       title={`p${percentile}`}
       icon={GaugeIcon}
       value={formatted}
@@ -171,7 +162,6 @@ function RPM({
 
   return (
     <StatCard
-      variants={{ onSurface: 'raised' }}
       title="Requests per minute"
       icon={ActivityIcon}
       value={throughput}
@@ -196,7 +186,7 @@ function SuccessRateStats({
 
   return (
     <StatCard
-      variants={{ onSurface: 'raised', tone: 'success' }}
+      variants={{ tone: 'success' }}
       title="Success rate"
       icon={SmileIcon}
       value={rate}
@@ -218,7 +208,7 @@ function FailureRateStats({
 
   return (
     <StatCard
-      variants={{ onSurface: 'raised', tone: 'danger' }}
+      variants={{ tone: 'danger' }}
       title="Failure rate"
       icon={FrownIcon}
       value={rate}

@@ -9,9 +9,7 @@ export const nav: NavPath = 'Base/Primitives/Accordion';
 
 /**
  * Items in, an accordion out, on Base UI. One trigger look: medium text, the chevron at the end,
- * no underline on hover. Each example below is drawn at the call site it will ship at, so the
- * Component Examples beside it, which still render the old components, can be compared like for
- * like.
+ * no underline on hover.
  */
 
 function Copy({ children }: { children: ReactNode }) {

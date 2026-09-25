@@ -8,8 +8,7 @@ export const nav: NavPath = 'Inventory/V2Leftovers';
 
 /**
  * The `v2/` primitives with no `ui/` counterpart that are still to migrate: Combobox and
- * Markdown. Avatar, Slider and ToggleGroup were here too until round 4 moved them onto base; their
- * transcriptions now live beside each base component as `Component Examples`.
+ * Markdown.
  *
  * Unlike the rest of Phase 0 there is nothing to compare against here — no second version exists,
  * so these are transcriptions of the only thing that ships.
@@ -41,8 +40,6 @@ export const Inventory = createPreview({
           <strong>Two components left here, 8 render sites, no ui/ counterparts.</strong> Each is
           the only implementation of its kind in the app, so unlike the rest of Phase 0 there is
           nothing to compare against — these are transcriptions of the only thing that ships.
-          Avatar, Slider and ToggleGroup moved to base in round 4; see each component&apos;s
-          Component Examples.
           <br />
           <br />
           <strong>Combobox drags in react-select.</strong> Three call sites, all multi-select tag

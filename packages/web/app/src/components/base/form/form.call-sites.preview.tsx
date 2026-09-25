@@ -167,9 +167,6 @@ export const nav: NavPath = 'Base/FormControls/Form/Component Examples';
  *
  * Two forms are not mounted: the metric alert form and the schema policy form run their own
  * queries. The support forms have a preview of their own under Components.
- *
- * History: `ui/form` (the shadcn parts over react-hook-form) on twenty-six files and nine Formik
- * forms with hand-wired fields, until round 7. Every form moved into its own file with a spec.
  */
 
 const ENTRIES = [

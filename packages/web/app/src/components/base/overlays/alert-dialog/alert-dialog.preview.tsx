@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { AlertDialog } from './alert-dialog';
@@ -8,8 +8,8 @@ export const nav: NavPath = 'Base/Overlays/AlertDialog';
 
 /**
  * A question with a confirm and a cancel. No × and no backdrop dismissal, so it can only be
- * answered. Confirm does not close the dialog by itself: every legacy call site controls `open`
- * and closes after its mutation, and four of them had to fight Radix's auto-close to do so.
+ * answered. Confirm does not close the dialog by itself: the call site controls `open` and closes
+ * once its mutation finishes.
  */
 
 export const Default = createPreview(() => {
@@ -102,19 +102,37 @@ export const WithField = createPreview(() => {
 });
 
 export const Playground = createPreview({
-  controls: controlsFor(AlertDialog, {
-    title: { type: 'text', default: 'Remove member?' },
+  controls: {
+    title: { type: 'text', default: 'Transfer ownership?' },
     description: {
       type: 'text',
-      default: 'They lose access to every project in the organization.',
+      default: 'You will lose owner access once they accept.',
     },
-  }),
-  render: v => (
-    <AlertDialog
-      trigger={<Button variant="destructive">Open</Button>}
-      title={v.title}
-      description={v.description}
-      confirm={{ label: 'Remove', variant: 'destructive', onClick: () => {} }}
-    />
-  ),
+    confirmLabel: { type: 'text', default: 'Transfer' },
+    confirmVariant: { type: 'radio', options: ['primary', 'destructive'], default: 'primary' },
+    confirmDisabled: { type: 'boolean', default: false },
+    cancel: { type: 'radio', options: ['Cancel', 'custom label', 'none'], default: 'Cancel' },
+    cancelLabel: { type: 'text', default: 'Keep editing' },
+  },
+  render: v => {
+    const [open, setOpen] = useState(false);
+    return (
+      <AlertDialog
+        open={open}
+        onOpenChange={setOpen}
+        trigger={<Button>Open</Button>}
+        title={v.title}
+        description={v.description || undefined}
+        confirm={{
+          label: v.confirmLabel,
+          variant: v.confirmVariant as 'primary' | 'destructive',
+          disabled: v.confirmDisabled,
+          onClick: () => setOpen(false),
+        }}
+        cancel={
+          v.cancel === 'none' ? false : v.cancel === 'custom label' ? { label: v.cancelLabel } : {}
+        }
+      />
+    );
+  },
 });

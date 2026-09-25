@@ -85,10 +85,6 @@ export const CustomTrigger = createPreview(() => {
 
 export const Disabled = createPreview(() => <Select options={METRICS} value="TRAFFIC" disabled />);
 
-// ---------------------------------------------------------------------------
-// Added in round 3, each one a gap the inventory found across the 17 legacy call sites.
-// ---------------------------------------------------------------------------
-
 /**
  * `label` overrides the trigger text. The sort selects say "Requests" while the option reads
  * "Requests · GraphQL requests made in the last 30 days"; the proposals editor holds `value=""`
@@ -157,8 +153,7 @@ export const WithDescriptions = createPreview(() => {
 
 /**
  * A disabled option keeps its description, so the reason it cannot be picked is on the row
- * rather than behind a hover. This replaces both the "Can't downgrade" inline note and the
- * wrapping tooltip the two legacy sites used.
+ * rather than behind a hover.
  */
 export const DisabledOptions = createPreview(() => {
   const [value, setValue] = useState('read-only');
