@@ -8,7 +8,7 @@ import { Heading } from '@/components/ui/heading';
 import { Link } from '@/components/ui/link';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
-import { useChartStyles } from '@/lib/utils';
+import { useResolvedColors } from '@/lib/utils';
 import { CardElement as StripeCardElement } from '@stripe/react-stripe-js';
 
 const GenerateStripeLinkMutation = graphql(`
@@ -107,7 +107,7 @@ export const BillingPaymentMethodForm = ({
   onValidationChange?: (isValid: boolean) => void;
 }): ReactElement | null => {
   // Stripe renders the card field in its own iframe, so it needs concrete colors, not CSS vars.
-  const { colors } = useChartStyles();
+  const colors = useResolvedColors();
 
   return (
     <div className="w-1/2">

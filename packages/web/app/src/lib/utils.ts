@@ -43,31 +43,40 @@ export function stringToHiveColor(str: string): string {
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
 
+// Canvas charts, iframes and other widgets can't read CSS variables, so they get concrete colors.
+// Hex rather than hsl(): ECharts can't parse comma-less HSL like hsl(45 93% 47%).
+function cssVarHex(s: CSSStyleDeclaration, name: string) {
+  const raw = s.getPropertyValue(name).trim();
+  if (!raw) return '#888';
+  const [h, sVal, l] = raw.split(' ').map(v => parseFloat(v));
+  return hslToHex(h, sVal, l);
+}
+
+function cssVarRgba(s: CSSStyleDeclaration, name: string, alpha: number) {
+  const raw = s.getPropertyValue(name).trim();
+  if (!raw) return `rgba(128,128,128,${alpha})`;
+  const hexColor = cssVarHex(s, name);
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function readResolvedColors() {
+  const s = getComputedStyle(document.documentElement);
+  return {
+    fg: cssVarHex(s, '--fg'),
+    fgMuted: cssVarHex(s, '--fg-muted'),
+    critical: cssVarHex(s, '--critical'),
+    warning: cssVarHex(s, '--warning'),
+    info: cssVarHex(s, '--info'),
+    success: cssVarHex(s, '--success'),
+  };
+}
+
 function readChartStyles() {
   const s = getComputedStyle(document.documentElement);
   const textColor = s.getPropertyValue('--color-fg').trim();
-
-  // Convert HSL CSS variables (e.g. "45 93% 47%") to hex strings.
-  // ECharts can't parse modern comma-less HSL like hsl(45 93% 47%),
-  // so we convert to hex which it handles natively.
-  const hex = (name: string) => {
-    const raw = s.getPropertyValue(name).trim();
-    if (!raw) return '#888';
-    const [h, sVal, l] = raw.split(' ').map(v => parseFloat(v));
-    return hslToHex(h, sVal, l);
-  };
-
-  /** Convert a raw HSL CSS variable to an rgba() string with the given alpha. */
-  const rgba = (name: string, alpha: number) => {
-    const raw = s.getPropertyValue(name).trim();
-    if (!raw) return `rgba(128,128,128,${alpha})`;
-    const [h, sVal, l] = raw.split(' ').map(v => parseFloat(v));
-    const hexColor = hslToHex(h, sVal, l);
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
-    return `rgba(${r},${g},${b},${alpha})`;
-  };
 
   return {
     styles: {
@@ -76,52 +85,57 @@ function readChartStyles() {
       legend: { textStyle: { color: textColor } },
     },
     colors: {
-      primary: hex('--chart-1'),
-      error: hex('--chart-2'),
-      p75: hex('--chart-3'),
-      p90: hex('--chart-4'),
-      p95: hex('--chart-5'),
-      p99: hex('--chart-6'),
-      grid: hex('--chart-grid'),
+      ...readResolvedColors(),
+      primary: cssVarHex(s, '--chart-1'),
+      error: cssVarHex(s, '--chart-2'),
+      p75: cssVarHex(s, '--chart-3'),
+      p90: cssVarHex(s, '--chart-4'),
+      p95: cssVarHex(s, '--chart-5'),
+      p99: cssVarHex(s, '--chart-6'),
+      grid: cssVarHex(s, '--chart-grid'),
       /** Semi-transparent text color overlay — for label pills on colored surfaces. */
-      overlayBg: rgba('--neutral-12', 0.7),
+      overlayBg: cssVarRgba(s, '--neutral-12', 0.7),
       /** Page-background color — for text on overlayBg pills. */
-      overlayText: hex('--neutral-1'),
+      overlayText: cssVarHex(s, '--neutral-1'),
       /** Semi-transparent text color — for subtle borders on colored surfaces. */
-      overlayBorder: rgba('--neutral-12', 0.2),
+      overlayBorder: cssVarRgba(s, '--neutral-12', 0.2),
       /** Muted axis label color. */
-      axisLabel: hex('--neutral-10'),
+      axisLabel: cssVarHex(s, '--neutral-10'),
       /** Subtle grid line color. */
-      gridSubtle: hex('--neutral-6'),
+      gridSubtle: cssVarHex(s, '--neutral-6'),
       /** Line color for single-series charts. */
-      line: hex('--neutral-9'),
+      line: cssVarHex(s, '--neutral-9'),
       /** Area fill gradient top (neutral-1). */
-      areaFillFrom: hex('--neutral-1'),
+      areaFillFrom: cssVarHex(s, '--neutral-1'),
       /** Area fill gradient bottom (neutral-4). */
-      areaFillTo: hex('--neutral-4'),
-      fg: hex('--fg'),
-      fgMuted: hex('--fg-muted'),
-      /** Severity / state semantic colors — match the in-app icon colors. */
-      critical: hex('--critical'),
-      warning: hex('--warning'),
-      info: hex('--info'),
-      success: hex('--success'),
+      areaFillTo: cssVarHex(s, '--neutral-4'),
     },
   };
 }
 
-export function useChartStyles() {
+/** Re-reads after the theme class lands on <html>, one frame after the theme changes. */
+function useThemeRead<T>(read: () => T): T {
   const { resolvedTheme } = useTheme();
-  const [value, setValue] = useState(() => readChartStyles());
+  const [value, setValue] = useState(read);
 
   useLayoutEffect(() => {
     const rafId = requestAnimationFrame(() => {
-      setValue(readChartStyles());
+      setValue(read());
     });
     return () => cancelAnimationFrame(rafId);
-  }, [resolvedTheme]);
+  }, [read, resolvedTheme]);
 
   return value;
+}
+
+/** Theme colors as hex, for widgets outside CSS such as Stripe's card iframe. */
+export function useResolvedColors() {
+  return useThemeRead(readResolvedColors);
+}
+
+/** ECharts options and colors, including the resolved theme colors. */
+export function useChartStyles() {
+  return useThemeRead(readChartStyles);
 }
 
 // Strings
