@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.64.2
+
+### Patch Changes
+
+- [#8536](https://github.com/graphql-hive/console/pull/8536)
+  [`c9328ea`](https://github.com/graphql-hive/console/commit/c9328ea8d833b074c0bb607dc67d2d2fd35d7a50)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Upgrades composition library to
+  `v0.27.0` - adds satisfiability checking for `@fromContext` arguments
+
 ## 0.64.1
 
 ### Patch Changes
