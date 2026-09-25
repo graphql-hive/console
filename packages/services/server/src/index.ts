@@ -432,6 +432,7 @@ export async function main() {
               accessTokenKey: new AccessTokenKeyContainer(env.supertokens.secrets.accessTokenKey),
               oidcIntegrationStore: new OIDCIntegrationStore(storage.pool, redis, logger),
               superadminForeignOrganizationActions: env.auth.superadminForeignOrganizationActions,
+              superadminOrganizationId: env.auth.superadminOrganizationId,
             }),
           organizationAccessTokenStrategy,
           (logger: Logger) =>

@@ -2,6 +2,7 @@ import c from 'node:crypto';
 import { parse as parseCookie } from 'cookie-es';
 import * as zod from 'zod';
 import type { FastifyReply, FastifyRequest } from '@hive/service-common';
+import type { User } from '../../../shared/entities';
 import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
 import { OIDCIntegrationStore } from '../../oidc-integrations/providers/oidc-integration.store';
@@ -27,6 +28,7 @@ export class SuperTokensCookieBasedSession extends Session {
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
   private superadminForeignOrganizationActions: ReadonlyArray<string>;
+  private superadminOrganizationId: string | null;
   /**
    * The properties `userId` and `oidcIntegrationId` are nullable for backwards compatibility.
    * In the future, when all still active sessions are using the new format, we can remove the nullability.
@@ -41,6 +43,7 @@ export class SuperTokensCookieBasedSession extends Session {
       storage: Storage;
       logger: Logger;
       superadminForeignOrganizationActions: ReadonlyArray<string>;
+      superadminOrganizationId: string | null;
     },
   ) {
     super({ logger: deps.logger });
@@ -49,6 +52,7 @@ export class SuperTokensCookieBasedSession extends Session {
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
     this.superadminForeignOrganizationActions = deps.superadminForeignOrganizationActions;
+    this.superadminOrganizationId = deps.superadminOrganizationId;
 
     if (sessionPayload.version === '2') {
       this.userId = sessionPayload.userId;
@@ -109,8 +113,8 @@ export class SuperTokensCookieBasedSession extends Session {
         organizationId,
       );
 
-      // Allow admins to act within foreign organizations per SUPERADMIN_FOREIGN_ORGANIZATION_ACTIONS.
-      // This makes it much more pleasant to debug. Defaults to describe-only access.
+      // Allow superadmins to act within foreign organizations per SUPERADMIN_FOREIGN_ORGANIZATION_ACTIONS.
+      // This makes it much more pleasant to debug.
       // The action names come from operator-supplied env config, so they can't be statically
       // verified against the closed ActionStrings union the way a literal could.
       if (user.isAdmin) {
@@ -178,13 +182,34 @@ export class SuperTokensCookieBasedSession extends Session {
 
     return {
       type: 'user',
-      user,
+      user: this.resolveSuperadmin(user),
       oidcIntegrationId: this.oidcIntegrationId,
     };
   }
 
   public isViewer() {
     return true;
+  }
+
+  /**
+   * `is_admin` has no assignment path other than a manual database update. Users provisioned (via SCIM)
+   * by the organization configured as SUPERADMIN_ORGANIZATION_ID are resolved as superadmins at session
+   * load instead, so self-hosters can grant and revoke superadmin access from their identity provider.
+   * Deriving it here, rather than at each `isAdmin` check, keeps the admin area, foreign organization
+   * access and organization switching consistent.
+   */
+  private resolveSuperadmin(user: User): User {
+    if (
+      user.isAdmin ||
+      this.superadminOrganizationId === null ||
+      user.provisioningStatus !== 'active' ||
+      user.deactivatedAt !== null ||
+      user.provisionedByOrganizationId !== this.superadminOrganizationId
+    ) {
+      return user;
+    }
+
+    return { ...user, isAdmin: true };
   }
 }
 
@@ -196,6 +221,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   private accessTokenKey: AccessTokenKeyContainer;
   private oidcIntegrationStore: OIDCIntegrationStore;
   private superadminForeignOrganizationActions: ReadonlyArray<string>;
+  private superadminOrganizationId: string | null;
 
   constructor(deps: {
     logger: Logger;
@@ -205,6 +231,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     accessTokenKey: AccessTokenKeyContainer;
     oidcIntegrationStore: OIDCIntegrationStore;
     superadminForeignOrganizationActions: ReadonlyArray<string>;
+    superadminOrganizationId: string | null;
   }) {
     super();
     this.organizationMembers = deps.organizationMembers;
@@ -214,6 +241,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     this.accessTokenKey = deps.accessTokenKey;
     this.oidcIntegrationStore = deps.oidcIntegrationStore;
     this.superadminForeignOrganizationActions = deps.superadminForeignOrganizationActions;
+    this.superadminOrganizationId = deps.superadminOrganizationId;
   }
 
   private async _verifySuperTokensAtHomeSession(args: {
@@ -404,6 +432,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       organizationMembers: this.organizationMembers,
       logger: args.req.log,
       superadminForeignOrganizationActions: this.superadminForeignOrganizationActions,
+      superadminOrganizationId: this.superadminOrganizationId,
     });
   }
 }

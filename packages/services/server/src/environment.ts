@@ -57,6 +57,8 @@ const EnvironmentModel = zod.object({
   // Comma-separated list of authorization actions (e.g. `*:describe,alert:modify`) superadmins are
   // granted within organizations they are not a member of. Defaults to describe-only access.
   SUPERADMIN_FOREIGN_ORGANIZATION_ACTIONS: emptyString(zod.string().optional()),
+  // Users provisioned (via SCIM) by this organization are treated as superadmins.
+  SUPERADMIN_ORGANIZATION_ID: emptyString(zod.string().uuid().optional()),
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
     zod
       .union([zod.literal('1'), zod.literal('0')])
@@ -655,6 +657,7 @@ export const env = {
       .split(',')
       .map(action => action.trim())
       .filter(Boolean),
+    superadminOrganizationId: base.SUPERADMIN_ORGANIZATION_ID ?? null,
   },
   github:
     github.INTEGRATION_GITHUB === '1'
