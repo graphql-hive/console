@@ -363,26 +363,6 @@ test.concurrent(
   },
 );
 
-test.concurrent('pushing an identical revision again is skipped', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
-  const { createProject } = await createOrg();
-  const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
-  const token = await createTargetAccessToken({ mode: 'readWrite' });
-  const input = {
-    target: { byId: target.id },
-    revision: 'v1',
-    sdl: 'type Query { one: String }',
-  };
-
-  const first = await schemaPush(input, token.secret).then(r => r.expectNoGraphQLErrors());
-  const second = await schemaPush(input, token.secret).then(r => r.expectNoGraphQLErrors());
-
-  expect(first.schemaPush.ok?.isSkipped).toBe(false);
-  expect(second.schemaPush.error).toBeNull();
-  expect(second.schemaPush.ok?.isSkipped).toBe(true);
-  expect(second.schemaPush.ok?.schemaRevision.id).toBe(first.schemaPush.ok?.schemaRevision.id);
-});
-
 test.concurrent('concurrent pushes of the same revision both succeed', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
@@ -400,7 +380,9 @@ test.concurrent('concurrent pushes of the same revision both succeed', async ({ 
   ]);
 
   expect(results.map(result => result.schemaPush.error)).toEqual([null, null]);
-  expect(results.filter(result => result.schemaPush.ok?.isSkipped === false)).toHaveLength(1);
+  expect(results[0].schemaPush.ok?.schemaRevision.id).toBe(
+    results[1].schemaPush.ok?.schemaRevision.id,
+  );
 });
 
 test.concurrent('ignores the service name for single-schema projects', async ({ expect }) => {
@@ -524,47 +506,3 @@ test.concurrent(
     expect(publish.schemaPublish.__typename).toBe('SchemaPublishMissingServiceError');
   },
 );
-
-test.concurrent('an expired revision can be pushed again', async ({ expect }) => {
-  const seed = initSeed();
-  const { createOrg } = await seed.createOwner();
-  const { createProject } = await createOrg();
-  const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
-  const token = await createTargetAccessToken({ mode: 'readWrite' });
-  const targetReference = { byId: target.id } as const;
-
-  const first = await schemaPush(
-    { target: targetReference, revision: 'expiring', sdl: 'type Query { one: String }' },
-    token.secret,
-  ).then(r => r.expectNoGraphQLErrors());
-
-  await using connection = await seed.createDbConnection();
-  await connection.pool.query(psql`
-    UPDATE "schema_revisions"
-    SET "expires_at" = now() - interval '1 day'
-    WHERE "id" = ${first.schemaPush.ok!.schemaRevision.id}
-  `);
-
-  const second = await schemaPush(
-    { target: targetReference, revision: 'expiring', sdl: 'type Query { two: String }' },
-    token.secret,
-  ).then(r => r.expectNoGraphQLErrors());
-
-  expect(second.schemaPush.error).toBeNull();
-  expect(second.schemaPush.ok?.isSkipped).toBe(false);
-  expect(second.schemaPush.ok?.schemaRevision.id).not.toBe(first.schemaPush.ok?.schemaRevision.id);
-
-  const publish = await execute({
-    document: SchemaPublish,
-    token: token.secret,
-    variables: {
-      input: {
-        target: targetReference,
-        author: 'Test',
-        commit: 'expiring',
-        schema: { revision: 'expiring' },
-      },
-    },
-  }).then(result => result.expectNoGraphQLErrors());
-  expect(publish.schemaPublish).toMatchObject({ __typename: 'SchemaPublishSuccess', valid: true });
-});

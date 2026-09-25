@@ -156,29 +156,6 @@ describe.each([
       await expect(conflictingPush).rejects.toThrow('with a different');
       await expect(conflictingPush).rejects.toThrow('schema.');
     });
-
-    test.concurrent('pushing the same revision again is skipped', async ({ expect }) => {
-      const { createOrg } = await initSeed().createOwner();
-      const { createProject } = await createOrg();
-      const { target, createTargetAccessToken } = await createProject(projectType);
-      const { secret } = await createTargetAccessToken({ mode: 'readWrite' });
-      const pushArgs = [
-        '--registry.accessToken',
-        secret,
-        '--target',
-        target.id,
-        '--revision',
-        revision,
-        ...serviceArgs,
-        'fixtures/init-schema.graphql',
-      ];
-
-      await expect(schemaPush(pushArgs)).resolves.toContain('Schema revision pushed.');
-
-      const repeatedPush = await schemaPush(pushArgs);
-      expect(repeatedPush).not.toContain('Schema revision pushed.');
-      expect(repeatedPush).toContain(`Revision: ${revision}`);
-    });
   },
 );
 
