@@ -138,9 +138,11 @@ export default class Dev extends Command<typeof Dev> {
       aliases: ['H'],
       description:
         'HTTP header to add to a subgraph introspection request (in key:value format).' +
-        ' A --header before any --service applies to all services.' +
-        ' A --header after a --service applies only to that service (until the next --service),' +
-        ' and overrides a global header of the same name for that service.',
+        ' A --header before any --service applies to all services (global).' +
+        ' A --header placed after a --service applies only to that service, until the next' +
+        ' --service is encountered, and overrides a global header of the same name for that' +
+        ' service. This includes headers placed after the LAST --service: they scope only to' +
+        ' that final service, not to all services.',
       multiple: true,
     }),
     watch: Flags.boolean({

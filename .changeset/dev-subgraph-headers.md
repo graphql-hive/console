@@ -26,3 +26,14 @@ In this example:
 
 - `reviews` receives `X-Foo:shared-value` and `Authorization:Bearer REVIEWS_TOKEN`
 - `products` receives `X-Foo:shared-value` and `Authorization:Bearer PRODUCTS_TOKEN`
+
+**Note:** a `--header` placed after the *last* `--service` scopes only to that final service — it
+is not treated as global. To apply a header to every service, place it before the first `--service`:
+
+```shell
+# ✅ applies to both reviews and products
+hive dev --header 'X-Foo:shared-value' --service reviews --url ... --service products --url ...
+
+# ⚠️ applies to `products` only, NOT to `reviews`
+hive dev --service reviews --url ... --service products --url ... --header 'X-Foo:shared-value'
+```
