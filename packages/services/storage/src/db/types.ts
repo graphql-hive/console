@@ -10,6 +10,7 @@
 export type alert_channel_type = 'DISCORD' | 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type hive_graph_type = 'BASE' | 'CONTRACT';
 export type hive_subgraph_log_type = 'added' | 'changed' | 'removed' | 'unchanged';
 export type metric_alert_direction = 'ABOVE' | 'BELOW';
 export type metric_alert_metric = 'AVG' | 'P75' | 'P90' | 'P95' | 'P99';
@@ -161,6 +162,19 @@ export interface graphile_worker_deduplication {
   dedupe_key: string;
   expires_at: Date;
   task_name: string;
+}
+
+export interface graphs {
+  config: any | null;
+  created_at: Date;
+  id: string;
+  is_backfilled: boolean;
+  name: string;
+  organization_id: string;
+  project_id: string;
+  source_graph_id: string | null;
+  target_id: string;
+  type: hive_graph_type;
 }
 
 export interface group_members {
@@ -550,6 +564,8 @@ export interface schema_versions {
   diff_schema_version_id: string | null;
   github_repository: string | null;
   github_sha: string | null;
+  graph_id: string | null;
+  graph_metadata: any | null;
   has_contract_composition_errors: boolean | null;
   has_persisted_schema_changes: boolean | null;
   id: string;
@@ -561,6 +577,7 @@ export interface schema_versions {
   record_version: string | null;
   schema_composition_errors: any | null;
   schema_metadata: any | null;
+  source_schema_version_id: string | null;
   supergraph_changes: any | null;
   supergraph_sdl: string | null;
   tags: Array<string> | null;
@@ -678,6 +695,7 @@ export interface DBTables {
   document_preflight_scripts: document_preflight_scripts;
   email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
+  graphs: graphs;
   group_members: group_members;
   group_role_assignments: group_role_assignments;
   groups: groups;

@@ -1,6 +1,8 @@
 import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
 import z from 'zod';
+import { GraphStore } from '@hive/api/modules/graph/providers/graph-store';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { createPostgresDatabasePool, psql } from '@hive/postgres';
 import { createRedisClient, type ServiceLogger } from '@hive/service-common';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
@@ -272,6 +274,9 @@ export function initSeed() {
       redis.disconnect();
     },
     createDbConnection,
+    async getGraphStore() {
+      return new GraphStore(new NoopLogger(), await getPool());
+    },
     authenticate: doAuthenticate,
     generateEmail: () => userEmail(generateUnique()),
     purgeOrganizationAccessTokenById,
@@ -287,6 +292,7 @@ export function initSeed() {
         ownerEmail,
         ownerToken,
         ownerRefreshToken,
+        getGraphStore: async () => new GraphStore(new NoopLogger(), await getPool()),
         async createOrg() {
           const orgSlug = generateUnique();
           const orgResult = await createOrganization({ slug: orgSlug }, ownerToken).then(r =>
