@@ -86,7 +86,7 @@ describe('Input', () => {
     render(<Input placeholder="Name" onSurface="raised" />);
     const input = screen.getByPlaceholderText('Name');
     expect(input.className).toContain('bg-surface-control-raised');
-    expect(input.className).toContain('dark:focus:bg-neutral-5');
+    expect(input.className).toContain('dark:focus:bg-neutral-6');
     expect(input.className.split(' ')).not.toContain('bg-surface-control');
   });
 

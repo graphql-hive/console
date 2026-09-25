@@ -8,6 +8,7 @@ import { Select, type SelectOption } from './floating/select/select';
 import { Input } from './input/input';
 import { Dialog } from './overlays/dialog/dialog';
 import { StatusDot } from './status-dot/status-dot';
+import { ToggleGroup } from './toggle-group/toggle-group';
 
 export const nav: NavPath = 'Base/Foundations/SemanticColors';
 
@@ -91,7 +92,7 @@ const SURFACES = [
   { token: 'surface-overlay', cls: 'bg-surface-overlay', light: 3, dark: 3 },
   { token: 'surface-floating', cls: 'bg-surface-floating', light: 2, dark: 4 },
   { token: 'surface-control', cls: 'bg-surface-control', light: 2, dark: 3 },
-  { token: 'surface-control-raised', cls: 'bg-surface-control-raised', light: 2, dark: 4 },
+  { token: 'surface-control-raised', cls: 'bg-surface-control-raised', light: 1, dark: 5 },
   { token: 'surface-selected', cls: 'bg-surface-selected', light: 5, dark: 5 },
   { token: 'surface-inverse', cls: 'bg-surface-inverse', light: 12, dark: 12 },
   { token: 'surface-hover', cls: 'bg-surface-hover', light: 4, dark: 4 },
@@ -187,16 +188,30 @@ export const SurfaceNesting = createPreview(() => (
   </div>
 ));
 
-export const ControlRaisedConflict = createPreview(() => (
-  <div className="bg-surface-overlay flex w-[28rem] flex-col gap-3 p-5">
-    <div className="bg-surface-control-raised border-line-control text-fg-subtle rounded-sm border px-3 py-2 text-sm">
-      Input raised (n2 / n4)
+/** Every raised control on surface-overlay; all four should rest on the same fill and border. */
+export const RaisedControls = createPreview(() => {
+  const [metric, setMetric] = useState('TRAFFIC');
+  const [mode, setMode] = useState('api');
+  return (
+    <div className="bg-surface-overlay flex w-[28rem] flex-col gap-3 p-5">
+      <Input onSurface="raised" placeholder="Input" />
+      <Select options={METRICS} value={metric} onValueChange={setMetric} onSurface="raised" />
+      <div className="flex items-center gap-3">
+        <Button onSurface="raised">Button</Button>
+        <ToggleGroup
+          options={[
+            { value: 'api', label: 'API' },
+            { value: 'mock', label: 'Mock' },
+          ]}
+          value={mode}
+          onValueChange={setMode}
+          onSurface="raised"
+          aria-label="Mode"
+        />
+      </div>
     </div>
-    <div className="bg-neutral-1 border-line dark:bg-neutral-5 dark:border-line-strong text-fg-subtle rounded-sm border px-3 py-2 text-sm">
-      controlSurface raised (n1 / n5)
-    </div>
-  </div>
-));
+  );
+});
 
 const METRICS: SelectOption[] = [
   { value: 'TRAFFIC', label: 'Total requests' },

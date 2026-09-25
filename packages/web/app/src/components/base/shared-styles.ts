@@ -62,7 +62,7 @@ export type OnSurface = 'base' | 'raised';
 // segments inside it (a toggle group) rather than to the whole.
 export const controlSurface = {
   base: 'bg-surface-control border-line-control',
-  raised: 'bg-neutral-1 border-line dark:bg-neutral-5 dark:border-line-strong',
+  raised: 'bg-surface-control-raised border-line dark:border-line-strong',
 } as const satisfies Record<OnSurface, string>;
 
 export const controlOnSurface = {

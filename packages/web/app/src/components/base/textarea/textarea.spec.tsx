@@ -70,7 +70,7 @@ describe('Textarea', () => {
     render(<Textarea placeholder="Description" onSurface="raised" />);
     const textarea = screen.getByPlaceholderText('Description');
     expect(textarea.className).toContain('bg-surface-control-raised');
-    expect(textarea.className).toContain('dark:focus:bg-neutral-5');
+    expect(textarea.className).toContain('dark:focus:bg-neutral-6');
     expect(textarea.className.split(' ')).not.toContain('bg-surface-control');
   });
 

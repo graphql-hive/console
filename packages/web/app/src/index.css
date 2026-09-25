@@ -195,7 +195,7 @@
     --surface-overlay: var(--neutral-3);
     --surface-floating: var(--neutral-2);
     --surface-control: var(--neutral-2);
-    --surface-control-raised: var(--neutral-2);
+    --surface-control-raised: var(--neutral-1);
     --surface-selected: var(--neutral-5);
     --surface-inverse: var(--neutral-12);
     --surface-hover: var(--neutral-4);
@@ -263,7 +263,7 @@
     --surface-card-hover: var(--neutral-4);
     --surface-floating: var(--neutral-4);
     --surface-control: var(--neutral-3);
-    --surface-control-raised: var(--neutral-4);
+    --surface-control-raised: var(--neutral-5);
     --surface-pressed: var(--neutral-5);
     --surface-inset: var(--neutral-2);
     --surface-stripe: hsl(var(--neutral-3) / 0.6);
