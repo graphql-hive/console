@@ -203,7 +203,7 @@ function MemberStatusIcon({ member }: { member: MemberRow }) {
   const Icon = info ? UserLock : UserRound;
   return (
     <span
-      className="bg-neutral-3 flex size-9 items-center justify-center rounded-full"
+      className="bg-surface-card flex size-9 items-center justify-center rounded-full"
       aria-label={info ? 'Provisioned user' : 'User'}
     >
       <Icon className="size-5" />
@@ -249,7 +249,7 @@ function MemberNameCell({ member }: { member: MemberRow }) {
                 trigger={
                   <span className="inline-flex">
                     <providerDisplay.Icon
-                      className={cn('size-4', provider.disabledReason && 'text-neutral-7')}
+                      className={cn('size-4', provider.disabledReason && 'text-fg-subtle')}
                     />
                   </span>
                 }

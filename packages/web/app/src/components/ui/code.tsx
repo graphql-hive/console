@@ -13,7 +13,7 @@ export const Code: FC<ComponentProps<'code'>> = ({ children, className, ...props
   return (
     <span
       ref={ref}
-      className="bg-neutral-1 border-neutral-8 relative flex cursor-text items-center gap-2 break-all rounded-md border p-4 pr-14 font-mono text-sm"
+      className="bg-surface-inset border-line-strong relative flex cursor-text items-center gap-2 break-all rounded-md border p-4 pr-14 font-mono text-sm"
       // Make this element able to be focused by setting tabIndex.
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
@@ -40,7 +40,7 @@ export const Code: FC<ComponentProps<'code'>> = ({ children, className, ...props
       <button
         hidden={!navigatorClipboardSupport}
         data-hovering={hovering || copied}
-        className="border-neutral-8 hover:text-warning absolute right-3 top-2 cursor-pointer rounded-md border p-2 opacity-0 data-[hovering=true]:opacity-100 data-[hovering=true]:transition-opacity"
+        className="border-line-strong hover:text-warning absolute right-3 top-2 cursor-pointer rounded-md border p-2 opacity-0 data-[hovering=true]:opacity-100 data-[hovering=true]:transition-opacity"
         onClick={async ev => {
           const value = children?.valueOf().toString();
           if (value) {

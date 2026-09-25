@@ -377,8 +377,8 @@
     --surface-hover: var(--neutral-4);
     --surface-pressed: var(--neutral-3);
     --surface-inset: var(--neutral-1);
-    --surface-code: var(--neutral-3);
-    --surface-skeleton: var(--neutral-3);
+    --surface-code: var(--neutral-5);
+    --surface-skeleton: var(--neutral-5);
     --surface-stripe: hsl(var(--neutral-2) / 0.6);
 
     --fg: var(--neutral-12);

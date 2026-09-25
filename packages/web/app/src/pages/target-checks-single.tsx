@@ -112,7 +112,7 @@ function SDLSingleView(props: {
 }): ReactElement {
   return (
     <div className="w-full">
-      <div className="border-neutral-3 flex items-center justify-between border-b px-2 py-1">
+      <div className="border-line-subtle flex items-center justify-between border-b px-2 py-1">
         <div className="px-2 font-bold">{props.title}</div>
         <div className="ml-auto flex h-[36px] items-center px-2">
           {props.sdl && props.downloadFileName && (
@@ -136,7 +136,7 @@ function SDLSingleDiffToggleView(props: {
 
   return (
     <div className="w-full">
-      <div className="border-neutral-3 flex items-center justify-between border-b px-2 py-1">
+      <div className="border-line-subtle flex items-center justify-between border-b px-2 py-1">
         <div className="px-2 font-bold">{title}</div>
         <div className="ml-auto flex h-[36px] items-center px-2">
           {props.after && props.downloadFileName && (
@@ -380,7 +380,7 @@ const PolicyBlock = (props: {
                 <button
                   type="button"
                   aria-label="Which rule"
-                  className="text-neutral-6 ml-2 inline-block"
+                  className="text-fg-subtle ml-2 inline-block"
                 >
                   <CircleQuestionMarkIcon size={16} />
                 </button>
@@ -1518,7 +1518,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
         <Subtitle>Detailed view of the schema check</Subtitle>
       </div>
       <div className="mb-3">
-        <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center gap-4 rounded-md border px-5 py-4">
+        <div className="bg-surface-card flex items-center gap-4 rounded-md border px-5 py-4">
           <div className="min-w-0 flex-1">
             <DescriptionList
               variants={{ termStyle: 'title', columns: 'auto' }}
@@ -1598,7 +1598,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
         </div>
         {schemaCheck.__typename === 'SuccessfulSchemaCheck' && schemaCheck.isApproved ? (
           <div className="py-6">
-            <div className="border-neutral-2 text-fg-secondary flex flex-row items-center gap-x-6 rounded-md border p-4 font-medium">
+            <div className="border-line-subtle text-fg-secondary flex flex-row items-center gap-x-6 rounded-md border p-4 font-medium">
               <div>
                 <Tooltip
                   trigger={

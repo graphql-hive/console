@@ -134,10 +134,10 @@ export function ResourceCard(props: {
                     </div>
                   ) : (
                     <div>
-                      <div className="bg-neutral-5 h-4 w-48 animate-pulse rounded-full py-2" />
+                      <div className="bg-surface-skeleton h-4 w-48 animate-pulse rounded-full py-2" />
                       {/* Only reserve the second line for a kind that has a subtitle to load into. */}
                       {props.kind === 'project' ? (
-                        <div className="bg-neutral-5 mt-4 h-2 w-24 animate-pulse rounded-full" />
+                        <div className="bg-surface-skeleton mt-4 h-2 w-24 animate-pulse rounded-full" />
                       ) : null}
                     </div>
                   )}
@@ -171,8 +171,8 @@ export function ResourceCard(props: {
                       </>
                     ) : (
                       <>
-                        <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
-                        <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
+                        <div className="bg-surface-skeleton my-1 h-2 w-16 animate-pulse rounded-full" />
+                        <div className="bg-surface-skeleton my-1 h-2 w-16 animate-pulse rounded-full" />
                       </>
                     )}
                   </div>

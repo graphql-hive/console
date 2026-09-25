@@ -122,7 +122,7 @@ export function DangerousChangesForm(props: {
   return (
     <div className={cn('transition-opacity duration-150', !props.enabled && 'opacity-50')}>
       <Form form={form} onSubmit={props.onSubmit}>
-        <div className="border-line bg-neutral-8/10 text-fg-secondary block w-auto max-w-4xl rounded-sm border px-5 py-3">
+        <div className="border-line bg-surface-card text-fg-secondary block w-auto max-w-4xl rounded-sm border px-5 py-3">
           <div className="text-fg mb-3 mt-1 font-semibold">
             Select Failing Dangerous Change Types
           </div>

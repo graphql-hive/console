@@ -108,7 +108,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
     <div className="p-8">
       <Heading className="mb-4">Native Composition Report</Heading>
 
-      <div className="border-line dark:bg-neutral-3 flex items-center gap-4 rounded-sm border px-8 py-4 text-xs">
+      <div className="border-line dark:bg-surface-card flex items-center gap-4 rounded-sm border px-8 py-4 text-xs">
         <MetaCell label="Project" className="flex-1 truncate text-left">
           {project.slug}
         </MetaCell>

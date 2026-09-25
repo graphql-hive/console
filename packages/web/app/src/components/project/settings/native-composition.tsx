@@ -44,7 +44,7 @@ const IncrementalNativeCompositionSwitch = (props: {
   return (
     <div
       className={cn(
-        'border-line bg-neutral-5/50 flex flex-row items-center gap-x-10 rounded-sm border p-4',
+        'border-line bg-surface-card flex flex-row items-center gap-x-10 rounded-sm border p-4',
         mutation.fetching && 'animate-pulse',
       )}
     >

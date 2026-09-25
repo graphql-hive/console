@@ -141,7 +141,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
 
                 if (invitation.__typename === 'OrganizationInvitationError') {
                   return (
-                    <div className="bg-neutral-1">
+                    <div className="bg-surface-inset">
                       <Card
                         variants={{ onSurface: 'raised', titleSize: 'large' }}
                         title="Invitation Error"
@@ -158,7 +158,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                 }
 
                 return (
-                  <div className="bg-neutral-1">
+                  <div className="bg-surface-inset">
                     <Card
                       variants={{ onSurface: 'raised', titleSize: 'large' }}
                       title={`Join "${invitation.name}" organization`}

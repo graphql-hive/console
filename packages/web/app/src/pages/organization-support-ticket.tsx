@@ -110,7 +110,7 @@ function Comment({ node }: { node: FragmentType<typeof Comment_SupportTicketComm
         trigger={
           <div
             className={cn(
-              'text-fg-default bg-neutral-5 inline-block max-w-[70%] rounded-lg p-2 text-left',
+              'text-fg-default bg-surface-selected inline-block max-w-[70%] rounded-lg p-2 text-left',
               isSupport ? 'rounded-br-none' : 'rounded-bl-none',
             )}
           >

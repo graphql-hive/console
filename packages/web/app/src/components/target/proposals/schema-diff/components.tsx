@@ -85,7 +85,7 @@ export function ChangeRow(props: {
       <tr>
         <td
           className={cn(
-            'bg-neutral-3 text-neutral-7 w-[42px] min-w-fit select-none pr-3 text-right',
+            'bg-surface-card text-fg-subtle w-[42px] min-w-fit select-none pr-3 text-right',
             props.className,
             (props.type === 'removal' || removed) && 'bg-diff-removed-gutter',
             props.type === 'addition' && 'invisible',
@@ -95,7 +95,7 @@ export function ChangeRow(props: {
         </td>
         <td
           className={cn(
-            'bg-neutral-3 text-neutral-7 w-[42px] min-w-fit select-none pr-3 text-right',
+            'bg-surface-card text-fg-subtle w-[42px] min-w-fit select-none pr-3 text-right',
             props.className,
             props.type === 'removal' && 'invisible',
             (props.type === 'addition' || added) && 'bg-diff-added-gutter',
@@ -105,7 +105,7 @@ export function ChangeRow(props: {
         </td>
         <td
           className={cn(
-            'bg-neutral-2 px-2',
+            'bg-surface-inset px-2',
             props.className,
             props.type === 'removal' && 'bg-diff-removed',
             props.type === 'addition' && 'bg-diff-added',
@@ -113,7 +113,7 @@ export function ChangeRow(props: {
         >
           <span
             className={cn(
-              'bg-neutral-2',
+              'bg-surface-inset',
               props.type === 'removal' &&
                 'bg-diff-removed decoration-diff-removed-strike line-through',
               props.type === 'addition' && 'bg-diff-added',

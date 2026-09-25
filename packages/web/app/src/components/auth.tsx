@@ -7,9 +7,9 @@ export function AuthCardStack(props: { children: React.ReactNode }) {
 export function AuthOrSeparator() {
   return (
     <div className="flex flex-row items-center justify-between gap-x-4">
-      <div className="bg-neutral-4 h-px w-full" />
+      <div className="bg-line-subtle h-px w-full" />
       <div className="text-fg-muted text-center">or</div>
-      <div className="bg-neutral-4 h-px w-full" />
+      <div className="bg-line-subtle h-px w-full" />
     </div>
   );
 }

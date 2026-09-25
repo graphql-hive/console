@@ -91,8 +91,8 @@ const SURFACES = [
   { token: 'surface-hover', cls: 'bg-surface-hover', light: 4, dark: 4 },
   { token: 'surface-pressed', cls: 'bg-surface-pressed', light: 3, dark: 5 },
   { token: 'surface-inset', cls: 'bg-surface-inset', light: 1, dark: 2 },
-  { token: 'surface-code', cls: 'bg-surface-code', light: 3, dark: 3 },
-  { token: 'surface-skeleton', cls: 'bg-surface-skeleton', light: 3, dark: 3 },
+  { token: 'surface-code', cls: 'bg-surface-code', light: 5, dark: 5 },
+  { token: 'surface-skeleton', cls: 'bg-surface-skeleton', light: 5, dark: 5 },
   { token: 'surface-stripe', cls: 'bg-surface-stripe', light: 2, dark: 3 },
 ];
 

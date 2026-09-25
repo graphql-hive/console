@@ -192,7 +192,7 @@ function TreeIcon(props: {
             height="16"
             rx="3px"
             ry="3px"
-            fill={props.isCollapsed ? 'currentColor' : 'black'}
+            fill={props.isCollapsed ? 'currentColor' : 'var(--color-surface-page)'}
             stroke="currentColor"
           />
           <text
@@ -201,7 +201,7 @@ function TreeIcon(props: {
             style={{ fontSize: 10 }}
             textAnchor="middle"
             fontWeight={props.isCollapsed ? 700 : 500}
-            fill={props.isCollapsed ? 'white' : 'currentColor'}
+            fill={props.isCollapsed ? 'var(--color-fg-inverse)' : 'currentColor'}
           >
             {props.childrenCount}
           </text>
@@ -320,8 +320,8 @@ function TraceResize(props: { minWidth: number; maxWidth: number }) {
       {/* Invisible wider hit area */}
       <div
         className={cn(
-          'bg-neutral-5 absolute inset-y-0 left-[2px] w-px',
-          isDragging ? 'bg-neutral-8' : 'hover:bg-neutral-2',
+          'bg-line absolute inset-y-0 left-[2px] w-px',
+          isDragging ? 'bg-fg-subtle' : 'hover:bg-surface-hover',
         )}
       />
     </div>
@@ -456,7 +456,7 @@ function SpanNode(props: SpanNodeProps) {
     <>
       <div
         className={cn(
-          'odd:bg-neutral-5/20 hover:bg-neutral-2 pr-8',
+          'odd:bg-surface-stripe hover:bg-surface-hover pr-8',
           hasException && 'bg-critical-tint odd:bg-critical-tint hover:bg-critical-tint-strong',
           highlightedEvent &&
             highlightedEvent.spanId === span.id &&
@@ -557,7 +557,7 @@ function SpanNode(props: SpanNodeProps) {
                     <div className="col-span-2">
                       {/* Timeline visualization */}
                       <div>
-                        <div className="bg-neutral-5 h-[2px] w-full overflow-hidden">
+                        <div className="bg-line h-[2px] w-full overflow-hidden">
                           <div
                             className="h-full"
                             style={{
@@ -579,7 +579,7 @@ function SpanNode(props: SpanNodeProps) {
                         <div className="col-span-2">
                           {/* Timeline visualization */}
                           <div>
-                            <div className="bg-neutral-5 h-[2px] w-full overflow-hidden">
+                            <div className="bg-line h-[2px] w-full overflow-hidden">
                               <div
                                 className="h-full"
                                 style={{
@@ -1675,7 +1675,7 @@ function ExceptionTeaser(props: {
       <div className="p-3 text-xs">
         <p className="text-fg-default">{props.message}</p>
         {props.stacktrace && (
-          <div className="bg-neutral-1/50 mt-2 rounded-sm">
+          <div className="bg-surface-inset mt-2 rounded-sm">
             <ScrollArea axis="horizontal">
               <pre className="text-fg-secondary text-2xs p-2 font-mono leading-tight">
                 {props.stacktrace}

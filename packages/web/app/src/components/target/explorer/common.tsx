@@ -375,7 +375,7 @@ export function GraphQLTypeCardListItem(props: {
       onClick={props.onClick}
       className={clsx(
         'flex flex-row items-center justify-between p-4 text-sm',
-        props.index % 2 ? '' : 'bg-neutral-2/50',
+        props.index % 2 ? '' : 'bg-surface-stripe',
         props.className,
       )}
     >
@@ -544,11 +544,11 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
       {widths.map((width, index) => (
         <GraphQLTypeCardListItem key={index} index={index} className="w-full">
           <div className="flex w-full flex-row items-center gap-2">
-            <Skeleton className={cn('bg-neutral-3 my-1 h-4', width)} />
+            <Skeleton className={cn('bg-surface-skeleton my-1 h-4', width)} />
             <div className="ml-auto flex flex-row items-center gap-2">
-              <Skeleton className="bg-neutral-3 my-1 size-4" />
-              <Skeleton className="bg-neutral-3 my-1 size-4" />
-              <Skeleton className="bg-neutral-3 my-1 size-4" />
+              <Skeleton className="bg-surface-skeleton my-1 size-4" />
+              <Skeleton className="bg-surface-skeleton my-1 size-4" />
+              <Skeleton className="bg-surface-skeleton my-1 size-4" />
             </div>
           </div>
         </GraphQLTypeCardListItem>
@@ -559,10 +559,10 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
 
 export const GraphQLTypeCardSkeleton = (props: { children: ReactNode }) => {
   return (
-    <div className="border-neutral-2 rounded-md border-2">
+    <div className="border-line-subtle rounded-md border-2">
       <div className="flex flex-row justify-between p-4">
         <div className="flex flex-row items-center gap-2">
-          <Skeleton className="bg-neutral-3 my-1 h-4 w-32" />
+          <Skeleton className="bg-surface-skeleton my-1 h-4 w-32" />
         </div>
       </div>
       <div>{props.children}</div>

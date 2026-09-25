@@ -111,8 +111,8 @@ function ListPage(props: {
           key={version.id}
           className={cn(
             'flex items-stretch gap-3 rounded-lg py-3 pl-2 pr-3',
-            'hover:bg-neutral-5/40',
-            versionId === version.id && 'bg-neutral-5/40',
+            'hover:bg-surface-hover',
+            versionId === version.id && 'bg-surface-selected',
           )}
           to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
           params={{
@@ -310,7 +310,7 @@ function HistoryPageContent() {
             <Subtitle>Recently published versions.</Subtitle>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-5">
-            <div className="border-line/50 bg-neutral-2/50 flex min-h-0 min-w-[420px] grow flex-col rounded-md border">
+            <div className="border-line-subtle bg-surface-inset flex min-h-0 min-w-[420px] grow flex-col rounded-md border">
               <ScrollArea fill>
                 <div className="flex flex-col gap-2.5 p-2.5">
                   {pageVariables.map((variables, i) => (

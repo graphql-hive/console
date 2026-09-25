@@ -49,7 +49,7 @@ const ChartContainer = React.forwardRef<
         data-chart={chartId}
         ref={ref}
         className={cn(
-          "[&_.recharts-cartesian-axis-tick_text]:fill-neutral-10 [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-neutral-5/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-neutral-5 [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-neutral-5 [&_.recharts-radial-bar-neutral-2-sector]:fill-neutral-3 [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-neutral-3 [&_.recharts-reference-line_[stroke='#ccc']]:stroke-neutral-5 flex aspect-video justify-center text-xs [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
+          "[&_.recharts-cartesian-axis-tick_text]:fill-fg-secondary [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-line-subtle [&_.recharts-curve.recharts-tooltip-cursor]:stroke-line [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-line [&_.recharts-radial-bar-background-sector]:fill-surface-card [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-surface-card [&_.recharts-reference-line_[stroke='#ccc']]:stroke-line flex aspect-video justify-center text-xs [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
           className,
         )}
         {...props}
@@ -160,7 +160,7 @@ const ChartTooltipContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          'border-line/50 bg-neutral-3 grid min-w-32 items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl',
+          'border-line-subtle bg-surface-floating grid min-w-32 items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl',
           className,
         )}
       >
@@ -188,7 +188,7 @@ const ChartTooltipContent = React.forwardRef<
                     ) : (
                       !hideIndicator && (
                         <div
-                          className={cn('border-line bg-neutral-2 shrink-0 rounded-[2px]', {
+                          className={cn('border-line bg-surface-card shrink-0 rounded-[2px]', {
                             'h-2.5 w-2.5': indicator === 'dot',
                             'w-1': indicator === 'line',
                             'w-0 border-[1.5px] border-dashed bg-transparent':

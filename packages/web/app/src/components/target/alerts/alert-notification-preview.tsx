@@ -134,7 +134,7 @@ function SlackPreview(props: PreviewProps) {
   return (
     <div className="space-y-1">
       <div className="text-fg-secondary mb-2 text-xs font-medium">Slack preview</div>
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-line rounded-md border p-3">
+      <div className="bg-surface-card border-line rounded-md border p-3">
         {/* Bot header */}
         <div className="mb-2 flex items-center gap-2">
           <div className="bg-accent text-accent text-2xs flex size-5 items-center justify-center rounded-sm font-bold">
@@ -147,15 +147,15 @@ function SlackPreview(props: PreviewProps) {
         {/* Attachment with colored bar */}
         <div className="flex">
           <div className={`${colors.bar} w-1 shrink-0 rounded-l`} />
-          <div className="bg-neutral-4/50 rounded-r p-3 text-sm leading-relaxed">
+          <div className="bg-surface-card rounded-r p-3 text-sm leading-relaxed">
             <div className="text-fg font-bold">{props.alertName || 'Untitled alert'}</div>
             <div className="text-fg-secondary mt-1">
               {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
             </div>
             <div className="text-fg-secondary mt-1">
               Target:{' '}
-              <code className="bg-neutral-5 rounded-sm px-1 text-xs">{props.targetSlug}</code> in{' '}
-              <code className="bg-neutral-5 rounded-sm px-1 text-xs">{props.projectSlug}</code>
+              <code className="bg-surface-code rounded-sm px-1 text-xs">{props.targetSlug}</code> in{' '}
+              <code className="bg-surface-code rounded-sm px-1 text-xs">{props.projectSlug}</code>
             </div>
             <div className="text-accent mt-1">View alert in Hive</div>
           </div>
@@ -206,7 +206,7 @@ function WebhookPreview(props: PreviewProps) {
   return (
     <div className="space-y-3">
       <div className="text-fg-secondary mb-2 text-xs font-medium">Webhook payload preview</div>
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-line rounded-md border p-3">
+      <div className="bg-surface-card border-line rounded-md border p-3">
         <ScrollArea axis="horizontal">
           <pre className="text-fg-default text-xs leading-relaxed">
             {JSON.stringify(payload, null, 2)}
@@ -241,7 +241,7 @@ function TeamsPreview(props: PreviewProps) {
   return (
     <div className="space-y-1">
       <div className="text-fg-secondary mb-2 text-xs font-medium">Teams preview</div>
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-line overflow-hidden rounded-md border">
+      <div className="bg-surface-card border-line overflow-hidden rounded-md border">
         {/* Theme color bar */}
         <div className={`${colors.bar} h-1`} />
         <div className="p-3">
@@ -284,7 +284,7 @@ function DiscordPreview(props: PreviewProps) {
   return (
     <div className="space-y-1">
       <div className="text-fg-secondary mb-2 text-xs font-medium">Discord preview</div>
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-line flex overflow-hidden rounded-md border">
+      <div className="bg-surface-card border-line flex overflow-hidden rounded-md border">
         {/* Discord embeds render the severity color as a vertical bar. */}
         <div className={`${colors.bar} w-1 shrink-0`} />
         <div className="p-3">

@@ -120,8 +120,8 @@ const Navigation = (
         <div
           key={edge.node.id}
           className={cn(
-            'hover:bg-neutral-5/40 flex flex-col rounded-md p-2.5',
-            edge.node.id === props.schemaCheckId ? 'bg-neutral-5/40' : null,
+            'hover:bg-surface-hover flex flex-col rounded-md p-2.5',
+            edge.node.id === props.schemaCheckId ? 'bg-surface-selected' : null,
           )}
         >
           <Link
@@ -297,7 +297,7 @@ function ChecksPageContent() {
         {hasSchemaChecks && (
           <SchemaChecksSideNav>
             {hasFilteredSchemaChecks ? (
-              <div className="border-line/50 flex min-h-0 w-[300px] grow flex-col rounded-md border">
+              <div className="border-line-subtle flex min-h-0 w-[300px] grow flex-col rounded-md border">
                 <ScrollArea fill>
                   <div className="flex flex-col gap-2.5 p-2.5">
                     {paginationVariables.map((cursor, index) => (

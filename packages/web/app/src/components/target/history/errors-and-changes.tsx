@@ -236,7 +236,7 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="bg-neutral-5 text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="bg-surface-selected text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
                       <ActivityIcon className="size-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}

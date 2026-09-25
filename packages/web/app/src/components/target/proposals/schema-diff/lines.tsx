@@ -68,7 +68,9 @@ export function Line(props: LineProps & { beforeLine: number; afterLine: number 
       {props.annotations?.map((node, i) => (
         <Fragment key={`annotations-${i}`}>
           {node.lineText && (
-            <code className="bg-neutral-3 text-fg mb-3 block w-full p-3 pl-6">{node.lineText}</code>
+            <code className="bg-surface-code text-fg mb-3 block w-full p-3 pl-6">
+              {node.lineText}
+            </code>
           )}
           <ReviewComments review={node} />
         </Fragment>

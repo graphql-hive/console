@@ -92,7 +92,7 @@ function Task({
       target="_blank"
       rel="noreferrer"
       className={cn(
-        'border-line hover:bg-neutral-5 bg-neutral-4 relative block rounded-lg border p-4',
+        'border-line hover:bg-surface-selected bg-surface-hover relative block rounded-lg border p-4',
         completed ? 'opacity-70' : null,
       )}
     >

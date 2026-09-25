@@ -7,7 +7,7 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-neutral-3 text-fg-default',
+        default: 'bg-surface-card text-fg-default',
         destructive: 'border-critical text-critical [&>svg]:text-critical',
       },
     },

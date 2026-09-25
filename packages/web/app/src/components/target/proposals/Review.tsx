@@ -34,7 +34,7 @@ export function ReviewComments(props: {
 
   return (
     <>
-      <div className="bg-neutral-1 border-neutral-8 mb-2 rounded-sm border px-6 py-4 font-sans">
+      <div className="bg-surface-inset border-line-strong mb-2 rounded-sm border px-6 py-4 font-sans">
         {review.comments?.edges?.map(({ node: comment }, idx) => {
           return (
             <ReviewComment key={`comment-${comment.id}`} first={idx === 0} comment={comment} />

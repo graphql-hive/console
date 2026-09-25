@@ -500,7 +500,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                       ({ node: operation }) => (
                         <Link
                           key={operation.id}
-                          className="text-fg-default hover:text-fg-default hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                          className="text-fg-default hover:text-fg-default hover:bg-surface-hover flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                           params={{
                             organizationSlug,
@@ -543,7 +543,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                       ({ node: client }) => (
                         <Link
                           key={client.name}
-                          className="text-fg-default hover:text-fg-default hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                          className="text-fg-default hover:text-fg-default hover:bg-surface-hover flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                           params={{
                             organizationSlug,

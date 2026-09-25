@@ -8,9 +8,9 @@ function ExternalLink(props: { href: string; children: React.ReactNode }) {
   return (
     <a
       href={props.href}
-      className="hover:text-accent text-fg/30 text-control/6 group relative isolate flex flex-none items-center gap-x-3 rounded-lg px-2 py-0.5 font-medium transition-colors"
+      className="hover:text-accent text-fg-subtle text-control/6 group relative isolate flex flex-none items-center gap-x-3 rounded-lg px-2 py-0.5 font-medium transition-colors"
     >
-      <span className="bg-neutral-4 absolute inset-0 -z-10 scale-75 rounded-lg opacity-0 transition group-hover:scale-100 group-hover:opacity-100" />
+      <span className="bg-surface-hover absolute inset-0 -z-10 scale-75 rounded-lg opacity-0 transition group-hover:scale-100 group-hover:opacity-100" />
       {props.children}
     </a>
   );
@@ -30,8 +30,8 @@ export function AuthPage() {
             </div>
           ) : (
             <div className="grid h-full min-h-screen items-center justify-center md:grid-cols-2 lg:max-w-none lg:grid-cols-3 lg:px-0">
-              <div className="dark:bg-neutral-3 bg-neutral-2 border-r-neutral-3 text-fg relative hidden h-full flex-col border-r p-10 lg:flex">
-                <div className="bg-neutral-1 absolute inset-0" />
+              <div className="bg-surface-card border-r-line-subtle text-fg relative hidden h-full flex-col border-r p-10 lg:flex">
+                <div className="bg-surface-inset absolute inset-0" />
                 <Link to="/">
                   <div className="relative z-20 flex items-center text-lg font-medium">
                     <HiveLogo animated={false} className="mr-2 size-6" />

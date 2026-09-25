@@ -188,7 +188,12 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
         {/*TODO: hide this if there is no filter declared */}
         <Bar stackId="all" dataKey="remaining" fill="rgba(170,175,180,0.1)" name="Filtered out" />
         {refAreaLeft && refAreaRight && (
-          <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="white" fillOpacity={0.2} />
+          <ReferenceArea
+            x1={refAreaLeft}
+            x2={refAreaRight}
+            fill="var(--color-fg)"
+            fillOpacity={0.1}
+          />
         )}
       </BarChart>
     </ChartContainer>
@@ -353,7 +358,7 @@ const TracesList = memo(function TracesList(
                 maxWidth="md"
                 trigger={
                   <span className="inline-flex items-center gap-2">
-                    <span className="bg-neutral-3 text-fg-secondary inline-flex items-center rounded-sm px-1 py-0.5 text-xs uppercase">
+                    <span className="bg-surface-card text-fg-secondary inline-flex items-center rounded-sm px-1 py-0.5 text-xs uppercase">
                       {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                     </span>
                     {row.original.operationName ?? (

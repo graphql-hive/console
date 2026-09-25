@@ -139,8 +139,8 @@ function InternalDeprecatedSchemaView(props: {
                     'inline-flex h-9 items-center px-2 py-1 text-sm font-medium transition-colors',
                     focusRingQuiet,
                     letter === activeLetter
-                      ? 'bg-neutral-2 text-accent'
-                      : 'text-fg-secondary hover:bg-neutral-2 hover:text-accent',
+                      ? 'bg-surface-selected text-accent'
+                      : 'text-fg-secondary hover:bg-surface-hover hover:text-accent',
                   )}
                 >
                   {letter}

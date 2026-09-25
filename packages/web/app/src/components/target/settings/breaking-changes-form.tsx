@@ -267,7 +267,7 @@ export function BreakingChangesForm(props: {
             )}
           />
         </div>
-        <div className="border-line bg-neutral-8/10 text-fg-secondary w-auto max-w-4xl space-y-2 rounded-sm border py-2 pl-5">
+        <div className="border-line bg-surface-card text-fg-secondary w-auto max-w-4xl space-y-2 rounded-sm border py-2 pl-5">
           <div>
             <div className="font-semibold">Example settings</div>
             <div className="text-sm">Removal of a field is considered breaking if</div>

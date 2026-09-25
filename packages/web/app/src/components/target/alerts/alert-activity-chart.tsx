@@ -119,7 +119,7 @@ export function AlertActivityChart({ events, from, to }: ChartProps) {
 
   if (totalEvents === 0) {
     return (
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-line flex h-[200px] items-center justify-center rounded-md border">
+      <div className="bg-surface-card border-line flex h-[200px] items-center justify-center rounded-md border">
         <span className="text-fg-subtle text-sm italic">
           No alerts fired in the selected time range.
         </span>
