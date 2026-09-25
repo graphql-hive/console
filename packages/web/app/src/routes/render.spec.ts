@@ -158,6 +158,37 @@ describe('chrome at every page', () => {
     expect(screen.getByRole('banner')).toBe(header);
   });
 
+  // The viewer is one request per session; each level fetches only its entity document.
+  it('loads the viewer once for the session', { timeout: 30_000 }, async () => {
+    const { router } = at(TARGET);
+    await screen.findByRole('banner');
+    await router.navigate({
+      to: '/$organizationSlug/$projectSlug',
+      params: { organizationSlug: SLUGS.organizationSlug, projectSlug: SLUGS.projectSlug },
+    });
+    await screen.findByRole('link', { name: 'Targets', current: 'page' });
+    await router.navigate({
+      to: '/$organizationSlug',
+      params: { organizationSlug: SLUGS.organizationSlug },
+    });
+    await screen.findByRole('link', { name: 'Overview', current: 'page' });
+
+    const seen = client.current!.seen;
+    expect(seen.filter(name => name === 'ViewerQuery')).toHaveLength(1);
+    expect(seen).toContain('ProjectLayoutQuery');
+    expect(seen).toContain('OrganizationLayoutQuery');
+  });
+
+  it('shows the user menu for the current organization', { timeout: 30_000 }, async () => {
+    at(ORGANIZATION);
+    // The trigger pulses until the current organization is known.
+    await waitFor(() =>
+      expect(document.querySelector('[data-cy="user-menu-trigger"]')?.className).not.toContain(
+        'animate-pulse',
+      ),
+    );
+  });
+
   it('renders a missing page inside the chrome, not over it', { timeout: 30_000 }, async () => {
     at(`${TARGET}/nope`);
     const heading = await screen.findByText('Page Not Found');

@@ -9,3 +9,4 @@ export { usePagedConnection } from './use-paged-connection';
 export { usePrettify } from './use-prettify';
 export { useSlugs } from './use-slugs';
 export { useToggle } from './use-toggle';
+export { useViewer } from './use-viewer';

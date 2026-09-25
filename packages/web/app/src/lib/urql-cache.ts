@@ -146,6 +146,9 @@ const createTarget: TypedDocumentNodeUpdateResolver<typeof CreateTarget_CreateTa
   const target = createTarget.ok.createdTarget;
   const { selector } = createTarget.ok;
 
+  // The selector tree reads Project.targets, which the patch below misses.
+  cache.invalidate({ __typename: 'Project', id: target.project.id }, 'targets');
+
   updateQuery(
     cache,
     {

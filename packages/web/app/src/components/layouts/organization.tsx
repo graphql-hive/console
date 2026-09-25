@@ -27,6 +27,7 @@ import { RateLimitWarn } from '../organization/billing/RateLimitWarn';
 import { HiveLink } from '../ui/hive-link';
 import { QueryError } from '../ui/query-error';
 import { OrganizationSelector } from './organization-selectors';
+import { OrganizationLayoutQuery } from './queries';
 
 export enum Page {
   Overview = 'overview',
@@ -35,34 +36,6 @@ export enum Page {
   Support = 'support',
   Subscription = 'subscription',
 }
-const OrganizationLayoutQuery = graphql(`
-  query OrganizationLayoutQuery($organizationSlug: String!, $minimal: Boolean!) {
-    me {
-      id
-      provider
-      ...UserMenu_MeFragment
-    }
-    organizationBySlug(organizationSlug: $organizationSlug) @skip(if: $minimal) {
-      id
-      slug
-      viewerCanCreateProject
-      viewerCanManageSupportTickets
-      viewerCanDescribeBilling
-      viewerCanSeeMembers
-      viewerCanAccessSettings
-      viewerCanManageAccessTokens
-      viewerCanManagePersonalAccessTokens
-      ...UserMenu_OrganizationFragment
-      ...ProPlanBilling_OrganizationFragment
-      ...RateLimitWarn_OrganizationFragment
-    }
-    organizations {
-      ...OrganizationSelector_OrganizationConnectionFragment
-      ...UserMenu_OrganizationConnectionFragment
-    }
-  }
-`);
-
 export function OrganizationLayout({
   children,
   organizationSlug,
@@ -98,16 +71,9 @@ export function OrganizationLayout({
       <Header>
         <div className="flex flex-row items-center gap-4">
           <HiveLink className="size-8" />
-          <OrganizationSelector
-            currentOrganizationSlug={organizationSlug}
-            organizations={query.data?.organizations ?? null}
-          />
+          <OrganizationSelector currentOrganizationSlug={organizationSlug} />
         </div>
-        <UserMenu
-          me={query.data?.me ?? null}
-          currentOrganization={query.data?.organizationBySlug ?? null}
-          organizations={query.data?.organizations ?? null}
-        />
+        <UserMenu />
       </Header>
       <SecondaryNavigation
         loading={!currentOrganization}

@@ -22,40 +22,13 @@ import { useRouter } from '@tanstack/react-router';
 import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
 import { HiveLink } from '../ui/hive-link';
 import { ProjectSelector } from './project-selector';
+import { ProjectLayoutQuery } from './queries';
 
 export enum Page {
   Targets = 'targets',
   Alerts = 'alerts',
   Settings = 'settings',
 }
-
-const ProjectLayoutQuery = graphql(`
-  query ProjectLayoutQuery($organizationSlug: String!, $projectSlug: String!) {
-    me {
-      id
-      ...UserMenu_MeFragment
-    }
-    organizations {
-      ...ProjectSelector_OrganizationConnectionFragment
-      ...UserMenu_OrganizationConnectionFragment
-    }
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      project: projectBySlug(projectSlug: $projectSlug) {
-        id
-        slug
-        viewerCanModifySchemaPolicy
-        viewerCanCreateTarget
-        viewerCanModifyAlerts
-        viewerCanModifySettings
-        viewerCanManageProjectAccessTokens
-        ...LegacyCompositionWarn_ProjectFragment
-      }
-      ...UserMenu_OrganizationFragment
-    }
-  }
-`);
 
 export function ProjectLayout({ children }: { children: ReactNode }) {
   const { organizationSlug, projectSlug } = useSlugs('project');
@@ -68,7 +41,6 @@ export function ProjectLayout({ children }: { children: ReactNode }) {
     variables: params,
   });
 
-  const me = query.data?.me;
   const currentOrganization = query.data?.organization;
   const currentProject = currentOrganization?.project;
 
@@ -82,15 +54,10 @@ export function ProjectLayout({ children }: { children: ReactNode }) {
           <ProjectSelector
             currentOrganizationSlug={organizationSlug}
             currentProjectSlug={projectSlug}
-            organizations={query.data?.organizations ?? null}
           />
         </div>
         <div>
-          <UserMenu
-            me={me ?? null}
-            currentOrganization={currentOrganization ?? null}
-            organizations={query.data?.organizations ?? null}
-          />
+          <UserMenu />
         </div>
       </Header>
       {query.fetching === false &&
@@ -172,6 +139,9 @@ export const CreateTarget_CreateTargetMutation = graphql(`
         createdTarget {
           id
           slug
+          project {
+            id
+          }
         }
       }
       error {

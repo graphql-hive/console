@@ -2,7 +2,8 @@ import Session from 'supertokens-auth-react/recipe/session';
 import { z } from 'zod';
 import { authenticated } from '@/components/authenticated-container';
 import { OrganizationLayout } from '@/components/layouts/organization';
-import { redirectToPathSchema } from '@/lib/route-utils';
+import { ViewerQuery } from '@/components/layouts/queries';
+import { loadQuery, redirectToPathSchema } from '@/lib/route-utils';
 import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
 import { DevPage } from '@/pages/dev';
 import { IndexPage } from '@/pages/index';
@@ -13,6 +14,8 @@ import { OrganizationOIDCRequestPage } from '@/pages/organization-oidc-request';
 import { OrganizationTransferPage } from '@/pages/organization-transfer';
 import { createRoute, Outlet, redirect } from '@tanstack/react-router';
 import { root } from './root';
+
+let viewerLoadedAt = 0;
 
 export const authenticatedRoute = createRoute({
   getParentRoute: () => root,
@@ -25,6 +28,12 @@ export const authenticatedRoute = createRoute({
   },
   // Never a pending boundary: the async check would otherwise hide the header behind a skeleton.
   pendingMs: Infinity,
+  // Revalidate the viewer at most once a minute.
+  shouldReload: () => Date.now() - viewerLoadedAt >= 60_000,
+  loader: loader => {
+    viewerLoadedAt = Date.now();
+    void loadQuery(loader, ViewerQuery, {}, 'cache-and-network');
+  },
   component: authenticated(function AuthenticatedRoute() {
     return <Outlet />;
   }),
