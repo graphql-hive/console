@@ -54,6 +54,9 @@ const EnvironmentModel = zod.object({
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+  // Comma-separated list of authorization actions (e.g. `*:describe,alert:modify`) superadmins are
+  // granted within organizations they are not a member of. Defaults to describe-only access.
+  SUPERADMIN_FOREIGN_ORGANIZATION_ACTIONS: emptyString(zod.string().optional()),
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
     zod
       .union([zod.literal('1'), zod.literal('0')])
@@ -649,6 +652,12 @@ export const env = {
         : null,
     organizationOIDC: authOktaMultiTenant.AUTH_ORGANIZATION_OIDC === '1',
     requireEmailVerification: base.AUTH_REQUIRE_EMAIL_VERIFICATION === '1',
+    superadminForeignOrganizationActions: (
+      base.SUPERADMIN_FOREIGN_ORGANIZATION_ACTIONS ?? '*:describe'
+    )
+      .split(',')
+      .map(action => action.trim())
+      .filter(Boolean),
   },
   github:
     github.INTEGRATION_GITHUB === '1'
