@@ -2670,11 +2670,13 @@ export function schemaPush(input: GraphQLSchema.SchemaPushInput, authToken: stri
       mutation TestKit_SchemaPush($input: SchemaPushInput!) {
         schemaPush(input: $input) {
           ok {
+            isSkipped
             schemaRevision {
               id
               service
               revision
               digest
+              expiresAt
             }
           }
           error {
