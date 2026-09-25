@@ -52,8 +52,6 @@ Invalid registry access tokens that expired are reported as `[106]`.
 
 - `hive schema:publish --github` prints the reason for errors that happen before a GitHub check-run
   is created, such as an unknown revision.
-- `hive schema:push` shows when a pushed revision expires, and warns when `--service` is ignored for a
-  single-schema project.
 - `hive app:create` shows why the app name or version was rejected.
 - Error messages link to the documentation of their error code, and the CLI README lists every error
   code with its exit code and recommended fix. The list is also published as `errors.json` in the

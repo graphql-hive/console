@@ -576,8 +576,7 @@ FLAGS
   --require=<value>...            [default: ] Loads specific require.extensions before running the codegen and reading
                                   the configuration
   --revision=<value>              (required) immutable schema revision, such as a commit SHA
-  --service=<value>               service name (required for federation and stitching projects, ignored for
-                                  single-schema projects)
+  --service=<value>               service name (required for distributed schemas)
   --target=<value>                (required) The target to push against as "$organizationSlug/$projectSlug/$targetSlug"
                                   or a target UUID.
   --token=<value>                 api token

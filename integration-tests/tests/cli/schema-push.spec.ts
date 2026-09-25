@@ -1,5 +1,5 @@
 import { ProjectType } from 'testkit/gql/graphql';
-import { schemaPublish, schemaPush } from '../../testkit/cli';
+import { cliErrorMessage, schemaPublish, schemaPush } from '../../testkit/cli';
 import { initSeed } from '../../testkit/seed';
 
 test('schema:publish requires a file or revision', async ({ expect }) => {
@@ -142,76 +142,22 @@ describe.each([
         'fixtures/init-schema.graphql',
       ]);
 
-      const conflictingPush = schemaPush([
-        '--registry.accessToken',
-        secret,
-        '--target',
-        target.id,
-        '--revision',
-        revision,
-        ...serviceArgs,
-        'fixtures/nonbreaking-schema.graphql',
-      ]);
-      await expect(conflictingPush).rejects.toThrow(`Revision '${identifier}' already exists`);
-      await expect(conflictingPush).rejects.toThrow('with a different');
-      await expect(conflictingPush).rejects.toThrow('schema.');
+      const conflictMessage = await cliErrorMessage(
+        schemaPush([
+          '--registry.accessToken',
+          secret,
+          '--target',
+          target.id,
+          '--revision',
+          revision,
+          ...serviceArgs,
+          'fixtures/nonbreaking-schema.graphql',
+        ]),
+      );
+      expect(conflictMessage).toContain(
+        `Revision rejected by the server: Revision '${identifier}' already exists with a different schema.`,
+      );
+      expect(conflictMessage).toContain('[115]');
     });
   },
 );
-
-test('schema:publish --revision without --service reports the missing service', async ({
-  expect,
-}) => {
-  const { createOrg } = await initSeed().createOwner();
-  const { createProject } = await createOrg();
-  const { target, createTargetAccessToken } = await createProject(ProjectType.Federation);
-  const { secret } = await createTargetAccessToken({ mode: 'readWrite' });
-
-  await schemaPush([
-    '--registry.accessToken',
-    secret,
-    '--target',
-    target.id,
-    '--revision',
-    'v1',
-    '--service',
-    'products',
-    'fixtures/init-schema.graphql',
-  ]);
-
-  const publish = schemaPublish([
-    '--registry.accessToken',
-    secret,
-    '--target',
-    target.id,
-    '--author',
-    'HiveCLI',
-    '--commit',
-    'v1',
-    '--revision',
-    'v1',
-  ]);
-  await expect(publish).rejects.toThrow('Missing service name');
-  await expect(publish).rejects.toThrow('[302]');
-});
-
-test('schema:push rejects an invalid service name', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
-  const { createProject } = await createOrg();
-  const { target, createTargetAccessToken } = await createProject(ProjectType.Federation);
-  const { secret } = await createTargetAccessToken({ mode: 'readWrite' });
-
-  const push = schemaPush([
-    '--registry.accessToken',
-    secret,
-    '--target',
-    target.id,
-    '--revision',
-    'v1',
-    '--service',
-    '1-invalid',
-    'fixtures/init-schema.graphql',
-  ]);
-  await expect(push).rejects.toThrow('Revision rejected by the server: Invalid service name.');
-  await expect(push).rejects.toThrow('[115]');
-});

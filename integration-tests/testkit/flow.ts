@@ -2675,7 +2675,6 @@ export function schemaPush(input: GraphQLSchema.SchemaPushInput, authToken: stri
               service
               revision
               digest
-              expiresAt
             }
           }
           error {
