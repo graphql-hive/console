@@ -206,19 +206,19 @@ function PlanBody(props: {
     <div className="flex w-full flex-col justify-between gap-6 self-stretch">
       <div>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-neutral-12 text-sm font-semibold">{props.name}</span>
+          <span className="text-fg text-sm font-semibold">{props.name}</span>
           {props.isCurrent ? (
-            <span className="bg-accent_10 text-accent rounded-xs px-2 py-1 text-[11px] font-medium tracking-wide">
+            <span className="bg-accent-tint text-accent rounded-xs px-2 py-1 text-[11px] font-medium tracking-wide">
               CURRENT PLAN
             </span>
           ) : null}
         </div>
-        <div className="text-neutral-12 text-3xl font-bold">{props.price}</div>
-        <div className="text-neutral-10 text-control">{props.description}</div>
+        <div className="text-fg text-3xl font-bold">{props.price}</div>
+        <div className="text-fg-secondary text-control">{props.description}</div>
         <div className="mt-6 flex flex-col gap-2">
           {props.features.map(feature => (
-            <div key={feature} className="text-neutral-11 text-control flex items-start gap-2">
-              <Check className="text-neutral-10 mt-0.5 size-4 shrink-0" />
+            <div key={feature} className="text-fg-default text-control flex items-start gap-2">
+              <Check className="text-fg-secondary mt-0.5 size-4 shrink-0" />
               {feature}
             </div>
           ))}
@@ -226,8 +226,8 @@ function PlanBody(props: {
       </div>
       {props.footer ? (
         <div>
-          <div className="border-neutral-5 mx-auto mb-4 w-9/12 border-b" />
-          <div className="text-neutral-11 text-xs">{props.footer}</div>
+          <div className="border-line mx-auto mb-4 w-9/12 border-b" />
+          <div className="text-fg-default text-xs">{props.footer}</div>
         </div>
       ) : null}
     </div>

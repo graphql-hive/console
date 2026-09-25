@@ -21,7 +21,7 @@ export const Sizes = createPreview(() => (
 ));
 
 export const Initials = createPreview(() => (
-  <div className="text-neutral-11 flex flex-col gap-3 text-xs">
+  <div className="text-fg-default flex flex-col gap-3 text-xs">
     {['User', 'Ada Lovelace', 'Jean-Luc Picard', 'user@the-guild.dev', ''].map(name => (
       <div key={name} className="flex items-center gap-3">
         <Avatar alt={name} />
@@ -51,11 +51,11 @@ export const WithImage = createPreview(() => (
 /** The alerts tables: an `xs` avatar and the name it stands for, in a `text-xs` row. */
 export const BesideName = createPreview(() => (
   <div className="flex flex-col gap-2">
-    <span className="text-neutral-12 inline-flex items-center gap-2 text-xs">
+    <span className="text-fg inline-flex items-center gap-2 text-xs">
       <Avatar size="xs" alt="User" />
       User
     </span>
-    <span className="text-neutral-12 inline-flex items-center gap-2 text-xs">
+    <span className="text-fg inline-flex items-center gap-2 text-xs">
       <Avatar size="xs" alt="Ada Lovelace" />
       Ada Lovelace
     </span>

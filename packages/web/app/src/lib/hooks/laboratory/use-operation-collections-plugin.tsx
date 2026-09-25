@@ -371,9 +371,9 @@ export function Content() {
                 search={{ operation: node.id }}
                 data-cy={`operation-${node.name}`}
                 className={cn(
-                  'text-neutral-12/50 hover:text-neutral-12 hover:bg-neutral-11/10 flex w-full items-center gap-x-3 rounded-sm p-2 font-normal hover:no-underline',
+                  'text-fg-muted hover:text-fg hover:bg-surface-hover flex w-full items-center gap-x-3 rounded-sm p-2 font-normal hover:no-underline',
                   node.id === queryParamsOperationId && [
-                    'text-neutral-12 bg-neutral-11/10',
+                    'text-fg bg-surface-selected',
                     currentOperation &&
                       node.id === currentOperation.id &&
                       !isSame &&
@@ -390,7 +390,7 @@ export function Content() {
                 trigger={
                   <button
                     type="button"
-                    className="graphiql-toolbar-button text-neutral-12 opacity-0 transition-opacity [div:hover>&]:opacity-100"
+                    className="graphiql-toolbar-button text-fg opacity-0 transition-opacity [div:hover>&]:opacity-100"
                   >
                     <EllipsisIcon className="size-4" />
                   </button>

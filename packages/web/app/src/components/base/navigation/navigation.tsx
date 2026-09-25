@@ -82,15 +82,15 @@ const itemVariants = cva(
 );
 
 const activeClasses: Record<NavigationVariant, string> = {
-  underline: 'text-neutral-12 border-accent',
-  pill: 'text-neutral-12 bg-neutral-5',
-  list: 'text-neutral-12 bg-neutral-5 hover:bg-neutral-5 dark:bg-neutral-3 dark:hover:bg-neutral-3',
+  underline: 'text-fg border-accent',
+  pill: 'text-fg bg-surface-selected',
+  list: 'text-fg bg-neutral-5 hover:bg-neutral-5 dark:bg-neutral-3 dark:hover:bg-neutral-3',
 };
 
 const inactiveClasses: Record<NavigationVariant, string> = {
-  underline: 'text-neutral-11 hover:text-neutral-12 hover:border-accent_80 border-transparent',
-  pill: 'text-neutral-11 hover:text-neutral-12',
-  list: 'text-neutral-11 hover:text-neutral-12 hover:underline',
+  underline: 'text-fg-default hover:text-fg hover:border-accent-muted border-transparent',
+  pill: 'text-fg-default hover:text-fg',
+  list: 'text-fg-default hover:text-fg hover:underline',
 };
 
 export function Navigation({

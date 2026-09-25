@@ -82,9 +82,9 @@ export function TargetSelector(props: {
           linkText={currentOrganization.slug}
         />
       ) : (
-        <div className="bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
+        <div className="bg-surface-skeleton h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
       )}
-      <div className="text-neutral-10 italic">/</div>
+      <div className="text-fg-secondary italic">/</div>
       {currentOrganization && currentProject ? (
         <PrimaryNavigationLink
           linkProps={{
@@ -97,9 +97,9 @@ export function TargetSelector(props: {
           linkText={currentProject.slug}
         />
       ) : (
-        <div className="bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
+        <div className="bg-surface-skeleton h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
       )}
-      <div className="text-neutral-10 italic">/</div>
+      <div className="text-fg-secondary italic">/</div>
       {targetEdges?.length && currentOrganization && currentProject && currentTarget ? (
         <Select
           aria-label="Target"
@@ -109,7 +109,7 @@ export function TargetSelector(props: {
           data-cy="target-picker-trigger"
         />
       ) : (
-        <div className="bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
+        <div className="bg-surface-skeleton h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
       )}
     </>
   );

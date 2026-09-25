@@ -19,7 +19,7 @@ export default function AvailabilityBar({
   return (
     <div
       className={cn(
-        'relative flex h-2 w-full items-center overflow-hidden rounded-sm bg-red-500',
+        'bg-critical relative flex h-2 w-full items-center overflow-hidden rounded-sm',
         className,
       )}
       role="progressbar"
@@ -29,7 +29,7 @@ export default function AvailabilityBar({
     >
       <div
         className={cn(
-          'h-full bg-green-500 transition-all duration-300 ease-in-out',
+          'bg-success h-full transition-all duration-300 ease-in-out',
           isLessThan100 && 'border-hive-laboratory-background border-r',
         )}
         style={{ width: fillWidth }}

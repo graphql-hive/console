@@ -215,7 +215,7 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
   if (result.error && !result.data) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center py-28">
-        <div className="text-sm text-red-500">
+        <div className="text-critical text-sm">
           Failed to load alert rule: {result.error.message}
         </div>
       </div>
@@ -323,7 +323,7 @@ function RuleStateLogSection(props: {
   const hasNoData = !data;
   const stateLogStatus =
     result.error && hasNoData ? (
-      <div className="py-4 text-sm text-red-500">
+      <div className="text-critical py-4 text-sm">
         Failed to load status transitions: {result.error.message}
       </div>
     ) : result.fetching && hasNoData ? (
@@ -335,7 +335,7 @@ function RuleStateLogSection(props: {
   return (
     <>
       <section className="space-y-2">
-        <h2 className="text-neutral-12 m-0 mb-2 text-sm font-medium">Status transitions</h2>
+        <h2 className="text-fg m-0 mb-2 text-sm font-medium">Status transitions</h2>
         {stateLogStatus ?? (
           <AlertStateTransitionsBar
             stateLog={stateLog}
@@ -348,7 +348,7 @@ function RuleStateLogSection(props: {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-neutral-12 m-0 text-sm font-medium">
+        <h2 className="text-fg m-0 text-sm font-medium">
           {rule.type === MetricAlertRuleType.ErrorRate
             ? 'Error rate over time'
             : rule.type === MetricAlertRuleType.Latency

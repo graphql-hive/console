@@ -9,7 +9,7 @@ const headerVariants = cva('flex items-center', {
     variant: {
       section: '',
       // The border only shows while open, so a closed panel reads as one bar.
-      panel: 'border-neutral-5 group-data-[open]/collapsible:border-b pr-4',
+      panel: 'border-line group-data-[open]/collapsible:border-b pr-4',
     },
   },
 });
@@ -17,7 +17,7 @@ const headerVariants = cva('flex items-center', {
 const triggerVariants = cva(
   [
     'group/trigger flex min-w-0 grow items-center gap-2 text-left text-sm font-medium transition-colors',
-    'text-neutral-11 hover:text-neutral-12 data-[panel-open]:text-neutral-12',
+    'text-fg-default hover:text-fg data-[panel-open]:text-fg',
     focusRing,
   ],
   {
@@ -72,7 +72,7 @@ export function Collapsible({
     >
       <div className={headerVariants({ variant })}>
         <BaseCollapsible.Trigger className={triggerVariants({ variant })}>
-          <ChevronRight className="text-neutral-10 size-4 shrink-0 transition-transform group-data-[panel-open]/trigger:rotate-90" />
+          <ChevronRight className="text-fg-secondary size-4 shrink-0 transition-transform group-data-[panel-open]/trigger:rotate-90" />
           <span className="min-w-0 grow">{trigger}</span>
         </BaseCollapsible.Trigger>
         {actions}

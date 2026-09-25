@@ -61,8 +61,8 @@ const rootVariants = cva('', {
 const itemVariants = cva('', {
   variants: {
     variant: {
-      list: 'border-neutral-5 border-b',
-      boxed: 'border-neutral-5 rounded-md border',
+      list: 'border-line border-b',
+      boxed: 'border-line rounded-md border',
       plain: '',
     },
   },
@@ -93,8 +93,8 @@ const triggerVariants = cva(
         sm: 'py-2 text-xs',
       },
       tone: {
-        default: 'text-neutral-12 hover:text-neutral-11',
-        accent: 'text-accent hover:text-accent/80',
+        default: 'text-fg hover:text-fg-default',
+        accent: 'text-accent hover:text-accent-muted',
       },
     },
   },
@@ -107,7 +107,7 @@ const chevronVariants = cva('shrink-0 transition-transform duration-200', {
       sm: 'size-3',
     },
     tone: {
-      default: 'text-neutral-8',
+      default: 'text-fg-subtle',
       accent: 'text-accent',
     },
     chevron: {

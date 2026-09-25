@@ -39,7 +39,7 @@ export const PolicyMultiSelect = (props: {
                 </button>
               }
               openOnHover
-              content={<p className="text-neutral-11 text-sm">{props.tooltip}</p>}
+              content={<p className="text-fg-default text-sm">{props.tooltip}</p>}
             />
           ) : null}
         </div>

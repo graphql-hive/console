@@ -122,7 +122,7 @@ const ExternalCompositionStatus = () => {
           trigger={
             <span className="inline-flex">
               <RefreshCw
-                className="text-neutral-10 size-5 animate-spin cursor-default"
+                className="text-fg-secondary size-5 animate-spin cursor-default"
                 onClick={e => e.preventDefault()}
               />
             </span>
@@ -154,7 +154,10 @@ const ExternalCompositionStatus = () => {
           defaultOpen
           trigger={
             <span className="inline-flex">
-              <X className="size-5 cursor-default text-red-500" onClick={e => e.preventDefault()} />
+              <X
+                className="text-critical size-5 cursor-default"
+                onClick={e => e.preventDefault()}
+              />
             </span>
           }
           content={error}
@@ -167,7 +170,7 @@ const ExternalCompositionStatus = () => {
           trigger={
             <span className="inline-flex">
               <Check
-                className="size-5 cursor-default text-green-500"
+                className="text-success size-5 cursor-default"
                 onClick={e => e.preventDefault()}
               />
             </span>
@@ -284,7 +287,7 @@ export const ExternalCompositionSettings = (props: {
   return (
     <div className="flex flex-col items-start gap-y-6">
       <div>
-        <p className="text-neutral-10 max-w-2xl text-sm">
+        <p className="text-fg-secondary max-w-2xl text-sm">
           For advanced users, you can configure an endpoint for external schema compositions. This
           can be used to implement custom composition logic.
         </p>

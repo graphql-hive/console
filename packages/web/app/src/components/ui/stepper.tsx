@@ -183,8 +183,8 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
                 'inline-flex size-9 items-center justify-center rounded-full text-sm font-medium transition-colors',
                 focusRing,
                 dataState !== 'inactive'
-                  ? 'bg-neutral-4 text-neutral-12'
-                  : 'bg-neutral-2 text-neutral-11',
+                  ? 'bg-surface-selected text-fg'
+                  : 'bg-surface-card text-fg-default',
                 clickable === false && 'cursor-default',
               )}
               aria-controls={`step-panel-${props.of}`}
@@ -278,7 +278,7 @@ const StepperTitle = ({ children, className, ...props }: React.ComponentProps<'h
 
 const StepperDescription = ({ children, className, ...props }: React.ComponentProps<'p'>) => {
   return (
-    <p className={cn('text-neutral-10 text-sm', className)} {...props}>
+    <p className={cn('text-fg-secondary text-sm', className)} {...props}>
       {children}
     </p>
   );
@@ -346,7 +346,7 @@ const CircleStepIndicator = ({
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-neutral-10"
+          className="text-fg-secondary"
         />
         <circle
           cx={size / 2}
@@ -357,7 +357,7 @@ const CircleStepIndicator = ({
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
-          className="text-neutral-11 transition-all duration-300 ease-in-out"
+          className="text-fg-default transition-all duration-300 ease-in-out"
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
@@ -386,8 +386,8 @@ const listVariants = cva('flex gap-2', {
 
 const classForSeparator = cva(
   [
-    'bg-neutral-3',
-    'data-[state=completed]:bg-neutral-11 data-disabled:opacity-50',
+    'bg-line-subtle',
+    'data-[state=completed]:bg-fg-default data-disabled:opacity-50',
     'transition-all duration-300 ease-in-out',
   ],
   {

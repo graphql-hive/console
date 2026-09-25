@@ -43,7 +43,7 @@ export const chipClass = buttonVariants({ variant: 'default', size: 'compact', l
 
 /** The chip's trailing remove button. */
 export const chipRemoveButtonClass =
-  'text-neutral-8 hover:text-neutral-12 flex cursor-pointer items-center px-2 py-1.5 transition-colors';
+  'text-fg-subtle hover:text-fg flex cursor-pointer items-center px-2 py-1.5 transition-colors';
 
 export function FilterDropdown({
   label,

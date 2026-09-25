@@ -39,7 +39,7 @@ export function TargetProposalChecksPage(props: {
       {checks?.edges?.map(({ node }, index) => {
         return (
           <CheckItem
-            className={index % 2 === 1 ? 'bg-neutral-2/50' : ''}
+            className={index % 2 === 1 ? 'bg-surface-stripe' : ''}
             key={node.id}
             {...props}
             {...node}
@@ -75,7 +75,7 @@ function CheckItem(props: {
         schemaCheckId: props.id,
       }}
       className={cn(
-        'hover:bg-neutral-5 col-span-3 grid grid-cols-subgrid items-center gap-4 px-4 py-3 text-left text-base sm:col-span-5',
+        'hover:bg-surface-hover col-span-3 grid grid-cols-subgrid items-center gap-4 px-4 py-3 text-left text-base sm:col-span-5',
         props.className,
       )}
     >
@@ -88,12 +88,12 @@ function CheckItem(props: {
           <div className="truncate">{props.serviceName || 'single schema'}</div>
         </div>
       </div>
-      <div className="text-neutral-10 truncate text-center">{props.commit}</div>
+      <div className="text-fg-secondary truncate text-center">{props.commit}</div>
       <div className="col-start-2 flex items-center sm:col-start-4 sm:justify-self-end">
         <CalendarIcon className="h-3" />
         <TimeAgo date={props.createdAt} />
       </div>
-      <div className="text-neutral-10 truncate pr-4 text-right">{props.author ?? ''}</div>
+      <div className="text-fg-secondary truncate pr-4 text-right">{props.author ?? ''}</div>
     </Link>
   );
 }
@@ -105,7 +105,7 @@ function SchemaCheckIcon(props: {
 }) {
   if (props.hasSchemaCompositionErrors || props.hasUnapprovedBreakingChanges) {
     return (
-      <div className="flex items-center text-red-500">
+      <div className="text-critical flex items-center">
         <XIcon className="inline-block h-4" />{' '}
         {props.hasSchemaCompositionErrors ? 'ERROR' : 'FAILED'}
       </div>
@@ -113,13 +113,13 @@ function SchemaCheckIcon(props: {
   }
   if (props.hasSchemaChanges) {
     return (
-      <div className="flex items-center text-green-500">
+      <div className="text-success flex items-center">
         <CheckIcon className="inline-block h-4" /> PASS
       </div>
     );
   }
   return (
-    <div className="text-neutral-10 flex items-center">
+    <div className="text-fg-secondary flex items-center">
       <Diamond className="mr-2 size-4" /> NO CHANGE
     </div>
   );

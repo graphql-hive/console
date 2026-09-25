@@ -129,8 +129,8 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         (needsDependency || !permission.isAssignableByViewer) && 'opacity-30',
                       )}
                     >
-                      <div className="text-neutral-12 font-semibold">{permission.title}</div>
-                      <div className="text-neutral-11 text-xs">{permission.description}</div>
+                      <div className="text-fg font-semibold">{permission.title}</div>
+                      <div className="text-fg-default text-xs">{permission.description}</div>
                     </div>
                     {permission.isAssignableByViewer === false ? (
                       <div className="flex grow justify-end">
@@ -142,7 +142,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                           }
                           openOnHover
                           content={
-                            <p className="text-neutral-11 text-sm">
+                            <p className="text-fg-default text-sm">
                               Your membership has insufficient authority for assigning this
                               permission.
                             </p>
@@ -154,11 +154,11 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         <Popover
                           trigger={
                             <button type="button" aria-label="Warning">
-                              <TriangleAlert className="text-yellow-700" />
+                              <TriangleAlert className="text-warning" />
                             </button>
                           }
                           openOnHover
-                          content={<p className="text-neutral-11 text-sm">{permission.warning}</p>}
+                          content={<p className="text-fg-default text-sm">{permission.warning}</p>}
                         />
                       </div>
                     ) : (
@@ -173,7 +173,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                             }
                             openOnHover
                             content={
-                              <p className="text-neutral-11 text-sm">
+                              <p className="text-fg-default text-sm">
                                 This permission depends on another permission.{' '}
                                 <Button
                                   variant="link"
@@ -250,7 +250,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                     />
                   </div>
                   {focusedPermission === permission.id && (
-                    <div className="pointer-events-none absolute bottom-[3px] left-[-7px] right-0 top-[-4px] rounded-sm border border-yellow-400" />
+                    <div className="border-warning pointer-events-none absolute bottom-[3px] left-[-7px] right-0 top-[-4px] rounded-sm border" />
                   )}
                 </div>
               );

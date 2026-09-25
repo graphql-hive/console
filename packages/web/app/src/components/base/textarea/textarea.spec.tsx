@@ -35,7 +35,7 @@ describe('Textarea', () => {
     expect(ref.current).toBe(textarea);
     expect(textarea.getAttribute('rows')).toBe('3');
     expect(textarea.getAttribute('maxlength')).toBe('5000');
-    expect(textarea.className).toContain('text-neutral-12');
+    expect(textarea.className).toContain('text-fg');
     expect(textarea.className).toContain('text-sm');
   });
 
@@ -69,9 +69,9 @@ describe('Textarea', () => {
   it('paints the raised surface for a field inside a sheet or dialog', () => {
     render(<Textarea placeholder="Description" onSurface="raised" />);
     const textarea = screen.getByPlaceholderText('Description');
-    expect(textarea.className).toContain('dark:bg-neutral-4');
-    expect(textarea.className).toContain('dark:focus:bg-neutral-5');
-    expect(textarea.className).not.toContain('dark:bg-neutral-3');
+    expect(textarea.className).toContain('bg-surface-control-raised');
+    expect(textarea.className).toContain('dark:focus:bg-neutral-6');
+    expect(textarea.className.split(' ')).not.toContain('bg-surface-control');
   });
 
   it('grows with its content when autoSize is set', () => {

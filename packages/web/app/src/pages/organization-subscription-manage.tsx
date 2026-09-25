@@ -278,10 +278,7 @@ function Inner(props: {
       return (
         <>
           <div className="my-8 flex flex-row gap-6">
-            <BillingPaymentMethodForm
-              className="w-1/2"
-              onValidationChange={setPaymentDetailsValid}
-            />
+            <BillingPaymentMethodForm onValidationChange={setPaymentDetailsValid} />
             <div className="w-1/2">
               {plan === BillingPlanType.Pro && plan !== organization.plan ? (
                 <div>
@@ -372,14 +369,14 @@ function Inner(props: {
                   <>
                     <div className="my-8 w-1/2">
                       <Heading>Define your reserved volume</Heading>
-                      <p className="text-neutral-10 text-sm">
+                      <p className="text-fg-secondary text-sm">
                         Pro plan requires to defined quota of reported operations.
                       </p>
-                      <p className="text-neutral-10 text-sm">
+                      <p className="text-fg-secondary text-sm">
                         Pick a volume a little higher than you think you'll need to avoid being rate
                         limited.
                       </p>
-                      <p className="text-neutral-10 text-sm">
+                      <p className="text-fg-secondary text-sm">
                         Don't worry, you can always adjust it later.
                       </p>
                       <div className="mt-5 pl-2.5">
@@ -488,7 +485,7 @@ function SubscriptionSlider({
 
       <div className="ml-auto w-48">
         <Input ref={inputRef} value={inputValue} onChange={handleInputChange} onBlur={handleBlur} />
-        {inputError && <div className="mt-1 text-end text-sm text-red-500">{inputError}</div>}
+        {inputError && <div className="text-critical mt-1 text-end text-sm">{inputError}</div>}
       </div>
     </div>
   );

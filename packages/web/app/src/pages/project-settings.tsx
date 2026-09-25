@@ -99,31 +99,31 @@ function GitHubIntegration(): ReactElement | null {
         }}
       />
       <div>
-        <div className="text-neutral-10 text-sm">
+        <div className="text-fg-secondary text-sm">
           <div>Here's how it will look like in your CI pipeline.</div>
           <div className="my-8 flex w-fit flex-col gap-y-1">
             <div className="flex items-center gap-x-2 pl-1">
-              <CheckIcon className="size-4 text-emerald-500" />
-              <div className="bg-neutral-12 flex size-6 items-center justify-center rounded-sm">
+              <CheckIcon className="text-success size-4" />
+              <div className="bg-surface-inverse flex size-6 items-center justify-center rounded-sm">
                 <HiveLogo className="size-4/5" />
               </div>
 
-              <div className="font-semibold text-[#adbac7]">
+              <div className="text-fg-default font-semibold">
                 {organizationSlug} &gt; schema:check &gt; staging
               </div>
-              <div className="text-neutral-10">— No changes</div>
+              <div className="text-fg-secondary">— No changes</div>
             </div>
             <ArrowBigDownDashIcon className="size-6 self-center" />
             <div className="flex items-center gap-x-2 pl-1">
-              <CheckIcon className="size-4 text-emerald-500" />
-              <div className="bg-neutral-12 flex size-6 items-center justify-center rounded-sm">
+              <CheckIcon className="text-success size-4" />
+              <div className="bg-surface-inverse flex size-6 items-center justify-center rounded-sm">
                 <HiveLogo className="size-4/5" />
               </div>
 
-              <div className="font-semibold text-[#adbac7]">
+              <div className="text-fg-default font-semibold">
                 {organizationSlug} &gt; schema:check &gt; {projectSlug} &gt; staging
               </div>
-              <div className="text-neutral-10">— No changes</div>
+              <div className="text-fg-secondary">— No changes</div>
             </div>
           </div>
         </div>
@@ -387,8 +387,8 @@ function ProjectPolicySettings(props: {
           currentState={currentProject.schemaPolicy}
         />
       ) : (
-        <div className="text-neutral-10 pl-1 text-sm font-bold">
-          <p className="text-neutral-2 mr-4 inline-block">!</p>
+        <div className="text-fg-secondary pl-1 text-sm font-bold">
+          <p className="text-fg-inverse mr-4 inline-block">!</p>
           Organization settings does not allow projects to override policy. Please consult your
           organization administrator.
         </div>

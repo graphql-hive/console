@@ -123,7 +123,7 @@ function PolicySettingsListForm({
             })
           : null}
         <div className="flex items-center justify-end">
-          {isDirty ? <p className="text-neutral-10 pr-2 text-sm">Unsaved changes</p> : null}
+          {isDirty ? <p className="text-fg-secondary pr-2 text-sm">Unsaved changes</p> : null}
 
           <Button disabled={!isDirty || saving || !isValid || !onSave} type="submit">
             Update Policy
@@ -137,7 +137,7 @@ function PolicySettingsListForm({
           </Callout>
         ) : null}
       </div>
-      <div className="divide-neutral-5 grid grid-cols-1 divide-y">
+      <div className="divide-line grid grid-cols-1 divide-y">
         {availableRules.map(availableRule => (
           <PolicyListItem
             disabled={!onSave}

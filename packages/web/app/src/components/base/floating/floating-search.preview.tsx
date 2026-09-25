@@ -15,14 +15,14 @@ export const Default = createPreview(() => {
   const matches = ITEMS.filter(item => item.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 w-64 rounded-md border px-2 pb-2">
+    <div className="bg-neutral-2 border-line dark:bg-neutral-4 dark:border-line w-64 rounded-md border px-2 pb-2">
       <FloatingSearch label="targets" value={search} onSearch={setSearch} />
       <div className="pt-2">
         {matches.length === 0 ? (
-          <div className="text-neutral-8 px-2 py-4 text-center text-sm italic">No matches</div>
+          <div className="text-fg-subtle px-2 py-4 text-center text-sm italic">No matches</div>
         ) : (
           matches.map(item => (
-            <div key={item} className="text-neutral-10 text-control flex h-7 items-center px-2">
+            <div key={item} className="text-fg-secondary text-control flex h-7 items-center px-2">
               {item}
             </div>
           ))
@@ -40,7 +40,7 @@ export const Standalone = createPreview(() => {
   const [search, setSearch] = useState('');
 
   return (
-    <div className="bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 thin-scrollbar w-64 overflow-y-auto overflow-x-hidden rounded-md border">
+    <div className="bg-neutral-2 border-line dark:bg-neutral-4 dark:border-line thin-scrollbar w-64 overflow-y-auto overflow-x-hidden rounded-md border">
       <FloatingSearch
         label="fields"
         value={search}
@@ -56,7 +56,7 @@ export const WithValue = createPreview(() => {
   const [search, setSearch] = useState('prod');
 
   return (
-    <div className="bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 thin-scrollbar w-64 overflow-y-auto overflow-x-hidden rounded-md border">
+    <div className="bg-neutral-2 border-line dark:bg-neutral-4 dark:border-line thin-scrollbar w-64 overflow-y-auto overflow-x-hidden rounded-md border">
       <FloatingSearch
         label="targets"
         value={search}

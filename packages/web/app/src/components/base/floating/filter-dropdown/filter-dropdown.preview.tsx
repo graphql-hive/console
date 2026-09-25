@@ -27,19 +27,19 @@ const SEVERITIES: FilterItem[] = [
 
 function SelectionReadout({ selected }: { selected: FilterSelection[] }) {
   if (selected.length === 0) {
-    return <div className="text-neutral-8 text-sm">No filters active</div>;
+    return <div className="text-fg-subtle text-sm">No filters active</div>;
   }
 
   return (
     <ul className="space-y-1 text-sm">
       {selected.map(selection => (
-        <li key={selection.name} className="text-neutral-11">
-          <span className="text-neutral-12 font-medium">{selection.name}</span>
+        <li key={selection.name} className="text-fg-default">
+          <span className="text-fg font-medium">{selection.name}</span>
           {': '}
           {selection.values === null ? (
-            <span className="text-neutral-8 italic">all</span>
+            <span className="text-fg-subtle italic">all</span>
           ) : (
-            <span className="text-neutral-9">{selection.values.join(', ')}</span>
+            <span className="text-fg-muted">{selection.values.join(', ')}</span>
           )}
         </li>
       ))}
@@ -90,7 +90,7 @@ function FilterHarness({
         alwaysShowSearch={alwaysShowSearch}
       />
       <div>
-        <div className="text-neutral-8 mb-2 text-xs font-medium uppercase tracking-wider">
+        <div className="text-fg-subtle mb-2 text-xs font-medium uppercase tracking-wider">
           Selection
         </div>
         <SelectionReadout selected={selected} />

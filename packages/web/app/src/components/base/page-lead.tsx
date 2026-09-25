@@ -20,10 +20,10 @@ export function PageLead({
   return (
     <div className="mb-4 flex flex-col gap-1.5">
       <div className="flex items-center gap-2">
-        <h1 className="text-neutral-12 m-0 text-lg font-medium">{title}</h1>
+        <h1 className="text-fg m-0 text-lg font-medium">{title}</h1>
         {titleAccessory}
       </div>
-      <p className="text-neutral-11 m-0 text-sm">{description}</p>
+      <p className="text-fg-default m-0 text-sm">{description}</p>
       {docsLink && (
         <div className="text-control">
           <DocsLink {...docsLink} />

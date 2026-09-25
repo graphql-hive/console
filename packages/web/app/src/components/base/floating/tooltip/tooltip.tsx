@@ -11,7 +11,7 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
 }
 
 const popupClass =
-  'rounded-md border text-xs shadow-md shadow-neutral-1/30 outline-none bg-neutral-4 border-neutral-5 text-neutral-11';
+  'rounded-md border text-xs shadow-md shadow-neutral-1/30 outline-none bg-neutral-4 border-line text-fg-default';
 
 const maxWidthClass = {
   default: 'max-w-64',

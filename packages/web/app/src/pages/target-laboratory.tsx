@@ -11,6 +11,7 @@ import { useToast } from '@/components/base/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
+import { useTheme } from '@/components/theme/theme-provider';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -278,6 +279,7 @@ function LaboratoryPageContent(props: {
   const router = useRouter();
   const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const { resolvedTheme } = useTheme();
   const { collections } = useCollections({
     organizationSlug,
     projectSlug,
@@ -444,7 +446,7 @@ function LaboratoryPageContent(props: {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <Title>Laboratory</Title>
-            <div className="bg-neutral-5 h-4 w-px" />
+            <div className="bg-line h-4 w-px" />
             <ToggleGroup
               aria-label="Laboratory version"
               value={props.defaultLaboratoryTab}
@@ -518,11 +520,6 @@ function LaboratoryPageContent(props: {
       </div>
       <Helmet>
         <style key="laboratory">{`
-          .graphiql-container,
-          .graphiql-dialog a {
-            --color-neutral-11: 40, 89%, 60% !important;
-          }
-
           .graphiql-container {
             overflow: unset; /* remove default overflow */
           }
@@ -531,19 +528,19 @@ function LaboratoryPageContent(props: {
           .doc-explorer-title {
             font-size: 1.125rem !important;
             line-height: 1.75rem !important;
-            color: white;
+            color: var(--color-fg);
           }
 
-          .graphiql-container,
-          .graphiql-dialog,
-          .CodeMirror-info {
+          .dark .graphiql-container,
+          .dark .graphiql-dialog,
+          .dark .CodeMirror-info {
             --color-base: 223, 70%, 3.9% !important;
           }
 
           .graphiql-tooltip,
           .graphiql-dropdown-content,
           .CodeMirror-lint-tooltip {
-            background: #030711;
+            background: var(--color-editor-backdrop);
           }
 
           .graphiql-tab {
@@ -576,8 +573,8 @@ function LaboratoryPageContent(props: {
             plugins={plugins}
             visiblePlugin={operationCollectionsPlugin}
             schema={schema}
-            forcedTheme="dark"
-            className={isFullScreen ? 'fixed inset-0 bg-[#030711]' : ''}
+            forcedTheme={resolvedTheme}
+            className={isFullScreen ? 'bg-editor-backdrop fixed inset-0' : ''}
             onTabChange={handleTabChange}
             readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
           >
@@ -676,7 +673,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
   return (
     <div
       id="preflight-logs"
-      className="flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]"
+      className="bg-editor-backdrop flex max-h-[200px] w-full flex-col overflow-hidden"
     >
       <Collapsible
         variant="panel"
@@ -702,7 +699,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
             {props.logs.length === 0 ? (
               <div
                 data-cy="empty-state"
-                className="text-neutral-10 flex flex-col items-center justify-center"
+                className="text-fg-secondary flex flex-col items-center justify-center"
               >
                 <p>No logs available</p>
                 <p>Execute a query to see logs</p>

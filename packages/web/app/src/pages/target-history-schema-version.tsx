@@ -101,7 +101,7 @@ export function TargetHistorySchemaVersionPage(props: { schemaVersionId: string 
 
   if (isLoading) {
     return (
-      <div className="text-neutral-10 flex size-full flex-col items-center justify-center self-center text-sm">
+      <div className="text-fg-secondary flex size-full flex-col items-center justify-center self-center text-sm">
         <Spinner className="mb-3 size-8" />
         Loading schema version...
       </div>
@@ -265,7 +265,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
   // Without contracts there is nothing to pick, but the default graph keeps its status glyph.
   const contractPicker = !contractVersions.length ? (
     schemaVersion.contractVersions?.edges ? (
-      <span className="text-neutral-11 inline-flex items-center gap-1.5 px-2 text-xs">
+      <span className="text-fg-default inline-flex items-center gap-1.5 px-2 text-xs">
         {versionStatusIcon(schemaVersion, DEFAULT_GRAPH_LABELS)}
         Default Graph
       </span>
@@ -690,7 +690,7 @@ function SubgraphCard(props: {
   const [isCollapsed, setIsCollapsed] = useState(props.isInitiallyCollapsed ?? false);
   return (
     <div className="divide-y overflow-hidden rounded-xl border">
-      <SubgraphRow subgraphDiff={props.diff} className="bg-neutral-2 dark:bg-neutral-3">
+      <SubgraphRow subgraphDiff={props.diff} className="bg-surface-card">
         <Button
           size="icon-sm"
           variant="ghost"
@@ -701,7 +701,7 @@ function SubgraphCard(props: {
         </Button>
       </SubgraphRow>
       {props.renderChildren && !isCollapsed && (
-        <div className="bg-neutral-1">{props.renderChildren()}</div>
+        <div className="bg-surface-inset">{props.renderChildren()}</div>
       )}
     </div>
   );
@@ -974,10 +974,10 @@ function FirstComposableGraphVersion() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="size-4 text-emerald-500" />
-        <h2 className="text-neutral-12 text-base font-medium">First composable graph</h2>
+        <CircleCheckIcon className="text-success size-4" />
+        <h2 className="text-fg text-base font-medium">First composable graph</h2>
       </div>
-      <p className="text-neutral-10 text-xs">
+      <p className="text-fg-secondary text-xs">
         Congratulations! This is the first version of the graph that is composable.
       </p>
     </div>
@@ -988,10 +988,10 @@ function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="size-4 text-emerald-500" />
-        <h2 className="text-neutral-12 text-base font-medium">No Graph Changes</h2>
+        <CircleCheckIcon className="text-success size-4" />
+        <h2 className="text-fg text-base font-medium">No Graph Changes</h2>
       </div>
-      <p className="text-neutral-10 text-xs">There are no public facing changes in the graph.</p>
+      <p className="text-fg-secondary text-xs">There are no public facing changes in the graph.</p>
     </div>
   );
 }
@@ -1156,7 +1156,7 @@ function SchemaVersionHeader(props: {
   return (
     <header>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-        <h1 className="text-neutral-12 text-xl font-semibold leading-tight">Graph Version</h1>
+        <h1 className="text-fg text-xl font-semibold leading-tight">Graph Version</h1>
         <CopyChip
           value={schemaVersion.id}
           label={
@@ -1167,8 +1167,10 @@ function SchemaVersionHeader(props: {
           }
         />
       </div>
-      <p className="text-neutral-10 mt-1.5 text-sm">Detailed view of the graph version changes.</p>
-      <div className="bg-neutral-2 dark:bg-neutral-3 mt-6 rounded-md border px-5 py-4">
+      <p className="text-fg-secondary mt-1.5 text-sm">
+        Detailed view of the graph version changes.
+      </p>
+      <div className="bg-surface-card mt-6 rounded-md border px-5 py-4">
         <DescriptionList
           variants={{ termStyle: 'title', columns: 'auto' }}
           rows={[
@@ -1229,8 +1231,8 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
             key={m.id}
             onClick={() => props.onChange(m.id)}
             className={cn(
-              'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
-              isActive ? 'bg-neutral-5/40' : 'hover:',
+              'hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
+              isActive ? 'bg-surface-selected' : 'hover:',
             )}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -1244,8 +1246,8 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
 
 const breakingChangeTypeModes: { id: SeverityLevelType; label: string; dotColor: string }[] = [
   { id: SeverityLevelType.Breaking, label: 'Breaking', dotColor: 'bg-critical' },
-  { id: SeverityLevelType.Dangerous, label: 'Dangerous', dotColor: 'bg-orange-500' },
-  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: 'bg-blue-400' },
+  { id: SeverityLevelType.Dangerous, label: 'Dangerous', dotColor: 'bg-warning' },
+  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: 'bg-info' },
 ];
 
 function ChangeTypeToggle(props: {
@@ -1257,11 +1259,11 @@ function ChangeTypeToggle(props: {
       <button
         onClick={() => props.onChange(null)}
         className={cn(
-          'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
-          props.selectedChangeType === null ? 'bg-neutral-5/40' : 'hover:',
+          'hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
+          props.selectedChangeType === null ? 'bg-surface-selected' : 'hover:',
         )}
       >
-        <span className={cn('h-1.5 w-1.5 translate-y-[-1px] rounded-full', 'bg-neutral-9')} />
+        <span className={cn('h-1.5 w-1.5 translate-y-[-1px] rounded-full', 'bg-fg-muted')} />
         All
       </button>
       {breakingChangeTypeModes.map(m => {
@@ -1271,8 +1273,8 @@ function ChangeTypeToggle(props: {
             key={m.id}
             onClick={() => props.onChange(m.id)}
             className={cn(
-              'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
-              isActive ? 'bg-neutral-5/40' : 'hover:',
+              'hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
+              isActive ? 'bg-surface-selected' : 'hover:',
             )}
           >
             <span className={cn('h-1.5 w-1.5 translate-y-[-1px] rounded-full', m.dotColor)} />
@@ -1293,39 +1295,39 @@ const CompositionErrors = (props: {
   );
 
   return (
-    <div className="border-critical_30 overflow-hidden rounded-xl border">
-      <div className="border-critical_30 bg-critical_08 flex items-start gap-3 border-b px-5 py-4">
-        <div className="border-critical_30 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border">
+    <div className="border-critical-line overflow-hidden rounded-xl border">
+      <div className="border-critical-line bg-critical-tint-subtle flex items-start gap-3 border-b px-5 py-4">
+        <div className="border-critical-line mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border">
           <XCircleIcon className="text-critical h-4 w-4" />
         </div>
 
-        <div className="text-neutral-12 min-w-0">
+        <div className="text-fg min-w-0">
           <h3 className="text-sm font-semibold">Supergraph not composable</h3>
           <p className="mt-0.5 text-[12.5px]">
             Errors occurred while attempting to compose the supergraph from its subgraphs.
           </p>
         </div>
 
-        <span className="focus:ring-ring text-2xs border-critical_30 bg-critical_10 text-critical ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
+        <span className="focus:ring-accent text-2xs border-critical-line bg-critical-tint text-critical ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
           <span className="bg-critical mr-1 h-1.5 w-1.5 rounded-full" />
           {compositionErrors.edges.length} error
           {compositionErrors.edges.length === 1 ? '' : 's'}
         </span>
       </div>
 
-      <div className="text-neutral-12 flex items-center gap-2 px-5 pt-4">
+      <div className="text-fg flex items-center gap-2 px-5 pt-4">
         <span className="text-sm font-medium">Composition errors</span>
         <CompositionErrorsPopover />
       </div>
 
-      <ul className="divide-neutral-4 divide-y px-1 pb-2">
+      <ul className="divide-line-subtle divide-y px-1 pb-2">
         {compositionErrors.edges.map((err, idx) => (
           <li key={idx} className="flex gap-3 px-4 py-3">
-            <span className="text-neutral-8 mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
+            <span className="text-fg-subtle mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
               {String(idx + 1).padStart(2, '0')}
             </span>
 
-            <p className="text-neutral-12 flex flex-wrap items-baseline gap-y-1 text-sm">
+            <p className="text-fg flex flex-wrap items-baseline gap-y-1 text-sm">
               <CompositionError message={err.node.message} />
             </p>
           </li>
@@ -1436,8 +1438,8 @@ const SchemaVersionSummary_ContractVersionFragment = graphql(`
 function SectionHeader(props: { title: string; subtitle: string }) {
   return (
     <div>
-      <h2 className="text-neutral-12 text-base font-semibold">{props.title}</h2>
-      <p className="text-neutral-10 mt-0.5 text-sm">{props.subtitle}</p>
+      <h2 className="text-fg text-base font-semibold">{props.title}</h2>
+      <p className="text-fg-secondary mt-0.5 text-sm">{props.subtitle}</p>
     </div>
   );
 }
@@ -1507,7 +1509,7 @@ export const SchemaVersionSummary = (props: {
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader title="Summary" subtitle="Changes introduced by this version." />
-      <div className="bg-neutral-2 dark:bg-neutral-3 grid grid-cols-3 gap-px overflow-hidden rounded-xl border 2xl:grid-cols-6">
+      <div className="bg-surface-card grid grid-cols-3 gap-px overflow-hidden rounded-xl border 2xl:grid-cols-6">
         <Stat label="Schema changes" value={publicChangeStats.totalChanges} />
         <Stat
           label="Breaking changes"
@@ -1527,7 +1529,7 @@ export const SchemaVersionSummary = (props: {
               ) : (
                 <Tooltip
                   trigger={
-                    <span className="pl-2 text-base text-green-500">
+                    <span className="text-success pl-2 text-base">
                       <CheckIcon size="14" className="inline" /> All safe
                     </span>
                   }
@@ -1553,12 +1555,12 @@ export const SchemaVersionSummary = (props: {
 
       {schemaVersion.subgraphDiffs && (
         <div className="overflow-hidden rounded-xl border">
-          <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between border-b px-5 py-3">
+          <div className="bg-surface-card flex items-center justify-between border-b px-5 py-3">
             <div className="flex items-center gap-2 text-xs font-bold capitalize">
               Subgraph Overview
             </div>
           </div>
-          <ul className="bg-neutral-1 divide-y">
+          <ul className="bg-surface-inset divide-y">
             {schemaVersion.subgraphDiffs
               .sort(diff => (diff.__typename === 'SubgraphDiffUnchanged' ? 1 : -1))
               .map((diff, index) => (
@@ -1599,34 +1601,34 @@ const kindMeta = {
   SubgraphDiffAdded: {
     label: 'Added',
     Icon: Plus,
-    text: 'text-yellow-800',
-    bg: 'bg-yellow-600',
-    ring: 'ring-yellow-500/25',
-    dot: 'bg-yellow-600',
+    text: 'text-warning',
+    bg: 'bg-warning-tint-strong',
+    ring: 'ring-warning-line',
+    dot: 'bg-warning',
   },
   SubgraphDiffRemoved: {
     label: 'Removed',
     Icon: Minus,
     text: 'text-critical',
-    bg: 'bg-critical_30',
-    ring: 'ring-critical_30',
+    bg: 'bg-critical-tint-strong',
+    ring: 'ring-critical-line',
     dot: 'bg-critical',
   },
   SubgraphDiffChanged: {
     label: 'Updated',
     Icon: GitCompareArrows,
-    text: 'text-neutral-800',
-    bg: 'bg-blue-600',
-    ring: 'ring-blue-500/25',
-    dot: 'bg-blue-600',
+    text: 'text-info',
+    bg: 'bg-info-tint-strong',
+    ring: 'ring-info-line',
+    dot: 'bg-info',
   },
   SubgraphDiffUnchanged: {
     label: 'Unchanged',
     Icon: CircleIcon,
-    text: 'text-neutral-800',
-    bg: 'bg-neutral-3',
-    ring: 'ring-neutral-6',
-    dot: 'bg-neutral-5',
+    text: 'text-fg-secondary',
+    bg: 'bg-surface-page',
+    ring: 'ring-line-strong',
+    dot: 'bg-line',
   },
 } as const;
 
@@ -1772,7 +1774,7 @@ function SubgraphLink(props: { url: string }) {
       href={props.url}
       target="_blank"
       rel="noreferrer"
-      className="text-neutral-11 inline-flex w-fit items-center gap-1 text-xs"
+      className="text-fg-default inline-flex w-fit items-center gap-1 text-xs"
     >
       {props.url}
       <ExternalLink className="h-2.5 w-2.5" />
@@ -1783,12 +1785,12 @@ function SubgraphLink(props: { url: string }) {
 function GenericGraphCard(props: { title: ReactNode; children?: ReactNode; actions?: ReactNode }) {
   return (
     <div className="divide-y overflow-hidden rounded-xl border">
-      <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center gap-4 px-5 py-3.5">
+      <div className="bg-surface-card flex items-center gap-4 px-5 py-3.5">
         <span
           className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1',
-            'bg-neutral-3',
-            'ring-neutral-6',
+            'bg-surface-page',
+            'ring-line-strong',
           )}
         >
           <BoxIcon className={cn('h-3.5 w-3.5')} />
@@ -1800,7 +1802,7 @@ function GenericGraphCard(props: { title: ReactNode; children?: ReactNode; actio
         </div>
         {props.actions ? <>{props.actions}</> : null}
       </div>
-      {props.children && <div className="bg-neutral-1">{props.children}</div>}
+      {props.children && <div className="bg-surface-inset">{props.children}</div>}
     </div>
   );
 }

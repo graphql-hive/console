@@ -116,7 +116,7 @@ export const WithLabel = createPreview(() => {
           label="Select a service…"
           disabled={remaining.length === 0}
         />
-        <span className="text-neutral-11 text-xs">
+        <span className="text-fg-default text-xs">
           {added.length ? `Added: ${added.join(', ')}` : 'Nothing added yet'}
         </span>
       </div>
@@ -238,12 +238,12 @@ export const WithTrailing = createPreview(() => {
 export const Sizes = createPreview(() => (
   <div className="flex flex-col gap-4">
     <div className="flex items-center gap-4">
-      <span className="text-neutral-9 w-16 text-xs">default</span>
+      <span className="text-fg-muted w-16 text-xs">default</span>
       <Select options={METRICS} value="TRAFFIC" />
       <Button variant="primary">Save</Button>
     </div>
     <div className="flex items-center gap-4">
-      <span className="text-neutral-9 w-16 text-xs">compact</span>
+      <span className="text-fg-muted w-16 text-xs">compact</span>
       <Select options={METRICS} value="TRAFFIC" size="compact" />
       <Button label="Filter" size="compact" />
     </div>
@@ -304,12 +304,12 @@ export const OnSurface = createPreview(() => {
   );
   return (
     <div className="flex flex-wrap gap-6">
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-4 flex w-[20rem] flex-col gap-3 rounded-md border p-4">
-        <span className="text-neutral-11 text-xs">A card</span>
+      <div className="bg-neutral-2 dark:bg-neutral-3 border-line-subtle flex w-[20rem] flex-col gap-3 rounded-md border p-4">
+        <span className="text-fg-default text-xs">A card</span>
         {pair}
       </div>
-      <div className="bg-neutral-2 dark:bg-neutral-4 border-neutral-5 flex w-[20rem] flex-col gap-3 rounded-md border p-4 shadow-md">
-        <span className="text-neutral-11 text-xs">A floating panel</span>
+      <div className="bg-neutral-2 dark:bg-neutral-4 border-line flex w-[20rem] flex-col gap-3 rounded-md border p-4 shadow-md">
+        <span className="text-fg-default text-xs">A floating panel</span>
         {pair}
       </div>
     </div>

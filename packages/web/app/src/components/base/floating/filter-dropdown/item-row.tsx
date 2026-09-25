@@ -22,7 +22,7 @@ interface ItemRowProps {
 function ItemName({ name, unavailable }: { name: string; unavailable?: boolean }) {
   return (
     <span
-      className={`flex-1 truncate ${unavailable ? 'text-neutral-8 line-through' : ''}`}
+      className={`flex-1 truncate ${unavailable ? 'text-fg-subtle line-through' : ''}`}
       title={name}
     >
       {name}

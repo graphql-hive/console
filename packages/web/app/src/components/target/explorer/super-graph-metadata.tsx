@@ -31,13 +31,13 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
     <Popover
       trigger={
         <button type="button" aria-label="Supergraph metadata" className="my-[5px]">
-          <MetadataIcon className="text-neutral-12 size-4" />
+          <MetadataIcon className="text-fg size-4" />
         </button>
       }
       openOnHover
       width="auto"
       content={
-        <div className="text-neutral-11 text-xs">
+        <div className="text-fg-default text-xs">
           {props.supergraphMetadata.map((m, i) => (
             <div key={i}>
               <span className="font-bold">{m.name}:</span> {m.content}
@@ -198,17 +198,14 @@ export function SupergraphMetadataList(props: {
       {allItems && (
         <Popover
           trigger={
-            <button
-              type="button"
-              className="text-neutral-12 flex items-center pl-1 text-xs font-bold"
-            >
+            <button type="button" className="text-fg flex items-center pl-1 text-xs font-bold">
               + {allItems.length - previewItems.length} more
             </button>
           }
           openOnHover
           width="auto"
           content={
-            <div className="text-neutral-11 text-xs">
+            <div className="text-fg-default text-xs">
               <div className="mb-2 font-bold">All Subgraphs</div>
               <div className="w-[250px]">
                 <ScrollArea maxHeight="md">
