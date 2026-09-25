@@ -240,58 +240,22 @@ describe('schema:check', () => {
 });
 
 describe('schema:publish --github', () => {
-  test('a publish rejected by --fail-on-composition-error exits with 1 and error code 300', async () => {
+  test('a publish rejected before a check-run is created prints the reason', async () => {
     const result = await runAgainstRegistry(
       publishResponse({
-        __typename: 'GitHubSchemaPublishSuccess',
-        message: 'Detected 2 errors',
+        __typename: 'SchemaPublishError',
         valid: false,
-        rejected: true,
         linkToWebsite: null,
+        changes: null,
+        errors: { edges: [{ node: { message: "Schema revision 'abc' was not found." } }] },
       }),
-      [...publishArgs, '--github', '--fail-on-composition-error'],
+      [...publishArgs, '--github'],
       githubEnv,
     );
 
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain('Detected 2 errors');
+    expect(result.stdout).toMatch(/Schema revision \S*abc\S* was not found\./);
     expect(result.stderr).toContain('[300]');
-    expect(result.requests[0].operationName).toBe('schemaPublishGitHub');
-    expect(result.requests[0].variables.input.failOnCompositionError).toBe(true);
-  });
-
-  test('a stored but invalid version exits with 0', async () => {
-    const result = await runAgainstRegistry(
-      publishResponse({
-        __typename: 'GitHubSchemaPublishSuccess',
-        message: 'Detected 1 error',
-        valid: false,
-        rejected: false,
-        linkToWebsite: 'https://app.graphql-hive.com/version',
-      }),
-      [...publishArgs, '--github'],
-      githubEnv,
-    );
-
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('Detected 1 error');
-  });
-
-  test('a successful publish exits with 0', async () => {
-    const result = await runAgainstRegistry(
-      publishResponse({
-        __typename: 'GitHubSchemaPublishSuccess',
-        message: 'Schema published',
-        valid: true,
-        rejected: false,
-        linkToWebsite: 'https://app.graphql-hive.com/version',
-      }),
-      [...publishArgs, '--github'],
-      githubEnv,
-    );
-
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('Schema published');
   });
 });
 
@@ -312,7 +276,6 @@ describe('schema:publish', () => {
     expect(result.stdout).toContain('Composition failed');
     expect(result.stderr).toContain('[300]');
     expect(result.requests[0].operationName).toBe('schemaPublish');
-    expect(result.requests[0].query).not.toContain('rejected');
   });
 
   test('a file together with --revision is a conflicting options error', async () => {

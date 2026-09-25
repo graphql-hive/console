@@ -899,19 +899,6 @@ export default gql`
 
   type GitHubSchemaPublishSuccess {
     message: String!
-    """
-    Whether the schema is valid. Has the same meaning as 'SchemaPublishSuccess.valid'.
-    """
-    valid: Boolean!
-    """
-    Whether the publish was rejected, in which case no schema version was stored.
-    Corresponds to a 'SchemaPublishError' when the GitHub integration is not used.
-    """
-    rejected: Boolean!
-    """
-    Link to the schema version in Hive Console, if a schema version is available.
-    """
-    linkToWebsite: String
   }
 
   type GitHubSchemaPublishError {

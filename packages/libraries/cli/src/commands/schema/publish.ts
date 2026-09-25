@@ -70,64 +70,6 @@ const schemaPublishMutation = graphql(/* GraphQL */ `
   }
 `);
 
-/** Only used with `--github`, so that servers without these fields keep working for other publishes. */
-const schemaPublishGitHubMutation = graphql(/* GraphQL */ `
-  mutation schemaPublishGitHub($input: SchemaPublishInput!) {
-    schemaPublish(input: $input) {
-      __typename
-      ... on SchemaPublishSuccess {
-        initial
-        valid
-        successMessage: message
-        linkToWebsite
-        changes {
-          edges {
-            __typename
-          }
-          ...RenderChanges_schemaChanges
-        }
-      }
-      ... on SchemaPublishError {
-        valid
-        linkToWebsite
-        changes {
-          edges {
-            __typename
-          }
-          ...RenderChanges_schemaChanges
-        }
-        errors {
-          ...RenderErrors_SchemaErrorConnectionFragment
-        }
-      }
-      ... on SchemaPublishMissingServiceError {
-        missingServiceError: message
-      }
-      ... on SchemaPublishMissingUrlError {
-        missingUrlError: message
-      }
-      ... on SchemaPublishRetry {
-        reason
-      }
-      ... on GitHubSchemaPublishSuccess {
-        message
-        valid
-        rejected
-        linkToWebsite
-      }
-      ... on GitHubSchemaPublishError {
-        message
-      }
-    }
-  }
-`);
-
-/** GitHub results are only returned for requests that use `schemaPublishGitHubMutation`. */
-type GitHubSchemaPublishSuccessResult = Extract<
-  DocumentType<typeof schemaPublishGitHubMutation>['schemaPublish'],
-  { __typename: 'GitHubSchemaPublishSuccess' }
->;
-
 export default class SchemaPublish extends Command<typeof SchemaPublish> {
   static description = 'publishes schema';
   static flags = {
@@ -384,23 +326,14 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       /** Gateway timeout is 60 seconds. */
       const timeout = 55_000;
 
-      let result:
-        | DocumentType<typeof schemaPublishMutation>
-        | DocumentType<typeof schemaPublishGitHubMutation>
-        | null = null;
+      let result: DocumentType<typeof schemaPublishMutation> | null = null;
 
       do {
-        result = gitHub
-          ? await api.request({
-              operation: schemaPublishGitHubMutation,
-              variables: { input },
-              timeout,
-            })
-          : await api.request({
-              operation: schemaPublishMutation,
-              variables: { input },
-              timeout,
-            });
+        result = await api.request({
+          operation: schemaPublishMutation,
+          variables: { input },
+          timeout,
+        });
 
         const payload = result.schemaPublish;
 
@@ -446,22 +379,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
 
           handleRejectedPublish(payload.linkToWebsite);
         } else if (payload.__typename === 'GitHubSchemaPublishSuccess') {
-          const gitHubResult = payload as GitHubSchemaPublishSuccessResult;
-
-          if (gitHubResult.rejected) {
-            this.logFailure(gitHubResult.message);
-            handleRejectedPublish(gitHubResult.linkToWebsite);
-          } else {
-            if (gitHubResult.valid) {
-              this.logSuccess(gitHubResult.message);
-            } else {
-              this.logWarning(gitHubResult.message);
-            }
-
-            if (gitHubResult.linkToWebsite) {
-              this.logInfo(`Available at ${gitHubResult.linkToWebsite}`);
-            }
-          }
+          this.logSuccess(payload.message);
         } else {
           throw new APIError(payload.message);
         }

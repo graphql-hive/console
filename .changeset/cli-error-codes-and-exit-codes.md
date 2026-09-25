@@ -3,7 +3,7 @@
 ---
 
 Report every CLI failure with an accurate, unique and documented error code, and report schema check
-and schema publish results accurately when using `--github`.
+results accurately when using `--github`.
 
 **Breaking changes**
 
@@ -13,9 +13,6 @@ and schema publish results accurately when using `--github`.
 - A failed schema check now prints `Schema check failed. [202]` to stderr. The exit code is unchanged.
 - `hive schema:check --forceSafe` now exits with code 1 (error `[203]`) when the registry did not
   store a schema check that could be approved, instead of exiting with 0.
-- `hive schema:publish --github` now exits with code 1 (error `[300]`) when the publish is rejected,
-  for example by `--fail-on-composition-error`, and prints the reason for errors that happen before
-  a GitHub check-run is created.
 - Exit codes are now consistent: `1` means the operation failed, `2` means a request timed out, and
   `3` means invalid input or setup. Invalid arguments and flags, and unknown commands, now exit with
   `3` instead of `2`. A missing CDN endpoint now exits with `3` instead of `1`.
@@ -27,9 +24,8 @@ and schema publish results accurately when using `--github`.
   `{ "registry": "...", "token": "..." }` format is read correctly again.
 - Passing both a schema file and `--revision` to `hive schema:publish` now fails with error `[123]`
   instead of ignoring the file.
-- `--github` for `schema:check` and `schema:publish` needs a Hive server that includes the new
-  `GitHubSchemaCheckSuccess` and `GitHubSchemaPublishSuccess` fields. Older servers are reported with
-  error `[125]`.
+- `hive schema:check --github` needs a Hive server that includes the new `GitHubSchemaCheckSuccess`
+  fields. Older servers are reported with error `[125]`.
 
 **New error codes**
 
@@ -52,6 +48,8 @@ Invalid registry access tokens that expired are reported as `[106]`.
 
 **New features**
 
+- `hive schema:publish --github` prints the reason for errors that happen before a GitHub check-run
+  is created, such as an unknown revision.
 - `hive schema:push` shows when a pushed revision expires, and warns when `--service` is ignored for a
   single-schema project.
 - `hive app:create` shows why the app name or version was rejected.
