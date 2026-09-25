@@ -85,6 +85,7 @@ export function useDateRangeController(args: {
     selectedPreset,
     setSelectedPreset(preset: Preset) {
       void router.navigate({
+        to: '.',
         search: {
           ...searchParams,
           from: preset.range.from,

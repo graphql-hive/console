@@ -15,7 +15,7 @@ import {
 } from '@/components/target/create-target-form';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
@@ -57,19 +57,8 @@ const ProjectLayoutQuery = graphql(`
   }
 `);
 
-export function ProjectLayout({
-  children,
-  page,
-  className,
-  organizationSlug,
-  projectSlug,
-}: {
-  page: Page;
-  organizationSlug: string;
-  projectSlug: string;
-  className?: string;
-  children: ReactNode;
-}) {
+export function ProjectLayout({ children }: { children: ReactNode }) {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const params = { organizationSlug, projectSlug };
 
   const [isModalOpen, toggleModalOpen] = useToggle();
@@ -115,26 +104,26 @@ export function ProjectLayout({
       ) : (
         <>
           <SecondaryNavigation
-            page={page}
             loading={!currentOrganization || !currentProject}
             links={
               currentOrganization && currentProject
                 ? [
                     {
-                      value: Page.Targets,
+                      id: Page.Targets,
                       label: 'Targets',
                       to: '/$organizationSlug/$projectSlug',
                       params,
+                      exact: true,
                     },
                     {
-                      value: Page.Alerts,
+                      id: Page.Alerts,
                       label: 'Alerts',
                       visible: currentProject.viewerCanModifyAlerts,
                       to: '/$organizationSlug/$projectSlug/view/alerts',
                       params,
                     },
                     {
-                      value: Page.Settings,
+                      id: Page.Settings,
                       label: 'Settings',
                       visible:
                         currentProject.viewerCanModifySettings ||
@@ -154,22 +143,17 @@ export function ProjectLayout({
                       New target
                     </span>
                   </Button>
-                  <CreateTargetModal
-                    organizationSlug={organizationSlug}
-                    projectSlug={projectSlug}
-                    isOpen={isModalOpen}
-                    toggleModalOpen={toggleModalOpen}
-                  />
+                  <CreateTargetModal isOpen={isModalOpen} toggleModalOpen={toggleModalOpen} />
                 </>
               ) : null
             }
           />
-          <div className="min-h-(--content-height) container pb-7">
-            {currentProject ? (
-              <LegacyCompositionWarn organizationSlug={organizationSlug} project={currentProject} />
-            ) : null}
-            <div className={className}>{children}</div>
-          </div>
+          {currentProject ? (
+            <div className="container">
+              <LegacyCompositionWarn project={currentProject} />
+            </div>
+          ) : null}
+          {children}
         </>
       )}
     </>
@@ -200,13 +184,8 @@ export const CreateTarget_CreateTargetMutation = graphql(`
   }
 `);
 
-function CreateTargetModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-}) {
-  const { organizationSlug, projectSlug } = props;
+function CreateTargetModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const [_, mutate] = useMutation(CreateTarget_CreateTargetMutation);
   const router = useRouter();
   const { toast } = useToast();
@@ -224,8 +203,8 @@ function CreateTargetModal(props: {
       input: {
         project: {
           bySelector: {
-            projectSlug: props.projectSlug,
-            organizationSlug: props.organizationSlug,
+            projectSlug,
+            organizationSlug,
           },
         },
         slug: values.targetSlug,

@@ -7,6 +7,7 @@ import { useToast } from '@/components/base/toast/toast';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ExternalCompositionForm,
@@ -77,13 +78,8 @@ enum TestState {
   SUCCESS,
 }
 
-const ExternalCompositionStatus = ({
-  projectSlug,
-  organizationSlug,
-}: {
-  projectSlug: string;
-  organizationSlug: string;
-}) => {
+const ExternalCompositionStatus = () => {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const [{ data, error: gqlError, fetching }, executeTestQuery] = useQuery({
     query: ExternalCompositionStatus_TestQuery,
     variables: {
@@ -302,12 +298,7 @@ export const ExternalCompositionSettings = (props: {
           form={form}
           onSubmit={onSubmit}
           endpointStatus={
-            project.externalSchemaComposition?.endpoint ? (
-              <ExternalCompositionStatus
-                projectSlug={project.slug}
-                organizationSlug={organization.slug}
-              />
-            ) : null
+            project.externalSchemaComposition?.endpoint ? <ExternalCompositionStatus /> : null
           }
           error={error}
           submitLabel={

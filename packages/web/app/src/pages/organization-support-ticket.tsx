@@ -5,7 +5,7 @@ import { useMutation, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { useToast } from '@/components/base/toast/toast';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ReplyTicketForm,
   ReplyTicketFormSchema,
@@ -17,6 +17,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
@@ -34,7 +35,8 @@ const ReplyTicketForm_SupportTicketReplyMutation = graphql(`
   }
 `);
 
-function ReplyTicket(props: { organizationSlug: string; ticketId: string; onSubmit: () => void }) {
+function ReplyTicket(props: { ticketId: string; onSubmit: () => void }) {
+  const { organizationSlug } = useSlugs('organization');
   const { toast } = useToast();
   const form = useForm<ReplyTicketFormValues>({
     resolver: zodResolver(ReplyTicketFormSchema),
@@ -48,7 +50,7 @@ function ReplyTicket(props: { organizationSlug: string; ticketId: string; onSubm
     try {
       const result = await mutate({
         input: {
-          organizationSlug: props.organizationSlug,
+          organizationSlug,
           ticketId: props.ticketId,
           body: data.body,
         },
@@ -188,11 +190,7 @@ function SupportTicket(props: {
               ))}
 
               <div className="mt-6">
-                <ReplyTicket
-                  organizationSlug={organization.slug}
-                  ticketId={ticket.id}
-                  onSubmit={props.refetch}
-                />
+                <ReplyTicket ticketId={ticket.id} onSubmit={props.refetch} />
               </div>
             </div>
           </div>
@@ -248,12 +246,13 @@ const SupportTicketPageQuery = graphql(`
   }
 `);
 
-function SupportTicketPageContent(props: { ticketId: string; organizationSlug: string }) {
+function SupportTicketPageContent(props: { ticketId: string }) {
+  const { organizationSlug } = useSlugs('organization');
   const ticketId = props.ticketId as string;
   const [query, refetchQuery] = useQuery({
     query: SupportTicketPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
       ticketId,
     },
     requestPolicy: 'cache-first',
@@ -264,18 +263,14 @@ function SupportTicketPageContent(props: { ticketId: string; organizationSlug: s
   }, [refetchQuery]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   const currentOrganization = query.data?.organization;
   const ticket = currentOrganization?.supportTicket;
 
   return (
-    <OrganizationLayout
-      page={Page.Support}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
+    <LayoutContent className="flex flex-col gap-y-10">
       {currentOrganization ? (
         ticket ? (
           <SupportTicket organization={currentOrganization} ticket={ticket} refetch={refetch} />
@@ -288,21 +283,15 @@ function SupportTicketPageContent(props: { ticketId: string; organizationSlug: s
           </div>
         )
       ) : null}
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 
-export function OrganizationSupportTicketPage(props: {
-  organizationSlug: string;
-  ticketId: string;
-}) {
+export function OrganizationSupportTicketPage(props: { ticketId: string }) {
   return (
     <>
       <Meta title={`Support Ticket #${props.ticketId}`} />
-      <SupportTicketPageContent
-        organizationSlug={props.organizationSlug}
-        ticketId={props.ticketId}
-      />
+      <SupportTicketPageContent ticketId={props.ticketId} />
     </>
   );
 }

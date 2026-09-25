@@ -11,7 +11,7 @@ import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
-import { useClipboard } from '@/lib/hooks';
+import { useClipboard, useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
@@ -245,11 +245,8 @@ function InvitationExpiryCell(props: { invitation: InvitationNode }) {
 }
 
 /** The row's menu, and the delete confirmation it opens. */
-function InvitationActions(props: {
-  invitation: InvitationNode;
-  organizationSlug: string;
-  refetchInvitations(): void;
-}) {
+function InvitationActions(props: { invitation: InvitationNode; refetchInvitations(): void }) {
+  const { organizationSlug } = useSlugs('organization');
   const invitation = useFragment(Members_Invitation, props.invitation);
   const copyToClipboard = useClipboard();
   const copyLink = useCallback(async () => {
@@ -283,7 +280,7 @@ function InvitationActions(props: {
                 input: {
                   organization: {
                     bySelector: {
-                      organizationSlug: props.organizationSlug,
+                      organizationSlug,
                     },
                   },
                   email: invitation.email,
@@ -393,7 +390,6 @@ export function OrganizationInvitations(props: {
         cell: ({ row }) => (
           <InvitationActions
             invitation={row.original}
-            organizationSlug={organization.slug}
             refetchInvitations={props.refetchInvitations}
           />
         ),

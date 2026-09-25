@@ -16,10 +16,16 @@ vi.mock('urql', async importOriginal => ({
 
 const slugs = { organizationSlug: 'acme', projectSlug: 'shop' };
 
+// The modal reads the current project from the URL; here it renders outside a router.
+vi.mock('@/lib/hooks', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/lib/hooks')>()),
+  useSlugs: () => slugs,
+}));
+
 function renderModal() {
   const toggleModalOpen = vi.fn();
   // A fresh element each time, or React skips the update and never reads the mutation state.
-  const element = () => <CreateChannelModal isOpen toggleModalOpen={toggleModalOpen} {...slugs} />;
+  const element = () => <CreateChannelModal isOpen toggleModalOpen={toggleModalOpen} />;
   const view = render(element());
   return { ...view, element, toggleModalOpen };
 }

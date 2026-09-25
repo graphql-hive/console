@@ -2,20 +2,17 @@ import { ReactElement, useCallback, useMemo } from 'react';
 import { ArrowBigDownDashIcon, CheckIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { z } from 'zod';
 import { Button } from '@/components/base/button/button';
+import { Navigation } from '@/components/base/navigation/navigation';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
-import { Page, ProjectLayout } from '@/components/layouts/project';
-import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { PolicySettings } from '@/components/policy/policy-settings';
-import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { HiveLogo } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import {
-  NavLayout,
   PageLayout,
   PageLayoutContent,
   SubPageLayout,
@@ -28,9 +25,15 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { getDocsUrl } from '@/lib/docs-url';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from '@tanstack/react-router';
+import {
+  Outlet,
+  useChildMatches,
+  useRouter,
+  type RegisteredRouter,
+  type RouteIds,
+} from '@tanstack/react-router';
 
 const GithubIntegration_GithubIntegrationDetailsQuery = graphql(`
   query getGitHubIntegrationDetails($organizationSlug: String!) {
@@ -55,16 +58,14 @@ const GithubIntegration_EnableProjectNameInGitHubCheckMutation = graphql(`
   }
 `);
 
-function GitHubIntegration(props: {
-  organizationSlug: string;
-  projectSlug: string;
-}): ReactElement | null {
+function GitHubIntegration(): ReactElement | null {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const href = getDocsUrl('integrations/ci-cd#github-workflow-for-ci');
   const { toast } = useToast();
   const [integrationQuery] = useQuery({
     query: GithubIntegration_GithubIntegrationDetailsQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
     },
   });
 
@@ -108,7 +109,7 @@ function GitHubIntegration(props: {
               </div>
 
               <div className="font-semibold text-[#adbac7]">
-                {props.organizationSlug} &gt; schema:check &gt; staging
+                {organizationSlug} &gt; schema:check &gt; staging
               </div>
               <div className="text-neutral-10">— No changes</div>
             </div>
@@ -120,7 +121,7 @@ function GitHubIntegration(props: {
               </div>
 
               <div className="font-semibold text-[#adbac7]">
-                {props.organizationSlug} &gt; schema:check &gt; {props.projectSlug} &gt; staging
+                {organizationSlug} &gt; schema:check &gt; {projectSlug} &gt; staging
               </div>
               <div className="text-neutral-10">— No changes</div>
             </div>
@@ -131,8 +132,8 @@ function GitHubIntegration(props: {
           onClick={() => {
             void ghCheckMutate({
               input: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
+                organizationSlug,
+                projectSlug,
               },
             }).then(
               result => {
@@ -171,7 +172,8 @@ const ProjectSettingsPage_UpdateProjectSlugMutation = graphql(`
   }
 `);
 
-function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; projectSlug: string }) {
+function ProjectSettingsPage_SlugForm() {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const { toast } = useToast();
   const router = useRouter();
   const [_slugMutation, slugMutate] = useMutation(ProjectSettingsPage_UpdateProjectSlugMutation);
@@ -180,7 +182,7 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
     mode: 'all',
     resolver: zodResolver(slugFormSchema('Project')),
     defaultValues: {
-      slug: props.projectSlug,
+      slug: projectSlug,
     },
   });
 
@@ -191,8 +193,8 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
           input: {
             project: {
               bySelector: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
+                organizationSlug,
+                projectSlug,
               },
             },
             slug: data.slug,
@@ -210,7 +212,7 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
           void router.navigate({
             to: '/$organizationSlug/$projectSlug/view/settings',
             params: {
-              organizationSlug: props.organizationSlug,
+              organizationSlug,
               projectSlug: result.data.updateProjectSlug.ok.updatedProject.slug,
             },
           });
@@ -248,13 +250,13 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
       <SlugForm
         form={slugForm}
         onSubmit={onSlugFormSubmit}
-        prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${props.organizationSlug}/`}
+        prefixText={`${env.appBaseUrl.replace(/https?:\/\//i, '')}/${organizationSlug}/`}
       />
     </SubPageLayout>
   );
 }
 
-function ProjectDelete(props: { organizationSlug: string; projectSlug: string }) {
+function ProjectDelete() {
   const [isModalOpen, toggleModalOpen] = useToggle();
 
   return (
@@ -275,12 +277,7 @@ function ProjectDelete(props: { organizationSlug: string; projectSlug: string })
       <Button variant="destructive" onClick={toggleModalOpen}>
         Delete Project
       </Button>
-      <DeleteProjectModal
-        projectSlug={props.projectSlug}
-        organizationSlug={props.organizationSlug}
-        isOpen={isModalOpen}
-        toggleModalOpen={toggleModalOpen}
-      />
+      <DeleteProjectModal isOpen={isModalOpen} toggleModalOpen={toggleModalOpen} />
     </SubPageLayout>
   );
 }
@@ -332,9 +329,9 @@ const UpdateSchemaPolicyForProject = graphql(`
 `);
 
 function ProjectPolicySettings(props: {
-  organizationSlug: string;
   project: FragmentType<typeof ProjectPolicySettings_ProjectFragment>;
 }) {
+  const { organizationSlug } = useSlugs('project');
   const [mutation, mutate] = useMutation(UpdateSchemaPolicyForProject);
   const { toast } = useToast();
 
@@ -363,7 +360,7 @@ function ProjectPolicySettings(props: {
               ? async newPolicy => {
                   await mutate({
                     selector: {
-                      organizationSlug: props.organizationSlug,
+                      organizationSlug,
                       projectSlug: currentProject.slug,
                     },
                     policy: newPolicy,
@@ -434,185 +431,187 @@ const ProjectSettingsPageQuery = graphql(`
   }
 `);
 
-function ProjectSettingsContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  page?: ProjectSettingsSubPage;
-}) {
-  const router = useRouter();
+const SETTINGS = '/authenticated/$organizationSlug/$projectSlug/view/settings';
+
+type SectionId = 'general' | 'policy' | 'composition' | 'access-tokens';
+
+type Section = {
+  id: SectionId;
+  label: string;
+  routeId: RouteIds<RegisteredRouter['routeTree']>;
+  to: `/$organizationSlug/$projectSlug/view/settings${'' | `/${Exclude<SectionId, 'general'>}`}`;
+  exact?: boolean;
+};
+
+/**
+ * The sections in nav order, with the route each renders under; the permission gate compares the
+ * matched child route against the items the viewer may see. The bare URL is General.
+ */
+const sections: readonly Section[] = [
+  {
+    id: 'general',
+    label: 'General',
+    routeId: `${SETTINGS}/`,
+    to: '/$organizationSlug/$projectSlug/view/settings',
+    exact: true,
+  },
+  {
+    id: 'policy',
+    label: 'Policy',
+    routeId: `${SETTINGS}/policy`,
+    to: '/$organizationSlug/$projectSlug/view/settings/policy',
+  },
+  {
+    id: 'composition',
+    label: 'Composition',
+    routeId: `${SETTINGS}/composition`,
+    to: '/$organizationSlug/$projectSlug/view/settings/composition',
+  },
+  {
+    id: 'access-tokens',
+    label: 'Access Tokens',
+    routeId: `${SETTINGS}/access-tokens`,
+    to: '/$organizationSlug/$projectSlug/view/settings/access-tokens',
+  },
+];
+
+function useProjectSettings(requestPolicy?: 'cache-and-network') {
   const [query] = useQuery({
     query: ProjectSettingsPageQuery,
-    variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-    },
-    requestPolicy: 'cache-and-network',
+    variables: useSlugs('project'),
+    requestPolicy,
   });
+  const organization = useFragment(
+    ProjectSettingsPage_OrganizationFragment,
+    query.data?.organization,
+  );
+  const project = useFragment(
+    ProjectSettingsPage_ProjectFragment,
+    query.data?.organization?.project,
+  );
+  return { query, organization, project };
+}
 
-  const currentOrganization = query.data?.organization;
-  const currentProject = currentOrganization?.project;
+export function ProjectSettingsPage() {
+  const slugs = useSlugs('project');
+  const { organizationSlug } = useSlugs('project');
+  // Fresh on entry; the sections read the same document from the cache.
+  const { query, project } = useProjectSettings('cache-and-network');
 
-  const organization = useFragment(ProjectSettingsPage_OrganizationFragment, currentOrganization);
-  const project = useFragment(ProjectSettingsPage_ProjectFragment, currentProject);
-
-  // Verify wether user is allowed to access the settings
-  // Otherwise redirect to the project overview.
   useRedirect({
     canAccess:
       project?.viewerCanModifySettings === true ||
       project?.viewerCanManageProjectAccessTokens === true,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug',
-        params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-        },
-      });
-    },
     entity: project,
+    redirectTo: router => {
+      void router.navigate({ to: '/$organizationSlug/$projectSlug', params: slugs });
+    },
   });
 
-  const subPages = useMemo(() => {
-    const pages: Array<{
-      key: ProjectSettingsSubPage;
-      title: string;
-    }> = [];
-
+  const visible = useMemo(() => {
+    const ids = new Set<SectionId>(['policy']);
     if (project?.viewerCanModifySettings) {
-      pages.push({
-        key: 'general',
-        title: 'General',
-      });
+      ids.add('general');
     }
-
-    pages.push({
-      key: 'policy',
-      title: 'Policy',
-    });
-
     if (project?.type === ProjectType.Federation) {
-      pages.push({
-        key: 'composition',
-        title: 'Composition',
-      });
+      ids.add('composition');
     }
-
     if (project?.viewerCanManageProjectAccessTokens) {
-      pages.push({
-        key: 'access-tokens',
-        title: 'Access Tokens',
-      });
+      ids.add('access-tokens');
     }
-
-    return pages;
+    return sections.filter(section => ids.has(section.id));
   }, [project]);
 
-  const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
+  const sectionRouteId = useChildMatches({ select: matches => matches.at(-1)?.routeId });
+  const allowed = visible.some(section => section.routeId === sectionRouteId);
 
-  if (!resolvedPage || !organization || !project) {
-    return null;
-  }
+  // A section the viewer may not open falls back to the first one they may, else the project.
+  useRedirect({
+    canAccess: allowed,
+    entity: project,
+    redirectTo: router => {
+      const fallback = visible.at(0);
+      void router.navigate(
+        fallback
+          ? { to: fallback.to, params: slugs, replace: true }
+          : { to: '/$organizationSlug/$projectSlug', params: slugs, replace: true },
+      );
+    },
+  });
 
   if (query.error) {
     return (
-      <QueryError
-        organizationSlug={props.organizationSlug}
-        error={query.error}
-        showLogoutButton={false}
-      />
+      <LayoutContent>
+        <QueryError
+          organizationSlug={organizationSlug}
+          error={query.error}
+          showLogoutButton={false}
+        />
+      </LayoutContent>
     );
   }
 
   return (
-    <PageLayout>
-      <NavLayout>
-        {subPages.map(subPage => (
-          <SubPageNavigationLink
-            key={subPage.key}
-            isActive={resolvedPage.key === subPage.key}
-            onClick={() => {
-              void router.navigate({
-                search: {
-                  page: subPage.key,
-                },
-              });
-            }}
-            title={subPage.title}
-          />
-        ))}
-      </NavLayout>
-      <PageLayoutContent>
-        <div className="space-y-12">
-          {resolvedPage.key === 'general' ? (
-            <>
-              <ResourceDetails id={project.id} label="Project ID" />
-              <ProjectSettingsPage_SlugForm
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-              />
-              {query.data?.isGitHubIntegrationFeatureEnabled &&
-              !project.isProjectNameInGitHubCheckEnabled ? (
-                <GitHubIntegration
-                  organizationSlug={organization.slug}
-                  projectSlug={project.slug}
-                />
-              ) : null}
-
-              {project.viewerCanDelete ? (
-                <ProjectDelete projectSlug={project.slug} organizationSlug={organization.slug} />
-              ) : null}
-            </>
-          ) : null}
-          {resolvedPage.key === 'policy' ? (
-            <ProjectPolicySettings organizationSlug={organization.slug} project={project} />
-          ) : null}
-          {resolvedPage.key === 'composition' ? (
-            <CompositionSettings project={project} organization={organization} />
-          ) : null}
-          {resolvedPage.key === 'access-tokens' ? (
-            <ProjectAccessTokensSubPage
-              organizationSlug={organization.slug}
-              projectSlug={project.slug}
+    <>
+      <Meta title="Project settings" />
+      <LayoutContent className="flex flex-col gap-y-10">
+        {allowed && project ? (
+          <PageLayout>
+            <Navigation
+              aria-label="Settings"
+              variant="list"
+              items={visible.map(section => ({
+                id: section.id,
+                label: section.label,
+                to: section.to,
+                params: slugs,
+                exact: section.exact,
+              }))}
             />
-          ) : null}
-        </div>
-      </PageLayoutContent>
-    </PageLayout>
+            <PageLayoutContent>
+              <div className="space-y-12">
+                <Outlet />
+              </div>
+            </PageLayoutContent>
+          </PageLayout>
+        ) : null}
+      </LayoutContent>
+    </>
   );
 }
 
-export const ProjectSettingsPageEnum = z.enum([
-  'general',
-  'policy',
-  'composition',
-  'access-tokens',
-]);
-
-export type ProjectSettingsSubPage = z.TypeOf<typeof ProjectSettingsPageEnum>;
-
-export function ProjectSettingsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  page?: ProjectSettingsSubPage;
-}) {
+export function ProjectSettingsGeneralSection() {
+  const { query, organization, project } = useProjectSettings();
+  if (!organization || !project) {
+    return null;
+  }
   return (
     <>
-      <Meta title="Project settings" />
-      <ProjectLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        page={Page.Settings}
-        className="flex flex-col gap-y-10"
-      >
-        <ProjectSettingsContent
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          page={props.page}
-        />
-      </ProjectLayout>
+      <ResourceDetails id={project.id} label="Project ID" />
+      <ProjectSettingsPage_SlugForm />
+      {query.data?.isGitHubIntegrationFeatureEnabled &&
+      !project.isProjectNameInGitHubCheckEnabled ? (
+        <GitHubIntegration />
+      ) : null}
+      {project.viewerCanDelete ? <ProjectDelete /> : null}
     </>
   );
+}
+
+export function ProjectSettingsPolicySection() {
+  const { organization, project } = useProjectSettings();
+  if (!organization || !project) {
+    return null;
+  }
+  return <ProjectPolicySettings project={project} />;
+}
+
+export function ProjectSettingsCompositionSection() {
+  const { organization, project } = useProjectSettings();
+  if (!organization || !project) {
+    return null;
+  }
+  return <CompositionSettings project={project} organization={organization} />;
 }
 
 export const DeleteProjectMutation = graphql(`
@@ -625,13 +624,8 @@ export const DeleteProjectMutation = graphql(`
   }
 `);
 
-export function DeleteProjectModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-}) {
-  const { organizationSlug, projectSlug } = props;
+export function DeleteProjectModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const [, mutate] = useMutation(DeleteProjectMutation);
   const { toast } = useToast();
   const router = useRouter();

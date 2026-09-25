@@ -15,13 +15,7 @@ vi.mock('urql', async importOriginal => ({
   useQuery: () => [urql.query, vi.fn()],
 }));
 
-vi.mock('@/env/frontend', () => ({
-  env: {
-    appBaseUrl: 'http://localhost:3000',
-    graphqlPublicOrigin: 'http://localhost:3001',
-    docsUrl: 'https://the-guild.dev/graphql/hive/docs',
-  },
-}));
+vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
 
 // The naming-convention rule edits its config in Monaco, which does not run in jsdom.
 vi.mock('@/components/theme/theme-provider', () => ({

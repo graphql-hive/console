@@ -106,16 +106,10 @@ const COLUMNS = [
 export function AlertActivityTable({
   events,
   loading = false,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
 }: {
   events: ActivityEventRow[];
   /** The first fetch, before there is anything to show or to call empty. */
   loading?: boolean;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
   return (
     <DataTable
@@ -128,9 +122,6 @@ export function AlertActivityTable({
         <AlertEventDetail
           rule={row.original.rule}
           event={row.original}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
           showRuleDetailLink
           ruleId={row.original.rule.id}
         />

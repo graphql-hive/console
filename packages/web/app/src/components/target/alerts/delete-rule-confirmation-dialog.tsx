@@ -2,6 +2,7 @@ import { useMutation } from 'urql';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 
 const DeleteRuleConfirmationDialog_Mutation = graphql(`
   mutation DeleteRuleConfirmationDialog_Mutation($input: DeleteMetricAlertRulesInput!) {
@@ -20,13 +21,12 @@ type DeleteRuleConfirmationDialogProps = {
   open: boolean;
   ruleId: string;
   ruleName: string;
-  organizationSlug: string;
-  projectSlug: string;
   onConfirm: () => void;
   onCancel: () => void;
 };
 
 export function DeleteRuleConfirmationDialog(props: DeleteRuleConfirmationDialogProps) {
+  const { organizationSlug, projectSlug } = useSlugs('target');
   const [mutationState, mutate] = useMutation(DeleteRuleConfirmationDialog_Mutation);
   const { toast } = useToast();
 
@@ -55,8 +55,8 @@ export function DeleteRuleConfirmationDialog(props: DeleteRuleConfirmationDialog
             input: {
               project: {
                 bySelector: {
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
+                  organizationSlug,
+                  projectSlug,
                 },
               },
               ruleIds: [props.ruleId],

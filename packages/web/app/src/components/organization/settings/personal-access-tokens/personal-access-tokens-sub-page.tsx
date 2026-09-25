@@ -4,6 +4,7 @@ import { Button } from '@/components/base/button/button';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { AccessTokenCreatedDialog } from '../access-tokens/access-token-created-dialog';
 import { CreateAccessTokenState } from '../access-tokens/access-tokens-sub-page';
@@ -25,17 +26,12 @@ const PersonalAccessTokensSubPage_OrganizationQuery = graphql(`
   }
 `);
 
-type PersonalAccessTokensSubPageProps = {
-  organizationSlug: string;
-};
-
-export function PersonalAccessTokensSubPage(
-  props: PersonalAccessTokensSubPageProps,
-): React.ReactNode {
+export function PersonalAccessTokensSubPage(): React.ReactNode {
+  const { organizationSlug } = useSlugs('organization');
   const [query, refetchQuery] = useQuery({
     query: PersonalAccessTokensSubPage_OrganizationQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
     },
     requestPolicy: 'network-only',
   });
@@ -130,7 +126,6 @@ export function PersonalAccessTokensSubPage(
         {query.data?.organization?.me?.accessTokens && (
           <PersonalAccessTokensTable
             accessTokens={query.data.organization.me.accessTokens}
-            organizationSlug={props.organizationSlug}
             refetch={refetchQuery}
           />
         )}

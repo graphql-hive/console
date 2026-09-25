@@ -51,6 +51,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 
@@ -84,18 +85,14 @@ const TargetHistoryGraphVersion_ActiveGraphVersionQuery = graphql(`
   }
 `);
 
-export function TargetHistorySchemaVersionPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  schemaVersionId: string;
-}) {
+export function TargetHistorySchemaVersionPage(props: { schemaVersionId: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetHistoryGraphVersion_ActiveGraphVersionQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       schemaVersionId: props.schemaVersionId,
     },
   });
@@ -126,23 +123,16 @@ export function TargetHistorySchemaVersionPage(props: {
   if (query.error) {
     return (
       <QueryError
+        organizationSlug={organizationSlug}
         error={query.error}
         showError
-        organizationSlug={props.organizationSlug}
         showLogoutButton={false}
         className="mt-20"
       />
     );
   }
 
-  return (
-    <SchemaVersionView
-      schemaVersion={schemaVersion}
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-    />
-  );
+  return <SchemaVersionView schemaVersion={schemaVersion} />;
 }
 
 const SchemaVersionView_SchemaVersionFragment = graphql(`
@@ -222,9 +212,6 @@ const SchemaVersionView_SchemaVersionFragment = graphql(`
 `);
 
 type SchemaVersionViewProps = {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   schemaVersion: FragmentType<typeof SchemaVersionView_SchemaVersionFragment>;
 };
 
@@ -403,12 +390,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col py-6">
       <div className="mb-3">
-        <SchemaVersionHeader
-          schemaVersion={schemaVersion}
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-        />
+        <SchemaVersionHeader schemaVersion={schemaVersion} />
       </div>
       {/* A monolithic schema has no subgraphs, so its summary sits on the page without tabs. */}
       {schemaVersion.subgraphDiffs ? (
@@ -636,13 +618,7 @@ function FilterableSchemaChangeBlock(props: {
         <div className="px-5">
           {filteredChanges?.length ? (
             <div className="pb-8 pt-2">
-              <ChangesBlock
-                changes={filteredChanges}
-                projectSlug=""
-                organizationSlug=""
-                schemaCheckId=""
-                targetSlug=""
-              />
+              <ChangesBlock changes={filteredChanges} />
             </div>
           ) : selectedChangeType !== null ? (
             <div className="py-3 text-xs">No changes of this change type.</div>
@@ -905,13 +881,7 @@ function GraphVersionSubgraphChangesView(props: {
                 <div className="px-5">
                   {edges?.length ? (
                     <div className="mb-8 pt-2">
-                      <ChangesBlock
-                        changes={edges?.map(edge => edge.node) ?? []}
-                        projectSlug=""
-                        organizationSlug=""
-                        schemaCheckId=""
-                        targetSlug=""
-                      />
+                      <ChangesBlock changes={edges?.map(edge => edge.node) ?? []} />
                     </div>
                   ) : selectedChangeType === null ? (
                     <div className="py-5 text-xs">No changes available.</div>
@@ -1070,13 +1040,11 @@ const SchemaVersionPromotionOriginContents_SchemaVersionPromoteOriginFragment = 
 `);
 
 function SchemaVersionPromotionOriginContents(props: {
-  projectSlug: string;
-  organizationSlug: string;
-  targetSlug: string;
   origin: FragmentType<
     typeof SchemaVersionPromotionOriginContents_SchemaVersionPromoteOriginFragment
   >;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const origin = useFragment(
     SchemaVersionPromotionOriginContents_SchemaVersionPromoteOriginFragment,
     props.origin,
@@ -1091,13 +1059,13 @@ function SchemaVersionPromotionOriginContents(props: {
     <>
       <span className="inline-flex items-center gap-1.5">
         <GitCommit className="h-3.5 w-3.5" />
-        {origin.targetSlug === props.targetSlug ? (
+        {origin.targetSlug === targetSlug ? (
           <Link
             className="font-mono"
             to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
             params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
+              organizationSlug,
+              projectSlug,
               targetSlug: origin.targetSlug,
               versionId: origin.schemaVersionId,
             }}
@@ -1114,9 +1082,6 @@ function SchemaVersionPromotionOriginContents(props: {
 }
 
 function SchemaVersionHeader(props: {
-  organizationSlug: string;
-  targetSlug: string;
-  projectSlug: string;
   schemaVersion: FragmentType<typeof SchemaVersionHeader_SchemaVersionFragment>;
 }) {
   const schemaVersion = useFragment(SchemaVersionHeader_SchemaVersionFragment, props.schemaVersion);
@@ -1124,12 +1089,7 @@ function SchemaVersionHeader(props: {
   const origin = (
     <>
       {schemaVersion.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-        <SchemaVersionPromotionOriginContents
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          origin={schemaVersion.origin}
-        />
+        <SchemaVersionPromotionOriginContents origin={schemaVersion.origin} />
       )}
       {schemaVersion.origin.__typename === 'SchemaVersionPublishOrigin' && (
         <>

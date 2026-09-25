@@ -2,11 +2,6 @@ import { forwardRef, HTMLAttributes, ReactNode } from 'react';
 import { DocsLink, DocsLinkProps } from '@/components/ui/docs-note';
 import { cn } from '@/lib/utils';
 
-const NavLayout = ({ children }: { children: ReactNode }) => (
-  <nav className="flex w-48 shrink-0 flex-col space-x-0 space-y-1">{children}</nav>
-);
-NavLayout.displayName = 'NavLayout';
-
 const PageLayout = ({ children }: { children: ReactNode }) => (
   <div className="flex flex-col gap-y-4">
     <div className="flex flex-row gap-x-6 py-6">{children}</div>
@@ -83,4 +78,4 @@ const SubPageLayoutHeader = ({
 
 SubPageLayoutHeader.displayName = 'SubPageLayoutHeader';
 
-export { PageLayout, NavLayout, PageLayoutContent, SubPageLayout, SubPageLayoutHeader };
+export { PageLayout, PageLayoutContent, SubPageLayout, SubPageLayoutHeader };

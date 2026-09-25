@@ -748,12 +748,7 @@ function TransferOwnershipExample() {
       note="In a dialog. The confirmation must match the organization slug, which the label's tooltip names."
     >
       <Raised width="dialog-xl">
-        <TransferOwnershipForm
-          form={form}
-          onSubmit={setSubmitted}
-          members={MEMBERS}
-          organizationSlug="the-guild"
-        />
+        <TransferOwnershipForm form={form} onSubmit={setSubmitted} members={MEMBERS} />
         <Submitted values={submitted} />
       </Raised>
     </CallSite>

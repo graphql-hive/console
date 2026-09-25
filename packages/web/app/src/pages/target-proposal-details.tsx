@@ -19,9 +19,6 @@ type MappedChange = {
 };
 
 export function TargetProposalDetailsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   proposalId: string;
   services: ServiceProposalDetails[];
   reviews: FragmentType<typeof Proposal_ReviewsFragment>;

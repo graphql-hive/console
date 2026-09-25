@@ -5,6 +5,7 @@ import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
 import { useEditorContext } from '@graphiql/react';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,16 +38,14 @@ const UpdateOperationNameMutation = graphql(`
 export const EditOperationModal = (props: {
   operationId: string;
   close: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }): ReactElement => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { toast } = useToast();
   const [updateOperationNameState, mutate] = useMutation(UpdateOperationNameMutation);
   const { collections } = useCollections({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
+    organizationSlug,
+    projectSlug,
+    targetSlug,
   });
   const { setTabState } = useEditorContext({ nonNull: true });
 
@@ -73,9 +72,9 @@ export const EditOperationModal = (props: {
   async function onSubmit(values: OperationFormValues) {
     const response = await mutate({
       selector: {
-        targetSlug: props.targetSlug,
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
+        targetSlug,
+        organizationSlug,
+        projectSlug,
       },
       input: {
         collectionId: values.collectionId,

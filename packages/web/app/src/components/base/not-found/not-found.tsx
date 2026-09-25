@@ -75,7 +75,7 @@ export function NotFound({
   ) : null;
   const backButton = showBackButton ? (
     <div className="mt-2">
-      <Button variant="outline" onClick={router.history.back}>
+      <Button variant="outline" onClick={() => router.history.back()}>
         Go back
       </Button>
     </div>

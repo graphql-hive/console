@@ -767,9 +767,8 @@ function OIDCAccessSettings(props: {
                     <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
                       Groups are provisioned and updated via SCIM.{' '}
                       <Link
-                        to="/$organizationSlug/view/members"
+                        to="/$organizationSlug/view/members/groups"
                         params={{ organizationSlug: organization.slug }}
-                        search={{ page: 'groups' }}
                         className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
                       >
                         Manage Groups
@@ -785,7 +784,6 @@ function OIDCAccessSettings(props: {
                       <Link
                         to="/$organizationSlug/view/members"
                         params={{ organizationSlug: organization.slug }}
-                        search={{ page: 'list' }}
                         className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
                       >
                         Manage Users
@@ -812,10 +810,7 @@ function OIDCAccessSettings(props: {
                             <Link
                               to="/$organizationSlug/view/members"
                               params={{ organizationSlug: organization.slug }}
-                              search={{
-                                page: 'list',
-                                showPendingSCIMManagementConfirmations: true,
-                              }}
+                              search={{ showPendingSCIMManagementConfirmations: true }}
                               className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
                             >
                               Review conflicts
@@ -832,9 +827,8 @@ function OIDCAccessSettings(props: {
                     <p className="text-neutral-10 max-w-[500px] text-xs font-normal leading-snug">
                       Assign role mappings to groups to grant permissions to group members.{' '}
                       <Link
-                        to="/$organizationSlug/view/members"
+                        to="/$organizationSlug/view/members/groups"
                         params={{ organizationSlug: organization.slug }}
-                        search={{ page: 'groups' }}
                         className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
                       >
                         Manage Groups

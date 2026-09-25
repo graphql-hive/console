@@ -1,27 +1,18 @@
 import { Lock } from 'lucide-react';
 import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
-import { OrganizationLayout } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
-import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
-import { Navigate, useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 
-export function OrganizationOIDCRequestPage(props: {
-  organizationSlug: string;
-  oidcId: string;
-  redirectToPath: string;
-}) {
+export function OrganizationOIDCRequestPage(props: { oidcId: string; redirectToPath: string }) {
   const router = useRouter();
-
-  if (!isProviderEnabled('oidc')) {
-    return <Navigate to={props.redirectToPath} />;
-  }
 
   return (
     <>
       <Meta title="Single sign-on" />
-      <OrganizationLayout organizationSlug={props.organizationSlug} minimal>
+      <LayoutContent>
         <div className="my-6">
           <Card variants={{ onSurface: 'raised' }}>
             <div className="min-h-140 flex flex-col items-center justify-center gap-y-6">
@@ -50,7 +41,7 @@ export function OrganizationOIDCRequestPage(props: {
             </div>
           </Card>
         </div>
-      </OrganizationLayout>
+      </LayoutContent>
     </>
   );
 }

@@ -15,7 +15,7 @@ import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
@@ -26,7 +26,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { FieldLevelMetricsDisplayState } from '@/gql/graphql';
-import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
+import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn, stringToHiveColor, useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
@@ -106,13 +106,8 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
   }
 `);
 
-function SchemaCoordinateView(props: {
-  coordinate: string;
-  dataRetentionInDays: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: number }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { styles, colors } = useChartStyles();
   const errorColors = [colors.error, colors.p99, colors.p95, colors.p90, colors.p75];
   const dateRangeController = useDateRangeController({
@@ -126,9 +121,9 @@ function SchemaCoordinateView(props: {
     query: SchemaCoordinateView_SchemaCoordinateStatsQuery,
     variables: {
       targetSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
       type: typeName,
       schemaCoordinate: props.coordinate,
@@ -199,7 +194,7 @@ function SchemaCoordinateView(props: {
     kind !== 'GraphQLInputObjectType';
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   return (
@@ -210,9 +205,6 @@ function SchemaCoordinateView(props: {
             <Title className="pr-8">{title}</Title>
             {supergraphMetadata ? (
               <SupergraphMetadataList
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
                 supergraphMetadata={supergraphMetadata}
                 previewThreshold={5}
               />
@@ -516,9 +508,9 @@ function SchemaCoordinateView(props: {
                           className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                           params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
+                            organizationSlug,
+                            projectSlug,
+                            targetSlug,
                             operationName: operation.name,
                             operationHash: operation.operationHash ?? '_',
                           }}
@@ -559,9 +551,9 @@ function SchemaCoordinateView(props: {
                           className="text-neutral-11 hover:text-neutral-11 hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                           params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
+                            organizationSlug,
+                            projectSlug,
+                            targetSlug,
                             name: client.name,
                           }}
                         >
@@ -708,25 +700,21 @@ const TargetSchemaCoordinatePageQuery = graphql(`
   }
 `);
 
-function TargetSchemaCoordinatePageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  coordinate: string;
-}) {
+function TargetSchemaCoordinatePageContent(props: { coordinate: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetSchemaCoordinatePageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
 
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -755,30 +743,17 @@ function TargetSchemaCoordinatePageContent(props: {
     <SchemaCoordinateView
       coordinate={props.coordinate}
       dataRetentionInDays={currentOrganization.usageRetentionInDays}
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
     />
   );
 }
 
-export function TargetInsightsCoordinatePage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  coordinate: string;
-}) {
+export function TargetInsightsCoordinatePage(props: { coordinate: string }) {
   return (
     <>
       <Meta title={`${props.coordinate} - schema coordinate`} />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Insights}
-      >
-        <TargetSchemaCoordinatePageContent {...props} />
-      </TargetLayout>
+      <LayoutContent>
+        <TargetSchemaCoordinatePageContent coordinate={props.coordinate} />
+      </LayoutContent>
     </>
   );
 }
