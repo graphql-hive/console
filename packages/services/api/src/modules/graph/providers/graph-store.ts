@@ -34,7 +34,7 @@ const ContractGraphModel = GraphSharedModel.extend({
   sourceGraphId: z.string(),
 });
 
-type ContractGraph = z.TypeOf<typeof ContractGraphModel>;
+export type ContractGraph = z.TypeOf<typeof ContractGraphModel>;
 
 const GraphModel = z.discriminatedUnion('type', [BaseGraphModel, ContractGraphModel]);
 
@@ -165,6 +165,27 @@ export class GraphStore {
     `;
 
     await trx.query(query);
+  }
+
+  async findContractGraphsForGraph(baseGraph: Graph) {
+    const query = psql`/* findContractGraphsForBaseGraph*/
+      SELECT
+        ${graphFields}
+      FROM
+        "graphs"
+      WHERE
+        "source_graph_id" = ${baseGraph.id}
+        AND "type" = 'CONTRACT'
+    `;
+
+    const records = await this.pg.any(query);
+    const graphsByName = new Map<string, ContractGraph>();
+    for (const record of records) {
+      const graph = ContractGraphModel.parse(record);
+      graphsByName.set(graph.name, graph);
+    }
+
+    return graphsByName;
   }
 }
 
