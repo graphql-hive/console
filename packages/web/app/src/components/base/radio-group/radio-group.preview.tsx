@@ -208,7 +208,7 @@ function PlanBody(props: {
         <div className="flex items-center justify-between gap-2">
           <span className="text-neutral-12 text-sm font-semibold">{props.name}</span>
           {props.isCurrent ? (
-            <span className="bg-accent_10 text-accent rounded-xs px-2 py-1 text-[11px] font-medium tracking-wide">
+            <span className="bg-accent-tint text-accent rounded-xs px-2 py-1 text-[11px] font-medium tracking-wide">
               CURRENT PLAN
             </span>
           ) : null}

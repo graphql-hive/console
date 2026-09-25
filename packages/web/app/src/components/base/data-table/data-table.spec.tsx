@@ -521,7 +521,11 @@ describe('DataTableCell', () => {
       />,
     );
     const rows = [...container.querySelectorAll('tbody > tr')];
-    expect(rows.map(tr => tr.className.includes('bg-critical_08'))).toEqual([false, true, false]);
+    expect(rows.map(tr => tr.className.includes('bg-critical-tint-subtle'))).toEqual([
+      false,
+      true,
+      false,
+    ]);
     // The second row would take the stripe; the critical tint replaces it.
     expect(rows[1].className).not.toContain('bg-neutral-2/60');
     expect(screen.getByText('beta').className).toContain('line-through');

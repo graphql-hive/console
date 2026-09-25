@@ -308,7 +308,7 @@ function ChangeItem(
                             ) : (
                               <Link
                                 key={index}
-                                className="text-accent_80 hover:text-accent"
+                                className="text-accent-muted hover:text-accent"
                                 to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
                                 params={{
                                   organizationSlug,

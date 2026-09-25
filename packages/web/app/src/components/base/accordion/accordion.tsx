@@ -94,7 +94,7 @@ const triggerVariants = cva(
       },
       tone: {
         default: 'text-fg hover:text-fg-default',
-        accent: 'text-accent hover:text-accent/80',
+        accent: 'text-accent hover:text-accent-muted',
       },
     },
   },

@@ -193,7 +193,7 @@ function MemberStatusIcon({ member }: { member: MemberRow }) {
   if (info?.provisioningStatus === GraphQLSchema.ProvisioningStatus.Active && info.isDisabled) {
     return (
       <span
-        className="bg-critical_10 text-critical flex size-9 items-center justify-center rounded-full"
+        className="bg-critical-tint text-critical flex size-9 items-center justify-center rounded-full"
         aria-label="Disabled user"
       >
         <UserRoundX className="size-5" />
@@ -757,7 +757,7 @@ export function OrganizationMembers(props: {
                 <Link
                   to="/$organizationSlug/view/members"
                   params={{ organizationSlug: organization.slug }}
-                  className="text-accent hover:text-accent/80"
+                  className="text-accent hover:text-accent-muted"
                 >
                   Show all members
                 </Link>

@@ -1293,9 +1293,9 @@ const CompositionErrors = (props: {
   );
 
   return (
-    <div className="border-critical_30 overflow-hidden rounded-xl border">
-      <div className="border-critical_30 bg-critical_08 flex items-start gap-3 border-b px-5 py-4">
-        <div className="border-critical_30 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border">
+    <div className="border-critical-line overflow-hidden rounded-xl border">
+      <div className="border-critical-line bg-critical-tint-subtle flex items-start gap-3 border-b px-5 py-4">
+        <div className="border-critical-line mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border">
           <XCircleIcon className="text-critical h-4 w-4" />
         </div>
 
@@ -1306,7 +1306,7 @@ const CompositionErrors = (props: {
           </p>
         </div>
 
-        <span className="focus:ring-ring text-2xs border-critical_30 bg-critical_10 text-critical ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
+        <span className="focus:ring-ring text-2xs border-critical-line bg-critical-tint text-critical ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
           <span className="bg-critical mr-1 h-1.5 w-1.5 rounded-full" />
           {compositionErrors.edges.length} error
           {compositionErrors.edges.length === 1 ? '' : 's'}
@@ -1608,8 +1608,8 @@ const kindMeta = {
     label: 'Removed',
     Icon: Minus,
     text: 'text-critical',
-    bg: 'bg-critical_30',
-    ring: 'ring-critical_30',
+    bg: 'bg-critical-tint-strong',
+    ring: 'ring-critical-line',
     dot: 'bg-critical',
   },
   SubgraphDiffChanged: {

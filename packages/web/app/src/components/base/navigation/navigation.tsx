@@ -88,7 +88,7 @@ const activeClasses: Record<NavigationVariant, string> = {
 };
 
 const inactiveClasses: Record<NavigationVariant, string> = {
-  underline: 'text-fg-default hover:text-fg hover:border-accent_80 border-transparent',
+  underline: 'text-fg-default hover:text-fg hover:border-accent-muted border-transparent',
   pill: 'text-fg-default hover:text-fg',
   list: 'text-fg-default hover:text-fg hover:underline',
 };

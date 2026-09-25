@@ -15,7 +15,7 @@ import { ScrollArea } from '../scroll-area/scroll-area';
 // Base UI sets `data-starting-style` on the frame a popup mounts and `data-ending-style` while it
 // leaves, so one CSS transition covers both directions.
 export const backdropClass =
-  'bg-neutral-1_01 fixed inset-0 z-50 backdrop-blur-sm transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0';
+  'bg-neutral-1/1 fixed inset-0 z-50 backdrop-blur-sm transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0';
 
 export const popupSurfaceClass =
   'bg-surface-overlay border-line text-fg z-50 flex flex-col gap-4 border shadow-lg outline-none';
