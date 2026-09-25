@@ -72,7 +72,7 @@ export default class Introspect extends Command<typeof Introspect> {
         !(err instanceof IntrospectionError || err instanceof InvalidFederationSubgraphError)
       ) {
         this.logFailure(err instanceof HiveCLIError ? err.plainMessage : String(err));
-        throw new IntrospectionError();
+        throw new IntrospectionError(args.location);
       }
       throw err;
     });

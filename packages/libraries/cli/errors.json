@@ -304,10 +304,10 @@
     {
       "code": 201,
       "name": "SchemaFileEmptyError",
-      "title": "Empty schema",
+      "title": "No type definitions found",
       "category": "Schema check",
       "exitCode": 3,
-      "fix": "Make sure the file contains GraphQL type definitions.",
+      "fix": "Make sure the schema contains GraphQL type definitions. In code files, the definitions must be in a template literal tagged with `gql` or `graphql`, or marked with a `/* GraphQL */` comment.",
       "anchor": "errors-201"
     },
     {

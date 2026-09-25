@@ -43,7 +43,9 @@ matching code, for example a missing or empty schema file (`[200]`, `[201]`), in
 `schema:check` (`[301]`), an invalid CDN access token (`[107]`), HTTP error responses (`[113]`) and
 `--forceSafe` without a target slug (`[102]`).
 `hive introspect` reports a missing, empty or invalid schema file as `[200]`, `[201]` or `[301]`, and
-keeps `[116]` for GraphQL services that cannot be introspected.
+keeps `[116]` for GraphQL services that cannot be introspected. `hive schema:check` now also reports a
+URL that cannot be introspected as `[116]` (exit code `1`) instead of `[200]`, like `schema:publish`,
+and introspection errors name the URL that failed.
 Invalid registry access tokens that expired are reported as `[106]`.
 
 **New features**
