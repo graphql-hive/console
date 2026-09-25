@@ -1,14 +1,15 @@
 import { ReactElement, useState } from 'react';
-import clsx from 'clsx';
 import { ExternalLink } from 'lucide-react';
 import { useMutation } from 'urql';
 import { Button } from '@/components/base/button/button';
+import { Card } from '@/components/base/card/card';
 import { Section } from '@/components/common';
 import { Heading } from '@/components/ui/heading';
 import { Link } from '@/components/ui/link';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
-import { CardElement } from '@stripe/react-stripe-js';
+import { useChartStyles } from '@/lib/utils';
+import { CardElement as StripeCardElement } from '@stripe/react-stripe-js';
 
 const GenerateStripeLinkMutation = graphql(`
   mutation GenerateStripeLinkMutation($selector: OrganizationSelectorInput!) {
@@ -102,37 +103,50 @@ export const ManagePaymentMethod = (props: {
 
 export const BillingPaymentMethodForm = ({
   onValidationChange,
-  className,
 }: {
-  className?: string;
   onValidationChange?: (isValid: boolean) => void;
 }): ReactElement | null => {
+  // Stripe renders the card field in its own iframe, so it needs concrete colors, not CSS vars.
+  const { colors } = useChartStyles();
+
   return (
-    <div className={clsx('flex flex-col gap-6', className)}>
-      <Heading>Payment Method</Heading>
-      <CardElement
-        className="grow"
-        onChange={e => {
-          if (e.error || !e.complete) {
-            onValidationChange?.(false);
-          } else {
-            onValidationChange?.(true);
-          }
-        }}
-        options={{
-          style: {
-            base: {
-              color: '#fff',
-            },
-          },
-        }}
-      />
-      <Section.Subtitle>
-        All payments and subscriptions are processed securely by{' '}
-        <Link as="a" variant="primary" href="https://stripe.com" target="_blank" rel="noreferrer">
-          Stripe
-        </Link>
-      </Section.Subtitle>
+    <div className="w-1/2">
+      <Card variants={{ onSurface: 'raised' }}>
+        <div className="flex flex-col gap-6">
+          <Heading>Payment Method</Heading>
+          <StripeCardElement
+            className="grow"
+            onChange={e => {
+              if (e.error || !e.complete) {
+                onValidationChange?.(false);
+              } else {
+                onValidationChange?.(true);
+              }
+            }}
+            options={{
+              style: {
+                base: {
+                  color: colors.fg,
+                  '::placeholder': { color: colors.fgMuted },
+                },
+                invalid: { color: colors.critical },
+              },
+            }}
+          />
+          <Section.Subtitle>
+            All payments and subscriptions are processed securely by{' '}
+            <Link
+              as="a"
+              variant="primary"
+              href="https://stripe.com"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Stripe
+            </Link>
+          </Section.Subtitle>
+        </div>
+      </Card>
     </div>
   );
 };

@@ -99,6 +99,8 @@ function readChartStyles() {
       areaFillFrom: hex('--neutral-1'),
       /** Area fill gradient bottom (neutral-4). */
       areaFillTo: hex('--neutral-4'),
+      fg: hex('--fg'),
+      fgMuted: hex('--fg-muted'),
       /** Severity / state semantic colors — match the in-app icon colors. */
       critical: hex('--critical'),
       warning: hex('--warning'),
