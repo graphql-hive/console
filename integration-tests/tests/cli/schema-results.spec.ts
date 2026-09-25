@@ -164,7 +164,8 @@ describe('schema:check --github', () => {
     );
 
     expect(result.exitCode).toBe(3);
-    expect(result.stderr).toContain('[204]');
+    expect(result.stderr).toContain('requires the target as a slug');
+    expect(result.stderr).toContain('[102]');
   });
 });
 
