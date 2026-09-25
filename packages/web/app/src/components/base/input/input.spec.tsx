@@ -39,7 +39,7 @@ describe('Input', () => {
     expect(input.getAttribute('autocomplete')).toBe('off');
     expect(input.getAttribute('data-cy')).toBe('email');
     // Regression: the merge used to drop the colour next to the theme's own font size.
-    expect(input.className).toContain('text-neutral-12');
+    expect(input.className).toContain('text-fg');
     expect(input.className).toContain('text-sm');
     // Focus lifts the fill one step on every surface.
     expect(input.className).toContain('focus:bg-neutral-1');
@@ -85,9 +85,9 @@ describe('Input', () => {
   it('paints the raised surface for a field inside a sheet or dialog', () => {
     render(<Input placeholder="Name" onSurface="raised" />);
     const input = screen.getByPlaceholderText('Name');
-    expect(input.className).toContain('dark:bg-neutral-4');
+    expect(input.className).toContain('bg-surface-control-raised');
     expect(input.className).toContain('dark:focus:bg-neutral-5');
-    expect(input.className).not.toContain('dark:bg-neutral-3');
+    expect(input.className.split(' ')).not.toContain('bg-surface-control');
   });
 
   it('applies size, width and mono as classes', () => {

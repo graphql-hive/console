@@ -36,8 +36,8 @@ export function FailureCard({ title, aside, items, viewLabel = 'View' }: Failure
     <div className="border-critical_30 bg-critical_08 overflow-hidden rounded-md border">
       <div className="border-critical_30 flex items-center gap-2 border-b px-4 py-2.5">
         <AlertTriangle className="text-critical size-4 shrink-0" />
-        <span className="text-neutral-12 text-sm font-medium">{title}</span>
-        {aside ? <span className="text-neutral-10 ml-auto text-xs">{aside}</span> : null}
+        <span className="text-fg text-sm font-medium">{title}</span>
+        {aside ? <span className="text-fg-secondary ml-auto text-xs">{aside}</span> : null}
       </div>
       <ul className="divide-critical_10 divide-y">
         {items.map(item => (
@@ -45,12 +45,12 @@ export function FailureCard({ title, aside, items, viewLabel = 'View' }: Failure
             key={item.key}
             className="grid grid-cols-[10rem_1fr_auto] items-center gap-4 px-4 py-2 text-sm"
           >
-            <span className="text-neutral-12 truncate" title={item.label}>
+            <span className="text-fg truncate" title={item.label}>
               {item.label}
             </span>
-            <span className="text-neutral-11">
+            <span className="text-fg-default">
               {item.reason}
-              {item.detail ? <span className="text-neutral-10"> {item.detail}</span> : null}
+              {item.detail ? <span className="text-fg-secondary"> {item.detail}</span> : null}
             </span>
             {item.onView ? (
               <Button variant="ghost" size="compact" onClick={item.onView}>

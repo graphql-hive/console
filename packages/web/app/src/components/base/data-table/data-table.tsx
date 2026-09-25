@@ -126,7 +126,7 @@ function SortHeader<TData>({
           // server-sorted column has no reason to carry one. Shift stacks a tiebreaker
           // the way the handler would.
           onClick={event => column.toggleSorting(undefined, event.shiftKey)}
-          className="text-neutral-10 hover:text-neutral-12 inline-flex items-center gap-1 text-xs font-medium"
+          className="text-fg-secondary hover:text-fg inline-flex items-center gap-1 text-xs font-medium"
         >
           {label}
           <ArrowDown
@@ -226,7 +226,7 @@ export function DataTable<TData>({
                           {meta?.tooltip ? (
                             <Tooltip
                               trigger={
-                                <span className="text-neutral-9 inline-flex">
+                                <span className="text-fg-muted inline-flex">
                                   <Info className="size-3.5" />
                                 </span>
                               }

@@ -3,7 +3,7 @@ import { User } from 'lucide-react';
 import { Avatar as BaseAvatar } from '@base-ui/react/avatar';
 
 const avatarVariants = cva(
-  'bg-accent_10 text-neutral-12 inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full font-medium',
+  'bg-accent_10 text-fg inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full font-medium',
   {
     variants: {
       size: {

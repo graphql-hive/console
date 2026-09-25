@@ -6,7 +6,7 @@ import { controlSize, focusRing, type ControlSize, type OnSurface } from '../sha
 
 /** The field itself, shared with Textarea. Fill and border come from `fieldSurface`. */
 export const fieldClass = [
-  'text-neutral-12 placeholder:text-neutral-8',
+  'text-fg placeholder:text-fg-subtle',
   // appearance-none: WebKit draws type="search" as a native searchfield with its own corners.
   'min-w-0 appearance-none rounded-sm border transition-colors focus:outline-none',
   focusRing,
@@ -25,21 +25,21 @@ export const fieldClass = [
  */
 export const fieldSurface = {
   base: [
-    'bg-neutral-2 border-neutral-5 focus:bg-neutral-1',
-    'dark:bg-neutral-3 dark:border-neutral-4 dark:focus:bg-neutral-4',
-    'hover:border-neutral-6 focus:border-neutral-7',
+    'bg-surface-control border-line-control focus:bg-neutral-1',
+    'dark:focus:bg-neutral-4',
+    'hover:border-line-strong focus:border-neutral-7',
   ].join(' '),
   raised: [
-    'bg-neutral-2 border-neutral-5 focus:bg-neutral-1',
-    'dark:bg-neutral-4 dark:border-neutral-5 dark:focus:bg-neutral-5',
-    'hover:border-neutral-6 focus:border-neutral-7',
+    'bg-surface-control-raised border-line focus:bg-neutral-1',
+    'dark:focus:bg-neutral-5',
+    'hover:border-line-strong focus:border-neutral-7',
   ].join(' '),
 } as const satisfies Record<OnSurface, string>;
 
 // The block before a slug sits one step further from the page than the field it joins.
 const prefixSurface = {
-  base: 'border-neutral-5 bg-neutral-3 dark:bg-neutral-4 dark:border-neutral-4',
-  raised: 'border-neutral-5 bg-neutral-3 dark:bg-neutral-5 dark:border-neutral-5',
+  base: 'border-line-control bg-neutral-3 dark:bg-neutral-4',
+  raised: 'border-line bg-neutral-3 dark:bg-neutral-5',
 } as const satisfies Record<OnSurface, string>;
 
 export const fieldWidth = {
@@ -139,14 +139,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           className={cn(
             controlSize[(size ?? 'default') as ControlSize],
             prefixSurface[onSurface ?? 'base'],
-            'text-neutral-10 inline-flex shrink-0 items-center whitespace-nowrap rounded-l-sm border border-r-0 px-3 text-sm',
+            'text-fg-secondary inline-flex shrink-0 items-center whitespace-nowrap rounded-l-sm border border-r-0 px-3 text-sm',
           )}
         >
           {prefixText}
         </span>
       ) : null}
       {LeadingIcon ? (
-        <LeadingIcon className="text-neutral-9 pointer-events-none absolute left-3 size-4" />
+        <LeadingIcon className="text-fg-muted pointer-events-none absolute left-3 size-4" />
       ) : null}
       {input}
       {trailing ? (

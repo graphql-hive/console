@@ -20,7 +20,7 @@ export const floatingBaseClass =
   // No z-index here. The positioner is transformed for placement, which makes it a stacking
   // context, so a z-index on the popup would only compete inside it and lose to any page
   // element that outranks the positioner. It goes on the positioner instead.
-  'text-control rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5 max-h-[var(--available-height)] overflow-y-auto overflow-x-hidden thin-scrollbar';
+  'text-control rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-surface-floating border-line max-h-[var(--available-height)] overflow-y-auto overflow-x-hidden thin-scrollbar';
 
 export const floatingVariants = cva(floatingBaseClass, {
   variants: {
@@ -65,17 +65,17 @@ export const itemVariants = cva(
   {
     variants: {
       variant: {
-        default: 'px-2 text-neutral-11',
+        default: 'px-2 text-fg-default',
         navigationLink: 'hover:text-accent text-accent_80 justify-end pr-2 hover:bg-transparent',
         action: 'pl-2 hover:bg-accent_10 hover:text-accent text-accent_80',
         destructiveAction: 'pl-2 text-red-400 hover:bg-red-300/10',
       },
       highlighted: {
-        true: 'bg-neutral-5 text-neutral-12',
+        true: 'bg-surface-selected text-fg',
         false: '',
       },
       selected: {
-        true: 'text-neutral-12',
+        true: 'text-fg',
         false: '',
       },
       disabled: {
@@ -83,7 +83,7 @@ export const itemVariants = cva(
         false: '',
       },
     },
-    compoundVariants: [{ highlighted: true, className: 'bg-neutral-5 text-neutral-12' }],
+    compoundVariants: [{ highlighted: true, className: 'bg-surface-selected text-fg' }],
     defaultVariants: {
       variant: 'default',
       highlighted: false,
@@ -131,4 +131,4 @@ export type FloatingProps = {
 export { scrollArea as floatingScrollArea } from '../shared-styles';
 
 /** Empty state text inside a floating panel. */
-export const floatingEmptyState = 'text-neutral-8 px-2 py-4 text-center text-sm italic';
+export const floatingEmptyState = 'text-fg-subtle px-2 py-4 text-center text-sm italic';
