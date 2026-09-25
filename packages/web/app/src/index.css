@@ -273,9 +273,8 @@
   --color-diff-removed-gutter: var(--diff-removed-gutter);
   --color-diff-removed-strike: var(--diff-removed-strike);
 
-  /* The preflight and laboratory editors are dark in both themes. */
-  --color-editor: #10151f;
-  --color-editor-backdrop: #030711;
+  --color-editor: var(--editor);
+  --color-editor-backdrop: var(--editor-backdrop);
 
   --color-card-bg: var(--color-neutral-3);
   --color-card-border: var(--color-neutral-4);
@@ -389,6 +388,9 @@
     --diff-removed-hover: #8e1c22;
     --diff-removed-gutter: rgb(116 23 28 / 0.3);
     --diff-removed-strike: #998c8b;
+
+    --editor: hsl(var(--neutral-2));
+    --editor-backdrop: hsl(var(--neutral-1));
   }
 
   .dark {
@@ -430,6 +432,9 @@
 
     --diff-added: #11362b;
     --diff-added-hover: #005b43;
+
+    --editor: #10151f;
+    --editor-backdrop: #030711;
   }
 
   :root {

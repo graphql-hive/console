@@ -11,6 +11,7 @@ import { useToast } from '@/components/base/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
+import { useTheme } from '@/components/theme/theme-provider';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -278,6 +279,7 @@ function LaboratoryPageContent(props: {
   const router = useRouter();
   const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const { resolvedTheme } = useTheme();
   const { collections } = useCollections({
     organizationSlug,
     projectSlug,
@@ -531,19 +533,19 @@ function LaboratoryPageContent(props: {
           .doc-explorer-title {
             font-size: 1.125rem !important;
             line-height: 1.75rem !important;
-            color: white;
+            color: var(--color-fg);
           }
 
-          .graphiql-container,
-          .graphiql-dialog,
-          .CodeMirror-info {
+          .dark .graphiql-container,
+          .dark .graphiql-dialog,
+          .dark .CodeMirror-info {
             --color-base: 223, 70%, 3.9% !important;
           }
 
           .graphiql-tooltip,
           .graphiql-dropdown-content,
           .CodeMirror-lint-tooltip {
-            background: #030711;
+            background: var(--color-editor-backdrop);
           }
 
           .graphiql-tab {
@@ -576,7 +578,7 @@ function LaboratoryPageContent(props: {
             plugins={plugins}
             visiblePlugin={operationCollectionsPlugin}
             schema={schema}
-            forcedTheme="dark"
+            forcedTheme={resolvedTheme}
             className={isFullScreen ? 'bg-editor-backdrop fixed inset-0' : ''}
             onTabChange={handleTabChange}
             readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
