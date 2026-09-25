@@ -10,6 +10,7 @@
 export type alert_channel_type = 'DISCORD' | 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type hive_graph_type = 'BASE' | 'CONTRACT';
 export type hive_subgraph_log_type = 'added' | 'changed' | 'removed' | 'unchanged';
 export type metric_alert_direction = 'ABOVE' | 'BELOW';
 export type metric_alert_metric = 'AVG' | 'P75' | 'P90' | 'P95' | 'P99';
@@ -164,7 +165,7 @@ export interface graphile_worker_deduplication {
 }
 
 export interface graphs {
-  config: any;
+  config: any | null;
   created_at: Date;
   id: string;
   is_backfilled: boolean;
@@ -173,6 +174,7 @@ export interface graphs {
   project_id: string;
   source_graph_id: string | null;
   target_id: string;
+  type: hive_graph_type;
 }
 
 export interface group_members {
