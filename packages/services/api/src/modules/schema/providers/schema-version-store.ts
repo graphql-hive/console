@@ -139,7 +139,6 @@ export class SchemaVersionStore {
           ${psql.jsonbOrNull(args.schemaMetadata)},
           ${psql.jsonbOrNull(args.metadataAttributes)},
           ${psql.jsonb(SchemaVersionOriginModel.parse(args.origin))},
-          ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))}
           ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))},
           ${args.graphId},
           ${psql.jsonbOrNull(GraphMetadataModel.nullable().parse(args.graphMetadata))},
