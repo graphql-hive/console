@@ -137,5 +137,6 @@ export const runPGMigrations = async (args: { slonik: PostgresDatabasePool; runT
       import('./actions/2026.09.24T00-00-01.schema-versions-action-id-nullability'),
       import('./actions/2026.09.25T00-00-00.graphs'),
       import('./actions/2026.09.25T00-00-01.graph-schema-version-indexes'),
+      import('./actions/2026.09.25T00-00-02.backfill-graphs'),
     ]),
   });
