@@ -40,7 +40,7 @@ export class Contracts {
     contract: CreateContractInput;
     organizationId: string;
     projectId: string;
-    sourceGraphId: string | null;
+    sourceGraphId: string;
   }) {
     this.logger.debug(
       'Create contract (targetId=%s, contractName=%s)',
@@ -59,6 +59,7 @@ export class Contracts {
       const allErrors = validatedContract.error.flatten().fieldErrors;
       return {
         type: 'error' as const,
+        message: 'Something went wrong.',
         errors: {
           targetId: allErrors.targetId?.[0],
           contractName: allErrors.contractName?.[0],
@@ -118,6 +119,7 @@ export class Contracts {
       ) {
         return {
           type: 'error' as const,
+          message: 'Something went wrong.',
           errors: {
             contractName: 'Must be unique across all target contracts.',
           },

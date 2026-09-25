@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
+import { batch } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
 
 const ContractGraphConfigModel = z.object({
@@ -105,24 +106,39 @@ export class GraphStore {
       .then(GraphModel.parse);
   }
 
-  async findGraphForTargetIdByName(targetId: string, graphName: string): Promise<Graph | null> {
-    this.logger.debug(
-      'find graph by target id and name (targetId=%s, graphName=%s)',
-      targetId,
-      graphName,
+  private findGraphForTargetIdByNameBatched = batch<
+    { targetId: string; graphName: string },
+    Graph | null
+  >(async args => {
+    this.logger.debug('find graphs by target ids and names (args=%o)', args);
+
+    const graphs = await this.pg
+      .any(
+        psql`
+        SELECT
+          ${graphFields}
+        FROM
+          "graphs"
+        WHERE
+          ("target_id", "name") IN (
+            SELECT * FROM ${psql.unnest(
+              args.map(arg => [arg.targetId, arg.graphName]),
+              ['uuid', 'text'],
+            )}
+          )
+      `,
+      )
+      .then(z.array(GraphModel).parse);
+
+    const graphByTargetIdAndName = new Map(
+      graphs.map(graph => [`${graph.targetId}:${graph.name}`, graph]),
     );
 
-    const query = psql`
-      SELECT
-        ${graphFields}
-      FROM
-        "graphs"
-      WHERE
-        "target_id" = ${targetId}
-        AND "name" = ${graphName}
-    `;
+    return args.map(arg => graphByTargetIdAndName.get(`${arg.targetId}:${arg.graphName}`) ?? null);
+  });
 
-    return this.pg.maybeOne(query).then(GraphModel.nullable().parse);
+  findGraphForTargetIdByName(targetId: string, graphName: string): Promise<Graph | null> {
+    return this.findGraphForTargetIdByNameBatched({ targetId, graphName });
   }
 
   async deleteGraphByTargetIdAndName(
