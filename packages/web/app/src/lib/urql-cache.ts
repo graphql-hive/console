@@ -14,6 +14,7 @@ import type { DeleteOperationMutationType } from '@/components/target/laboratory
 import type { CreateAccessToken_CreateTokenMutation } from '@/components/target/settings/registry-access-token';
 import { graphql } from '@/gql';
 import { CollectionsQuery } from '@/lib/hooks/laboratory/use-collections';
+import type { JoinOrganizationPage_JoinOrganizationMutation } from '@/pages/organization-join';
 import type { CreateOrganizationMutation } from '@/pages/organization-new';
 import type { DeleteOrganizationDocument } from '@/pages/organization-settings';
 import type { DeleteProjectMutation } from '@/pages/project-settings';
@@ -89,6 +90,15 @@ const createOrganization: TypedDocumentNodeUpdateResolver<typeof CreateOrganizat
   cache,
 ) => {
   cache.invalidate('Query', 'organizations');
+};
+
+// The viewer's organizations are one session-level document; a join has to reach it.
+const joinOrganization: TypedDocumentNodeUpdateResolver<
+  typeof JoinOrganizationPage_JoinOrganizationMutation
+> = ({ joinOrganization }, _args, cache) => {
+  if (joinOrganization.__typename === 'OrganizationPayload') {
+    cache.invalidate('Query', 'organizations');
+  }
 };
 
 const deleteOrganization: TypedDocumentNodeUpdateResolver<typeof DeleteOrganizationDocument> = (
@@ -422,6 +432,7 @@ const updateMetricAlertRule: UpdateResolver = (_result, args, cache) => {
 // UpdateResolver
 export const Mutation = {
   createOrganization,
+  joinOrganization,
   deleteOrganization,
   createProject,
   deleteProject,

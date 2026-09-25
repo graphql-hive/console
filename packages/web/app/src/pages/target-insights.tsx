@@ -393,6 +393,7 @@ function TargetOperationsPageContent() {
       targetSlug,
     },
   });
+  const layout = useLayoutQuery('target');
 
   if (query.error) {
     return (
@@ -404,10 +405,12 @@ function TargetOperationsPageContent() {
     );
   }
 
-  const currentOrganization = useLayoutQuery('target').data?.organization;
+  const currentOrganization = layout.data?.organization;
   const hasCollectedOperations = query.data?.hasCollectedOperations === true;
 
-  if (!currentOrganization) {
+  // The layout's document is usually cached, so only the page's own answer says whether to show
+  // the empty state.
+  if (!currentOrganization || !query.data) {
     return null;
   }
 

@@ -180,7 +180,6 @@ function TargetAppVersionContent(props: {
         .toPromise(),
   });
 
-  const project = data.data?.target;
   const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
 
   useRedirect({

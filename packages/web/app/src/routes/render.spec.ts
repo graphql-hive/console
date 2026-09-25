@@ -560,6 +560,26 @@ describe('alerts sections', () => {
   );
 });
 
+describe('insights', () => {
+  const INSIGHTS = `${TARGET}/insights`;
+  const emptyState = /waiting for your first collected operation/;
+
+  it('shows nothing until its own query has answered', { timeout: 30_000 }, async () => {
+    at(INSIGHTS);
+    await screen.findByRole('link', { name: 'Insights', current: 'page' });
+    expect(screen.queryByText(emptyState)).toBeNull();
+  });
+
+  it('shows the empty state for a target without operations', { timeout: 30_000 }, async () => {
+    client.current!.fixtures.set('TargetOperationsPageQuery', {
+      __typename: 'Query',
+      hasCollectedOperations: false,
+    });
+    at(INSIGHTS);
+    expect(await screen.findByText(emptyState)).toBeTruthy();
+  });
+});
+
 describe('proposals', () => {
   it(
     'reads the permission from the layout, not a document of its own',

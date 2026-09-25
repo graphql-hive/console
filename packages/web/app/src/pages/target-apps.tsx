@@ -162,7 +162,6 @@ function TargetAppsView(props: { sorting: SortState }) {
   });
   const sortingState = [{ id: props.sorting.field, desc: props.sorting.direction === 'DESC' }];
 
-  const project = data.data?.target;
   const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
 
   useRedirect({
