@@ -822,7 +822,7 @@ export class SchemaVersionStore {
         FROM
           "schema_versions" as "sv"
         WHERE
-          "sv"."target_ud" = ${graph.targetId}
+          "sv"."target_id" = ${graph.targetId}
           AND "sv"."is_composable" IS TRUE
           AND "sv"."graph_id" IS NULL
         ORDER BY
