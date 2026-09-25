@@ -27,9 +27,9 @@ and schema publish results accurately when using `--github`.
   `{ "registry": "...", "token": "..." }` format is read correctly again.
 - Passing both a schema file and `--revision` to `hive schema:publish` now fails with error `[123]`
   instead of ignoring the file.
-- `--github` for `schema:check` and `schema:publish`, and `hive schema:push`, need a Hive server that
-  includes the new `GitHubSchemaCheckSuccess`, `GitHubSchemaPublishSuccess` and `SchemaPushOk` fields.
-  Older servers are reported with error `[125]`.
+- `--github` for `schema:check` and `schema:publish` needs a Hive server that includes the new
+  `GitHubSchemaCheckSuccess` and `GitHubSchemaPublishSuccess` fields. Older servers are reported with
+  error `[125]`.
 
 **New error codes**
 
@@ -52,8 +52,8 @@ Invalid registry access tokens that expired are reported as `[106]`.
 
 **New features**
 
-- `hive schema:push` reports when a revision with the same schema already exists and skips it, shows
-  when a pushed revision expires, and warns when `--service` is ignored for a single-schema project.
+- `hive schema:push` shows when a pushed revision expires, and warns when `--service` is ignored for a
+  single-schema project.
 - `hive app:create` shows why the app name or version was rejected.
 - Error messages link to the documentation of their error code, and the CLI README lists every error
   code with its exit code and recommended fix. The list is also published as `errors.json` in the

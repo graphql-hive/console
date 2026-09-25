@@ -17,7 +17,6 @@ const schemaPushMutation = graphql(/* GraphQL */ `
   mutation CLI_SchemaPushMutation($input: SchemaPushInput!) {
     schemaPush(input: $input) {
       ok {
-        isSkipped
         schemaRevision {
           service
           revision
@@ -133,8 +132,7 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
         throw new APIError('Schema push returned no result.');
       }
 
-      const { isSkipped, schemaRevision: revision } = result.schemaPush.ok;
-      const revisionName = `${revision.service ? `${revision.service}@` : ''}${revision.revision}`;
+      const revision = result.schemaPush.ok.schemaRevision;
 
       if (flags.service && !revision.service) {
         this.warn(
@@ -142,13 +140,7 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
         );
       }
 
-      if (isSkipped) {
-        this.warn(
-          `Schema revision "${revisionName}" already exists with the same schema. Skipping...`,
-        );
-      } else {
-        this.logSuccess('Schema revision pushed.');
-      }
+      this.logSuccess('Schema revision pushed.');
       if (revision.service) {
         this.logInfo(`Service: ${revision.service}`);
       }
