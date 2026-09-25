@@ -5,7 +5,7 @@ export function Label({ className, children, ...props }: ComponentProps<'span'>)
   return (
     <span
       className={cn(
-        'bg-accent_10 text-accent inline-block rounded-sm px-2 py-1 text-xs font-medium tracking-widest',
+        'bg-accent-tint text-accent inline-block rounded-sm px-2 py-1 text-xs font-medium tracking-widest',
         className,
       )}
       {...props}

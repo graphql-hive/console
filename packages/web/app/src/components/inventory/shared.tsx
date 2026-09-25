@@ -83,8 +83,8 @@ export function OriginTag(props: { origin: Origin }) {
         {
           ui: 'bg-neutral-4 text-neutral-11 rounded-xs text-2xs px-1 py-px font-mono leading-none',
           v2: 'bg-neutral-5 text-neutral-12 rounded-xs text-2xs px-1 py-px font-mono leading-none',
-          base: 'bg-success_80/20 text-success_80 rounded-xs text-2xs px-1 py-px font-mono leading-none',
-          raw: 'bg-warning_10 text-warning rounded-xs text-2xs px-1 py-px font-mono leading-none',
+          base: 'bg-success-muted/20 text-success-muted rounded-xs text-2xs px-1 py-px font-mono leading-none',
+          raw: 'bg-warning-tint text-warning rounded-xs text-2xs px-1 py-px font-mono leading-none',
         }[props.origin]
       }
     >

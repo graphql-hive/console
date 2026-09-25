@@ -32,7 +32,7 @@ const radioItemVariants = cva(
         class: [
           'border-line-subtle bg-transparent',
           'hover:bg-neutral-3',
-          'data-[checked]:bg-neutral-3 data-[checked]:border-accent_30',
+          'data-[checked]:bg-neutral-3 data-[checked]:border-accent-line',
         ],
       },
       {
@@ -50,7 +50,7 @@ const radioItemVariants = cva(
         class: [
           'bg-neutral-4 border-line',
           'hover:bg-neutral-5',
-          'data-[checked]:bg-neutral-5 data-[checked]:border-accent_30',
+          'data-[checked]:bg-neutral-5 data-[checked]:border-accent-line',
         ],
       },
     ],

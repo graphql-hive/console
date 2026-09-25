@@ -212,7 +212,7 @@ function stopPropagation(event: MouseEvent) {
 const tone = { default: 'text-fg', muted: 'text-fg-secondary' } as const;
 const linkTone = {
   default: 'text-fg-default hover:text-fg hover:underline underline-offset-2',
-  accent: 'text-accent_80 hover:text-accent hover:underline underline-offset-2',
+  accent: 'text-accent-muted hover:text-accent hover:underline underline-offset-2',
 } as const;
 
 const statusIconTone: Record<StatusColor, string> = {

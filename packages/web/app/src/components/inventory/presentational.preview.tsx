@@ -139,9 +139,9 @@ export const Banners = createPreview({
       <CallSite
         source="pages/target-insights-coordinate.tsx:257"
         origin="ui"
-        note="The only Alert that is neither default nor destructive: it hand-rolls an info look with border-info_10 bg-info_08 text-info. The variant it wants does not exist, so the call site invented it."
+        note="The only Alert that is neither default nor destructive: it hand-rolls an info look with border-info-line-subtle bg-info-tint-subtle text-info. The variant it wants does not exist, so the call site invented it."
       >
-        <Alert className="border-info_10 bg-info_08 text-info">
+        <Alert className="border-info-line-subtle bg-info-tint-subtle text-info">
           <AlertTriangleIcon className="size-4" />
           <AlertTitle>Coordinate resolutions were recently added.</AlertTitle>
           <AlertDescription>

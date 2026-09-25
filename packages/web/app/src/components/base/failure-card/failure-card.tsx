@@ -33,13 +33,13 @@ export function FailureCard({ title, aside, items, viewLabel = 'View' }: Failure
     return null;
   }
   return (
-    <div className="border-critical_30 bg-critical_08 overflow-hidden rounded-md border">
-      <div className="border-critical_30 flex items-center gap-2 border-b px-4 py-2.5">
+    <div className="border-critical-line bg-critical-tint-subtle overflow-hidden rounded-md border">
+      <div className="border-critical-line flex items-center gap-2 border-b px-4 py-2.5">
         <AlertTriangle className="text-critical size-4 shrink-0" />
         <span className="text-fg text-sm font-medium">{title}</span>
         {aside ? <span className="text-fg-secondary ml-auto text-xs">{aside}</span> : null}
       </div>
-      <ul className="divide-critical_10 divide-y">
+      <ul className="divide-critical-line-subtle divide-y">
         {items.map(item => (
           <li
             key={item.key}

@@ -266,9 +266,9 @@ function UsageChip({ used, limit }: { used: number; limit: number }) {
   const ratio = limit > 0 ? used / limit : 0;
   const color =
     used >= limit
-      ? 'border-critical_30 bg-critical_08 text-critical'
+      ? 'border-critical-line bg-critical-tint-subtle text-critical'
       : ratio >= 0.8
-        ? 'border-warning/40 bg-warning/10 text-warning'
+        ? 'border-warning-line bg-warning-tint text-warning'
         : 'border-neutral-5 bg-neutral-3 text-neutral-11';
   const label = `${used} / ${limit} rules`;
   const title =

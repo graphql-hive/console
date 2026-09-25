@@ -26,8 +26,8 @@ export const buttonVariants = cva(
         default: 'text-fg-muted hover:text-fg-default dark:text-fg-default',
         active: ['border-line dark:border-line-strong text-fg', 'bg-neutral-3 dark:bg-neutral-5'],
         action: [
-          'border-dashed border-accent_30 text-accent_80 bg-accent_08',
-          'hover:border-accent_80 hover:text-accent hover:bg-accent_10',
+          'border-dashed border-accent-line text-accent-muted bg-accent-tint-subtle',
+          'hover:border-accent-muted hover:text-accent hover:bg-accent-tint',
         ],
         'muted-action': ['border-dashed hover:bg-neutral-3 hover:border-neutral-7 hover:text-fg'],
         // Standard button styles (for form actions)
@@ -35,7 +35,7 @@ export const buttonVariants = cva(
         outline: 'border-line bg-transparent text-fg-default hover:bg-neutral-4 hover:text-fg',
         ghost: 'border-transparent bg-transparent text-fg-secondary hover:text-fg',
         destructive: [
-          'bg-critical_08 border-critical_30 text-critical_80 hover:bg-critical_10 hover:border-critical hover:text-critical',
+          'bg-critical-tint-subtle border-critical-line text-critical-muted hover:bg-critical-tint hover:border-critical hover:text-critical',
         ],
         // Text that acts: accent, underlined on hover, no box. Sits inline with the copy around it.
         link: 'text-accent underline-offset-4 hover:underline',

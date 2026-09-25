@@ -83,7 +83,7 @@ function BareModal(props: {
   const body = (
     <BaseDialog.Root open={props.open} onOpenChange={props.onOpenChange}>
       <BaseDialog.Portal>
-        <BaseDialog.Backdrop className="bg-neutral-1_01 fixed inset-0 z-50 backdrop-blur-sm" />
+        <BaseDialog.Backdrop className="bg-neutral-1/1 fixed inset-0 z-50 backdrop-blur-sm" />
         <BaseDialog.Popup
           ref={setPopup}
           className="bg-neutral-3 border-neutral-5 fixed left-1/2 top-1/2 z-50 w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-lg border p-6 outline-none"

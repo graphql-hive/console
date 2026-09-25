@@ -94,12 +94,14 @@ export const Interactive = createPreview(() => (
 export const BodyPadding = createPreview(() => (
   <div className="grid w-[36rem] grid-cols-2 gap-4">
     <Card variants={{ onSurface: 'raised' }} title="Default">
-      <div className="bg-accent/20 text-neutral-11 rounded-sm p-4 text-center text-xs">
+      <div className="bg-accent-tint-strong text-neutral-11 rounded-sm p-4 text-center text-xs">
         Inset by the card's p-5
       </div>
     </Card>
     <Card variants={{ onSurface: 'raised', bodyPadding: 'none' }} title="None">
-      <div className="bg-accent/20 text-neutral-11 p-4 text-center text-xs">Runs to the edge</div>
+      <div className="bg-accent-tint-strong text-neutral-11 p-4 text-center text-xs">
+        Runs to the edge
+      </div>
     </Card>
   </div>
 ));
@@ -146,7 +148,7 @@ export const Playground = createPreview({
       // Tinted so `bodyPadding` is visible; off, the card is just its heading block.
       derive: on =>
         on ? (
-          <div className="bg-accent/20 text-neutral-11 p-4 text-center text-xs">Body</div>
+          <div className="bg-accent-tint-strong text-neutral-11 p-4 text-center text-xs">Body</div>
         ) : undefined,
     },
   }),

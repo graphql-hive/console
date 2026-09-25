@@ -83,7 +83,9 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
                   <li
                     className={cn(
                       'border-l-2 pl-4',
-                      readChanges.includes(change.href) ? 'border-transparent' : 'border-accent_80',
+                      readChanges.includes(change.href)
+                        ? 'border-transparent'
+                        : 'border-accent-muted',
                     )}
                     key={index}
                   >

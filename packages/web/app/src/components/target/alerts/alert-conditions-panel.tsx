@@ -193,7 +193,7 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
       })}
       target="_blank"
       rel="noreferrer"
-      className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+      className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
     >
       {rule.savedFilter.name}
       <ExternalLink className="size-3" />

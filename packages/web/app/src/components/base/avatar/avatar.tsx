@@ -3,7 +3,7 @@ import { User } from 'lucide-react';
 import { Avatar as BaseAvatar } from '@base-ui/react/avatar';
 
 const avatarVariants = cva(
-  'bg-accent_10 text-fg inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full font-medium',
+  'bg-accent-tint text-fg inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full font-medium',
   {
     variants: {
       size: {
@@ -13,7 +13,7 @@ const avatarVariants = cva(
       variant: {
         default: '',
         /** An accent ring, for the signed-in user's own avatar in the header. */
-        outlined: 'border-accent_80 border-1',
+        outlined: 'border-accent-muted border-1',
       },
     },
     defaultVariants: {

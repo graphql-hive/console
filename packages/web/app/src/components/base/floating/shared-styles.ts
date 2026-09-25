@@ -66,8 +66,8 @@ export const itemVariants = cva(
     variants: {
       variant: {
         default: 'px-2 text-fg-default',
-        navigationLink: 'hover:text-accent text-accent_80 justify-end pr-2 hover:bg-transparent',
-        action: 'pl-2 hover:bg-accent_10 hover:text-accent text-accent_80',
+        navigationLink: 'hover:text-accent text-accent-muted justify-end pr-2 hover:bg-transparent',
+        action: 'pl-2 hover:bg-accent-tint hover:text-accent text-accent-muted',
         destructiveAction: 'pl-2 text-red-400 hover:bg-red-300/10',
       },
       highlighted: {

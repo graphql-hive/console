@@ -24,7 +24,6 @@
   --color-inherit: inherit;
 
   --color-neutral-1: hsl(var(--neutral-1));
-  --color-neutral-1_01: hsl(var(--neutral-1) / 0.01);
   --color-neutral-2: hsl(var(--neutral-2));
   --color-neutral-3: hsl(var(--neutral-3));
   --color-neutral-4: hsl(var(--neutral-4));
@@ -38,34 +37,45 @@
   --color-neutral-12: hsl(var(--neutral-12));
 
   --color-accent: hsl(var(--accent));
-  --color-accent_80: hsl(var(--accent) / 0.8);
-  --color-accent_30: hsl(var(--accent) / 0.3);
-  --color-accent_10: hsl(var(--accent) / 0.1);
-  --color-accent_08: hsl(var(--accent) / 0.08);
-
   --color-success: hsl(var(--success));
-  --color-success_80: hsla(var(--success) / 0.8);
-  --color-success_30: hsla(var(--success) / 0.3);
-  --color-success_10: hsla(var(--success) / 0.1);
-  --color-success_08: hsla(var(--success) / 0.08);
-
   --color-info: hsl(var(--info));
-  --color-info_80: hsla(var(--info) / 0.8);
-  --color-info_30: hsla(var(--info) / 0.3);
-  --color-info_10: hsla(var(--info) / 0.1);
-  --color-info_08: hsla(var(--info) / 0.08);
-
   --color-warning: hsl(var(--warning));
-  --color-warning_80: hsla(var(--warning) / 0.8);
-  --color-warning_30: hsla(var(--warning) / 0.3);
-  --color-warning_10: hsla(var(--warning) / 0.1);
-  --color-warning_08: hsla(var(--warning) / 0.08);
-
   --color-critical: hsl(var(--critical));
-  --color-critical_80: hsla(var(--critical) / 0.8);
-  --color-critical_30: hsla(var(--critical) / 0.3);
-  --color-critical_10: hsla(var(--critical) / 0.1);
-  --color-critical_08: hsla(var(--critical) / 0.08);
+
+  --color-accent-tint: hsl(var(--accent) / 0.1);
+  --color-accent-tint-subtle: hsl(var(--accent) / 0.08);
+  --color-accent-tint-strong: hsl(var(--accent) / 0.3);
+  --color-accent-line: hsl(var(--accent) / 0.3);
+  --color-accent-line-subtle: hsl(var(--accent) / 0.1);
+  --color-accent-muted: hsl(var(--accent) / 0.8);
+
+  --color-success-tint: hsl(var(--success) / 0.1);
+  --color-success-tint-subtle: hsl(var(--success) / 0.08);
+  --color-success-tint-strong: hsl(var(--success) / 0.3);
+  --color-success-line: hsl(var(--success) / 0.3);
+  --color-success-line-subtle: hsl(var(--success) / 0.1);
+  --color-success-muted: hsl(var(--success) / 0.8);
+
+  --color-info-tint: hsl(var(--info) / 0.1);
+  --color-info-tint-subtle: hsl(var(--info) / 0.08);
+  --color-info-tint-strong: hsl(var(--info) / 0.3);
+  --color-info-line: hsl(var(--info) / 0.3);
+  --color-info-line-subtle: hsl(var(--info) / 0.1);
+  --color-info-muted: hsl(var(--info) / 0.8);
+
+  --color-warning-tint: hsl(var(--warning) / 0.1);
+  --color-warning-tint-subtle: hsl(var(--warning) / 0.08);
+  --color-warning-tint-strong: hsl(var(--warning) / 0.3);
+  --color-warning-line: hsl(var(--warning) / 0.3);
+  --color-warning-line-subtle: hsl(var(--warning) / 0.1);
+  --color-warning-muted: hsl(var(--warning) / 0.8);
+
+  --color-critical-tint: hsl(var(--critical) / 0.1);
+  --color-critical-tint-subtle: hsl(var(--critical) / 0.08);
+  --color-critical-tint-strong: hsl(var(--critical) / 0.3);
+  --color-critical-line: hsl(var(--critical) / 0.3);
+  --color-critical-line-subtle: hsl(var(--critical) / 0.1);
+  --color-critical-muted: hsl(var(--critical) / 0.8);
 
   --color-red-50: #fef5f5;
   --color-red-100: #fdeaeb;
@@ -291,7 +301,7 @@
     /* Tailwind base utility variables */
     --tw-ring-inset: ;
     --tw-ring-offset-width: 1px;
-    --tw-ring-offset-color: var(--color-accent_30);
+    --tw-ring-offset-color: var(--color-accent-line);
     --tw-ring-offset-shadow: 0 0 #0000;
     --tw-ring-shadow: 0 0 #0000;
     --tw-shadow: 0 0 #0000;
@@ -584,7 +594,7 @@
 }
 
 .hive-badge-is-changed:after {
-  @apply border-b-accent bg-accent_80 absolute right-2 size-1.5 rounded-full border content-[''];
+  @apply border-b-accent bg-accent-muted absolute right-2 size-1.5 rounded-full border content-[''];
 }
 
 /*

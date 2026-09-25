@@ -51,10 +51,11 @@ export function stateBadgeItem(state: MetricAlertRuleState) {
 }
 
 const STATE_SUMMARY_CLASS: Record<MetricAlertRuleState, string> = {
-  [MetricAlertRuleState.Normal]: 'border-success_10 bg-success_08 text-success',
-  [MetricAlertRuleState.Pending]: 'border-warning_10 bg-warning_08 text-warning',
-  [MetricAlertRuleState.Firing]: 'border-critical_10 bg-critical_08 text-critical',
-  [MetricAlertRuleState.Recovering]: 'border-info_10 bg-info_08 text-info',
+  [MetricAlertRuleState.Normal]: 'border-success-line-subtle bg-success-tint-subtle text-success',
+  [MetricAlertRuleState.Pending]: 'border-warning-line-subtle bg-warning-tint-subtle text-warning',
+  [MetricAlertRuleState.Firing]:
+    'border-critical-line-subtle bg-critical-tint-subtle text-critical',
+  [MetricAlertRuleState.Recovering]: 'border-info-line-subtle bg-info-tint-subtle text-info',
 };
 
 export type AlertEventRow = {
@@ -258,7 +259,7 @@ export function AlertEventDetail({
       })}
       target="_blank"
       rel="noreferrer"
-      className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+      className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
     >
       {rule.savedFilter.name}
       <ExternalLink className="size-3" />

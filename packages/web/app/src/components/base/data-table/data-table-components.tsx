@@ -112,7 +112,7 @@ export function DataTableRow({
         onClick && surface[onSurface].hover,
         // The critical tint replaces the stripe rather than layering on it.
         striped && !critical && surface[onSurface].stripe,
-        critical && 'bg-critical_08',
+        critical && 'bg-critical-tint-subtle',
         'data-[state=expanded]:bg-neutral-3 data-[state=expanded]:border-b-0',
         'data-[state=selected]:bg-neutral-12/10 dark:data-[state=selected]:bg-neutral-12/10',
         onClick && 'cursor-pointer',

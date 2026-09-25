@@ -769,7 +769,7 @@ function OIDCAccessSettings(props: {
                       <Link
                         to="/$organizationSlug/view/members/groups"
                         params={{ organizationSlug: organization.slug }}
-                        className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                        className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
                       >
                         Manage Groups
                       </Link>
@@ -784,7 +784,7 @@ function OIDCAccessSettings(props: {
                       <Link
                         to="/$organizationSlug/view/members"
                         params={{ organizationSlug: organization.slug }}
-                        className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                        className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
                       >
                         Manage Users
                       </Link>
@@ -811,7 +811,7 @@ function OIDCAccessSettings(props: {
                               to="/$organizationSlug/view/members"
                               params={{ organizationSlug: organization.slug }}
                               search={{ showPendingSCIMManagementConfirmations: true }}
-                              className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                              className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
                             >
                               Review conflicts
                             </Link>
@@ -829,7 +829,7 @@ function OIDCAccessSettings(props: {
                       <Link
                         to="/$organizationSlug/view/members/groups"
                         params={{ organizationSlug: organization.slug }}
-                        className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+                        className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
                       >
                         Manage Groups
                       </Link>

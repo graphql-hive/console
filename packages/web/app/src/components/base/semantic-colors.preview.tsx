@@ -5,44 +5,54 @@ import { StatusDot } from './status-dot/status-dot';
 
 export const nav: NavPath = 'Base/Foundations/SemanticColors';
 
-/**
- * The four state colours and their alpha steps, as defined in `index.css`. `success`, `warning`,
- * `critical` and `info` each come as the full token plus `_80`, `_30`, `_10` and `_08`, so a
- * component paints a state without reaching for a raw green, yellow or red: a tinted pill is
- * `bg-<state>_10 text-<state>`, a dot is `bg-<state>`, a hover is `_80`.
- */
+/** A tinted pill is `bg-<state>-tint text-<state>`, a dot is `bg-<state>`, a hover is `-muted`. */
 const STATES = [
   {
     name: 'success',
     solid: 'bg-success',
-    steps: ['bg-success_80', 'bg-success_30', 'bg-success_10', 'bg-success_08'],
+    steps: [
+      'bg-success-muted',
+      'bg-success-tint-strong',
+      'bg-success-tint',
+      'bg-success-tint-subtle',
+    ],
     text: 'text-success',
     use: 'a check passed, a version is valid, a permission is allowed',
   },
   {
     name: 'warning',
     solid: 'bg-warning',
-    steps: ['bg-warning_80', 'bg-warning_30', 'bg-warning_10', 'bg-warning_08'],
+    steps: [
+      'bg-warning-muted',
+      'bg-warning-tint-strong',
+      'bg-warning-tint',
+      'bg-warning-tint-subtle',
+    ],
     text: 'text-warning',
     use: 'allowed with a caveat, a warning-level alert',
   },
   {
     name: 'critical',
     solid: 'bg-critical',
-    steps: ['bg-critical_80', 'bg-critical_30', 'bg-critical_10', 'bg-critical_08'],
+    steps: [
+      'bg-critical-muted',
+      'bg-critical-tint-strong',
+      'bg-critical-tint',
+      'bg-critical-tint-subtle',
+    ],
     text: 'text-critical',
     use: 'a failed check, a denied permission, an error',
   },
   {
     name: 'info',
     solid: 'bg-info',
-    steps: ['bg-info_80', 'bg-info_30', 'bg-info_10', 'bg-info_08'],
+    steps: ['bg-info-muted', 'bg-info-tint-strong', 'bg-info-tint', 'bg-info-tint-subtle'],
     text: 'text-info',
     use: 'an info-level alert, a neutral note',
   },
 ] as const;
 
-const STEP_LABELS = ['', '_80', '_30', '_10', '_08'];
+const STEP_LABELS = ['', 'muted', 'tint-strong', 'tint', 'tint-subtle'];
 
 export const Tokens = createPreview(() => (
   <div className="flex flex-col gap-5">
