@@ -577,7 +577,7 @@ function LaboratoryPageContent(props: {
             visiblePlugin={operationCollectionsPlugin}
             schema={schema}
             forcedTheme="dark"
-            className={isFullScreen ? 'fixed inset-0 bg-[#030711]' : ''}
+            className={isFullScreen ? 'bg-editor-backdrop fixed inset-0' : ''}
             onTabChange={handleTabChange}
             readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
           >
@@ -676,7 +676,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
   return (
     <div
       id="preflight-logs"
-      className="flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]"
+      className="bg-editor-backdrop flex max-h-[200px] w-full flex-col overflow-hidden"
     >
       <Collapsible
         variant="panel"

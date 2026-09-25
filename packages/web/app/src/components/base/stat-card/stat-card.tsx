@@ -8,8 +8,8 @@ const statTitleVariants = cva('text-sm font-medium', {
   variants: {
     tone: {
       default: 'text-fg-default',
-      success: 'text-emerald-500',
-      danger: 'text-red-500',
+      success: 'text-success',
+      danger: 'text-critical',
       muted: 'text-fg-secondary',
     },
   },

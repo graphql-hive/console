@@ -27,8 +27,8 @@ export function labelize(message: string) {
 }
 
 const severityLevelMapping = {
-  [SeverityLevelType.Safe]: clsx('text-emerald-400'),
-  [SeverityLevelType.Dangerous]: clsx('text-yellow-400'),
+  [SeverityLevelType.Safe]: clsx('text-success'),
+  [SeverityLevelType.Dangerous]: clsx('text-warning'),
 } as Record<SeverityLevelType, string>;
 
 const ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment = graphql(`
@@ -228,7 +228,7 @@ function ChangeItem(
               <div>
                 <span className="text-neutral-10">{labelize(change.message)}</span>
                 {change.isSafeBasedOnUsage && (
-                  <span className="cursor-pointer text-yellow-700 dark:text-yellow-500">
+                  <span className="text-warning cursor-pointer">
                     {' '}
                     <CheckIcon className="inline size-3" /> Safe based on usage data
                   </span>
@@ -256,7 +256,7 @@ function ChangeItem(
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <>
                     {' '}
-                    <span className="text-neutral-1 inline-flex items-center space-x-1 rounded-sm bg-orange-500 px-2 py-1 align-middle font-bold">
+                    <span className="text-neutral-1 bg-warning inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
                       <BoxIcon className="size-4 stroke-[2px]" />
                       <span className="text-xs">
                         {change.affectedAppDeployments.totalCount}{' '}
@@ -598,7 +598,7 @@ function AffectedAppDeploymentsPanel(props: {
             schemaCheckId: props.schemaCheckId,
           }}
           search={{ coordinate: props.coordinate }}
-          className="mt-2 block text-sm text-orange-500 hover:underline"
+          className="text-warning mt-2 block text-sm hover:underline"
         >
           View all ({props.connection.totalCount}) affected app deployments
         </Link>
@@ -615,7 +615,7 @@ function ApprovedByBadge(props: {
     approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
 
   return (
-    <span className="cursor-pointer text-green-500">
+    <span className="text-success cursor-pointer">
       <CheckIcon className="inline size-3" /> Approved by {approvalName}
     </span>
   );
@@ -727,7 +727,7 @@ export function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="size-4 text-emerald-500" />
+        <CircleCheckIcon className="text-success size-4" />
         <h2 className="text-neutral-12 text-base font-medium">No Graph Changes</h2>
       </div>
       <p className="text-neutral-10 text-xs">There are no changes in this graph for this graph.</p>

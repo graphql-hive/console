@@ -271,7 +271,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
                   targetSlug,
                   schemaCheckId: props.schemaCheckId,
                 }}
-                className="text-orange-500 hover:underline"
+                className="text-warning hover:underline"
               >
                 Schema Check
               </Link>
@@ -283,7 +283,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
             props.coordinate ? (
               <>
                 App deployments affected by breaking change to{' '}
-                <code className="bg-neutral-5 rounded-sm px-1 py-0.5 font-mono text-orange-400">
+                <code className="bg-neutral-5 text-warning rounded-sm px-1 py-0.5 font-mono">
                   {props.coordinate}
                 </code>
               </>

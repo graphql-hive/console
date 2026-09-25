@@ -249,7 +249,7 @@ export function NativeCompositionSettings(props: {
       ) : projectQuery.error ? (
         <div className="flex flex-row items-center gap-x-4">
           <div>
-            <HeartCrackIcon className="size-10 text-red-500" />
+            <HeartCrackIcon className="text-critical size-10" />
           </div>
           <div>
             <div className="text-base font-semibold">
@@ -262,11 +262,11 @@ export function NativeCompositionSettings(props: {
           <div>
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Compatible ? (
-              <PartyPopperIcon className="size-10 text-emerald-500" />
+              <PartyPopperIcon className="text-success size-10" />
             ) : null}
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Incompatible ? (
-              <HeartCrackIcon className="size-10 text-red-500" />
+              <HeartCrackIcon className="text-critical size-10" />
             ) : null}
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Unknown ? (

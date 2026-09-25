@@ -51,8 +51,7 @@ export function Combobox(
         ),
       }}
       classNames={{
-        control: () =>
-          clsx('bg-neutral-5! border-neutral-5! hover:border-orange-400! shadow-none!'),
+        control: () => clsx('bg-neutral-5! border-neutral-5! hover:border-accent! shadow-none!'),
         valueContainer: () => clsx('bg-neutral-5! rounded-xl!'),
         indicatorsContainer: () => clsx('bg-neutral-5! rounded-xl!'),
         container: () => clsx('bg-neutral-5! rounded-xl! shadow-lg! text-sm!'),

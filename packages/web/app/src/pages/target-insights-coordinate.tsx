@@ -292,7 +292,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                     <>
                       {isLoading ? '-' : formatNumber(totalResolutions)}
                       {totalFailures ? (
-                        <span className="ml-2 text-sm font-normal text-red-500">
+                        <span className="text-critical ml-2 text-sm font-normal">
                           ({formatNumber(totalFailures)} errors)
                         </span>
                       ) : null}

@@ -974,7 +974,7 @@ function FirstComposableGraphVersion() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="size-4 text-emerald-500" />
+        <CircleCheckIcon className="text-success size-4" />
         <h2 className="text-neutral-12 text-base font-medium">First composable graph</h2>
       </div>
       <p className="text-neutral-10 text-xs">
@@ -988,7 +988,7 @@ function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="size-4 text-emerald-500" />
+        <CircleCheckIcon className="text-success size-4" />
         <h2 className="text-neutral-12 text-base font-medium">No Graph Changes</h2>
       </div>
       <p className="text-neutral-10 text-xs">There are no public facing changes in the graph.</p>
@@ -1244,8 +1244,8 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
 
 const breakingChangeTypeModes: { id: SeverityLevelType; label: string; dotColor: string }[] = [
   { id: SeverityLevelType.Breaking, label: 'Breaking', dotColor: 'bg-critical' },
-  { id: SeverityLevelType.Dangerous, label: 'Dangerous', dotColor: 'bg-orange-500' },
-  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: 'bg-blue-400' },
+  { id: SeverityLevelType.Dangerous, label: 'Dangerous', dotColor: 'bg-warning' },
+  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: 'bg-info' },
 ];
 
 function ChangeTypeToggle(props: {
@@ -1527,7 +1527,7 @@ export const SchemaVersionSummary = (props: {
               ) : (
                 <Tooltip
                   trigger={
-                    <span className="pl-2 text-base text-green-500">
+                    <span className="text-success pl-2 text-base">
                       <CheckIcon size="14" className="inline" /> All safe
                     </span>
                   }
@@ -1599,10 +1599,10 @@ const kindMeta = {
   SubgraphDiffAdded: {
     label: 'Added',
     Icon: Plus,
-    text: 'text-yellow-800',
-    bg: 'bg-yellow-600',
-    ring: 'ring-yellow-500/25',
-    dot: 'bg-yellow-600',
+    text: 'text-warning',
+    bg: 'bg-warning-tint-strong',
+    ring: 'ring-warning-line',
+    dot: 'bg-warning',
   },
   SubgraphDiffRemoved: {
     label: 'Removed',
@@ -1615,15 +1615,15 @@ const kindMeta = {
   SubgraphDiffChanged: {
     label: 'Updated',
     Icon: GitCompareArrows,
-    text: 'text-neutral-800',
-    bg: 'bg-blue-600',
-    ring: 'ring-blue-500/25',
-    dot: 'bg-blue-600',
+    text: 'text-info',
+    bg: 'bg-info-tint-strong',
+    ring: 'ring-info-line',
+    dot: 'bg-info',
   },
   SubgraphDiffUnchanged: {
     label: 'Unchanged',
     Icon: CircleIcon,
-    text: 'text-neutral-800',
+    text: 'text-fg-secondary',
     bg: 'bg-neutral-3',
     ring: 'ring-neutral-6',
     dot: 'bg-neutral-5',

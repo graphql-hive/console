@@ -16,8 +16,8 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
         <TriangleAlert
           className={clsx(
             'size-4',
-            active ? 'text-orange-500' : 'text-neutral-8',
-            'hover:text-orange-500',
+            active ? 'text-warning' : 'text-neutral-8',
+            'hover:text-warning',
           )}
         />
       ),
@@ -29,8 +29,8 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
         <CircleX
           className={clsx(
             'size-4',
-            active ? 'text-red-600' : 'text-neutral-8',
-            'hover:text-red-600',
+            active ? 'text-critical' : 'text-neutral-8',
+            'hover:text-critical',
           )}
         />
       ),

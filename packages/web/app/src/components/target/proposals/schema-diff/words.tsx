@@ -23,8 +23,8 @@ export function Word(props: WordProps) {
           props.kind === 'field' && 'text-neutral-11',
           props.kind === 'keyword' && 'text-gray-400',
           props.kind === 'literal' && 'text-neutral-11',
-          props.kind === 'location' && 'text-orange-400',
-          props.kind === 'type' && 'text-orange-400',
+          props.kind === 'location' && 'text-warning',
+          props.kind === 'type' && 'text-warning',
         )}
       >
         {props.text}

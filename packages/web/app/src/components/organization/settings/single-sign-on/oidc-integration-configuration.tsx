@@ -794,7 +794,7 @@ function OIDCAccessSettings(props: {
                     <div>
                       <Popover
                         trigger={
-                          <button type="button" className="flex text-xs text-yellow-500">
+                          <button type="button" className="text-warning flex text-xs">
                             {organization.pendingSCIMManagementConfirmationsCount} SCIM provisioning
                             conflict
                             {organization.pendingSCIMManagementConfirmationsCount === 1 ? '' : 's'}

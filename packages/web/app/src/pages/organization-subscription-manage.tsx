@@ -488,7 +488,7 @@ function SubscriptionSlider({
 
       <div className="ml-auto w-48">
         <Input ref={inputRef} value={inputValue} onChange={handleInputChange} onBlur={handleBlur} />
-        {inputError && <div className="mt-1 text-end text-sm text-red-500">{inputError}</div>}
+        {inputError && <div className="text-critical mt-1 text-end text-sm">{inputError}</div>}
       </div>
     </div>
   );

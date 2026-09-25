@@ -95,7 +95,7 @@ function SendInvitation(props: {
     console.error('Viewer role not found in organization member roles');
     return (
       <>
-        <div className="text-red-500">Viewer role not found in organization member roles</div>
+        <div className="text-critical">Viewer role not found in organization member roles</div>
         <div className="text-neutral-10">Please contact support.</div>
       </>
     );

@@ -154,7 +154,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         <Popover
                           trigger={
                             <button type="button" aria-label="Warning">
-                              <TriangleAlert className="text-yellow-700" />
+                              <TriangleAlert className="text-warning" />
                             </button>
                           }
                           openOnHover
@@ -250,7 +250,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                     />
                   </div>
                   {focusedPermission === permission.id && (
-                    <div className="pointer-events-none absolute bottom-[3px] left-[-7px] right-0 top-[-4px] rounded-sm border border-yellow-400" />
+                    <div className="border-warning pointer-events-none absolute bottom-[3px] left-[-7px] right-0 top-[-4px] rounded-sm border" />
                   )}
                 </div>
               );

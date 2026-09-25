@@ -341,10 +341,10 @@ function TargetAppVersionContent(props: {
           </div>
         </div>
         {coordinates ? (
-          <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
+          <div className="border-warning-line bg-warning-tint mt-4 flex items-center justify-between rounded-md border px-4 py-2 text-sm">
             <span>
               Showing operations affected by{' '}
-              <code className="bg-neutral-5 rounded-sm px-1 py-0.5 font-mono text-orange-400">
+              <code className="bg-neutral-5 text-warning rounded-sm px-1 py-0.5 font-mono">
                 {coordinates}
               </code>
             </span>
@@ -357,7 +357,7 @@ function TargetAppVersionContent(props: {
                 appName: props.appName,
                 appVersion: props.appVersion,
               }}
-              className="text-orange-500 hover:underline"
+              className="text-warning hover:underline"
             >
               Clear filter
             </Link>
@@ -396,7 +396,7 @@ function TargetAppVersionContent(props: {
                   <div
                     className={cn(
                       'text-neutral-12 truncate text-sm font-semibold',
-                      appDeployment?.status === AppDeploymentStatus.Retired && 'text-red-600',
+                      appDeployment?.status === AppDeploymentStatus.Retired && 'text-critical',
                       appDeployment?.status === AppDeploymentStatus.Pending && 'text-neutral-11',
                     )}
                   >

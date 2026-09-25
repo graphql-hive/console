@@ -392,7 +392,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                     }
                   />
                 </div>
-                <div className="text-red-500">
+                <div className="text-critical">
                   {hasInvalidUnitRegex?.test(fromValue) ? (
                     <>Only allowed units are {validUnits.join(', ')}</>
                   ) : !fromParsed ? (
@@ -423,13 +423,13 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                     }
                   />
                 </div>
-                <div className="text-red-500">
+                <div className="text-critical">
                   {hasInvalidUnitRegex?.test(toValue) ? (
                     <>Only allowed units are {validUnits.join(', ')}</>
                   ) : !toParsed ? (
                     <>Invalid date string</>
                   ) : fromParsed && toParsed && fromParsed.getTime() > toParsed.getTime() ? (
-                    <div className="text-red-500">To cannot be before from.</div>
+                    <div className="text-critical">To cannot be before from.</div>
                   ) : null}
                 </div>
               </div>

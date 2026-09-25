@@ -319,7 +319,7 @@ export const DurationFilter = memo(
         <div className="space-y-6 p-2">
           <div className="space-y-2">
             <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-400">MIN</label>
+              <label className="text-fg-secondary font-mono text-xs">MIN</label>
               <Input
                 type="number"
                 value={values[0]}
@@ -330,7 +330,7 @@ export const DurationFilter = memo(
               />
             </div>
             <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-400">MAX</label>
+              <label className="text-fg-secondary font-mono text-xs">MAX</label>
               <Input
                 type="number"
                 value={values[1]}

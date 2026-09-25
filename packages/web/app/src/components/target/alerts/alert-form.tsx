@@ -240,9 +240,9 @@ const THRESHOLD_TYPE_OPTIONS = [
 ] as const;
 
 const SEVERITIES = [
-  { value: 'INFO' as const, label: 'Info', dotClass: 'bg-blue-400' },
-  { value: 'WARNING' as const, label: 'Warning', dotClass: 'bg-yellow-400' },
-  { value: 'CRITICAL' as const, label: 'Critical', dotClass: 'bg-red-400' },
+  { value: 'INFO' as const, label: 'Info', dotClass: 'bg-info' },
+  { value: 'WARNING' as const, label: 'Warning', dotClass: 'bg-warning' },
+  { value: 'CRITICAL' as const, label: 'Critical', dotClass: 'bg-critical' },
 ];
 
 export const AlertFormSchema = z

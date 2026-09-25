@@ -87,7 +87,7 @@ export function ChangeRow(props: {
           className={cn(
             'bg-neutral-3 text-neutral-7 w-[42px] min-w-fit select-none pr-3 text-right',
             props.className,
-            (props.type === 'removal' || removed) && 'bg-red-900/30',
+            (props.type === 'removal' || removed) && 'bg-diff-removed-gutter',
             props.type === 'addition' && 'invisible',
           )}
         >
@@ -98,7 +98,7 @@ export function ChangeRow(props: {
             'bg-neutral-3 text-neutral-7 w-[42px] min-w-fit select-none pr-3 text-right',
             props.className,
             props.type === 'removal' && 'invisible',
-            (props.type === 'addition' || added) && 'bg-green-900/30',
+            (props.type === 'addition' || added) && 'bg-diff-added-gutter',
           )}
         >
           {props.afterLine}
@@ -107,15 +107,16 @@ export function ChangeRow(props: {
           className={cn(
             'bg-neutral-2 px-2',
             props.className,
-            props.type === 'removal' && 'bg-[#561c1d]',
-            props.type === 'addition' && 'bg-green-600 dark:bg-[#11362b]',
+            props.type === 'removal' && 'bg-diff-removed',
+            props.type === 'addition' && 'bg-diff-added',
           )}
         >
           <span
             className={cn(
               'bg-neutral-2',
-              props.type === 'removal' && 'bg-[#561c1d] line-through decoration-[#998c8b]',
-              props.type === 'addition' && 'bg-green-600 dark:bg-[#11362b]',
+              props.type === 'removal' &&
+                'bg-diff-removed decoration-diff-removed-strike line-through',
+              props.type === 'addition' && 'bg-diff-added',
             )}
           >
             {!!props.indent &&
@@ -124,17 +125,17 @@ export function ChangeRow(props: {
               ))}
             {props.severityLevel === SeverityLevelType.Breaking && (
               <span title="Breaking Change">
-                <XIcon className="inline-block text-red-600" />
+                <XIcon className="text-critical inline-block" />
               </span>
             )}
             {props.severityLevel === SeverityLevelType.Dangerous && (
               <span title="Dangerous Change">
-                <TriangleAlert className="mr-1 inline-block size-4 text-yellow-600" />
+                <TriangleAlert className="text-warning mr-1 inline-block size-4" />
               </span>
             )}
             {props.severityLevel === SeverityLevelType.Safe && (
               <span title="Safe Change">
-                <CheckIcon className="mr-1 inline-block text-green-500" />
+                <CheckIcon className="text-success mr-1 inline-block" />
               </span>
             )}
             {props.children}
@@ -161,7 +162,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
   return (
     <span
       className={cn(
-        'bg-[#561c1d] line-through decoration-[#998c8b] hover:bg-red-800',
+        'bg-diff-removed decoration-diff-removed-strike hover:bg-diff-removed-hover line-through',
         props.className,
       )}
     >
@@ -178,12 +179,7 @@ function Addition(props: { children: ReactNode; className?: string }): ReactNode
     }
   }, [change.addition]);
   return (
-    <span
-      className={cn(
-        'bg-green-600 hover:bg-green-700 dark:bg-[#11362b] dark:hover:bg-green-900',
-        props.className,
-      )}
-    >
+    <span className={cn('bg-diff-added hover:bg-diff-added-hover', props.className)}>
       {props.children}
     </span>
   );
