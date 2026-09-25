@@ -14,7 +14,14 @@ import { buildSubgraphSchema } from '@apollo/subgraph';
 import { useDisableIntrospection } from '@graphql-yoga/plugin-disable-introspection';
 import type { CompositeSchema } from '@hive/api/__generated__/types';
 import { createServer } from '@hive/service-common';
-import { appCreate, appPublish, createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
+import {
+  appCreate,
+  appPublish,
+  cliErrorMessage,
+  createCLI,
+  schemaCheck,
+  schemaPublish,
+} from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
 import { createPolicy } from '../api/policy/policy-check.spec';
@@ -1020,7 +1027,7 @@ test.concurrent(
       'fixtures/init-schema.graphql',
     ]);
 
-    await expect(
+    const message = await cliErrorMessage(
       schemaCheck([
         '--registry.accessToken',
         writeToken.secret,
@@ -1031,7 +1038,11 @@ test.concurrent(
         `${organization.slug}/${project.slug}/${target.slug}`,
         'fixtures/breaking-schema.graphql',
       ]),
-    ).rejects.toThrow('Failed to auto-approve: Schema check has schema policy errors');
+    );
+    expect(message).toContain(
+      'Failed to auto-approve the schema check: Schema check has schema policy errors',
+    );
+    expect(message).toContain('[203]');
   },
 );
 

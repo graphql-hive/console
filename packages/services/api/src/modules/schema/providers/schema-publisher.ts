@@ -1371,13 +1371,6 @@ export class SchemaPublisher {
       );
     }
 
-    if (project.type !== Types.ProjectType.SINGLE && !input.service) {
-      return {
-        __typename: 'SchemaPublishMissingServiceError' as const,
-        message: 'Missing service name',
-      } as const;
-    }
-
     let revisionId: string | null = null;
     let revisionName: string | null = null;
     let resolvedSdl = input.sdl ?? input.schema?.sdl ?? null;
@@ -1420,7 +1413,12 @@ export class SchemaPublisher {
     ]);
 
     if (project.type !== Types.ProjectType.SINGLE) {
-      invariant(input.service, 'Service name is required for composite projects.');
+      if (!input.service) {
+        return {
+          __typename: 'SchemaPublishMissingServiceError' as const,
+          message: 'Missing service name',
+        } as const;
+      }
 
       let serviceExists = false;
       if (latestVersion?.schemas) {

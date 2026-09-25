@@ -6,7 +6,7 @@ import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
 import { getServiceHost } from 'testkit/utils';
 import { createHive } from '@graphql-hive/core';
-import { appCheck, appCreate, appPublish, appRetire } from '../../testkit/cli';
+import { appCheck, appCreate, appPublish, appRetire, cliErrorMessage } from '../../testkit/cli';
 import { graphql } from '../../testkit/gql';
 import { execute } from '../../testkit/graphql';
 import { initSeed } from '../../testkit/seed';
@@ -203,9 +203,11 @@ test('app:check handles missing and empty operation inputs', async () => {
   const accessToken = 'unused-access-token';
   const missingOperationsFile = join(tmpdir(), `missing-operations-${Date.now()}.json`);
 
-  await expect(
+  const missingMessage = await cliErrorMessage(
     appCheck(['--registry.accessToken', accessToken, missingOperationsFile]),
-  ).rejects.toThrow(/The file does not exist\./);
+  );
+  expect(missingMessage).toContain('The file does not exist.');
+  expect(missingMessage).toContain('[118]');
 
   const emptyOperationsFile = join(tmpdir(), `empty-operations-${Date.now()}.json`);
   await writeFile(emptyOperationsFile, '{}', 'utf-8');
