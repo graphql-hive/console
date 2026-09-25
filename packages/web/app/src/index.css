@@ -233,6 +233,28 @@
 
   --color-ring: hsl(var(--ring));
 
+  --color-surface-page: hsl(var(--surface-page));
+  --color-surface-card: hsl(var(--surface-card));
+  --color-surface-card-hover: hsl(var(--surface-card-hover));
+  --color-surface-overlay: hsl(var(--surface-overlay));
+  --color-surface-floating: hsl(var(--surface-floating));
+  --color-surface-control: hsl(var(--surface-control));
+  --color-surface-control-raised: hsl(var(--surface-control-raised));
+  --color-surface-selected: hsl(var(--surface-selected));
+  --color-surface-inverse: hsl(var(--surface-inverse));
+
+  --color-fg: hsl(var(--fg));
+  --color-fg-default: hsl(var(--fg-default));
+  --color-fg-secondary: hsl(var(--fg-secondary));
+  --color-fg-muted: hsl(var(--fg-muted));
+  --color-fg-subtle: hsl(var(--fg-subtle));
+  --color-fg-inverse: hsl(var(--fg-inverse));
+
+  --color-line: hsl(var(--line));
+  --color-line-subtle: hsl(var(--line-subtle));
+  --color-line-strong: hsl(var(--line-strong));
+  --color-line-control: hsl(var(--line-control));
+
   --color-card-bg: var(--color-neutral-3);
   --color-card-border: var(--color-neutral-4);
   --color-card-bg-hover: var(--color-neutral-4);
@@ -315,6 +337,28 @@
 
     /* The legacy ui/ focus ring, kept on the accent so it matches base until ui/button goes. */
     --ring: var(--accent);
+
+    --surface-page: var(--neutral-3);
+    --surface-card: var(--neutral-2);
+    --surface-card-hover: var(--neutral-1);
+    --surface-overlay: var(--neutral-3);
+    --surface-floating: var(--neutral-2);
+    --surface-control: var(--neutral-2);
+    --surface-control-raised: var(--neutral-2);
+    --surface-selected: var(--neutral-5);
+    --surface-inverse: var(--neutral-12);
+
+    --fg: var(--neutral-12);
+    --fg-default: var(--neutral-11);
+    --fg-secondary: var(--neutral-10);
+    --fg-muted: var(--neutral-9);
+    --fg-subtle: var(--neutral-8);
+    --fg-inverse: var(--neutral-1);
+
+    --line: var(--neutral-5);
+    --line-subtle: var(--neutral-4);
+    --line-strong: var(--neutral-6);
+    --line-control: var(--neutral-5);
   }
 
   .dark {
@@ -345,6 +389,14 @@
     --chart-5: 258 90% 72%;
     --chart-6: 330 81% 68%;
     --chart-grid: 0 0% 45%;
+
+    --surface-page: var(--neutral-2);
+    --surface-card: var(--neutral-3);
+    --surface-card-hover: var(--neutral-4);
+    --surface-floating: var(--neutral-4);
+    --surface-control: var(--neutral-3);
+    --surface-control-raised: var(--neutral-4);
+    --line-control: var(--neutral-4);
   }
 
   :root {
