@@ -470,11 +470,20 @@ test.concurrent('accepts an invalid service name of an existing service', async 
 
   // Services created before the naming rules existed can have names that are not valid anymore.
   await using connection = await seed.createDbConnection();
-  await connection.pool.query(psql`
+  // Schema logs are linked to a target through the schema versions that include them.
+  const renamed = await connection.pool.any(psql`
     UPDATE "schema_log"
     SET "service_name" = '1-legacy'
-    WHERE "target_id" = ${target.id} AND "service_name" = 'products'
+    WHERE "service_name" = 'products'
+      AND "id" IN (
+        SELECT "schema_version_to_log"."action_id"
+        FROM "schema_version_to_log"
+        JOIN "schema_versions" ON "schema_versions"."id" = "schema_version_to_log"."version_id"
+        WHERE "schema_versions"."target_id" = ${target.id}
+      )
+    RETURNING "id"
   `);
+  expect(renamed).toHaveLength(1);
 
   const push = await schemaPush(
     { target: targetReference, service: '1-legacy', revision: 'v1', sdl },
