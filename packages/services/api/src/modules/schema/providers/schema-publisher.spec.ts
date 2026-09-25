@@ -3,9 +3,7 @@ import { CriticalityLevel } from '@graphql-inspector/core';
 import {
   buildSchemaCheckSuccessGithubOutput,
   changesToMarkdown,
-  getGitHubCheckRunUpdateFailedMessage,
   getSchemaCheckFailureGithubDetails,
-  toGitHubSchemaPublishPayload,
   type MarkdownSchemaChange,
 } from './schema-publisher';
 
@@ -207,67 +205,5 @@ describe('changesToMarkdown', () => {
     ];
 
     expect(changesToMarkdown(changes, false)).toBe('## Found 2 changes\n\nBreaking: 1\nSafe: 1');
-  });
-});
-
-describe('toGitHubSchemaPublishPayload', () => {
-  test('marks a rejected publish as rejected and invalid', () => {
-    expect(
-      toGitHubSchemaPublishPayload({
-        outcome: 'rejected',
-        valid: false,
-        title: 'Detected 2 errors',
-        detailsUrl: null,
-      }),
-    ).toEqual({
-      __typename: 'GitHubSchemaPublishSuccess',
-      message: 'Detected 2 errors',
-      valid: false,
-      rejected: true,
-      linkToWebsite: null,
-    });
-  });
-
-  test('marks a stored but invalid schema version as invalid and not rejected', () => {
-    expect(
-      toGitHubSchemaPublishPayload({
-        outcome: 'published',
-        valid: false,
-        title: 'Detected 1 error',
-        detailsUrl: 'https://app.graphql-hive.com/version',
-      }),
-    ).toMatchObject({
-      valid: false,
-      rejected: false,
-      linkToWebsite: 'https://app.graphql-hive.com/version',
-    });
-  });
-
-  test('marks an ignored publish as valid and not rejected', () => {
-    expect(
-      toGitHubSchemaPublishPayload({
-        outcome: 'ignored',
-        valid: true,
-        title: 'No changes',
-        detailsUrl: null,
-      }),
-    ).toMatchObject({ valid: true, rejected: false });
-  });
-});
-
-describe('getGitHubCheckRunUpdateFailedMessage', () => {
-  test('says the schema was published when a schema version was stored', () => {
-    expect(getGitHubCheckRunUpdateFailedMessage('published')).toBe(
-      'The schema was published, but the GitHub check-run could not be updated.',
-    );
-  });
-
-  test('does not claim a publish when nothing was stored', () => {
-    expect(getGitHubCheckRunUpdateFailedMessage('rejected')).toBe(
-      'Failed to update the GitHub check-run.',
-    );
-    expect(getGitHubCheckRunUpdateFailedMessage('ignored')).toBe(
-      'Failed to update the GitHub check-run.',
-    );
   });
 });

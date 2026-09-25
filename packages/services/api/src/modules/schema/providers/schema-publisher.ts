@@ -2156,7 +2156,6 @@ export class SchemaPublisher {
 
       if (githubCheckRun) {
         return this.updateGithubCheckRunForSchemaPublish({
-          outcome: 'ignored',
           githubCheckRun,
           force: false,
           initial: false,
@@ -2216,7 +2215,6 @@ export class SchemaPublisher {
 
       if (githubCheckRun) {
         return this.updateGithubCheckRunForSchemaPublish({
-          outcome: 'rejected',
           githubCheckRun,
           force: false,
           initial: false,
@@ -2260,7 +2258,6 @@ export class SchemaPublisher {
 
       if (githubCheckRun) {
         return this.updateGithubCheckRunForSchemaPublish({
-          outcome: 'rejected',
           githubCheckRun,
           force: false,
           initial: false,
@@ -2468,7 +2465,6 @@ export class SchemaPublisher {
 
     if (githubCheckRun) {
       return this.updateGithubCheckRunForSchemaPublish({
-        outcome: 'published',
         githubCheckRun,
         force: false,
         initial: publishResult.state.initial,
@@ -3691,7 +3687,6 @@ export class SchemaPublisher {
   }
 
   private async updateGithubCheckRunForSchemaPublish({
-    outcome,
     initial,
     force,
     valid,
@@ -3702,7 +3697,6 @@ export class SchemaPublisher {
     githubCheckRun,
     detailsUrl,
   }: {
-    outcome: GitHubSchemaPublishOutcome;
     organizationId: string;
     githubCheckRun: {
       owner: string;
@@ -3773,12 +3767,15 @@ export class SchemaPublisher {
         },
         detailsUrl,
       });
-      return toGitHubSchemaPublishPayload({ outcome, valid, title, detailsUrl });
+      return {
+        __typename: 'GitHubSchemaPublishSuccess',
+        message: title,
+      } as const;
     } catch (error: unknown) {
       Sentry.captureException(error);
       return {
         __typename: 'GitHubSchemaPublishError',
-        message: getGitHubCheckRunUpdateFailedMessage(outcome),
+        message: `Failed to create the check-run`,
       } as const;
     }
   }
@@ -3981,28 +3978,4 @@ const SchemaCheckContextIdModel = z
 
 export function isValidServiceName(service: string): boolean {
   return service.length <= 64 && /^[a-zA-Z][\w_-]*$/g.test(service);
-}
-
-/** Whether a publish was ignored (no changes), rejected (nothing stored) or published (a schema version was stored). */
-export type GitHubSchemaPublishOutcome = 'ignored' | 'rejected' | 'published';
-
-export function toGitHubSchemaPublishPayload(args: {
-  outcome: GitHubSchemaPublishOutcome;
-  valid: boolean;
-  title: string;
-  detailsUrl: string | null;
-}) {
-  return {
-    __typename: 'GitHubSchemaPublishSuccess' as const,
-    message: args.title,
-    valid: args.valid,
-    rejected: args.outcome === 'rejected',
-    linkToWebsite: args.detailsUrl,
-  };
-}
-
-export function getGitHubCheckRunUpdateFailedMessage(outcome: GitHubSchemaPublishOutcome) {
-  return outcome === 'published'
-    ? 'The schema was published, but the GitHub check-run could not be updated.'
-    : 'Failed to update the GitHub check-run.';
 }
