@@ -239,8 +239,10 @@ export default class Dev extends Command<typeof Dev> {
       throw new ServiceAndUrlLengthMismatch(flags.service, flags.url);
     }
 
-    const { global: globalHeaderList, perService: perServiceHeaderLists } =
-      segmentHeadersByService(raw, flags.service.length);
+    const { global: globalHeaderList, perService: perServiceHeaderLists } = segmentHeadersByService(
+      raw,
+      flags.service.length,
+    );
     const globalHeaders = parseHeaders(globalHeaderList);
 
     const isRemote = flags.remote === true;
