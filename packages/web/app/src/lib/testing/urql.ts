@@ -4,8 +4,15 @@ import {
   type FragmentDefinitionNode,
   type SelectionSetNode,
 } from 'graphql';
-import { filter, map, pipe } from 'wonka';
-import { cacheExchange, createClient, makeResult, type Exchange, type Operation } from '@urql/core';
+import { filter, fromPromise, fromValue, mergeMap, pipe } from 'wonka';
+import {
+  cacheExchange,
+  createClient,
+  makeErrorResult,
+  makeResult,
+  type Exchange,
+  type Operation,
+} from '@urql/core';
 
 type Fixture = unknown | ((variables: Record<string, unknown>) => unknown);
 
@@ -113,29 +120,51 @@ export function missingSelections(
  * data and no error, which is what a page shows while a query is still in flight, so pages a spec
  * does not care about render their loading branch rather than throw. A fixture that no longer
  * covers what its query selects throws, naming the missing paths, so fixtures cannot drift from
- * the documents. `fixtures` is the live map; `seen` records every operation name asked for.
+ * the documents. `fixtures` is the live map; `seen` records every operation name asked for and
+ * `operations` every operation. A promise fixture holds its answer until it settles.
  */
 export function createTestClient(fixtures: Fixtures = new Map()) {
   const seen: string[] = [];
+  const operations: Operation[] = [];
+
+  function uncovered(operation: Operation, name: string, data: unknown) {
+    if (data === undefined) {
+      return null;
+    }
+    const missing = missingSelections(operation.query, data, operation.variables ?? {});
+    return missing.length > 0
+      ? `Fixture for ${name} does not cover its query; missing: ${missing.join(', ')}`
+      : null;
+  }
+
   const resolve: Exchange = () => operations$ =>
     pipe(
       operations$,
       filter(operation => operation.kind !== 'teardown'),
-      map(operation => {
+      mergeMap(operation => {
         const name = operationName(operation) ?? '';
         seen.push(name);
+        operations.push(operation);
         const fixture = fixtures.get(name);
-        const variables = operation.variables ?? {};
-        const data = typeof fixture === 'function' ? fixture(variables) : fixture;
-        if (data !== undefined) {
-          const missing = missingSelections(operation.query, data, variables);
-          if (missing.length > 0) {
-            throw new Error(
-              `Fixture for ${name} does not cover its query; missing: ${missing.join(', ')}`,
-            );
-          }
+        const answer = typeof fixture === 'function' ? fixture(operation.variables ?? {}) : fixture;
+
+        // A throw here would be an unhandled rejection, so a stale async fixture answers with an error.
+        if (answer instanceof Promise) {
+          return fromPromise(
+            answer.then(data => {
+              const message = uncovered(operation, name, data);
+              return message
+                ? makeErrorResult(operation, new Error(message))
+                : makeResult(operation, { data });
+            }),
+          );
         }
-        return makeResult(operation, { data });
+
+        const message = uncovered(operation, name, answer);
+        if (message) {
+          throw new Error(message);
+        }
+        return fromValue(makeResult(operation, { data: answer }));
       }),
     );
 
@@ -144,5 +173,5 @@ export function createTestClient(fixtures: Fixtures = new Map()) {
     exchanges: [cacheExchange, resolve],
   });
 
-  return Object.assign(client, { fixtures, seen });
+  return Object.assign(client, { fixtures, seen, operations });
 }

@@ -72,4 +72,46 @@ describe('createTestClient', () => {
       'Fixture for ProjectQuery does not cover its query; missing: project.name',
     );
   });
+
+  it('records each operation with its variables and context', async () => {
+    const client = createTestClient();
+    await client.query(ProjectQuery, { n: 1 }, { preload: true }).toPromise();
+
+    expect(client.operations).toHaveLength(1);
+    expect(client.operations[0].variables).toEqual({ n: 1 });
+    expect(client.operations[0].context.preload).toBe(true);
+  });
+
+  it('holds a promise fixture in flight until it settles', async () => {
+    let answer = (_data: unknown) => {};
+    const client = createTestClient(
+      new Map<string, unknown>([['ProjectQuery', new Promise(resolve => (answer = resolve))]]),
+    );
+    let settled = false;
+    const result = client
+      .query(ProjectQuery, {})
+      .toPromise()
+      .then(value => {
+        settled = true;
+        return value;
+      });
+
+    await Promise.resolve();
+    expect(settled).toBe(false);
+
+    answer({ project: { id: 'p', name: 'shop' } });
+    expect((await result).data).toEqual({ project: { id: 'p', name: 'shop' } });
+  });
+
+  it('answers a promise fixture that does not cover its query with an error', async () => {
+    const client = createTestClient(
+      new Map<string, unknown>([['ProjectQuery', Promise.resolve({ project: { id: 'p' } })]]),
+    );
+    const result = await client.query(ProjectQuery, {}).toPromise();
+
+    expect(result.data).toBeUndefined();
+    expect(result.error?.message).toContain(
+      'Fixture for ProjectQuery does not cover its query; missing: project.name',
+    );
+  });
 });
