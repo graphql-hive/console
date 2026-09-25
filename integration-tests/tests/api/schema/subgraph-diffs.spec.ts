@@ -2,6 +2,7 @@ import 'reflect-metadata';
 /* eslint-disable no-process-env */
 import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { assertNonNullish } from 'testkit/utils';
+import z from 'zod';
 import { PostgresDatabasePool, psql } from '@hive/postgres';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import {
@@ -13,27 +14,60 @@ import {
 import { initSeed } from '../../../testkit/seed';
 
 /**
- * Helper function to clear the schema log edge data history in order to simulate a legacy record.
+ * Helper function to clear the schema log edge data history and populate the schema version action_id column in order to simulate a legacy record.
  */
-async function clearSchemaLogEdgeHistory(pool: PostgresDatabasePool, targetId: string) {
-  await pool.query(psql`
-    UPDATE
-      "schema_version_to_log"
-    SET
-      "type" = NULL
-      , "previous_action_id" = NULL
-      , "schema_changes" = NULL
-      , "subgraph_name" = NULL
-    WHERE
-      "version_id" = ANY(
-        SELECT
-          "id"
-        FROM
-          "schema_versions"
-        WHERE
-          "target_id" = ${targetId}
-      )
-`);
+async function clearSchemaLogEdgeHistoryAndPopulateSchemaVersionActionIdColumn(
+  pool: PostgresDatabasePool,
+  targetId: string,
+) {
+  await pool.transaction('legacy transforation', async trx => {
+    // handle federation
+    await trx.query(psql`
+      UPDATE "schema_versions"
+      SET "action_id" = ("origin"->'services'->0->>'versionId')::uuid
+      WHERE "target_id" = ${targetId}
+    `);
+
+    {
+      // handle single schema
+      const versionIds = await trx
+        .anyFirst(
+          psql`
+            SELECT "id" FROM "schema_versions" WHERE  "target_id" = ${targetId} AND "action_id" IS NULL
+          `,
+        )
+        .then(z.array(z.string()).parse);
+
+      for (const id of versionIds) {
+        await trx.query(psql`
+          UPDATE "schema_versions"
+            SET "action_id" = (SELECT "action_id" FROM "schema_version_to_log" WHERE "version_id" = ${id})
+          WHERE "id" = ${id}
+        `);
+      }
+    }
+
+    await trx.any(
+      psql`
+          UPDATE
+            "schema_version_to_log"
+          SET
+            "type" = NULL
+            , "previous_action_id" = NULL
+            , "schema_changes" = NULL
+            , "subgraph_name" = NULL
+          WHERE
+            "version_id" = ANY(
+              SELECT
+                "id"
+              FROM
+                "schema_versions"
+              WHERE
+                "target_id" = ${targetId}
+            )
+        `,
+    );
+  });
 }
 
 test.concurrent('monolitic project schema version has no subgraph diff', async ({ expect }) => {
@@ -558,7 +592,7 @@ describe('legacy schema version yields correct subgraph diff', () => {
     assertNonNullish(initialVersion);
 
     const { pool } = await seed.createDbConnection();
-    await clearSchemaLogEdgeHistory(pool, target.id);
+    await clearSchemaLogEdgeHistoryAndPopulateSchemaVersionActionIdColumn(pool, target.id);
 
     const result = await schemaVersionPromote(
       {
@@ -623,7 +657,7 @@ describe('legacy schema version yields correct subgraph diff', () => {
 
     // We manually convert the records to "legacy" records
     const { pool } = await seed.createDbConnection();
-    await clearSchemaLogEdgeHistory(pool, target.id);
+    await clearSchemaLogEdgeHistoryAndPopulateSchemaVersionActionIdColumn(pool, target.id);
     const legacyVersion = await getSchemaVersionWithAllDetails(
       target.id,
       latestVersion.id,
@@ -694,7 +728,7 @@ describe('legacy schema version yields correct subgraph diff', () => {
 
     // We manually convert the records to "legacy" records
     const { pool } = await seed.createDbConnection();
-    await clearSchemaLogEdgeHistory(pool, target.id);
+    await clearSchemaLogEdgeHistoryAndPopulateSchemaVersionActionIdColumn(pool, target.id);
     const legacyVersion = await getSchemaVersionWithAllDetails(
       target.id,
       latestVersion.id,
@@ -765,7 +799,7 @@ describe('legacy schema version yields correct subgraph diff', () => {
 
     // We manually convert the records to "legacy" records
     const { pool } = await seed.createDbConnection();
-    await clearSchemaLogEdgeHistory(pool, target.id);
+    await clearSchemaLogEdgeHistoryAndPopulateSchemaVersionActionIdColumn(pool, target.id);
     const legacyVersion = await getSchemaVersionWithAllDetails(
       target.id,
       latestVersion.id,
