@@ -206,7 +206,11 @@ export class Contracts {
         };
       }
 
-      await this.graphStore.deleteGraphByTargetIdAndName(record.targetId, record.contractName, trx);
+      await this.graphStore.deleteGraphByTargetIdAndName(
+        record.targetId,
+        `default/${record.contractName}`,
+        trx,
+      );
 
       return {
         type: 'success' as const,
