@@ -39,35 +39,6 @@ export class SchemaRevisionStore {
     | { error: { message: string }; ok?: never }
   > {
     return this.pg.transaction('pushSchemaRevision', async trx => {
-      // An expired revision can no longer be published, so a new push with the same name replaces it.
-      const expiredRevisions = await trx.any(psql`
-        DELETE FROM "schema_revisions"
-        WHERE "project_id" = ${args.projectId}
-          AND "service_name" IS NOT DISTINCT FROM ${args.service}
-          AND "revision" = ${args.revision}
-          AND "first_published_at" IS NULL
-          AND "expires_at" IS NOT NULL
-          AND "expires_at" <= now()
-        RETURNING "digest"
-      `);
-      const expiredDigests = z
-        .array(z.object({ digest: z.string() }))
-        .parse(expiredRevisions)
-        .map(row => row.digest)
-        .filter(digest => digest !== args.digest);
-
-      if (expiredDigests.length) {
-        await trx.query(psql`
-          DELETE FROM "sdl_artifacts"
-          WHERE "digest" = ANY(${psql.array(expiredDigests, 'text')})
-            AND NOT EXISTS (
-              SELECT 1
-              FROM "schema_revisions"
-              WHERE "schema_revisions"."digest" = "sdl_artifacts"."digest"
-            )
-        `);
-      }
-
       const existing = await this.findForPush(trx, args);
       if (existing) {
         return this.toExistingRevisionResult(existing, args);
