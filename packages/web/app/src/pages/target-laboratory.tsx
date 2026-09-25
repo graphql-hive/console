@@ -16,7 +16,7 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
-import { useClipboard, useSlugs, useToggle } from '@/lib/hooks';
+import { useClipboard, useLayoutQuery, useSlugs, useToggle } from '@/lib/hooks';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
 import { useCurrentOperation } from '@/lib/hooks/laboratory/use-current-operation';
 import {
@@ -408,8 +408,9 @@ function LaboratoryPageContent(props: {
     [userOperations],
   );
 
+  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
   useRedirect({
-    canAccess: target?.viewerCanViewLaboratory === true,
+    canAccess: layoutTarget?.viewerCanViewLaboratory === true,
     redirectTo: router => {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
@@ -420,7 +421,7 @@ function LaboratoryPageContent(props: {
         },
       });
     },
-    entity: target,
+    entity: layoutTarget,
   });
 
   if (query.error) {
@@ -433,7 +434,7 @@ function LaboratoryPageContent(props: {
     );
   }
 
-  if (target?.viewerCanViewLaboratory === false) {
+  if (layoutTarget?.viewerCanViewLaboratory === false) {
     return null;
   }
 

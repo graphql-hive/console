@@ -17,7 +17,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { graphql, type DocumentType } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { usePagedConnection, useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, usePagedConnection, useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -42,7 +42,6 @@ const TargetAppsVersionQuery = graphql(`
       }
     ) {
       id
-      viewerCanViewAppDeployments
       appDeployment(appName: $appName, appVersion: $appVersion) {
         id
         name
@@ -182,10 +181,11 @@ function TargetAppVersionContent(props: {
   });
 
   const project = data.data?.target;
+  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
 
   useRedirect({
-    entity: project,
-    canAccess: project?.viewerCanViewAppDeployments === true,
+    entity: layoutTarget,
+    canAccess: layoutTarget?.viewerCanViewAppDeployments === true,
     redirectTo(router) {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
@@ -207,7 +207,7 @@ function TargetAppVersionContent(props: {
     );
   }
 
-  if (project?.viewerCanViewAppDeployments === false) {
+  if (layoutTarget?.viewerCanViewAppDeployments === false) {
     return null;
   }
 

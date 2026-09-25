@@ -22,7 +22,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
-import { useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
 
@@ -373,11 +373,6 @@ const TargetOperationsPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      usageRetentionInDays
-    }
     hasCollectedOperations(
       selector: {
         organizationSlug: $organizationSlug
@@ -409,7 +404,7 @@ function TargetOperationsPageContent() {
     );
   }
 
-  const currentOrganization = query.data?.organization;
+  const currentOrganization = useLayoutQuery('target').data?.organization;
   const hasCollectedOperations = query.data?.hasCollectedOperations === true;
 
   if (!currentOrganization) {

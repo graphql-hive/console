@@ -1,39 +1,15 @@
-import { useQuery } from 'urql';
 import { Navigation } from '@/components/base/navigation/navigation';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { Meta } from '@/components/ui/meta';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
-import { graphql } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
-import { useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { Outlet } from '@tanstack/react-router';
-
-const TargetAlertsPageQuery = graphql(`
-  query TargetAlertsPageQuery(
-    $organizationSlug: String!
-    $projectSlug: String!
-    $targetSlug: String!
-  ) {
-    target(
-      reference: {
-        bySelector: {
-          organizationSlug: $organizationSlug
-          projectSlug: $projectSlug
-          targetSlug: $targetSlug
-        }
-      }
-    ) {
-      id
-      viewerCanUseMetricAlertRules
-    }
-  }
-`);
 
 /** The gate every alerts page sits behind; the pages with the nav and the rule detail render in it. */
 export function TargetAlertsPage() {
   const slugs = useSlugs('target');
-  const [data] = useQuery({ query: TargetAlertsPageQuery, variables: slugs });
-  const target = data.data?.target;
+  const target = useLayoutQuery('target').data?.organization?.project?.target;
 
   useRedirect({
     entity: target,

@@ -14,7 +14,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { getRouteApi, useNavigate, useSearch } from '@tanstack/react-router';
 
@@ -22,43 +22,13 @@ const proposalsRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/proposals',
 );
 
-const TargetProposalsQuery = graphql(`
-  query TargetProposalsQuery(
-    $organizationSlug: String!
-    $projectSlug: String!
-    $targetSlug: String!
-  ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      project: projectBySlug(projectSlug: $projectSlug) {
-        id
-        slug
-        target: targetBySlug(targetSlug: $targetSlug) {
-          id
-          slug
-          viewerCanViewSchemaProposals
-        }
-      }
-    }
-  }
-`);
-
 export function TargetProposalsPage(props: {
   filterUserIds?: string[];
   filterStages?: string[];
   selectedProposalId?: string;
 }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const [query] = useQuery({
-    query: TargetProposalsQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-    },
-  });
-  const target = query.data?.organization?.project?.target;
+  const target = useLayoutQuery('target').data?.organization?.project?.target;
 
   useRedirect({
     canAccess: target?.viewerCanViewSchemaProposals === true,

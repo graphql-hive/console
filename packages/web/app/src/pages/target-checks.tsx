@@ -189,9 +189,6 @@ const ChecksPageQuery = graphql(`
     $targetSlug: String!
     $filters: SchemaChecksFilter
   ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-    }
     target(
       reference: {
         bySelector: {

@@ -95,7 +95,6 @@ export const TargetLaboratoryPageQuery = graphql(`
         id
         sdl
       }
-      viewerCanViewLaboratory
       viewerCanModifyLaboratory
       ...PreflightScript_TargetFragment
     }

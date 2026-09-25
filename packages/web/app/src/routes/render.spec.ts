@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { type ReactNode } from 'react';
-import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
+import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
 import { organizationMembers } from '@/lib/testing/fixtures/organization-members';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
 import { projectSettings } from '@/lib/testing/fixtures/project-settings';
@@ -510,9 +510,12 @@ describe('alerts sections', () => {
 
   function renderAlerts(url: string, viewerCanUseMetricAlertRules = true) {
     client.current = createTestClient(layoutFixtures());
-    client.current.fixtures.set('TargetAlertsPageQuery', {
-      target: { __typename: 'Target', id: 'target-1', viewerCanUseMetricAlertRules },
-    });
+    const layout = targetLayout();
+    layout.organization.project.target = {
+      ...layout.organization.project.target,
+      viewerCanUseMetricAlertRules,
+    };
+    client.current.fixtures.set('TargetLayoutQuery', layout);
     return at(url);
   }
 
@@ -543,4 +546,30 @@ describe('alerts sections', () => {
     const { router } = renderAlerts(`${ALERTS}/rules`, false);
     await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
   });
+
+  it(
+    'reads the permission from the layout, not a document of its own',
+    { timeout: 30_000 },
+    async () => {
+      renderAlerts(ALERTS);
+      await sectionNav('Alerts');
+      const seen = client.current!.seen;
+      expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
+      expect(seen).not.toContain('TargetAlertsPageQuery');
+    },
+  );
+});
+
+describe('proposals', () => {
+  it(
+    'reads the permission from the layout, not a document of its own',
+    { timeout: 30_000 },
+    async () => {
+      at(`${TARGET}/proposals`);
+      await screen.findByRole('link', { name: 'Proposals', current: 'page' });
+      const seen = client.current!.seen;
+      expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
+      expect(seen).not.toContain('TargetProposalsQuery');
+    },
+  );
 });
