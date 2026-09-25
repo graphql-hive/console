@@ -7,9 +7,9 @@ const labelVariants = cva('', {
   variants: {
     variant: {
       /** The form label: small caps on its own line above the control, as on every field. */
-      caps: 'block text-neutral-10 text-[9px] font-medium uppercase tracking-[0.75px]',
+      caps: 'block text-fg-secondary text-[9px] font-medium uppercase tracking-[0.75px]',
       /** Sentence case beside a switch or a checkbox, in a row. */
-      inline: 'inline-block text-neutral-11 text-xs font-normal',
+      inline: 'inline-block text-fg-default text-xs font-normal',
     },
   },
   defaultVariants: {
@@ -43,7 +43,7 @@ export function LabelHint({ tooltip, icon: Icon = Info, name }: LabelHintProps &
         <button
           type="button"
           aria-label={`About ${name}`}
-          className="text-neutral-9 hover:text-neutral-11 inline-flex"
+          className="text-fg-muted hover:text-fg-default inline-flex"
         >
           <Icon className="size-3" />
         </button>

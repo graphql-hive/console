@@ -21,16 +21,16 @@ const radioItemVariants = cva(
         variant: 'as-button',
         onSurface: 'base',
         class: [
-          'bg-neutral-2 border-neutral-5 text-neutral-11',
-          'hover:bg-neutral-3 hover:border-neutral-4 hover:text-neutral-12',
-          'data-[checked]:bg-neutral-4 data-[checked]:border-neutral-5 data-[checked]:text-neutral-12',
+          'bg-neutral-2 border-line text-fg-default',
+          'hover:bg-neutral-3 hover:border-line-subtle hover:text-fg',
+          'data-[checked]:bg-neutral-4 data-[checked]:border-line data-[checked]:text-fg',
         ],
       },
       {
         variant: 'as-card',
         onSurface: 'base',
         class: [
-          'border-neutral-4 bg-transparent',
+          'border-line-subtle bg-transparent',
           'hover:bg-neutral-3',
           'data-[checked]:bg-neutral-3 data-[checked]:border-accent_30',
         ],
@@ -39,16 +39,16 @@ const radioItemVariants = cva(
         variant: 'as-button',
         onSurface: 'raised',
         class: [
-          'bg-neutral-3 border-neutral-5 text-neutral-11',
-          'hover:bg-neutral-4 hover:text-neutral-12',
-          'data-[checked]:bg-neutral-5 data-[checked]:border-neutral-6 data-[checked]:text-neutral-12',
+          'bg-neutral-3 border-line text-fg-default',
+          'hover:bg-neutral-4 hover:text-fg',
+          'data-[checked]:bg-neutral-5 data-[checked]:border-line-strong data-[checked]:text-fg',
         ],
       },
       {
         variant: 'as-card',
         onSurface: 'raised',
         class: [
-          'bg-neutral-4 border-neutral-5',
+          'bg-neutral-4 border-line',
           'hover:bg-neutral-5',
           'data-[checked]:bg-neutral-5 data-[checked]:border-accent_30',
         ],
@@ -116,7 +116,7 @@ function RadioItem({
   const isCard = variant === 'as-card';
 
   const indicator = isCard ? (
-    <span className="border-neutral-6 group-data-[checked]:border-accent flex size-5 shrink-0 items-center justify-center rounded-full border">
+    <span className="border-line-strong group-data-[checked]:border-accent flex size-5 shrink-0 items-center justify-center rounded-full border">
       <BaseRadio.Indicator className="bg-accent size-2.5 rounded-full" />
     </span>
   ) : null;
@@ -136,9 +136,9 @@ function RadioItem({
         <>
           {indicator}
           <span className={isCard ? 'flex flex-col gap-2' : undefined}>
-            <span className={isCard ? 'text-neutral-12 font-medium' : undefined}>{item.label}</span>
+            <span className={isCard ? 'text-fg font-medium' : undefined}>{item.label}</span>
             {isCard && item.description ? (
-              <span className="text-neutral-11 leading-[1.4]">{item.description}</span>
+              <span className="text-fg-default leading-[1.4]">{item.description}</span>
             ) : null}
           </span>
         </>

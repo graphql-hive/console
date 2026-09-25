@@ -23,23 +23,17 @@ export const buttonVariants = cva(
       variant: {
         // Segmented trigger style (for selects, menus, popovers, filters). Fill and border come
         // from `controlOnSurface` in the compound variants below.
-        default: 'text-neutral-9 hover:text-neutral-11 dark:text-neutral-11',
-        active: [
-          'border-neutral-5 dark:border-neutral-6 text-neutral-12',
-          'bg-neutral-3 dark:bg-neutral-5',
-        ],
+        default: 'text-fg-muted hover:text-fg-default dark:text-fg-default',
+        active: ['border-line dark:border-line-strong text-fg', 'bg-neutral-3 dark:bg-neutral-5'],
         action: [
           'border-dashed border-accent_30 text-accent_80 bg-accent_08',
           'hover:border-accent_80 hover:text-accent hover:bg-accent_10',
         ],
-        'muted-action': [
-          'border-dashed hover:bg-neutral-3 hover:border-neutral-7 hover:text-neutral-12',
-        ],
+        'muted-action': ['border-dashed hover:bg-neutral-3 hover:border-neutral-7 hover:text-fg'],
         // Standard button styles (for form actions)
-        primary: 'bg-neutral-12 text-neutral-1 hover:bg-neutral-11 border-transparent',
-        outline:
-          'border-neutral-5 bg-transparent text-neutral-11 hover:bg-neutral-4 hover:text-neutral-12',
-        ghost: 'border-transparent bg-transparent text-neutral-10 hover:text-neutral-12',
+        primary: 'bg-surface-inverse text-fg-inverse hover:bg-neutral-11 border-transparent',
+        outline: 'border-line bg-transparent text-fg-default hover:bg-neutral-4 hover:text-fg',
+        ghost: 'border-transparent bg-transparent text-fg-secondary hover:text-fg',
         destructive: [
           'bg-critical_08 border-critical_30 text-critical_80 hover:bg-critical_10 hover:border-critical hover:text-critical',
         ],
@@ -253,7 +247,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
                       }
                     : undefined
                 }
-                className={`${props.rightIcon.withSeparator && segmentSeparator} text-neutral-8 ${props.rightIcon.action ? 'hover:text-neutral-11' : 'group-hover:text-neutral-12'} flex items-center self-stretch px-2`}
+                className={`${props.rightIcon.withSeparator && segmentSeparator} text-fg-subtle ${props.rightIcon.action ? 'hover:text-fg-default' : 'group-hover:text-fg'} flex items-center self-stretch px-2`}
               >
                 <props.rightIcon.icon className="size-3" />
               </span>

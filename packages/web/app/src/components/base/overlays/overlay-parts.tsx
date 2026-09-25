@@ -18,7 +18,7 @@ export const backdropClass =
   'bg-neutral-1_01 fixed inset-0 z-50 backdrop-blur-sm transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0';
 
 export const popupSurfaceClass =
-  'bg-neutral-3 border-neutral-5 text-neutral-12 z-50 flex flex-col gap-4 border shadow-lg outline-none';
+  'bg-surface-overlay border-line text-fg z-50 flex flex-col gap-4 border shadow-lg outline-none';
 
 /**
  * Where menus, selects and tooltips opened inside the overlay portal to. Base UI appends a plain
@@ -47,11 +47,11 @@ export function OverlayHeader({
 }) {
   return (
     <div className={cn('flex shrink-0 flex-col gap-1.5 px-6 pt-6', clearCloseButton && 'pr-14')}>
-      <BaseDialog.Title className="text-neutral-12 mb-2 text-lg font-normal leading-none">
+      <BaseDialog.Title className="text-fg mb-2 text-lg font-normal leading-none">
         {title}
       </BaseDialog.Title>
       {description != null ? (
-        <BaseDialog.Description className="text-neutral-11 text-sm">
+        <BaseDialog.Description className="text-fg-default text-sm">
           {description}
         </BaseDialog.Description>
       ) : null}

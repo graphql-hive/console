@@ -70,7 +70,7 @@ const scrollerVariants = cva('', {
 const listVariants = cva('relative flex', {
   variants: {
     variant: {
-      underline: 'border-neutral-5 gap-1',
+      underline: 'border-line gap-1',
       // The band around it draws the border and fill.
       header: 'h-10 grow gap-1 px-2',
     },
@@ -89,7 +89,7 @@ const listVariants = cva('relative flex', {
 const tabVariants = cva(
   cn(
     'relative z-10 inline-flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap font-medium transition-colors',
-    'text-neutral-10 hover:text-neutral-12 data-[active]:text-accent',
+    'text-fg-secondary hover:text-fg data-[active]:text-accent',
     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
     'rounded-sm',
     focusRingQuiet,

@@ -10,7 +10,7 @@ export const segmentSeparator = 'border-l [border-left-color:inherit]';
 
 /** Interactive segment within a segmented trigger (clickable text area). */
 export const segmentButton =
-  'px-2.5 py-1.5 text-control transition-colors cursor-pointer hover:bg-neutral-4/50 hover:text-neutral-12';
+  'px-2.5 py-1.5 text-control transition-colors cursor-pointer hover:bg-neutral-4/50 hover:text-fg';
 
 export const disabledStyle = { opacity: 0.5, pointerEvents: 'none' } as const;
 
@@ -61,18 +61,18 @@ export type OnSurface = 'base' | 'raised';
 // `controlSurface` is the resting half on its own, for a control whose hover belongs to the
 // segments inside it (a toggle group) rather than to the whole.
 export const controlSurface = {
-  base: 'bg-neutral-2 border-neutral-5 dark:bg-neutral-3 dark:border-neutral-4',
-  raised: 'bg-neutral-1 border-neutral-5 dark:bg-neutral-5 dark:border-neutral-6',
+  base: 'bg-surface-control border-line-control',
+  raised: 'bg-neutral-1 border-line dark:bg-neutral-5 dark:border-line-strong',
 } as const satisfies Record<OnSurface, string>;
 
 export const controlOnSurface = {
   base: [
     controlSurface.base,
-    'hover:bg-neutral-1 dark:hover:bg-neutral-4 dark:hover:border-neutral-5',
+    'hover:bg-neutral-1 dark:hover:bg-neutral-4 dark:hover:border-line',
   ].join(' '),
   raised: [
     controlSurface.raised,
-    'hover:border-neutral-6 dark:hover:bg-neutral-6 dark:hover:border-neutral-7',
+    'hover:border-line-strong dark:hover:bg-neutral-6 dark:hover:border-neutral-7',
   ].join(' '),
 } as const satisfies Record<OnSurface, string>;
 

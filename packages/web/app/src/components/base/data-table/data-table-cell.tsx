@@ -209,9 +209,9 @@ function stopPropagation(event: MouseEvent) {
   event.stopPropagation();
 }
 
-const tone = { default: 'text-neutral-12', muted: 'text-neutral-10' } as const;
+const tone = { default: 'text-fg', muted: 'text-fg-secondary' } as const;
 const linkTone = {
-  default: 'text-neutral-11 hover:text-neutral-12 hover:underline underline-offset-2',
+  default: 'text-fg-default hover:text-fg hover:underline underline-offset-2',
   accent: 'text-accent_80 hover:text-accent hover:underline underline-offset-2',
 } as const;
 
@@ -220,7 +220,7 @@ const statusIconTone: Record<StatusColor, string> = {
   warning: 'text-warning',
   critical: 'text-critical',
   info: 'text-info',
-  neutral: 'text-neutral-10',
+  neutral: 'text-fg-secondary',
 };
 
 function Destination<TTo extends string>({
@@ -278,7 +278,7 @@ function LinkOutMenu<TTo extends string>({
         <button
           type="button"
           aria-label={tooltip}
-          className="text-neutral-9 hover:text-neutral-12 inline-flex items-center"
+          className="text-fg-muted hover:text-fg inline-flex items-center"
         >
           <ExternalLink className="size-3.5" />
           <ChevronDown className="size-3" />
@@ -327,7 +327,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
         >
           {props.value}
           {props.secondary != null ? (
-            <span className="text-neutral-10"> {props.secondary}</span>
+            <span className="text-fg-secondary"> {props.secondary}</span>
           ) : null}
         </span>
       );
@@ -341,7 +341,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
     }
     case 'number':
       return (
-        <span className="text-neutral-12 block text-right tabular-nums">
+        <span className="text-fg block text-right tabular-nums">
           {formatCellNumber(props.value, props.format)}
         </span>
       );
@@ -362,7 +362,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
             props.mono && 'font-mono text-xs',
           )}
         >
-          {props.prefix ? <span className="text-neutral-10">{props.prefix}</span> : null}
+          {props.prefix ? <span className="text-fg-secondary">{props.prefix}</span> : null}
           <time
             dateTime={date.toISOString()}
             title={mode === 'absolute' ? undefined : formatAbsolute(date)}
@@ -372,7 +372,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
           {mode === 'relative-info' ? (
             <Tooltip
               trigger={
-                <span className="text-neutral-9 inline-flex">
+                <span className="text-fg-muted inline-flex">
                   <Info className="size-3.5" />
                 </span>
               }
@@ -409,9 +409,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
     }
     case 'link-out': {
       const label = (
-        <span className={cn('text-neutral-12', props.mono && 'font-mono text-xs')}>
-          {props.label}
-        </span>
+        <span className={cn('text-fg', props.mono && 'font-mono text-xs')}>{props.label}</span>
       );
       if (props.targets.length === 0) return label;
       if (props.targets.length === 1) {
@@ -423,7 +421,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
                 <Destination
                   destination={props.targets[0]}
                   aria-label={props.tooltip}
-                  className="text-neutral-9 hover:text-neutral-12 inline-flex"
+                  className="text-fg-muted hover:text-fg inline-flex"
                 >
                   <ExternalLink className="size-3.5" />
                 </Destination>
@@ -466,12 +464,12 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       return props.value ? (
         <Check className="text-success inline size-4" aria-label="Yes" />
       ) : (
-        <X className="text-neutral-9 inline size-4" aria-label="No" />
+        <X className="text-fg-muted inline size-4" aria-label="No" />
       );
     case 'status': {
       if ('dot' in props) {
         const body = (
-          <span className="text-neutral-12 inline-flex items-center gap-1.5">
+          <span className="text-fg inline-flex items-center gap-1.5">
             <StatusDot color={props.dot} />
             {props.label}
           </span>
@@ -481,7 +479,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       if ('icon' in props) {
         const Icon = props.icon;
         const body = (
-          <span className="text-neutral-12 inline-flex items-center gap-1.5">
+          <span className="text-fg inline-flex items-center gap-1.5">
             {props.label}
             <Icon className={cn('size-3.5', statusIconTone[props.iconTone ?? 'neutral'])} />
           </span>
@@ -489,16 +487,16 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
         return props.tooltip ? <Tooltip trigger={body} content={props.tooltip} /> : body;
       }
       return (
-        <span className="text-neutral-11 inline-flex items-center gap-2">
+        <span className="text-fg-default inline-flex items-center gap-2">
           <Badge content={props.from.content} variants={{ variant: props.from.variant }} />
-          <ArrowRight className="text-neutral-8 size-3.5" />
+          <ArrowRight className="text-fg-subtle size-3.5" />
           <Badge content={props.to.content} variants={{ variant: props.to.variant }} />
         </span>
       );
     }
     case 'avatar':
       return (
-        <span className="text-neutral-12 inline-flex items-center gap-2">
+        <span className="text-fg inline-flex items-center gap-2">
           <Avatar size="xs" alt={props.name} src={props.src} />
           <span className={cn(props.strikethrough && 'line-through')}>{props.name}</span>
           {props.trailing}
@@ -579,6 +577,6 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       );
     }
     case 'placeholder':
-      return <span className="text-neutral-10">—</span>;
+      return <span className="text-fg-secondary">—</span>;
   }
 }

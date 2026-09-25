@@ -5,9 +5,9 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-neutral-6 text-neutral-11',
-        secondary: 'border-transparent bg-neutral-4 text-neutral-11',
-        outline: 'border-neutral-5 font-normal text-neutral-11',
+        default: 'border-transparent bg-neutral-6 text-fg-default',
+        secondary: 'border-transparent bg-neutral-4 text-fg-default',
+        outline: 'border-line font-normal text-fg-default',
         // The semantic states, tinted: a 10% fill of the token under its full-strength text, so
         // a pill never needs its own red or green.
         success: 'border-transparent bg-success_10 text-success',

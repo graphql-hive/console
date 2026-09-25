@@ -248,7 +248,7 @@ describe('DataTable', () => {
     );
     const rows = [...container.querySelectorAll('tbody tr')];
     expect(rows[0].className).toContain('opacity-40');
-    expect(rows[1].className).toContain('text-neutral-10');
+    expect(rows[1].className).toContain('text-fg-secondary');
     expect(rows[2].getAttribute('data-state')).toBe('selected');
   });
 

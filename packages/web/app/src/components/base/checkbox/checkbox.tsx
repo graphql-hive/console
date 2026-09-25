@@ -16,7 +16,7 @@ const checkboxVariants = cva(
       },
       variant: {
         default: [
-          'border-neutral-6',
+          'border-line-strong',
           'data-[checked]:bg-accent_30 data-[checked]:border-accent_30 data-[checked]:text-accent',
           'not-[[data-disabled]]:hover:bg-neutral-6 not-[[data-disabled]]:hover:border-accent_30',
           'not-[[data-disabled]]:data-[checked]:hover:bg-accent_10',
