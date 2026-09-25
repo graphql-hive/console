@@ -68,8 +68,7 @@ export const WithArrow = createPreview(() => (
 ));
 
 /**
- * One scale for both modes. Raw defaults to `sm` (the legacy popover's width), structured to
- * `md`. `lg` and `xl` are the two widest panels in the app, rounded to the rem grid.
+ * One scale for both modes. Raw defaults to `sm`, structured to `md`. `lg` and `xl` are the two widest panels in the app, rounded to the rem grid.
  */
 export const Widths = createPreview(() => (
   <div className="flex flex-wrap items-center gap-4">

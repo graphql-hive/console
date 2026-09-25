@@ -22,10 +22,7 @@ const ICONS = {
   frown: FrownIcon,
 };
 
-/**
- * The shape all 17 insights stat cards share. Every one of them is `raised`: the pages that set
- * `bg-neutral-2/50` and the one that took ui/card's default fill both land on the same surface.
- */
+/** The shape all the insights stat cards share. Every one of them is `raised`. */
 export const Default = createPreview(() => (
   <StatCard
     variants={{ onSurface: 'raised' }}

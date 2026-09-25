@@ -8,8 +8,8 @@ export const nav: NavPath = 'Base/Overlays/AlertDialog';
 
 /**
  * A question with a confirm and a cancel. No × and no backdrop dismissal, so it can only be
- * answered. Confirm does not close the dialog by itself: every legacy call site controls `open`
- * and closes after its mutation, and four of them had to fight Radix's auto-close to do so.
+ * answered. Confirm does not close the dialog by itself: the call site controls `open` and closes
+ * once its mutation finishes.
  */
 
 export const Default = createPreview(() => {

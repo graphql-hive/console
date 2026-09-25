@@ -100,7 +100,7 @@ export const Link = createPreview(() => (
 /**
  * A button that navigates. `anchor` renders an `<a>` for links out; `render` takes the router
  * `<Link>` for links within the app and merges the button's classes, ref and handlers onto it.
- * Together they replace the old `asChild`. Anchors stand in for the router here.
+ * Anchors stand in for the router here.
  */
 export const AsLink = createPreview(() => (
   <div className="flex w-96 flex-col gap-3">
@@ -129,7 +129,7 @@ export const Disabled = createPreview(() => (
 
 /**
  * `width="full"` is the modal-footer and auth-form shape: a pair of full-width buttons sharing a
- * row. It replaces the `className="w-full justify-center"` that 116 legacy call sites set by hand.
+ * row.
  */
 export const FullWidth = createPreview(() => (
   <div className="flex w-96 flex-col gap-3">

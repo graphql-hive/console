@@ -8,7 +8,7 @@ export const nav: NavPath = 'Base/Feedback/Toast';
  * One call shape, `toast({ title, description, variant })`, drawn on the neutral-3 surface with a
  * status icon. Up to three stack in the corner, collapsed to the front one until hovered or
  * focused; default and success toasts leave after 5s, destructive ones stay until closed. Swipe
- * right or down to dismiss. Replaces `ui/toast`, `ui/toaster`, `ui/use-toast` and react-toastify.
+ * right or down to dismiss.
  *
  * The provider is mounted by foundry's providers, as the router mounts it in the app.
  */

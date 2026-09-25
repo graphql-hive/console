@@ -8,8 +8,7 @@ export const nav: NavPath = 'Base/Overlays/Dialog';
 
 /**
  * A centred modal with a title, an optional description, a body that scrolls once the dialog
- * reaches the viewport height, and a right-aligned footer. Replaces `ui/dialog` and `v2/modal`,
- * which were the same Radix dialog dressed two ways.
+ * reaches the viewport height, and a right-aligned footer.
  *
  * Every preview opens from a button, since a dialog rendered open cannot show its backdrop, its
  * focus trap or its way out.
@@ -55,7 +54,7 @@ export const Default = createPreview(() => {
   );
 });
 
-/** The four widths. `md` is the default and the most common legacy width. */
+/** The four widths. `md` is the default. */
 export const Widths = createPreview(() => (
   <div className="flex flex-wrap gap-3">
     {(['sm', 'md', 'lg', 'xl'] as const).map(width => (

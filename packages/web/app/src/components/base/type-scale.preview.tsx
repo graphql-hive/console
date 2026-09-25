@@ -5,8 +5,8 @@ export const nav: NavPath = 'Base/Foundations/TypeScale';
 /**
  * The type scale: Tailwind's steps plus the two the app kept typing by hand. `control` (13px) is
  * the size of UI text: buttons, inputs, menus, chips, description lists, card bodies. `2xs`
- * (10px) is micro text: badges, subgraph chips, tick labels, mono timestamps. Both carry a
- * line-height now, where the old arbitrary values inherited whatever the parent had.
+ * (10px) is micro text: badges, subgraph chips, tick labels, mono timestamps. Both carry their
+ * own line-height.
  */
 const STEPS = [
   { name: '2xs', px: 10, lh: 14, cls: 'text-2xs', use: 'badges, chips, tick labels' },

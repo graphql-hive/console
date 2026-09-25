@@ -44,8 +44,7 @@ function FilterRows(props: { rows: { label: string; count: number }[] }) {
 
 /**
  * `section`: a heading row that toggles the list beneath it, as in the traces filter column.
- * The count at the trailing edge is an `actions` slot, outside the button, where the old markup
- * nested a button inside the trigger.
+ * The count at the trailing edge is an `actions` slot, outside the button.
  */
 export const Section = createPreview(() => (
   <div className="text-neutral-11 flex w-64 flex-col">

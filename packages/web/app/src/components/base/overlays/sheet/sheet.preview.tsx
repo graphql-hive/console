@@ -10,8 +10,7 @@ export const nav: NavPath = 'Base/Overlays/Sheet';
 /**
  * A panel from the right edge, for a task with more to it than a dialog holds: the token and SSO
  * forms, the trace details. The header stays at the top and the footer at the bottom while the
- * body scrolls, which every legacy sheet built by hand. Replaces `ui/sheet`; the top, bottom and
- * left sides had no call site and are gone.
+ * body scrolls.
  */
 
 function TokenFields({ count = 3 }: { count?: number }) {
@@ -60,7 +59,7 @@ export const Default = createPreview(() => {
   );
 });
 
-/** `md` is the default and what nine of the legacy sheets set; `half` is the trace panels. */
+/** `md` is the default; `half` is the trace panels. */
 export const Widths = createPreview(() => (
   <div className="flex flex-wrap gap-3">
     {(['md', 'lg', 'half'] as const).map(width => (
