@@ -538,18 +538,6 @@ export class SchemaCheckApprovalFailedError extends HiveCLIError {
   }
 }
 
-export class ForceSafeRequiresTargetSlugError extends HiveCLIError {
-  static readonly code = errorCode(ErrorCategory.SCHEMA_CHECK, 4);
-  static readonly exitCode = ExitCode.BAD_INIT;
-  static readonly title = '`--forceSafe` requires a target slug';
-  static readonly fix = 'Pass `--target` as a slug in the form `organization/project/target`.';
-  constructor() {
-    super(
-      'The `--forceSafe` flag requires the `--target` flag to be specified by its slug ("organization/project/target"), not its ID.',
-    );
-  }
-}
-
 export class SchemaPublishFailedError extends HiveCLIError {
   static readonly code = errorCode(ErrorCategory.SCHEMA_PUBLISH, 0);
   static readonly exitCode = ExitCode.ERROR;
@@ -744,7 +732,6 @@ export const errorCatalog: ReadonlyArray<HiveCLIErrorClass> = [
   SchemaFileEmptyError,
   SchemaCheckFailedError,
   SchemaCheckApprovalFailedError,
-  ForceSafeRequiresTargetSlugError,
   SchemaPublishFailedError,
   InvalidSDLError,
   SchemaPublishMissingServiceError,

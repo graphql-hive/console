@@ -40,12 +40,12 @@ and schema publish results accurately when using `--github`.
   on the server, so check the result before retrying. Other network errors, including timeouts while
   introspecting a GraphQL service, remain `[114]`.
 - `[127]` Invalid command input, `[128]` invalid header.
-- `[202]` Schema check failed, `[203]` schema check approval failed, `[204]` `--forceSafe` requires a
-  target slug.
+- `[202]` Schema check failed, `[203]` schema check approval failed.
 
 Other errors that were previously reported as unexpected (`[199]`) or without a code now use the
 matching code, for example a missing or empty schema file (`[200]`, `[201]`), invalid SDL in
-`schema:check` (`[301]`), an invalid CDN access token (`[107]`) and HTTP error responses (`[113]`).
+`schema:check` (`[301]`), an invalid CDN access token (`[107]`), HTTP error responses (`[113]`) and
+`--forceSafe` without a target slug (`[102]`).
 `hive introspect` reports a missing, empty or invalid schema file as `[200]`, `[201]` or `[301]`, and
 keeps `[116]` for GraphQL services that cannot be introspected.
 Invalid registry access tokens that expired are reported as `[106]`.

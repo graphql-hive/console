@@ -7,7 +7,6 @@ import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
   CommitRequiredError,
-  ForceSafeRequiresTargetSlugError,
   GithubRepositoryRequiredError,
   InvalidTargetError,
   MissingArgumentsError,
@@ -435,7 +434,10 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         }
 
         if (!target?.bySelector) {
-          throw new ForceSafeRequiresTargetSlugError();
+          throw new MissingArgumentsError([
+            'target',
+            'The target slug in the format "$organizationSlug/$projectSlug/$targetSlug". The `--forceSafe` flag requires the target as a slug, not as an ID.',
+          ]);
         }
 
         if (!schemaCheckId) {

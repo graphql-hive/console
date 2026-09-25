@@ -95,7 +95,6 @@ describe('error catalog', () => {
         201: SchemaFileEmptyError,
         202: SchemaCheckFailedError,
         203: SchemaCheckApprovalFailedError,
-        204: ForceSafeRequiresTargetSlugError,
         300: SchemaPublishFailedError,
         301: InvalidSDLError,
         302: SchemaPublishMissingServiceError,

@@ -329,15 +329,6 @@
       "anchor": "errors-203"
     },
     {
-      "code": 204,
-      "name": "ForceSafeRequiresTargetSlugError",
-      "title": "`--forceSafe` requires a target slug",
-      "category": "Schema check",
-      "exitCode": 3,
-      "fix": "Pass `--target` as a slug in the form `organization/project/target`.",
-      "anchor": "errors-204"
-    },
-    {
       "code": 300,
       "name": "SchemaPublishFailedError",
       "title": "Schema publish failed",
