@@ -73,7 +73,7 @@ export const ConnectLabModalContent = (props: {
           scope:
         </span>
         {/* A header line with a link inside, not a pill: a code block rather than a Badge. */}
-        <code className="bg-neutral-4 text-fg-default inline-flex items-center gap-x-1 rounded-sm p-2 text-sm">
+        <code className="bg-surface-code text-fg-default inline-flex items-center gap-x-1 rounded-sm p-2 text-sm">
           X-Hive-Key:
           <Link
             as="a"

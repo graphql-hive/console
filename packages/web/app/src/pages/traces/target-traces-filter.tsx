@@ -35,7 +35,7 @@ export function FilterLocalSearch(props: { value: string; onChange(value: string
 
 /** A row in a filter group. */
 const filterRowClass = cn(
-  'hover:bg-neutral-5/50 flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm transition-colors',
+  'hover:bg-surface-hover flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm transition-colors',
   focusRing,
 );
 
@@ -240,7 +240,7 @@ function Filter(props: { name: string; changes?: number; onReset(): void; childr
                 type="button"
                 aria-label={`Reset ${props.name} filter`}
                 className={cn(
-                  'hover:bg-neutral-2 text-fg-secondary group ml-auto flex h-6 w-8 items-center justify-center rounded-md px-1 text-xs transition-colors',
+                  'hover:bg-surface-hover text-fg-secondary group ml-auto flex h-6 w-8 items-center justify-center rounded-md px-1 text-xs transition-colors',
                   focusRing,
                 )}
                 onClick={props.onReset}

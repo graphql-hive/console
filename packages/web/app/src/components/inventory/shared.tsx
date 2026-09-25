@@ -81,8 +81,8 @@ export function OriginTag(props: { origin: Origin }) {
     <span
       className={
         {
-          ui: 'bg-neutral-4 text-fg-default rounded-xs text-2xs px-1 py-px font-mono leading-none',
-          v2: 'bg-neutral-5 text-fg rounded-xs text-2xs px-1 py-px font-mono leading-none',
+          ui: 'bg-surface-hover text-fg-default rounded-xs text-2xs px-1 py-px font-mono leading-none',
+          v2: 'bg-surface-selected text-fg rounded-xs text-2xs px-1 py-px font-mono leading-none',
           base: 'bg-success-muted/20 text-success-muted rounded-xs text-2xs px-1 py-px font-mono leading-none',
           raw: 'bg-warning-tint text-warning rounded-xs text-2xs px-1 py-px font-mono leading-none',
         }[props.origin]

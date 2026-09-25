@@ -28,7 +28,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         head_cell: 'text-fg-secondary rounded-md w-8 font-normal text-control',
         row: 'flex w-full mt-2',
         cell: cn(
-          'relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-neutral-2 [&:has([aria-selected].day-outside)]:bg-neutral-2/50 [&:has([aria-selected].day-range-end)]:rounded-r-md',
+          'relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-surface-selected [&:has([aria-selected].day-outside)]:bg-surface-stripe [&:has([aria-selected].day-range-end)]:rounded-r-md',
           props.mode === 'range'
             ? '[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md'
             : '[&:has([aria-selected])]:rounded-md',
@@ -40,12 +40,12 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         day_range_start: 'day-range-start',
         day_range_end: 'day-range-end',
         day_selected:
-          'bg-neutral-11 text-neutral-2 hover:bg-neutral-11 hover:text-neutral-2 focus:bg-neutral-11 focus:text-neutral-2',
-        day_today: 'bg-neutral-2 text-fg',
+          'bg-surface-inverse text-fg-inverse hover:bg-surface-inverse hover:text-fg-inverse focus:bg-surface-inverse focus:text-fg-inverse',
+        day_today: 'bg-surface-hover text-fg',
         day_outside:
-          'day-outside text-fg-secondary opacity-50  aria-selected:bg-neutral-2/50 aria-selected:text-fg-secondary aria-selected:opacity-30',
+          'day-outside text-fg-secondary opacity-50  aria-selected:bg-surface-stripe aria-selected:text-fg-secondary aria-selected:opacity-30',
         day_disabled: 'text-fg-secondary opacity-50',
-        day_range_middle: 'aria-selected:bg-neutral-2 aria-selected:text-fg',
+        day_range_middle: 'aria-selected:bg-surface-selected aria-selected:text-fg',
         day_hidden: 'invisible',
         ...classNames,
       }}

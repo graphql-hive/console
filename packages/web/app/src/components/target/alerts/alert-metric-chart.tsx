@@ -161,7 +161,7 @@ export function AlertMetricChart({
 
   if (data.length === 0) {
     return (
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-line flex h-[200px] items-center justify-center rounded-md border">
+      <div className="bg-surface-card border-line flex h-[200px] items-center justify-center rounded-md border">
         <span className={loading ? 'text-fg-subtle text-sm' : 'text-fg-subtle text-sm italic'}>
           {loading ? 'Loading chart data...' : 'No data available for this range.'}
         </span>

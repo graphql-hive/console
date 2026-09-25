@@ -258,7 +258,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
                   : query.data?.target?.clientStats.operations.edges.map(({ node: operation }) => (
                       <Link
                         key={operation.id}
-                        className="text-fg-default hover:text-fg-default hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                        className="text-fg-default hover:text-fg-default hover:bg-surface-hover flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                         params={{
                           organizationSlug,

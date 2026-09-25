@@ -39,7 +39,7 @@ export function TargetProposalChecksPage(props: {
       {checks?.edges?.map(({ node }, index) => {
         return (
           <CheckItem
-            className={index % 2 === 1 ? 'bg-neutral-2/50' : ''}
+            className={index % 2 === 1 ? 'bg-surface-stripe' : ''}
             key={node.id}
             {...props}
             {...node}
@@ -75,7 +75,7 @@ function CheckItem(props: {
         schemaCheckId: props.id,
       }}
       className={cn(
-        'hover:bg-neutral-5 col-span-3 grid grid-cols-subgrid items-center gap-4 px-4 py-3 text-left text-base sm:col-span-5',
+        'hover:bg-surface-hover col-span-3 grid grid-cols-subgrid items-center gap-4 px-4 py-3 text-left text-base sm:col-span-5',
         props.className,
       )}
     >

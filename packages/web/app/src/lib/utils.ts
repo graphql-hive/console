@@ -45,7 +45,7 @@ export function stringToHiveColor(str: string): string {
 
 function readChartStyles() {
   const s = getComputedStyle(document.documentElement);
-  const textColor = s.getPropertyValue('--color-neutral-12').trim();
+  const textColor = s.getPropertyValue('--color-fg').trim();
 
   // Convert HSL CSS variables (e.g. "45 93% 47%") to hex strings.
   // ECharts can't parse modern comma-less HSL like hsl(45 93% 47%),

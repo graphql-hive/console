@@ -182,7 +182,9 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
               className={cn(
                 'inline-flex size-9 items-center justify-center rounded-full text-sm font-medium transition-colors',
                 focusRing,
-                dataState !== 'inactive' ? 'bg-neutral-4 text-fg' : 'bg-neutral-2 text-fg-default',
+                dataState !== 'inactive'
+                  ? 'bg-surface-selected text-fg'
+                  : 'bg-surface-card text-fg-default',
                 clickable === false && 'cursor-default',
               )}
               aria-controls={`step-panel-${props.of}`}
@@ -384,8 +386,8 @@ const listVariants = cva('flex gap-2', {
 
 const classForSeparator = cva(
   [
-    'bg-neutral-3',
-    'data-[state=completed]:bg-neutral-11 data-disabled:opacity-50',
+    'bg-line-subtle',
+    'data-[state=completed]:bg-fg-default data-disabled:opacity-50',
     'transition-all duration-300 ease-in-out',
   ],
   {

@@ -283,7 +283,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
             props.coordinate ? (
               <>
                 App deployments affected by breaking change to{' '}
-                <code className="bg-neutral-5 text-warning rounded-sm px-1 py-0.5 font-mono">
+                <code className="bg-surface-code text-warning rounded-sm px-1 py-0.5 font-mono">
                   {props.coordinate}
                 </code>
               </>

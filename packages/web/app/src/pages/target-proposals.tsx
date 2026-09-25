@@ -157,7 +157,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
         ) : null}
       </div>
 
-      <div className="border-line/50 bg-neutral-2/50 min-h-full gap-2.5 rounded-md border p-2.5">
+      <div className="border-line-subtle bg-surface-inset min-h-full gap-2.5 rounded-md border p-2.5">
         {pageVariables.map(({ after }, i) => (
           <ProposalsListPage
             key={after ?? i}
@@ -231,8 +231,8 @@ const ProposalsListPage = (props: {
           <div
             key={proposal.id}
             className={cn(
-              'hover:bg-neutral-5/40 flex w-full flex-col rounded-md p-2.5',
-              props.selectedProposalId === proposal.id && 'bg-neutral-5/40',
+              'hover:bg-surface-hover flex w-full flex-col rounded-md p-2.5',
+              props.selectedProposalId === proposal.id && 'bg-surface-selected',
             )}
           >
             <Link
@@ -256,7 +256,7 @@ const ProposalsListPage = (props: {
                     <span className="text-fg-default mr-6 truncate font-semibold">
                       {proposal.title}
                     </span>
-                    <span className="text-neutral-2 flex items-center">
+                    <span className="text-fg-inverse flex items-center">
                       <StatusDot color={stageToColor(proposal.stage)} />
                     </span>
                     <span className="text-fg-secondary">{proposal.stage}</span>

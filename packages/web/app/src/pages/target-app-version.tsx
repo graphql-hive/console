@@ -344,7 +344,7 @@ function TargetAppVersionContent(props: {
           <div className="border-warning-line bg-warning-tint mt-4 flex items-center justify-between rounded-md border px-4 py-2 text-sm">
             <span>
               Showing operations affected by{' '}
-              <code className="bg-neutral-5 text-warning rounded-sm px-1 py-0.5 font-mono">
+              <code className="bg-surface-code text-warning rounded-sm px-1 py-0.5 font-mono">
                 {coordinates}
               </code>
             </span>

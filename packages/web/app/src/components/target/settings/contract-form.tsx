@@ -52,7 +52,7 @@ function TagSuggestions(props: {
           onClick={() => props.onToggle(value)}
           className={itemVariants({
             selected: props.selected.includes(value),
-            className: 'hover:bg-neutral-5 hover:text-fg w-full',
+            className: 'hover:bg-surface-hover hover:text-fg w-full',
           })}
         >
           <Check

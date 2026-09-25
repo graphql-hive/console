@@ -300,7 +300,7 @@ export function AdminStats({
     <DataWrapper query={query} organizationSlug={null}>
       {({ data }) => (
         <div className="flex flex-col gap-6">
-          <div className="border-line bg-neutral-2/50 flex justify-between rounded-md border p-5">
+          <div className="border-line bg-surface-inset flex justify-between rounded-md border p-5">
             <OverallStat label="Users" value={overall.users} />
             <OverallStat label="Organizations" value={overall.organizations} />
             <OverallStat label="Projects" value={overall.projects} />

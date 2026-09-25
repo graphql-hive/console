@@ -51,18 +51,18 @@ export function Combobox(
         ),
       }}
       classNames={{
-        control: () => clsx('bg-neutral-5! border-line! hover:border-accent! shadow-none!'),
-        valueContainer: () => clsx('bg-neutral-5! rounded-xl!'),
-        indicatorsContainer: () => clsx('bg-neutral-5! rounded-xl!'),
-        container: () => clsx('bg-neutral-5! rounded-xl! shadow-lg! text-sm!'),
-        menu: () => clsx('bg-neutral-5! rounded-xl! shadow-lg! text-xs!'),
-        menuList: () => clsx('bg-neutral-5! rounded-lg! text-xs!'),
-        option: () => clsx('bg-neutral-5! hover:bg-neutral-2! text-xs! cursor-pointer!'),
+        control: () => clsx('bg-surface-selected! border-line! hover:border-accent! shadow-none!'),
+        valueContainer: () => clsx('bg-surface-selected! rounded-xl!'),
+        indicatorsContainer: () => clsx('bg-surface-selected! rounded-xl!'),
+        container: () => clsx('bg-surface-selected! rounded-xl! shadow-lg! text-sm!'),
+        menu: () => clsx('bg-surface-selected! rounded-xl! shadow-lg! text-xs!'),
+        menuList: () => clsx('bg-surface-selected! rounded-lg! text-xs!'),
+        option: () => clsx('bg-surface-selected! hover:bg-surface-hover! text-xs! cursor-pointer!'),
         placeholder: () => clsx('text-fg-secondary! text-xs!'),
         input: () => clsx('text-fg-secondary! text-xs!'),
-        multiValue: () => clsx('text-fg-secondary! text-xs! bg-neutral-10! font-bold!'),
+        multiValue: () => clsx('text-fg-secondary! text-xs! bg-fg-secondary! font-bold!'),
         multiValueRemove: () =>
-          clsx('text-neutral-6 text-xs! hover:bg-neutral-11! hover:text-neutral-2!'),
+          clsx('text-fg-subtle text-xs! hover:bg-surface-inverse! hover:text-fg-inverse!'),
       }}
       closeMenuOnSelect={false}
       value={props.value}

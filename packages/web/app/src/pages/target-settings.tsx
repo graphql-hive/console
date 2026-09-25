@@ -933,7 +933,7 @@ export const AppDeploymentProtection = () => {
               </p>
               <p>
                 Use{' '}
-                <code className="bg-neutral-3 rounded-sm px-1 py-0.5 text-xs">
+                <code className="bg-surface-code rounded-sm px-1 py-0.5 text-xs">
                   hive app:retire --force
                 </code>{' '}
                 to bypass protection.

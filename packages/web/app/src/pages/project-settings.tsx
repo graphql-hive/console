@@ -104,7 +104,7 @@ function GitHubIntegration(): ReactElement | null {
           <div className="my-8 flex w-fit flex-col gap-y-1">
             <div className="flex items-center gap-x-2 pl-1">
               <CheckIcon className="text-success size-4" />
-              <div className="bg-neutral-12 flex size-6 items-center justify-center rounded-sm">
+              <div className="bg-surface-inverse flex size-6 items-center justify-center rounded-sm">
                 <HiveLogo className="size-4/5" />
               </div>
 
@@ -116,7 +116,7 @@ function GitHubIntegration(): ReactElement | null {
             <ArrowBigDownDashIcon className="size-6 self-center" />
             <div className="flex items-center gap-x-2 pl-1">
               <CheckIcon className="text-success size-4" />
-              <div className="bg-neutral-12 flex size-6 items-center justify-center rounded-sm">
+              <div className="bg-surface-inverse flex size-6 items-center justify-center rounded-sm">
                 <HiveLogo className="size-4/5" />
               </div>
 
@@ -388,7 +388,7 @@ function ProjectPolicySettings(props: {
         />
       ) : (
         <div className="text-fg-secondary pl-1 text-sm font-bold">
-          <p className="text-neutral-2 mr-4 inline-block">!</p>
+          <p className="text-fg-inverse mr-4 inline-block">!</p>
           Organization settings does not allow projects to override policy. Please consult your
           organization administrator.
         </div>

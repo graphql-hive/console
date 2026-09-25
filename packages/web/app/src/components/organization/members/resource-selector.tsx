@@ -1212,7 +1212,7 @@ function RowItem(props: {
 }) {
   return (
     <div
-      className="data-[active=true]:bg-neutral-10 data-[active=true]:text-fg-inverse flex cursor-pointer items-center space-x-1 px-2 py-1 data-[active=true]:cursor-default"
+      className="data-[active=true]:bg-surface-inverse data-[active=true]:text-fg-inverse flex cursor-pointer items-center space-x-1 px-2 py-1 data-[active=true]:cursor-default"
       data-active={props.isActive}
     >
       <span className="grow text-sm" onClick={props.onClick}>
@@ -1231,7 +1231,7 @@ function RowItem(props: {
               <XIcon
                 size={12}
                 data-active={props.isActive}
-                className="text-fg-secondary data-[active=true]:text-neutral-2"
+                className="text-fg-secondary data-[active=true]:text-fg-inverse"
               />
             </button>
           }

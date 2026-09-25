@@ -50,7 +50,7 @@ type AlertStateTransitionsBarProps = {
 
 type SegmentState = MetricAlertRuleState | 'NO_DATA';
 
-const NO_DATA_COLOR = 'bg-neutral-6';
+const NO_DATA_COLOR = 'bg-line-strong';
 const NO_DATA_LABEL = 'No data';
 
 function colorForSegment(state: SegmentState): string {

@@ -121,7 +121,7 @@ export const Banners = createPreview({
       <CallSite
         source="pages/target-explorer.tsx:212 and 3 more"
         origin="ui"
-        note="Alert: muted bg-neutral-3, rounded-lg, with absolute icon positioning driven by [&>svg] selectors. Four of the seven call sites are this same Outdated Schema warning, copy-pasted across the explorer pages."
+        note="Alert: a muted card fill, rounded-lg, with absolute icon positioning driven by [&>svg] selectors. Four of the seven call sites are this same Outdated Schema warning, copy-pasted across the explorer pages."
       >
         <Alert className="mb-3">
           <AlertTriangleIcon className="size-4" />
@@ -257,7 +257,7 @@ export const Loading = createPreview({
       <CallSite
         source="43 render sites, 44 classNames"
         origin="ui"
-        note="Skeleton is three classes and a spread: bg-neutral-11/10 animate-pulse rounded-md. It has no API, so every call site sizes it by hand. The recurring shapes below are the ones worth turning into something nameable."
+        note="Skeleton is three classes and a spread: a skeleton fill, animate-pulse, rounded-md. It has no API, so every call site sizes it by hand. The recurring shapes below are the ones worth turning into something nameable."
       >
         <div className="flex w-[28rem] flex-col gap-4">
           <div className="flex flex-col gap-2">

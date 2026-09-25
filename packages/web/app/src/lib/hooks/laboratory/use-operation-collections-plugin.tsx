@@ -371,9 +371,9 @@ export function Content() {
                 search={{ operation: node.id }}
                 data-cy={`operation-${node.name}`}
                 className={cn(
-                  'text-fg/50 hover:text-fg hover:bg-neutral-11/10 flex w-full items-center gap-x-3 rounded-sm p-2 font-normal hover:no-underline',
+                  'text-fg-muted hover:text-fg hover:bg-surface-hover flex w-full items-center gap-x-3 rounded-sm p-2 font-normal hover:no-underline',
                   node.id === queryParamsOperationId && [
-                    'text-fg bg-neutral-11/10',
+                    'text-fg bg-surface-selected',
                     currentOperation &&
                       node.id === currentOperation.id &&
                       !isSame &&

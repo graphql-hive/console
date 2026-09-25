@@ -19,7 +19,7 @@ export function Word(props: WordProps) {
     <Change type={props.change}>
       <span
         className={cn(
-          props.kind === 'description' && 'textneutral-8',
+          props.kind === 'description' && 'text-fg-subtle',
           props.kind === 'field' && 'text-fg-default',
           props.kind === 'keyword' && 'text-gray-400',
           props.kind === 'literal' && 'text-fg-default',

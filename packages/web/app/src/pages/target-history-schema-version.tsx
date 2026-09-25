@@ -690,7 +690,7 @@ function SubgraphCard(props: {
   const [isCollapsed, setIsCollapsed] = useState(props.isInitiallyCollapsed ?? false);
   return (
     <div className="divide-y overflow-hidden rounded-xl border">
-      <SubgraphRow subgraphDiff={props.diff} className="bg-neutral-2 dark:bg-neutral-3">
+      <SubgraphRow subgraphDiff={props.diff} className="bg-surface-card">
         <Button
           size="icon-sm"
           variant="ghost"
@@ -701,7 +701,7 @@ function SubgraphCard(props: {
         </Button>
       </SubgraphRow>
       {props.renderChildren && !isCollapsed && (
-        <div className="bg-neutral-1">{props.renderChildren()}</div>
+        <div className="bg-surface-inset">{props.renderChildren()}</div>
       )}
     </div>
   );
@@ -1170,7 +1170,7 @@ function SchemaVersionHeader(props: {
       <p className="text-fg-secondary mt-1.5 text-sm">
         Detailed view of the graph version changes.
       </p>
-      <div className="bg-neutral-2 dark:bg-neutral-3 mt-6 rounded-md border px-5 py-4">
+      <div className="bg-surface-card mt-6 rounded-md border px-5 py-4">
         <DescriptionList
           variants={{ termStyle: 'title', columns: 'auto' }}
           rows={[
@@ -1231,8 +1231,8 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
             key={m.id}
             onClick={() => props.onChange(m.id)}
             className={cn(
-              'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
-              isActive ? 'bg-neutral-5/40' : 'hover:',
+              'hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
+              isActive ? 'bg-surface-selected' : 'hover:',
             )}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -1259,11 +1259,11 @@ function ChangeTypeToggle(props: {
       <button
         onClick={() => props.onChange(null)}
         className={cn(
-          'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
-          props.selectedChangeType === null ? 'bg-neutral-5/40' : 'hover:',
+          'hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
+          props.selectedChangeType === null ? 'bg-surface-selected' : 'hover:',
         )}
       >
-        <span className={cn('h-1.5 w-1.5 translate-y-[-1px] rounded-full', 'bg-neutral-9')} />
+        <span className={cn('h-1.5 w-1.5 translate-y-[-1px] rounded-full', 'bg-fg-muted')} />
         All
       </button>
       {breakingChangeTypeModes.map(m => {
@@ -1273,8 +1273,8 @@ function ChangeTypeToggle(props: {
             key={m.id}
             onClick={() => props.onChange(m.id)}
             className={cn(
-              'hover:bg-neutral-5/50 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
-              isActive ? 'bg-neutral-5/40' : 'hover:',
+              'hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
+              isActive ? 'bg-surface-selected' : 'hover:',
             )}
           >
             <span className={cn('h-1.5 w-1.5 translate-y-[-1px] rounded-full', m.dotColor)} />
@@ -1509,7 +1509,7 @@ export const SchemaVersionSummary = (props: {
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader title="Summary" subtitle="Changes introduced by this version." />
-      <div className="bg-neutral-2 dark:bg-neutral-3 grid grid-cols-3 gap-px overflow-hidden rounded-xl border 2xl:grid-cols-6">
+      <div className="bg-surface-card grid grid-cols-3 gap-px overflow-hidden rounded-xl border 2xl:grid-cols-6">
         <Stat label="Schema changes" value={publicChangeStats.totalChanges} />
         <Stat
           label="Breaking changes"
@@ -1555,12 +1555,12 @@ export const SchemaVersionSummary = (props: {
 
       {schemaVersion.subgraphDiffs && (
         <div className="overflow-hidden rounded-xl border">
-          <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between border-b px-5 py-3">
+          <div className="bg-surface-card flex items-center justify-between border-b px-5 py-3">
             <div className="flex items-center gap-2 text-xs font-bold capitalize">
               Subgraph Overview
             </div>
           </div>
-          <ul className="bg-neutral-1 divide-y">
+          <ul className="bg-surface-inset divide-y">
             {schemaVersion.subgraphDiffs
               .sort(diff => (diff.__typename === 'SubgraphDiffUnchanged' ? 1 : -1))
               .map((diff, index) => (
@@ -1626,9 +1626,9 @@ const kindMeta = {
     label: 'Unchanged',
     Icon: CircleIcon,
     text: 'text-fg-secondary',
-    bg: 'bg-neutral-3',
-    ring: 'ring-neutral-6',
-    dot: 'bg-neutral-5',
+    bg: 'bg-surface-page',
+    ring: 'ring-line-strong',
+    dot: 'bg-line',
   },
 } as const;
 
@@ -1785,12 +1785,12 @@ function SubgraphLink(props: { url: string }) {
 function GenericGraphCard(props: { title: ReactNode; children?: ReactNode; actions?: ReactNode }) {
   return (
     <div className="divide-y overflow-hidden rounded-xl border">
-      <div className="bg-neutral-2 dark:bg-neutral-3 flex items-center gap-4 px-5 py-3.5">
+      <div className="bg-surface-card flex items-center gap-4 px-5 py-3.5">
         <span
           className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1',
-            'bg-neutral-3',
-            'ring-neutral-6',
+            'bg-surface-page',
+            'ring-line-strong',
           )}
         >
           <BoxIcon className={cn('h-3.5 w-3.5')} />
@@ -1802,7 +1802,7 @@ function GenericGraphCard(props: { title: ReactNode; children?: ReactNode; actio
         </div>
         {props.actions ? <>{props.actions}</> : null}
       </div>
-      {props.children && <div className="bg-neutral-1">{props.children}</div>}
+      {props.children && <div className="bg-surface-inset">{props.children}</div>}
     </div>
   );
 }

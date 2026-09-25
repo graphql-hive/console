@@ -203,7 +203,7 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
   );
 
   return (
-    <div className="border-line bg-neutral-2 space-y-6 border-l px-5 py-3">
+    <div className="border-line bg-surface-card space-y-6 border-l px-5 py-3">
       <h2 className="text-fg mb-2 block text-sm font-semibold">Alert conditions</h2>
 
       <DescriptionList

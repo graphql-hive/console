@@ -269,7 +269,7 @@ function UsageChip({ used, limit }: { used: number; limit: number }) {
       ? 'border-critical-line bg-critical-tint-subtle text-critical'
       : ratio >= 0.8
         ? 'border-warning-line bg-warning-tint text-warning'
-        : 'border-line bg-neutral-3 text-fg-default';
+        : 'border-line bg-surface-card text-fg-default';
   const label = `${used} / ${limit} rules`;
   const title =
     used >= limit
