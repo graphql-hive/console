@@ -1,6 +1,6 @@
-import { createOrganizationAccessToken } from 'testkit/flow';
-import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { assertNonNullish } from 'testkit/utils';
+import { psql } from '@hive/postgres';
 import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
@@ -17,6 +17,167 @@ const SchemaByCommitQuery = graphql(/* GraphQL */ `
     }
   }
 `);
+
+const PaginatedSchemaVersionsQuery = graphql(/* GraphQL */ `
+  query PaginatedSchemaVersionsQuery(
+    $targetRef: TargetReferenceInput!
+    $first: Int!
+    $after: String
+  ) {
+    target(reference: $targetRef) {
+      schemaVersions(first: $first, after: $after) {
+        edges {
+          cursor
+          node {
+            meta {
+              commit
+            }
+          }
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+      }
+    }
+  }
+`);
+
+test.concurrent(
+  'schema version pagination excludes legacy versions without duplicates',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+
+    for (const commit of ['legacy-1', 'legacy-2']) {
+      await token
+        .publishSchema({
+          commit,
+          sdl: `type Query { ${commit.replace('-', '_')}: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+    }
+
+    const { pool } = await seed.createDbConnection();
+    await pool.query(psql`
+      UPDATE "schema_versions"
+      SET "graph_id" = NULL
+      WHERE "target_id" = ${target.id}
+    `);
+
+    for (const commit of ['linked-1', 'linked-2']) {
+      await token
+        .publishSchema({
+          commit,
+          sdl: `type Query { ${commit.replace('-', '_')}: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+    }
+
+    const commits: Array<string | null> = [];
+    let after: string | null = null;
+
+    do {
+      const result = await execute({
+        document: PaginatedSchemaVersionsQuery,
+        authToken: token.secret,
+        variables: {
+          targetRef: { byId: target.id },
+          first: 1,
+          after,
+        },
+      }).then(r => r.expectNoGraphQLErrors());
+
+      const connection = result.target?.schemaVersions;
+      assertNonNullish(connection);
+      expect(connection.edges).toHaveLength(1);
+
+      commits.push(connection.edges[0].node.meta?.commit ?? null);
+      after = connection.pageInfo.endCursor;
+      if (!connection.pageInfo.hasNextPage) {
+        break;
+      }
+    } while (after);
+
+    expect(commits).toEqual(['linked-2', 'linked-1']);
+    expect(new Set(commits).size).toBe(commits.length);
+    await pool.end();
+  },
+);
+
+test.concurrent(
+  'schema version pagination includes legacy versions without duplicates for backfilled graph',
+  async () => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+    const { pool } = await seed.createDbConnection();
+
+    await pool.query(psql`
+      UPDATE "graphs"
+      SET "is_backfilled" = TRUE
+      WHERE "target_id" = ${target.id}
+    `);
+
+    for (const commit of ['legacy-1', 'legacy-2']) {
+      await token
+        .publishSchema({
+          commit,
+          sdl: `type Query { ${commit.replace('-', '_')}: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+    }
+
+    await pool.query(psql`
+    UPDATE "schema_versions"
+    SET "graph_id" = NULL
+    WHERE "target_id" = ${target.id}
+  `);
+
+    for (const commit of ['linked-1', 'linked-2']) {
+      await token
+        .publishSchema({
+          commit,
+          sdl: `type Query { ${commit.replace('-', '_')}: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+    }
+
+    const commits: Array<string | null> = [];
+    let after: string | null = null;
+
+    do {
+      const result = await execute({
+        document: PaginatedSchemaVersionsQuery,
+        authToken: token.secret,
+        variables: {
+          targetRef: { byId: target.id },
+          first: 1,
+          after,
+        },
+      }).then(r => r.expectNoGraphQLErrors());
+
+      const connection = result.target?.schemaVersions;
+      assertNonNullish(connection);
+      expect(connection.edges).toHaveLength(1);
+
+      commits.push(connection.edges[0].node.meta?.commit ?? null);
+      after = connection.pageInfo.endCursor;
+      if (!connection.pageInfo.hasNextPage) {
+        break;
+      }
+    } while (after);
+
+    expect(commits).toEqual(['linked-2', 'linked-1', 'legacy-2', 'legacy-1']);
+    expect(new Set(commits).size).toBe(commits.length);
+    await pool.end();
+  },
+);
 
 test.concurrent(
   'schema version by commit returns latest schema for the commit',
