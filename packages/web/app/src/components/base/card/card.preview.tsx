@@ -57,15 +57,11 @@ export const ContentOnly = createPreview(() => (
  */
 export const OnSurface = createPreview(() => (
   <div className="flex gap-4">
-    <Card
-      variants={{ onSurface: 'base' }}
-      title="Base"
-      description="Border only, no fill. Today's v2/card."
-    />
+    <Card variants={{ onSurface: 'base' }} title="Base" description="Border only, no fill." />
     <Card
       variants={{ onSurface: 'raised' }}
       title="Raised"
-      description="Filled, one step off the page. Today's ui/card."
+      description="Filled, one step off the page."
     />
   </div>
 ));
@@ -123,7 +119,7 @@ export const TitleSize = createPreview(() => (
     <Card
       variants={{ titleSize: 'large' }}
       title="Large"
-      description="text-lg, for section-heading cards. Today's ui/card CardTitle."
+      description="text-lg, for section-heading cards."
     />
     <Card
       variants={{ titleSize: 'xlarge' }}

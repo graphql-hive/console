@@ -90,10 +90,7 @@ export const Illustrations = createPreview(() => (
   </div>
 ));
 
-/**
- * All eight existing call sites through the new component, so each can be compared against its
- * counterpart under `Migration/NotFound`. The dashed box stands in for the region each one fills.
- */
+/** All eight call sites. The dashed box stands in for the region each one fills. */
 export const AllCallSites = createPreview({
   label: 'All 8 call sites',
   render: () => (

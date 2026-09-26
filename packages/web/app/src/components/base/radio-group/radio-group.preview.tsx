@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
-import { createPreview, type NavPath } from 'react-foundry';
+import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { RadioGroup } from './radio-group';
 
 export const nav: NavPath = 'Base/FormControls/RadioGroup';
@@ -165,6 +165,33 @@ export const AsCardFloating = createPreview(() => {
       />
     </div>
   );
+});
+
+export const Playground = createPreview({
+  controls: controlsFor(RadioGroup, {
+    variant: { type: 'radio', options: ['as-button', 'as-card'], default: 'as-card' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
+    orientation: { type: 'radio', options: ['vertical', 'horizontal'], default: 'vertical' },
+    disabled: { type: 'boolean', default: false },
+  }),
+  render: v => {
+    const [value, setValue] = useState('normal');
+    return (
+      <div
+        className={v.onSurface === 'raised' ? 'bg-neutral-3 w-[46rem] rounded-md p-5' : 'w-[46rem]'}
+      >
+        <RadioGroup
+          variant={v.variant}
+          onSurface={v.onSurface}
+          orientation={v.orientation}
+          disabled={v.disabled}
+          value={value}
+          onValueChange={setValue}
+          items={SEVERITY_ITEMS}
+        />
+      </div>
+    );
+  },
 });
 
 function PlanBody(props: {

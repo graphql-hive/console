@@ -3,11 +3,7 @@ import { StatusDot } from './status-dot';
 
 export const nav: NavPath = 'Base/Primitives/StatusDot';
 
-/**
- * One solid dot per state, on the semantic tokens. The old `BadgeRounded` drew a two-tone ring
- * (a 500-shade fill inside a 900-shade border) for its named colours and a flat dot for the
- * semantic ones; this is the flat dot everywhere.
- */
+/** One solid dot per state, on the semantic tokens. */
 export const Colors = createPreview(() => (
   <div className="text-neutral-11 flex items-center gap-6 text-sm">
     {(['success', 'warning', 'critical', 'info', 'neutral'] as const).map(color => (

@@ -100,7 +100,7 @@ export const Link = createPreview(() => (
 /**
  * A button that navigates. `anchor` renders an `<a>` for links out; `render` takes the router
  * `<Link>` for links within the app and merges the button's classes, ref and handlers onto it.
- * Together they replace the old `asChild`. Anchors stand in for the router here.
+ * Anchors stand in for the router here.
  */
 export const AsLink = createPreview(() => (
   <div className="flex w-96 flex-col gap-3">
@@ -129,7 +129,7 @@ export const Disabled = createPreview(() => (
 
 /**
  * `width="full"` is the modal-footer and auth-form shape: a pair of full-width buttons sharing a
- * row. It replaces the `className="w-full justify-center"` that 116 legacy call sites set by hand.
+ * row.
  */
 export const FullWidth = createPreview(() => (
   <div className="flex w-96 flex-col gap-3">
@@ -143,6 +143,34 @@ export const FullWidth = createPreview(() => (
       <Button variant="primary" width="full">
         Save changes
       </Button>
+    </div>
+  </div>
+));
+
+/** Without `raised`, the default fill disappears into a dialog or sheet in dark mode. */
+export const OnRaisedSurface = createPreview(() => (
+  <div className="flex flex-wrap gap-6">
+    <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-4 flex w-[24rem] flex-col gap-3 rounded-md border p-6">
+      <Button type="submit" width="full" onSurface="raised">
+        Sign in
+      </Button>
+      <Button variant="outline" width="full">
+        Login with GitHub
+      </Button>
+    </div>
+    <div className="bg-neutral-3 border-neutral-5 flex w-[28rem] flex-col gap-6 rounded-md border p-6">
+      <div className="flex justify-end gap-2">
+        <Button variant="outline">Cancel</Button>
+        <Button onSurface="raised">Transfer this organization</Button>
+      </div>
+      <div className="flex gap-2">
+        <Button variant="outline" width="full">
+          Cancel
+        </Button>
+        <Button width="full" onSurface="raised">
+          Add Operation
+        </Button>
+      </div>
     </div>
   </div>
 ));
@@ -167,11 +195,18 @@ export const Playground = createPreview({
     },
     size: { type: 'radio', options: ['default', 'compact'], default: 'default' },
     width: { type: 'radio', options: ['auto', 'full'], default: 'auto' },
+    onSurface: { type: 'radio', options: ['base', 'raised'], default: 'base' },
     disabled: { type: 'boolean', default: false },
   }),
   render: v => (
     <div className="w-80">
-      <Button variant={v.variant} size={v.size} width={v.width} disabled={v.disabled}>
+      <Button
+        variant={v.variant}
+        size={v.size}
+        width={v.width}
+        onSurface={v.onSurface}
+        disabled={v.disabled}
+      >
         {v.children}
       </Button>
     </div>

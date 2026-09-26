@@ -266,7 +266,6 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
           <div className="col-span-4">
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Total calls"
                 icon={GlobeIcon}
                 value={isLoading ? '-' : formatNumber(totalRequests)}
@@ -274,7 +273,6 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
               />
               {showFieldLevelMetrics ? (
                 <StatCard
-                  variants={{ onSurface: 'raised' }}
                   title="Total resolutions"
                   icon={GlobeIcon}
                   hint={
@@ -304,7 +302,6 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                 />
               ) : null}
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Requests per minute"
                 icon={ActivityIcon}
                 value={
@@ -321,14 +318,12 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                 caption={`RPM in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
               />
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Operations"
                 icon={BookIcon}
                 value={isLoading ? '-' : totalOperations}
                 caption="GraphQL documents with selected coordinate"
               />
               <StatCard
-                variants={{ onSurface: 'raised' }}
                 title="Consumers"
                 icon={TabletSmartphoneIcon}
                 value={isLoading ? '-' : totalClients}
