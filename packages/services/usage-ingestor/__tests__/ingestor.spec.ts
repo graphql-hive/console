@@ -284,7 +284,7 @@ describe('createDeduplicationToken', () => {
   });
 });
 
-test('a corrupt/unparseable message increments the poison-pill counter and logs', async () => {
+test('a corrupt/unparseable message is dropped, counted as a poison pill and logged', async () => {
   const processor = buildProcessor();
   const writer = buildWriter();
   const tracker = { waitForCapacity: vi.fn().mockResolvedValue(undefined), track: vi.fn() };
@@ -310,15 +310,21 @@ test('a corrupt/unparseable message increments the poison-pill counter and logs'
       topic: 'usage_reports',
       partition: 4,
     }),
-  ).rejects.toThrow();
+  ).resolves.toBeUndefined();
 
   expect(incSpy).toHaveBeenCalledTimes(1);
   expect(processor.processReports).not.toHaveBeenCalled();
-  expect(tracker.track).not.toHaveBeenCalled();
+  expect(tracker.track).toHaveBeenCalledWith({
+    topic: 'usage_reports',
+    partition: 4,
+    offset: '999',
+    bytes: 0,
+    promise: expect.any(Promise),
+  });
 
   const [errorArg, errorMsg] = logger.error.mock.calls.at(-1)!;
   expect(errorMsg).toEqual(
-    'Report decompression/parsing failed - offset not committed, message will be reprocessed',
+    'Report decompression/parsing failed - message dropped, offset will be committed',
   );
   expect(errorArg).toMatchObject({
     topic: 'usage_reports',
@@ -426,6 +432,33 @@ describe('createIngestor', () => {
     );
     expect(lagSpy).toHaveBeenLastCalledWith({ partition: '0' }, 0);
     lagSpy.mockRestore();
+  });
+
+  test('drops an unparseable message and commits past it on shutdown', async () => {
+    const { ingestor } = build();
+    await ingestor.start();
+    const { eachMessage } = fakeConsumer.run.mock.calls[0][0];
+
+    await eachMessage({
+      topic: 'usage_reports',
+      partition: 0,
+      message: {
+        key: null,
+        value: Buffer.from('not-a-valid-compressed-payload'),
+        timestamp: String(Date.now()),
+        attributes: 0,
+        offset: '999',
+        headers: {},
+      },
+      heartbeat,
+      pause: () => () => {},
+    });
+
+    await ingestor.stop();
+
+    expect(fakeConsumer.commitOffsets).toHaveBeenCalledWith([
+      { topic: 'usage_reports', partition: 0, offset: '1000' },
+    ]);
   });
 
   test('does not commit a message ClickHouse never acknowledged, and disconnects at the deadline', async () => {

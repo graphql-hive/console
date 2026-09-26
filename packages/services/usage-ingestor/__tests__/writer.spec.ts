@@ -1,5 +1,6 @@
 import nock from 'nock';
 import {
+  failingMessages,
   ingestedOperationsFailures,
   ingestedOperationsWrites,
   poisonPillMessages,
@@ -87,7 +88,9 @@ test('after the HTTP retries are exhausted it retries the same insert in place u
     .post('/')
     .query(true)
     .reply(200, '{}');
-  const incSpy = vi.spyOn(poisonPillMessages, 'inc');
+  const poisonSpy = vi.spyOn(poisonPillMessages, 'inc');
+  const failingIncSpy = vi.spyOn(failingMessages, 'inc');
+  const failingDecSpy = vi.spyOn(failingMessages, 'dec');
   const writesSpy = vi.spyOn(ingestedOperationsWrites, 'inc');
   const failuresSpy = vi.spyOn(ingestedOperationsFailures, 'inc');
   const logger = buildLogger();
@@ -99,7 +102,9 @@ test('after the HTTP retries are exhausted it retries the same insert in place u
   expect(scope.isDone()).toBe(true);
   expect(tokens).toHaveLength(4);
   expect(new Set(tokens)).toEqual(new Set([options.deduplicationToken]));
-  expect(incSpy).toHaveBeenCalledTimes(1);
+  expect(poisonSpy).not.toHaveBeenCalled();
+  expect(failingIncSpy).toHaveBeenCalledTimes(1);
+  expect(failingDecSpy).toHaveBeenCalledTimes(1);
   expect(failuresSpy).toHaveBeenCalledTimes(1);
   expect(failuresSpy).toHaveBeenCalledWith(2);
   expect(writesSpy).toHaveBeenCalledTimes(1);
@@ -112,16 +117,50 @@ test('after the HTTP retries are exhausted it retries the same insert in place u
     deduplicationToken: options.deduplicationToken,
     rows: 2,
     attempt: 1,
+    status: 500,
+    clickhouseError: 'boom',
   });
 
-  incSpy.mockRestore();
+  poisonSpy.mockRestore();
+  failingIncSpy.mockRestore();
+  failingDecSpy.mockRestore();
   writesSpy.mockRestore();
   failuresSpy.mockRestore();
+}, 15_000);
+
+test('a message with several failing inserts counts once in the failing-messages gauge', async () => {
+  for (const table of ['operations', 'operation_collection']) {
+    const matches = (query: Record<string, string>) =>
+      query.query.startsWith(`INSERT INTO ${table} `);
+    nock('http://clickhouse.test:8123')
+      .post('/')
+      .query(matches)
+      .times(3)
+      .reply(500, 'boom')
+      .post('/')
+      .query(matches)
+      .reply(200, '{}');
+  }
+  const failingIncSpy = vi.spyOn(failingMessages, 'inc');
+  const failingDecSpy = vi.spyOn(failingMessages, 'dec');
+  const writer = createWriter({ clickhouse, logger: buildLogger() });
+
+  await Promise.all([
+    writer.writeOperations(['row'], options),
+    writer.writeRegistry(['record'], options),
+  ]);
+  writer.destroy();
+
+  expect(failingIncSpy).toHaveBeenCalledTimes(1);
+  expect(failingDecSpy).toHaveBeenCalledTimes(1);
+  failingIncSpy.mockRestore();
+  failingDecSpy.mockRestore();
 }, 15_000);
 
 test('destroying the writer stops an in-place retry loop without counting a write', async () => {
   nock('http://clickhouse.test:8123').post('/').query(true).reply(500, 'boom').persist();
   const writesSpy = vi.spyOn(ingestedOperationsWrites, 'inc');
+  const failingDecSpy = vi.spyOn(failingMessages, 'dec');
   const writer = createWriter({ clickhouse, logger: buildLogger() });
 
   const write = writer.writeOperations(['row'], options);
@@ -130,7 +169,9 @@ test('destroying the writer stops an in-place retry loop without counting a writ
 
   await expect(write).rejects.toThrow();
   expect(writesSpy).not.toHaveBeenCalled();
+  expect(failingDecSpy).toHaveBeenCalledTimes(1);
   writesSpy.mockRestore();
+  failingDecSpy.mockRestore();
 }, 15_000);
 
 test('the request timeout covers the busy timeout the insert waits for', async () => {

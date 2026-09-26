@@ -392,7 +392,7 @@
         "type": "prometheus",
         "uid": "PROM_DATASOURCE_UID"
       },
-      "description": "Write attempts that failed all HTTP retries and were retried in place, plus unparseable messages, over the dashboard range.",
+      "description": "Kafka messages with an insert currently being retried in place; clears when the insert succeeds. Sustained > 0 means a stuck message or a ClickHouse outage.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -444,12 +444,12 @@
             "uid": "PROM_DATASOURCE_UID"
           },
           "editorMode": "code",
-          "expr": "sum(increase({__name__=~\"usage_ingestor_poison_pill_messages(_total)?\"}[$__range])) or vector(0)",
-          "legendFormat": "Poison-pill retries",
+          "expr": "sum(usage_ingestor_failing_messages) or vector(0)",
+          "legendFormat": "Failing messages",
           "refId": "A"
         }
       ],
-      "title": "Poison-pill retries",
+      "title": "Failing messages",
       "type": "stat"
     },
     {
@@ -534,7 +534,7 @@
         "code": {
           "language": "markdown"
         },
-        "content": "**Stalled writes**: *ClickHouse write requests/s* drops to 0 or shifts to error statuses while *Committed offset lag* rises.  \n**Stuck message**: *Poison-pill retries* keeps increasing for the same partition; the ingestor logs the deduplication token and source offset.  \n**Backpressure**: *Processing duration* grows because the ingestor waits for in-flight bytes to drain.  \n**Commits failing**: writes are healthy but lag still rises; `usage_ingestor_errors` counts rejected commits (usually a rebalance).  \nClickHouse server metrics (active parts, async-insert queue) are not scraped; check `system.parts` and `system.asynchronous_inserts` directly.",
+        "content": "**Stalled writes**: *ClickHouse write requests/s* drops to 0 or shifts to error statuses while *Committed offset lag* rises.  \n**Stuck message**: *Failing messages* stays above 0 while write requests continue; the ingestor logs the deduplication token, source offset, HTTP status and ClickHouse error.  \n**Poison pill**: an unparseable message was dropped and counted; the error log has its topic, partition and offset.  \n**Backpressure**: *Processing duration* grows because the ingestor waits for in-flight bytes to drain.  \n**Commits failing**: writes are healthy but lag still rises; `usage_ingestor_errors` counts rejected commits (usually a rebalance).  \nClickHouse server metrics (active parts, async-insert queue) are not scraped; check `system.parts` and `system.asynchronous_inserts` directly.",
         "mode": "markdown"
       },
       "title": "How to read this dashboard",
@@ -1117,7 +1117,7 @@
         "type": "prometheus",
         "uid": "PROM_DATASOURCE_UID"
       },
-      "description": "Errors: unparseable messages and rejected offset commits. Poison-pill: inserts retried in place after exhausting HTTP retries.",
+      "description": "Errors: unexpected processing failures and rejected offset commits. Poison pills: unparseable messages, dropped and counted. Failing messages: inserts being retried in place.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1177,11 +1177,21 @@
           },
           "editorMode": "code",
           "expr": "sum(rate({__name__=~\"usage_ingestor_poison_pill_messages(_total)?\"}[$__rate_interval]))",
-          "legendFormat": "poison-pill retries",
+          "legendFormat": "poison pills (unparseable, dropped)",
           "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(usage_ingestor_failing_messages)",
+          "legendFormat": "failing messages",
+          "refId": "C"
         }
       ],
-      "title": "Errors and poison-pill retries",
+      "title": "Errors, poison pills and failing messages",
       "type": "timeseries"
     },
     {

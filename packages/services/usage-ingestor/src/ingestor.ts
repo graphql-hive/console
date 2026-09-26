@@ -4,6 +4,7 @@ import type { ServiceLogger } from '@hive/service-common';
 import { createMskIamTokenProvider } from '@hive/service-common';
 import type { RawReport } from '@hive/usage-common';
 import { decompress } from '@hive/usage-common';
+import * as Sentry from '@sentry/node';
 import type { KafkaEnvironment } from './environment';
 import { createInflightTracker } from './inflight';
 import { errors, poisonPillMessages, processDuration, reportMessageBytes } from './metrics';
@@ -264,7 +265,8 @@ function serializedBytes(rows: string[]) {
 /**
  * Parses one Kafka message and starts its ClickHouse writes. Resolves as soon as the writes
  * are handed to the in-flight tracker; the tracker commits the offset when they are all
- * acknowledged. Rejects only for a message that cannot be parsed.
+ * acknowledged. A message that cannot be parsed is dropped and its offset committed, so this
+ * rejects only on unexpected processing errors, which kafkajs retries.
  */
 export async function processMessage({
   processor,
@@ -293,9 +295,9 @@ export async function processMessage({
     // Decompress and parse the message to get a list of reports
     rawReports = JSON.parse((await decompress(message.value!)).toString());
   } catch (error) {
-    // A genuinely corrupt/unparseable message is considered a poison
-    // pill. It will never successfully decompress or parse no matter how many times
-    // it's retried, unlike a write failure which could be transient.
+    // A poison pill: it will never decompress or parse however often it is retried, and
+    // retrying it (kafkajs redelivers it and restarts the consumer) only blocks the partition.
+    // Until a dead-letter queue exists the payload survives only in the debug log.
     poisonPillMessages.inc();
     const summary = {
       topic,
@@ -305,13 +307,21 @@ export async function processMessage({
     };
     logger.error(
       { ...summary, error: error instanceof Error ? error.message : String(error) },
-      'Report decompression/parsing failed - offset not committed, message will be reprocessed',
+      'Report decompression/parsing failed - message dropped, offset will be committed',
     );
     logger.debug(
       { ...summary, value: message.value?.toString('base64') },
       'Poison pill message full payload',
     );
-    throw error;
+    Sentry.captureException(error, { level: 'error', extra: summary });
+    tracker.track({
+      topic,
+      partition,
+      offset: message.offset,
+      bytes: 0,
+      promise: Promise.resolve(),
+    });
+    return;
   }
 
   const deduplicationToken = createDeduplicationToken(rawReports, message.value!);

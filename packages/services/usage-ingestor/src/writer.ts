@@ -5,13 +5,13 @@ import { metrics } from '@hive/service-common';
 import { compressGzip } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
 import {
+  failingMessages,
   ingestedOperationErrorsFailures,
   ingestedOperationErrorsWrites,
   ingestedOperationRegistryFailures,
   ingestedOperationRegistryWrites,
   ingestedOperationsFailures,
   ingestedOperationsWrites,
-  poisonPillMessages,
   writeDuration,
 } from './metrics';
 import {
@@ -55,6 +55,15 @@ interface RowMetrics {
   failures: Counter;
 }
 
+/**
+ * Keeps `usage_ingestor_failing_messages` at the number of messages with at least one insert in
+ * the retry loop, however many of a message's five inserts are failing at once.
+ */
+interface FailingMessages {
+  markFailing(source: string): void;
+  markRecovered(source: string): void;
+}
+
 const MAX_RETRY_BACKOFF_MS = 30_000;
 
 const operationsFields = operationsOrder.join(', ');
@@ -86,6 +95,27 @@ export function createWriter({
   const httpAgent = new Agent(agentConfig);
   const httpsAgent = new Agent.HttpsAgent(agentConfig);
   const abortController = new AbortController();
+  const failingWritesBySource = new Map<string, number>();
+  const failing: FailingMessages = {
+    markFailing(source) {
+      const count = failingWritesBySource.get(source) ?? 0;
+      if (count === 0) {
+        failingMessages.inc();
+      }
+      failingWritesBySource.set(source, count + 1);
+    },
+    markRecovered(source) {
+      const count = failingWritesBySource.get(source) ?? 0;
+      if (count > 1) {
+        failingWritesBySource.set(source, count - 1);
+        return;
+      }
+      failingWritesBySource.delete(source);
+      if (count === 1) {
+        failingMessages.dec();
+      }
+    },
+  };
 
   const agents = {
     http: httpAgent,
@@ -114,6 +144,7 @@ export function createWriter({
       maxRetry: 3,
       options,
       rowMetrics,
+      failing,
       signal: abortController.signal,
     });
   }
@@ -192,6 +223,15 @@ export function createWriter({
  * request with backoff until it succeeds or the writer is destroyed. Because the body and
  * the deduplication token never change, ClickHouse applies at most one copy no matter how
  * many attempts reach it.
+ *
+ * The retries are unbounded on purpose. A failure that never clears is systemic (a schema
+ * lagging a deploy, a table missing during a migration), so every message fails at once:
+ * holding them until the in-flight byte cap pauses consumption is the intended backpressure,
+ * and the rows flow again the moment the cause is fixed, with no restart or replay. Giving up
+ * would drop the rows until a restart replayed them. A single message that can never be
+ * written freezes its partition's commit offset and keeps its bytes counted against the cap;
+ * `usage_ingestor_failing_messages` and `usage_ingestor_committed_offset_lag` expose it and
+ * each retry logs ClickHouse's error. A dead-letter queue for such messages is future work.
  */
 async function writeCsv(args: {
   config: ClickHouseConfig;
@@ -205,48 +245,61 @@ async function writeCsv(args: {
   maxRetry: number;
   options: WriteOptions;
   rowMetrics: RowMetrics | null;
+  failing: FailingMessages;
   signal: AbortSignal;
 }) {
-  const { config, logger, query, options, rowMetrics, signal } = args;
+  const { config, logger, query, options, rowMetrics, failing, signal } = args;
   let attempt = 0;
+  let markedFailing = false;
 
-  for (;;) {
-    try {
-      const response = await sendCsv(args);
-      rowMetrics?.writes.inc(rowMetrics.rows);
-      return response;
-    } catch (error) {
-      rowMetrics?.failures.inc(rowMetrics.rows);
+  try {
+    for (;;) {
+      try {
+        const response = await sendCsv(args);
+        rowMetrics?.writes.inc(rowMetrics.rows);
+        return response;
+      } catch (error) {
+        rowMetrics?.failures.inc(rowMetrics.rows);
+        if (!markedFailing) {
+          markedFailing = true;
+          failing.markFailing(options.source);
+        }
 
-      if (signal.aborted) {
-        throw error;
+        if (signal.aborted) {
+          throw error;
+        }
+
+        attempt += 1;
+        const delay = Math.min(
+          config.write_retry_backoff_ms * 2 ** (attempt - 1),
+          MAX_RETRY_BACKOFF_MS,
+        );
+        logger.error(
+          {
+            query,
+            source: options.source,
+            deduplicationToken: options.deduplicationToken,
+            rows: rowMetrics?.rows,
+            bodyBytes: args.body.byteLength,
+            attempt,
+            retryInMs: delay,
+            status: getStatusCodeFromError(error),
+            clickhouseError: getResponseBody(error),
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'Write failed - offset not committed, retrying the same insert in place',
+        );
+
+        await sleep(delay, signal);
+
+        if (signal.aborted) {
+          throw error;
+        }
       }
-
-      attempt += 1;
-      poisonPillMessages.inc();
-      const delay = Math.min(
-        config.write_retry_backoff_ms * 2 ** (attempt - 1),
-        MAX_RETRY_BACKOFF_MS,
-      );
-      logger.error(
-        {
-          query,
-          source: options.source,
-          deduplicationToken: options.deduplicationToken,
-          rows: rowMetrics?.rows,
-          bodyBytes: args.body.byteLength,
-          attempt,
-          retryInMs: delay,
-          error: error instanceof Error ? error.message : String(error),
-        },
-        'Write failed - offset not committed, retrying the same insert in place',
-      );
-
-      await sleep(delay, signal);
-
-      if (signal.aborted) {
-        throw error;
-      }
+    }
+  } finally {
+    if (markedFailing) {
+      failing.markRecovered(options.source);
     }
   }
 }
@@ -354,6 +407,8 @@ function sendCsv({
           query,
           source: options.source,
           deduplicationToken: options.deduplicationToken,
+          status: getStatusCodeFromError(error),
+          clickhouseError: getResponseBody(error),
           clickhouse: {
             protocol: config.protocol,
             host: config.host,
@@ -387,4 +442,20 @@ function getStatusCodeFromError(error: unknown) {
   if (hasResponse(error)) {
     return error.response?.statusCode;
   }
+}
+
+const MAX_LOGGED_RESPONSE_CHARS = 1000;
+
+function getResponseBody(error: unknown) {
+  if (!hasResponse(error)) {
+    return undefined;
+  }
+  const body: unknown = error.response?.body;
+  if (typeof body === 'string') {
+    return body.slice(0, MAX_LOGGED_RESPONSE_CHARS);
+  }
+  if (Buffer.isBuffer(body)) {
+    return body.toString('utf8', 0, MAX_LOGGED_RESPONSE_CHARS);
+  }
+  return undefined;
 }

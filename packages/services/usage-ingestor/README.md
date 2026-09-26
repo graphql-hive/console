@@ -8,6 +8,13 @@ inserts. Retried or replayed messages are therefore written once. ClickHouse Clo
 tables keep the deduplication log by default; self-hosted `MergeTree` tables get it from the
 `non_replicated_deduplication_window` setting applied by the ClickHouse migrations.
 
+Deduplication needs ClickHouse 26.2 or newer, the version line pinned in
+`docker/docker-compose.community.yml`. 26.1 added per-insert deduplication of coalesced async
+inserts on plain `MergeTree`, and 26.2 lifted the restriction on combining async inserts with
+`deduplicate_blocks_in_dependent_materialized_views`; releases from 24.3 to 26.1 reject every insert
+the ingestor sends with "Deduplication in dependent materialized view cannot work together with
+async inserts".
+
 ## Configuration
 
 | Name                                      | Required                                       | Description                                                                                                                                                       | Example Value                                        |

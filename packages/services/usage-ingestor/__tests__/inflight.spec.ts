@@ -201,3 +201,93 @@ test('retainPartitions drops state and the gauge for revoked partitions', async 
 
   removeSpy.mockRestore();
 });
+
+test('a message delivered again after a rebalance shares its slot and never moves the commit offset backwards', async () => {
+  const { tracker, onCommit } = buildTracker();
+  const first: Record<string, ReturnType<typeof deferred>> = {};
+  for (const offset of ['10', '11', '12']) {
+    first[offset] = deferred();
+    tracker.track({ topic: 't', partition: 0, offset, bytes: 1, promise: first[offset].promise });
+  }
+  first['10'].resolve();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(onCommit).toHaveBeenLastCalledWith([{ topic: 't', partition: 0, offset: '11' }]);
+
+  const replay: Record<string, ReturnType<typeof deferred>> = {};
+  for (const offset of ['11', '12', '13']) {
+    replay[offset] = deferred();
+    tracker.track({ topic: 't', partition: 0, offset, bytes: 1, promise: replay[offset].promise });
+  }
+  expect(tracker.inflight()).toEqual({ bytes: 5, count: 5 });
+
+  first['12'].resolve();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(onCommit).toHaveBeenCalledTimes(1);
+
+  replay['11'].resolve();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(onCommit).toHaveBeenLastCalledWith([{ topic: 't', partition: 0, offset: '13' }]);
+
+  first['11'].resolve();
+  replay['12'].resolve();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(onCommit).toHaveBeenCalledTimes(2);
+
+  replay['13'].resolve();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(onCommit.mock.calls.map(([offsets]) => offsets[0].offset)).toEqual(['11', '13', '14']);
+  expect(tracker.inflight()).toEqual({ bytes: 0, count: 0 });
+});
+
+test('a replay of an already acknowledged offset only tracks its bytes', async () => {
+  const { tracker, onCommit } = buildTracker();
+  const original = deferred();
+  tracker.track({ topic: 't', partition: 0, offset: '10', bytes: 1, promise: original.promise });
+  original.resolve();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(onCommit).toHaveBeenLastCalledWith([{ topic: 't', partition: 0, offset: '11' }]);
+
+  const replay = deferred();
+  tracker.track({ topic: 't', partition: 0, offset: '10', bytes: 4, promise: replay.promise });
+  expect(tracker.inflight()).toEqual({ bytes: 4, count: 1 });
+
+  replay.resolve();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(onCommit).toHaveBeenCalledTimes(1);
+  expect(tracker.inflight()).toEqual({ bytes: 0, count: 0 });
+});
+
+test('drain clears its wake-up timers once every write is acknowledged', async () => {
+  const { tracker } = buildTracker();
+  const a = deferred();
+  const b = deferred();
+  tracker.track({ topic: 't', partition: 0, offset: '1', bytes: 1, promise: a.promise });
+  tracker.track({ topic: 't', partition: 0, offset: '2', bytes: 1, promise: b.promise });
+
+  const draining = tracker.drain(500);
+  await vi.advanceTimersByTimeAsync(100);
+  a.resolve();
+  await vi.advanceTimersByTimeAsync(100);
+  b.resolve();
+  await vi.advanceTimersByTimeAsync(0);
+  const result = await draining;
+
+  expect(result).toEqual({ remaining: 0 });
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+test('a write settling for a revoked partition does not set its lag gauge', async () => {
+  const { tracker } = buildTracker();
+  const setSpy = vi.spyOn(committedOffsetLag, 'set');
+  const a = deferred();
+  tracker.track({ topic: 't', partition: 0, offset: '10', bytes: 1, promise: a.promise });
+  tracker.observeHighWatermark('t', 0, '20');
+  tracker.retainPartitions({ t: [1] });
+  setSpy.mockClear();
+
+  a.resolve();
+  await vi.advanceTimersByTimeAsync(0);
+
+  expect(setSpy).not.toHaveBeenCalled();
+  setSpy.mockRestore();
+});

@@ -38,6 +38,19 @@ function partitionKey(topic: string, partition: number) {
   return `${topic}:${partition}`;
 }
 
+function findOrInsert(queue: Pending[], offset: bigint): Pending {
+  let index = queue.length;
+  while (index > 0 && queue[index - 1].offset >= offset) {
+    if (queue[index - 1].offset === offset) {
+      return queue[index - 1];
+    }
+    index -= 1;
+  }
+  const pending: Pending = { offset, done: false };
+  queue.splice(index, 0, pending);
+  return pending;
+}
+
 /**
  * Tracks messages whose ClickHouse writes are still in flight and commits Kafka offsets
  * strictly in order per partition, so an offset is never committed ahead of a message
@@ -81,7 +94,11 @@ export function createInflightTracker(config: {
   }
 
   function updateLag(state: PartitionState) {
-    if (state.highWatermark === null || state.nextOffset === null) {
+    if (
+      state.highWatermark === null ||
+      state.nextOffset === null ||
+      partitions.get(partitionKey(state.topic, state.partition)) !== state
+    ) {
       return;
     }
     committedOffsetLag.set(
@@ -116,10 +133,15 @@ export function createInflightTracker(config: {
     }
   }
 
-  function settle(state: PartitionState, pending: Pending, bytes: number, succeeded: boolean) {
+  function settle(
+    state: PartitionState,
+    pending: Pending | null,
+    bytes: number,
+    succeeded: boolean,
+  ) {
     inflightBytes -= bytes;
     inflightCount -= 1;
-    if (succeeded) {
+    if (succeeded && pending) {
       pending.done = true;
       advance(state);
     }
@@ -173,12 +195,22 @@ export function createInflightTracker(config: {
   }
 
   return {
+    /**
+     * After every group join kafkajs resumes each assigned partition from its committed offset,
+     * so a message whose writes are still in flight is delivered again. Both copies carry the
+     * same deduplication token, so whichever ClickHouse acknowledges first proves the rows are
+     * stored: a repeat shares its first delivery's slot instead of appending one that would move
+     * the commit offset backwards, and a repeat of an already acknowledged offset needs no slot.
+     */
     track(entry: InflightEntry) {
       const state = getPartition(entry.topic, entry.partition);
-      const pending: Pending = { offset: BigInt(entry.offset), done: false };
-      state.queue.push(pending);
+      const offset = BigInt(entry.offset);
       inflightBytes += entry.bytes;
       inflightCount += 1;
+      const pending =
+        state.nextOffset !== null && offset < state.nextOffset
+          ? null
+          : findOrInsert(state.queue, offset);
       entry.promise.then(
         () => settle(state, pending, entry.bytes, true),
         () => settle(state, pending, entry.bytes, false),
@@ -239,10 +271,12 @@ export function createInflightTracker(config: {
       const deadline = Date.now() + deadlineMs;
 
       while (inflightCount > 0 && Date.now() < deadline) {
-        await Promise.race([
-          nextSettle(),
-          new Promise<void>(resolve => setTimeout(resolve, deadline - Date.now())),
-        ]);
+        const wake = setTimeout(notifySettled, deadline - Date.now());
+        try {
+          await nextSettle();
+        } finally {
+          clearTimeout(wake);
+        }
       }
 
       await flushCommits();
