@@ -8,7 +8,7 @@ describe('Skeleton', () => {
     const element = container.firstElementChild!;
     expect(element.getAttribute('aria-hidden')).toBe('true');
     expect([...element.classList]).toEqual(
-      expect.arrayContaining(['animate-skeleton', 'bg-fixed', 'rounded-full', 'h-4', 'w-48']),
+      expect.arrayContaining(['animate-skeleton', 'bg-fixed', 'rounded-sm', 'h-4', 'w-48']),
     );
   });
 
@@ -17,7 +17,7 @@ describe('Skeleton', () => {
       <Skeleton variants={{ shape: 'block', size: 'xl', width: 'xs' }} />,
     );
     const classes = [...container.firstElementChild!.classList];
-    expect(classes).toEqual(expect.arrayContaining(['size-full', 'rounded-md']));
+    expect(classes).toEqual(expect.arrayContaining(['size-full', 'rounded-sm']));
     expect(classes).not.toContain('h-6');
     expect(classes).not.toContain('w-12');
   });
