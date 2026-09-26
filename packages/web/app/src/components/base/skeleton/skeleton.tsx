@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 const skeletonVariants = cva(
   [
     'bg-neutral-5 block shrink-0 animate-skeleton bg-fixed bg-size-[200%_100%]',
-    'bg-[linear-gradient(140deg,transparent_35%,hsl(var(--accent)/0.12)_75%,transparent_85%)]',
+    'bg-[linear-gradient(100deg,transparent_35%,hsl(var(--accent)/0.12)_75%,transparent_85%)]',
     'motion-reduce:animate-none motion-reduce:bg-none',
   ],
   {
