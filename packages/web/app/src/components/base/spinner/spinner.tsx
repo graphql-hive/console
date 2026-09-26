@@ -1,23 +1,26 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { LoaderCircle } from 'lucide-react';
 
-const spinnerVariants = cva(
-  'text-accent shrink-0 animate-spinner-spin [&>path]:animate-spinner-arc',
-  {
-    variants: {
-      size: {
-        /** Beside text: a paging bar, a button label. */
-        sm: 'size-4',
-        default: 'size-6',
-        /** A page or panel that has nothing else to show yet. */
-        lg: 'size-8',
-      },
+const spinnerVariants = cva('shrink-0 animate-spinner-spin [&>path]:animate-spinner-arc', {
+  variants: {
+    size: {
+      /** Beside text: a paging bar, a button label. */
+      sm: 'size-4',
+      default: 'size-6',
+      /** A page or panel that has nothing else to show yet. */
+      lg: 'size-8',
     },
-    defaultVariants: {
-      size: 'default',
+    tone: {
+      accent: 'text-accent',
+      /** Inside a button: takes the button's text color. */
+      current: '',
     },
   },
-);
+  defaultVariants: {
+    size: 'default',
+    tone: 'accent',
+  },
+});
 
 type SpinnerProps = {
   /** What assistive tech announces; the icon itself is decorative. */
