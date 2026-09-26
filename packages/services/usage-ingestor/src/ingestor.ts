@@ -1,21 +1,13 @@
+import { createHash } from 'node:crypto';
 import { Kafka, KafkaMessage, logLevel } from 'kafkajs';
 import type { ServiceLogger } from '@hive/service-common';
 import { createMskIamTokenProvider } from '@hive/service-common';
 import type { RawReport } from '@hive/usage-common';
 import { decompress } from '@hive/usage-common';
+import * as Sentry from '@sentry/node';
 import type { KafkaEnvironment } from './environment';
-import {
-  errors,
-  ingestedOperationErrorsFailures,
-  ingestedOperationErrorsWrites,
-  ingestedOperationRegistryFailures,
-  ingestedOperationRegistryWrites,
-  ingestedOperationsFailures,
-  ingestedOperationsWrites,
-  poisonPillMessages,
-  processDuration,
-  reportMessageBytes,
-} from './metrics';
+import { createInflightTracker } from './inflight';
+import { errors, poisonPillMessages, processDuration, reportMessageBytes } from './metrics';
 import { createProcessor } from './processor';
 import { ClickHouseConfig, createWriter } from './writer';
 
@@ -35,15 +27,14 @@ const levelMap = {
   [logLevel.DEBUG]: 'debug',
 } as const;
 
-const retryOnFailureSymbol = Symbol.for('retry-on-failure');
-
-function shouldRetryOnFailure(error: any) {
-  return error[retryOnFailureSymbol] === true;
-}
-
 export function createIngestor(config: {
   logger: ServiceLogger;
   clickhouse: ClickHouseConfig;
+  inflight: {
+    maxBytes: number;
+    commitIntervalMs?: number;
+    shutdownDeadlineMs?: number;
+  };
   kafka: {
     topic: string;
     consumerGroup: string;
@@ -108,12 +99,42 @@ export function createIngestor(config: {
     metadataMaxAge: 180_000,
   });
 
+  const tracker = createInflightTracker({
+    maxBytes: config.inflight.maxBytes,
+    commitIntervalMs: config.inflight.commitIntervalMs ?? 1_000,
+    logger,
+    onCommit: offsets => consumer.commitOffsets(offsets),
+  });
+
+  consumer.on('consumer.end_batch_process', event => {
+    tracker.observeHighWatermark(
+      event.payload.topic,
+      event.payload.partition,
+      event.payload.highWatermark,
+    );
+  });
+
+  consumer.on('consumer.group_join', event => {
+    tracker.retainPartitions(event.payload.memberAssignment);
+  });
+
   async function stop() {
     logger.info('Started Usage Ingestor shutdown...');
     changeStatus(Status.Stopped);
-    await consumer.disconnect();
+
+    try {
+      consumer.pause([{ topic: config.kafka.topic }]);
+    } catch (error) {
+      logger.debug(
+        { error: error instanceof Error ? error.message : String(error) },
+        'Consumer was not running, nothing to pause',
+      );
+    }
+
+    const { remaining } = await tracker.drain(config.inflight.shutdownDeadlineMs ?? 30_000);
     writer.destroy();
-    logger.info(`Consumer disconnected`);
+    await consumer.disconnect();
+    logger.info({ unacknowledgedMessages: remaining }, 'Consumer disconnected');
 
     logger.info('Usage Ingestor stopped');
   }
@@ -164,18 +185,21 @@ export function createIngestor(config: {
     });
     logger.info('Running consumer');
     await consumer.run({
-      autoCommit: true,
-      autoCommitThreshold: 2,
+      // Offsets are committed by the in-flight tracker once ClickHouse has acknowledged
+      // every write for a message, never on consumption.
+      autoCommit: false,
       partitionsConsumedConcurrently: config.kafka.concurrency,
-      eachMessage({ topic, partition, message }) {
+      eachMessage({ topic, partition, message, heartbeat }) {
         const stopTimer = processDuration.startTimer();
         return processMessage({
           topic,
           partition,
           message,
+          heartbeat,
           logger,
           processor,
           writer,
+          tracker,
         })
           .catch(error => {
             errors.inc();
@@ -216,31 +240,64 @@ export function createIngestor(config: {
   };
 }
 
+/**
+ * Hashed so the token stays a fixed size in the query string however many reports a message
+ * carries. Today the usage service assigns the report ids, so the token identifies the
+ * produced message; once clients supply their own ids it will identify the reports
+ * themselves. A message with a report that has no id falls back to its raw bytes so that
+ * such messages never share a token.
+ */
+export function createDeduplicationToken(rawReports: RawReport[], messageValue: Buffer) {
+  const ids = rawReports.map(report => report.id);
+  const hash = createHash('sha256');
+  if (ids.length > 0 && ids.every(id => typeof id === 'string' && id.length > 0)) {
+    hash.update(ids.join(','));
+  } else {
+    hash.update(messageValue);
+  }
+  return hash.digest('hex');
+}
+
+function serializedBytes(rows: string[]) {
+  return rows.reduce((sum, row) => sum + row.length, 0);
+}
+
+/**
+ * Parses one Kafka message and starts its ClickHouse writes. Resolves as soon as the writes
+ * are handed to the in-flight tracker; the tracker commits the offset when they are all
+ * acknowledged. A message that cannot be parsed is dropped and its offset committed, so this
+ * rejects only on unexpected processing errors, which kafkajs retries.
+ */
 export async function processMessage({
   processor,
   writer,
+  tracker,
   message,
+  heartbeat,
   logger,
   topic,
   partition,
 }: {
   processor: ReturnType<typeof createProcessor>;
   writer: ReturnType<typeof createWriter>;
+  tracker: Pick<ReturnType<typeof createInflightTracker>, 'track' | 'waitForCapacity'>;
   message: KafkaMessage;
+  heartbeat: () => Promise<void>;
   logger: ServiceLogger;
   topic: string;
   partition: number;
 }) {
   reportMessageBytes.observe(message.value!.byteLength);
+  const source = `${topic}/${partition}@${message.offset}`;
 
   let rawReports: RawReport[];
   try {
     // Decompress and parse the message to get a list of reports
     rawReports = JSON.parse((await decompress(message.value!)).toString());
   } catch (error) {
-    // A genuinely corrupt/unparseable message is considered a poison
-    // pill. It will never successfully decompress or parse no matter how many times
-    // it's retried, unlike a write failure below which could be transient.
+    // A poison pill: it will never decompress or parse however often it is retried, and
+    // retrying it (kafkajs redelivers it and restarts the consumer) only blocks the partition.
+    // Until a dead-letter queue exists the payload survives only in the debug log.
     poisonPillMessages.inc();
     const summary = {
       topic,
@@ -250,95 +307,56 @@ export async function processMessage({
     };
     logger.error(
       { ...summary, error: error instanceof Error ? error.message : String(error) },
-      'Report decompression/parsing failed - offset not committed, message will be reprocessed',
+      'Report decompression/parsing failed - message dropped, offset will be committed',
     );
     logger.debug(
       { ...summary, value: message.value?.toString('base64') },
       'Poison pill message full payload',
     );
-    throw error;
+    Sentry.captureException(error, { level: 'error', extra: summary });
+    tracker.track({
+      topic,
+      partition,
+      offset: message.offset,
+      bytes: 0,
+      promise: Promise.resolve(),
+    });
+    return;
   }
 
-  const { registryRecords, operations, subscriptionOperations, appDeploymentUsageRecords, errors } =
-    await processor.processReports(rawReports);
+  const deduplicationToken = createDeduplicationToken(rawReports, message.value!);
 
-  try {
-    // .then and .catch looks weird but async/await with try/catch and Promise.all is even weirder
-    await Promise.all([
-      writer
-        .writeRegistry(registryRecords)
-        .then(value => {
-          ingestedOperationRegistryWrites.inc(registryRecords.length);
-          return Promise.resolve(value);
-        })
-        .catch(error => {
-          ingestedOperationRegistryFailures.inc(registryRecords.length);
-          return Promise.reject(error);
-        }),
-      writer
-        .writeOperations(operations)
-        .then(value => {
-          ingestedOperationsWrites.inc(operations.length);
-          return Promise.resolve(value);
-        })
-        .catch(error => {
-          ingestedOperationsFailures.inc(operations.length);
-          // We want to retry the kafka message only if the write to operations table fails.
-          // Why? Because if we retry the message for operation_registry, we will have duplicate.
-          // One write could succeed, the other one could fail.
-          // Let's stick to the operations table for now.
-          error[retryOnFailureSymbol] = true;
-          return Promise.reject(error);
-        }),
-      writer
-        .writeSubscriptionOperations(subscriptionOperations)
-        .then(value => {
-          ingestedOperationsWrites.inc(subscriptionOperations.length);
-          return Promise.resolve(value);
-        })
-        .catch(error => {
-          ingestedOperationsFailures.inc(subscriptionOperations.length);
-          // We want to retry the kafka message only if the write to operations table fails.
-          // Why? Because if we retry the message for operation_registry, we will have duplicate.
-          // One write could succeed, the other one could fail.
-          // Let's stick to the operations table for now.
-          error[retryOnFailureSymbol] = true;
-          return Promise.reject(error);
-        }),
-      writer.writeAppDeploymentUsage(appDeploymentUsageRecords),
-      writer
-        .writeOperationErrors(errors)
-        .then(value => {
-          ingestedOperationErrorsWrites.inc(errors.length);
-          return Promise.resolve(value);
-        })
-        .catch(error => {
-          ingestedOperationErrorsFailures.inc(errors.length);
-          // error[retryOnFailureSymbol] = true;
-          return Promise.reject(error);
-        }),
-    ]);
-  } catch (error) {
-    logger.error(error);
+  const {
+    registryRecords,
+    operations,
+    subscriptionOperations,
+    appDeploymentUsageRecords,
+    errors: errorRecords,
+  } = await processor.processReports(rawReports);
 
-    if (shouldRetryOnFailure(error)) {
-      poisonPillMessages.inc();
-      const summary = {
-        topic,
-        partition,
-        offset: message.offset,
-        reportCount: rawReports.length,
-        totalOperations: rawReports.reduce((sum, r) => sum + r.size, 0),
-        targets: [...new Set(rawReports.map(r => r.target))],
-        organizations: [...new Set(rawReports.map(r => r.organization))],
-        messageBytes: message.value?.byteLength,
-      };
-      logger.error(
-        summary,
-        'Report write failed - offset not committed, message will be reprocessed',
-      );
-      logger.debug({ ...summary, rawReports }, 'Poison pill message full payload');
-      throw error;
-    }
-  }
+  const bytes =
+    serializedBytes(registryRecords) +
+    serializedBytes(operations) +
+    serializedBytes(subscriptionOperations) +
+    serializedBytes(appDeploymentUsageRecords) +
+    serializedBytes(errorRecords);
+
+  await tracker.waitForCapacity(bytes, heartbeat);
+
+  const options = { deduplicationToken, source };
+  const written = Promise.all([
+    writer.writeRegistry(registryRecords, options),
+    writer.writeOperations(operations, options),
+    writer.writeSubscriptionOperations(subscriptionOperations, options),
+    writer.writeAppDeploymentUsage(appDeploymentUsageRecords, options),
+    writer.writeOperationErrors(errorRecords, options),
+  ]);
+
+  tracker.track({
+    topic,
+    partition,
+    offset: message.offset,
+    bytes,
+    promise: written,
+  });
 }

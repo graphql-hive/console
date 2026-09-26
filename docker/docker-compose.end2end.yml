@@ -49,12 +49,9 @@ services:
 
   usage-ingestor:
     environment:
-      # Make reported operations queryable in Insights synchronously, so the usage e2e tests
-      # don't race ClickHouse's async-insert timer. Both settings are required: wait-for-flush
-      # makes the insert block until the data is queryable, and the low busy-timeout makes that
-      # flush happen in ~100ms instead of waiting up to the default 30s. Prod keeps its
-      # fire-and-forget defaults.
-      CLICKHOUSE_WAIT_FOR_ASYNC_INSERT: '1'
+      # The ingestor only acknowledges a message once ClickHouse has flushed its inserts, so a
+      # low busy-timeout makes reported operations queryable in Insights within ~100ms instead
+      # of the default 30s and keeps the usage e2e tests from racing the async-insert timer.
       CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS: '100'
 
   server:

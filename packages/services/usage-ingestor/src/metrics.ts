@@ -58,7 +58,7 @@ export const ingestedOperationErrorsWrites = new metrics.Counter({
 
 export const ingestedOperationsFailures = new metrics.Counter({
   name: 'usage_ingested_operation_failures',
-  help: 'Number of failed to ingest operations',
+  help: 'Rows in operations and subscription_operations insert attempts that failed; counts every attempt, so it rises with retries during an outage',
 });
 
 export const ingestedOperationRegistryWrites = new metrics.Counter({
@@ -68,12 +68,12 @@ export const ingestedOperationRegistryWrites = new metrics.Counter({
 
 export const ingestedOperationRegistryFailures = new metrics.Counter({
   name: 'usage_ingested_operation_registry_failures',
-  help: 'Number of failed to ingest registry records',
+  help: 'Rows in operation_collection insert attempts that failed; counts every attempt, so it rises with retries during an outage',
 });
 
 export const ingestedOperationErrorsFailures = new metrics.Counter({
   name: 'usage_ingested_operation_errors_failures',
-  help: 'Number of failed to ingest operations_errors',
+  help: 'Rows in operation_errors insert attempts that failed; counts every attempt, so it rises with retries during an outage',
 });
 
 /**
@@ -84,5 +84,16 @@ export const ingestedOperationErrorsFailures = new metrics.Counter({
  */
 export const poisonPillMessages = new metrics.Counter({
   name: 'usage_ingestor_poison_pill_messages',
-  help: 'Number of times a report failed to write and its offset was not committed, so the message will be reprocessed - sustained/repeated firing for the same message signals a stuck partition',
+  help: 'Number of messages that could not be decompressed or parsed and were dropped so the partition keeps flowing; the offset is committed and the payload is only in the debug log until a dead-letter queue exists',
+});
+
+export const failingMessages = new metrics.Gauge({
+  name: 'usage_ingestor_failing_messages',
+  help: 'Kafka messages with at least one ClickHouse insert that failed and is being retried in place; drops back when the insert succeeds or the ingestor shuts down. Sustained values mean a stuck message (the log carries its token, offset, HTTP status and ClickHouse error) or a ClickHouse outage',
+});
+
+export const committedOffsetLag = new metrics.Gauge({
+  name: 'usage_ingestor_committed_offset_lag',
+  help: 'Messages between the partition high watermark and the next offset to commit; grows when ClickHouse is not acknowledging writes or offset commits are failing',
+  labelNames: ['partition'],
 });

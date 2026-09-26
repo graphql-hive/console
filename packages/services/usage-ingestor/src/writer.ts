@@ -1,9 +1,19 @@
 import Agent from 'agentkeepalive';
 import { got, Response as GotResponse } from 'got';
 import type { ServiceLogger } from '@hive/service-common';
+import { metrics } from '@hive/service-common';
 import { compressGzip } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
-import { writeDuration } from './metrics';
+import {
+  failingMessages,
+  ingestedOperationErrorsFailures,
+  ingestedOperationErrorsWrites,
+  ingestedOperationRegistryFailures,
+  ingestedOperationRegistryWrites,
+  ingestedOperationsFailures,
+  ingestedOperationsWrites,
+  writeDuration,
+} from './metrics';
 import {
   appDeploymentUsageOrder,
   joinIntoSingleMessage,
@@ -21,28 +31,46 @@ export interface ClickHouseConfig {
   password: string;
   async_insert_busy_timeout_ms: number;
   async_insert_max_data_size: number;
-  wait_for_async_insert: number;
+  max_sockets: number;
+  write_retry_backoff_ms: number;
 }
+
+export interface WriteOptions {
+  /**
+   * Identifies the reports the rows came from. ClickHouse skips an insert whose token it
+   * has already applied to the same table, so retries and replays are not double counted.
+   */
+  deduplicationToken: string;
+  /**
+   * Human readable origin (topic/partition@offset) for logs.
+   */
+  source: string;
+}
+
+type Counter = InstanceType<typeof metrics.Counter>;
+
+interface RowMetrics {
+  rows: number;
+  writes: Counter;
+  failures: Counter;
+}
+
+/**
+ * Keeps `usage_ingestor_failing_messages` at the number of messages with at least one insert in
+ * the retry loop, however many of a message's five inserts are failing at once.
+ */
+interface FailingMessages {
+  markFailing(source: string): void;
+  markRecovered(source: string): void;
+}
+
+const MAX_RETRY_BACKOFF_MS = 30_000;
 
 const operationsFields = operationsOrder.join(', ');
 const subscriptionOperationsFields = subscriptionOperationsOrder.join(', ');
 const registryFields = registryOrder.join(', ');
 const appDeploymentUsageFields = appDeploymentUsageOrder.join(', ');
 const operationErrorsFields = operationErrorsOrder.join(', ');
-
-const agentConfig: Agent.HttpOptions = {
-  // Keep sockets around in a pool to be used by other requests in the future
-  keepAlive: true,
-  // Sets the working socket to timeout after N ms of inactivity on the working socket
-  timeout: 60_000,
-  // Sets the free socket to timeout after N ms of inactivity on the free socket
-  freeSocketTimeout: 30_000,
-  // Sets the socket active time to live
-  socketActiveTTL: 60_000,
-  maxSockets: 10,
-  maxFreeSockets: 10,
-  scheduling: 'lifo',
-};
 
 export function createWriter({
   clickhouse,
@@ -51,123 +79,253 @@ export function createWriter({
   clickhouse: ClickHouseConfig;
   logger: ServiceLogger;
 }) {
+  const agentConfig: Agent.HttpOptions = {
+    // Keep sockets around in a pool to be used by other requests in the future
+    keepAlive: true,
+    // Sets the working socket to timeout after N ms of inactivity on the working socket
+    timeout: clickhouse.async_insert_busy_timeout_ms + 60_000,
+    // Sets the free socket to timeout after N ms of inactivity on the free socket
+    freeSocketTimeout: 30_000,
+    // Sets the socket active time to live
+    socketActiveTTL: clickhouse.async_insert_busy_timeout_ms + 60_000,
+    maxSockets: clickhouse.max_sockets,
+    maxFreeSockets: clickhouse.max_sockets,
+    scheduling: 'lifo',
+  };
   const httpAgent = new Agent(agentConfig);
   const httpsAgent = new Agent.HttpsAgent(agentConfig);
+  const abortController = new AbortController();
+  const failingWritesBySource = new Map<string, number>();
+  const failing: FailingMessages = {
+    markFailing(source) {
+      const count = failingWritesBySource.get(source) ?? 0;
+      if (count === 0) {
+        failingMessages.inc();
+      }
+      failingWritesBySource.set(source, count + 1);
+    },
+    markRecovered(source) {
+      const count = failingWritesBySource.get(source) ?? 0;
+      if (count > 1) {
+        failingWritesBySource.set(source, count - 1);
+        return;
+      }
+      failingWritesBySource.delete(source);
+      if (count === 1) {
+        failingMessages.dec();
+      }
+    },
+  };
 
   const agents = {
     http: httpAgent,
     https: httpsAgent,
   };
 
+  async function write(
+    query: string,
+    rows: string[],
+    options: WriteOptions,
+    rowMetrics: RowMetrics | null,
+  ) {
+    if (rows.length === 0) {
+      return;
+    }
+
+    const csv = joinIntoSingleMessage(rows);
+    const compressed = await compressGzip(csv);
+
+    await writeCsv({
+      config: clickhouse,
+      agents,
+      query,
+      body: compressed,
+      logger,
+      maxRetry: 3,
+      options,
+      rowMetrics,
+      failing,
+      signal: abortController.signal,
+    });
+  }
+
   return {
-    async writeOperations(operations: string[]) {
-      if (operations.length === 0) {
-        return;
-      }
-
-      const csv = joinIntoSingleMessage(operations);
-      const compressed = await compressGzip(csv);
-
+    writeOperations(operations: string[], options: WriteOptions) {
       // Note that `SETTINGS input_format_with_names_use_header = 1` is enabled by default.
       // If migrating this table in the future, be sure to double check this via
       // SELECT name, value, changed, description FROM system.settings WHERE name = 'input_format_with_names_use_header';
-      await writeCsv(
-        clickhouse,
-        agents,
+      return write(
         `INSERT INTO operations (${operationsFields})
         FORMAT CSV`,
-        compressed,
-        logger,
-        3,
+        operations,
+        options,
+        {
+          rows: operations.length,
+          writes: ingestedOperationsWrites,
+          failures: ingestedOperationsFailures,
+        },
       );
     },
-    async writeSubscriptionOperations(operations: string[]) {
-      if (operations.length === 0) {
-        return;
-      }
-
-      const csv = joinIntoSingleMessage(operations);
-      const compressed = await compressGzip(csv);
-
-      await writeCsv(
-        clickhouse,
-        agents,
+    writeSubscriptionOperations(operations: string[], options: WriteOptions) {
+      return write(
         `INSERT INTO subscription_operations (${subscriptionOperationsFields}) FORMAT CSV`,
-        compressed,
-        logger,
-        3,
+        operations,
+        options,
+        {
+          rows: operations.length,
+          writes: ingestedOperationsWrites,
+          failures: ingestedOperationsFailures,
+        },
       );
     },
-    async writeRegistry(records: string[]) {
-      if (records.length === 0) {
-        return;
-      }
-
-      const csv = joinIntoSingleMessage(records);
-      const compressed = await compressGzip(csv);
-
-      await writeCsv(
-        clickhouse,
-        agents,
+    writeRegistry(records: string[], options: WriteOptions) {
+      return write(
         `INSERT INTO operation_collection (${registryFields}) FORMAT CSV`,
-        compressed,
-        logger,
-        3,
+        records,
+        options,
+        {
+          rows: records.length,
+          writes: ingestedOperationRegistryWrites,
+          failures: ingestedOperationRegistryFailures,
+        },
       );
     },
-    async writeAppDeploymentUsage(records: string[]) {
-      if (records.length === 0) {
-        return;
-      }
-
-      const csv = joinIntoSingleMessage(records);
-      const compressed = await compressGzip(csv);
-
-      await writeCsv(
-        clickhouse,
-        agents,
+    writeAppDeploymentUsage(records: string[], options: WriteOptions) {
+      return write(
         `INSERT INTO "app_deployment_usage" (${appDeploymentUsageFields}) FORMAT CSV`,
-        compressed,
-        logger,
-        3,
+        records,
+        options,
+        null,
       );
     },
-    async writeOperationErrors(records: string[]) {
-      if (records.length === 0) {
-        return;
-      }
-
-      const csv = joinIntoSingleMessage(records);
-      const compressed = await compressGzip(csv);
-      // create input structure schema
-
-      await writeCsv(
-        clickhouse,
-        agents,
+    writeOperationErrors(records: string[], options: WriteOptions) {
+      return write(
         `INSERT INTO operation_errors (${operationErrorsFields}) FORMAT CSV`,
-        compressed,
-        logger,
-        3,
+        records,
+        options,
+        {
+          rows: records.length,
+          writes: ingestedOperationErrorsWrites,
+          failures: ingestedOperationErrorsFailures,
+        },
       );
     },
     destroy() {
+      abortController.abort();
       httpAgent.destroy();
       httpsAgent.destroy();
     },
   };
 }
 
-async function writeCsv(
-  config: ClickHouseConfig,
+/**
+ * Sends the insert and, once got's own retries are exhausted, keeps retrying the identical
+ * request with backoff until it succeeds or the writer is destroyed. Because the body and
+ * the deduplication token never change, ClickHouse applies at most one copy no matter how
+ * many attempts reach it.
+ *
+ * The retries are unbounded on purpose. A failure that never clears is systemic (a schema
+ * lagging a deploy, a table missing during a migration), so every message fails at once:
+ * holding them until the in-flight byte cap pauses consumption is the intended backpressure,
+ * and the rows flow again the moment the cause is fixed, with no restart or replay. Giving up
+ * would drop the rows until a restart replayed them. A single message that can never be
+ * written freezes its partition's commit offset and keeps its bytes counted against the cap;
+ * `usage_ingestor_failing_messages` and `usage_ingestor_committed_offset_lag` expose it and
+ * each retry logs ClickHouse's error. A dead-letter queue for such messages is future work.
+ */
+async function writeCsv(args: {
+  config: ClickHouseConfig;
   agents: {
     http: Agent;
     https: Agent.HttpsAgent;
-  },
-  query: string,
-  body: Buffer,
-  logger: ServiceLogger,
-  maxRetry: number,
-) {
+  };
+  query: string;
+  body: Buffer;
+  logger: ServiceLogger;
+  maxRetry: number;
+  options: WriteOptions;
+  rowMetrics: RowMetrics | null;
+  failing: FailingMessages;
+  signal: AbortSignal;
+}) {
+  const { config, logger, query, options, rowMetrics, failing, signal } = args;
+  let attempt = 0;
+  let markedFailing = false;
+
+  try {
+    for (;;) {
+      try {
+        const response = await sendCsv(args);
+        rowMetrics?.writes.inc(rowMetrics.rows);
+        return response;
+      } catch (error) {
+        rowMetrics?.failures.inc(rowMetrics.rows);
+        if (!markedFailing) {
+          markedFailing = true;
+          failing.markFailing(options.source);
+        }
+
+        if (signal.aborted) {
+          throw error;
+        }
+
+        attempt += 1;
+        const delay = Math.min(
+          config.write_retry_backoff_ms * 2 ** (attempt - 1),
+          MAX_RETRY_BACKOFF_MS,
+        );
+        logger.error(
+          {
+            query,
+            source: options.source,
+            deduplicationToken: options.deduplicationToken,
+            rows: rowMetrics?.rows,
+            bodyBytes: args.body.byteLength,
+            attempt,
+            retryInMs: delay,
+            status: getStatusCodeFromError(error),
+            clickhouseError: getResponseBody(error),
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'Write failed - offset not committed, retrying the same insert in place',
+        );
+
+        await sleep(delay, signal);
+
+        if (signal.aborted) {
+          throw error;
+        }
+      }
+    }
+  } finally {
+    if (markedFailing) {
+      failing.markRecovered(options.source);
+    }
+  }
+}
+
+function sendCsv({
+  config,
+  agents,
+  query,
+  body,
+  logger,
+  maxRetry,
+  options,
+  signal,
+}: {
+  config: ClickHouseConfig;
+  agents: {
+    http: Agent;
+    https: Agent.HttpsAgent;
+  };
+  query: string;
+  body: Buffer;
+  logger: ServiceLogger;
+  maxRetry: number;
+  options: WriteOptions;
+  signal: AbortSignal;
+}) {
   const stopTimer = writeDuration.startTimer({
     query,
     destination: config.host,
@@ -175,16 +333,24 @@ async function writeCsv(
   return got
     .post(`${config.protocol ?? 'https'}://${config.host}:${config.port}`, {
       body,
+      signal,
       searchParams: {
         query,
         async_insert: 1,
-        wait_for_async_insert: config.wait_for_async_insert,
+        // The Kafka offset is committed once this request resolves, so the acknowledgement
+        // has to mean the rows are persisted, not merely queued.
+        wait_for_async_insert: 1,
         async_insert_busy_timeout_ms: config.async_insert_busy_timeout_ms,
         async_insert_max_data_size: config.async_insert_max_data_size,
         // The adaptive busy timeout ClickHouse enables by default starts at 50ms and only grows when
         // inserts arrive within 50ms of each other; at this insert rate the configured timeout
         // would never apply and every INSERT would become its own part.
         async_insert_use_adaptive_busy_timeout: 0,
+        async_insert_deduplicate: 1,
+        insert_deduplication_token: options.deduplicationToken,
+        // Without this a materialized view whose insert failed after the source insert
+        // succeeded would never receive the retry, because the source skips it as a duplicate.
+        deduplicate_blocks_in_dependent_materialized_views: 1,
       },
       username: config.username,
       password: config.password,
@@ -215,7 +381,7 @@ async function writeCsv(
         lookup: 2000,
         connect: 2000,
         secureConnect: 2000,
-        request: 30_000,
+        request: config.async_insert_busy_timeout_ms + 30_000,
       },
       agent: {
         http: agents.http,
@@ -239,6 +405,10 @@ async function writeCsv(
         },
         extra: {
           query,
+          source: options.source,
+          deduplicationToken: options.deduplicationToken,
+          status: getStatusCodeFromError(error),
+          clickhouseError: getResponseBody(error),
           clickhouse: {
             protocol: config.protocol,
             host: config.host,
@@ -248,6 +418,18 @@ async function writeCsv(
       });
       return Promise.reject(error);
     });
+}
+
+function sleep(ms: number, signal: AbortSignal) {
+  return new Promise<void>(resolve => {
+    const done = () => {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    signal.addEventListener('abort', done, { once: true });
+  });
 }
 
 function hasResponse(error: unknown): error is {
@@ -260,4 +442,20 @@ function getStatusCodeFromError(error: unknown) {
   if (hasResponse(error)) {
     return error.response?.statusCode;
   }
+}
+
+const MAX_LOGGED_RESPONSE_CHARS = 1000;
+
+function getResponseBody(error: unknown) {
+  if (!hasResponse(error)) {
+    return undefined;
+  }
+  const body: unknown = error.response?.body;
+  if (typeof body === 'string') {
+    return body.slice(0, MAX_LOGGED_RESPONSE_CHARS);
+  }
+  if (Buffer.isBuffer(body)) {
+    return body.toString('utf8', 0, MAX_LOGGED_RESPONSE_CHARS);
+  }
+  return undefined;
 }

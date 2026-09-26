@@ -49,8 +49,11 @@ export function deployUsageIngestor({
       env: {
         ...environment.envVars,
         SENTRY: sentry.enabled ? '1' : '0',
-        CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS: '30000', // flush data after max 30 seconds
+        // Every message holds its inserts open until ClickHouse flushes, so this bounds both
+        // the number of in-flight requests and how long a Kafka offset stays uncommitted.
+        CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS: '5000',
         CLICKHOUSE_ASYNC_INSERT_MAX_DATA_SIZE: '200000000', // flush data when the buffer reaches 200MB
+        CLICKHOUSE_MAX_INFLIGHT_BYTES: '50000000',
         KAFKA_SASL_MECHANISM: kafka.config.saslMechanism,
         KAFKA_CONCURRENCY: kafka.config.concurrency,
         KAFKA_TOPIC: kafka.config.topic,

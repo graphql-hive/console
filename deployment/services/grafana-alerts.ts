@@ -1,8 +1,12 @@
 import { alerting, oss } from '@pulumiverse/grafana';
 
 /**
- * Provisions Grafana alert rules that target the Prometheus metrics exposed by
- * the metric-alert evaluator. Pairs with the Metric-Alerts dashboard at
+ * Provisions Hive's operational Grafana alert rules. Routing to contact points
+ * is configured in Grafana Cloud and matches on the `severity` and `component`
+ * labels.
+ *
+ * The `metric-alerts-evaluator` group targets the Prometheus metrics exposed by
+ * the metric-alert evaluator and pairs with the Metric-Alerts dashboard at
  * `deployment/grafana-dashboards/Metric-Alerts.json`.
  *
  * Why these specific rules: the metric-alert evaluator runs every minute and
@@ -22,8 +26,8 @@ export function deployGrafanaAlerts(envName: string) {
     uid: 'hive-alerts',
   });
 
-  // Single rule group for the metric-alerts feature; evaluation interval
-  // matches the cron that produces the underlying metrics (every minute).
+  // Rule group for the metric-alerts feature; evaluation interval matches the
+  // cron that produces the underlying metrics (every minute).
   const ruleGroup = new alerting.RuleGroup('metric-alerts-evaluator', {
     folderUid: folder.uid,
     name: 'metric-alerts-evaluator',
@@ -178,5 +182,149 @@ export function deployGrafanaAlerts(envName: string) {
     ],
   });
 
-  return { folder, ruleGroup };
+  // The usage ingestor's own metrics; pairs with the Usage-Ingestion dashboard
+  // at `deployment/grafana-dashboards/Usage-Ingestion.json`.
+  const usageIngestorRuleGroup = new alerting.RuleGroup('usage-ingestor', {
+    folderUid: folder.uid,
+    name: 'usage-ingestor',
+    intervalSeconds: 60,
+    rules: [
+      {
+        name: 'UsageIngestorFailingMessages',
+        for: '5m',
+        condition: 'C',
+        noDataState: 'OK',
+        execErrState: 'Alerting',
+        annotations: {
+          summary: 'Usage ingestor inserts are failing',
+          description:
+            "At least one Kafka usage message has had a ClickHouse insert retrying in place for 5 minutes. Its partition's offset is frozen and its bytes count against the in-flight cap; a sustained value means a stuck message or a ClickHouse outage. See the Usage Ingestion dashboard; the log line 'Write failed - offset not committed, retrying the same insert in place' carries the source offset, deduplication token, HTTP status and ClickHouse error.",
+          runbook_url:
+            'https://github.com/graphql-hive/console/blob/main/packages/services/usage-ingestor/src/writer.ts',
+        },
+        labels: { severity: 'critical', component: 'usage-ingestor' },
+        isPaused: false,
+        datas: [
+          {
+            refId: 'A',
+            queryType: '',
+            relativeTimeRange: { from: 600, to: 0 },
+            datasourceUid: 'grafanacloud-prom',
+            model: JSON.stringify({
+              refId: 'A',
+              expr: 'sum(usage_ingestor_failing_messages)',
+              instant: false,
+              range: true,
+              intervalMs: 30_000,
+              maxDataPoints: 43_200,
+            }),
+          },
+          {
+            refId: 'B',
+            queryType: '',
+            relativeTimeRange: { from: 0, to: 0 },
+            datasourceUid: '__expr__',
+            model: JSON.stringify({
+              refId: 'B',
+              type: 'reduce',
+              reducer: 'last',
+              expression: 'A',
+              datasource: { type: '__expr__', uid: '__expr__' },
+            }),
+          },
+          {
+            refId: 'C',
+            queryType: '',
+            relativeTimeRange: { from: 0, to: 0 },
+            datasourceUid: '__expr__',
+            model: JSON.stringify({
+              refId: 'C',
+              type: 'threshold',
+              expression: 'B',
+              conditions: [
+                {
+                  type: 'query',
+                  evaluator: { type: 'gt', params: [0] },
+                  operator: { type: 'and' },
+                  query: { params: ['B'] },
+                  reducer: { type: 'last', params: [] },
+                },
+              ],
+              datasource: { type: '__expr__', uid: '__expr__' },
+            }),
+          },
+        ],
+      },
+      {
+        name: 'UsageIngestorPoisonPill',
+        for: '0s',
+        condition: 'C',
+        noDataState: 'OK',
+        execErrState: 'Alerting',
+        annotations: {
+          summary: 'Usage ingestor dropped an unparseable message',
+          description:
+            "A Kafka usage message could not be decompressed or parsed and was dropped; its offset was committed and its operations are lost. The log line 'Report decompression/parsing failed - message dropped, offset will be committed' has the topic, partition and offset, and the base64 payload is logged at debug level. There is no dead-letter queue yet.",
+          runbook_url:
+            'https://github.com/graphql-hive/console/blob/main/packages/services/usage-ingestor/src/ingestor.ts',
+        },
+        labels: { severity: 'critical', component: 'usage-ingestor' },
+        isPaused: false,
+        datas: [
+          {
+            refId: 'A',
+            queryType: '',
+            relativeTimeRange: { from: 600, to: 0 },
+            datasourceUid: 'grafanacloud-prom',
+            model: JSON.stringify({
+              refId: 'A',
+              // The collector path may store the counter as `..._total`, so match
+              // both spellings like the dashboards do.
+              expr: 'sum(increase({__name__=~"usage_ingestor_poison_pill_messages(_total)?"}[10m]))',
+              instant: false,
+              range: true,
+              intervalMs: 30_000,
+              maxDataPoints: 43_200,
+            }),
+          },
+          {
+            refId: 'B',
+            queryType: '',
+            relativeTimeRange: { from: 0, to: 0 },
+            datasourceUid: '__expr__',
+            model: JSON.stringify({
+              refId: 'B',
+              type: 'reduce',
+              reducer: 'last',
+              expression: 'A',
+              datasource: { type: '__expr__', uid: '__expr__' },
+            }),
+          },
+          {
+            refId: 'C',
+            queryType: '',
+            relativeTimeRange: { from: 0, to: 0 },
+            datasourceUid: '__expr__',
+            model: JSON.stringify({
+              refId: 'C',
+              type: 'threshold',
+              expression: 'B',
+              conditions: [
+                {
+                  type: 'query',
+                  evaluator: { type: 'gt', params: [0] },
+                  operator: { type: 'and' },
+                  query: { params: ['B'] },
+                  reducer: { type: 'last', params: [] },
+                },
+              ],
+              datasource: { type: '__expr__', uid: '__expr__' },
+            }),
+          },
+        ],
+      },
+    ],
+  });
+
+  return { folder, ruleGroup, usageIngestorRuleGroup };
 }
