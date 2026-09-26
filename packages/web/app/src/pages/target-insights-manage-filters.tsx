@@ -9,6 +9,7 @@ import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filte
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { useToast } from '@/components/base/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -18,7 +19,6 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
-import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';

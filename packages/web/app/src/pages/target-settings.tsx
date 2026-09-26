@@ -16,6 +16,7 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Navigation } from '@/components/base/navigation/navigation';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { Switch } from '@/components/base/switch/switch';
 import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
@@ -52,7 +53,6 @@ import {
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
-import { Spinner } from '@/components/ui/spinner';
 import { Combobox } from '@/components/v2/combobox';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';

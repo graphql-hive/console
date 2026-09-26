@@ -4,7 +4,7 @@ import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
-import { Spinner } from '@/components/ui/spinner';
+import { Spinner } from '@/components/base/spinner/spinner';
 
 export const CreateOrganizationFormSchema = z.object({
   slug: z
@@ -61,8 +61,8 @@ export function CreateOrganizationForm(props: {
             >
               {form.formState.isSubmitting ? (
                 <>
-                  <Spinner className="text-fg-inverse size-6" />
-                  <span className="ml-4">Creating...</span>
+                  <Spinner variants={{ size: 'sm', tone: 'current' }} />
+                  Creating...
                 </>
               ) : (
                 'Create Organization'
