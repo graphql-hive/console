@@ -374,6 +374,13 @@ describe('DataTable', () => {
 
     rerender(<DataTable data={[]} columns={COLUMNS} getRowId={row => row.id} loading />);
     expect(screen.getByLabelText('Loading')).toBeTruthy();
+    // Skeleton rows, one line per column, under the real header.
+    const skeletonRows = container.querySelectorAll('tbody tr');
+    expect(skeletonRows).toHaveLength(5);
+    expect(skeletonRows[0].querySelectorAll('td [aria-hidden="true"]')).toHaveLength(
+      COLUMNS.length,
+    );
+    expect(container.querySelector('thead')).not.toBeNull();
 
     rerender(
       <DataTable

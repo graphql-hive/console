@@ -17,7 +17,7 @@ import {
 } from '@tanstack/react-table';
 import { Tooltip } from '../floating/tooltip/tooltip';
 import type { OnSurface } from '../shared-styles';
-import { Spinner } from '../spinner/spinner';
+import { Skeleton } from '../skeleton/skeleton';
 import {
   DataTableBody,
   DataTableCellSlot,
@@ -57,7 +57,7 @@ export type DataTableProps<TData> = {
   getRowId?: (row: TData) => string;
   /** What the empty table says; a node when it needs a link or a second line. */
   emptyMessage?: ReactNode;
-  /** Replaces the rows with a spinner while the first page loads. */
+  /** Replaces the rows with skeleton rows while the first page loads. */
   loading?: boolean;
   variants?: {
     onSurface?: OnSurface;
@@ -146,6 +146,8 @@ function SortHeader<TData>({
     />
   );
 }
+
+const LOADING_ROWS = 5;
 
 export function DataTable<TData>({
   data,
@@ -244,11 +246,32 @@ export function DataTable<TData>({
           ) : null}
           <DataTableBody>
             {loading ? (
-              <DataTableRow onSurface={onSurface}>
-                <DataTableCellSlot colSpan={totalColumnCount} variant="empty">
-                  <Spinner />
-                </DataTableCellSlot>
-              </DataTableRow>
+              Array.from({ length: LOADING_ROWS }, (_, index) => (
+                <DataTableRow
+                  key={index}
+                  onSurface={onSurface}
+                  striped={striped && index % 2 === 1}
+                >
+                  {table.getVisibleLeafColumns().map((column, columnIndex) => (
+                    <DataTableCellSlot key={column.id} layout={column.columnDef.meta}>
+                      {index === 0 && columnIndex === 0 ? (
+                        <span role="status" aria-label="Loading" className="sr-only" />
+                      ) : null}
+                      {/* Fills the column up to a cap without widening it; inline, so the
+                          column's alignment places it. */}
+                      <span
+                        className={cn(
+                          'inline-flex w-full',
+                          columnIndex === 0 ? 'max-w-48' : 'max-w-24',
+                        )}
+                      >
+                        <Skeleton variants={{ width: 'full' }} />
+                      </span>
+                    </DataTableCellSlot>
+                  ))}
+                  {hasTrailingColumn ? <DataTableCellSlot variant="compact" /> : null}
+                </DataTableRow>
+              ))
             ) : rows.length === 0 ? (
               <DataTableRow onSurface={onSurface}>
                 <DataTableCellSlot colSpan={totalColumnCount} variant="empty">
