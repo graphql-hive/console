@@ -4,7 +4,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { InlineCode } from '@/components/v2/inline-code';
 import Stat from '@/components/v2/stat';
@@ -54,12 +53,6 @@ const ENTRIES = [
     source: '43 render sites across 9 files',
     origin: 'ui',
     what: 'Skeleton — 44 classNames against 43 instances; no API beyond className',
-    coveredBy: 'Loading',
-  },
-  {
-    source: '35 render sites across 24 files',
-    origin: 'ui',
-    what: 'Spinner — no size prop, so 8 call sites resize it by className',
     coveredBy: 'Loading',
   },
   {
@@ -247,7 +240,7 @@ export const Typography = createPreview({
 });
 
 // ---------------------------------------------------------------------------
-// Skeleton and Spinner.
+// Skeleton.
 // ---------------------------------------------------------------------------
 
 export const Loading = createPreview({
@@ -277,27 +270,6 @@ export const Loading = createPreview({
           <div className="flex items-center gap-2">
             <Skeleton className="size-9 rounded-full" />
             <span className="text-fg-secondary text-xs">size-9 rounded-full — an avatar</span>
-          </div>
-        </div>
-      </CallSite>
-
-      <CallSite
-        source="35 render sites across 24 files"
-        origin="ui"
-        note="Spinner has no size prop at all - only className - so 8 call sites resize it: mb-3 size-8, mr-2 size-4, mr-1 size-4, text-fg-inverse size-6. The other 27 take size-6 and the accent colour. The three sizes below are all that the app actually needs."
-      >
-        <div className="flex items-center gap-8">
-          <div className="flex flex-col items-center gap-2">
-            <Spinner className="mr-1 size-4" />
-            <span className="text-fg-secondary text-xs">size-4, inside a button</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <Spinner />
-            <span className="text-fg-secondary text-xs">size-6, the default</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <Spinner className="mb-3 size-8" />
-            <span className="text-fg-secondary text-xs">size-8, a full-page load</span>
           </div>
         </div>
       </CallSite>
