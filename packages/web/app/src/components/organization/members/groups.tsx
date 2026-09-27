@@ -15,9 +15,9 @@ import { Button } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Skeleton } from '@/components/ui/skeleton';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
@@ -108,15 +108,23 @@ export function Groups(props: {
                   className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3"
                 >
                   <div className="flex items-center gap-3">
-                    <Skeleton className="size-4" />
-                    <Skeleton className="size-9 rounded-full" />
+                    <span className="block size-4">
+                      <Skeleton variants={{ shape: 'block' }} />
+                    </span>
+                    <Skeleton variants={{ shape: 'circle' }} />
                     <div className="flex items-center gap-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-5 w-28 rounded-full" />
+                      <span className="flex w-32">
+                        <Skeleton variants={{ width: 'full' }} />
+                      </span>
+                      <span className="flex w-28">
+                        <Skeleton variants={{ size: 'lg', width: 'full' }} />
+                      </span>
                     </div>
                   </div>
                   <div className="flex w-24 justify-center">
-                    <Skeleton className="h-4 w-6" />
+                    <span className="flex w-6">
+                      <Skeleton variants={{ width: 'full' }} />
+                    </span>
                   </div>
                   <div className="w-10" />
                 </div>

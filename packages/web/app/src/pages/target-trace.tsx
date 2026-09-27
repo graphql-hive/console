@@ -27,6 +27,7 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -34,7 +35,6 @@ import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { Skeleton } from '@/components/ui/skeleton';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard, useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -1015,7 +1015,9 @@ function TargetInsightsNewPageContent(props: {
                 </span>
               </>
             ) : (
-              <Skeleton className="inline-block h-5 w-[150px]" />
+              <span className="inline-flex w-[150px] align-middle">
+                <Skeleton variants={{ size: 'lg', width: 'full' }} />
+              </span>
             )}
           </span>
         }
@@ -1029,7 +1031,9 @@ function TargetInsightsNewPageContent(props: {
                   <CopyIconButton value={trace.id} label="Copy Trace ID" />
                 </>
               ) : (
-                <Skeleton className="inline-block h-4 w-[200px]" />
+                <span className="inline-flex w-[200px] align-middle">
+                  <Skeleton variants={{ width: 'full' }} />
+                </span>
               )}
             </p>
             {trace && (

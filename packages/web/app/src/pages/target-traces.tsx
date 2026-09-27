@@ -12,6 +12,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ChartConfig,
@@ -24,7 +25,6 @@ import { DateRangePicker, Preset, presetLast7Days } from '@/components/ui/date-r
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
-import { Skeleton } from '@/components/ui/skeleton';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
@@ -784,7 +784,9 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
             </span>
           </>
         ) : (
-          <Skeleton className="inline-block h-5 w-[260px]" />
+          <span className="inline-flex w-[260px] align-middle">
+            <Skeleton variants={{ size: 'lg', width: 'full' }} />
+          </span>
         )
       }
       description={
@@ -796,7 +798,9 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
               <CopyIconButton value={trace.id} label="Copy Trace ID" />
             </>
           ) : (
-            <Skeleton className="inline-block h-4 w-[200px]" />
+            <span className="inline-flex w-[200px] align-middle">
+              <Skeleton variants={{ width: 'full' }} />
+            </span>
           )}
         </>
       }
@@ -817,7 +821,9 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
             </span>
           </>
         ) : (
-          <Skeleton className="inline-block h-4 w-[150px]" />
+          <span className="inline-flex w-[150px] align-middle">
+            <Skeleton variants={{ width: 'full' }} />
+          </span>
         )}
         {props.traceId ? (
           <div className="ml-auto">

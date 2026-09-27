@@ -4,6 +4,7 @@ import { ChartPie, CheckIcon, FileDiffIcon, List, PencilIcon, XIcon } from 'luci
 import { useMutation, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { Spinner } from '@/components/base/spinner/spinner';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
@@ -18,7 +19,6 @@ import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Skeleton } from '@/components/ui/skeleton';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -402,7 +402,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 {props.proposalId ? (
                   `${props.proposalId}`
                 ) : (
-                  <Skeleton className="inline-block h-5 w-[150px]" />
+                  <span className="inline-flex w-[150px] align-middle">
+                    <Skeleton variants={{ size: 'lg', width: 'full' }} />
+                  </span>
                 )}
               </span>
             }
