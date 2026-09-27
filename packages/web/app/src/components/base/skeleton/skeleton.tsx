@@ -1,7 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 
-// The highlight is pinned to the viewport, so one band crosses the page and each shape shows its
-// slice of it instead of running a band of its own.
 const skeletonVariants = cva(
   [
     'bg-neutral-5 block shrink-0 animate-skeleton bg-fixed bg-size-[200%_100%]',
@@ -46,7 +44,6 @@ type SkeletonProps = {
   variants?: VariantProps<typeof skeletonVariants>;
 };
 
-/** Decorative; the composition around it announces the loading state. */
 export function Skeleton({ variants }: SkeletonProps) {
   return <span aria-hidden className={skeletonVariants({ ...variants })} />;
 }

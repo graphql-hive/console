@@ -3,7 +3,6 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Text } from '@/components/ui/text';
 import { InlineCode } from '@/components/v2/inline-code';
 import Stat from '@/components/v2/stat';
@@ -50,12 +49,6 @@ const ENTRIES = [
     coveredBy: 'Typography',
   },
   {
-    source: '43 render sites across 9 files',
-    origin: 'ui',
-    what: 'Skeleton — 44 classNames against 43 instances; no API beyond className',
-    coveredBy: 'Loading',
-  },
-  {
     source: 'PlanSummary.tsx ×4, organization-subscription.tsx, -manage.tsx, AdminStats.tsx',
     origin: 'v2',
     what: 'Stat — a dl/dt/dd compound. A page-local Stat of the same name shadows it elsewhere',
@@ -85,10 +78,6 @@ export const Inventory = createPreview({
           <strong>Unreachable variants, delete rather than port:</strong> Heading <code>2xl</code>;
           Callout <code>default</code> and its <code>emoji</code> prop. Zero call sites each.
           Callout <code>default</code> is never passed explicitly but is reached by omission.
-          <br />
-          <br />
-          <strong>Skeleton is a pure className carrier.</strong> 44 classNames against 43 instances
-          and no API at all.
           <br />
           <br />
           <strong>Two live bugs.</strong> <code>Text</code> declares an <code>arrangement</code>{' '}
@@ -233,44 +222,6 @@ export const Typography = createPreview({
               {size}
             </Text>
           ))}
-        </div>
-      </CallSite>
-    </div>
-  ),
-});
-
-// ---------------------------------------------------------------------------
-// Skeleton.
-// ---------------------------------------------------------------------------
-
-export const Loading = createPreview({
-  label: 'Loading',
-  render: () => (
-    <div className="flex flex-col gap-8">
-      <CallSite
-        source="43 render sites, 44 classNames"
-        origin="ui"
-        note="Skeleton is three classes and a spread: a skeleton fill, animate-pulse, rounded-md. It has no API, so every call site sizes it by hand. The recurring shapes below are the ones worth turning into something nameable."
-      >
-        <div className="flex w-[28rem] flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <span className="text-fg-secondary text-xs">h-10 w-1/4 — 6 uses</span>
-            <Skeleton className="h-10 w-1/4" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className="text-fg-secondary text-xs">h-10 w-1/2 — 3 uses</span>
-            <Skeleton className="h-10 w-1/2" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className="text-fg-secondary text-xs">
-              inline-block h-5 w-[150px] — 3 uses, inline in a sentence
-            </span>
-            <Skeleton className="inline-block h-5 w-[150px]" />
-          </div>
-          <div className="flex items-center gap-2">
-            <Skeleton className="size-9 rounded-full" />
-            <span className="text-fg-secondary text-xs">size-9 rounded-full — an avatar</span>
-          </div>
         </div>
       </CallSite>
     </div>
