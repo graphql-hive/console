@@ -123,12 +123,11 @@ export function PersonalAccessTokensSubPage(): React.ReactNode {
         }
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
-        {query.data?.organization?.me?.accessTokens && (
-          <PersonalAccessTokensTable
-            accessTokens={query.data.organization.me.accessTokens}
-            refetch={refetchQuery}
-          />
-        )}
+        <PersonalAccessTokensTable
+          accessTokens={query.data?.organization?.me?.accessTokens ?? null}
+          loading={query.fetching && !query.data?.organization?.me}
+          refetch={refetchQuery}
+        />
       </div>
     </SubPageLayout>
   );

@@ -615,10 +615,23 @@ describe('layout loaders', () => {
 });
 
 describe('tables while they load', () => {
+  beforeEach(() => {
+    client.current = createTestClient(layoutFixtures());
+    // The settings layouts gate their sections on these.
+    client.current.fixtures.set('OrganizationSettingsPageQuery', organizationSettings());
+    client.current.fixtures.set('ProjectSettingsPageQuery', projectSettings());
+  });
+
   // Held in flight, as the page's own query is on a real first load.
   it.each([
     [`${TARGET}/apps`, 'TargetAppsViewQuery'],
     [`${TARGET}/alerts/rules`, 'TargetAlertsRulesPage_Query'],
+    [`${ORGANIZATION}/view/settings/access-tokens`, 'AccessTokensSubPage_OrganizationQuery'],
+    [
+      `${ORGANIZATION}/view/settings/personal-access-tokens`,
+      'PersonalAccessTokensSubPage_OrganizationQuery',
+    ],
+    [`${PROJECT}/view/settings/access-tokens`, 'ProjectAccessTokensSubPage_OrganizationQuery'],
   ])('%s shows skeleton rows, not a spinner', { timeout: 30_000 }, async (url, pageQuery) => {
     client.current!.fixtures.set(pageQuery, new Promise(() => {}));
     at(url);
@@ -628,6 +641,10 @@ describe('tables while they load', () => {
 });
 
 describe('insights', () => {
+  beforeEach(() => {
+    client.current = createTestClient(layoutFixtures());
+  });
+
   const INSIGHTS = `${TARGET}/insights`;
   const emptyState = /waiting for your first collected operation/;
 
@@ -648,6 +665,10 @@ describe('insights', () => {
 });
 
 describe('proposals', () => {
+  beforeEach(() => {
+    client.current = createTestClient(layoutFixtures());
+  });
+
   it(
     'reads the permission from the layout, not a document of its own',
     { timeout: 30_000 },

@@ -3,7 +3,6 @@ import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Skeleton } from '@/components/ui/skeleton';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -125,31 +124,11 @@ export function AccessTokensSubPage(): React.ReactNode {
         }
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-access-tokens">
-        {query.fetching && !query.data?.organization && (
-          <div className="space-y-3">
-            <div className="flex w-full items-center space-x-4">
-              <Skeleton className="h-10 w-1/4" />
-              <Skeleton className="h-10 w-1/2" />
-              <Skeleton className="h-10 w-1/4" />
-            </div>
-            <div className="flex w-full items-center space-x-4">
-              <Skeleton className="h-10 w-1/4" />
-              <Skeleton className="h-10 w-1/2" />
-              <Skeleton className="h-10 w-1/4" />
-            </div>
-            <div className="flex w-full items-center space-x-4">
-              <Skeleton className="h-10 w-1/4" />
-              <Skeleton className="h-10 w-1/2" />
-              <Skeleton className="h-10 w-1/4" />
-            </div>
-          </div>
-        )}
-        {query.data?.organization && (
-          <AccessTokensTable
-            accessTokens={query.data.organization.allAccessTokens}
-            refetch={refetchQuery}
-          />
-        )}
+        <AccessTokensTable
+          accessTokens={query.data?.organization?.allAccessTokens ?? null}
+          loading={query.fetching && !query.data?.organization}
+          refetch={refetchQuery}
+        />
       </div>
     </SubPageLayout>
   );

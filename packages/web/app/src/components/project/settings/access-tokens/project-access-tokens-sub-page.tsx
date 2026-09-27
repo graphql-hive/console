@@ -111,12 +111,11 @@ export function ProjectAccessTokensSubPage(): React.ReactNode {
           onClose={() => setCreatedKey(null)}
         />
 
-        {query.data?.organization?.project?.accessTokens && (
-          <ProjectAccessTokensTable
-            accessTokens={query.data.organization.project.accessTokens}
-            refetch={refetchQuery}
-          />
-        )}
+        <ProjectAccessTokensTable
+          accessTokens={query.data?.organization?.project?.accessTokens ?? null}
+          loading={query.fetching && !query.data?.organization?.project}
+          refetch={refetchQuery}
+        />
       </div>
     </SubPageLayout>
   );
