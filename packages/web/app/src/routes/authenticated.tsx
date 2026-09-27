@@ -18,8 +18,6 @@ export const authenticatedRoute = createRoute({
       throw redirect({ to: '/auth', search: { redirectToPath: location.href } });
     }
   },
-  // Never a pending boundary: the async check would otherwise hide the header behind a skeleton.
-  pendingMs: Infinity,
   component: authenticated(function AuthenticatedRoute() {
     return <Outlet />;
   }),

@@ -137,6 +137,28 @@ describe('chrome at every page', () => {
     expect(screen.getByRole('banner')).toBe(header);
   });
 
+  it(
+    'keeps the chrome while the history redirect waits on its lookup',
+    { timeout: 30_000 },
+    async () => {
+      // The page renders its outlet only once it knows there are versions; the lookup stays held.
+      client.current!.fixtures.set('TargetHistoryPageQuery', {
+        target: {
+          __typename: 'Target',
+          id: 'target-1',
+          project: { __typename: 'Project', id: 'project-1', type: 'SINGLE' },
+          latestSchemaVersion: { __typename: 'SchemaVersion', id: 'version-42' },
+        },
+      });
+      client.current!.fixtures.set('TargetHistoryLatestVersionQuery', new Promise(() => {}));
+      at(`${TARGET}/history`);
+      expect(
+        await screen.findByRole('status', { name: 'Loading' }, { timeout: 2000 }),
+      ).toBeTruthy();
+      expect(screen.getByRole('banner')).toBeTruthy();
+    },
+  );
+
   it('sends the bare history URL to the latest version', { timeout: 30_000 }, async () => {
     client.current!.fixtures.set('TargetHistoryLatestVersionQuery', {
       organization: {

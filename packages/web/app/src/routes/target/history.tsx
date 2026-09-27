@@ -1,4 +1,6 @@
+import { SectionSkeleton } from '@/components/layouts/page-skeleton';
 import { DiffsWorkerPoolProvider } from '@/components/theme/diffs-worker-pool-provider';
+import { loadQuery } from '@/lib/route-utils';
 import { TargetHistoryLatestVersionQuery, TargetHistoryPage } from '@/pages/target-history';
 import { TargetHistorySchemaVersionPage } from '@/pages/target-history-schema-version';
 import { createRoute, redirect } from '@tanstack/react-router';
@@ -15,15 +17,21 @@ export const targetHistoryRoute = createRoute({
 export const targetHistoryIndexRoute = createRoute({
   getParentRoute: () => targetHistoryRoute,
   path: '/',
-  beforeLoad: async ({ context, params }) => {
-    const result = await context.urqlClient
-      .query(TargetHistoryLatestVersionQuery, params)
-      .toPromise();
+  // A loader, not beforeLoad, so the wait shows a pending state; it renders in the history page's
+  // pane, beside the versions list.
+  pendingComponent: SectionSkeleton,
+  loader: async loader => {
+    const { organizationSlug, projectSlug, targetSlug } = loader.params;
+    const result = await loadQuery(loader, TargetHistoryLatestVersionQuery, {
+      organizationSlug,
+      projectSlug,
+      targetSlug,
+    });
     const versionId = result.data?.organization?.project?.target?.latestSchemaVersion?.id;
     if (versionId) {
       throw redirect({
         to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
-        params: { ...params, versionId },
+        params: { organizationSlug, projectSlug, targetSlug, versionId },
       });
     }
   },

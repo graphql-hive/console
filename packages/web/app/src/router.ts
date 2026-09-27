@@ -1,6 +1,7 @@
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import type { Client } from 'urql';
 import { ErrorComponent } from '@/components/error';
+import { PageSkeleton } from '@/components/layouts/page-skeleton';
 import {
   createRouter,
   parseSearchWith,
@@ -28,6 +29,10 @@ export function createAppRouter(options: { history?: RouterHistory; urqlClient: 
     // Every route gets these boundaries; a route declares its own only when it needs different behavior.
     defaultErrorComponent: ErrorComponent,
     defaultNotFoundComponent: RouteNotFound,
+    // Only a route that awaits before rendering is ever pending; a load that finishes inside the
+    // delay never shows a skeleton.
+    defaultPendingComponent: PageSkeleton,
+    defaultPendingMs: 250,
     parseSearch: parseSearchWith(str => {
       if (needsJsurl2()) {
         return jsUrlParse(str);
