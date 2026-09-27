@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
@@ -185,7 +185,16 @@ const ProposalsListPage = (props: {
 
   return (
     <>
-      {query.fetching ? <Spinner /> : null}
+      {query.data ? null : (
+        <div role="status" aria-label="Loading" className="flex flex-col">
+          {[0, 1, 2, 3].map(index => (
+            <div key={index} className="flex flex-col gap-2 p-2.5">
+              <Skeleton variants={{ size: 'lg', width: 'lg' }} />
+              <Skeleton variants={{ size: 'sm', width: 'md' }} />
+            </div>
+          ))}
+        </div>
+      )}
       {query.data?.schemaProposals?.edges?.length === 0 && (
         <div className="my-8 flex min-h-48 items-center text-center">
           <div className="w-full">

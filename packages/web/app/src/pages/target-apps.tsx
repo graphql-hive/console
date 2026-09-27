@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { PageLead } from '@/components/base/page-lead';
-import { Spinner } from '@/components/base/spinner/spinner';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -284,19 +283,12 @@ function TargetAppsView(props: { sorting: SortState }) {
         }}
       />
       <div className="mt-4" />
-      {data.fetching || data.stale ? (
-        <div className="flex h-fit flex-1 items-center justify-center">
-          <div className="flex flex-col items-center">
-            <Spinner />
-            <div className="mt-2 text-xs">Loading app deployments</div>
-          </div>
-        </div>
-      ) : !data.data?.target?.latestSchemaVersion ? (
+      {data.data && !data.data.target?.latestSchemaVersion ? (
         <NoSchemaVersion
           recommendedAction="publish"
           projectType={data.data?.target?.project?.type ?? null}
         />
-      ) : !connection?.edges.length ? (
+      ) : data.data && !connection?.edges.length ? (
         <EmptyList
           title="Hive is waiting for your first app deployment"
           description="You can create an app deployment with the Hive CLI"
@@ -304,6 +296,7 @@ function TargetAppsView(props: { sorting: SortState }) {
         />
       ) : (
         <DataTable
+          loading={!data.data}
           data={rows}
           columns={columns}
           getRowId={deployment => deployment.id}
@@ -328,7 +321,9 @@ function TargetAppsView(props: { sorting: SortState }) {
           }}
           pagination={{
             ...pagination,
-            summary: `${pagination.summary} · ${connection.total} deployments`,
+            summary: connection
+              ? `${pagination.summary} · ${connection.total} deployments`
+              : pagination.summary,
           }}
         />
       )}

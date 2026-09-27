@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import { useQuery } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Spinner } from '@/components/base/spinner/spinner';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -293,14 +292,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
           }
         />
         <div className="mt-4" />
-        {loading && deployments.length === 0 ? (
-          <div className="flex h-fit flex-1 items-center justify-center">
-            <div className="flex flex-col items-center">
-              <Spinner />
-              <div className="mt-2 text-xs">Loading affected deployments</div>
-            </div>
-          </div>
-        ) : deployments.length === 0 ? (
+        {!loading && deployments.length === 0 ? (
           <EmptyList
             title="No affected app deployments"
             description={
@@ -311,6 +303,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
           />
         ) : (
           <DataTable
+            loading={loading && deployments.length === 0}
             data={deployments}
             columns={columns}
             getRowId={deployment => deployment.id}

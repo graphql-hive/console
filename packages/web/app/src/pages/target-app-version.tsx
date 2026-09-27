@@ -7,7 +7,6 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { NotFound } from '@/components/base/not-found/not-found';
 import { PageLead } from '@/components/base/page-lead';
-import { Spinner } from '@/components/base/spinner/spinner';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { BackLink } from '@/components/navigation/back-link';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
@@ -363,14 +362,9 @@ function TargetAppVersionContent(props: {
           </div>
         ) : null}
         <div className="mt-4" />
-        {data.fetching || data.stale ? (
-          <div className="flex h-fit flex-1 items-center justify-center">
-            <div className="flex flex-col items-center">
-              <Spinner />
-              <div className="mt-2 text-xs">Loading app deployments</div>
-            </div>
-          </div>
-        ) : !data.data?.target?.appDeployment?.documents?.edges.length ? (
+        {!data.data ? (
+          <DataTable loading data={[]} columns={columns} getRowId={document => document.hash} />
+        ) : !data.data.target?.appDeployment?.documents?.edges.length ? (
           <EmptyList
             title={
               coordinates

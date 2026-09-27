@@ -6,7 +6,6 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { PageLead } from '@/components/base/page-lead';
-import { Spinner } from '@/components/base/spinner/spinner';
 import { graphql } from '@/gql';
 import {
   AlertChannelType,
@@ -342,12 +341,9 @@ export function TargetAlertsRulesPage() {
         <div className="text-critical flex justify-center py-12 text-sm">
           Failed to load alert rules: {result.error.message}
         </div>
-      ) : result.fetching && !data ? (
-        <div className="flex justify-center py-12">
-          <Spinner />
-        </div>
       ) : (
         <DataTable
+          loading={result.fetching && !data}
           data={rules}
           columns={RULE_COLUMNS}
           getRowId={r => r.id}

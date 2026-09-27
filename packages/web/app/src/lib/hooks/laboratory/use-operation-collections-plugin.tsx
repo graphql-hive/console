@@ -12,7 +12,7 @@ import { Accordion } from '@/components/base/accordion/accordion';
 import { Button } from '@/components/base/button/button';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { useToast } from '@/components/base/toast/toast';
 import { CreateCollectionModal } from '@/components/target/laboratory/create-collection-modal';
 import { DeleteCollectionModal } from '@/components/target/laboratory/delete-collection-modal';
@@ -472,9 +472,10 @@ export function Content() {
         )}
       </div>
       {loading ? (
-        <div className="flex flex-col items-center gap-4 text-xs">
-          <Spinner />
-          Loading collections...
+        <div role="status" aria-label="Loading collections" className="flex flex-col gap-3 px-2">
+          {[0, 1, 2].map(index => (
+            <Skeleton key={index} variants={{ width: 'full' }} />
+          ))}
         </div>
       ) : collections.length ? (
         <Accordion

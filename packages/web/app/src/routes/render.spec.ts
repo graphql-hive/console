@@ -614,6 +614,19 @@ describe('layout loaders', () => {
   );
 });
 
+describe('tables while they load', () => {
+  // Held in flight, as the page's own query is on a real first load.
+  it.each([
+    [`${TARGET}/apps`, 'TargetAppsViewQuery'],
+    [`${TARGET}/alerts/rules`, 'TargetAlertsRulesPage_Query'],
+  ])('%s shows skeleton rows, not a spinner', { timeout: 30_000 }, async (url, pageQuery) => {
+    client.current!.fixtures.set(pageQuery, new Promise(() => {}));
+    at(url);
+    const status = await screen.findByRole('status', { name: 'Loading' });
+    expect(status.closest('tbody')).not.toBeNull();
+  });
+});
+
 describe('insights', () => {
   const INSIGHTS = `${TARGET}/insights`;
   const emptyState = /waiting for your first collected operation/;

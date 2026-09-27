@@ -9,6 +9,7 @@ import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filte
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { Spinner } from '@/components/base/spinner/spinner';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { useToast } from '@/components/base/toast/toast';
@@ -735,15 +736,9 @@ function ManageFiltersContent() {
     );
   }
 
-  if (!query.data?.target) {
-    return (
-      <div className="flex h-fit flex-1 items-center justify-center py-28">
-        <Spinner />
-      </div>
-    );
-  }
+  const loaded = !!query.data?.target;
 
-  if (filters.length === 0) {
+  if (loaded && filters.length === 0) {
     return (
       <div className="py-8">
         <EmptyList
@@ -760,22 +755,23 @@ function ManageFiltersContent() {
         <StatCard
           variants={{ tone: 'muted' }}
           title="Total Filters"
-          value={stats.total.toLocaleString()}
+          value={loaded ? stats.total.toLocaleString() : <StatSkeleton />}
         />
         <StatCard
           variants={{ tone: 'muted' }}
           title="Shared Filters"
-          value={stats.shared.toLocaleString()}
+          value={loaded ? stats.shared.toLocaleString() : <StatSkeleton />}
         />
         <StatCard
           variants={{ tone: 'muted' }}
           title="Total Views"
-          value={stats.totalViews.toLocaleString()}
+          value={loaded ? stats.totalViews.toLocaleString() : <StatSkeleton />}
         />
       </div>
 
       <div className="mt-8">
         <DataTable
+          loading={!loaded}
           data={filters}
           columns={columns}
           getRowId={f => f.id}
@@ -790,6 +786,10 @@ function ManageFiltersContent() {
       </div>
     </>
   );
+}
+
+function StatSkeleton() {
+  return <Skeleton variants={{ size: 'xl', width: 'xs' }} />;
 }
 
 export function TargetInsightsManageFiltersPage(): ReactElement {
