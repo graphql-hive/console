@@ -63,6 +63,8 @@ export function useDateRangeController(args: {
     resolvedRange: resolved.range,
     refreshResolvedRange() {
       setTriggerRefreshCounter(c => c + 1);
+      // The route's loaders own the page's documents, so a refresh reloads the route.
+      void router.invalidate();
     },
     resolution: resolved.resolution,
   } as const;

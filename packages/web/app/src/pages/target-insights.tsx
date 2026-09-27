@@ -30,7 +30,7 @@ const insightsRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights',
 );
 
-function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
+export function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
   return {
     operationIds: state.operations?.length ? state.operations : undefined,
     clientVersionFilters: state.clients?.length
@@ -44,7 +44,7 @@ function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInp
   };
 }
 
-const InsightsFilterPicker_Query = graphql(`
+export const InsightsFilterPicker_Query = graphql(`
   query InsightsFilterPicker($selector: TargetSelectorInput!, $period: DateRangeInput!) {
     target(reference: { bySelector: $selector }) {
       id
@@ -367,7 +367,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
   );
 }
 
-const TargetOperationsPageQuery = graphql(`
+export const TargetOperationsPageQuery = graphql(`
   query TargetOperationsPageQuery(
     $organizationSlug: String!
     $projectSlug: String!

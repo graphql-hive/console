@@ -35,7 +35,7 @@ function GraphQLOperationBody(props: {
   return <div>Operation not found.</div>;
 }
 
-const Operation_View_OperationBodyQuery = graphql(`
+export const Operation_View_OperationBodyQuery = graphql(`
   query GraphQLOperationBody_GetOperationBodyQuery($selector: TargetSelectorInput!, $hash: ID!) {
     target(reference: { bySelector: $selector }) {
       id
@@ -139,7 +139,7 @@ function OperationView({
   );
 }
 
-const OperationInsightsPageQuery = graphql(`
+export const OperationInsightsPageQuery = graphql(`
   query OperationInsightsPageQuery(
     $organizationSlug: String!
     $projectSlug: String!

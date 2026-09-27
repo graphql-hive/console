@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import { ReactElement, useCallback, useMemo, useState } from 'react';
 import { differenceInMilliseconds } from 'date-fns';
 import ReactECharts from 'echarts-for-react';
 import {
@@ -35,7 +35,7 @@ import { useRouter } from '@tanstack/react-router';
 import { OperationsFallback } from './fallback';
 import { resolutionToMilliseconds } from './utils';
 
-const Stats_GeneralOperationsStatsQuery = graphql(`
+export const Stats_GeneralOperationsStatsQuery = graphql(`
   query Stats_GeneralOperationsStats(
     $targetSelector: TargetSelectorInput!
     $period: DateRangeInput!
@@ -1049,12 +1049,6 @@ export function OperationsStats({
       requestPolicy: 'cache-and-network',
     });
   }, [refetchQuery]);
-
-  useEffect(() => {
-    if (!query.fetching) {
-      refetch();
-    }
-  }, [period, filter]);
 
   const isFetching = query.fetching;
   const isError = !!query.error;

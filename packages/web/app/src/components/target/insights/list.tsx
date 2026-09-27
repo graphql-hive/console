@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useMemo, useState } from 'react';
+import { ReactElement, useMemo, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Card } from '@/components/base/card/card';
@@ -265,7 +265,7 @@ function OperationsTableContainer({
   );
 }
 
-const OperationsList_OperationsStatsQuery = graphql(`
+export const OperationsList_OperationsStatsQuery = graphql(`
   query OperationsList_OperationsStats(
     $targetSelector: TargetSelectorInput!
     $period: DateRangeInput!
@@ -318,12 +318,6 @@ export function OperationsList({
   });
 
   const refetch = () => refetchQuery({ requestPolicy: 'cache-and-network' });
-
-  useEffect(() => {
-    if (!query.fetching) {
-      refetch();
-    }
-  }, [period, filter]);
 
   return (
     <OperationsFallback

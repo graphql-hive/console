@@ -1,16 +1,70 @@
-import { InsightsFilterSearch } from '@/components/target/insights/search-schemas';
-import { TargetInsightsPage } from '@/pages/target-insights';
+import { OperationsList_OperationsStatsQuery } from '@/components/target/insights/list';
+import {
+  InsightsDateRangeSearch,
+  InsightsFilterSearch,
+} from '@/components/target/insights/search-schemas';
+import { Stats_GeneralOperationsStatsQuery } from '@/components/target/insights/stats';
+import { presetLast1Day, presetLast7Days } from '@/components/ui/date-range-picker';
+import { resolveDateRange } from '@/lib/hooks/use-date-range-controller';
+import { loadQuery } from '@/lib/route-utils';
+import {
+  buildGraphQLFilter,
+  InsightsFilterPicker_Query,
+  TargetInsightsPage,
+  TargetOperationsPageQuery,
+} from '@/pages/target-insights';
 import { TargetInsightsClientPage } from '@/pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from '@/pages/target-insights-coordinate';
 import { TargetInsightsManageFiltersPage } from '@/pages/target-insights-manage-filters';
-import { TargetInsightsOperationPage } from '@/pages/target-insights-operation';
+import {
+  Operation_View_OperationBodyQuery,
+  OperationInsightsPageQuery,
+  TargetInsightsOperationPage,
+} from '@/pages/target-insights-operation';
 import { createRoute } from '@tanstack/react-router';
 import { targetRoute } from './route';
+
+// Stats move, so their documents revalidate on every visit and on Refresh (router.invalidate);
+// the rest is read once. The page reads cache-first and never requests on its own.
+const REVALIDATE = 'cache-and-network';
 
 export const targetInsightsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights',
   validateSearch: InsightsFilterSearch.parse,
+  // The page writes this default into a bare URL; naming it here keeps that from re-running the loader.
+  loaderDeps: ({ search }) => ({
+    from: search.from ?? presetLast7Days.range.from,
+    to: search.to ?? presetLast7Days.range.to,
+    operations: search.operations,
+    clients: search.clients,
+    excludeOperations: search.excludeOperations,
+    excludeClients: search.excludeClients,
+  }),
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug } = loader.params;
+    const selector = { organizationSlug, projectSlug, targetSlug };
+    const { range: period, resolution } = resolveDateRange({
+      from: loader.deps.from,
+      to: loader.deps.to,
+      defaultPreset: presetLast7Days,
+    });
+    const filter = buildGraphQLFilter(loader.deps);
+    void loadQuery(loader, TargetOperationsPageQuery, selector);
+    void loadQuery(loader, InsightsFilterPicker_Query, { selector, period });
+    void loadQuery(
+      loader,
+      Stats_GeneralOperationsStatsQuery,
+      { targetSelector: selector, period, filter, resolution },
+      REVALIDATE,
+    );
+    void loadQuery(
+      loader,
+      OperationsList_OperationsStatsQuery,
+      { targetSelector: selector, period, filter },
+      REVALIDATE,
+    );
+  },
   component: TargetInsightsPage,
 });
 
@@ -41,6 +95,27 @@ export const targetInsightsClientRoute = createRoute({
 export const targetInsightsOperationsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights/$operationName/$operationHash',
+  validateSearch: InsightsDateRangeSearch.parse,
+  loaderDeps: ({ search }) => ({
+    from: search.from ?? presetLast1Day.range.from,
+    to: search.to ?? presetLast1Day.range.to,
+  }),
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug, operationHash } = loader.params;
+    const selector = { organizationSlug, projectSlug, targetSlug };
+    const { range: period, resolution } = resolveDateRange({
+      ...loader.deps,
+      defaultPreset: presetLast1Day,
+    });
+    void loadQuery(loader, OperationInsightsPageQuery, selector);
+    void loadQuery(loader, Operation_View_OperationBodyQuery, { selector, hash: operationHash });
+    void loadQuery(
+      loader,
+      Stats_GeneralOperationsStatsQuery,
+      { targetSelector: selector, period, filter: { operationIds: [operationHash] }, resolution },
+      REVALIDATE,
+    );
+  },
   component: function TargetInsightsRoute() {
     const { operationName, operationHash } = targetInsightsOperationsRoute.useParams();
     return (
