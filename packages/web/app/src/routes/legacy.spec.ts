@@ -54,10 +54,15 @@ describe('legacy URLs', () => {
     const { legacyPaths } = await import('./legacy');
     for (const { example } of legacyPaths) {
       const router = await loadAt(example.from);
-      expect({ from: example.from, to: router.state.location.href }).toEqual({
+      // The example's search must carry over; a landing route may add its own (alerts adds a range).
+      const expected = new URL(example.to, 'http://localhost');
+      expect({ from: example.from, to: router.state.location.pathname }).toEqual({
         from: example.from,
-        to: example.to,
+        to: expected.pathname,
       });
+      expect(router.state.location.search).toMatchObject(
+        Object.fromEntries(expected.searchParams),
+      );
       expect(router.history.length).toBe(1);
     }
   });

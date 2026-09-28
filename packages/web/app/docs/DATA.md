@@ -133,7 +133,9 @@ src/routes/<scope>/route.tsx              the layout loaders
 src/routes/target/insights.tsx            warm + revalidate, loaderDeps, a beforeLoad default, preload policy
 src/routes/target/checks.tsx              warm, loaderDeps on the filters, a child route's own document
 src/routes/target/settings.ts             await + redirect, section checks, section documents warmed
-src/routes/target/{alerts,laboratory,proposals}.tsx  requireLayoutFlag.target(loader, flag)
+src/routes/target/{laboratory,proposals}.tsx  requireLayoutFlag.target(loader, flag)
+src/routes/target/alerts.tsx              the gate; activity: default range, loaderDeps, period as loader data,
+                                          polled by router.invalidate; rules and detail warm + revalidate
 src/routes/target/apps.tsx                loaderDeps on the sort, and on the settled search term; warm beside the gate
 src/routes/target/history.tsx             warm + revalidate the list, await + redirect from a cache read
 src/lib/testing/urql.ts                   createTestClient on cacheOptions; fixtures/ beside it
@@ -180,6 +182,8 @@ Run from the repo root: `pnpm vitest run packages/web/app/src`.
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `routes/target/insights.spec.ts`      | The loader's variables and policies before render; one request per document with the page mounted; Refresh on both pages; the bare URL's default range; the period resolved once across an hour boundary; a hover warms and the visit revalidates; rows don't preload. |
 | `routes/target/checks.spec.ts`        | Load more merges pages; a filter change starts over and keeps the selected check; the loaders' variables; one request per document; rows don't preload.                                                                                                                |
+| `routes/target/alerts.spec.ts`        | The bare URL's default range; retention and the log started together with the loader's period; the poll repeats the bounds within a minute and moves them at the roll; rules and detail revalidate their configuration and leave the state log to the page; the create form's three documents. |
+| `routes/target/traces.spec.ts`        | The trace loader's variables; the error branch before not-found. |
 | `routes/target/history.spec.ts`       | The list's next page merges into the same list; the loaders' variables; one request per document; a revisit revalidates the list alone; the version pane shows an error before not-found. |
 | `routes/render.spec.ts`               | The layout loaders' variables; the settings redirects and the page document requested once; hover preloading; the history redirect as a cache read; failed page queries show the error; a CDN create refetches the open page.                                          |
 | `routes/target/settings-cdn.spec.tsx` | The one spec on the app's own client, exchanges and all: a CDN create through the modal refetches the open page.                                                                                                                                                       |

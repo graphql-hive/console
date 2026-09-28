@@ -33,7 +33,7 @@ import { useNavigate } from '@tanstack/react-router';
 // sheet (and everything else in the page chrome) lives under this query, so it
 // is never torn down by a background refetch. The live, time-windowed
 // `stateLog` is fetched separately by `RuleStateLogSection` below.
-const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
+export const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
   query TargetAlertsDetailPage_RuleConfigQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -205,7 +205,6 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
   const [result] = useQuery({
     query: TargetAlertsDetailPage_RuleConfigQuery,
     variables: { organizationSlug, projectSlug, targetSlug, ruleId },
-    requestPolicy: 'cache-and-network',
   });
 
   const rule = result.data?.target?.metricAlertRule;
