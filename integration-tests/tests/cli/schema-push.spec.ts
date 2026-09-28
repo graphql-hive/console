@@ -160,7 +160,7 @@ describe.each([
       expect(conflictMessage).toContain('[115]');
     });
 
-    test.concurrent('pushing the same revision again is skipped', async ({ expect }) => {
+    test.concurrent('pushing the same revision again succeeds', async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
       const { target, createTargetAccessToken } = await createProject(projectType);
@@ -179,8 +179,9 @@ describe.each([
       await expect(schemaPush(pushArgs)).resolves.toContain('Schema revision pushed.');
 
       const repeatedPush = await schemaPush(pushArgs);
-      expect(repeatedPush).not.toContain('Schema revision pushed.');
+      expect(repeatedPush).toContain('Schema revision pushed.');
       expect(repeatedPush).toContain(`Revision: ${revision}`);
+      expect(repeatedPush).toContain('Expires:');
     });
   },
 );
