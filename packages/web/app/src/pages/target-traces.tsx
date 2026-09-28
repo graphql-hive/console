@@ -1,4 +1,4 @@
-import { memo, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
@@ -22,7 +22,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
-import { DateRangePicker, Preset, presetLast7Days } from '@/components/ui/date-range-picker';
+import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
@@ -222,6 +222,8 @@ type SortProps = {
   sorting: SortState;
 };
 
+export const defaultTracesSort: SortState = { id: 'timestamp', desc: true };
+
 const TracesList_Trace = graphql(`
   fragment TracesList_Trace on Trace {
     id
@@ -256,7 +258,7 @@ const TracesList = memo(function TracesList(
   const navigate = tracesRoute.useNavigate();
   const data = useFragment(TracesList_Trace, props.traces);
 
-  const targetRef = tracesRoute.useParams();
+  const { organizationSlug, projectSlug, targetSlug } = tracesRoute.useParams();
 
   const rows = useMemo(() => [...data], [data]);
 
@@ -273,9 +275,9 @@ const TracesList = memo(function TracesList(
             link={{
               to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
               params: {
-                organizationSlug: targetRef.organizationSlug,
-                projectSlug: targetRef.projectSlug,
-                targetSlug: targetRef.targetSlug,
+                organizationSlug: organizationSlug,
+                projectSlug: projectSlug,
+                targetSlug: targetSlug,
                 traceId: row.original.id,
               },
             }}
@@ -474,7 +476,7 @@ const TracesList = memo(function TracesList(
         cell: ({ row }) => <DataTableCell kind="text" mono value={row.original.httpStatusCode} />,
       },
     ],
-    [targetRef.organizationSlug, targetRef.projectSlug, targetRef.targetSlug],
+    [organizationSlug, projectSlug, targetSlug],
   );
 
   return (
@@ -533,6 +535,22 @@ export const TargetTracesFilterState = z.object({
 });
 
 export type FilterState = z.infer<typeof TargetTracesFilterState>;
+
+export const defaultTracesFilter: FilterState = {
+  'graphql.client': [],
+  'graphql.errorCode': [],
+  'graphql.kind': [],
+  'graphql.operation': [],
+  'graphql.status': [],
+  'graphql.subgraph': [],
+  'http.host': [],
+  'http.method': [],
+  'http.route': [],
+  'http.status': [],
+  'http.url': [],
+  'trace.id': [],
+  duration: [],
+};
 
 type FilterProps = {
   filter: FilterState;
@@ -854,7 +872,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
   );
 }
 
-const TargetTracesPageQuery = graphql(`
+export const TargetTracesPageQuery = graphql(`
   query TargetTracesPageQuery(
     $targetRef: TargetSelectorInput!
     $first: Int!
@@ -953,12 +971,50 @@ const TargetTracesFetchMoreTracesQuery = graphql(`
   }
 `);
 
-export function TargetTracesPage(
-  props: SortProps &
-    FilterProps & {
-      range: Preset['range'] | null;
-    },
+const TRACES_PAGE_SIZE = 50;
+
+export function tracesPageVariables(
+  slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
+  filter: FilterState,
+  sorting: SortState,
+  period: { from: string; to: string },
 ) {
+  return {
+    targetRef: slugs,
+    filter: {
+      period,
+      duration: {
+        min: filter.duration?.[0] ?? null,
+        max: filter.duration?.[1] ?? null,
+      },
+      traceIds: filter['trace.id'],
+      success: filter['graphql.status']?.map(status => (status === 'ok' ? true : false)),
+      errorCodes: filter['graphql.errorCode'],
+      operationNames: filter['graphql.operation'],
+      operationTypes: filter['graphql.kind'] as any,
+      clientNames: filter['graphql.client'],
+      subgraphNames: filter['graphql.subgraph'],
+      httpStatusCodes: filter['http.status'],
+      httpMethods: filter['http.method'],
+      httpHosts: filter['http.host'],
+      httpRoutes: filter['http.route'],
+      httpUrls: filter['http.url'],
+    } satisfies GraphQLSchema.TracesFilterInput,
+    first: TRACES_PAGE_SIZE,
+    sort: {
+      sort:
+        sorting.id === 'duration'
+          ? GraphQLSchema.TracesSortType.Duration
+          : GraphQLSchema.TracesSortType.Timestamp,
+      direction: sorting.desc
+        ? GraphQLSchema.SortDirectionType.Desc
+        : GraphQLSchema.SortDirectionType.Asc,
+    },
+    filterTopN: 5,
+  };
+}
+
+export function TargetTracesPage(props: SortProps & FilterProps) {
   return (
     <>
       <Meta title="Traces" />
@@ -969,95 +1025,38 @@ export function TargetTracesPage(
   );
 }
 
-function TargetTracesPageContent(
-  props: SortProps &
-    FilterProps & {
-      range: Preset['range'] | null;
-    },
-) {
-  const targetRef = tracesRoute.useParams();
+function TargetTracesPageContent(props: SortProps & FilterProps) {
+  const { organizationSlug, projectSlug, targetSlug } = tracesRoute.useParams();
+  // Resolved by the route loader, so the list and the loader share one clock.
+  const { period } = tracesRoute.useLoaderData();
 
   const dateRangeController = useDateRangeController({
     // TODO: ressolve retention from account
     dataRetentionInDays: 365,
     defaultPreset: presetLast7Days,
-    range: props.range || undefined,
   });
 
-  const filter: GraphQLSchema.TracesFilterInput = {
-    period: dateRangeController.resolvedRange,
-    duration: {
-      min: props.filter.duration?.[0] ?? null,
-      max: props.filter.duration?.[1] ?? null,
-    },
-    traceIds: props.filter['trace.id'],
-    success: props.filter['graphql.status']?.map(status => (status === 'ok' ? true : false)),
-    errorCodes: props.filter['graphql.errorCode'],
-    operationNames: props.filter['graphql.operation'],
-    operationTypes: props.filter['graphql.kind'] as any,
-    clientNames: props.filter['graphql.client'],
-    subgraphNames: props.filter['graphql.subgraph'],
-    httpStatusCodes: props.filter['http.status'],
-    httpMethods: props.filter['http.method'],
-    httpHosts: props.filter['http.host'],
-    httpRoutes: props.filter['http.route'],
-    httpUrls: props.filter['http.url'],
-  };
-
-  const paginationSize = 50;
-  const sort = {
-    sort:
-      props.sorting.id === 'duration'
-        ? GraphQLSchema.TracesSortType.Duration
-        : GraphQLSchema.TracesSortType.Timestamp,
-    direction: props.sorting.desc
-      ? GraphQLSchema.SortDirectionType.Desc
-      : GraphQLSchema.SortDirectionType.Asc,
-  };
-
+  const variables = tracesPageVariables(
+    { organizationSlug, projectSlug, targetSlug },
+    props.filter,
+    props.sorting,
+    period,
+  );
   const urql = useClient();
-  const [query, refetch] = useQuery({
-    query: TargetTracesPageQuery,
-    variables: {
-      targetRef: {
-        organizationSlug: targetRef.organizationSlug,
-        projectSlug: targetRef.projectSlug,
-        targetSlug: targetRef.targetSlug,
-      },
-      filter,
-      first: paginationSize,
-      sort,
-      filterTopN: 5,
-    },
-    requestPolicy: 'network-only',
-  });
-
-  useEffect(() => {
-    // query.fetching and query.stale are not dependencies as this effect should only trigger if dateRangeController.resolvedRange has changed
-    // in case `JSON.stringify(dateRangeController.resolvedRange)` is still the same, but the object got re-created (by pressing on the refresh button)
-    // we still want to refetch as new data might be available
-    if (query.fetching || query.stale) {
-      return;
-    }
-    refetch();
-  }, [dateRangeController.resolvedRange]);
+  const [query] = useQuery({ query: TargetTracesPageQuery, variables });
 
   const connection = query.data?.target?.traces;
   const { rows: traces, pagination } = usePagedConnection({
     edges: connection?.edges.map(edge => edge.node) ?? [],
     pageInfo: connection?.pageInfo ?? { hasNextPage: false },
-    pageSize: paginationSize,
+    pageSize: TRACES_PAGE_SIZE,
     loadMore: after =>
       urql
         .query(TargetTracesFetchMoreTracesQuery, {
-          targetRef: {
-            organizationSlug: targetRef.organizationSlug,
-            projectSlug: targetRef.projectSlug,
-            targetSlug: targetRef.targetSlug,
-          },
-          filter,
-          first: paginationSize,
-          sort,
+          targetRef: variables.targetRef,
+          filter: variables.filter,
+          first: TRACES_PAGE_SIZE,
+          sort: variables.sort,
           after,
         })
         .toPromise(),
@@ -1155,7 +1154,7 @@ function TargetTracesPageContent(
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={targetRef.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
