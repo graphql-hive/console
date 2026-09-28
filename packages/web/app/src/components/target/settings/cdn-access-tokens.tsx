@@ -242,7 +242,7 @@ function DeleteCDNAccessTokenModal(props: {
   );
 }
 
-const CDNAccessTokensQuery = graphql(`
+export const CDNAccessTokensQuery = graphql(`
   query CDNAccessTokensQuery($selector: TargetSelectorInput!, $first: Int!, $after: String) {
     target(reference: { bySelector: $selector }) {
       id
@@ -291,7 +291,6 @@ export function CDNAccessTokens(): React.ReactElement {
       first: 10,
       after: endCursors[endCursors.length - 1] ?? null,
     },
-    requestPolicy: 'cache-and-network',
   });
 
   return (

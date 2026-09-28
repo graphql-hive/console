@@ -62,18 +62,10 @@ import {
   DangerousChangeType,
   ProjectType,
 } from '@/gql/graphql';
-import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Link,
-  Outlet,
-  useChildMatches,
-  useRouter,
-  type RegisteredRouter,
-  type RouteIds,
-} from '@tanstack/react-router';
+import { Link, Outlet, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
 /**
@@ -487,7 +479,7 @@ const TargetSettings_AppDeploymentProtectionConfigurationFragment = graphql(`
   }
 `);
 
-const TargetSettingsPage_TargetSettingsQuery = graphql(`
+export const TargetSettingsPage_TargetSettingsQuery = graphql(`
   query TargetSettingsPage_TargetSettingsQuery(
     $selector: TargetSelectorInput!
     $targetsSelector: ProjectSelectorInput!
@@ -1210,7 +1202,7 @@ function TargetDelete() {
   );
 }
 
-const TargetSettingsPageQuery = graphql(`
+export const TargetSettingsPageQuery = graphql(`
   query TargetSettingsPageQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -1248,9 +1240,7 @@ function TargetInfo(props: { targetId: string }) {
   );
 }
 
-const SETTINGS = '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/settings';
-
-type SectionId =
+export type SettingsSectionId =
   | 'general'
   | 'base-schema'
   | 'breaking-changes'
@@ -1259,57 +1249,72 @@ type SectionId =
   | 'cdn';
 
 type Section = {
-  id: SectionId;
+  id: SettingsSectionId;
   label: string;
-  routeId: RouteIds<RegisteredRouter['routeTree']>;
-  to: `/$organizationSlug/$projectSlug/$targetSlug/settings${'' | `/${Exclude<SectionId, 'general'>}`}`;
+  to: `/$organizationSlug/$projectSlug/$targetSlug/settings${'' | `/${Exclude<SettingsSectionId, 'general'>}`}`;
   exact?: boolean;
 };
 
-/**
- * The sections in nav order, with the route each renders under; the permission gate compares the
- * matched child route against the items the viewer may see. The bare URL is General.
- */
+/** The sections in nav order. The bare URL is General. */
 const sections: readonly Section[] = [
   {
     id: 'general',
     label: 'General',
-    routeId: `${SETTINGS}/`,
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
     exact: true,
   },
   {
     id: 'base-schema',
     label: 'Base Schema',
-    routeId: `${SETTINGS}/base-schema`,
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/base-schema',
   },
   {
     id: 'breaking-changes',
     label: 'Breaking Changes',
-    routeId: `${SETTINGS}/breaking-changes`,
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/breaking-changes',
   },
   {
     id: 'schema-contracts',
     label: 'Schema Contracts',
-    routeId: `${SETTINGS}/schema-contracts`,
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/schema-contracts',
   },
   {
     id: 'registry-token',
     label: 'Registry Tokens',
-    routeId: `${SETTINGS}/registry-token`,
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/registry-token',
   },
   {
     id: 'cdn',
     label: 'CDN Tokens',
-    routeId: `${SETTINGS}/cdn`,
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
   },
 ];
 
+/** The sections this viewer may open, in nav order; the route loaders and the nav agree through it. */
+export function settingsSections(input: {
+  target: {
+    viewerCanModifySettings: boolean;
+    viewerCanModifyTargetAccessToken: boolean;
+    viewerCanModifyCDNAccessToken: boolean;
+  };
+  projectType: ProjectType;
+}) {
+  const ids = new Set<SettingsSectionId>();
+  if (input.target.viewerCanModifySettings) {
+    ids.add('general');
+    ids.add(input.projectType === ProjectType.Federation ? 'schema-contracts' : 'base-schema');
+    ids.add('breaking-changes');
+  }
+  if (input.target.viewerCanModifyTargetAccessToken) {
+    ids.add('registry-token');
+  }
+  if (input.target.viewerCanModifyCDNAccessToken) {
+    ids.add('cdn');
+  }
+  return sections.filter(section => ids.has(section.id));
+}
+
+// The route's loader answered the page document and sent away a viewer who may not be here.
 export function TargetSettingsPage() {
   const slugs = useSlugs('target');
   const { organizationSlug } = slugs;
@@ -1317,47 +1322,6 @@ export function TargetSettingsPage() {
   const currentOrganization = query.data?.organization;
   const currentProject = currentOrganization?.project;
   const currentTarget = currentProject?.target;
-
-  useRedirect({
-    canAccess: currentTarget?.viewerCanAccessSettings === true,
-    entity: currentTarget,
-    redirectTo: router => {
-      void router.navigate({ to: '/$organizationSlug/$projectSlug/$targetSlug', params: slugs });
-    },
-  });
-
-  const visible = useMemo(() => {
-    const ids = new Set<SectionId>();
-    if (currentTarget?.viewerCanModifySettings) {
-      ids.add('general');
-      ids.add(currentProject?.type === ProjectType.Federation ? 'schema-contracts' : 'base-schema');
-      ids.add('breaking-changes');
-    }
-    if (currentTarget?.viewerCanModifyTargetAccessToken) {
-      ids.add('registry-token');
-    }
-    if (currentTarget?.viewerCanModifyCDNAccessToken) {
-      ids.add('cdn');
-    }
-    return sections.filter(section => ids.has(section.id));
-  }, [currentTarget, currentProject]);
-
-  const sectionRouteId = useChildMatches({ select: matches => matches.at(-1)?.routeId });
-  const allowed = visible.some(section => section.routeId === sectionRouteId);
-
-  // A section the viewer may not open falls back to the first one they may, else the target.
-  useRedirect({
-    canAccess: allowed,
-    entity: currentTarget,
-    redirectTo: router => {
-      const fallback = visible.at(0);
-      void router.navigate(
-        fallback
-          ? { to: fallback.to, params: slugs, replace: true }
-          : { to: '/$organizationSlug/$projectSlug/$targetSlug', params: slugs, replace: true },
-      );
-    },
-  });
 
   if (query.error) {
     return (
@@ -1375,12 +1339,15 @@ export function TargetSettingsPage() {
     <>
       <Meta title="Settings" />
       <LayoutContent>
-        {allowed && currentOrganization && currentProject && currentTarget ? (
+        {currentOrganization && currentProject && currentTarget ? (
           <PageLayout>
             <Navigation
               aria-label="Settings"
               variant="list"
-              items={visible.map(section => ({
+              items={settingsSections({
+                target: currentTarget,
+                projectType: currentProject.type,
+              }).map(section => ({
                 label: section.label,
                 to: section.to,
                 params: slugs,

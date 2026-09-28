@@ -352,6 +352,45 @@ describe('target settings sections', () => {
     );
     await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
   });
+
+  it('sends a viewer without settings access back to the target', { timeout: 30_000 }, async () => {
+    const { router } = renderSettings(SETTINGS, targetSettings({ viewerCanAccessSettings: false }));
+    await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
+    expect(screen.queryByRole('navigation', { name: 'Settings' })).toBeNull();
+  });
+
+  it(
+    'loads the page document once for the page and its section, and warms the section',
+    { timeout: 30_000 },
+    async () => {
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set('TargetSettingsPageQuery', targetSettings());
+      client.current.fixtures.set('CDNAccessTokensQuery', new Promise(() => {}));
+      at(`${SETTINGS}/cdn`);
+      await screen.findByText('CDN Access Token');
+
+      const seen = client.current.seen;
+      expect(seen.filter(name => name === 'TargetSettingsPageQuery')).toHaveLength(1);
+      const cdn = client.current.operations.filter(
+        (_, index) => seen[index] === 'CDNAccessTokensQuery',
+      );
+      expect(cdn.map(operation => operation.variables)).toEqual([
+        { selector: SLUGS, first: 10, after: null },
+      ]);
+    },
+  );
+
+  it('keeps the settings nav mounted from General to CDN', { timeout: 30_000 }, async () => {
+    const { router } = renderSettings(SETTINGS);
+    await screen.findByText('Target ID');
+    const nav = screen.getByRole('navigation', { name: 'Settings' });
+    await router.navigate({
+      to: '/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
+      params: SLUGS,
+    });
+    await screen.findByText('CDN Access Token');
+    expect(screen.getByRole('navigation', { name: 'Settings' })).toBe(nav);
+  });
 });
 
 describe('organization settings sections', () => {

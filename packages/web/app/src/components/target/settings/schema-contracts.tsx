@@ -20,7 +20,7 @@ import {
   type ContractFormValues,
 } from './contract-form';
 
-const SchemaContractsQuery = graphql(`
+export const SchemaContractsQuery = graphql(`
   query SchemaContractsQuery($selector: TargetSelectorInput!, $after: String) {
     target(reference: { bySelector: $selector }) {
       id
