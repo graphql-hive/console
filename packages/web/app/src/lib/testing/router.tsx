@@ -18,6 +18,11 @@ if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
     }) as MediaQueryList;
 }
 
+// Base UI's scroll area asks its viewport for running animations; jsdom has no Web Animations.
+if (typeof Element !== 'undefined' && typeof Element.prototype.getAnimations !== 'function') {
+  Element.prototype.getAnimations = () => [];
+}
+
 // Charts measure their container; jsdom has no ResizeObserver.
 if (typeof window !== 'undefined' && typeof window.ResizeObserver !== 'function') {
   window.ResizeObserver = class {
