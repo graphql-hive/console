@@ -202,7 +202,6 @@ test.concurrent(
 
     const normalized_document = normalizeOperation({
       document: parse(raw_document),
-      operationName: 'outfit',
       hideLiterals: true,
       removeAliases: true,
     });
@@ -211,7 +210,6 @@ test.concurrent(
       {
         operation: normalizeOperation({
           document: parse(raw_document),
-          operationName: 'outfit',
           hideLiterals: true,
           removeAliases: true,
         }),
