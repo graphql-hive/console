@@ -1,5 +1,14 @@
+// @vitest-environment jsdom
 import { parse } from 'graphql';
 import { createTestClient, missingSelections, type Fixtures } from './urql';
+
+// The cache config imports the updaters, which import pages; these stand in for what cannot load here.
+vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
+vi.mock('@graphql-hive/laboratory', () => import('@/lib/testing/mocks/laboratory'));
+vi.mock(
+  '@/lib/laboratory-history-storage',
+  () => import('@/lib/testing/mocks/laboratory-history-storage'),
+);
 
 const OrganizationQuery = parse(`
   query OrganizationQuery($organizationSlug: String!, $minimal: Boolean!) {
@@ -12,7 +21,7 @@ const OrganizationQuery = parse(`
   fragment Viewer on User { email }
 `);
 
-const ProjectQuery = parse('query ProjectQuery { project { id name } }');
+const ProjectQuery = parse('query ProjectQuery($n: Int) { organizations { nodes { id slug } } }');
 
 describe('missingSelections', () => {
   it('accepts data that covers every selected field, through fragments and lists', () => {
@@ -47,7 +56,10 @@ describe('createTestClient', () => {
     const fixtures: Fixtures = new Map();
     fixtures.set('OrganizationQuery', { me: null, organization: null });
     fixtures.set('ProjectQuery', (variables: Record<string, unknown>) => ({
-      project: { id: 'p', name: String(variables.n) },
+      organizations: {
+        __typename: 'OrganizationConnection',
+        nodes: [{ __typename: 'Organization', id: 'p', slug: String(variables.n) }],
+      },
     }));
     const client = createTestClient(fixtures);
 
@@ -55,10 +67,10 @@ describe('createTestClient', () => {
       .query(OrganizationQuery, { organizationSlug: 'o', minimal: false })
       .toPromise();
     const project = await client.query(ProjectQuery, { n: 1 }).toPromise();
-    const unknown = await client.query(parse('query Unknown { me { id } }'), {}).toPromise();
+    const unknown = await client.query(parse('query Unknown { isCDNEnabled }'), {}).toPromise();
 
-    expect(organization.data).toEqual({ me: null, organization: null });
-    expect(project.data).toEqual({ project: { id: 'p', name: '1' } });
+    expect(organization.data).toMatchObject({ me: null, organization: null });
+    expect(project.data).toMatchObject({ organizations: { nodes: [{ id: 'p', slug: '1' }] } });
     expect(unknown.data).toBeUndefined();
     expect(unknown.error).toBeUndefined();
     expect(client.seen).toEqual(['OrganizationQuery', 'ProjectQuery', 'Unknown']);
@@ -66,10 +78,10 @@ describe('createTestClient', () => {
 
   it('throws when a fixture does not cover its query', async () => {
     const client = createTestClient(
-      new Map<string, unknown>([['ProjectQuery', { project: { id: 'p' } }]]),
+      new Map<string, unknown>([['ProjectQuery', { organizations: { nodes: [{ id: 'p' }] } }]]),
     );
     await expect(client.query(ProjectQuery, {}).toPromise()).rejects.toThrow(
-      'Fixture for ProjectQuery does not cover its query; missing: project.name',
+      'Fixture for ProjectQuery does not cover its query; missing: organizations.nodes[0].slug',
     );
   });
 
@@ -99,19 +111,28 @@ describe('createTestClient', () => {
     await Promise.resolve();
     expect(settled).toBe(false);
 
-    answer({ project: { id: 'p', name: 'shop' } });
-    expect((await result).data).toEqual({ project: { id: 'p', name: 'shop' } });
+    answer({
+      organizations: {
+        __typename: 'OrganizationConnection',
+        nodes: [{ __typename: 'Organization', id: 'p', slug: 'shop' }],
+      },
+    });
+    expect((await result).data).toMatchObject({
+      organizations: { nodes: [{ id: 'p', slug: 'shop' }] },
+    });
   });
 
   it('answers a promise fixture that does not cover its query with an error', async () => {
     const client = createTestClient(
-      new Map<string, unknown>([['ProjectQuery', Promise.resolve({ project: { id: 'p' } })]]),
+      new Map<string, unknown>([
+        ['ProjectQuery', Promise.resolve({ organizations: { nodes: [{ id: 'p' }] } })],
+      ]),
     );
     const result = await client.query(ProjectQuery, {}).toPromise();
 
     expect(result.data).toBeUndefined();
     expect(result.error?.message).toContain(
-      'Fixture for ProjectQuery does not cover its query; missing: project.name',
+      'Fixture for ProjectQuery does not cover its query; missing: organizations.nodes[0].slug',
     );
   });
 });

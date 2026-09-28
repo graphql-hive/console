@@ -13,6 +13,14 @@ import {
 import { render, screen } from '@testing-library/react';
 import { useLayoutQuery } from './use-layout-query';
 
+// The cache config imports the updaters, which import pages; these stand in for what cannot load here.
+vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
+vi.mock('@graphql-hive/laboratory', () => import('@/lib/testing/mocks/laboratory'));
+vi.mock(
+  '@/lib/laboratory-history-storage',
+  () => import('@/lib/testing/mocks/laboratory-history-storage'),
+);
+
 // The app's route ids without its pages, as in use-slugs.spec.tsx.
 function routerAt(url: string, leaf: () => React.ReactNode, onError?: () => React.ReactNode) {
   const root = createRootRoute();

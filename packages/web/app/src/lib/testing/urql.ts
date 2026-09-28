@@ -5,14 +5,15 @@ import {
   type SelectionSetNode,
 } from 'graphql';
 import { filter, fromPromise, fromValue, mergeMap, pipe } from 'wonka';
+import { cacheOptions } from '@/lib/urql-cache';
 import {
-  cacheExchange,
   createClient,
   makeErrorResult,
   makeResult,
   type Exchange,
   type Operation,
 } from '@urql/core';
+import { cacheExchange } from '@urql/exchange-graphcache';
 
 type Fixture = unknown | ((variables: Record<string, unknown>) => unknown);
 
@@ -30,8 +31,9 @@ export function operationName(operation: Operation): string | undefined {
 /**
  * The paths the document selects that `data` does not provide. The document is the one the app
  * sends, fragments inlined, so a fixture written by hand is checked against the query as it is
- * today, not as it was when the fixture was written. `null` satisfies any selection; `__typename`
- * is not required.
+ * today, not as it was when the fixture was written. `null` satisfies any selection. The client's
+ * documents arrive formatted by graphcache, which selects `__typename` below the root, so fixtures
+ * carry it on every object as the server would; without it the cache reads back null.
  */
 export function missingSelections(
   document: DocumentNode,
@@ -93,7 +95,7 @@ export function missingSelections(
       }
       if (selection.kind === Kind.FIELD) {
         const key = selection.alias?.value ?? selection.name.value;
-        if (key === '__typename') continue;
+        if (key === '__typename' && path === '') continue;
         if (!(key in object)) {
           missing.push(path ? `${path}.${key}` : key);
           continue;
@@ -115,8 +117,9 @@ export function missingSelections(
 }
 
 /**
- * A urql client whose only network is a lookup in `fixtures` by operation name, so a spec can
- * answer several different queries in one tree. An operation without a fixture resolves with no
+ * A urql client on the app's own graphcache configuration whose only network is a lookup in
+ * `fixtures` by operation name, so a spec can answer several different queries in one tree and
+ * normalization, pagination resolvers and mutation updaters behave as they do in the app. An operation without a fixture resolves with no
  * data and no error, which is what a page shows while a query is still in flight, so pages a spec
  * does not care about render their loading branch rather than throw. A fixture that no longer
  * covers what its query selects throws, naming the missing paths, so fixtures cannot drift from
@@ -170,7 +173,7 @@ export function createTestClient(fixtures: Fixtures = new Map()) {
 
   const client = createClient({
     url: 'http://test.invalid/graphql',
-    exchanges: [cacheExchange, resolve],
+    exchanges: [cacheExchange(cacheOptions), resolve],
   });
 
   return Object.assign(client, { fixtures, seen, operations });

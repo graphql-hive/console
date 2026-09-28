@@ -137,43 +137,14 @@ describe('chrome at every page', () => {
     expect(screen.getByRole('banner')).toBe(header);
   });
 
-  it(
-    'keeps the chrome while the history redirect waits on its lookup',
-    { timeout: 30_000 },
-    async () => {
-      // The page renders its outlet only once it knows there are versions; the lookup stays held.
-      client.current!.fixtures.set('TargetHistoryPageQuery', {
-        target: {
-          __typename: 'Target',
-          id: 'target-1',
-          project: { __typename: 'Project', id: 'project-1', type: 'SINGLE' },
-          latestSchemaVersion: { __typename: 'SchemaVersion', id: 'version-42' },
-        },
-      });
-      client.current!.fixtures.set('TargetHistoryLatestVersionQuery', new Promise(() => {}));
-      at(`${TARGET}/history`);
-      expect(
-        await screen.findByRole('status', { name: 'Loading' }, { timeout: 2000 }),
-      ).toBeTruthy();
-      expect(screen.getByRole('banner')).toBeTruthy();
-    },
-  );
-
+  // The layout document carries latestSchemaVersion, so the redirect is a cache read, not a request.
   it('sends the bare history URL to the latest version', { timeout: 30_000 }, async () => {
-    client.current!.fixtures.set('TargetHistoryLatestVersionQuery', {
-      organization: {
-        id: 'org-1',
-        project: {
-          id: 'project-1',
-          target: { id: 'target-1', latestSchemaVersion: { id: 'version-42' } },
-        },
-      },
-    });
     const { router } = at(`${TARGET}/history`);
     await waitFor(() =>
       expect(router.state.location.pathname).toBe(`${TARGET}/history/version-42`),
     );
     expect(router.history.length).toBe(1);
+    expect(client.current!.seen).not.toContain('TargetHistoryLatestVersionQuery');
   });
 
   it('keeps the project layout mounted across its pages', { timeout: 30_000 }, async () => {
@@ -253,7 +224,8 @@ describe('chrome at every page', () => {
         'animate-pulse',
       ),
     );
-    expect(client.current!.seen).toContain('UserMenu_OrganizationQuery');
+    // The layout document already holds every field the menu selects, so the menu reads the cache.
+    expect(client.current!.seen).not.toContain('UserMenu_OrganizationQuery');
   });
 
   it('renders a missing page inside the chrome, not over it', { timeout: 30_000 }, async () => {
