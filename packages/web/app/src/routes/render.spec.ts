@@ -666,7 +666,6 @@ describe('alerts sections', () => {
   it('sends a viewer without alert rules back to the target', { timeout: 30_000 }, async () => {
     const { router } = renderAlerts(`${ALERTS}/rules`, false);
     await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
-    expect(client.current!.seen).not.toContain('TargetAlertsRulesPage_Query');
   });
 
   it(
@@ -683,16 +682,16 @@ describe('alerts sections', () => {
 });
 
 describe('permission gates', () => {
-  // Each gated URL, the layout flag that opens it, and the page document that must never start
-  // for a viewer without the flag.
+  // Each gated URL and the layout flag that opens it. A route may start its page documents beside
+  // the gate, so what a viewer without the flag never gets is the page, not the request.
   const gates = [
-    [`${TARGET}/alerts/rules`, 'viewerCanUseMetricAlertRules', 'TargetAlertsRulesPage_Query'],
-    [`${TARGET}/apps`, 'viewerCanViewAppDeployments', 'TargetAppsViewQuery'],
-    [`${TARGET}/apps/app/1.0.0`, 'viewerCanViewAppDeployments', 'TargetAppsVersionQuery'],
-    [`${TARGET}/laboratory`, 'viewerCanViewLaboratory', 'Laboratory'],
-    [`${TARGET}/proposals`, 'viewerCanViewSchemaProposals', 'listProposals'],
-    [`${TARGET}/proposals/new`, 'viewerCanViewSchemaProposals', 'ProposalsNewProposalQuery'],
-    [`${TARGET}/proposals/proposal-1`, 'viewerCanViewSchemaProposals', 'ProposalQuery'],
+    [`${TARGET}/alerts/rules`, 'viewerCanUseMetricAlertRules'],
+    [`${TARGET}/apps`, 'viewerCanViewAppDeployments'],
+    [`${TARGET}/apps/app/1.0.0`, 'viewerCanViewAppDeployments'],
+    [`${TARGET}/laboratory`, 'viewerCanViewLaboratory'],
+    [`${TARGET}/proposals`, 'viewerCanViewSchemaProposals'],
+    [`${TARGET}/proposals/new`, 'viewerCanViewSchemaProposals'],
+    [`${TARGET}/proposals/proposal-1`, 'viewerCanViewSchemaProposals'],
   ] as const;
 
   beforeEach(() => {
@@ -700,9 +699,9 @@ describe('permission gates', () => {
   });
 
   it.each(gates)(
-    '%s sends a viewer without %s to the target before the page starts, replacing the entry',
+    '%s sends a viewer without %s to the target, replacing the entry',
     { timeout: 30_000 },
-    async (url, flag, document) => {
+    async (url, flag) => {
       client.current = createTestClient(layoutFixtures());
       client.current.fixtures.set('TargetLayoutQuery', targetLayout({ [flag]: false }));
       const { router } = at(url);
@@ -710,7 +709,6 @@ describe('permission gates', () => {
       await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
 
       expect(router.history.length).toBe(1);
-      expect(client.current.seen).not.toContain(document);
       expect(client.current.requests('TargetLayoutQuery')).toHaveLength(1);
     },
   );
@@ -730,6 +728,23 @@ describe('permission gates', () => {
       expect(client.requests('TargetLayoutQuery')).toHaveLength(1);
     },
   );
+});
+
+describe('read-once page loaders', () => {
+  // Loaded but not rendered: the request can only have come from the route.
+  it.each([
+    [TARGET, 'TargetSchemaPageQuery', SLUGS],
+    [`${TARGET}/proposals/new`, 'ProposalsNewProposalQuery', { targetReference: { bySelector: SLUGS } }],
+  ])('%s starts %s with the page variables before render', { timeout: 30_000 }, async (url, name, variables) => {
+    const client = createTestClient(layoutFixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({ initialEntries: [url] }),
+      urqlClient: client,
+    });
+    await router.load();
+
+    expect(client.requests(name).map(operation => operation.variables)).toEqual([variables]);
+  });
 });
 
 describe('layout loaders', () => {

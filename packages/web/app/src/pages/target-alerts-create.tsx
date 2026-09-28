@@ -10,7 +10,7 @@ import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useNavigate } from '@tanstack/react-router';
 
-const TargetAlertsCreatePage_CapQuery = graphql(`
+export const TargetAlertsCreatePage_CapQuery = graphql(`
   query TargetAlertsCreatePage_CapQuery(
     $organizationSlug: String!
     $projectSlug: String!

@@ -129,6 +129,27 @@ describe('checks route loaders', () => {
     expect(listRequests(testClient)).toHaveLength(1);
   });
 
+  it(
+    "start the affected deployments' first page on its route, keeping the coordinate",
+    { timeout: 30_000 },
+    async () => {
+      const testClient = client();
+      const router = createAppRouter({
+        history: createMemoryHistory({
+          initialEntries: [`${CHECKS_PAGE}/check-1/affected-deployments?coordinate=Query.me`],
+        }),
+        urqlClient: testClient,
+      });
+      await router.load();
+
+      expect(router.state.location.search).toEqual({ coordinate: 'Query.me' });
+      const affected = testClient.requests('AffectedDeploymentsQuery');
+      expect(affected.map(operation => operation.variables)).toEqual([
+        { ...SLUGS, schemaCheckId: 'check-1', first: 20, after: null },
+      ]);
+    },
+  );
+
   it("start a check's own document on its route, once", { timeout: 30_000 }, async () => {
     const testClient = client();
     testClient.fixtures.set('ActiveSchemaCheck_ActiveSchemaCheckQuery', new Promise(() => {}));

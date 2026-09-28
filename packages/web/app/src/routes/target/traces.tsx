@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { z } from 'zod';
-import { TargetTracePage } from '@/pages/target-trace';
+import { loadQuery } from '@/lib/route-utils';
+import { TargetInsightsNewPageContent_TraceQuery, TargetTracePage } from '@/pages/target-trace';
 import {
   FilterState,
   TargetTracesFilterState,
@@ -64,6 +65,13 @@ export const targetTraceRoute = createRoute({
     return TargetTraceRouteSearchModel.parse(search);
   },
   path: 'traces/$traceId',
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug, traceId } = loader.params;
+    void loadQuery(loader, TargetInsightsNewPageContent_TraceQuery, {
+      targetSelector: { organizationSlug, projectSlug, targetSlug },
+      traceId,
+    });
+  },
   component: function TargetTraceRoute() {
     const { traceId } = targetTraceRoute.useParams();
     const { activeSpanId, activeSpanTab } = targetTraceRoute.useSearch();

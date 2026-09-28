@@ -213,6 +213,22 @@ describe('operation route', () => {
   });
 });
 
+describe('manage filters route', () => {
+  it('starts the saved filters document with the page variables', { timeout: 30_000 }, async () => {
+    const client = createTestClient(layoutFixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({ initialEntries: [`${TARGET}/insights/manage-filters`] }),
+      urqlClient: client,
+    });
+    await router.load();
+
+    expect(client.requests('ManageFilters_SavedFiltersQuery')[0]?.variables).toEqual({
+      organizationSlug: SLUGS.organizationSlug,
+      selector: SLUGS,
+    });
+  });
+});
+
 describe('insights preloading', () => {
   it('a hover only warms; the visit that follows revalidates', { timeout: 30_000 }, async () => {
     const client = createTestClient(fixtures());

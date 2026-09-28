@@ -2,10 +2,17 @@ import { z } from 'zod';
 import { AlertActivitySearch } from '@/components/target/alerts/search-schemas';
 import { TargetAlertsPage, TargetAlertsWithNav } from '@/pages/target-alerts';
 import { TargetAlertsActivityPage } from '@/pages/target-alerts-activity';
-import { TargetAlertsCreatePage } from '@/pages/target-alerts-create';
+import {
+  AlertForm_ChannelsQuery,
+  AlertForm_SavedFiltersQuery,
+} from '@/components/target/alerts/alert-form';
+import {
+  TargetAlertsCreatePage,
+  TargetAlertsCreatePage_CapQuery,
+} from '@/pages/target-alerts-create';
 import { TargetAlertsDetailPage } from '@/pages/target-alerts-detail';
 import { TargetAlertsRulesPage } from '@/pages/target-alerts-rules';
-import { requireLayoutFlag } from '@/lib/route-utils';
+import { loadQuery, requireLayoutFlag } from '@/lib/route-utils';
 import { createRoute } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
@@ -44,6 +51,13 @@ export const targetAlertsCreateRoute = createRoute({
   getParentRoute: () => targetAlertsWithNavRoute,
   path: 'create',
   validateSearch: TargetAlertsCreateSearch.parse,
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug } = loader.params;
+    const slugs = { organizationSlug, projectSlug, targetSlug };
+    void loadQuery(loader, TargetAlertsCreatePage_CapQuery, slugs);
+    void loadQuery(loader, AlertForm_ChannelsQuery, { organizationSlug, projectSlug });
+    void loadQuery(loader, AlertForm_SavedFiltersQuery, slugs);
+  },
   component: function TargetAlertsCreateRoute() {
     const { savedFilterId } = targetAlertsCreateRoute.useSearch();
     return <TargetAlertsCreatePage savedFilterId={savedFilterId} />;

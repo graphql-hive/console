@@ -15,7 +15,10 @@ import {
 } from '@/pages/target-insights';
 import { TargetInsightsClientPage } from '@/pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from '@/pages/target-insights-coordinate';
-import { TargetInsightsManageFiltersPage } from '@/pages/target-insights-manage-filters';
+import {
+  ManageFilters_SavedFiltersQuery,
+  TargetInsightsManageFiltersPage,
+} from '@/pages/target-insights-manage-filters';
 import {
   Operation_View_OperationBodyQuery,
   OperationInsightsPageQuery,
@@ -64,6 +67,13 @@ export const targetInsightsRoute = createRoute({
 export const targetInsightsManageFiltersRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights/manage-filters',
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug } = loader.params;
+    void loadQuery(loader, ManageFilters_SavedFiltersQuery, {
+      organizationSlug,
+      selector: { organizationSlug, projectSlug, targetSlug },
+    });
+  },
   component: TargetInsightsManageFiltersPage,
 });
 

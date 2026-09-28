@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { ProposalTab, TargetProposalsSinglePage } from '@/pages/target-proposal';
 import { TargetProposalsPage } from '@/pages/target-proposals';
-import { TargetProposalsNewPage } from '@/pages/target-proposals-new';
-import { requireLayoutFlag } from '@/lib/route-utils';
+import { ProposalsNewProposalQuery, TargetProposalsNewPage } from '@/pages/target-proposals-new';
+import { loadQuery, requireLayoutFlag } from '@/lib/route-utils';
 import { createRoute, useParams } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
@@ -39,7 +39,14 @@ export const targetProposalsRoute = createRoute({
 export const targetProposalsNewRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'proposals/new',
-  loader: loader => requireLayoutFlag.target(loader, 'viewerCanViewSchemaProposals'),
+  // Started beside the gate, not after it: on a cold load the gate waits for the layout request.
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug } = loader.params;
+    void loadQuery(loader, ProposalsNewProposalQuery, {
+      targetReference: { bySelector: { organizationSlug, projectSlug, targetSlug } },
+    });
+    return requireLayoutFlag.target(loader, 'viewerCanViewSchemaProposals');
+  },
   component: TargetProposalsNewPage,
 });
 
