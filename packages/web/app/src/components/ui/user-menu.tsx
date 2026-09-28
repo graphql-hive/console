@@ -313,8 +313,8 @@ export function LeaveOrganizationModalContent(props: {
       description={
         <>
           Are you sure you want to leave this organization? You will lose access to{' '}
-          <span className="text-neutral-12 font-semibold">{props.organizationSlug}</span>.{' '}
-          <span className="text-neutral-12 font-semibold">This action is irreversible!</span>
+          <span className="text-fg font-semibold">{props.organizationSlug}</span>.{' '}
+          <span className="text-fg font-semibold">This action is irreversible!</span>
         </>
       }
       confirm={{

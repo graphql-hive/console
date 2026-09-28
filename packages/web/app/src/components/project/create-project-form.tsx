@@ -105,12 +105,12 @@ export function CreateProjectForm(props: {
                     <Icon
                       className={cn(
                         'size-8 shrink-0',
-                        field.value === type ? 'text-neutral-12' : 'text-neutral-9',
+                        field.value === type ? 'text-fg' : 'text-fg-muted',
                       )}
                     />
                     <div>
-                      <span className="text-neutral-12 text-sm font-medium">{title}</span>
-                      <p className="text-neutral-11 text-sm">{description}</p>
+                      <span className="text-fg text-sm font-medium">{title}</span>
+                      <p className="text-fg-default text-sm">{description}</p>
                     </div>
                   </>
                 ),

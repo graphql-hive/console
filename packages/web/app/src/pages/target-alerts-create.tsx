@@ -59,9 +59,9 @@ export function TargetAlertsCreatePage(props: { savedFilterId?: string }) {
   if (isAtLimit) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 px-6 text-center">
-        <CircleAlert className="text-neutral-9 size-10" />
-        <h2 className="text-neutral-12 m-0 text-base font-medium">You're at the rule limit</h2>
-        <p className="text-neutral-10 m-0 max-w-md text-sm">
+        <CircleAlert className="text-fg-muted size-10" />
+        <h2 className="text-fg m-0 text-base font-medium">You're at the rule limit</h2>
+        <p className="text-fg-secondary m-0 max-w-md text-sm">
           This target has {limit} of {limit} configured alert rules. Delete one from the rules list
           to free a slot, then come back to create another.
         </p>

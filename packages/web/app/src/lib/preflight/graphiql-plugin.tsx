@@ -18,6 +18,7 @@ import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useToast } from '@/components/base/toast/toast';
+import { useMonacoTheme } from '@/components/theme/theme-provider';
 import { Subtitle } from '@/components/ui/page';
 import { usePromptManager } from '@/components/ui/prompt';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -55,8 +56,8 @@ export const preflightPlugin: GraphiQLPlugin = {
 const targetRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug');
 
 const classes = {
-  monaco: clsx('*:bg-[#10151f]'),
-  monacoMini: clsx('h-32 *:rounded-md *:bg-[#10151f]'),
+  monaco: clsx('*:bg-editor'),
+  monacoMini: clsx('h-32 *:rounded-md *:bg-editor'),
   icon: clsx('absolute -left-5 top-px'),
 };
 
@@ -69,7 +70,6 @@ function EditorTitle(props: { children: ReactNode; className?: string }) {
 }
 
 const sharedMonacoProps = {
-  theme: 'vs-dark',
   className: classes.monaco,
   options: {
     minimap: { enabled: false },
@@ -95,7 +95,6 @@ const monacoProps = {
   },
   script: {
     ...sharedMonacoProps,
-    theme: 'vs-dark',
     defaultLanguage: 'javascript',
     options: {
       ...sharedMonacoProps.options,
@@ -478,6 +477,7 @@ export const PreflightProvider = PreflightContext.Provider;
 
 function PreflightContent() {
   const preflight = useContext(PreflightContext);
+  const monacoTheme = useMonacoTheme();
   if (preflight === null) {
     throw new Error('PreflightContent used outside PreflightContext.Provider');
   }
@@ -576,8 +576,8 @@ function PreflightContent() {
       <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
       <div className="relative">
         {preflight.isEnabled ? null : (
-          <div className="text-neutral-12 absolute inset-0 z-20 flex items-center justify-center bg-[#030711]/90 p-4">
-            <div className="rounded-md bg-[#0f1520] p-4 text-sm">
+          <div className="text-fg bg-editor-backdrop/90 absolute inset-0 z-20 flex items-center justify-center p-4">
+            <div className="bg-editor rounded-md p-4 text-sm">
               Preflight Script is disabled and will not be executed
             </div>
           </div>
@@ -586,6 +586,7 @@ function PreflightContent() {
           height={128}
           value={preflight.content}
           {...monacoProps.script}
+          theme={monacoTheme}
           className={cn(classes.monacoMini, 'z-10')}
           wrapperProps={{
             ['data-cy']: 'preflight-editor-mini',
@@ -614,6 +615,7 @@ function PreflightContent() {
         onChange={value => preflight.setEnvironmentVariables(value ?? '')}
         onMount={editor => exposeMonacoEditorForE2E('env-editor-mini', editor)}
         {...monacoProps.env}
+        theme={monacoTheme}
         className={classes.monacoMini}
         wrapperProps={{
           ['data-cy']: 'env-editor-mini',
@@ -650,6 +652,7 @@ function PreflightModal({
   envValue: string;
   onEnvValueChange: (value: string) => void;
 }) {
+  const monacoTheme = useMonacoTheme();
   const scriptEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const envEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const consoleRef = useRef<HTMLDivElement>(null);
@@ -725,7 +728,7 @@ function PreflightModal({
       }
       footer={
         <>
-          <p className="text-neutral-11 me-auto flex items-center gap-2 text-sm">
+          <p className="text-fg-default me-auto flex items-center gap-2 text-sm">
             <InfoIcon className="size-4 shrink-0" />
             Changes made to this Preflight Script will apply to all users on your team using this
             target.
@@ -785,6 +788,7 @@ function PreflightModal({
             beforeMount={handleMonacoEditorBeforeMount}
             onMount={handleScriptEditorDidMount}
             {...monacoProps.script}
+            theme={monacoTheme}
             options={{
               ...monacoProps.script.options,
               wordWrap: 'wordWrapColumn',
@@ -808,7 +812,7 @@ function PreflightModal({
               </span>
             </Button>
           </div>
-          <div className="flex h-1/2 flex-col bg-[#10151f]">
+          <div className="bg-editor flex h-1/2 flex-col">
             <ScrollArea fill ref={consoleRef} data-cy="console-output">
               <section className="py-2.5 pl-[26px] pr-2.5 font-mono text-xs/[18px]">
                 {logs.map((log, index) => (
@@ -826,6 +830,7 @@ function PreflightModal({
             onChange={value => onEnvValueChange(value ?? '')}
             onMount={handleEnvEditorDidMount}
             {...monacoProps.env}
+            theme={monacoTheme}
             options={{
               ...monacoProps.env.options,
               wordWrap: 'wordWrapColumn',
@@ -841,10 +846,10 @@ function PreflightModal({
 }
 
 const LOG_COLORS = {
-  error: 'text-red-400',
-  info: 'text-emerald-400',
-  warn: 'text-yellow-400',
-  log: 'text-neutral-10',
+  error: 'text-critical',
+  info: 'text-success',
+  warn: 'text-warning',
+  log: 'text-fg-secondary',
 };
 
 export function LogLine({ log }: { log: LogRecord }) {

@@ -139,7 +139,7 @@ export const TermTooltips = createPreview(() => (
             {
               term: 'Additional Scopes',
               tooltip: 'Additional scopes that are requested from the OIDC provider.',
-              description: <span className="text-neutral-8">none</span>,
+              description: <span className="text-fg-subtle">none</span>,
             },
           ],
         },

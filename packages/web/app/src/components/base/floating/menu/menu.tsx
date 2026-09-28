@@ -278,9 +278,9 @@ function LinkRow({
 function HeaderRow({ title, subtitle }: MenuHeader) {
   return (
     <div className="flex flex-col gap-y-1 px-2 pb-1 pt-3">
-      <span className="text-neutral-12 truncate text-sm font-medium leading-none">{title}</span>
+      <span className="text-fg truncate text-sm font-medium leading-none">{title}</span>
       {subtitle ? (
-        <span className="text-neutral-10 truncate text-xs leading-none">{subtitle}</span>
+        <span className="text-fg-secondary truncate text-xs leading-none">{subtitle}</span>
       ) : null}
     </div>
   );
@@ -423,14 +423,14 @@ function renderSections(sections: MenuSection[]): ReactNode {
 
     if (result.length > 0) {
       result.push(
-        <div key={`sep-${result.length}`} role="separator" className="bg-neutral-5 my-2 h-px" />,
+        <div key={`sep-${result.length}`} role="separator" className="bg-line my-2 h-px" />,
       );
     }
 
     if (labelled) {
       result.push(
         <BaseMenu.Group key={`group-${result.length}`}>
-          <BaseMenu.GroupLabel className="text-neutral-9 px-2 pb-1 pt-2 text-xs font-normal">
+          <BaseMenu.GroupLabel className="text-fg-muted px-2 pb-1 pt-2 text-xs font-normal">
             {section.label}
           </BaseMenu.GroupLabel>
           {entries.map(renderEntry)}

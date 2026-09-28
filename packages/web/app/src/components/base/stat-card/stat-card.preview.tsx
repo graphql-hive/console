@@ -76,7 +76,7 @@ export const NodeValue = createPreview(() => (
     value={
       <>
         1,204,880
-        <span className="ml-2 text-sm font-normal text-red-500">(3,120 errors)</span>
+        <span className="text-critical ml-2 text-sm font-normal">(3,120 errors)</span>
       </>
     }
     caption="Resolved in last 7 days"

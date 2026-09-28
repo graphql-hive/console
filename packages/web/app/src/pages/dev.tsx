@@ -13,7 +13,6 @@ export function DevPage() {
           {`
             body.graphiql-dark .graphiql-container {
               --color-base: transparent;
-              --color-neutral-11: 40, 89%, 60%;
             }
           `}
         </style>

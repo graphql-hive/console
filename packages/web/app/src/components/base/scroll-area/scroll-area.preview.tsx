@@ -29,7 +29,7 @@ function Rows(props: { count?: number }) {
       {rows.map((name, index) => (
         <div
           key={index}
-          className="text-neutral-11 hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 text-sm"
+          className="text-fg-default hover:bg-neutral-4 flex items-center rounded-md px-2 py-1 text-sm"
         >
           <span className="truncate font-medium">{name}</span>
           <span className="ml-auto pl-4 font-light">{(index * 37) % 1000}</span>
@@ -47,7 +47,7 @@ function Rows(props: { count?: number }) {
 export const Heights = createPreview(() => (
   <div className="flex items-start gap-6">
     {(['sm', 'md', 'lg'] as const).map(height => (
-      <div key={height} className="border-neutral-5 w-72 rounded-md border p-2">
+      <div key={height} className="border-line w-72 rounded-md border p-2">
         <ScrollArea height={height}>
           <Rows count={30} />
         </ScrollArea>
@@ -59,12 +59,12 @@ export const Heights = createPreview(() => (
 /** `maxHeight` only scrolls once the content is taller than the step; short content sits flush. */
 export const MaxHeight = createPreview(() => (
   <div className="flex items-start gap-6">
-    <div className="border-neutral-5 w-72 rounded-md border p-2">
+    <div className="border-line w-72 rounded-md border p-2">
       <ScrollArea maxHeight="sm">
         <Rows count={3} />
       </ScrollArea>
     </div>
-    <div className="border-neutral-5 w-72 rounded-md border p-2">
+    <div className="border-line w-72 rounded-md border p-2">
       <ScrollArea maxHeight="sm">
         <Rows count={30} />
       </ScrollArea>
@@ -74,8 +74,8 @@ export const MaxHeight = createPreview(() => (
 
 /** `fill` takes what is left of a flex column: a header, then a list that scrolls to the bottom edge. */
 export const Fill = createPreview(() => (
-  <div className="border-neutral-5 flex h-64 w-80 flex-col rounded-md border">
-    <div className="border-neutral-5 text-neutral-12 border-b px-3 py-2 text-sm font-medium">
+  <div className="border-line flex h-64 w-80 flex-col rounded-md border">
+    <div className="border-line text-fg border-b px-3 py-2 text-sm font-medium">
       Span attributes
     </div>
     <ScrollArea fill>
@@ -89,9 +89,9 @@ export const Fill = createPreview(() => (
 const WIDE = OPERATIONS.join('  ');
 
 export const Horizontal = createPreview(() => (
-  <div className="border-neutral-5 w-96 rounded-md border">
+  <div className="border-line w-96 rounded-md border">
     <ScrollArea axis="horizontal">
-      <pre className="text-neutral-11 text-2xs whitespace-pre p-2 font-mono leading-tight">
+      <pre className="text-fg-default text-2xs whitespace-pre p-2 font-mono leading-tight">
         {WIDE}
         {'\n'}
         {WIDE}
@@ -101,9 +101,9 @@ export const Horizontal = createPreview(() => (
 ));
 
 export const Both = createPreview(() => (
-  <div className="border-neutral-5 w-96 rounded-md border">
+  <div className="border-line w-96 rounded-md border">
     <ScrollArea axis="both" height="sm">
-      <pre className="text-neutral-11 text-2xs whitespace-pre p-2 font-mono leading-tight">
+      <pre className="text-fg-default text-2xs whitespace-pre p-2 font-mono leading-tight">
         {Array.from({ length: 30 }, () => WIDE).join('\n')}
       </pre>
     </ScrollArea>
@@ -135,7 +135,7 @@ export const Playground = createPreview({
     },
   }),
   render: v => (
-    <div className="border-neutral-5 w-72 rounded-md border p-2">
+    <div className="border-line w-72 rounded-md border p-2">
       <ScrollArea height={v.height} maxHeight={v.maxHeight}>
         {v.children}
       </ScrollArea>

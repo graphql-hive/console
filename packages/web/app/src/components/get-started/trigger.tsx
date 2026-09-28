@@ -45,14 +45,14 @@ export function GetStartedProgress(props: {
           props.className,
         )}
       >
-        <div className="text-neutral-11 text-sm font-medium">Get Started</div>
-        <div className="text-neutral-10 text-xs">
+        <div className="text-fg-default text-sm font-medium">Get Started</div>
+        <div className="text-fg-secondary text-xs">
           {remaining} remaining task{remaining > 1 ? 's' : ''}
         </div>
         <div>
-          <div className="bg-accent_30 relative mt-1 h-[5px] w-full overflow-hidden rounded-sm">
+          <div className="bg-accent-tint-strong relative mt-1 h-[5px] w-full overflow-hidden rounded-sm">
             <div
-              className="bg-accent_80 h-full"
+              className="bg-accent-muted h-full"
               style={{ width: `${(completed / total) * 100}%` }}
             />
           </div>

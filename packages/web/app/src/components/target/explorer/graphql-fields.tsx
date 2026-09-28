@@ -84,7 +84,7 @@ export function GraphQLFields(props: {
                           openOnHover
                           width="auto"
                           content={
-                            <p className="text-neutral-11 text-sm">
+                            <p className="text-fg-default text-sm">
                               This field is used but the presented arguments are not.
                             </p>
                           }
@@ -104,7 +104,7 @@ export function GraphQLFields(props: {
                         openOnHover
                         width="auto"
                         content={
-                          <p className="text-neutral-11 text-sm">
+                          <p className="text-fg-default text-sm">
                             This field is not deprecated but the presented arguments are.
                           </p>
                         }
@@ -120,7 +120,7 @@ export function GraphQLFields(props: {
                     )}
                     <span className="mr-1">:</span>
                     <GraphQLTypeAsLink
-                      className="text-neutral-11 font-semibold"
+                      className="text-fg-default font-semibold"
                       type={field.type}
                     />
                   </div>

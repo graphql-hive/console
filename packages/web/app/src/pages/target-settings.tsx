@@ -279,10 +279,10 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         onChange={value => setBaseSchema(value ?? '')}
       />
       {mutation.data?.updateBaseSchema.error && (
-        <div className="text-red-500">{mutation.data.updateBaseSchema.error.message}</div>
+        <div className="text-critical">{mutation.data.updateBaseSchema.error.message}</div>
       )}
       {mutation.error && (
-        <div className="text-red-500">
+        <div className="text-critical">
           {mutation.error?.graphQLErrors[0]?.message ?? mutation.error.message}
         </div>
       )}
@@ -320,7 +320,7 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         <Button variant="outline" onClick={() => setBaseSchema(props.baseSchema)}>
           Reset
         </Button>
-        {isUnsaved && <span className="text-sm text-green-500">Unsaved changes!</span>}
+        {isUnsaved && <span className="text-success text-sm">Unsaved changes!</span>}
       </div>
     </SubPageLayout>
   );
@@ -427,7 +427,7 @@ function AppDeploymentExclusion(
 
   if (availableAppDeploymentNamesQuery.error) {
     return (
-      <div className="text-sm text-red-500">Failed to load app deployments. Please try again.</div>
+      <div className="text-critical text-sm">Failed to load app deployments. Please try again.</div>
     );
   }
 
@@ -747,7 +747,7 @@ export const BreakingChanges = () => {
         />
 
         {dangerousAsBreaking.error && (
-          <span className="ml-2 text-red-500">
+          <span className="text-critical ml-2">
             {dangerousAsBreaking.error?.graphQLErrors[0]?.message ??
               dangerousAsBreaking.error.message}
           </span>
@@ -933,7 +933,7 @@ export const AppDeploymentProtection = () => {
               </p>
               <p>
                 Use{' '}
-                <code className="bg-neutral-3 rounded-sm px-1 py-0.5 text-xs">
+                <code className="bg-surface-code rounded-sm px-1 py-0.5 text-xs">
                   hive app:retire --force
                 </code>{' '}
                 to bypass protection.
@@ -1625,7 +1625,7 @@ export function DangerousChangeTypeForm({
 
 function JustSavedLabel() {
   return (
-    <div className="inline-flex flex-row items-center gap-1 italic text-green-700 subpixel-antialiased dark:text-green-500">
+    <div className="text-success inline-flex flex-row items-center gap-1 italic subpixel-antialiased">
       <JustSavedIndicator />
       <span>Saved just now</span>
     </div>
@@ -1633,12 +1633,12 @@ function JustSavedLabel() {
 }
 
 function JustSavedIndicator() {
-  return <Check className="size-5 text-green-700 dark:text-green-500" />;
+  return <Check className="text-success size-5" />;
 }
 
 function SavedLabel() {
   return (
-    <div className="text-neutral-10 inline-flex flex-row items-center gap-1 italic subpixel-antialiased">
+    <div className="text-fg-secondary inline-flex flex-row items-center gap-1 italic subpixel-antialiased">
       <SavedIndicator />
       <span>All changes saved</span>
     </div>
@@ -1646,7 +1646,7 @@ function SavedLabel() {
 }
 
 function SavedIndicator() {
-  return <Check className="text-neutral-10 size-5" />;
+  return <Check className="text-fg-secondary size-5" />;
 }
 
 function UnsavedChangesLabel() {

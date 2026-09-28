@@ -22,7 +22,7 @@ export function OrganizationSelector(props: {
   )?.nodes;
 
   if (!organizations) {
-    return <div className="bg-neutral-5 h-5 w-48 animate-pulse rounded-full" />;
+    return <div className="bg-surface-skeleton h-5 w-48 animate-pulse rounded-full" />;
   }
 
   return (

@@ -288,8 +288,8 @@ function CreateProjectModal(props: {
       title="Create a project"
       description={
         <>
-          A Hive <span className="text-neutral-12 font-medium">project</span> represents a{' '}
-          <span className="text-neutral-12 font-medium">GraphQL API</span> running a GraphQL schema.
+          A Hive <span className="text-fg font-medium">project</span> represents a{' '}
+          <span className="text-fg font-medium">GraphQL API</span> running a GraphQL schema.
         </>
       }
     >

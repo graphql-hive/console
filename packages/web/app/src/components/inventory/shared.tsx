@@ -33,9 +33,9 @@ export function CallSite(props: {
       <div className="flex flex-col gap-1">
         <span className="flex items-center gap-1.5">
           <OriginTag origin={props.origin} />
-          <code className="text-neutral-10 font-mono text-xs">{props.source}</code>
+          <code className="text-fg-secondary font-mono text-xs">{props.source}</code>
         </span>
-        {props.note ? <p className="text-neutral-11 max-w-prose text-xs">{props.note}</p> : null}
+        {props.note ? <p className="text-fg-default max-w-prose text-xs">{props.note}</p> : null}
       </div>
       {props.children}
     </div>
@@ -46,7 +46,7 @@ export function CallSite(props: {
 export function CallSiteGroup(props: { label: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-6">
-      <h3 className="text-neutral-12 text-sm font-medium">{props.label}</h3>
+      <h3 className="text-fg text-sm font-medium">{props.label}</h3>
       {props.children}
     </section>
   );
@@ -81,10 +81,10 @@ export function OriginTag(props: { origin: Origin }) {
     <span
       className={
         {
-          ui: 'bg-neutral-4 text-neutral-11 rounded-xs text-2xs px-1 py-px font-mono leading-none',
-          v2: 'bg-neutral-5 text-neutral-12 rounded-xs text-2xs px-1 py-px font-mono leading-none',
-          base: 'bg-success_80/20 text-success_80 rounded-xs text-2xs px-1 py-px font-mono leading-none',
-          raw: 'bg-warning_10 text-warning rounded-xs text-2xs px-1 py-px font-mono leading-none',
+          ui: 'bg-surface-hover text-fg-default rounded-xs text-2xs px-1 py-px font-mono leading-none',
+          v2: 'bg-surface-selected text-fg rounded-xs text-2xs px-1 py-px font-mono leading-none',
+          base: 'bg-success-muted/20 text-success-muted rounded-xs text-2xs px-1 py-px font-mono leading-none',
+          raw: 'bg-warning-tint text-warning rounded-xs text-2xs px-1 py-px font-mono leading-none',
         }[props.origin]
       }
     >
@@ -106,23 +106,23 @@ export function InventoryList(props: {
   return (
     <div className="flex max-w-3xl flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-neutral-12 text-sm font-medium">{props.component}</h3>
-        <p className="text-neutral-11 text-xs">{props.entries.length} call sites</p>
+        <h3 className="text-fg text-sm font-medium">{props.component}</h3>
+        <p className="text-fg-default text-xs">{props.entries.length} call sites</p>
         {props.summary ? (
-          <div className="text-neutral-11 max-w-prose text-xs">{props.summary}</div>
+          <div className="text-fg-default max-w-prose text-xs">{props.summary}</div>
         ) : null}
       </div>
       <ul className="flex flex-col">
         {props.entries.map(entry => (
           <li
             key={entry.source}
-            className="border-neutral-5 flex flex-col gap-0.5 border-b py-2 last:border-b-0"
+            className="border-line flex flex-col gap-0.5 border-b py-2 last:border-b-0"
           >
             <span className="flex items-center gap-1.5">
               <OriginTag origin={entry.origin} />
-              <code className="text-neutral-11 font-mono text-xs">{entry.source}</code>
+              <code className="text-fg-default font-mono text-xs">{entry.source}</code>
             </span>
-            <span className="text-neutral-10 text-xs">
+            <span className="text-fg-secondary text-xs">
               {entry.what}
               {entry.coveredBy ? ` — covered by "${entry.coveredBy}"` : null}
             </span>

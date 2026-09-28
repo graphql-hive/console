@@ -9,7 +9,7 @@ export const nav: NavPath = 'Components/NotFound';
  * whole canvas.
  */
 export const Default = createPreview(() => (
-  <div className="border-neutral-5 h-[26rem] w-[48rem] rounded-md border border-dashed">
+  <div className="border-line h-[26rem] w-[48rem] rounded-md border border-dashed">
     <NotFound
       title="Schema Version not found."
       description="This schema version does not seem to exist anymore."
@@ -19,7 +19,7 @@ export const Default = createPreview(() => (
 
 /** Without the back button, the shape the organization layout uses. */
 export const WithoutBackButton = createPreview(() => (
-  <div className="border-neutral-5 h-[26rem] w-[48rem] rounded-md border border-dashed">
+  <div className="border-line h-[26rem] w-[48rem] rounded-md border border-dashed">
     <NotFound
       title="Organization not found"
       description="Use the empty dropdown in the header to select an organization to which you have access."
@@ -33,7 +33,7 @@ export const WithoutBackButton = createPreview(() => (
  * only combination that ships: it replaces the whole page rather than a layout's content region.
  */
 export const BigHeading = createPreview(() => (
-  <div className="border-neutral-5 h-[34rem] w-[48rem] overflow-hidden rounded-md border border-dashed">
+  <div className="border-line h-[34rem] w-[48rem] overflow-hidden rounded-md border border-dashed">
     <NotFound bigHeading="404" title="Page Not Found" />
   </div>
 ));
@@ -44,7 +44,7 @@ export const BigHeading = createPreview(() => (
  * check that fallback.
  */
 export const Horizontal = createPreview(() => (
-  <div className="border-neutral-5 h-[26rem] w-[60rem] rounded-md border border-dashed">
+  <div className="border-line h-[26rem] w-[60rem] rounded-md border border-dashed">
     <NotFound
       variants={{ layout: 'horizontal', illustration: 'connection' }}
       title="404 - This project does not seem to exist."
@@ -60,7 +60,7 @@ export const Horizontal = createPreview(() => (
 
 /** Horizontal at a narrow width, where it falls back to the stacked arrangement. */
 export const HorizontalNarrow = createPreview(() => (
-  <div className="border-neutral-5 h-[34rem] w-[22rem] rounded-md border border-dashed">
+  <div className="border-line h-[34rem] w-[22rem] rounded-md border border-dashed">
     <NotFound
       variants={{ layout: 'horizontal', illustration: 'connection' }}
       title="404 - This project does not seem to exist."
@@ -77,10 +77,10 @@ export const HorizontalNarrow = createPreview(() => (
 /** Both illustrations side by side, since `connection` is only ever seen in horizontal today. */
 export const Illustrations = createPreview(() => (
   <div className="grid w-[60rem] grid-cols-2 gap-4">
-    <div className="border-neutral-5 h-[24rem] rounded-md border border-dashed">
+    <div className="border-line h-[24rem] rounded-md border border-dashed">
       <NotFound variants={{ illustration: 'ghost' }} title="ghost" showBackButton={false} />
     </div>
-    <div className="border-neutral-5 h-[24rem] rounded-md border border-dashed">
+    <div className="border-line h-[24rem] rounded-md border border-dashed">
       <NotFound
         variants={{ illustration: 'connection' }}
         title="connection"
@@ -174,8 +174,8 @@ export const AllCallSites = createPreview({
         },
       ].map(({ site, node }) => (
         <div key={site}>
-          <p className="text-neutral-10 mb-2 text-xs">{site}</p>
-          <div className="border-neutral-5 h-[24rem] overflow-hidden rounded-md border border-dashed">
+          <p className="text-fg-secondary mb-2 text-xs">{site}</p>
+          <div className="border-line h-[24rem] overflow-hidden rounded-md border border-dashed">
             {node}
           </div>
         </div>
@@ -213,7 +213,7 @@ export const Playground = createPreview({
     return v.variants?.fullScreen ? (
       notFound
     ) : (
-      <div className="border-neutral-5 h-[30rem] w-[52rem] overflow-hidden rounded-md border border-dashed">
+      <div className="border-line h-[30rem] w-[52rem] overflow-hidden rounded-md border border-dashed">
         {notFound}
       </div>
     );

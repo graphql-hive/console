@@ -87,7 +87,7 @@ function SubscriptionPageContent() {
 
   const organization = useFragment(SubscriptionPage_OrganizationFragment, currentOrganization);
   const queryForBilling = useFragment(SubscriptionPage_QueryFragment, query.data);
-  const { styles } = useChartStyles();
+  const { styles, colors } = useChartStyles();
 
   const monthlyUsage = query.data?.monthlyUsage ?? [];
   const monthlyUsagePoints: [string, number][] = useMemo(
@@ -155,7 +155,7 @@ function SubscriptionPageContent() {
           </Card>
           <div className="mt-8">
             <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Current Usage">
-              <p className="text-neutral-10 text-sm">
+              <p className="text-fg-secondary text-sm">
                 {DateFormatter.format(start)} — {DateFormatter.format(end)}
               </p>
               <div className="mt-4">
@@ -209,7 +209,7 @@ function SubscriptionPageContent() {
                               },
                               splitLine: {
                                 lineStyle: {
-                                  color: '#595959',
+                                  color: colors.gridSubtle,
                                   type: 'dashed',
                                 },
                               },
@@ -221,7 +221,7 @@ function SubscriptionPageContent() {
                               name: 'Events',
                               showSymbol: false,
                               boundaryGap: false,
-                              color: '#595959',
+                              color: colors.line,
                               areaStyle: {},
                               emphasis: {
                                 focus: 'series',

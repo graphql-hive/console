@@ -52,11 +52,11 @@ export function ProjectSelector(props: {
           linkText={currentOrganization.slug}
         />
       ) : (
-        <div className="bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
+        <div className="bg-surface-skeleton h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
       )}
       {projectEdges?.length && currentProject ? (
         <>
-          <div className="text-neutral-10 italic">/</div>
+          <div className="text-fg-secondary italic">/</div>
           <Select
             aria-label="Project"
             options={projectEdges.map(edge => ({ value: edge.node.slug, label: edge.node.slug }))}
@@ -74,7 +74,7 @@ export function ProjectSelector(props: {
           />
         </>
       ) : (
-        <div className="bg-neutral-5 h-5 w-48 animate-pulse rounded-full" />
+        <div className="bg-surface-skeleton h-5 w-48 animate-pulse rounded-full" />
       )}
     </>
   );
