@@ -62,6 +62,13 @@ describe('router module', () => {
     },
   );
 
+  it('preloads routes on intent', { timeout: 30_000 }, async () => {
+    const { createAppRouter } = await import('./router');
+    const router = createAppRouter({ urqlClient: createTestClient() });
+
+    expect(router.options.defaultPreload).toBe('intent');
+  });
+
   it('owns the error and not-found boundaries for every route', { timeout: 30_000 }, async () => {
     const { createAppRouter } = await import('./router');
     const router = createAppRouter({ urqlClient: createTestClient() });

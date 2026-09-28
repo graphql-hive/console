@@ -33,6 +33,8 @@ export function createAppRouter(options: { history?: RouterHistory; urqlClient: 
     // delay never shows a skeleton.
     defaultPendingComponent: PageSkeleton,
     defaultPendingMs: 250,
+    // Hovering or focusing a link runs its route's loaders, so the click finds the cache warm.
+    defaultPreload: 'intent',
     parseSearch: parseSearchWith(str => {
       if (needsJsurl2()) {
         return jsUrlParse(str);

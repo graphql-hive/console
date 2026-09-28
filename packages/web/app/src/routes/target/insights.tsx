@@ -6,7 +6,7 @@ import {
 import { Stats_GeneralOperationsStatsQuery } from '@/components/target/insights/stats';
 import { presetLast1Day, presetLast7Days } from '@/components/ui/date-range-picker';
 import { resolveDateRange } from '@/lib/hooks/use-date-range-controller';
-import { loadQuery } from '@/lib/route-utils';
+import { loadQuery, type LoaderContext } from '@/lib/route-utils';
 import {
   buildGraphQLFilter,
   InsightsFilterPicker_Query,
@@ -25,8 +25,10 @@ import { createRoute, redirect } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
 // Stats move, so their documents revalidate on every visit and on Refresh (router.invalidate);
-// the rest is read once. The page reads cache-first and never requests on its own.
-const REVALIDATE = 'cache-and-network';
+// the rest is read once, and a hover preload only warms. The page reads cache-first and never
+// requests on its own.
+const revalidate = (loader: LoaderContext) =>
+  loader.preload ? ('cache-first' as const) : ('cache-and-network' as const);
 
 export const targetInsightsRoute = createRoute({
   getParentRoute: () => targetRoute,
@@ -60,13 +62,13 @@ export const targetInsightsRoute = createRoute({
       loader,
       Stats_GeneralOperationsStatsQuery,
       { targetSelector: selector, period, filter, resolution },
-      REVALIDATE,
+      revalidate(loader),
     );
     void loadQuery(
       loader,
       OperationsList_OperationsStatsQuery,
       { targetSelector: selector, period, filter },
-      REVALIDATE,
+      revalidate(loader),
     );
   },
   component: TargetInsightsPage,
@@ -117,7 +119,7 @@ export const targetInsightsOperationsRoute = createRoute({
       loader,
       Stats_GeneralOperationsStatsQuery,
       { targetSelector: selector, period, filter: { operationIds: [operationHash] }, resolution },
-      REVALIDATE,
+      revalidate(loader),
     );
   },
   component: function TargetInsightsRoute() {

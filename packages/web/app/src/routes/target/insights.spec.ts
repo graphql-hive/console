@@ -5,7 +5,7 @@ import { resolvePeriod } from '@/lib/hooks/use-date-range-controller';
 import { insightsFixtures, OPERATION } from '@/lib/testing/fixtures/insights';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
-import { createTestClient } from '@/lib/testing/urql';
+import { createTestClient, operationName } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
 import { createMemoryHistory } from '@tanstack/react-router';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
@@ -46,6 +46,7 @@ const TARGET = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSl
 const HOUR = 60 * 60 * 1000;
 const to = new Date(Math.floor(Date.now() / HOUR) * HOUR).toISOString();
 const from = new Date(Date.parse(to) - 7 * 24 * HOUR).toISOString();
+const RANGE_TO = to;
 const RANGE = `from=${from}&to=${to}`;
 const OPERATIONS = `operations=${encodeURIComponent(JSON.stringify([OPERATION.hash]))}`;
 const INSIGHTS = `${TARGET}/insights?${RANGE}&${OPERATIONS}`;
@@ -85,6 +86,18 @@ describe('insights route', () => {
       await router.load();
 
       expect(client.seen).toEqual(expect.arrayContaining(PAGE_DOCUMENTS));
+      const policies = client.operations.map(operation => [
+        operationName(operation),
+        operation.context.requestPolicy,
+      ]);
+      expect(policies).toEqual(
+        expect.arrayContaining([
+          ['TargetOperationsPageQuery', 'cache-first'],
+          ['InsightsFilterPicker', 'cache-first'],
+          ['Stats_GeneralOperationsStats', 'cache-and-network'],
+          ['OperationsList_OperationsStats', 'cache-and-network'],
+        ]),
+      );
       const { range: period, resolution } = resolvePeriod({ from, to });
       const filter = { operationIds: [OPERATION.hash] };
       expect(variablesOf(client, 'TargetOperationsPageQuery')).toEqual(SLUGS);
@@ -180,4 +193,33 @@ describe('operation route', () => {
       expect(requests(client, name)).toBe(1);
     }
   });
+});
+
+describe('insights preloading', () => {
+  // A preloaded match stays fresh for preloadStaleTime, so the click that follows runs no loader.
+  it(
+    'a preload only warms, and the click that follows needs no request',
+    { timeout: 30_000 },
+    async () => {
+      const client = createTestClient(fixtures());
+      const router = createAppRouter({
+        history: createMemoryHistory({ initialEntries: [TARGET] }),
+        urqlClient: client,
+      });
+      await router.load();
+      const to = '/$organizationSlug/$projectSlug/$targetSlug/insights';
+      const search = { from, to: RANGE_TO };
+      const stats = () =>
+        client.operations
+          .filter((_, index) => client.seen[index] === 'Stats_GeneralOperationsStats')
+          .map(operation => [operation.context.preload, operation.context.requestPolicy]);
+
+      await router.preloadRoute({ to, params: SLUGS, search });
+      expect(stats()).toEqual([[true, 'cache-first']]);
+
+      await router.navigate({ to, params: SLUGS, search });
+      expect(router.state.location.pathname).toBe(`${TARGET}/insights`);
+      expect(stats()).toEqual([[true, 'cache-first']]);
+    },
+  );
 });

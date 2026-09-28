@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { type ReactNode } from 'react';
+import { CHECKS, checksFixtures } from '@/lib/testing/fixtures/checks';
 import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
 import { organizationMembers } from '@/lib/testing/fixtures/organization-members';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
@@ -9,7 +10,7 @@ import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
 import { createMemoryHistory } from '@tanstack/react-router';
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
@@ -711,6 +712,33 @@ describe('proposals', () => {
       const seen = client.current!.seen;
       expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
       expect(seen).not.toContain('TargetProposalsQuery');
+    },
+  );
+});
+
+describe('hover preloading', () => {
+  it(
+    "runs a link's loaders on hover, so the click needs no request",
+    { timeout: 30_000 },
+    async () => {
+      const testClient = createTestClient(new Map([...layoutFixtures(), ...checksFixtures()]));
+      const { router } = renderAtUrl(TARGET, { client: testClient });
+      const link = await screen.findByRole('link', { name: 'Checks' });
+
+      fireEvent.mouseEnter(link);
+
+      await waitFor(() => expect(testClient.seen).toContain('ChecksPageQuery'));
+      expect(router.state.location.pathname).toBe(TARGET);
+      const requests = testClient.seen.length;
+      const preloaded = testClient.operations.filter(
+        (_, index) => testClient.seen[index] === 'ChecksPageQuery',
+      );
+      expect(preloaded.map(operation => operation.context.preload)).toEqual([true]);
+
+      fireEvent.click(link);
+
+      await screen.findByText(CHECKS.first[0]);
+      expect(testClient.seen).toHaveLength(requests);
     },
   );
 });
