@@ -40,7 +40,6 @@ export const targetInsightsRoute = createRoute({
         to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
         params,
         search: { ...search, from: presetLast7Days.range.from, to: presetLast7Days.range.to },
-        replace: true,
       });
     }
   },

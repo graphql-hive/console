@@ -39,7 +39,6 @@ async function loadSettings(loader: SettingsLoader) {
     throw redirect({
       to: '/$organizationSlug/$projectSlug/$targetSlug',
       params: slugs,
-      replace: true,
     });
   }
   return { slugs, target: project?.target, projectType: project?.type };
@@ -57,12 +56,11 @@ async function loadSection(loader: SettingsLoader, id: SettingsSectionId) {
   }
   const fallback = visible.at(0);
   if (fallback) {
-    throw redirect({ to: fallback.to, params: slugs, replace: true });
+    throw redirect({ to: fallback.to, params: slugs });
   }
   throw redirect({
     to: '/$organizationSlug/$projectSlug/$targetSlug',
     params: slugs,
-    replace: true,
   });
 }
 

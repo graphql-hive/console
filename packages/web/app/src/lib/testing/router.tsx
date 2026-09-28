@@ -18,11 +18,6 @@ if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
     }) as MediaQueryList;
 }
 
-// Base UI's scroll area asks its viewport for running animations; jsdom has no Web Animations.
-if (typeof Element !== 'undefined' && typeof Element.prototype.getAnimations !== 'function') {
-  Element.prototype.getAnimations = () => [];
-}
-
 // Charts measure their container; jsdom has no ResizeObserver.
 if (typeof window !== 'undefined' && typeof window.ResizeObserver !== 'function') {
   window.ResizeObserver = class {
@@ -32,11 +27,18 @@ if (typeof window !== 'undefined' && typeof window.ResizeObserver !== 'function'
   };
 }
 
+// With a ResizeObserver, Base UI's scroll area goes on to ask its viewport for running animations,
+// and jsdom has no Web Animations. With this stub every Base UI popup also waits a frame before
+// `onOpenChangeComplete` and its unmount, as in a browser, so assert a close with `waitFor`.
+if (typeof Element !== 'undefined' && typeof Element.prototype.getAnimations !== 'function') {
+  Element.prototype.getAnimations = () => [];
+}
+
 /**
  * Renders the real app at `url`: the real route tree, root providers and layouts, in a memory
  * history, with `client` (a `createTestClient`) in router context. Pair it with the module mocks a
- * spec needs for jsdom (`@/env/frontend`, the laboratory package, SuperTokens); `vi.mock` has to sit
- * in the spec file itself, so this helper cannot own them.
+ * spec needs for jsdom (`src/lib/testing/mocks/`): vitest hoists `vi.mock` per spec file and there
+ * is no app-scoped vitest project to hold `setupFiles`, so this helper cannot own them.
  */
 export function renderAtUrl(url: string, options: { client: Client }) {
   const router = createAppRouter({

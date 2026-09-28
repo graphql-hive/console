@@ -130,22 +130,8 @@ For the rest of the route state:
   imports the real client from `@/lib/urql`; `router.spec.ts` fails if a route module does.
 - `authenticated.tsx` checks the session in `beforeLoad`, so a loader never runs for an anonymous
   visitor; `SessionAuth` still covers a session that expires mid-visit.
-- `ViewerQuery` (`src/components/layouts/queries.ts`) is the signed-in viewer: `me`, the
-  organizations tree the selectors read, `isCDNEnabled`. The `with-header` route's loader loads it
-  once and revalidates it at most once a minute (`VIEWER_MAX_AGE_MS`); `useViewer()` reads it
-  anywhere under the header as a cache hit. It stays fresh through graphcache: renames flow through
-  normalization (the rename mutations return `id slug`); creates, deletes, joins and member removals
-  go through updaters in `src/lib/urql-cache.ts`. Changes made by other people appear within a
-  minute plus a navigation.
-- Each layout runs its entity document (`OrganizationLayoutQuery`, `ProjectLayoutQuery`,
-  `TargetLayoutQuery`: slugs, `viewerCan*`, `latestSchemaVersion.id`, `usageRetentionInDays`). A
-  page under it reads the same document through `useLayoutQuery(scope)` as a cache hit instead of
-  selecting those fields again. `UserMenu` reads the current organization's bits through its own
-  small document, except on the OIDC interstitial, where the organization answers `NEEDS_OIDC`.
-- `loadQuery(loader, document, variables, policy)` (`src/lib/route-utils.ts`) runs a document from a
-  route loader on the client in router context and tags the operation with the loader's `preload`
-  flag, which the progress bar leaves out. Page loaders, request policies, pagination, preloading
-  and the loading vocabulary are in [DATA.md](./DATA.md).
+- The viewer and layout documents, `useLayoutQuery`, `loadQuery`, request policies, pagination,
+  preloading and the loading vocabulary are in [DATA.md](./DATA.md).
 
 ## Search params
 
@@ -218,22 +204,23 @@ goes in `beforeLoad`. Do not redirect from a render effect, which races data and
 
 ## Testing
 
-Run from the repo root: `pnpm vitest run packages/web/app/src/routes`.
+Run from the repo root: `pnpm vitest run packages/web/app/src`.
 
-| Spec                       | Guards                                                                                                                                                       |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `routes/tree.spec.ts`      | The exact set of route ids (inline snapshot) and one example URL per id; a route without an example fails the suite.                                         |
-| `routes/legacy.spec.ts`    | Every catalog entry's example lands on its new URL with a single history entry; the config-dependent redirects.                                              |
-| `routes/render.spec.ts`    | The real tree rendered at every page URL: one secondary nav, the expected item current, no error boundary; per-screen blocks for each tertiary nav and gate. |
-| `router.spec.ts`           | `createAppRouter` has no side effects and owns the default error/not-found boundaries, the pending defaults and `defaultPreload`.                            |
-| `lib/testing/urql.spec.ts` | The test client answers by operation name and fails a fixture that no longer covers its document.                                                            |
-| `routes/target/*.spec.ts`  | One per area with loaders (insights, checks): what the loaders request and that the page reads it from the cache. See DATA.md.                               |
+| Spec                       | Guards                                                                                                                                                                                                                 |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `routes/tree.spec.ts`      | The exact set of route ids (inline snapshot) and one example URL per id; a route without an example fails the suite.                                                                                                   |
+| `routes/legacy.spec.ts`    | Every catalog entry's example lands on its new URL with a single history entry; the config-dependent redirects.                                                                                                        |
+| `routes/render.spec.ts`    | The real tree rendered at every page URL: one secondary nav, the expected item current, no error boundary; per-screen blocks for each tertiary nav and gate.                                                           |
+| `router.spec.ts`           | `createAppRouter` has no side effects and owns the default error/not-found boundaries, the pending defaults and `defaultPreload`.                                                                                      |
+| `lib/testing/urql.spec.ts` | The test client answers by operation name and fails a fixture that no longer covers its document.                                                                                                                      |
+| `routes/target/*.spec.ts`  | For the areas whose loaders warm page documents (insights, checks): what the loaders request and that the page reads it from the cache; the settings and history loaders are covered in `render.spec.ts`. See DATA.md. |
 
 `renderAtUrl(url, { client })` (`src/lib/testing/router.tsx`) renders the app in a memory history
 with `client` (a `createTestClient`) in router context. Specs that use it mock `@/env/frontend`,
-`@graphql-hive/laboratory`, the laboratory storage and SuperTokens; the `vi.mock` calls have to sit
-in the spec file. Fixtures for the viewer, layout and user-menu queries, each settings screen,
-checks and insights live in `src/lib/testing/fixtures/` and are checked against the documents they
-answer, so a query change that they no longer cover fails with the missing paths named. The client
-runs on the app's own graphcache configuration, so fixtures carry `__typename` on every object below
-the root.
+`@graphql-hive/laboratory`, the laboratory storage and SuperTokens through the stand-ins in
+`src/lib/testing/mocks/`, one `vi.mock` line each in the spec, since there is no app-scoped vitest
+project to hold `setupFiles`. Fixtures for the viewer, layout and user-menu queries, each settings
+screen, checks and insights live in `src/lib/testing/fixtures/` and are checked against the
+documents they answer, so a query change that they no longer cover fails with the missing paths
+named. The client runs on the app's own graphcache configuration, so fixtures carry `__typename` on
+every object below the root.

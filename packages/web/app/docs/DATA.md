@@ -23,7 +23,8 @@ decide before rendering: a redirect (`/settings` under a target awaits the page 
 `viewerCanAccessSettings`, each section awaits it to check its own visibility, `/history` awaits the
 latest version to redirect to it) or a not-found. While an awaiting loader runs, the router shows
 `PageSkeleton` after 250 ms (`defaultPendingComponent` and `defaultPendingMs` in `src/router.ts`); a
-load that finishes inside the delay never shows it.
+load that finishes inside the delay never shows it. A warmed document the page turns out not to read
+(the stats of a target that has no operations yet) is the accepted cost of not awaiting.
 
 **The rule that makes 1 work: the variables must match.** The loader builds them from `params` and
 `loaderDeps` exactly as the page builds them from `useSlugs` and `useSearch`: same shape, same
@@ -56,7 +57,10 @@ search params a query takes, so a change to one of them re-runs the loader and a
 - **Refresh** is `router.invalidate()`: it re-runs the current matches' loaders, and each loader's
   policy decides what that costs. `useDateRangeController().refreshResolvedRange()` does this, so a
   Refresh button is one call and reloads exactly what its route declared live, recomputing anything
-  the loader resolved, such as the insights period.
+  the loader resolved, such as the insights period. On a page without a loader yet (traces, the
+  client and coordinate insights, alerts activity, the explorer pages) the same call only re-runs
+  the layout loaders, all cache hits, and the page's own refetch effect still does the work; those
+  effects stay until their pages get loaders.
 - **`network-only`** after a mutation whose result no updater can write, to re-execute a list.
 - An error result is never cached. `loadQuery` resolves with it rather than throwing, the page's
   `useQuery` sees it and renders `QueryError` as before, and a loader redirects only on an explicit
@@ -84,15 +88,17 @@ search params a query takes, so a change to one of them re-runs the loader and a
 ## A list owns its connection
 
 A paginated list keeps one query and moves its cursor. The field gets `relayPagination()` in
-`cacheOptions.resolvers` (`Target.schemaChecks`, `appDeployments`, `traces`, the token connections),
-the list holds `after` in `useResetState(null, [...filters])`, and the query for the latest cursor
-reads every page loaded so far, so "load more" is `setAfter(pageInfo.endCursor)` and a filter change
-resets the cursor. The route warms the first page with `after: null` and the filters from
-`loaderDeps`. The checks side list (`src/pages/target-checks.tsx`) is the example.
+`cacheOptions.resolvers` (`Target.schemaChecks`, `Target.appDeployments`, `Target.traces`,
+`AppDeployment.documents`, the token connections), the list holds `after` in
+`useResetState(null, [...filters])`, and the query for the latest cursor reads every page loaded so
+far, so "load more" is `setAfter(pageInfo.endCursor)` and a filter change resets the cursor. The
+route warms the first page with `after: null` and the filters from `loaderDeps`. The checks side
+list (`src/pages/target-checks.tsx`) is the example.
 
 One footgun: the resolver merges every use of the field whose non-cursor arguments match, so a
 `first: 1` probe with the same filters reads the merged list, not one item. Read only its emptiness,
-or give the probe arguments of its own.
+or give the probe arguments of its own: the checks probe carries no `filters` while the list always
+passes them, so the two never merge.
 
 ## Loading states
 
@@ -101,11 +107,11 @@ behind a skeleton: `DataTable loading` renders skeleton rows under the real head
 lists use the `Skeleton` primitives, and `PageSkeleton` / `SectionSkeleton`
 (`src/components/layouts/page-skeleton.tsx`) stand in for a route while its awaiting loader runs.
 
-The cold-load sequence is: HTML, then the whole app's JavaScript (the route tree imports every page
-eagerly), then the session gate, then every loader for the matched routes in one burst, then the
-first render with each region's skeleton, then the data. Nothing can start before the route tree has
-evaluated, which is most of the time to first request in development; a hover preload moves a
-route's burst ahead of the click.
+The cold-load sequence is: HTML, then nearly all of the app's JavaScript (the route tree imports
+every page eagerly; Monaco alone is lazy), then the session gate, then every loader for the matched
+routes in one burst, then the first render with each region's skeleton, then the data. Nothing can
+start before the route tree has evaluated, which is most of the time to first request in
+development; a hover preload moves a route's burst ahead of the click.
 
 ## Where things live
 
@@ -162,22 +168,28 @@ agree through that function.
 
 ## Testing
 
-Run from the repo root: `pnpm vitest run packages/web/app/src/routes`.
+Run from the repo root: `pnpm vitest run packages/web/app/src`.
 
-| Spec                             | Guards                                                                                                                                                          |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `routes/target/insights.spec.ts` | The loader's variables and policies before render; one request per document with the page mounted; Refresh; the bare URL's default range; a preload only warms. |
-| `routes/target/checks.spec.ts`   | Load more merges pages; a filter change starts over and keeps the selected check; the loaders' variables; one request per document.                             |
-| `routes/render.spec.ts`          | The layout loaders' variables; the settings redirects and the page document requested once; hover preloading; the history redirect as a cache read.             |
-| `router.spec.ts`                 | The pending defaults and `defaultPreload`.                                                                                                                      |
-| `lib/testing/urql.spec.ts`       | The test client answers by operation name, records variables and context, holds promise fixtures, and fails a fixture that no longer covers its document.       |
+| Spec                                  | Guards                                                                                                                                                                                                                                                                 |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `routes/target/insights.spec.ts`      | The loader's variables and policies before render; one request per document with the page mounted; Refresh on both pages; the bare URL's default range; the period resolved once across an hour boundary; a hover warms and the visit revalidates; rows don't preload. |
+| `routes/target/checks.spec.ts`        | Load more merges pages; a filter change starts over and keeps the selected check; the loaders' variables; one request per document; rows don't preload.                                                                                                                |
+| `routes/render.spec.ts`               | The layout loaders' variables; the settings redirects and the page document requested once; hover preloading; the history redirect as a cache read; failed page queries show the error; a CDN create refetches the open page.                                          |
+| `routes/target/settings-cdn.spec.tsx` | The one spec on the app's own client, exchanges and all: a CDN create through the modal refetches the open page.                                                                                                                                                       |
+| `lib/urql-cache.spec.ts`              | The updaters against a stub cache, and the CDN updaters through the real cache.                                                                                                                                                                                        |
+| `router.spec.ts`                      | The pending defaults and `defaultPreload`.                                                                                                                                                                                                                             |
+| `lib/testing/urql.spec.ts`            | The test client answers by operation name, records variables and context, holds promise fixtures, and fails a fixture that no longer covers its document.                                                                                                              |
 
 `createTestClient(fixtures)` (`src/lib/testing/urql.ts`) is a client on the app's own graphcache
-configuration whose network is a lookup by operation name. `seen` records the names of the requests
-that reached the network, `operations` the operations, so a spec can assert variables, policies and
-the `preload` flag. A promise fixture holds its request in flight until it settles, which is how a
-spec proves a page joined the loader's request. Fixtures (`src/lib/testing/fixtures/`) carry
-`__typename` on every object below the root, as the server would, and are checked against the
+configuration whose network is a lookup by operation name. `seen` and `operations` are the requests
+that reached the network, and `requests(name)` narrows them to one document: a cache hit is absent,
+the network leg of a `cache-and-network` hit arrives as `network-only`, and an invalidated or
+partial read arrives again. A spec asserts variables, policies and the `preload` flag on them. A
+promise fixture holds its request in flight until it settles, which is how a spec proves a page
+joined the loader's request; an `Error` fixture answers as a failed request. The env, laboratory and
+SuperTokens stand-ins live in `src/lib/testing/mocks/`, one `vi.mock` line each in the spec, since
+there is no app-scoped vitest project to hold `setupFiles`. Fixtures (`src/lib/testing/fixtures/`)
+carry `__typename` on every object below the root, as the server would, and are checked against the
 document they answer: a missing field, including a typename, fails with its path named. No fake
 timers, except the clock alone (`vi.useFakeTimers({ toFake: ['Date'] })`) when a case needs time to
 move: timers, the router and `waitFor` stay real.

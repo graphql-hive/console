@@ -119,13 +119,16 @@ export function missingSelections(
 /**
  * A urql client on the app's own graphcache configuration whose only network is a lookup in
  * `fixtures` by operation name, so a spec can answer several different queries in one tree and
- * normalization, pagination resolvers and mutation updaters behave as they do in the app. An operation without a fixture resolves with no
- * data and no error, which is what a page shows while a query is still in flight, so pages a spec
- * does not care about render their loading branch rather than throw. A fixture that no longer
- * covers what its query selects throws, naming the missing paths, so fixtures cannot drift from
- * the documents. `fixtures` is the live map; `seen` records every operation name asked for and
- * `operations` every operation, and `requests(name)` the operations of one name. A promise fixture holds its answer until it settles; an `Error` fixture
- * answers with that error, as a failed request would.
+ * normalization, pagination resolvers and mutation updaters behave as they do in the app. An
+ * operation without a fixture resolves with no data and no error, which is what a page shows while
+ * a query is still in flight, so pages a spec does not care about render their loading branch
+ * rather than throw. A fixture that no longer covers what its query selects throws, naming the
+ * missing paths, so fixtures cannot drift from the documents. `fixtures` is the live map.
+ *
+ * `seen` and `operations` are the requests that reached the network, and `requests(name)` those of
+ * one document: a cache hit is absent, the network leg of a `cache-and-network` hit arrives as
+ * `network-only`, and an invalidated or partial read arrives again. A promise fixture holds its
+ * answer until it settles; an `Error` fixture answers with that error, as a failed request would.
  */
 export function createTestClient(fixtures: Fixtures = new Map()) {
   const seen: string[] = [];
