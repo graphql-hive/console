@@ -8,8 +8,8 @@ export const Page = createPreview(() => <PageSkeleton />);
 // Beside a settings nav, where a section route's pending state renders.
 export const Section = createPreview(() => (
   <div className="flex w-[56rem] gap-8">
-    <div className="text-neutral-10 flex w-48 flex-col gap-3 text-sm">
-      <span className="text-neutral-12">General</span>
+    <div className="text-fg-secondary flex w-48 flex-col gap-3 text-sm">
+      <span className="text-fg-default">General</span>
       <span>CDN tokens</span>
       <span>Registry tokens</span>
     </div>

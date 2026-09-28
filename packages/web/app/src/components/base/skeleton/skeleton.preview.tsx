@@ -4,7 +4,7 @@ import { Skeleton } from './skeleton';
 export const nav: NavPath = 'Base/Primitives/Skeleton';
 
 export const Shapes = createPreview(() => (
-  <div className="text-neutral-10 flex items-end gap-8 text-xs">
+  <div className="text-fg-secondary flex items-end gap-8 text-xs">
     <span className="flex flex-col gap-2">
       <Skeleton />
       line
@@ -23,7 +23,7 @@ export const Shapes = createPreview(() => (
 ));
 
 export const LineSizes = createPreview(() => (
-  <div className="text-neutral-10 flex flex-col gap-3 text-xs">
+  <div className="text-fg-secondary flex flex-col gap-3 text-xs">
     {(['xs', 'sm', 'default', 'lg', 'xl'] as const).map(size => (
       <span key={size} className="flex items-center gap-4">
         <span className="w-14">{size}</span>
@@ -34,7 +34,7 @@ export const LineSizes = createPreview(() => (
 ));
 
 export const LineWidths = createPreview(() => (
-  <div className="text-neutral-10 flex w-[32rem] flex-col gap-3 text-xs">
+  <div className="text-fg-secondary flex w-[32rem] flex-col gap-3 text-xs">
     {(['xs', 'sm', 'md', 'lg', 'xl', 'full'] as const).map(width => (
       <span key={width} className="flex items-center gap-4">
         <span className="w-14 shrink-0">{width}</span>
