@@ -74,6 +74,7 @@ test.concurrent('disabling a contract deletes its contract graph', async ({ expe
       target: { byId: target.id },
       contractName: 'my-contract',
       removeUnreachableTypesFromPublicApiSchema: false,
+      includeTags: ['public'],
     },
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
