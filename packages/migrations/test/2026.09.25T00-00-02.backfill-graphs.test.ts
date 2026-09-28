@@ -28,18 +28,26 @@ await describe('migration: backfill-graphs', async () => {
       });
       const target = await seed.target({ project, target: { name: 't1' } });
 
-      await db.query(psql`
-        INSERT INTO contracts (
-          target_id,
-          contract_name,
-          include_tags,
-          exclude_tags,
-          remove_unreachable_types_from_public_api_schema,
-          is_disabled
-        ) VALUES
-          (${target.id}, 'public', ARRAY['public'], ARRAY['internal'], true, false),
-          (${target.id}, 'disabled', NULL, NULL, false, true)
-      `);
+      const contracts = await db
+        .any(
+          psql`
+          INSERT INTO contracts (
+            target_id,
+            contract_name,
+            include_tags,
+            exclude_tags,
+            remove_unreachable_types_from_public_api_schema,
+            is_disabled
+          ) VALUES
+            (${target.id}, 'public', ARRAY['public'], ARRAY['internal'], true, false),
+            (${target.id}, 'disabled', NULL, NULL, false, true)
+          RETURNING id, contract_name
+        `,
+        )
+        .then(z.array(z.object({ id: z.string(), contract_name: z.string() })).parse);
+
+      const publicContract = contracts.find(contract => contract.contract_name === 'public');
+      assert.ok(publicContract);
 
       await complete();
 
@@ -69,6 +77,7 @@ await describe('migration: backfill-graphs', async () => {
 
       const contractGraph = graphs.find(graph => graph.name === 'default/public');
       assert.ok(contractGraph);
+      assert.equal(contractGraph.id, publicContract.id);
       assert.deepEqual(contractGraph, {
         id: contractGraph.id,
         name: 'default/public',
