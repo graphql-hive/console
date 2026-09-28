@@ -253,6 +253,7 @@ export class SchemaVersionStore {
       origin: SchemaVersionOrigin;
       github: GithubMeta;
       conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadata | null;
+      meta: SchemaVersionMeta | null;
     },
   ): Promise<void> {
     // write to "contract_versions" for rollback capabilities
@@ -304,18 +305,18 @@ export class SchemaVersionStore {
       targetId: args.graph.targetId,
       supergraphSDL: args.supergraphSDL,
       compositeSchemaSDL: args.compositeSchemaSDL,
-      baseSchema: null,
-      tags: null,
       graphId: args.graph.id,
       hasContractCompositionErrors: false,
       supergraphChanges: args.supergraphChanges,
-      meta: null,
+      meta: args.meta,
       conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-      metadataAttributes: null,
       github: args.github,
       origin: args.origin,
+      schemaCompositionErrors: args.schemaCompositionErrors,
       schemaMetadata: null,
-      schemaCompositionErrors: null,
+      baseSchema: null,
+      tags: null,
+      metadataAttributes: null,
     };
 
     const PreviousVersionIdsModel = z.object({
@@ -497,6 +498,11 @@ export class SchemaVersionStore {
           : null,
       };
 
+      const meta: SchemaVersionMeta = {
+        author: args.author,
+        commit: args.commit,
+      };
+
       // creates a new version
       const version = await this.insertSchemaVersion(trx, {
         isComposable: args.valid,
@@ -517,10 +523,7 @@ export class SchemaVersionStore {
         supergraphChanges: args.supergraphChanges,
         schemaCompositionErrors: args.schemaCompositionErrors,
         github: args.github,
-        meta: {
-          author: args.author,
-          commit: args.commit,
-        },
+        meta,
         tags: args.tags,
         schemaMetadata: args.schemaMetadata,
         metadataAttributes: args.metadataAttributes,
@@ -580,6 +583,7 @@ export class SchemaVersionStore {
           conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
           diffSchemaVersionId: contract.diffSchemaVersionId,
           previousSchemaVersionId: contract.previousSchemaVersionId,
+          meta,
         });
       }
 
@@ -779,6 +783,7 @@ export class SchemaVersionStore {
           conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
           diffSchemaVersionId: contract.diffSchemaVersionId,
           previousSchemaVersionId: contract.previousSchemaVersionId,
+          meta: null,
         });
       }
 
@@ -1799,6 +1804,7 @@ export class SchemaVersionStore {
           conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
           diffSchemaVersionId: contract.diffSchemaVersionId,
           previousSchemaVersionId: contract.previousSchemaVersionId,
+          meta: args.meta,
         });
       }
 
