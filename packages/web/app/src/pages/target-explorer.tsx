@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { AlertCircleIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -9,17 +9,16 @@ import {
 import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
 import { DateRangeFilter } from '@/components/target/explorer/filter';
 import { GraphQLObjectTypeComponent } from '@/components/target/explorer/object-type';
-import {
-  SchemaExplorerProvider,
-  useSchemaExplorerContext,
-} from '@/components/target/explorer/provider';
+import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { useScrollRestoration } from '@/components/target/explorer/scroll-restoration';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { NoSchemaVersion, noValidSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, useSlugs } from '@/lib/hooks';
+import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { Link } from '@tanstack/react-router';
 
 const ExplorerPage_SchemaExplorerFragment = graphql(`
@@ -127,26 +126,17 @@ const TargetExplorerPageQuery = graphql(`
 
 function ExplorerPageContent() {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const { resolvedPeriod, dataRetentionInDays, setDataRetentionInDays } =
-    useSchemaExplorerContext();
+  const dataRetentionInDays =
+    useLayoutQuery('target').data?.organization?.usageRetentionInDays ?? 7;
+  const dateRangeController = useDateRangeController({
+    dataRetentionInDays,
+    defaultPreset: presetLast7Days,
+  });
+  const period = dateRangeController.resolvedRange;
   const [query] = useQuery({
     query: TargetExplorerPageQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-      period: resolvedPeriod,
-    },
+    variables: { organizationSlug, projectSlug, targetSlug, period },
   });
-
-  const currentOrganization = query.data?.organization;
-  const retentionInDays = currentOrganization?.usageRetentionInDays;
-
-  useEffect(() => {
-    if (typeof retentionInDays === 'number' && dataRetentionInDays !== retentionInDays) {
-      setDataRetentionInDays(retentionInDays);
-    }
-  }, [setDataRetentionInDays, retentionInDays]);
 
   /* to avoid janky behaviour we keep track if the version has a successful explorer once, and in that case always show the filter bar. */
   const isFilterVisible = useRef(false);
@@ -178,12 +168,12 @@ function ExplorerPageContent() {
       <ExplorerHeader
         title="Explore Schema"
         description="Insights from the latest version."
-        period={resolvedPeriod}
+        period={period}
         includeSchemaDimensions
         showFilters={isFilterVisible.current}
         subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
         metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
-        dateRangeControl={<DateRangeFilter />}
+        dateRangeControl={<DateRangeFilter controller={dateRangeController} />}
       />
       {/* No data means "not known yet", not "no schema". */}
       {!query.fetching && !query.stale && query.data ? (

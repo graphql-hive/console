@@ -1,28 +1,24 @@
-import { useCallback } from 'react';
 import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useSlugs } from '@/lib/hooks';
+import type { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useLocation } from '@tanstack/react-router';
-import { usePeriodSelector } from './provider';
+import { rememberExplorerPeriod } from './period';
 
-export function DateRangeFilter() {
-  const periodSelector = usePeriodSelector();
-  const validUnits = ['y', 'M', 'w', 'd'] as const;
-  const onUpdate = useCallback(
-    (value: { preset: { range: { from: string; to: string } } }) => {
-      periodSelector.setPeriod(value.preset.range);
-    },
-    [periodSelector],
-  );
-
+// One picker for the four views: a preset lands in the URL and is remembered for a bare one.
+export function DateRangeFilter(props: { controller: ReturnType<typeof useDateRangeController> }) {
+  const { controller } = props;
   return (
     <DateRangePicker
       size="compact"
-      validUnits={[...validUnits]}
-      onUpdate={onUpdate}
-      selectedRange={periodSelector.period}
-      startDate={periodSelector.startDate}
+      validUnits={['y', 'M', 'w', 'd', 'h']}
+      selectedRange={controller.selectedPreset.range}
+      startDate={controller.startDate}
       align="start"
+      onUpdate={({ preset }) => {
+        rememberExplorerPeriod(preset.range);
+        controller.setSelectedPreset(preset);
+      }}
     />
   );
 }

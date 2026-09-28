@@ -135,6 +135,7 @@ src/routes/<scope>/route.tsx              the layout loaders
 src/routes/target/insights.tsx            warm + revalidate, loaderDeps, a beforeLoad default, preload policy;
                                           operation, client and coordinate the same without the redirect
 src/routes/target/checks.tsx              warm, loaderDeps on the filters, a child route's own document
+src/routes/target/explorer.tsx            a beforeLoad default from the preset last picked (components/target/explorer/period.ts)
 src/routes/target/traces.tsx              default range, loaderDeps on filter + sort + range, period as loader data,
                                           warm + revalidate; the trace detail warmed
 src/routes/target/settings.ts             await + redirect, section checks, section documents warmed
@@ -188,6 +189,7 @@ Run from the repo root: `pnpm vitest run packages/web/app/src`.
 | `routes/target/insights.spec.ts`      | The loader's variables and policies before render; one request per document with the page mounted; Refresh on both pages; the bare URL's default range; the period resolved once across an hour boundary; a hover warms and the visit revalidates; rows don't preload. |
 | `routes/target/checks.spec.ts`        | Load more merges pages; a filter change starts over and keeps the selected check; the loaders' variables; one request per document; rows don't preload.                                                                                                                |
 | `routes/target/alerts.spec.ts`        | The bare URL's default range; retention and the log started together with the loader's period; the poll repeats the bounds within a minute and moves them at the roll; rules and detail revalidate their configuration and leave the state log to the page; the create form's three documents. |
+| `routes/target/explorer.spec.ts`      | A bare URL on any of the four views takes the remembered preset, else the last week; the filters it carries survive the redirect; a preset picked on a view lands in the URL beside them and is remembered. |
 | `routes/target/traces.spec.ts`        | The bare URL's default range; the list started with the loader's period, the default filter and sort, revalidating; a URL's filter and sort reach the variables; the trace loader's variables; the error branch before not-found. |
 | `routes/target/history.spec.ts`       | The list's next page merges into the same list; the loaders' variables; one request per document; a revisit revalidates the list alone; the version pane shows an error before not-found. |
 | `routes/render.spec.ts`               | The layout loaders' variables; the settings redirects and the page document requested once; hover preloading; the history redirect as a cache read; failed page queries show the error; a CDN create refetches the open page.                                          |

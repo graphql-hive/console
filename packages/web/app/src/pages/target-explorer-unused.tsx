@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
@@ -10,19 +10,20 @@ import {
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
 import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
+import { DateRangeFilter } from '@/components/target/explorer/filter';
 import {
   SchemaExplorerProvider,
   useSchemaExplorerContext,
 } from '@/components/target/explorer/provider';
 import { matchesSubgraphFilter } from '@/components/target/explorer/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
+import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
@@ -277,20 +278,16 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
   }
 `);
 
-function UnusedSchemaExplorer({
-  dataRetentionInDays,
-  hasCollectedOperations,
-}: {
-  dataRetentionInDays: number;
-  hasCollectedOperations: boolean;
-}) {
+function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperations: boolean }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const dataRetentionInDays =
+    useLayoutQuery('target').data?.organization?.usageRetentionInDays ?? 7;
   const dateRangeController = useDateRangeController({
     dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
 
-  const [query, refresh] = useQuery({
+  const [query] = useQuery({
     query: UnusedSchemaExplorer_UnusedSchemaQuery,
     variables: {
       organizationSlug,
@@ -300,12 +297,6 @@ function UnusedSchemaExplorer({
     },
     pause: !hasCollectedOperations,
   });
-
-  useEffect(() => {
-    if (!query.fetching) {
-      refresh({ requestPolicy: 'network-only' });
-    }
-  }, [dateRangeController.resolvedRange]);
 
   if (query.error) {
     return (
@@ -319,17 +310,6 @@ function UnusedSchemaExplorer({
 
   const latestSchemaVersion = query.data?.target?.latestSchemaVersion;
   const latestValidSchemaVersion = query.data?.target?.latestValidSchemaVersion;
-  const dateRangeFilter = (
-    <DateRangePicker
-      size="compact"
-      validUnits={['y', 'M', 'w', 'd', 'h']}
-      selectedRange={dateRangeController.selectedPreset.range}
-      startDate={dateRangeController.startDate}
-      align="start"
-      onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
-    />
-  );
-
   return (
     <>
       <ExplorerHeader
@@ -338,7 +318,7 @@ function UnusedSchemaExplorer({
         period={dateRangeController.resolvedRange}
         subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
         metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
-        dateRangeControl={dateRangeFilter}
+        dateRangeControl={<DateRangeFilter controller={dateRangeController} />}
       />
 
       {!hasCollectedOperations ? (
@@ -449,12 +429,7 @@ function ExplorerUnusedSchemaPageContent() {
     return null;
   }
 
-  return (
-    <UnusedSchemaExplorer
-      dataRetentionInDays={currentOrganization.usageRetentionInDays}
-      hasCollectedOperations={hasCollectedOperations}
-    />
-  );
+  return <UnusedSchemaExplorer hasCollectedOperations={hasCollectedOperations} />;
 }
 
 export function TargetExplorerUnusedPage() {

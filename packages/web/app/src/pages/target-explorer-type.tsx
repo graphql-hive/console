@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode } from 'react';
 import { useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
@@ -19,11 +19,13 @@ import {
 import { GraphQLScalarTypeComponent } from '@/components/target/explorer/scalar-type';
 import { GraphQLUnionTypeComponent } from '@/components/target/explorer/union-type';
 import { matchesSubgraphFilter } from '@/components/target/explorer/utils';
+import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, useSlugs } from '@/lib/hooks';
+import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 
 export const TypeRenderFragment = graphql(`
   fragment TypeRenderFragment on GraphQLNamedType {
@@ -137,27 +139,17 @@ const TargetExplorerTypenamePageQuery = graphql(`
 
 function TypeExplorerPageContent(props: { typename: string }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const { resolvedPeriod, dataRetentionInDays, setDataRetentionInDays } =
-    useSchemaExplorerContext();
+  const dataRetentionInDays =
+    useLayoutQuery('target').data?.organization?.usageRetentionInDays ?? 7;
+  const dateRangeController = useDateRangeController({
+    dataRetentionInDays,
+    defaultPreset: presetLast7Days,
+  });
+  const period = dateRangeController.resolvedRange;
   const [query] = useQuery({
     query: TargetExplorerTypenamePageQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-      period: resolvedPeriod,
-      typename: props.typename,
-    },
+    variables: { organizationSlug, projectSlug, targetSlug, period, typename: props.typename },
   });
-
-  const currentOrganization = query.data?.organization;
-  const retentionInDays = currentOrganization?.usageRetentionInDays;
-
-  useEffect(() => {
-    if (typeof retentionInDays === 'number' && dataRetentionInDays !== retentionInDays) {
-      setDataRetentionInDays(retentionInDays);
-    }
-  }, [setDataRetentionInDays, retentionInDays]);
 
   if (query.error) {
     return (
@@ -178,13 +170,13 @@ function TypeExplorerPageContent(props: { typename: string }) {
       <ExplorerHeader
         title="Explore"
         description="Insights from the latest version."
-        period={resolvedPeriod}
+        period={period}
         typename={props.typename}
         includeSchemaDimensions
         showFilters={!!(latestSchemaVersion && type)}
         subgraphNames={latestSchemaVersion?.explorer?.subgraphNames}
         metadataAttributes={latestSchemaVersion?.explorer?.metadataAttributes}
-        dateRangeControl={<DateRangeFilter />}
+        dateRangeControl={<DateRangeFilter controller={dateRangeController} />}
       />
       {query.fetching || query.stale ? (
         <GraphQLTypeCardSkeleton>
