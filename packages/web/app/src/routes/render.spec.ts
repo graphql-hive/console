@@ -636,12 +636,7 @@ describe('alerts sections', () => {
 
   function renderAlerts(url: string, viewerCanUseMetricAlertRules = true) {
     client.current = createTestClient(layoutFixtures());
-    const layout = targetLayout();
-    layout.organization.project.target = {
-      ...layout.organization.project.target,
-      viewerCanUseMetricAlertRules,
-    };
-    client.current.fixtures.set('TargetLayoutQuery', layout);
+    client.current.fixtures.set('TargetLayoutQuery', targetLayout({ viewerCanUseMetricAlertRules }));
     return at(url);
   }
 
@@ -671,6 +666,7 @@ describe('alerts sections', () => {
   it('sends a viewer without alert rules back to the target', { timeout: 30_000 }, async () => {
     const { router } = renderAlerts(`${ALERTS}/rules`, false);
     await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
+    expect(client.current!.seen).not.toContain('TargetAlertsRulesPage_Query');
   });
 
   it(
@@ -682,6 +678,56 @@ describe('alerts sections', () => {
       const seen = client.current!.seen;
       expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
       expect(seen).not.toContain('TargetAlertsPageQuery');
+    },
+  );
+});
+
+describe('permission gates', () => {
+  // Each gated URL, the layout flag that opens it, and the page document that must never start
+  // for a viewer without the flag.
+  const gates = [
+    [`${TARGET}/alerts/rules`, 'viewerCanUseMetricAlertRules', 'TargetAlertsRulesPage_Query'],
+    [`${TARGET}/apps`, 'viewerCanViewAppDeployments', 'TargetAppsViewQuery'],
+    [`${TARGET}/apps/app/1.0.0`, 'viewerCanViewAppDeployments', 'TargetAppsVersionQuery'],
+    [`${TARGET}/laboratory`, 'viewerCanViewLaboratory', 'Laboratory'],
+    [`${TARGET}/proposals`, 'viewerCanViewSchemaProposals', 'listProposals'],
+    [`${TARGET}/proposals/new`, 'viewerCanViewSchemaProposals', 'ProposalsNewProposalQuery'],
+    [`${TARGET}/proposals/proposal-1`, 'viewerCanViewSchemaProposals', 'ProposalQuery'],
+  ] as const;
+
+  beforeEach(() => {
+    localStorage.setItem('hive:laboratory:welcome-dialog-shown', 'true');
+  });
+
+  it.each(gates)(
+    '%s sends a viewer without %s to the target before the page starts, replacing the entry',
+    { timeout: 30_000 },
+    async (url, flag, document) => {
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set('TargetLayoutQuery', targetLayout({ [flag]: false }));
+      const { router } = at(url);
+
+      await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
+
+      expect(router.history.length).toBe(1);
+      expect(client.current.seen).not.toContain(document);
+      expect(client.current.requests('TargetLayoutQuery')).toHaveLength(1);
+    },
+  );
+
+  it.each(gates)(
+    '%s reads %s from the layout request, adding none of its own',
+    { timeout: 30_000 },
+    async url => {
+      const client = createTestClient(layoutFixtures());
+      const router = createAppRouter({
+        history: createMemoryHistory({ initialEntries: [url] }),
+        urqlClient: client,
+      });
+      await router.load();
+
+      expect(router.state.location.pathname).toBe(url);
+      expect(client.requests('TargetLayoutQuery')).toHaveLength(1);
     },
   );
 });

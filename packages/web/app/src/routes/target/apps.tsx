@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { TargetAppVersionPage } from '@/pages/target-app-version';
 import { TargetAppsPage, TargetAppsSortSchema, type SortState } from '@/pages/target-apps';
+import { requireLayoutFlag } from '@/lib/route-utils';
 import { createRoute } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
@@ -12,6 +13,7 @@ export const targetAppsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'apps',
   validateSearch: TargetAppsRouteSearch.parse,
+  loader: loader => requireLayoutFlag.target(loader, 'viewerCanViewAppDeployments'),
   component: function TargetAppsRoute() {
     const {
       sort = {
@@ -27,6 +29,7 @@ export const targetAppVersionRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'apps/$appName/$appVersion',
   validateSearch: () => ({}) as { search?: string; coordinates?: string },
+  loader: loader => requireLayoutFlag.target(loader, 'viewerCanViewAppDeployments'),
   component: function TargetAppVersionRoute() {
     const { appName, appVersion } = targetAppVersionRoute.useParams();
     const { coordinates } = targetAppVersionRoute.useSearch();

@@ -15,8 +15,7 @@ import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql, type DocumentType } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
-import { useRedirect } from '@/lib/access/common';
-import { useLayoutQuery, usePagedConnection, useSlugs } from '@/lib/hooks';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -179,34 +178,12 @@ function TargetAppVersionContent(props: {
         .toPromise(),
   });
 
-  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
-
-  useRedirect({
-    entity: layoutTarget,
-    canAccess: layoutTarget?.viewerCanViewAppDeployments === true,
-    redirectTo(router) {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-        },
-        replace: true,
-      });
-    },
-  });
-
   const title = `${props.appName}@${props.appVersion}`;
 
   if (data.error) {
     return (
       <QueryError organizationSlug={organizationSlug} error={data.error} showLogoutButton={false} />
     );
-  }
-
-  if (layoutTarget?.viewerCanViewAppDeployments === false) {
-    return null;
   }
 
   const columns: ColumnDef<AppDocument, unknown>[] = [

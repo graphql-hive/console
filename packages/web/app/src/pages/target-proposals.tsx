@@ -14,8 +14,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
-import { useRedirect } from '@/lib/access/common';
-import { useLayoutQuery, useSlugs } from '@/lib/hooks';
+import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { getRouteApi, useNavigate, useSearch } from '@tanstack/react-router';
 
@@ -28,23 +27,6 @@ export function TargetProposalsPage(props: {
   filterStages?: string[];
   selectedProposalId?: string;
 }) {
-  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const target = useLayoutQuery('target').data?.organization?.project?.target;
-
-  useRedirect({
-    canAccess: target?.viewerCanViewSchemaProposals === true,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-        },
-      });
-    },
-    entity: target,
-  });
   return (
     <>
       <Meta title="Schema proposals" />

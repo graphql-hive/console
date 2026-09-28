@@ -10,8 +10,7 @@ import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql, useFragment, type DocumentType } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
-import { useRedirect } from '@/lib/access/common';
-import { useLayoutQuery, usePagedConnection, useSlugs } from '@/lib/hooks';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { getRouteApi } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -161,32 +160,10 @@ function TargetAppsView(props: { sorting: SortState }) {
   });
   const sortingState = [{ id: props.sorting.field, desc: props.sorting.direction === 'DESC' }];
 
-  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
-
-  useRedirect({
-    entity: layoutTarget,
-    canAccess: layoutTarget?.viewerCanViewAppDeployments === true,
-    redirectTo(router) {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-        },
-        replace: true,
-      });
-    },
-  });
-
   if (data.error) {
     return (
       <QueryError organizationSlug={organizationSlug} error={data.error} showLogoutButton={false} />
     );
-  }
-
-  if (layoutTarget?.viewerCanViewAppDeployments === false) {
-    return null;
   }
 
   const columns: ColumnDef<AppDeploymentRow, unknown>[] = [

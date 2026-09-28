@@ -5,12 +5,14 @@ import { TargetAlertsActivityPage } from '@/pages/target-alerts-activity';
 import { TargetAlertsCreatePage } from '@/pages/target-alerts-create';
 import { TargetAlertsDetailPage } from '@/pages/target-alerts-detail';
 import { TargetAlertsRulesPage } from '@/pages/target-alerts-rules';
+import { requireLayoutFlag } from '@/lib/route-utils';
 import { createRoute } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
 export const targetAlertsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'alerts',
+  loader: loader => requireLayoutFlag.target(loader, 'viewerCanUseMetricAlertRules'),
   component: TargetAlertsPage,
 });
 

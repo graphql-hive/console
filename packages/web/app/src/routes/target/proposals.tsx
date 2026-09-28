@@ -3,6 +3,7 @@ import { SchemaProposalStage } from '@/gql/graphql';
 import { ProposalTab, TargetProposalsSinglePage } from '@/pages/target-proposal';
 import { TargetProposalsPage } from '@/pages/target-proposals';
 import { TargetProposalsNewPage } from '@/pages/target-proposals-new';
+import { requireLayoutFlag } from '@/lib/route-utils';
 import { createRoute, useParams } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
@@ -17,6 +18,7 @@ export const targetProposalsRoute = createRoute({
       .catch(() => void 0),
     user: z.string().array().optional().catch(undefined),
   }),
+  loader: loader => requireLayoutFlag.target(loader, 'viewerCanViewSchemaProposals'),
   component: function TargetProposalsRoute() {
     // select proposalId from child route
     const proposalId = useParams({
@@ -37,6 +39,7 @@ export const targetProposalsRoute = createRoute({
 export const targetProposalsNewRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'proposals/new',
+  loader: loader => requireLayoutFlag.target(loader, 'viewerCanViewSchemaProposals'),
   component: TargetProposalsNewPage,
 });
 
@@ -51,6 +54,7 @@ export const targetProposalsSingleRoute = createRoute({
       .catch(() => void 0),
     version: z.string().optional(),
   }),
+  loader: loader => requireLayoutFlag.target(loader, 'viewerCanViewSchemaProposals'),
   component: function TargetProposalRoute() {
     const { proposalId } = targetProposalsSingleRoute.useParams();
     const { page, version, ts } = targetProposalsSingleRoute.useSearch();

@@ -133,6 +133,7 @@ src/routes/<scope>/route.tsx              the layout loaders
 src/routes/target/insights.tsx            warm + revalidate, loaderDeps, a beforeLoad default, preload policy
 src/routes/target/checks.tsx              warm, loaderDeps on the filters, a child route's own document
 src/routes/target/settings.ts             await + redirect, section checks, section documents warmed
+src/routes/target/{alerts,apps,laboratory,proposals}.tsx  requireLayoutFlag.target(loader, flag)
 src/routes/target/history.tsx             await + redirect from a cache read
 src/lib/testing/urql.ts                   createTestClient on cacheOptions; fixtures/ beside it
 ```
