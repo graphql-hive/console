@@ -84,7 +84,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/check.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/app/check.ts)_
+[src/commands/app/check.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/app/check.ts)_
 
 ## `hive app:create OPERATIONS`
 
@@ -117,7 +117,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/create.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/app/create.ts)_
+[src/commands/app/create.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/app/create.ts)_
 
 ## `hive app:publish`
 
@@ -145,7 +145,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/publish.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/app/publish.ts)_
+[src/commands/app/publish.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/app/publish.ts)_
 
 ## `hive app:retire`
 
@@ -174,7 +174,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/retire.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/app/retire.ts)_
+[src/commands/app/retire.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/app/retire.ts)_
 
 ## `hive artifact:fetch`
 
@@ -200,7 +200,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/artifact/fetch.ts)_
+[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/artifact/fetch.ts)_
 
 ## `hive dev`
 
@@ -210,26 +210,59 @@ Develop and compose Supergraph with your local services.
 USAGE
   $ hive dev (--url <address>... --service <string>...) [--debug] [--registry.header <value>...]
     [--registry.endpoint <value> --remote] [--registry <value> ] [--registry.accessToken <value> ] [--token <value> ]
-    [--schema <filepath>... ] [--watch] [--watchInterval <value>] [--write <value>] [--target <value>]
+    [--schema <filepath>... ] [--header <value>...] [--watch] [--watchInterval <value>] [--write <value>] [--target
+    <value>]
 
 FLAGS
-  --debug                         Whether debug output for HTTP calls and similar should be enabled.
-  --registry=<value>              registry address (deprecated in favor of --registry.endpoint)
-  --registry.accessToken=<value>  registry access token
-  --registry.endpoint=<value>     registry endpoint
-  --registry.header=<value>...    HTTP header to add to registry requests (in Name=Value format)
-  --remote                        Compose provided services remotely
-  --schema=<filepath>...          Service sdl. If not provided, will be introspected from the service
-  --service=<string>...           (required) Service name
-  --target=<value>                The target to use for composition (slug or ID). This can either be a slug following
-                                  the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
-                                  "the-guild/graphql-hive/staging") or an UUID (e.g.
-                                  "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
-  --token=<value>                 api token (deprecated in favor of --registry.accessToken)
-  --url=<address>...              (required) Service url
-  --watch                         Watch mode
-  --watchInterval=<value>         [default: 1000] Watch interval in milliseconds
-  --write=<value>                 [default: supergraph.graphql] Where to save the supergraph schema file
+  --debug
+      Whether debug output for HTTP calls and similar should be enabled.
+
+  --header=<value>...
+      HTTP header to add to a subgraph introspection request (in key:value format). A --header before any --service
+      applies to all services (global). A --header placed after a --service applies only to that service, until the next
+      --service is encountered, and overrides a global header of the same name for that service. This includes headers
+      placed after the LAST --service: they scope only to that final service, not to all services.
+
+  --registry=<value>
+      registry address (deprecated in favor of --registry.endpoint)
+
+  --registry.accessToken=<value>
+      registry access token
+
+  --registry.endpoint=<value>
+      registry endpoint
+
+  --registry.header=<value>...
+      HTTP header to add to registry requests (in Name=Value format)
+
+  --remote
+      Compose provided services remotely
+
+  --schema=<filepath>...
+      Service sdl. If not provided, will be introspected from the service
+
+  --service=<string>...
+      (required) Service name
+
+  --target=<value>
+      The target to use for composition (slug or ID). This can either be a slug following the format
+      "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging") or an UUID (e.g.
+      "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
+
+  --token=<value>
+      api token (deprecated in favor of --registry.accessToken)
+
+  --url=<address>...
+      (required) Service url
+
+  --watch
+      Watch mode
+
+  --watchInterval=<value>
+      [default: 1000] Watch interval in milliseconds
+
+  --write=<value>
+      [default: supergraph.graphql] Where to save the supergraph schema file
 
 DESCRIPTION
   Develop and compose Supergraph with your local services.
@@ -242,7 +275,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/dev.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/dev.ts)_
+[src/commands/dev.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/dev.ts)_
 
 ## `hive help [COMMAND]`
 
@@ -290,7 +323,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/introspect.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/introspect.ts)_
+[src/commands/introspect.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/introspect.ts)_
 
 ## `hive operations:check FILE`
 
@@ -352,7 +385,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/operations/check.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/operations/check.ts)_
+[src/commands/operations/check.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/operations/check.ts)_
 
 ## `hive schema:check FILE`
 
@@ -401,7 +434,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/check.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/schema/check.ts)_
+[src/commands/schema/check.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/schema/check.ts)_
 
 ## `hive schema:delete SERVICE`
 
@@ -435,7 +468,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/delete.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/schema/delete.ts)_
+[src/commands/schema/delete.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/schema/delete.ts)_
 
 ## `hive schema:fetch [COMMIT]`
 
@@ -470,7 +503,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/fetch.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/schema/fetch.ts)_
+[src/commands/schema/fetch.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/schema/fetch.ts)_
 
 ## `hive schema:promote`
 
@@ -504,7 +537,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/promote.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/schema/promote.ts)_
+[src/commands/schema/promote.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/schema/promote.ts)_
 
 ## `hive schema:publish [FILE]`
 
@@ -552,7 +585,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/publish.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/schema/publish.ts)_
+[src/commands/schema/publish.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/schema/publish.ts)_
 
 ## `hive schema:push FILE`
 
@@ -586,7 +619,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/push.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/schema/push.ts)_
+[src/commands/schema/push.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/schema/push.ts)_
 
 ## `hive update [CHANNEL]`
 
@@ -650,7 +683,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/whoami.ts](https://github.com/graphql-hive/console/blob/v0.64.1/src/commands/whoami.ts)_
+[src/commands/whoami.ts](https://github.com/graphql-hive/console/blob/v0.65.0/src/commands/whoami.ts)_
 
 <!-- commandsstop -->
 
