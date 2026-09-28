@@ -120,21 +120,6 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     defaultPreset: presetLast7Days,
   });
 
-  // Populate URL with the default date range on initial load so the URL always reflects the active range.
-  // Skipped when from/to are already present (e.g. shared link or saved filter).
-  useEffect(() => {
-    if (search.from === undefined && search.to === undefined) {
-      void navigate({
-        search: prev => ({
-          ...prev,
-          from: presetLast7Days.range.from,
-          to: presetLast7Days.range.to,
-        }),
-        replace: true,
-      });
-    }
-  }, []);
-
   const [pickerQuery, reexecutePickerQuery] = useQuery({
     query: InsightsFilterPicker_Query,
     variables: {

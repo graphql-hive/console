@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { type ReactNode } from 'react';
+import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { resolvePeriod } from '@/lib/hooks/use-date-range-controller';
 import { insightsFixtures, OPERATION } from '@/lib/testing/fixtures/insights';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
@@ -101,6 +102,20 @@ describe('insights route', () => {
       });
     },
   );
+
+  it('sends a bare URL to the default range and loads once', { timeout: 30_000 }, async () => {
+    const client = createTestClient(layoutFixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({ initialEntries: [`${TARGET}/insights`] }),
+      urqlClient: client,
+    });
+    await router.load();
+
+    await waitFor(() => expect(router.state.location.search).toEqual(presetLast7Days.range));
+    for (const name of PAGE_DOCUMENTS) {
+      expect(requests(client, name)).toBe(1);
+    }
+  });
 
   it('renders the page from the cache: one request per document', { timeout: 30_000 }, async () => {
     const client = createTestClient(fixtures());

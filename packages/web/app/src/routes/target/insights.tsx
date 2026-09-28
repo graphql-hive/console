@@ -21,7 +21,7 @@ import {
   OperationInsightsPageQuery,
   TargetInsightsOperationPage,
 } from '@/pages/target-insights-operation';
-import { createRoute } from '@tanstack/react-router';
+import { createRoute, redirect } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
 // Stats move, so their documents revalidate on every visit and on Refresh (router.invalidate);
@@ -32,15 +32,19 @@ export const targetInsightsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights',
   validateSearch: InsightsFilterSearch.parse,
-  // The page writes this default into a bare URL; naming it here keeps that from re-running the loader.
-  loaderDeps: ({ search }) => ({
-    from: search.from ?? presetLast7Days.range.from,
-    to: search.to ?? presetLast7Days.range.to,
-    operations: search.operations,
-    clients: search.clients,
-    excludeOperations: search.excludeOperations,
-    excludeClients: search.excludeClients,
-  }),
+  // A bare URL names the default range, so a shared link always says what it shows.
+  beforeLoad: ({ search, params }) => {
+    if (search.from === undefined && search.to === undefined) {
+      throw redirect({
+        to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
+        params,
+        search: { ...search, from: presetLast7Days.range.from, to: presetLast7Days.range.to },
+        replace: true,
+      });
+    }
+  },
+  // Everything in the search but the saved filter's id reaches a query.
+  loaderDeps: ({ search: { viewId: _viewId, ...deps } }) => deps,
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
