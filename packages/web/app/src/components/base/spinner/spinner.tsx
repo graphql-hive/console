@@ -4,6 +4,8 @@ import { LoaderCircle } from 'lucide-react';
 const spinnerVariants = cva('shrink-0 animate-spinner-spin [&>path]:animate-spinner-arc', {
   variants: {
     size: {
+      /** In an icon's slot, such as a sort header's arrow. */
+      xs: 'size-3',
       /** Beside text: a paging bar, a button label. */
       sm: 'size-4',
       default: 'size-6',

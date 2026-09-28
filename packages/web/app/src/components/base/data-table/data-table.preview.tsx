@@ -177,6 +177,55 @@ function ServerSortedTable() {
   );
 }
 
+/** The server takes a moment: the sorted column's arrow spins and the old order dims. */
+export const SortLoading = createPreview(() => <SortLoadingTable />);
+
+function SortLoadingTable() {
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'changes', desc: true }]);
+  const [loading, setLoading] = useState(false);
+  const [rows, setRows] = useState(() => sortChecks(sorting));
+
+  return (
+    <div className="w-[52rem]">
+      <DataTable
+        data={rows}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        sorting={{
+          state: sorting,
+          manual: true,
+          loading,
+          onChange: updater => {
+            const next = typeof updater === 'function' ? updater(sorting) : updater;
+            setSorting(next);
+            setLoading(true);
+            setTimeout(() => {
+              setRows(sortChecks(next));
+              setLoading(false);
+            }, 1500);
+          },
+        }}
+      />
+    </div>
+  );
+}
+
+function sortChecks(sorting: SortingState) {
+  const [sort] = sorting;
+  return CHECKS.slice(0, 8).sort((a, b) => {
+    const [x, y] = sort?.id === 'ranAt' ? [a.ranAt, b.ranAt] : [a.changes, b.changes];
+    const order = x < y ? -1 : x > y ? 1 : 0;
+    return sort?.desc ? -order : order;
+  });
+}
+
+/** A search or filter is in flight: the last settled rows stay, dimmed and inert. */
+export const Refreshing = createPreview(() => (
+  <div className="w-[52rem]">
+    <DataTable data={CHECKS.slice(0, 5)} columns={COLUMNS} getRowId={row => row.id} refreshing />
+  </div>
+));
+
 /** No column declares a header, so there is no header row: a list of one thing. */
 export const Headerless = createPreview(() => <HeaderlessList />);
 

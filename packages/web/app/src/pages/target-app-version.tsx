@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { useClient, useQuery } from 'urql';
-import { AppFilter } from '@/components/apps/AppFilter';
+import { AppFilter } from '@/components/apps/app-filter';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
@@ -16,11 +15,12 @@ import { QueryError } from '@/components/ui/query-error';
 import { graphql, type DocumentType } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { usePagedConnection, useSlugs } from '@/lib/hooks';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
-const TargetAppsVersionQuery = graphql(`
+export const TargetAppsVersionQuery = graphql(`
   query TargetAppsVersionQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -117,43 +117,39 @@ type AppDocument = NonNullable<
   >['documents']
 >['edges'][number]['node'];
 
+export function appVersionVariables(
+  slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
+  appName: string,
+  appVersion: string,
+  filter: { search: string; coordinates?: string },
+) {
+  return {
+    ...slugs,
+    appName,
+    appVersion,
+    first: 20,
+    documentsFilter: {
+      operationName: filter.search,
+      schemaCoordinates: filter.coordinates ? [filter.coordinates] : null,
+    },
+  };
+}
+
 function TargetAppVersionContent(props: {
   appName: string;
   appVersion: string;
+  search: string;
   coordinates?: string;
 }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const router = useRouter();
-  const search =
-    typeof router.latestLocation.search.search === 'string'
-      ? router.latestLocation.search.search
-      : '';
   const coordinates = props.coordinates ?? null;
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 500); // 500ms debounce delay
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [search]);
-  const [data] = useQuery({
-    query: TargetAppsVersionQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-      appName: props.appName,
-      appVersion: props.appVersion,
-      first: 20,
-      documentsFilter: {
-        operationName: debouncedSearch,
-        schemaCoordinates: coordinates ? [coordinates] : null,
-      },
-    },
-  });
+  const variables = appVersionVariables(
+    { organizationSlug, projectSlug, targetSlug },
+    props.appName,
+    props.appVersion,
+    props,
+  );
+  const [data] = useQuery({ query: TargetAppsVersionQuery, variables });
   const client = useClient();
   const documents = data.data?.target?.appDeployment?.documents;
   const { rows, pagination } = usePagedConnection({
@@ -161,22 +157,14 @@ function TargetAppVersionContent(props: {
     pageInfo: documents?.pageInfo ?? { hasNextPage: false },
     pageSize: 20,
     loadMore: after =>
-      client
-        .query(TargetAppsVersionFetchMoreQuery, {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-          appName: props.appName,
-          appVersion: props.appVersion,
-          first: 20,
-          after,
-          documentsFilter: {
-            operationName: debouncedSearch,
-            schemaCoordinates: coordinates ? [coordinates] : null,
-          },
-        })
-        .toPromise(),
+      client.query(TargetAppsVersionFetchMoreQuery, { ...variables, after }).toPromise(),
   });
+
+  // A search change reads the deployment from the cache before its new documents arrive (a
+  // partial, stale result); the last settled rows stay up, dimmed, until they do.
+  const settled = !!data.data && !data.stale;
+  const previousRows = useKeepPreviousData(rows, !settled);
+  const refreshing = !settled && !!previousRows?.length;
 
   const title = `${props.appName}@${props.appVersion}`;
 
@@ -311,7 +299,7 @@ function TargetAppVersionContent(props: {
               }}
             />
             <div className="flex">
-              <AppFilter />
+              <AppFilter search={props.search} />
             </div>
           </div>
         </div>
@@ -339,14 +327,14 @@ function TargetAppVersionContent(props: {
           </div>
         ) : null}
         <div className="mt-4" />
-        {!data.data ? (
+        {!settled && !refreshing ? (
           <DataTable loading data={[]} columns={columns} getRowId={document => document.hash} />
-        ) : !data.data.target?.appDeployment?.documents?.edges.length ? (
+        ) : settled && !documents?.edges.length ? (
           <EmptyList
             title={
               coordinates
                 ? `No operations found using ${coordinates}`
-                : debouncedSearch
+                : props.search
                   ? 'No documents found matching that operation name'
                   : 'No documents have been uploaded for this app deployment'
             }
@@ -430,7 +418,8 @@ function TargetAppVersionContent(props: {
               </div>
             </div>
             <DataTable
-              data={rows}
+              data={refreshing ? previousRows! : rows}
+              refreshing={refreshing}
               columns={columns}
               getRowId={document => document.hash}
               pagination={pagination}
@@ -445,6 +434,7 @@ function TargetAppVersionContent(props: {
 export function TargetAppVersionPage(props: {
   appName: string;
   appVersion: string;
+  search: string;
   coordinates?: string;
 }) {
   return (
