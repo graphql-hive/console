@@ -96,7 +96,7 @@ describe('schema:check --github', () => {
       checkResponse({
         __typename: 'GitHubSchemaCheckSuccess',
         message: 'Check-run created',
-        valid: true,
+        isValid: true,
         schemaCheck,
       }),
       githubCheckArgs,
