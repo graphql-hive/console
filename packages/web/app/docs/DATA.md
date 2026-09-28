@@ -22,8 +22,8 @@ and the page renders at once with its regions behind their own skeletons (`DataT
 decide before rendering: a redirect (`/settings` under a target awaits the page document to check
 `viewerCanAccessSettings`, each section awaits it to check its own visibility, `/history` awaits the
 latest version to redirect to it) or a not-found. While an awaiting loader runs, the router shows
-`PageSkeleton` after 250 ms (`defaultPendingComponent` and `defaultPendingMs` in `src/router.ts`); a
-load that finishes inside the delay never shows it. A warmed document the page turns out not to read
+`PagePending`, a centered spinner, after 250 ms (`defaultPendingComponent` and `defaultPendingMs` in
+`src/router.ts`); a load that finishes inside the delay never shows it. A warmed document the page turns out not to read
 (the stats of a target that has no operations yet) is the accepted cost of not awaiting.
 
 **The rule that makes 1 work: the variables must match.** The loader builds them from `params` and
@@ -102,10 +102,12 @@ passes them, so the two never merge.
 
 ## Loading states
 
-A spinner marks an inline wait: a button while it saves, a switch while it flips. A region loads
-behind a skeleton: `DataTable loading` renders skeleton rows under the real header, stat cards and
-lists use the `Skeleton` primitives, and `PageSkeleton` / `SectionSkeleton`
-(`src/components/layouts/page-skeleton.tsx`) stand in for a route while its awaiting loader runs.
+A spinner marks a wait that promises no shape: a button while it saves, a switch while it flips, and
+a route while its awaiting loader decides what the page is (`PagePending` / `SectionPending`,
+`src/components/layouts/page-pending.tsx`). A region whose shape is known loads behind a skeleton:
+`DataTable loading` renders skeleton rows under the real header, stat cards and lists use the
+`Skeleton` primitives. A table whose rows are being replaced keeps them, dimmed (`DataTable
+refreshing`, or `sorting.loading` for a sort, which also spins the sorted header's arrow).
 
 The cold-load sequence is: HTML, then nearly all of the app's JavaScript (the route tree imports
 every page eagerly; Monaco alone is lazy), then the session gate, then every loader for the matched

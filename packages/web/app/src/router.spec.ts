@@ -50,14 +50,14 @@ describe('router module', () => {
   });
 
   it(
-    'configures the page skeleton as the pending default after 250 ms',
+    'configures the pending spinner as the default after 250 ms',
     { timeout: 30_000 },
     async () => {
       const { createAppRouter } = await import('./router');
       const router = createAppRouter({ urqlClient: createTestClient() });
-      const { PageSkeleton } = await import('@/components/layouts/page-skeleton');
+      const { PagePending } = await import('@/components/layouts/page-pending');
 
-      expect(router.options.defaultPendingComponent).toBe(PageSkeleton);
+      expect(router.options.defaultPendingComponent).toBe(PagePending);
       expect(router.options.defaultPendingMs).toBe(250);
     },
   );

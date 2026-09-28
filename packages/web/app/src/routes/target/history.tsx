@@ -1,4 +1,4 @@
-import { SectionSkeleton } from '@/components/layouts/page-skeleton';
+import { SectionPending } from '@/components/layouts/page-pending';
 import { DiffsWorkerPoolProvider } from '@/components/theme/diffs-worker-pool-provider';
 import { loadQuery, revalidate } from '@/lib/route-utils';
 import {
@@ -41,7 +41,7 @@ export const targetHistoryIndexRoute = createRoute({
   path: '/',
   // A loader, not beforeLoad, so the wait shows a pending state; it renders in the history page's
   // pane, beside the versions list.
-  pendingComponent: SectionSkeleton,
+  pendingComponent: SectionPending,
   loader: async loader => {
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const result = await loadQuery(loader, TargetHistoryLatestVersionQuery, {

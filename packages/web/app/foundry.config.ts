@@ -126,7 +126,7 @@ export default defineConfig({
         { label: 'FailureCard' },
         { label: 'NotFound' },
         { label: 'PageLead' },
-        { label: 'PageSkeleton' },
+        { label: 'PagePending' },
         { label: 'SupportForms' },
         { label: 'TabbedView' },
       ],
