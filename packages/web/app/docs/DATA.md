@@ -132,7 +132,8 @@ src/lib/overview-period.ts                overviewPeriod(now?): the overviews' 1
 src/lib/hooks/use-interval.ts             useInterval(ms, fn): a poll that never fires on mount
 src/routes/with-header.tsx                the viewer's loader and its freshness stamp
 src/routes/<scope>/route.tsx              the layout loaders
-src/routes/target/insights.tsx            warm + revalidate, loaderDeps, a beforeLoad default, preload policy
+src/routes/target/insights.tsx            warm + revalidate, loaderDeps, a beforeLoad default, preload policy;
+                                          operation, client and coordinate the same without the redirect
 src/routes/target/checks.tsx              warm, loaderDeps on the filters, a child route's own document
 src/routes/target/traces.tsx              default range, loaderDeps on filter + sort + range, period as loader data,
                                           warm + revalidate; the trace detail warmed

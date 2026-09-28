@@ -13,8 +13,17 @@ import {
   TargetInsightsPage,
   TargetOperationsPageQuery,
 } from '@/pages/target-insights';
-import { TargetInsightsClientPage } from '@/pages/target-insights-client';
-import { TargetInsightsCoordinatePage } from '@/pages/target-insights-coordinate';
+import {
+  ClientInsightsPageQuery,
+  ClientView_ClientStatsQuery,
+  TargetInsightsClientPage,
+} from '@/pages/target-insights-client';
+import {
+  coordinateType,
+  SchemaCoordinateView_SchemaCoordinateStatsQuery,
+  TargetInsightsCoordinatePage,
+  TargetSchemaCoordinatePageQuery,
+} from '@/pages/target-insights-coordinate';
 import {
   ManageFilters_SavedFiltersQuery,
   TargetInsightsManageFiltersPage,
@@ -77,9 +86,37 @@ export const targetInsightsManageFiltersRoute = createRoute({
   component: TargetInsightsManageFiltersPage,
 });
 
+// Client and coordinate default to the last week without a redirect, like the operation route.
+const lastWeek = ({ search }: { search: { from?: string; to?: string } }) => ({
+  from: search.from ?? presetLast7Days.range.from,
+  to: search.to ?? presetLast7Days.range.to,
+});
+
 export const targetInsightsCoordinateRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights/schema-coordinate/$coordinate',
+  validateSearch: InsightsDateRangeSearch.parse,
+  loaderDeps: lastWeek,
+  preloadStaleTime: 0,
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug, coordinate } = loader.params;
+    const selector = { organizationSlug, projectSlug, targetSlug };
+    const { period, resolution } = loaderPeriod(loader.deps, presetLast7Days);
+    void loadQuery(loader, TargetSchemaCoordinatePageQuery, selector);
+    void loadQuery(
+      loader,
+      SchemaCoordinateView_SchemaCoordinateStatsQuery,
+      {
+        targetSelector: selector,
+        type: coordinateType(coordinate),
+        schemaCoordinate: coordinate,
+        period,
+        resolution,
+      },
+      revalidate(loader),
+    );
+    return { period, resolution };
+  },
   component: function TargetInsightsRoute() {
     const { coordinate } = targetInsightsCoordinateRoute.useParams();
     return <TargetInsightsCoordinatePage coordinate={coordinate} />;
@@ -89,6 +126,22 @@ export const targetInsightsCoordinateRoute = createRoute({
 export const targetInsightsClientRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights/client/$name',
+  validateSearch: InsightsDateRangeSearch.parse,
+  loaderDeps: lastWeek,
+  preloadStaleTime: 0,
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug, name } = loader.params;
+    const selector = { organizationSlug, projectSlug, targetSlug };
+    const { period, resolution } = loaderPeriod(loader.deps, presetLast7Days);
+    void loadQuery(loader, ClientInsightsPageQuery, selector);
+    void loadQuery(
+      loader,
+      ClientView_ClientStatsQuery,
+      { targetSelector: selector, period, clientName: name, resolution },
+      revalidate(loader),
+    );
+    return { period, resolution };
+  },
   component: function TargetInsightsRoute() {
     const { name } = targetInsightsClientRoute.useParams();
     return <TargetInsightsClientPage name={name} />;

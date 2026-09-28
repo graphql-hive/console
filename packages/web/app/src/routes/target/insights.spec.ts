@@ -213,6 +213,58 @@ describe('operation route', () => {
   });
 });
 
+describe('client and coordinate routes', () => {
+  async function loadedAt(url: string) {
+    const client = createTestClient(layoutFixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({ initialEntries: [url] }),
+      urqlClient: client,
+    });
+    await router.load();
+    return client;
+  }
+
+  it('start the gate and the client stats together, revalidating', { timeout: 30_000 }, async () => {
+    const client = await loadedAt(`${TARGET}/insights/client/web?${RANGE}`);
+
+    expect(variablesOf(client, 'ClientInsightsPageQuery')).toEqual(SLUGS);
+    const [stats] = client.requests('ClientView_ClientStatsQuery');
+    expect(stats.variables).toMatchObject({ targetSelector: SLUGS, clientName: 'web' });
+    expectPeriod(stats.variables);
+    expect(stats.context.requestPolicy).toBe('cache-and-network');
+  });
+
+  it('start the gate and the coordinate stats together, with the type', { timeout: 30_000 }, async () => {
+    const client = await loadedAt(`${TARGET}/insights/schema-coordinate/Query.me?${RANGE}`);
+
+    expect(variablesOf(client, 'TargetSchemaCoordinatePageQuery')).toEqual(SLUGS);
+    const [stats] = client.requests('SchemaCoordinateView_SchemaCoordinateStatsQuery');
+    expect(stats.variables).toMatchObject({
+      targetSelector: SLUGS,
+      type: 'Query',
+      schemaCoordinate: 'Query.me',
+    });
+    expectPeriod(stats.variables);
+    expect(stats.context.requestPolicy).toBe('cache-and-network');
+  });
+
+  it('default a bare URL to the last week without a redirect', { timeout: 30_000 }, async () => {
+    const client = createTestClient(layoutFixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({ initialEntries: [`${TARGET}/insights/client/web`] }),
+      urqlClient: client,
+    });
+    await router.load();
+
+    expect(router.state.location.search).toEqual({});
+    const { period } = variablesOf(client, 'ClientView_ClientStatsQuery') as {
+      period: { from: string; to: string };
+    };
+    expect(Date.parse(period.to) - Date.parse(period.from)).toBeGreaterThan(7 * 24 * HOUR - HOUR);
+    expect(Date.parse(period.to) - Date.parse(period.from)).toBeLessThan(7 * 24 * HOUR + HOUR);
+  });
+});
+
 describe('manage filters route', () => {
   it('starts the saved filters document with the page variables', { timeout: 30_000 }, async () => {
     const client = createTestClient(layoutFixtures());
