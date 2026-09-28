@@ -5,6 +5,8 @@ The Hive application as seen on https://app.graphql-hive.com/.
 ## Docs
 
 - [Routing](./docs/ROUTER.md): layouts, navigation, redirects and how to add a page.
+- [Data loading](./docs/DATA.md): route loaders, request policies, pagination, preloading and
+  loading states.
 
 ## Configuration
 

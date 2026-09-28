@@ -27,13 +27,14 @@ parent: `/settings/cdn`, `/view/members/roles`, `/alerts/rules`. A page's detail
 page's path (`/traces/$traceId`, `/history/$versionId`, `/checks/$schemaCheckId`) so the section's
 item stays current on it.
 
-**3. Redirects run in `beforeLoad` and throw `redirect()`.** The router follows them before
-rendering and commits with `replace`, so the old URL never enters history. Every redirect that
-exists because a URL moved is an entry in `src/routes/legacy.ts` (see below). Redirects that depend
-on config live on their route (`/auth` → sign-in, `/history` → latest version, `/oidc-request` when
-the provider is off); the one that depends on query data, a viewer landing on a section they may not
-open, uses the `useRedirect` hook in the page, reading the layout's document through
-`useLayoutQuery`, until data loading moves into the router.
+**3. Redirects run in the router and throw `redirect()`.** The router follows them before rendering
+and commits with `replace`, so the old URL never enters history. Every redirect that exists because
+a URL moved is an entry in `src/routes/legacy.ts` (see below). Redirects that depend on config or on
+the URL alone live in `beforeLoad` (`/auth` → sign-in, `/oidc-request` when the provider is off, a
+bare `/insights` → its default range); one that depends on query data awaits the document in the
+route's loader (`/history` → latest version, a viewer landing on a settings section they may not
+open; see [DATA.md](./DATA.md)). The organization and project settings and members pages still use
+the `useRedirect` hook in the page until they get loaders.
 
 ## Where things live
 
@@ -63,6 +64,7 @@ src/components/layouts/      the three layouts (org/project/target), LayoutConte
                              and queries.ts: the viewer and layout documents
 src/lib/hooks/               useSlugs, useViewer, useLayoutQuery
 src/lib/route-utils.ts       loadQuery for route loaders, redirectToPathSchema
+src/lib/urql-cache.ts        the graphcache config (keys, pagination resolvers, updaters), shared with the test client
 src/lib/testing/             renderAtUrl, the fixture-checking test urql client, fixtures, jsdom mocks
 ```
 
@@ -142,8 +144,8 @@ For the rest of the route state:
   small document, except on the OIDC interstitial, where the organization answers `NEEDS_OIDC`.
 - `loadQuery(loader, document, variables, policy)` (`src/lib/route-utils.ts`) runs a document from a
   route loader on the client in router context and tags the operation with the loader's `preload`
-  flag, which the progress bar leaves out. Page loaders are the next PR's work, documented in
-  `docs/DATA.md` then.
+  flag, which the progress bar leaves out. Page loaders, request policies, pagination, preloading
+  and the loading vocabulary are in [DATA.md](./DATA.md).
 
 ## Search params
 
@@ -181,10 +183,11 @@ Put a detail page under the tab's path (`thing/$id`) so the item stays current o
 
 ### Add a section to a settings page (a tertiary nav)
 
-1. Add a route under the settings route: `path: 'thing'`, component rendering the section.
-2. Add the section to the `sections` table in the settings page (`id`, `label`, `routeId`, `to`),
-   and to the `visible` set under its permission. The `routeId` is how the layout knows which
-   section is open, for the permission fallback.
+1. Add a route under the settings route: `path: 'thing'`, component rendering the section. Under a
+   target, give it `loader: loader => loadSection(loader, 'thing')` (see DATA.md).
+2. Add the section to the `sections` table in the settings page (`id`, `label`, `to`) and to the set
+   under its permission: `settingsSections` for a target, the `visible` memo (with `routeId`) on the
+   organization and project settings pages until they get loaders.
 3. If the section replaces an old `?page=thing`, add the value to the matching `legacySearch`
    entry's `values` and an example.
 4. Tests: `tree.spec.ts` id + example; a `render.spec.ts` case in that screen's block.
@@ -209,8 +212,9 @@ two would evaluate in a cycle). Section modules import it; `<area>/route.tsx` mo
 ### Make an index the default of its parent
 
 An index route (`path: '/'`) renders the default section. If the default must be computed
-(`/history` → latest version), put the lookup in the index route's `beforeLoad` and throw
-`redirect`; do not redirect from a render effect, which races data and can loop.
+(`/history` → latest version), put the lookup in the index route's loader, `await` it with
+`loadQuery` and throw `redirect`; a default that needs only the URL (`/insights` → its date range)
+goes in `beforeLoad`. Do not redirect from a render effect, which races data and can loop.
 
 ## Testing
 
@@ -221,12 +225,15 @@ Run from the repo root: `pnpm vitest run packages/web/app/src/routes`.
 | `routes/tree.spec.ts`      | The exact set of route ids (inline snapshot) and one example URL per id; a route without an example fails the suite.                                         |
 | `routes/legacy.spec.ts`    | Every catalog entry's example lands on its new URL with a single history entry; the config-dependent redirects.                                              |
 | `routes/render.spec.ts`    | The real tree rendered at every page URL: one secondary nav, the expected item current, no error boundary; per-screen blocks for each tertiary nav and gate. |
-| `router.spec.ts`           | `createAppRouter` has no side effects and owns the default error/not-found boundaries.                                                                       |
+| `router.spec.ts`           | `createAppRouter` has no side effects and owns the default error/not-found boundaries, the pending defaults and `defaultPreload`.                            |
 | `lib/testing/urql.spec.ts` | The test client answers by operation name and fails a fixture that no longer covers its document.                                                            |
+| `routes/target/*.spec.ts`  | One per area with loaders (insights, checks): what the loaders request and that the page reads it from the cache. See DATA.md.                               |
 
 `renderAtUrl(url, { client })` (`src/lib/testing/router.tsx`) renders the app in a memory history
 with `client` (a `createTestClient`) in router context. Specs that use it mock `@/env/frontend`,
 `@graphql-hive/laboratory`, the laboratory storage and SuperTokens; the `vi.mock` calls have to sit
-in the spec file. Fixtures for the viewer, layout and user-menu queries and each settings screen
-live in `src/lib/testing/fixtures/` and are checked against the documents they answer, so a query
-change that they no longer cover fails with the missing paths named.
+in the spec file. Fixtures for the viewer, layout and user-menu queries, each settings screen,
+checks and insights live in `src/lib/testing/fixtures/` and are checked against the documents they
+answer, so a query change that they no longer cover fails with the missing paths named. The client
+runs on the app's own graphcache configuration, so fixtures carry `__typename` on every object below
+the root.
