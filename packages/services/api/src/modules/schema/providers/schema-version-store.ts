@@ -341,10 +341,17 @@ export class SchemaVersionStore {
             )
             .then(PreviousVersionIdsModel.parse);
 
-    await this.insertSchemaVersion(trx, {
+    const version = await this.insertSchemaVersion(trx, {
       ...sharedParams,
       ...references,
     });
+
+    if (args.changes?.length) {
+      await this.insertSchemaVersionChanges(trx, {
+        changes: args.changes,
+        versionId: version.id,
+      });
+    }
   }
 
   private async insertSchemaVersionContractChanges(
