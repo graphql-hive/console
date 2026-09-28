@@ -16,7 +16,9 @@ import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 
-const schemaRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/');
+const schemaRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/',
+);
 
 type CompositeSchema = Extract<
   DocumentType<typeof SchemaView_SchemaFragment>,

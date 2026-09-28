@@ -1,6 +1,7 @@
 import { Select } from '@/components/base/floating/select/select';
 import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { graphql, useFragment } from '@/gql';
+import { useViewer } from '@/lib/hooks';
 import { useRouter } from '@tanstack/react-router';
 import { resolveTargetSwitchTo, TARGET_ROUTE_PREFIX } from './target-selector.utils';
 
@@ -33,13 +34,12 @@ export function TargetSelector(props: {
   currentOrganizationSlug: string;
   currentProjectSlug: string;
   currentTargetSlug: string;
-  organizations: FragmentType<typeof TargetSelector_OrganizationConnectionFragment> | null;
 }) {
   const router = useRouter();
 
   const organizations = useFragment(
     TargetSelector_OrganizationConnectionFragment,
-    props.organizations,
+    useViewer().data?.organizations ?? null,
   )?.nodes;
 
   const currentOrganization = organizations?.find(

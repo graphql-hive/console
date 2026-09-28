@@ -12,7 +12,7 @@ import {
   TriangleAlertIcon,
   UserRoundMinus,
 } from 'lucide-react';
-import { useMutation } from 'urql';
+import { useMutation, useQuery } from 'urql';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
@@ -21,11 +21,11 @@ import { useThemeMenuEntry } from '@/components/theme/theme-switcher';
 import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { env } from '@/env/frontend';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { graphql, useFragment } from '@/gql';
 import { getDocsUrl } from '@/lib/docs-url';
-import { useToggle } from '@/lib/hooks';
+import { useToggle, useViewer } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 import { GetStartedProgress } from '../get-started/trigger';
 import { UserSettingsModal } from '../user/settings';
 import { Changelog } from './changelog/changelog';
@@ -54,6 +54,16 @@ const UserMenu_OrganizationFragment = graphql(`
   }
 `);
 
+// The same fields the layouts select, so a cache hit after the first paint.
+const UserMenu_OrganizationQuery = graphql(`
+  query UserMenu_OrganizationQuery($organizationSlug: String!) {
+    organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      ...UserMenu_OrganizationFragment
+    }
+  }
+`);
+
 const UserMenu_MeFragment = graphql(`
   fragment UserMenu_MeFragment on User {
     id
@@ -68,18 +78,24 @@ const UserMenu_MeFragment = graphql(`
   }
 `);
 
-export function UserMenu(props: {
-  me: FragmentType<typeof UserMenu_MeFragment> | null;
-  organizations: FragmentType<typeof UserMenu_OrganizationConnectionFragment> | null;
-  currentOrganization: FragmentType<typeof UserMenu_OrganizationFragment> | null;
-}) {
+export function UserMenu({ withOrganization = true }: { withOrganization?: boolean }) {
   const docsUrl = getDocsUrl();
-  const me = useFragment(UserMenu_MeFragment, props.me);
+  const viewer = useViewer();
+  const me = useFragment(UserMenu_MeFragment, viewer.data?.me ?? null);
   const organizations = useFragment(
     UserMenu_OrganizationConnectionFragment,
-    props.organizations,
+    viewer.data?.organizations ?? null,
   )?.nodes;
-  const currentOrganization = useFragment(UserMenu_OrganizationFragment, props.currentOrganization);
+  const { organizationSlug } = useParams({ strict: false });
+  const [organizationQuery] = useQuery({
+    query: UserMenu_OrganizationQuery,
+    variables: { organizationSlug: organizationSlug ?? '' },
+    pause: !organizationSlug || !withOrganization,
+  });
+  const currentOrganization = useFragment(
+    UserMenu_OrganizationFragment,
+    organizationQuery.data?.organizationBySlug ?? null,
+  );
   const themeEntry = useThemeMenuEntry();
   const [isUserSettingsModalOpen, toggleUserSettingsModalOpen] = useToggle();
   const [userSettingsSession, setUserSettingsSession] = useState(0);

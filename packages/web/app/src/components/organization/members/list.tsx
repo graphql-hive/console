@@ -34,7 +34,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
 
-const membersRoute = getRouteApi('/authenticated/$organizationSlug/view/members/');
+const membersRoute = getRouteApi('/authenticated/with-header/$organizationSlug/view/members/');
 
 const MemberGroups_GroupFragment = graphql(`
   fragment MemberGroups_GroupFragment on Group {
@@ -125,7 +125,7 @@ export const authProviderToIconAndTextMap: Record<
   },
 };
 
-const OrganizationMemberRow_DeleteMember = graphql(`
+export const OrganizationMemberRow_DeleteMember = graphql(`
   mutation OrganizationMemberRow_DeleteMember($input: OrganizationMemberInput!) {
     deleteOrganizationMember(input: $input) {
       organization {

@@ -431,7 +431,7 @@ const ProjectSettingsPageQuery = graphql(`
   }
 `);
 
-const SETTINGS = '/authenticated/$organizationSlug/$projectSlug/view/settings';
+const SETTINGS = '/authenticated/with-header/$organizationSlug/$projectSlug/view/settings';
 
 type SectionId = 'general' | 'policy' | 'composition' | 'access-tokens';
 
@@ -561,7 +561,6 @@ export function ProjectSettingsPage() {
               aria-label="Settings"
               variant="list"
               items={visible.map(section => ({
-                id: section.id,
                 label: section.label,
                 to: section.to,
                 params: slugs,

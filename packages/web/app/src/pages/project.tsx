@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { UTCDate } from '@date-fns/utc';
 import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 
-const projectIndexRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/');
+const projectIndexRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/');
 
 const TargetCard_TargetFragment = graphql(`
   fragment TargetCard_TargetFragment on Target {

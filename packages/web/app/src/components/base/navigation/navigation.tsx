@@ -10,9 +10,8 @@ export type NavigationSize = 'default' | 'sm';
 type LinkAttributes = Pick<LinkOptions, 'to' | 'params' | 'search'>;
 
 export type NavigationItem = LinkAttributes & {
-  /** Distinguishes the item from its siblings; nothing else reads it. */
-  id: string;
-  label: ReactNode;
+  /** Also the item's key, so unique within one nav. */
+  label: string;
   icon?: ComponentType<{ className?: string }>;
   /** Explains the destination on hover: what a filter shows, say. */
   tooltip?: ReactNode;
@@ -121,7 +120,6 @@ export function Navigation({
           .filter(item => item.visible !== false)
           .map(
             ({
-              id,
               label,
               icon: Icon,
               tooltip,
@@ -150,7 +148,7 @@ export function Navigation({
                 </Link>
               );
               return (
-                <li key={id} className="contents">
+                <li key={label} className="contents">
                   {tooltip == null ? (
                     anchor
                   ) : (

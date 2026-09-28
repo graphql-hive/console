@@ -1,6 +1,7 @@
 import { Select } from '@/components/base/floating/select/select';
 import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { graphql, useFragment } from '@/gql';
+import { useViewer } from '@/lib/hooks';
 import { useRouter } from '@tanstack/react-router';
 
 const ProjectSelector_OrganizationConnectionFragment = graphql(`
@@ -23,13 +24,12 @@ const ProjectSelector_OrganizationConnectionFragment = graphql(`
 export function ProjectSelector(props: {
   currentOrganizationSlug: string;
   currentProjectSlug: string;
-  organizations: FragmentType<typeof ProjectSelector_OrganizationConnectionFragment> | null;
 }) {
   const router = useRouter();
 
   const organizations = useFragment(
     ProjectSelector_OrganizationConnectionFragment,
-    props.organizations,
+    useViewer().data?.organizations ?? null,
   )?.nodes;
 
   const currentOrganization = organizations?.find(

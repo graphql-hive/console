@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { createTestClient } from '@/lib/testing/urql';
 
 // The route tree imports every page. These stand in for the modules that cannot load under jsdom
 // or that read the frontend env at import time.
@@ -8,6 +9,11 @@ vi.mock(
   '@/lib/laboratory-history-storage',
   () => import('@/lib/testing/mocks/laboratory-history-storage'),
 );
+
+// The real client belongs to `main.tsx`; the router only carries whatever client it is given.
+vi.mock('@/lib/urql', () => {
+  throw new Error('the router module must not import @/lib/urql');
+});
 
 const superTokensInit = vi.hoisted(() => vi.fn());
 vi.mock('supertokens-auth-react', async importOriginal => ({
@@ -26,7 +32,8 @@ describe('router module', () => {
     'can be imported without initializing SuperTokens or Sentry',
     { timeout: 30_000 },
     async () => {
-      const { router } = await import('./router');
+      const { createAppRouter } = await import('./router');
+      const router = createAppRouter({ urqlClient: createTestClient() });
 
       expect(router.routeTree).toBeDefined();
       expect(superTokensInit).not.toHaveBeenCalled();
@@ -34,8 +41,17 @@ describe('router module', () => {
     },
   );
 
+  it('carries the urql client it is given in route context', { timeout: 30_000 }, async () => {
+    const { createAppRouter } = await import('./router');
+    const client = createTestClient();
+    const router = createAppRouter({ urqlClient: client });
+
+    expect(router.options.context.urqlClient).toBe(client);
+  });
+
   it('owns the error and not-found boundaries for every route', { timeout: 30_000 }, async () => {
-    const { router } = await import('./router');
+    const { createAppRouter } = await import('./router');
+    const router = createAppRouter({ urqlClient: createTestClient() });
     const { ErrorComponent } = await import('@/components/error');
     const { RouteNotFound } = await import('./routes/root');
 

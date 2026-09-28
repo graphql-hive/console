@@ -14,7 +14,7 @@ import { graphql } from '@/gql';
 import { HiveStripeWrapper } from '@/lib/billing/stripe';
 import { Link, useRouter } from '@tanstack/react-router';
 
-const JoinOrganizationPage_JoinOrganizationMutation = graphql(`
+export const JoinOrganizationPage_JoinOrganizationMutation = graphql(`
   mutation JoinOrganizationPage_JoinOrganizationMutation($code: String!) {
     joinOrganization(code: $code) {
       __typename

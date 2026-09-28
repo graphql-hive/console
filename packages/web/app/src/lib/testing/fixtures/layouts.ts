@@ -1,7 +1,7 @@
 /**
- * Result data for the three layout queries, shaped exactly as their documents select (see the
- * flattened documents in `src/gql/persisted-documents.json`), for a viewer with every permission.
- * The slugs match the URLs `render.spec.tsx` visits.
+ * Result data for the viewer, layout and user-menu queries, shaped exactly as their documents
+ * select (see the flattened documents in `src/gql/persisted-documents.json`), for a viewer with
+ * every permission. The slugs match the URLs `render.spec.tsx` visits.
  */
 
 export const SLUGS = {
@@ -102,6 +102,7 @@ const organization = {
   __typename: 'Organization' as const,
   id: 'organization-1',
   slug: SLUGS.organizationSlug,
+  usageRetentionInDays: 30,
   me: organizationMember,
   getStarted,
   billingConfiguration: { __typename: 'BillingConfiguration' as const, hasPaymentIssues: false },
@@ -116,37 +117,34 @@ const organization = {
   viewerCanSeeMembers: true,
 };
 
+export function viewer() {
+  return { __typename: 'Query' as const, me, organizations, isCDNEnabled: true };
+}
+
+export function userMenuOrganization() {
+  return { __typename: 'Query' as const, organizationBySlug: organization };
+}
+
 export function organizationLayout() {
-  return {
-    __typename: 'Query' as const,
-    me,
-    organizationBySlug: organization,
-    organizations,
-  };
+  return { __typename: 'Query' as const, organizationBySlug: organization };
 }
 
 export function projectLayout() {
-  return {
-    __typename: 'Query' as const,
-    me,
-    organizations,
-    organization: { ...organization, project },
-  };
+  return { __typename: 'Query' as const, organization: { ...organization, project } };
 }
 
 export function targetLayout() {
   return {
     __typename: 'Query' as const,
-    me,
-    organizations,
-    isCDNEnabled: true,
     organization: { ...organization, project: { ...project, target } },
   };
 }
 
-/** Every layout query answered, for a spec that renders any page of the app. */
+/** Every chrome query answered, for a spec that renders any page of the app. */
 export function layoutFixtures() {
   return new Map<string, unknown>([
+    ['ViewerQuery', viewer()],
+    ['UserMenu_OrganizationQuery', userMenuOrganization()],
     ['OrganizationLayoutQuery', organizationLayout()],
     ['ProjectLayoutQuery', projectLayout()],
     ['TargetLayoutQuery', targetLayout()],

@@ -512,7 +512,7 @@ const OrganizationSettingsPageQuery = graphql(`
   }
 `);
 
-const SETTINGS = '/authenticated/$organizationSlug/view/settings';
+const SETTINGS = '/authenticated/with-header/$organizationSlug/view/settings';
 
 type SectionId = 'general' | 'policy' | 'sso' | 'access-tokens' | 'personal-access-tokens';
 
@@ -616,7 +616,6 @@ export function OrganizationSettingsPage() {
               aria-label="Settings"
               variant="list"
               items={visible.map(section => ({
-                id: section.id,
                 label: section.label,
                 to: section.to,
                 params: slugs,

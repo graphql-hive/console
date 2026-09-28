@@ -20,7 +20,9 @@ import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { getRouteApi, Link, Outlet, useParams } from '@tanstack/react-router';
 
-const checksRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/checks');
+const checksRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/checks',
+);
 
 const SchemaChecks_NavigationQuery = graphql(`
   query SchemaChecks_NavigationQuery(
@@ -187,9 +189,6 @@ const ChecksPageQuery = graphql(`
     $targetSlug: String!
     $filters: SchemaChecksFilter
   ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-    }
     target(
       reference: {
         bySelector: {
