@@ -3,7 +3,10 @@ import {
   ResourceAssignmentModeType,
   RuleInstanceSeverityLevel,
 } from 'testkit/gql/graphql';
+import { GraphStore } from '@hive/api/modules/graph/providers/graph-store';
 import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
+import { invariant } from '@hive/service-common';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
 import { checkSchema } from '../../../testkit/flow';
@@ -2596,6 +2599,9 @@ test.concurrent(
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
     const schemaVersions = new SchemaVersionStore(storage.pool);
+    const graphStore = new GraphStore(new NoopLogger(), storage.pool);
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    invariant(graph, 'Graph must exist.');
     await schemaVersions.createPublishSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
@@ -2626,7 +2632,7 @@ test.concurrent(
       supergraphChanges: null,
       schemaMetadata: null,
       metadataAttributes: null,
-      graph: null,
+      graph,
     });
     await storage.destroy();
 
