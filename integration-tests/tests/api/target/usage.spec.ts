@@ -1242,7 +1242,7 @@ test.concurrent(
         name: String
       }
     `;
-    const operation = /* GraphQL */ `
+    const operation = `
       query UserName {
         user {
           name
@@ -1294,7 +1294,7 @@ test.concurrent(
     expect(operationsStats.totalOperations).toBe(1);
     expect(operationsStats.operations.edges).toHaveLength(1);
 
-    const expectedQuery = 'query Prod' + 'uctName{product{name}}query UserN' + 'ame{user{name}}';
+    const expectedQuery = 'query ProductName{product{name}}query UserName{user{name}}';
 
     const reportedOperation = operationsStats.operations.edges[0].node;
     expect(reportedOperation).toMatchObject({
