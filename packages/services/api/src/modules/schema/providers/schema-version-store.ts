@@ -1,12 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
-import {
-  CommonQueryMethods,
-  ForeignKeyIntegrityConstraintViolationError,
-  PostgresDatabasePool,
-  psql,
-} from '@hive/postgres';
+import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
 import { invariant, traceFn } from '@hive/service-common';
 import {
   ConditionalBreakingChangeMetadata,
@@ -323,28 +318,32 @@ export class SchemaVersionStore {
       schemaCompositionErrors: null,
     };
 
-    try {
-      await this.insertSchemaVersion(trx, {
-        ...sharedParams,
-        previousSchemaVersionId: args.previousSchemaVersionId,
-        diffSchemaVersionId: args.diffSchemaVersionId,
-      });
-    } catch (err) {
-      // For the initial "new" contract version we do not have an already existing record within the "schema_versions" table
-      // Thus we retry with `null` values for the previous and diff schema version
-      if (err instanceof ForeignKeyIntegrityConstraintViolationError) {
-        if (
-          err.constraint === 'schema_versions_previous_schema_version_id_fkey' ||
-          err.constraint === 'schema_versions_diff_schema_version_id_fkey'
-        ) {
-          await this.insertSchemaVersion(trx, {
-            ...sharedParams,
-            previousSchemaVersionId: null,
-            diffSchemaVersionId: null,
-          });
-        }
-      }
-    }
+    const PreviousVersionIdsModel = z.object({
+      previousSchemaVersionId: z.string().nullable(),
+      diffSchemaVersionId: z.string().nullable(),
+    });
+
+    const references: z.TypeOf<typeof PreviousVersionIdsModel> =
+      args.previousSchemaVersionId === null && args.diffSchemaVersionId === null
+        ? { previousSchemaVersionId: null, diffSchemaVersionId: null }
+        : await trx
+            .one(
+              psql`/* resolveContractSchemaVersionReferences */
+                SELECT
+                  CASE WHEN EXISTS (
+                    SELECT 1 FROM "schema_versions" WHERE "id" = ${args.previousSchemaVersionId}
+                  ) THEN ${args.previousSchemaVersionId}::uuid ELSE NULL END AS "previousSchemaVersionId",
+                  CASE WHEN EXISTS (
+                    SELECT 1 FROM "schema_versions" WHERE "id" = ${args.diffSchemaVersionId}
+                  ) THEN ${args.diffSchemaVersionId}::uuid ELSE NULL END AS "diffSchemaVersionId"
+              `,
+            )
+            .then(PreviousVersionIdsModel.parse);
+
+    await this.insertSchemaVersion(trx, {
+      ...sharedParams,
+      ...references,
+    });
   }
 
   private async insertSchemaVersionContractChanges(
