@@ -3,6 +3,7 @@ import { schemaPush } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
+import { psql } from '@hive/postgres';
 import { initSeed } from '../../../testkit/seed';
 
 const SchemaPublish = graphql(/* GraphQL */ `
@@ -362,7 +363,7 @@ test.concurrent(
   },
 );
 
-test.concurrent('pushing an identical revision again is skipped', async ({ expect }) => {
+test.concurrent('pushing an identical revision again succeeds', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
   const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
@@ -376,11 +377,94 @@ test.concurrent('pushing an identical revision again is skipped', async ({ expec
   const first = await schemaPush(input, token.secret).then(r => r.expectNoGraphQLErrors());
   const second = await schemaPush(input, token.secret).then(r => r.expectNoGraphQLErrors());
 
-  expect(first.schemaPush.ok?.isSkipped).toBe(false);
+  expect(first.schemaPush.error).toBeNull();
   expect(second.schemaPush.error).toBeNull();
-  expect(second.schemaPush.ok?.isSkipped).toBe(true);
   expect(second.schemaPush.ok?.schemaRevision.id).toBe(first.schemaPush.ok?.schemaRevision.id);
 });
+
+test.concurrent('pushing an unpublished revision again extends its expiry', async ({ expect }) => {
+  const seed = initSeed();
+  const { createOrg } = await seed.createOwner();
+  const { createProject } = await createOrg();
+  const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+  const token = await createTargetAccessToken({ mode: 'readWrite' });
+  const input = {
+    target: { byId: target.id },
+    revision: 'v1',
+    sdl: 'type Query { one: String }',
+  };
+
+  const first = await schemaPush(input, token.secret).then(r => r.expectNoGraphQLErrors());
+  expect(first.schemaPush.error).toBeNull();
+  const revisionId = first.schemaPush.ok!.schemaRevision.id;
+
+  // An expired revision still exists until the purge job removes it.
+  await using connection = await seed.createDbConnection();
+  await connection.pool.query(psql`
+    UPDATE "schema_revisions"
+    SET "expires_at" = now() - interval '1 hour'
+    WHERE "id" = ${revisionId}
+  `);
+
+  const second = await schemaPush(input, token.secret).then(r => r.expectNoGraphQLErrors());
+  expect(second.schemaPush.error).toBeNull();
+  expect(second.schemaPush.ok?.schemaRevision.id).toBe(revisionId);
+  const expiresAt = second.schemaPush.ok?.schemaRevision.expiresAt;
+  expect(expiresAt).toBeTruthy();
+  expect(new Date(expiresAt!).getTime()).toBeGreaterThan(Date.now());
+
+  const publish = await execute({
+    document: SchemaPublish,
+    token: token.secret,
+    variables: {
+      input: {
+        target: { byId: target.id },
+        author: 'Test',
+        commit: 'v1',
+        schema: { revision: 'v1' },
+      },
+    },
+  }).then(result => result.expectNoGraphQLErrors());
+  expect(publish.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+});
+
+test.concurrent(
+  'pushing a published revision again keeps it without expiry',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({ mode: 'readWrite' });
+    const input = {
+      target: { byId: target.id },
+      revision: 'v1',
+      sdl: 'type Query { one: String }',
+    };
+
+    const first = await schemaPush(input, token.secret).then(r => r.expectNoGraphQLErrors());
+    expect(first.schemaPush.error).toBeNull();
+    expect(first.schemaPush.ok?.schemaRevision.expiresAt).toBeTruthy();
+
+    const publish = await execute({
+      document: SchemaPublish,
+      token: token.secret,
+      variables: {
+        input: {
+          target: { byId: target.id },
+          author: 'Test',
+          commit: 'v1',
+          schema: { revision: 'v1' },
+        },
+      },
+    }).then(result => result.expectNoGraphQLErrors());
+    expect(publish.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const second = await schemaPush(input, token.secret).then(r => r.expectNoGraphQLErrors());
+    expect(second.schemaPush.error).toBeNull();
+    expect(second.schemaPush.ok?.schemaRevision.id).toBe(first.schemaPush.ok?.schemaRevision.id);
+    expect(second.schemaPush.ok?.schemaRevision.expiresAt).toBeNull();
+  },
+);
 
 test.concurrent('concurrent pushes of the same revision both succeed', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
@@ -399,7 +483,9 @@ test.concurrent('concurrent pushes of the same revision both succeed', async ({ 
   ]);
 
   expect(results.map(result => result.schemaPush.error)).toEqual([null, null]);
-  expect(results.filter(result => result.schemaPush.ok?.isSkipped === false)).toHaveLength(1);
+  const [firstId, secondId] = results.map(result => result.schemaPush.ok?.schemaRevision.id);
+  expect(firstId).toBeTruthy();
+  expect(secondId).toBe(firstId);
 });
 
 test.concurrent('ignores the service name for single-schema projects', async ({ expect }) => {

@@ -292,13 +292,12 @@ describe('schema:publish', () => {
 });
 
 describe('schema:push', () => {
-  test('pushing an existing revision with the same schema is skipped', async () => {
+  test('pushing an existing revision with the same schema succeeds', async () => {
     const result = await runAgainstRegistry(
       () => ({
         data: {
           schemaPush: {
             ok: {
-              isSkipped: true,
               schemaRevision: {
                 service: 'products',
                 revision: 'abc',
@@ -314,9 +313,8 @@ describe('schema:push', () => {
     );
 
     expect(result.exitCode).toBe(0);
-    expect(result.stderr).toContain(
-      'Schema revision "products@abc" already exists with the same schema. Skipping...',
-    );
+    expect(result.stdout).toContain('Schema revision pushed.');
     expect(result.stdout).toContain('Expires: 2026-10-24T00:00:00.000Z');
+    expect(result.stderr).not.toContain('Skipping');
   });
 });

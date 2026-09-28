@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { CommonQueryMethods, PostgresDatabasePool, psql } from '@hive/postgres';
+import { invariant } from '@hive/service-common';
 import { batch } from '../../../shared/helpers';
 
 const SchemaRevisionModel = z.object({
@@ -14,6 +15,8 @@ const SchemaRevisionModel = z.object({
 });
 
 export type SchemaRevision = z.TypeOf<typeof SchemaRevisionModel>;
+
+const SchemaRevisionExpiryModel = SchemaRevisionModel.pick({ expiresAt: true });
 
 /** Thrown when a schema revision expired and was deleted before the publish that uses it was stored. */
 export class SchemaRevisionUnavailableError extends Error {
@@ -35,13 +38,13 @@ export class SchemaRevisionStore {
     sdl: string;
     expiresAt: Date;
   }): Promise<
-    | { ok: { schemaRevision: SchemaRevision; isSkipped: boolean }; error?: never }
+    | { ok: { schemaRevision: SchemaRevision }; error?: never }
     | { error: { message: string }; ok?: never }
   > {
     return this.pg.transaction('pushSchemaRevision', async trx => {
       const existing = await this.findForPush(trx, args);
       if (existing) {
-        return this.toExistingRevisionResult(existing, args);
+        return this.resolveExistingRevision(trx, existing, args);
       }
 
       await trx.query(psql`
@@ -70,13 +73,12 @@ export class SchemaRevisionStore {
         // A concurrent push created the same revision first.
         const concurrent = await this.findForPush(trx, args);
         invariant(concurrent, 'Schema revision conflict could not be resolved.');
-        return this.toExistingRevisionResult(concurrent, args);
+        return this.resolveExistingRevision(trx, concurrent, args);
       }
 
       return {
         ok: {
           schemaRevision: SchemaRevisionModel.parse(Object.assign({ sdl: args.sdl }, revision)),
-          isSkipped: false,
         },
       };
     });
@@ -105,9 +107,15 @@ export class SchemaRevisionStore {
     return row ? SchemaRevisionModel.parse(row) : null;
   }
 
-  private toExistingRevisionResult(
+  /**
+   * Pushing a revision that already exists with the same schema succeeds without creating anything.
+   * While the revision is unpublished, the push extends its expiry so it stays available for the
+   * retention period after the most recent push.
+   */
+  private async resolveExistingRevision(
+    trx: CommonQueryMethods,
     schemaRevision: SchemaRevision,
-    args: { service: string | null; revision: string; digest: string },
+    args: { service: string | null; revision: string; digest: string; expiresAt: Date },
   ) {
     if (schemaRevision.digest !== args.digest) {
       return {
@@ -117,7 +125,25 @@ export class SchemaRevisionStore {
       };
     }
 
-    return { ok: { schemaRevision, isSkipped: true } };
+    if (schemaRevision.expiresAt === null) {
+      return { ok: { schemaRevision } };
+    }
+
+    const extended = await trx.maybeOne(psql`
+      UPDATE "schema_revisions"
+      SET "expires_at" = GREATEST("expires_at", ${args.expiresAt.toISOString()})
+      WHERE "id" = ${schemaRevision.id}
+        AND "first_published_at" IS NULL
+      RETURNING "expires_at" AS "expiresAt"
+    `);
+
+    return {
+      ok: {
+        schemaRevision: extended
+          ? { ...schemaRevision, ...SchemaRevisionExpiryModel.parse(extended) }
+          : schemaRevision,
+      },
+    };
   }
 
   async getByRevision(args: {
