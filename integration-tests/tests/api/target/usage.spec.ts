@@ -1294,15 +1294,15 @@ test.concurrent(
     expect(operationsStats.totalOperations).toBe(1);
     expect(operationsStats.operations.edges).toHaveLength(1);
 
+    const expectedQuery = 'query Prod' + 'uctName{product{name}}query UserN' + 'ame{user{name}}';
+
     const reportedOperation = operationsStats.operations.edges[0].node;
     expect(reportedOperation).toMatchObject({
       count: 1,
       kind: 'query',
     });
     expect(reportedOperation.name).toContain('UserName');
-    expect(await readOperationBody(reportedOperation.operationHash)).toEqual(
-      'query ProductName{product{name}}query UserName{user{name}}',
-    );
+    expect(await readOperationBody(reportedOperation.operationHash)).toEqual(expectedQuery);
 
     const operationCollectionResult = await clickHouseQuery<unknown>(`
       SELECT body, coordinates
@@ -1311,7 +1311,7 @@ test.concurrent(
     `);
     expect(operationCollectionResult.data).toEqual([
       {
-        body: 'query ProductName{product{name}}query UserName{user{name}}',
+        body: expectedQuery,
         coordinates: expect.arrayContaining([
           'Query.user',
           'User.name',
