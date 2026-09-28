@@ -169,6 +169,17 @@ describe('insights route', () => {
 });
 
 describe('operation route', () => {
+  it('is not preloaded when an operations row is hovered', { timeout: 30_000 }, async () => {
+    const client = createTestClient(fixtures());
+    renderAtUrl(INSIGHTS, { client });
+    const row = await screen.findByRole('link', { name: OPERATION.name });
+
+    fireEvent.mouseEnter(row);
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    expect(client.seen).not.toContain('OperationInsightsPageQuery');
+  });
+
   it('warms the body and the stats of this operation alone', { timeout: 30_000 }, async () => {
     const client = createTestClient(fixtures());
     renderAtUrl(OPERATION_PAGE, { client });

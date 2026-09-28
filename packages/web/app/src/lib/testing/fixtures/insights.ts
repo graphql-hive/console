@@ -4,7 +4,7 @@ const TARGET_ID = 'target-1';
 
 export const OPERATION = { name: 'GetUser', hash: 'op-1' } as const;
 
-/** Stats for a period without traffic: every series and list empty, every count zero. */
+/** Stats for a period without traffic: one operation with no requests, every series empty. */
 function operationsStats() {
   return {
     __typename: 'OperationsStats' as const,
@@ -16,7 +16,25 @@ function operationsStats() {
     requestsOverTime: [],
     durationOverTime: [],
     clients: { __typename: 'ClientStatsValuesConnection' as const, edges: [] },
-    operations: { __typename: 'OperationStatsValuesConnection' as const, edges: [] },
+    operations: {
+      __typename: 'OperationStatsValuesConnection' as const,
+      edges: [
+        {
+          __typename: 'OperationStatsValuesEdge' as const,
+          node: {
+            __typename: 'OperationStatsValues' as const,
+            id: OPERATION.hash,
+            name: OPERATION.name,
+            operationHash: OPERATION.hash,
+            kind: 'query',
+            countOk: 0,
+            count: 0,
+            percentage: 0,
+            duration: { __typename: 'DurationValues' as const, p90: 0, p95: 0, p99: 0, avg: 0 },
+          },
+        },
+      ],
+    },
   };
 }
 

@@ -129,8 +129,10 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
                 edge.node.id === props.schemaCheckId ? 'bg-surface-selected' : null,
               )}
             >
+              {/* A pointer moving down the list would run a loader per row it crossed. */}
               <Link
                 to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId"
+                preload={false}
                 params={{ organizationSlug, projectSlug, targetSlug, schemaCheckId: edge.node.id }}
                 search={search}
               >

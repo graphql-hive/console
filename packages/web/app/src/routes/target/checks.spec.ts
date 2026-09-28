@@ -91,6 +91,17 @@ describe('schema checks list', () => {
     expect(testClient.seen.filter(name => name === 'ChecksPageQuery')).toHaveLength(1);
   });
 
+  it('does not preload a check when its row is hovered', { timeout: 30_000 }, async () => {
+    const testClient = client();
+    renderAtUrl(CHECKS_PAGE, { client: testClient });
+    const row = await screen.findByRole('link', { name: new RegExp(CHECKS.first[0]) });
+
+    fireEvent.mouseEnter(row);
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    expect(testClient.seen).not.toContain('ActiveSchemaCheck_ActiveSchemaCheckQuery');
+  });
+
   it('keeps the selected check when a filter changes', { timeout: 30_000 }, async () => {
     const { router } = renderAtUrl(`${CHECKS_PAGE}/check-2`, { client: client() });
     await screen.findByText(CHECKS.first[1]);

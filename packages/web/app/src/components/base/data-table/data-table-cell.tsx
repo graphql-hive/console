@@ -240,9 +240,16 @@ function Destination<TTo extends string>({
     return (
       // TanStack resolves the route generics at the call site, where `DataTableRoute<TTo>` is
       // checked in full; inside the component TTo is opaque and no Link overload matches, the
-      // same situation ui/link sits in.
+      // same situation ui/link sits in. No preload: a pointer moving down a table would run a
+      // route loader per row it crossed; the nav keeps preloading on intent.
       // @ts-expect-error see above
-      <Link {...destination.link} className={className} title={title} aria-label={ariaLabel}>
+      <Link
+        {...destination.link}
+        preload={false}
+        className={className}
+        title={title}
+        aria-label={ariaLabel}
+      >
         {children}
       </Link>
     );
