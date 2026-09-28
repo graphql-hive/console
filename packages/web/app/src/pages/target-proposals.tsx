@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Skeleton } from '@/components/base/skeleton/skeleton';
@@ -68,7 +67,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
   );
 };
 
-const ProposalsQuery = graphql(`
+export const ProposalsQuery = graphql(`
   query listProposals($input: SchemaProposalsInput!) {
     schemaProposals(input: $input) {
       edges {
@@ -89,8 +88,26 @@ const ProposalsQuery = graphql(`
   }
 `);
 
+export function proposalStages(stages?: string[]) {
+  return [
+    ...(stages ?? [
+      SchemaProposalStage.Draft,
+      SchemaProposalStage.Open,
+      SchemaProposalStage.Approved,
+    ]),
+  ]
+    .sort()
+    .map(s => s.toUpperCase() as SchemaProposalStage);
+}
+
+export function proposalsVariables(
+  slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
+  stages?: string[],
+) {
+  return { input: { target: { bySelector: slugs }, stages: proposalStages(stages) } };
+}
+
 function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
-  const [pageVariables, setPageVariables] = useState([{ first: 20, after: null as string | null }]);
   const navigate = proposalsRoute.useNavigate();
   const reset = () => {
     void navigate({
@@ -111,58 +128,23 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
       </div>
 
       <div className="border-line-subtle bg-surface-inset min-h-full gap-2.5 rounded-md border p-2.5">
-        {pageVariables.map(({ after }, i) => (
-          <ProposalsListPage
-            key={after ?? i}
-            {...props}
-            isLastPage={i === pageVariables.length - 1}
-            onLoadMore={(after: string) => {
-              setPageVariables([...pageVariables, { after, first: 10 }]);
-            }}
-          />
-        ))}
+        <ProposalsList {...props} />
       </div>
     </>
   );
 }
 
-/**
- * This renders a single page of proposals for the ProposalList component.
- */
-const ProposalsListPage = (props: {
+// The API takes no cursor, so this is the whole list; a "load more" only repeated it.
+const ProposalsList = (props: {
   filterUserIds?: string[];
   filterStages?: string[];
   selectedProposalId?: string;
-  isLastPage: boolean;
-  onLoadMore: (after: string) => void | Promise<void>;
 }) => {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ProposalsQuery,
-    variables: {
-      input: {
-        target: {
-          bySelector: {
-            organizationSlug,
-            projectSlug,
-            targetSlug,
-          },
-        },
-        stages: (
-          props.filterStages ?? [
-            SchemaProposalStage.Draft,
-            SchemaProposalStage.Open,
-            SchemaProposalStage.Approved,
-          ]
-        )
-          .sort()
-          .map(s => s.toUpperCase() as SchemaProposalStage),
-        // userIds: props.filterUserIds,
-      },
-    },
-    requestPolicy: 'cache-and-network',
+    variables: proposalsVariables({ organizationSlug, projectSlug, targetSlug }, props.filterStages),
   });
-  const pageInfo = query.data?.schemaProposals?.pageInfo;
   const search = useSearch({ strict: false });
   const hasFilter = props.filterStages?.length || props.filterUserIds?.length;
 
@@ -251,11 +233,6 @@ const ProposalsListPage = (props: {
           </div>
         );
       })}
-      {props.isLastPage && pageInfo?.hasNextPage ? (
-        <Button variant="link" onClick={_e => props.onLoadMore(pageInfo?.endCursor)}>
-          Load more
-        </Button>
-      ) : null}
     </>
   );
 };

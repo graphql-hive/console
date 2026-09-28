@@ -1,9 +1,14 @@
 import { z } from 'zod';
 import { SchemaProposalStage } from '@/gql/graphql';
-import { ProposalTab, TargetProposalsSinglePage } from '@/pages/target-proposal';
-import { TargetProposalsPage } from '@/pages/target-proposals';
+import {
+  ProposalQuery,
+  ProposalTab,
+  proposalVariables,
+  TargetProposalsSinglePage,
+} from '@/pages/target-proposal';
+import { ProposalsQuery, proposalsVariables, TargetProposalsPage } from '@/pages/target-proposals';
 import { ProposalsNewProposalQuery, TargetProposalsNewPage } from '@/pages/target-proposals-new';
-import { loadQuery, requireLayoutFlag } from '@/lib/route-utils';
+import { loadQuery, requireLayoutFlag, revalidate } from '@/lib/route-utils';
 import { createRoute, useParams } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
@@ -18,7 +23,18 @@ export const targetProposalsRoute = createRoute({
       .catch(() => void 0),
     user: z.string().array().optional().catch(undefined),
   }),
-  loader: loader => requireLayoutFlag.target(loader, 'viewerCanViewSchemaProposals'),
+  loaderDeps: ({ search }) => ({ stage: search.stage }),
+  preloadStaleTime: 0,
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug } = loader.params;
+    void loadQuery(
+      loader,
+      ProposalsQuery,
+      proposalsVariables({ organizationSlug, projectSlug, targetSlug }, loader.deps.stage),
+      revalidate(loader),
+    );
+    return requireLayoutFlag.target(loader, 'viewerCanViewSchemaProposals');
+  },
   component: function TargetProposalsRoute() {
     // select proposalId from child route
     const proposalId = useParams({
@@ -61,7 +77,23 @@ export const targetProposalsSingleRoute = createRoute({
       .catch(() => void 0),
     version: z.string().optional(),
   }),
-  loader: loader => requireLayoutFlag.target(loader, 'viewerCanViewSchemaProposals'),
+  loaderDeps: ({ search }) => ({ version: search.version, ts: search.ts }),
+  preloadStaleTime: 0,
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug, proposalId } = loader.params;
+    void loadQuery(
+      loader,
+      ProposalQuery,
+      proposalVariables(
+        { organizationSlug, projectSlug, targetSlug },
+        proposalId,
+        loader.deps.version,
+        loader.deps.ts,
+      ),
+      revalidate(loader),
+    );
+    return requireLayoutFlag.target(loader, 'viewerCanViewSchemaProposals');
+  },
   component: function TargetProposalRoute() {
     const { proposalId } = targetProposalsSingleRoute.useParams();
     const { page, version, ts } = targetProposalsSingleRoute.useSearch();
