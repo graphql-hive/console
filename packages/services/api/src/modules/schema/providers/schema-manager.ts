@@ -295,7 +295,7 @@ export class SchemaManager {
     return {
       ...version,
       projectId: graph.projectId,
-      targetId: graph.id,
+      targetId: graph.targetId,
       organizationId: graph.organizationId,
     };
   }
@@ -380,7 +380,7 @@ export class SchemaManager {
     return {
       ...latest,
       projectId: graph.projectId,
-      targetId: graph.id,
+      targetId: graph.targetId,
       organizationId: graph.organizationId,
     };
   }
