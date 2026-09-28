@@ -886,7 +886,7 @@ export default gql`
     """
     Whether the schema check passed. The same result is reported on the GitHub check-run.
     """
-    valid: Boolean!
+    isValid: Boolean!
     """
     The schema check that was stored for this check.
     """
