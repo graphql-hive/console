@@ -556,17 +556,19 @@ export class SchemaVersionStore {
           FROM
             "schema_versions"
           WHERE
-            "graph_id" = ${graph.id}
-            ${
-              graph.isBackfilled
-                ? psql`
+            (
+              "graph_id" = ${graph.id}
+              ${
+                graph.isBackfilled
+                  ? psql`
                     OR (
                       "target_id" = ${graph.targetId}
                       AND "graph_id" IS NULL
                     )
                   `
-                : psql``
-            }
+                  : psql``
+              }
+            )
           ORDER BY
             "created_at" DESC
           LIMIT 1
@@ -782,17 +784,19 @@ export class SchemaVersionStore {
         FROM
           "schema_versions" as "v"
         WHERE
-          "v"."graph_id" = ${graph.id}
-          ${
-            graph.isBackfilled
-              ? psql`
+          (
+            "v"."graph_id" = ${graph.id}
+            ${
+              graph.isBackfilled
+                ? psql`
                   OR (
                     "v"."target_id" = ${graph.targetId}
                     AND "v"."graph_id" IS NULL
                   )
                 `
-              : psql``
-          }
+                : psql``
+            }
+          )
         LIMIT 1
       `,
     );
@@ -1118,6 +1122,7 @@ export class SchemaVersionStore {
             `
             : psql``
         }
+        AND "graph_id" IS NULL
       ORDER BY
         "created_at" DESC
         , "id" DESC
