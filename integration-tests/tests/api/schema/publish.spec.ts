@@ -5,7 +5,9 @@ import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { assertNonNull, getServiceHost } from 'testkit/utils';
 import z from 'zod';
+import { GraphStore } from '@hive/api/modules/graph/providers/graph-store';
 import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { createPostgresDatabasePool, psql } from '@hive/postgres';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
@@ -595,8 +597,8 @@ describe('schema publishing changes are persisted', () => {
       const serviceUrl = { url: 'http://localhost:4000' };
 
       const { createOrg } = await initSeed().createOwner();
-      const { createProject, organization } = await createOrg();
-      const { createTargetAccessToken, target, project } = await createProject(
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, target } = await createProject(
         args.type ?? ProjectType.Single,
       );
       const readWriteToken = await createTargetAccessToken({});
@@ -629,8 +631,10 @@ describe('schema publishing changes are persisted', () => {
       }
 
       const schemaVersions = new SchemaVersionStore(storage.pool);
-
-      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+      const graphStore = new GraphStore(new NoopLogger(), storage.pool);
+      const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+      assertNonNull(graph);
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
       assertNonNull(latestVersion);
 
       const changes = await schemaVersions.getSchemaSchangesForSchemaVersion(latestVersion);
@@ -3264,6 +3268,7 @@ const SchemaCompareToPreviousVersionQuery = graphql(`
 
 test('Target.schemaVersion: result is read from the database', async () => {
   const storage = await createStorage(connectionString(), 1);
+  const graphStore = new GraphStore(new NoopLogger(), storage.pool);
   const schemaVersions = new SchemaVersionStore(storage.pool);
 
   try {
@@ -3307,7 +3312,9 @@ test('Target.schemaVersion: result is read from the database', async () => {
       return;
     }
 
-    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    assertNonNull(graph);
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -3344,6 +3351,7 @@ test('Target.schemaVersion: result is read from the database', async () => {
 
 test('Composition Error (Federation 2) can be served from the database', async () => {
   const storage = await createStorage(connectionString(), 1);
+  const graphStore = new GraphStore(new NoopLogger(), storage.pool);
   const schemaVersions = new SchemaVersionStore(storage.pool);
   const serviceAddress = await getServiceHost('composition_federation_2', 3069, false);
 
@@ -3442,8 +3450,9 @@ test('Composition Error (Federation 2) can be served from the database', async (
       expect(publishResult2.schemaPublish.__typename).toBe('SchemaPublishSuccess');
       return;
     }
-
-    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    assertNonNull(graph);
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -3471,6 +3480,7 @@ test('Composition Error (Federation 2) can be served from the database', async (
 
 test('Composition Network Failure (Federation 2)', async () => {
   const storage = await createStorage(connectionString(), 1);
+  const graphStore = new GraphStore(new NoopLogger(), storage.pool);
   const schemaVersions = new SchemaVersionStore(storage.pool);
   const serviceAddress = await getServiceHost('composition_federation_2', 3069, false);
 
@@ -3605,8 +3615,9 @@ test('Composition Network Failure (Federation 2)', async () => {
       expect(publishResult3.schemaPublish.__typename).toBe('SchemaPublishError');
       return;
     }
-
-    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    assertNonNull(graph);
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -4611,6 +4622,9 @@ test.concurrent(
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
     const schemaVersions = new SchemaVersionStore(storage.pool);
+    const graphStore = new GraphStore(new NoopLogger(), storage.pool);
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    assertNonNull(graph);
     await schemaVersions.createPublishSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
@@ -4641,7 +4655,7 @@ test.concurrent(
       previousSchemaLogId: null,
       serviceChanges: null,
       supergraphChanges: null,
-      graph: null,
+      graph,
     });
     await storage.destroy();
 

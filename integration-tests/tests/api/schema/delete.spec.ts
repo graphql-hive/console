@@ -5,7 +5,10 @@ import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { assertNonNull, getServiceHost } from 'testkit/utils';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GraphStore } from '@hive/api/modules/graph/providers/graph-store';
 import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
+import { invariant } from '@hive/service-common';
 import { createStorage } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
 
@@ -134,11 +137,10 @@ test.concurrent(
     try {
       storage = await createStorage(connectionString(), 1);
       const schemaVersions = new SchemaVersionStore(storage.pool);
+      const graphStore = new GraphStore(new NoopLogger(), storage.pool);
       const { createOrg } = await initSeed().createOwner();
-      const { createProject, organization } = await createOrg();
-      const { createTargetAccessToken, project, target } = await createProject(
-        ProjectType.Federation,
-      );
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
       const readToken = await createTargetAccessToken({});
 
@@ -173,7 +175,9 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+      const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+      invariant(graph, 'Graph must exist.');
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
       assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toMatchInlineSnapshot(`
@@ -225,6 +229,7 @@ test.concurrent(
 
     try {
       storage = await createStorage(connectionString(), 1);
+      const graphStore = new GraphStore(new NoopLogger(), storage.pool);
       const schemaVersions = new SchemaVersionStore(storage.pool);
       const { createOrg, ownerToken } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
@@ -308,7 +313,9 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+      const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+      invariant(graph, 'Graph must exist.');
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
       assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toEqual(null);
