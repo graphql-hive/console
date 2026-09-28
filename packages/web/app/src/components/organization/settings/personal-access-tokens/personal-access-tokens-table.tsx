@@ -30,7 +30,7 @@ const PersonalAccessTokensTable_PersonalAccessTokenConnectionFragment = graphql(
   }
 `);
 
-const PersonalAccessTokensTable_MoreAccessTokensQuery = graphql(`
+export const PersonalAccessTokensTable_MoreAccessTokensQuery = graphql(`
   query PersonalAccessTokensTable_MoreAccessTokensQuery(
     $organizationSlug: String!
     $after: String

@@ -141,6 +141,7 @@ src/routes/target/explorer.tsx            a beforeLoad default from the preset l
 src/routes/target/traces.tsx              default range, loaderDeps on filter + sort + range, period as loader data,
                                           warm + revalidate; the trace detail warmed
 src/routes/target/settings.ts             await + redirect, section checks, section documents warmed
+src/routes/organization/settings.ts       the same over organizationSettingsSections; token and SSO sections revalidate
 src/routes/target/laboratory.tsx          requireLayoutFlag.target(loader, flag)
 src/routes/target/proposals.tsx           the gate; list and proposal warm + revalidate beside it, loaderDeps on the
                                           stage filter and on version + ts
@@ -193,6 +194,7 @@ Run from the repo root: `pnpm vitest run packages/web/app/src`.
 | `routes/target/insights.spec.ts`      | The loader's variables and policies before render; one request per document with the page mounted; Refresh on both pages; the bare URL's default range; the period resolved once across an hour boundary; a hover warms and the visit revalidates; rows don't preload. |
 | `routes/target/checks.spec.ts`        | Load more merges pages; a filter change starts over and keeps the selected check; the loaders' variables; one request per document; rows don't preload.                                                                                                                |
 | `routes/target/alerts.spec.ts`        | The bare URL's default range; retention and the log started together with the loader's period; the poll repeats the bounds within a minute and moves them at the roll; rules and detail revalidate their configuration and leave the state log to the page; the create form's three documents. |
+| `routes/organization/settings.spec.ts`| The page document once for the page and its section; token and SSO sections started revalidating; a hidden section falls back to the first visible one; the personal tokens' next page merges into the list. |
 | `routes/organization/route.spec.ts`   | The overview started with the 14-day window as loader data, revalidating; support and a ticket warmed; the subscription pages redirect without Stripe and warm their documents with it. |
 | `routes/project/route.spec.ts`        | The overview as above; project alerts warmed read-once beside the gate, and the gate's redirect. |
 | `routes/target/proposals.spec.ts`     | The list started with the stages from the URL, or the default three, revalidating; the proposal started with version and timestamp, its changes left to the page; the list renders from the cache with no load-more control. |

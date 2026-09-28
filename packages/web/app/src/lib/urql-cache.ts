@@ -565,6 +565,9 @@ export const cacheOptions = {
     Project: {
       accessTokens: relayPagination(),
     },
+    Member: {
+      accessTokens: relayPagination(),
+    },
   },
   keys: {
     RequestsOverTime: noKey,
