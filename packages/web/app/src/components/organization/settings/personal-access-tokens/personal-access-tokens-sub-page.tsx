@@ -3,6 +3,7 @@ import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -123,11 +124,19 @@ export function PersonalAccessTokensSubPage(): React.ReactNode {
         }
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
-        <PersonalAccessTokensTable
-          accessTokens={query.data?.organization?.me?.accessTokens ?? null}
-          loading={query.fetching && !query.data?.organization?.me}
-          refetch={refetchQuery}
-        />
+        {query.error ? (
+          <QueryError
+            organizationSlug={organizationSlug}
+            error={query.error}
+            showLogoutButton={false}
+          />
+        ) : (
+          <PersonalAccessTokensTable
+            accessTokens={query.data?.organization?.me?.accessTokens ?? null}
+            loading={query.fetching && !query.data?.organization?.me}
+            refetch={refetchQuery}
+          />
+        )}
       </div>
     </SubPageLayout>
   );

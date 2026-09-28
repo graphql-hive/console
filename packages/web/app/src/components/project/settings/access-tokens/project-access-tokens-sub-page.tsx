@@ -4,6 +4,7 @@ import { Button } from '@/components/base/button/button';
 import { PageLead } from '@/components/base/page-lead';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { SubPageLayout } from '@/components/ui/page-content-layout';
+import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -111,11 +112,19 @@ export function ProjectAccessTokensSubPage(): React.ReactNode {
           onClose={() => setCreatedKey(null)}
         />
 
-        <ProjectAccessTokensTable
-          accessTokens={query.data?.organization?.project?.accessTokens ?? null}
-          loading={query.fetching && !query.data?.organization?.project}
-          refetch={refetchQuery}
-        />
+        {query.error ? (
+          <QueryError
+            organizationSlug={organizationSlug}
+            error={query.error}
+            showLogoutButton={false}
+          />
+        ) : (
+          <ProjectAccessTokensTable
+            accessTokens={query.data?.organization?.project?.accessTokens ?? null}
+            loading={query.fetching && !query.data?.organization?.project}
+            refetch={refetchQuery}
+          />
+        )}
       </div>
     </SubPageLayout>
   );

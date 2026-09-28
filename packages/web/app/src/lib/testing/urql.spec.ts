@@ -85,6 +85,16 @@ describe('createTestClient', () => {
     );
   });
 
+  it('answers an Error fixture with that error, as a failed request would', async () => {
+    const client = createTestClient(
+      new Map<string, unknown>([['ProjectQuery', new Error('the server is away')]]),
+    );
+    const result = await client.query(ProjectQuery, {}).toPromise();
+
+    expect(result.data).toBeUndefined();
+    expect(result.error?.networkError?.message).toBe('the server is away');
+  });
+
   it('records each operation with its variables and context', async () => {
     const client = createTestClient();
     await client.query(ProjectQuery, { n: 1 }, { preload: true }).toPromise();

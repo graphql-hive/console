@@ -10,6 +10,7 @@ import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
@@ -185,7 +186,14 @@ const ProposalsListPage = (props: {
 
   return (
     <>
-      {query.data ? null : (
+      {query.error && !query.data ? (
+        <QueryError
+          organizationSlug={organizationSlug}
+          error={query.error}
+          showLogoutButton={false}
+        />
+      ) : null}
+      {query.fetching && !query.data ? (
         <div role="status" aria-label="Loading" className="flex flex-col">
           {[0, 1, 2, 3].map(index => (
             <div key={index} className="flex flex-col gap-2 p-2.5">
@@ -194,7 +202,7 @@ const ProposalsListPage = (props: {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
       {query.data?.schemaProposals?.edges?.length === 0 && (
         <div className="my-8 flex min-h-48 items-center text-center">
           <div className="w-full">

@@ -124,7 +124,8 @@ export function missingSelections(
  * does not care about render their loading branch rather than throw. A fixture that no longer
  * covers what its query selects throws, naming the missing paths, so fixtures cannot drift from
  * the documents. `fixtures` is the live map; `seen` records every operation name asked for and
- * `operations` every operation. A promise fixture holds its answer until it settles.
+ * `operations` every operation. A promise fixture holds its answer until it settles; an `Error` fixture
+ * answers with that error, as a failed request would.
  */
 export function createTestClient(fixtures: Fixtures = new Map()) {
   const seen: string[] = [];
@@ -163,6 +164,9 @@ export function createTestClient(fixtures: Fixtures = new Map()) {
           );
         }
 
+        if (answer instanceof Error) {
+          return fromValue(makeErrorResult(operation, answer));
+        }
         const message = uncovered(operation, name, answer);
         if (message) {
           throw new Error(message);

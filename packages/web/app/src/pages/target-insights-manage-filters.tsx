@@ -736,9 +736,9 @@ function ManageFiltersContent() {
     );
   }
 
-  const loaded = !!query.data?.target;
+  const loading = query.fetching && !query.data;
 
-  if (loaded && filters.length === 0) {
+  if (!loading && filters.length === 0) {
     return (
       <div className="py-8">
         <EmptyList
@@ -755,23 +755,23 @@ function ManageFiltersContent() {
         <StatCard
           variants={{ tone: 'muted' }}
           title="Total Filters"
-          value={loaded ? stats.total.toLocaleString() : <StatSkeleton />}
+          value={loading ? <StatSkeleton /> : stats.total.toLocaleString()}
         />
         <StatCard
           variants={{ tone: 'muted' }}
           title="Shared Filters"
-          value={loaded ? stats.shared.toLocaleString() : <StatSkeleton />}
+          value={loading ? <StatSkeleton /> : stats.shared.toLocaleString()}
         />
         <StatCard
           variants={{ tone: 'muted' }}
           title="Total Views"
-          value={loaded ? stats.totalViews.toLocaleString() : <StatSkeleton />}
+          value={loading ? <StatSkeleton /> : stats.totalViews.toLocaleString()}
         />
       </div>
 
       <div className="mt-8">
         <DataTable
-          loading={!loaded}
+          loading={loading}
           data={filters}
           columns={columns}
           getRowId={f => f.id}

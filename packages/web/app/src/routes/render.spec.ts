@@ -746,6 +746,53 @@ describe('tables while they load', () => {
   });
 });
 
+describe('a failed page query', () => {
+  beforeEach(() => {
+    client.current = createTestClient(layoutFixtures());
+    client.current.fixtures.set('OrganizationSettingsPageQuery', organizationSettings());
+    client.current.fixtures.set('ProjectSettingsPageQuery', projectSettings());
+  });
+
+  it.each([
+    [`${TARGET}/proposals`, 'listProposals'],
+    [`${ORGANIZATION}/view/settings/access-tokens`, 'AccessTokensSubPage_OrganizationQuery'],
+    [
+      `${ORGANIZATION}/view/settings/personal-access-tokens`,
+      'PersonalAccessTokensSubPage_OrganizationQuery',
+    ],
+    [`${PROJECT}/view/settings/access-tokens`, 'ProjectAccessTokensSubPage_OrganizationQuery'],
+  ])(
+    '%s shows the error, not a skeleton or an empty state',
+    { timeout: 30_000 },
+    async (url, pageQuery) => {
+      client.current!.fixtures.set(pageQuery, new Error('the server is away'));
+      at(url);
+      await screen.findByText('Oops, something went wrong.');
+      expect(screen.queryByRole('status', { name: 'Loading' })).toBeNull();
+      expect(screen.queryByText(/No .* yet\./)).toBeNull();
+    },
+  );
+
+  it(
+    'manage filters settles on its empty state for a target with none',
+    { timeout: 30_000 },
+    async () => {
+      client.current!.fixtures.set('ManageFilters_SavedFiltersQuery', {
+        __typename: 'Query',
+        organization: {
+          __typename: 'Organization',
+          id: 'organization-1',
+          usageRetentionInDays: 30,
+        },
+        target: null,
+      });
+      at(`${TARGET}/insights/manage-filters`);
+      await screen.findByText('No saved filters');
+      expect(screen.queryByRole('status', { name: 'Loading' })).toBeNull();
+    },
+  );
+});
+
 describe('insights', () => {
   beforeEach(() => {
     client.current = createTestClient(layoutFixtures());
