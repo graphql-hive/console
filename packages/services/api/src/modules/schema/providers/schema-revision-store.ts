@@ -69,9 +69,7 @@ export class SchemaRevisionStore {
       if (!revision) {
         // A concurrent push created the same revision first.
         const concurrent = await this.findForPush(trx, args);
-        if (!concurrent) {
-          throw new Error('Schema revision conflict could not be resolved.');
-        }
+        invariant(concurrent, 'Schema revision conflict could not be resolved.');
         return this.toExistingRevisionResult(concurrent, args);
       }
 
