@@ -74,6 +74,19 @@ export function missingSelections(
     return false;
   }
 
+  // A fragment on another union member does not apply to this object. An interface condition
+  // would be skipped too; graphcache still reads such a field from the schema and reports it null.
+  function isOtherMember(
+    typeCondition: { name: { value: string } } | undefined,
+    object: Record<string, unknown>,
+  ) {
+    return (
+      typeCondition !== undefined &&
+      typeof object.__typename === 'string' &&
+      object.__typename !== typeCondition.name.value
+    );
+  }
+
   function walk(selectionSet: SelectionSetNode, value: unknown, path: string) {
     if (value === null || value === undefined) {
       return;
@@ -105,9 +118,13 @@ export function missingSelections(
         }
       } else if (selection.kind === Kind.FRAGMENT_SPREAD) {
         const fragment = fragments.get(selection.name.value);
-        if (fragment) walk(fragment.selectionSet, value, path);
+        if (fragment && !isOtherMember(fragment.typeCondition, object)) {
+          walk(fragment.selectionSet, value, path);
+        }
       } else if (selection.kind === Kind.INLINE_FRAGMENT) {
-        walk(selection.selectionSet, value, path);
+        if (!isOtherMember(selection.typeCondition, object)) {
+          walk(selection.selectionSet, value, path);
+        }
       }
     }
   }

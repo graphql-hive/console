@@ -62,7 +62,7 @@ function StatusTooltip(props: { icon: React.ReactNode; label: string }) {
   );
 }
 
-const TargetHistoryGraphVersion_ActiveGraphVersionQuery = graphql(`
+export const TargetHistoryGraphVersion_ActiveGraphVersionQuery = graphql(`
   query TargetHistoryGraphVersion_ActiveGraphVersionQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -112,16 +112,6 @@ export function TargetHistorySchemaVersionPage(props: { schemaVersionId: string 
 
   const schemaVersion = query.data?.project?.target?.schemaVersion ?? null;
 
-  if (!schemaVersion) {
-    return (
-      <NotFound
-        title="Schema Version not found."
-        description="This schema version does not seem to exist anymore."
-        showBackButton={false}
-      />
-    );
-  }
-
   if (query.error) {
     return (
       <QueryError
@@ -130,6 +120,16 @@ export function TargetHistorySchemaVersionPage(props: { schemaVersionId: string 
         showError
         showLogoutButton={false}
         className="mt-20"
+      />
+    );
+  }
+
+  if (!schemaVersion) {
+    return (
+      <NotFound
+        title="Schema Version not found."
+        description="This schema version does not seem to exist anymore."
+        showBackButton={false}
       />
     );
   }

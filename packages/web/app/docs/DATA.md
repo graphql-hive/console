@@ -134,7 +134,7 @@ src/routes/target/insights.tsx            warm + revalidate, loaderDeps, a befor
 src/routes/target/checks.tsx              warm, loaderDeps on the filters, a child route's own document
 src/routes/target/settings.ts             await + redirect, section checks, section documents warmed
 src/routes/target/{alerts,apps,laboratory,proposals}.tsx  requireLayoutFlag.target(loader, flag)
-src/routes/target/history.tsx             await + redirect from a cache read
+src/routes/target/history.tsx             warm + revalidate the list, await + redirect from a cache read
 src/lib/testing/urql.ts                   createTestClient on cacheOptions; fixtures/ beside it
 ```
 
@@ -179,6 +179,7 @@ Run from the repo root: `pnpm vitest run packages/web/app/src`.
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `routes/target/insights.spec.ts`      | The loader's variables and policies before render; one request per document with the page mounted; Refresh on both pages; the bare URL's default range; the period resolved once across an hour boundary; a hover warms and the visit revalidates; rows don't preload. |
 | `routes/target/checks.spec.ts`        | Load more merges pages; a filter change starts over and keeps the selected check; the loaders' variables; one request per document; rows don't preload.                                                                                                                |
+| `routes/target/history.spec.ts`       | The list's next page merges into the same list; the loaders' variables; one request per document; a revisit revalidates the list alone; the version pane shows an error before not-found. |
 | `routes/render.spec.ts`               | The layout loaders' variables; the settings redirects and the page document requested once; hover preloading; the history redirect as a cache read; failed page queries show the error; a CDN create refetches the open page.                                          |
 | `routes/target/settings-cdn.spec.tsx` | The one spec on the app's own client, exchanges and all: a CDN create through the modal refetches the open page.                                                                                                                                                       |
 | `lib/urql-cache.spec.ts`              | The updaters against a stub cache, and the CDN updaters through the real cache.                                                                                                                                                                                        |

@@ -552,6 +552,7 @@ export const cacheOptions = {
     Target: {
       appDeployments: relayPagination(),
       schemaChecks: relayPagination(),
+      schemaVersions: relayPagination(),
       traces: relayPagination(),
     },
     AppDeployment: {

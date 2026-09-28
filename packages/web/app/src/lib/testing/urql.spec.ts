@@ -23,6 +23,13 @@ const OrganizationQuery = parse(`
 
 const ProjectQuery = parse('query ProjectQuery($n: Int) { organizations { nodes { id slug } } }');
 
+const OriginQuery = parse(`
+  query OriginQuery {
+    version { origin { __typename ... on Publish { revision } ... on Promote { targetSlug } ...Removed } }
+  }
+  fragment Removed on Remove { removedSubgraphs }
+`);
+
 describe('missingSelections', () => {
   it('accepts data that covers every selected field, through fragments and lists', () => {
     const data = {
@@ -48,6 +55,15 @@ describe('missingSelections', () => {
 
   it('does not demand a field the variables skip, and treats null as covered', () => {
     expect(missingSelections(OrganizationQuery, { me: null }, { minimal: true })).toEqual([]);
+  });
+
+  it('demands only the fragments of the union member the object is', () => {
+    const publish = { version: { origin: { __typename: 'Publish', revision: 'r1' } } };
+    expect(missingSelections(OriginQuery, publish, {})).toEqual([]);
+    const promote = { version: { origin: { __typename: 'Promote' } } };
+    expect(missingSelections(OriginQuery, promote, {})).toEqual(['version.origin.targetSlug']);
+    const remove = { version: { origin: { __typename: 'Remove' } } };
+    expect(missingSelections(OriginQuery, remove, {})).toEqual(['version.origin.removedSubgraphs']);
   });
 });
 
