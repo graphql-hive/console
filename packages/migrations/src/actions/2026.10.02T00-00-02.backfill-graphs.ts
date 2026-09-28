@@ -27,7 +27,8 @@ export default {
     ON CONFLICT ON CONSTRAINT "graphs_target_id_name_key" DO NOTHING;
 
     INSERT INTO "graphs" (
-      "organization_id"
+      "id"
+      , "organization_id"
       , "project_id"
       , "target_id"
       , "type"
@@ -37,7 +38,8 @@ export default {
       , "is_backfilled"
     )
     SELECT
-      "default_graphs"."organization_id"
+      "contracts"."id"
+      , "default_graphs"."organization_id"
       , "default_graphs"."project_id"
       , "contracts"."target_id"
       , 'CONTRACT'
