@@ -46,15 +46,15 @@ export const Mono = createPreview(() => (
 export const InContext = createPreview(() => (
   <div className="flex flex-col gap-3 text-sm">
     <div className="flex items-center gap-2">
-      <span className="text-neutral-11">production</span>
+      <span className="text-fg-default">production</span>
       <Badge content="3 subgraphs" variants={{ variant: 'secondary' }} />
     </div>
     <div className="flex items-center gap-2">
-      <span className="text-neutral-11">checkout-service</span>
+      <span className="text-fg-default">checkout-service</span>
       <Badge content="breaking" variants={{ variant: 'critical' }} />
     </div>
     <div className="flex items-center gap-2">
-      <span className="text-neutral-11">v2.4.0</span>
+      <span className="text-fg-default">v2.4.0</span>
       <Badge content="latest" variants={{ variant: 'outline' }} />
     </div>
   </div>

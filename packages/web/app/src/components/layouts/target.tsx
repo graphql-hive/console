@@ -6,75 +6,20 @@ import { Select } from '@/components/base/floating/select/select';
 import { Label } from '@/components/base/label/label';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
-import { HiveLink } from '@/components/ui/hive-link';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link as UiLink } from '@/components/ui/link';
-import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
-import { useSlugs, useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle, useViewer } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { Tabs } from '../base/tabs/tabs';
-import { TargetSelector } from './target-selector';
-
-export enum Page {
-  Schema = 'schema',
-  Explorer = 'explorer',
-  Checks = 'checks',
-  History = 'history',
-  Insights = 'insights',
-  Traces = 'traces',
-  Laboratory = 'laboratory',
-  Apps = 'apps',
-  Proposals = 'proposals',
-  Alerts = 'alerts',
-  Settings = 'settings',
-}
-
-const TargetLayoutQuery = graphql(`
-  query TargetLayoutQuery($organizationSlug: String!, $projectSlug: String!, $targetSlug: String!) {
-    me {
-      id
-      ...UserMenu_MeFragment
-    }
-    organizations {
-      ...TargetSelector_OrganizationConnectionFragment
-      ...UserMenu_OrganizationConnectionFragment
-    }
-    isCDNEnabled
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      project: projectBySlug(projectSlug: $projectSlug) {
-        id
-        slug
-        target: targetBySlug(targetSlug: $targetSlug) {
-          id
-          slug
-          viewerCanViewLaboratory
-          viewerCanViewAppDeployments
-          viewerCanAccessSettings
-          viewerCanAccessTraces
-          viewerCanViewSchemaProposals
-          viewerCanUseMetricAlertRules
-          # Warms the cache for the /history index redirect (routes/target/history.tsx).
-          latestSchemaVersion {
-            id
-          }
-        }
-      }
-      ...UserMenu_OrganizationFragment
-    }
-  }
-`);
+import { TargetLayoutQuery } from './queries';
 
 export const TargetLayout = ({ children }: { children: ReactNode }): ReactElement | null => {
   const params = useSlugs('target');
-  const { organizationSlug, projectSlug, targetSlug } = params;
 
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
@@ -83,36 +28,17 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
     variables: params,
   });
 
-  const me = query.data?.me;
+  const viewer = useViewer();
   const currentOrganization = query.data?.organization;
   const currentProject = query.data?.organization?.project;
   const currentTarget = query.data?.organization?.project?.target;
 
-  const isCDNEnabled = query.data?.isCDNEnabled === true;
+  const isCDNEnabled = viewer.data?.isCDNEnabled === true;
 
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
   return (
     <>
-      <Header>
-        <div className="flex flex-row items-center gap-4">
-          <HiveLink className="size-8" />
-          <TargetSelector
-            organizations={query.data?.organizations ?? null}
-            currentOrganizationSlug={organizationSlug}
-            currentProjectSlug={projectSlug}
-            currentTargetSlug={targetSlug}
-          />
-        </div>
-        <div>
-          <UserMenu
-            me={me ?? null}
-            currentOrganization={currentOrganization ?? null}
-            organizations={query.data?.organizations ?? null}
-          />
-        </div>
-      </Header>
-
       {query.fetching === false &&
       query.stale === false &&
       (currentProject === null || currentOrganization === null || currentTarget === null) ? (
@@ -129,74 +55,63 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
               currentOrganization && currentProject && currentTarget
                 ? [
                     {
-                      id: Page.Schema,
                       label: 'Schema',
                       to: '/$organizationSlug/$projectSlug/$targetSlug',
                       params,
                       exact: true,
                     },
                     {
-                      id: Page.Checks,
                       label: 'Checks',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
                       params,
                     },
                     {
-                      id: Page.Explorer,
                       label: 'Explorer',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
                       params,
                     },
                     {
-                      id: Page.History,
                       label: 'History',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/history',
                       params,
                     },
                     {
-                      id: Page.Insights,
                       label: 'Insights',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
                       params,
                       search: {},
                     },
                     {
-                      id: Page.Traces,
                       label: 'Traces',
                       visible: currentTarget.viewerCanAccessTraces,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
                       params,
                     },
                     {
-                      id: Page.Apps,
                       label: 'Apps',
                       visible: currentTarget.viewerCanViewAppDeployments,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
                       params,
                     },
                     {
-                      id: Page.Laboratory,
                       label: 'Laboratory',
                       visible: currentTarget.viewerCanViewLaboratory,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/laboratory',
                       params,
                     },
                     {
-                      id: Page.Proposals,
                       label: 'Proposals',
                       visible: currentTarget.viewerCanViewSchemaProposals,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
                       params,
                     },
                     {
-                      id: Page.Alerts,
                       label: 'Alerts',
                       visible: currentTarget.viewerCanUseMetricAlertRules,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
                       params,
                     },
                     {
-                      id: Page.Settings,
                       label: 'Settings',
                       visible: currentTarget.viewerCanAccessSettings,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/settings',

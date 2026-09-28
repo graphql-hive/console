@@ -2,10 +2,10 @@ import { z } from 'zod';
 import { TargetLayout } from '@/components/layouts/target';
 import { TargetPage } from '@/pages/target';
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { authenticatedRoute } from '../authenticated';
+import { withHeaderRoute } from '../with-header';
 
 export const targetRoute = createRoute({
-  getParentRoute: () => authenticatedRoute,
+  getParentRoute: () => withHeaderRoute,
   path: '$organizationSlug/$projectSlug/$targetSlug',
   component: function TargetRoute() {
     return (

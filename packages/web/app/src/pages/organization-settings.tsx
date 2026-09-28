@@ -489,7 +489,7 @@ function OrganizationPolicySettings(props: {
               onCheckedChange={setAllowOverrides}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
-            <label htmlFor="allowOverrides" className="text-neutral-11 ml-2 inline-block text-sm">
+            <label htmlFor="allowOverrides" className="text-fg-default ml-2 inline-block text-sm">
               Allow projects to override or disable rules
             </label>
           </div>
@@ -512,7 +512,7 @@ const OrganizationSettingsPageQuery = graphql(`
   }
 `);
 
-const SETTINGS = '/authenticated/$organizationSlug/view/settings';
+const SETTINGS = '/authenticated/with-header/$organizationSlug/view/settings';
 
 type SectionId = 'general' | 'policy' | 'sso' | 'access-tokens' | 'personal-access-tokens';
 
@@ -616,7 +616,6 @@ export function OrganizationSettingsPage() {
               aria-label="Settings"
               variant="list"
               items={visible.map(section => ({
-                id: section.id,
                 label: section.label,
                 to: section.to,
                 params: slugs,

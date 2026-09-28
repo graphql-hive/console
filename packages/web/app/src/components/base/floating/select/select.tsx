@@ -247,7 +247,7 @@ export function Select({
                             {option.label}
                           </span>
                           {option.description ? (
-                            <span className="text-neutral-9 block truncate text-xs">
+                            <span className="text-fg-muted block truncate text-xs">
                               {option.description}
                             </span>
                           ) : null}

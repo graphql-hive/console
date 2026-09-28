@@ -10,9 +10,8 @@ export type NavigationSize = 'default' | 'sm';
 type LinkAttributes = Pick<LinkOptions, 'to' | 'params' | 'search'>;
 
 export type NavigationItem = LinkAttributes & {
-  /** Distinguishes the item from its siblings; nothing else reads it. */
-  id: string;
-  label: ReactNode;
+  /** Also the item's key, so unique within one nav. */
+  label: string;
   icon?: ComponentType<{ className?: string }>;
   /** Explains the destination on hover: what a filter shows, say. */
   tooltip?: ReactNode;
@@ -82,15 +81,15 @@ const itemVariants = cva(
 );
 
 const activeClasses: Record<NavigationVariant, string> = {
-  underline: 'text-neutral-12 border-accent',
-  pill: 'text-neutral-12 bg-neutral-5',
-  list: 'text-neutral-12 bg-neutral-5 hover:bg-neutral-5 dark:bg-neutral-3 dark:hover:bg-neutral-3',
+  underline: 'text-fg border-accent',
+  pill: 'text-fg bg-surface-selected',
+  list: 'text-fg bg-neutral-5 hover:bg-neutral-5 dark:bg-neutral-3 dark:hover:bg-neutral-3',
 };
 
 const inactiveClasses: Record<NavigationVariant, string> = {
-  underline: 'text-neutral-11 hover:text-neutral-12 hover:border-accent_80 border-transparent',
-  pill: 'text-neutral-11 hover:text-neutral-12',
-  list: 'text-neutral-11 hover:text-neutral-12 hover:underline',
+  underline: 'text-fg-default hover:text-fg hover:border-accent-muted border-transparent',
+  pill: 'text-fg-default hover:text-fg',
+  list: 'text-fg-default hover:text-fg hover:underline',
 };
 
 export function Navigation({
@@ -121,7 +120,6 @@ export function Navigation({
           .filter(item => item.visible !== false)
           .map(
             ({
-              id,
               label,
               icon: Icon,
               tooltip,
@@ -150,7 +148,7 @@ export function Navigation({
                 </Link>
               );
               return (
-                <li key={id} className="contents">
+                <li key={label} className="contents">
                   {tooltip == null ? (
                     anchor
                   ) : (

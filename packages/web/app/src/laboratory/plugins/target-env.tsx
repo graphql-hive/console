@@ -71,7 +71,7 @@ export const TargetEnvPlugin = (props: {
       {
         type: 'target-env',
         name: 'Target Environment Variables',
-        icon: <GlobeIcon className="size-4 text-orange-400" />,
+        icon: <GlobeIcon className="text-warning size-4" />,
         component: (_tab, _laboratory, state, setState) => {
           return (
             <Editor

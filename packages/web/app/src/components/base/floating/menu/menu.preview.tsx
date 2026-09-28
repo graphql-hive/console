@@ -110,7 +110,7 @@ export const Anatomy = createPreview(() => {
           label: 'Regions',
           icon: Globe,
           content: (
-            <div className="text-neutral-10 px-2 py-3 text-xs">
+            <div className="text-fg-secondary px-2 py-3 text-xs">
               Any panel can go here. This one is not a list of rows.
             </div>
           ),
@@ -305,7 +305,7 @@ export const SubmenuWithPanel = createPreview(() => (
           label: 'Clients',
           maxWidth: 'lg',
           content: (
-            <div className="text-neutral-10 px-2 py-3 text-xs">
+            <div className="text-fg-secondary px-2 py-3 text-xs">
               A search field, a virtualized list, anything.
             </div>
           ),

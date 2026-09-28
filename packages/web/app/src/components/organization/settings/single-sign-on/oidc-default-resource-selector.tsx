@@ -91,11 +91,11 @@ export function OIDCDefaultResourceSelector(props: {
     }
 
     if (mutateState === 'error') {
-      return <XIcon className="absolute right-0 top-0 text-red-500" />;
+      return <XIcon className="text-critical absolute right-0 top-0" />;
     }
 
     if (mutateState === 'success') {
-      return <CheckIcon className="absolute right-0 top-0 text-emerald-500" />;
+      return <CheckIcon className="text-success absolute right-0 top-0" />;
     }
 
     return null;

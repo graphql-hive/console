@@ -49,7 +49,7 @@ export function LegacyCompositionWarn(props: {
           organizationSlug,
           projectSlug: project.slug,
         }}
-        className="text-blue-500"
+        className="text-info"
       >
         Open Composition settings
       </Link>

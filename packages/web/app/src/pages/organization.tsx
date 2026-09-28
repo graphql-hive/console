@@ -19,7 +19,7 @@ import { useSlugs } from '@/lib/hooks';
 import { UTCDate } from '@date-fns/utc';
 import { getRouteApi, useRouter } from '@tanstack/react-router';
 
-const organizationIndexRoute = getRouteApi('/authenticated/$organizationSlug/');
+const organizationIndexRoute = getRouteApi('/authenticated/with-header/$organizationSlug/');
 
 export const OrganizationIndexRouteSearch = z.object({
   search: z.string().optional(),

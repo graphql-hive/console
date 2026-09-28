@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 import { Separator as BaseSeparator } from '@base-ui/react/separator';
 
-const separatorVariants = cva('bg-neutral-5 shrink-0', {
+const separatorVariants = cva('bg-line shrink-0', {
   variants: {
     orientation: {
       horizontal: 'h-px w-full',

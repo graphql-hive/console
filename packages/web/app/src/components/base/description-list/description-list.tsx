@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { CopyChip } from '../copy-chip/copy-chip';
 import { Tooltip } from '../floating/tooltip/tooltip';
 
-const termVariants = cva('text-neutral-10 mb-1 inline-flex items-center gap-1', {
+const termVariants = cva('text-fg-secondary mb-1 inline-flex items-center gap-1', {
   variants: {
     termStyle: {
       /** Small caps, for a details panel beside or under a table. */
@@ -90,7 +90,7 @@ function DescriptionListItem({
         {tooltip ? (
           <Tooltip
             trigger={
-              <span className="text-neutral-9 inline-flex">
+              <span className="text-fg-muted inline-flex">
                 <Info className="size-3" />
               </span>
             }
@@ -100,7 +100,7 @@ function DescriptionListItem({
       </div>
       {/* An identifier has no spaces to wrap at, so it breaks anywhere rather than overflowing. */}
       <div
-        className={cn('text-neutral-12 text-control', mono && 'break-all font-mono')}
+        className={cn('text-fg text-control', mono && 'break-all font-mono')}
         // A value that gets clipped by a narrow column can still be read on hover.
         title={typeof description === 'string' ? description : undefined}
       >

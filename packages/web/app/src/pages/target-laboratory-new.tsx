@@ -15,7 +15,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useRedirect } from '@/lib/access/common';
-import { useLocalStorage, useSlugs, useToggle } from '@/lib/hooks';
+import { useLayoutQuery, useLocalStorage, useSlugs, useToggle } from '@/lib/hooks';
 import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use-current-operation';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
@@ -111,7 +111,6 @@ export const LaboratoryQuery = graphql(`
       }
       ...LaboratoryPreflightScriptTargetFragment
       viewerCanModifyLaboratory
-      viewerCanViewLaboratory
     }
   }
 `);
@@ -733,8 +732,9 @@ function LaboratoryPageContent(props: {
 
   const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
 
+  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
   useRedirect({
-    canAccess: query.data?.target?.viewerCanViewLaboratory === true,
+    canAccess: layoutTarget?.viewerCanViewLaboratory === true,
     redirectTo: router => {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
@@ -745,7 +745,7 @@ function LaboratoryPageContent(props: {
         },
       });
     },
-    entity: query.data?.target,
+    entity: layoutTarget,
   });
 
   const { resolvedTheme } = useTheme();
@@ -784,7 +784,7 @@ function LaboratoryPageContent(props: {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Title>Laboratory</Title>
-              <div className="bg-neutral-5 h-4 w-px" />
+              <div className="bg-line h-4 w-px" />
               <ToggleGroup
                 aria-label="Laboratory version"
                 value={props.defaultLaboratoryTab}
@@ -914,7 +914,7 @@ export function TargetLaboratoryPage(props: {
           </Button>
         }
       >
-        <p className="text-neutral-11 text-sm">
+        <p className="text-fg-default text-sm">
           You always can switch to the old GraphiQL based Laboratory by using the tab switcher in
           the top left cornder.
         </p>

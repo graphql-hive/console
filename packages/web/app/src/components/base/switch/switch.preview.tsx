@@ -36,10 +36,10 @@ export const InSettingsRow = createPreview(() => {
   const [enabled, setEnabled] = useState(true);
 
   return (
-    <div className="border-neutral-5 flex w-96 items-center justify-between rounded-lg border p-4">
+    <div className="border-line flex w-96 items-center justify-between rounded-lg border p-4">
       <div>
-        <div className="text-neutral-12 text-sm font-medium">Alert enabled</div>
-        <div className="text-neutral-10 text-control">
+        <div className="text-fg text-sm font-medium">Alert enabled</div>
+        <div className="text-fg-secondary text-control">
           {enabled ? 'Evaluating every 5 minutes.' : 'Paused, no notifications will be sent.'}
         </div>
       </div>

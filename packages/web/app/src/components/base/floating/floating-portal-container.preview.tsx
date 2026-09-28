@@ -40,22 +40,22 @@ function FloatingTrio() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <span className="text-neutral-11 w-16 text-xs">Select</span>
+        <span className="text-fg-default w-16 text-xs">Select</span>
         <Select options={OPTIONS} value={metric} onValueChange={setMetric} onSurface="raised" />
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-neutral-11 w-16 text-xs">Popover</span>
+        <span className="text-fg-default w-16 text-xs">Popover</span>
         <Popover
           trigger={<Button label="Details" onSurface="raised" />}
           content={
-            <p className="text-neutral-11 p-3 text-sm">
+            <p className="text-fg-default p-3 text-sm">
               If you can read this, the popover rendered inside the modal.
             </p>
           }
         />
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-neutral-11 w-16 text-xs">Menu</span>
+        <span className="text-fg-default w-16 text-xs">Menu</span>
         <Menu
           trigger={<Button label={picked ?? 'Actions'} onSurface="raised" />}
           sections={[
@@ -66,7 +66,7 @@ function FloatingTrio() {
           ]}
         />
       </div>
-      <p className="text-neutral-10 text-xs">
+      <p className="text-fg-secondary text-xs">
         Working: the Select changes, the Popover reads, the Menu label updates.
       </p>
     </div>
@@ -83,12 +83,12 @@ function BareModal(props: {
   const body = (
     <BaseDialog.Root open={props.open} onOpenChange={props.onOpenChange}>
       <BaseDialog.Portal>
-        <BaseDialog.Backdrop className="bg-neutral-1_01 fixed inset-0 z-50 backdrop-blur-sm" />
+        <BaseDialog.Backdrop className="bg-neutral-1/1 fixed inset-0 z-50 backdrop-blur-sm" />
         <BaseDialog.Popup
           ref={setPopup}
-          className="bg-neutral-3 border-neutral-5 fixed left-1/2 top-1/2 z-50 w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-lg border p-6 outline-none"
+          className="bg-neutral-3 border-line fixed left-1/2 top-1/2 z-50 w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-lg border p-6 outline-none"
         >
-          <BaseDialog.Title className="text-neutral-12 mb-4 text-sm font-medium">
+          <BaseDialog.Title className="text-fg mb-4 text-sm font-medium">
             {props.withProvider ? 'With the provider' : 'Without the provider'}
           </BaseDialog.Title>
           <FloatingTrio />

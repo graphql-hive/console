@@ -126,7 +126,7 @@ function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
           subPageTitle={
             <span className="flex items-center">
               <Link
-                className="text-neutral-12"
+                className="text-fg"
                 to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                 params={{
                   organizationSlug,
@@ -136,7 +136,7 @@ function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
               >
                 Schema Proposals
               </Link>{' '}
-              <span className="text-neutral-10 inline-block px-2 italic">/</span> New
+              <span className="text-fg-secondary inline-block px-2 italic">/</span> New
             </span>
           }
           description="Collaborate on schema changes to reduce friction during development."
@@ -643,7 +643,7 @@ function DiffService(props: { title: string; changes: Change<any>[]; error?: str
       <Title>{props.title}</Title>
       <div className="mb-6">
         {props.error ? (
-          <div className="flex items-center text-red-500">
+          <div className="text-critical flex items-center">
             <TriangleAlert className="mr-2 size-4" />
             {props.error}
           </div>

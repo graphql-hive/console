@@ -9,9 +9,9 @@ type Slugs = {
 };
 
 const routes = {
-  organization: getRouteApi('/authenticated/$organizationSlug'),
-  project: getRouteApi('/authenticated/$organizationSlug/$projectSlug'),
-  target: getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug'),
+  organization: getRouteApi('/authenticated/with-header/$organizationSlug'),
+  project: getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug'),
+  target: getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug'),
 };
 
 /**

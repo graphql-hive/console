@@ -16,7 +16,9 @@ import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 
-const schemaRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/');
+const schemaRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/',
+);
 
 type CompositeSchema = Extract<
   DocumentType<typeof SchemaView_SchemaFragment>,
@@ -45,7 +47,9 @@ function serviceHeader(schema: CompositeSchema) {
       <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>
         {schema.service ?? 'SDL'}
       </div>
-      {schema.url ? <div className="text-neutral-10 text-xs font-normal">{schema.url}</div> : null}
+      {schema.url ? (
+        <div className="text-fg-secondary text-xs font-normal">{schema.url}</div>
+      ) : null}
     </div>
   );
 }

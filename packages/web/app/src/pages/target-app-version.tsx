@@ -17,7 +17,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { graphql, type DocumentType } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { usePagedConnection, useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, usePagedConnection, useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -42,7 +42,6 @@ const TargetAppsVersionQuery = graphql(`
       }
     ) {
       id
-      viewerCanViewAppDeployments
       appDeployment(appName: $appName, appVersion: $appVersion) {
         id
         name
@@ -181,11 +180,11 @@ function TargetAppVersionContent(props: {
         .toPromise(),
   });
 
-  const project = data.data?.target;
+  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
 
   useRedirect({
-    entity: project,
-    canAccess: project?.viewerCanViewAppDeployments === true,
+    entity: layoutTarget,
+    canAccess: layoutTarget?.viewerCanViewAppDeployments === true,
     redirectTo(router) {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
@@ -207,7 +206,7 @@ function TargetAppVersionContent(props: {
     );
   }
 
-  if (project?.viewerCanViewAppDeployments === false) {
+  if (layoutTarget?.viewerCanViewAppDeployments === false) {
     return null;
   }
 
@@ -341,10 +340,10 @@ function TargetAppVersionContent(props: {
           </div>
         </div>
         {coordinates ? (
-          <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
+          <div className="border-warning-line bg-warning-tint mt-4 flex items-center justify-between rounded-md border px-4 py-2 text-sm">
             <span>
               Showing operations affected by{' '}
-              <code className="bg-neutral-5 rounded-sm px-1 py-0.5 font-mono text-orange-400">
+              <code className="bg-surface-code text-warning rounded-sm px-1 py-0.5 font-mono">
                 {coordinates}
               </code>
             </span>
@@ -357,7 +356,7 @@ function TargetAppVersionContent(props: {
                 appName: props.appName,
                 appVersion: props.appVersion,
               }}
-              className="text-orange-500 hover:underline"
+              className="text-warning hover:underline"
             >
               Clear filter
             </Link>
@@ -390,14 +389,14 @@ function TargetAppVersionContent(props: {
         ) : (
           <>
             <div className="mb-3">
-              <div className="border-neutral-5 text-neutral-10 grid grid-flow-col grid-rows-2 items-center justify-between gap-4 rounded-md border px-4 py-3 font-medium md:grid-rows-1">
+              <div className="border-line text-fg-secondary grid grid-flow-col grid-rows-2 items-center justify-between gap-4 rounded-md border px-4 py-3 font-medium md:grid-rows-1">
                 <div className="min-w-0">
                   <div className="text-xs">Status</div>
                   <div
                     className={cn(
-                      'text-neutral-12 truncate text-sm font-semibold',
-                      appDeployment?.status === AppDeploymentStatus.Retired && 'text-red-600',
-                      appDeployment?.status === AppDeploymentStatus.Pending && 'text-neutral-11',
+                      'text-fg truncate text-sm font-semibold',
+                      appDeployment?.status === AppDeploymentStatus.Retired && 'text-critical',
+                      appDeployment?.status === AppDeploymentStatus.Pending && 'text-fg-default',
                     )}
                   >
                     {appDeployment?.status === AppDeploymentStatus.Retired &&
@@ -412,13 +411,13 @@ function TargetAppVersionContent(props: {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs">Total Documents</div>
-                  <div className={cn('text-neutral-12 truncate text-center text-sm font-semibold')}>
+                  <div className={cn('text-fg truncate text-center text-sm font-semibold')}>
                     {appDeployment?.totalDocumentCount ?? '...'}
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs">Created</div>
-                  <div className="text-neutral-12 text-sm font-semibold">
+                  <div className="text-fg text-sm font-semibold">
                     {appDeployment?.createdAt ? (
                       <DateWithTimeAgo
                         date={appDeployment.createdAt}
@@ -431,20 +430,20 @@ function TargetAppVersionContent(props: {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs">Activated</div>
-                  <div className="text-neutral-12 text-sm font-semibold">
+                  <div className="text-fg text-sm font-semibold">
                     {appDeployment?.activatedAt ? (
                       <DateWithTimeAgo
                         date={appDeployment.activatedAt}
                         dateFormatStr="MMM d, yyyy HH:mm:ss"
                       />
                     ) : (
-                      <span className="text-neutral-10 font-normal">—</span>
+                      <span className="text-fg-secondary font-normal">—</span>
                     )}
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs">Last Used</div>
-                  <div className="text-neutral-12 text-sm font-semibold">
+                  <div className="text-fg text-sm font-semibold">
                     {data.fetching ? (
                       '...'
                     ) : appDeployment?.lastUsed ? (
@@ -453,7 +452,7 @@ function TargetAppVersionContent(props: {
                         dateFormatStr="MMM d, yyyy HH:mm:ss"
                       />
                     ) : (
-                      <span className="text-neutral-10 font-normal">No Usage Data</span>
+                      <span className="text-fg-secondary font-normal">No Usage Data</span>
                     )}
                   </div>
                 </div>

@@ -14,35 +14,13 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { getRouteApi, useNavigate, useSearch } from '@tanstack/react-router';
 
 const proposalsRoute = getRouteApi(
-  '/authenticated/$organizationSlug/$projectSlug/$targetSlug/proposals',
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/proposals',
 );
-
-const TargetProposalsQuery = graphql(`
-  query TargetProposalsQuery(
-    $organizationSlug: String!
-    $projectSlug: String!
-    $targetSlug: String!
-  ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      project: projectBySlug(projectSlug: $projectSlug) {
-        id
-        slug
-        target: targetBySlug(targetSlug: $targetSlug) {
-          id
-          slug
-          viewerCanViewSchemaProposals
-        }
-      }
-    }
-  }
-`);
 
 export function TargetProposalsPage(props: {
   filterUserIds?: string[];
@@ -50,15 +28,7 @@ export function TargetProposalsPage(props: {
   selectedProposalId?: string;
 }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const [query] = useQuery({
-    query: TargetProposalsQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-    },
-  });
-  const target = query.data?.organization?.project?.target;
+  const target = useLayoutQuery('target').data?.organization?.project?.target;
 
   useRedirect({
     canAccess: target?.viewerCanViewSchemaProposals === true,
@@ -157,7 +127,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
         ) : null}
       </div>
 
-      <div className="border-neutral-5/50 bg-neutral-2/50 min-h-full gap-2.5 rounded-md border p-2.5">
+      <div className="border-line-subtle bg-surface-inset min-h-full gap-2.5 rounded-md border p-2.5">
         {pageVariables.map(({ after }, i) => (
           <ProposalsListPage
             key={after ?? i}
@@ -231,8 +201,8 @@ const ProposalsListPage = (props: {
           <div
             key={proposal.id}
             className={cn(
-              'hover:bg-neutral-5/40 flex w-full flex-col rounded-md p-2.5',
-              props.selectedProposalId === proposal.id && 'bg-neutral-5/40',
+              'hover:bg-surface-hover flex w-full flex-col rounded-md p-2.5',
+              props.selectedProposalId === proposal.id && 'bg-surface-selected',
             )}
           >
             <Link
@@ -253,15 +223,15 @@ const ProposalsListPage = (props: {
               <div className="flex flex-row items-start">
                 <div className="flex min-w-0 grow flex-col">
                   <div className="mr-6 flex min-w-0 flex-row gap-1 text-sm md:text-base">
-                    <span className="text-neutral-11 mr-6 truncate font-semibold">
+                    <span className="text-fg-default mr-6 truncate font-semibold">
                       {proposal.title}
                     </span>
-                    <span className="text-neutral-2 flex items-center">
+                    <span className="text-fg-inverse flex items-center">
                       <StatusDot color={stageToColor(proposal.stage)} />
                     </span>
-                    <span className="text-neutral-10">{proposal.stage}</span>
+                    <span className="text-fg-secondary">{proposal.stage}</span>
                   </div>
-                  <div className="text-neutral-10 mb-1.5 mt-2 flex flex-col gap-x-1 align-middle text-xs font-medium md:flex-row">
+                  <div className="text-fg-secondary mb-1.5 mt-2 flex flex-col gap-x-1 align-middle text-xs font-medium md:flex-row">
                     <div className="truncate">
                       proposed <TimeAgo date={proposal.updatedAt} />
                     </div>
@@ -270,7 +240,7 @@ const ProposalsListPage = (props: {
                 </div>
                 {/* <div
                   className={cn(
-                    'hidden items-center justify-end gap-1 text-right text-neutral-10 sm:flex',
+                    'hidden items-center justify-end gap-1 text-right text-fg-secondary sm:flex',
                   )}
                 >
                   <span>{proposal.commentsCount}</span>

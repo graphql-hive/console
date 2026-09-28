@@ -3,16 +3,17 @@ import ReactDOM from 'react-dom/client';
 import SuperTokens from 'supertokens-auth-react';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
+import { urqlClient } from '@/lib/urql';
 import { init } from '@sentry/react';
 import { RouterProvider } from '@tanstack/react-router';
 import './index.css';
 import { clearChunkReloadFlag, isChunkLoadError, reloadOnChunkError } from './lib/chunk-error';
-import { router } from './router';
+import { createAppRouter } from './router';
 
 // Register things for typesafety
 declare module '@tanstack/react-router' {
   interface Register {
-    router: typeof router;
+    router: ReturnType<typeof createAppRouter>;
   }
 }
 
@@ -83,5 +84,7 @@ window.addEventListener('unhandledrejection', event => {
     reloadOnChunkError();
   }
 });
+
+const router = createAppRouter({ urqlClient });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<RouterProvider router={router} />);

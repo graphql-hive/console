@@ -7,7 +7,7 @@ const switchRootVariants = cva(
     'group relative inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors',
     'data-[unchecked]:bg-neutral-6 data-[checked]:bg-success',
     'not-data-[disabled]:data-[unchecked]:hover:bg-neutral-8',
-    'not-data-[disabled]:data-[checked]:hover:bg-success_80',
+    'not-data-[disabled]:data-[checked]:hover:bg-success-muted',
     focusRing,
     // Base UI renders a span, so `:disabled` never matches; the state is a data attribute.
     'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',

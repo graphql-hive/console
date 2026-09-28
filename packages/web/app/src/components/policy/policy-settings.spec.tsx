@@ -20,6 +20,7 @@ vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
 // The naming-convention rule edits its config in Monaco, which does not run in jsdom.
 vi.mock('@/components/theme/theme-provider', () => ({
   useTheme: () => ({ resolvedTheme: 'light' }),
+  useMonacoTheme: () => 'vs',
 }));
 vi.mock('@monaco-editor/react', () => ({
   loader: { config: () => {} },
@@ -432,7 +433,7 @@ describe('PolicySettings', () => {
     await act(async () => {
       fireEvent.change(editor(), { target: { value: '{"types":' } });
     });
-    await waitFor(() => expect(editor().className).toContain('border-red-500'));
+    await waitFor(() => expect(editor().className).toContain('border-critical'));
     expect(updateButton().disabled).toBe(true);
 
     // Configs are checked against the rule's JSON Schema by the policy service on save, not here.

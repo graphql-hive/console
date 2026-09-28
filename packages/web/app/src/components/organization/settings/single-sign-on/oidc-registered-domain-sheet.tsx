@@ -368,7 +368,7 @@ export function OIDCRegisteredDomainSheet(props: {
                   {domain && !domain.challenge && (
                     <>
                       <Callout type="warning">This challenge has expired.</Callout>
-                      <div className="text-red-500">
+                      <div className="text-critical">
                         {requestDomainChallengeMutationState.error?.message ??
                           requestDomainChallengeMutationState.data?.requestOIDCDomainChallenge.error
                             ?.message}
@@ -400,7 +400,7 @@ export function OIDCRegisteredDomainSheet(props: {
               ),
             })}
             {stepper.current.id === 'step-2-challenge' && challengeError ? (
-              <p className="mt-4 text-red-500">{challengeError}</p>
+              <p className="text-critical mt-4">{challengeError}</p>
             ) : null}
           </Sheet>
         )}

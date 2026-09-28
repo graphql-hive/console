@@ -32,7 +32,7 @@ export const EmptyList = ({
             className="drag-none"
           />
           <Heading className="text-center">{title}</Heading>
-          <span className="text-neutral-10 text-center text-sm font-medium">{description}</span>
+          <span className="text-fg-secondary text-center text-sm font-medium">{description}</span>
           <div className="py-4">{children}</div>
           {docsUrl && (
             <div className="pb-4">
@@ -68,7 +68,7 @@ export const NoSchemaVersion = ({
     if (recommendedAction === 'check') {
       children = (
         <>
-          <div className="text-neutral-10 flex w-full justify-center py-2 text-xs">
+          <div className="text-fg-secondary flex w-full justify-center py-2 text-xs">
             It's recommended to check that the schema is valid and compatible with the state of the
             registry before publishing.
           </div>
@@ -83,7 +83,7 @@ export const NoSchemaVersion = ({
       children = (
         <>
           {isDistributed && (
-            <div className="text-neutral-10 flex w-full justify-center py-2 text-xs">
+            <div className="text-fg-secondary flex w-full justify-center py-2 text-xs">
               For distributed systems, it's recommended to publish the schema after the service is
               deployed.
             </div>

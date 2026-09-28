@@ -19,7 +19,7 @@ import { targetRoute } from './target/route';
  * Redirects that depend on data or config are not legacy and live on their routes:
  * - `/auth` -> `/auth/sign-in`, carrying `redirectToPath` (routes/anonymous.tsx)
  * - `/history` -> the target's latest version (routes/target/history.tsx)
- * - `/oidc-request` -> `redirectToPath` when the OIDC provider is off (pages/organization-oidc-request.tsx)
+ * - `/oidc-request` -> `redirectToPath` when the OIDC provider is off (routes/oidc-request.tsx)
  * - a settings section the viewer may not open -> the first one they may (pages/target-settings.tsx)
  */
 export type LegacyPath = {

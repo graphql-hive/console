@@ -42,7 +42,7 @@ function TagSuggestions(props: {
 }) {
   return (
     <div className="w-[200px] p-1">
-      <div className="text-neutral-10 px-2 py-1.5 text-xs font-medium">
+      <div className="text-fg-secondary px-2 py-1.5 text-xs font-medium">
         Tags from latest schema version
       </div>
       {props.tags.map(value => (
@@ -52,7 +52,7 @@ function TagSuggestions(props: {
           onClick={() => props.onToggle(value)}
           className={itemVariants({
             selected: props.selected.includes(value),
-            className: 'hover:bg-neutral-5 hover:text-neutral-12 w-full',
+            className: 'hover:bg-surface-hover hover:text-fg w-full',
           })}
         >
           <Check

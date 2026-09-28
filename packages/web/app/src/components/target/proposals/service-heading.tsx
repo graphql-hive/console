@@ -21,7 +21,7 @@ export function ServiceHeading(props: {
   return (
     <div
       className={cn(
-        'text-accent bg-accent_10 mt-2 flex flex-row items-center rounded-sm px-4 py-2 text-base font-semibold',
+        'text-accent bg-accent-tint mt-2 flex flex-row items-center rounded-sm px-4 py-2 text-base font-semibold',
         props.onClick !== undefined && 'cursor-pointer hover:underline',
         props.onClick !== undefined && isOpen && 'rounded-b-none',
       )}
@@ -34,10 +34,10 @@ export function ServiceHeading(props: {
         <Box className="mr-2 size-4" />
         <span>{props.serviceName}</span>
         {props.type === ServiceHeadingType.NEW ? (
-          <span className="ml-2 text-xs text-green-500">*NEW*</span>
+          <span className="text-success ml-2 text-xs">*NEW*</span>
         ) : null}
         {props.type === ServiceHeadingType.DELETED ? (
-          <span className="ml-2 text-xs text-red-500">*DELETED*</span>
+          <span className="text-critical ml-2 text-xs">*DELETED*</span>
         ) : null}
       </div>
       {showToggleIcon && (

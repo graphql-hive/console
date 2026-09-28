@@ -10,7 +10,7 @@ export const Controlled = createPreview(() => {
   return (
     <div className="flex w-[28rem] flex-col gap-2">
       <Slider min={1} max={300} value={value} onValueChange={setValue} aria-label="Operations" />
-      <span className="text-neutral-11 text-sm">{value}M operations per month</span>
+      <span className="text-fg-default text-sm">{value}M operations per month</span>
     </div>
   );
 });
@@ -28,7 +28,7 @@ export const Stepped = createPreview(() => {
         onValueChange={setValue}
         aria-label="Share"
       />
-      <span className="text-neutral-11 text-sm">{value}%</span>
+      <span className="text-fg-default text-sm">{value}%</span>
     </div>
   );
 });
@@ -39,7 +39,7 @@ export const Range = createPreview(() => {
   return (
     <div className="flex w-[28rem] flex-col gap-2">
       <Slider min={0} max={100_000} value={range} onValueChange={setRange} aria-label="Duration" />
-      <span className="text-neutral-11 font-mono text-xs">
+      <span className="text-fg-default font-mono text-xs">
         {range[0]} ms to {range[1]} ms
       </span>
     </div>
@@ -111,7 +111,7 @@ function SliderPlayground(props: {
           aria-label="Value"
         />
       )}
-      <span className="text-neutral-11 font-mono text-xs">
+      <span className="text-fg-default font-mono text-xs">
         {props.range ? `${range[0]} to ${range[1]}` : single}
       </span>
     </div>

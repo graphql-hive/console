@@ -103,17 +103,17 @@ export function Popover(props: PopoverProps) {
     inner = (
       <div className={cn(widthClass[width ?? 'md'], 'p-4')}>
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-neutral-12 text-sm">{props.title}</span>
+          <span className="text-fg text-sm">{props.title}</span>
           {!props.hideCloseButton && (
             <BasePopover.Close
-              className="text-neutral-10 hover:text-neutral-12 rounded-sm p-0.5"
+              className="text-fg-secondary hover:text-fg rounded-sm p-0.5"
               aria-label="Close"
             >
               <X className="size-4" />
             </BasePopover.Close>
           )}
         </div>
-        {props.description && <p className="text-neutral-11 mb-3 text-sm">{props.description}</p>}
+        {props.description && <p className="text-fg-default mb-3 text-sm">{props.description}</p>}
         {props.content}
       </div>
     );
@@ -177,11 +177,11 @@ function PopoverArrow() {
         )}
       >
         <path
-          className="fill-neutral-2 dark:fill-neutral-4"
+          className="fill-surface-floating"
           d="M9.664.602 4.808 4.973A4 4 0 0 1 2.132 6H0v2h20V6h-1.465a4 4 0 0 1-2.676-1.027L11.002.603a1 1 0 0 0-1.338 0"
         />
         <path
-          className="fill-neutral-5"
+          className="fill-line"
           d="M10.333 1.345 5.477 5.716A5 5 0 0 1 2.132 7H0V6h2.132a4 4 0 0 0 2.676-1.027L9.664.603a1 1 0 0 1 1.338 0l4.857 4.37A4 4 0 0 0 18.535 6H20v1h-1.465a5 5 0 0 1-3.345-1.284z"
         />
       </svg>

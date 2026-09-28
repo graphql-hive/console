@@ -5,13 +5,13 @@ import { cn } from '@/lib/utils';
 export const cardVariants = cva('rounded-md border', {
   variants: {
     onSurface: {
-      base: 'border-neutral-5',
-      raised: 'bg-neutral-2 dark:bg-neutral-3 border-neutral-4',
+      base: 'border-line',
+      raised: 'bg-surface-card border-line-subtle',
     },
     // For a card that is itself a link or button. The hover fill moves one step in the same
     // direction the surface already inverts, so it reads as "lifted" in both themes.
     interactive: {
-      true: 'hover:bg-neutral-1 dark:hover:bg-neutral-4 hover:border-neutral-5',
+      true: 'hover:bg-surface-card-hover hover:border-line',
     },
   },
   defaultVariants: {
@@ -33,7 +33,7 @@ const cardBodyVariants = cva('', {
   },
 });
 
-const cardTitleVariants = cva('text-neutral-12 font-medium leading-none', {
+const cardTitleVariants = cva('text-fg font-medium leading-none', {
   variants: {
     titleSize: {
       default: 'text-sm',
@@ -63,7 +63,7 @@ export function Card({ children, title, description, variants }: CardProps) {
       {hasHeader ? (
         <div className="flex flex-col space-y-1.5 p-5">
           {title ? <h3 className={cardTitleVariants({ ...variants })}>{title}</h3> : null}
-          {description ? <p className="text-neutral-10 text-control">{description}</p> : null}
+          {description ? <p className="text-fg-secondary text-control">{description}</p> : null}
         </div>
       ) : null}
       {children ? (

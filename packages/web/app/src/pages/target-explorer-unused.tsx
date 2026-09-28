@@ -152,10 +152,10 @@ function InternalUnusedSchemaView(props: {
     return (
       <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
         <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-          <PartyPopperIcon className="size-10 text-emerald-500" />
+          <PartyPopperIcon className="text-success size-10" />
 
           <h3 className="mt-4 text-lg font-semibold">No unused types</h3>
-          <p className="text-neutral-10 mb-4 mt-2 text-sm">
+          <p className="text-fg-secondary mb-4 mt-2 text-sm">
             It looks like you are using all typea in your schema, congratulations!
           </p>
         </div>
@@ -182,7 +182,7 @@ function InternalUnusedSchemaView(props: {
     <div className="space-y-6">
       {unusedFieldsMessage.length ? (
         <div>
-          <p className="text-neutral-10 text-sm">
+          <p className="text-fg-secondary text-sm">
             You have a total of {unusedFieldsMessage} within {unused.types} different types in the
             selected time period
           </p>
@@ -201,8 +201,8 @@ function InternalUnusedSchemaView(props: {
                     'inline-flex h-9 items-center px-2 py-1 text-sm font-medium transition-colors',
                     focusRingQuiet,
                     letter === activeLetter
-                      ? 'bg-neutral-2 text-accent'
-                      : 'text-neutral-10 hover:bg-neutral-2 hover:text-accent',
+                      ? 'bg-surface-selected text-accent'
+                      : 'text-fg-secondary hover:bg-surface-hover hover:text-accent',
                   )}
                 >
                   {letter}

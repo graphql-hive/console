@@ -32,7 +32,7 @@ function FilterRows(props: { rows: { label: string; count: number }[] }) {
               <Checkbox visual checked={row.label === 'ok'} size="sm" />
               {row.label}
             </span>
-            <span className="bg-neutral-4 text-neutral-11 text-2xs rounded-sm px-1 font-mono">
+            <span className="bg-neutral-4 text-fg-default text-2xs rounded-sm px-1 font-mono">
               {row.count}
             </span>
           </button>
@@ -47,12 +47,12 @@ function FilterRows(props: { rows: { label: string; count: number }[] }) {
  * The count at the trailing edge is an `actions` slot, outside the button.
  */
 export const Section = createPreview(() => (
-  <div className="text-neutral-11 flex w-64 flex-col">
+  <div className="text-fg-default flex w-64 flex-col">
     <div className="p-2">
       <Collapsible
         trigger="Status"
         defaultOpen
-        actions={<span className="text-neutral-10 text-2xs rounded-sm px-2 font-mono">1</span>}
+        actions={<span className="text-fg-secondary text-2xs rounded-sm px-2 font-mono">1</span>}
       >
         <FilterRows rows={STATUS} />
       </Collapsible>
@@ -85,7 +85,7 @@ const LOGS = [
 export const Panel = createPreview(() => {
   const [open, setOpen] = useState(true);
   return (
-    <div className="border-neutral-5 bg-neutral-1 flex max-h-[200px] w-[36rem] flex-col overflow-hidden rounded-md border">
+    <div className="border-line bg-neutral-1 flex max-h-[200px] w-[36rem] flex-col overflow-hidden rounded-md border">
       <Collapsible
         variant="panel"
         trigger="Preflight Script Logs"
@@ -98,7 +98,7 @@ export const Panel = createPreview(() => {
         }
       >
         <ScrollArea fill>
-          <div className="text-neutral-11 p-4 font-mono text-xs/[18px]">
+          <div className="text-fg-default p-4 font-mono text-xs/[18px]">
             {LOGS.map((line, index) => (
               <div key={index}>{line}</div>
             ))}
@@ -112,7 +112,7 @@ export const Panel = createPreview(() => {
 export const Controlled = createPreview(() => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="text-neutral-11 flex w-64 flex-col gap-3 text-sm">
+    <div className="text-fg-default flex w-64 flex-col gap-3 text-sm">
       <Button variant="outline" onClick={() => setOpen(prev => !prev)}>
         {open ? 'Collapse' : 'Expand'} from outside
       </Button>
@@ -133,7 +133,7 @@ export const Playground = createPreview({
       default: 'count',
       derive: kind =>
         kind === 'count' ? (
-          <span className="text-neutral-10 text-2xs rounded-sm px-2 font-mono">1</span>
+          <span className="text-fg-secondary text-2xs rounded-sm px-2 font-mono">1</span>
         ) : kind === 'clear' ? (
           <Button layout="iconOnly" icon={Eraser} aria-label="Clear" variant="ghost" />
         ) : undefined,
@@ -144,8 +144,8 @@ export const Playground = createPreview({
     <div
       className={
         v.variant === 'panel'
-          ? 'border-neutral-5 bg-neutral-1 w-[36rem] overflow-hidden rounded-md border'
-          : 'text-neutral-11 w-64 p-2'
+          ? 'border-line bg-neutral-1 w-[36rem] overflow-hidden rounded-md border'
+          : 'text-fg-default w-64 p-2'
       }
     >
       {/* `defaultOpen` is read once at mount, so the key remounts on a change. */}

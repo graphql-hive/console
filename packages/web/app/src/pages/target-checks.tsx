@@ -20,7 +20,9 @@ import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { getRouteApi, Link, Outlet, useParams } from '@tanstack/react-router';
 
-const checksRoute = getRouteApi('/authenticated/$organizationSlug/$projectSlug/$targetSlug/checks');
+const checksRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/checks',
+);
 
 const SchemaChecks_NavigationQuery = graphql(`
   query SchemaChecks_NavigationQuery(
@@ -120,8 +122,8 @@ const Navigation = (
         <div
           key={edge.node.id}
           className={cn(
-            'hover:bg-neutral-5/40 flex flex-col rounded-md p-2.5',
-            edge.node.id === props.schemaCheckId ? 'bg-neutral-5/40' : null,
+            'hover:bg-surface-hover flex flex-col rounded-md p-2.5',
+            edge.node.id === props.schemaCheckId ? 'bg-surface-selected' : null,
           )}
         >
           <Link
@@ -134,14 +136,14 @@ const Navigation = (
               {edge.node.meta?.commit ?? edge.node.id}
             </h3>
             {edge.node.meta?.author ? (
-              <div className="text-neutral-10 truncate text-xs font-medium">
+              <div className="text-fg-secondary truncate text-xs font-medium">
                 <span className="overflow-hidden truncate">{edge.node.meta.author}</span>
               </div>
             ) : null}
-            <div className="text-neutral-10 mb-1.5 mt-2.5 flex align-middle text-xs font-medium">
+            <div className="text-fg-secondary mb-1.5 mt-2.5 flex align-middle text-xs font-medium">
               <div
                 className={cn(
-                  edge.node.__typename === 'FailedSchemaCheck' ? 'text-red-500' : null,
+                  edge.node.__typename === 'FailedSchemaCheck' ? 'text-critical' : null,
                   'flex flex-row items-center gap-1',
                 )}
               >
@@ -161,7 +163,7 @@ const Navigation = (
           </Link>
           {edge.node.githubRepository && edge.node.meta ? (
             <a
-              className="text-neutral-10 hover:text-neutral-10 -ml-px text-xs font-medium"
+              className="text-fg-secondary hover:text-fg-secondary -ml-px text-xs font-medium"
               target="_blank"
               rel="noreferrer"
               href={`https://github.com/${edge.node.githubRepository}/commit/${edge.node.meta.commit}`}
@@ -187,9 +189,6 @@ const ChecksPageQuery = graphql(`
     $targetSlug: String!
     $filters: SchemaChecksFilter
   ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-    }
     target(
       reference: {
         bySelector: {
@@ -297,7 +296,7 @@ function ChecksPageContent() {
         {hasSchemaChecks && (
           <SchemaChecksSideNav>
             {hasFilteredSchemaChecks ? (
-              <div className="border-neutral-5/50 flex min-h-0 w-[300px] grow flex-col rounded-md border">
+              <div className="border-line-subtle flex min-h-0 w-[300px] grow flex-col rounded-md border">
                 <ScrollArea fill>
                   <div className="flex flex-col gap-2.5 p-2.5">
                     {paginationVariables.map((cursor, index) => (
@@ -316,7 +315,7 @@ function ChecksPageContent() {
               </div>
             ) : (
               !isLoading && (
-                <div className="text-neutral-10 my-4 cursor-default text-center text-sm">
+                <div className="text-fg-secondary my-4 cursor-default text-center text-sm">
                   No schema checks found with the current filters
                 </div>
               )
