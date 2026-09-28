@@ -1,6 +1,7 @@
 import { ChevronDown, Copy, ListFilter, Plus, RefreshCw, X } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from './button';
+import { RefreshButton } from './refresh-button';
 
 export const nav: NavPath = 'Base/Primitives/Button';
 
@@ -75,6 +76,15 @@ export const IconOnly = createPreview(() => (
     <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" />
     <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" variant="active" />
     <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" variant="action" />
+  </div>
+));
+
+/** The one Refresh control, as a filter row and a page header mount it. */
+export const Refresh = createPreview(() => (
+  <div className="flex items-center gap-4">
+    <RefreshButton onClick={() => {}} />
+    <RefreshButton size="compact" onClick={() => {}} />
+    <RefreshButton disabled onClick={() => {}} />
   </div>
 ));
 
