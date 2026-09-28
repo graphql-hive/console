@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { type ReactNode } from 'react';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { targetSettings } from '@/lib/testing/fixtures/target-settings';
 import { createAppRouter } from '@/router';
@@ -18,24 +17,8 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/schema-editor')>()),
   SchemaEditor: () => null,
 }));
-vi.mock('supertokens-auth-react', async importOriginal => ({
-  ...(await importOriginal<typeof import('supertokens-auth-react')>()),
-  default: { init: () => {} },
-  SuperTokensWrapper: (props: { children: ReactNode }) => props.children,
-}));
-vi.mock('supertokens-auth-react/recipe/session', () => ({
-  default: {
-    doesSessionExist: async () => true,
-    getAccessTokenPayloadSecurely: async () => ({
-      superTokensUserId: 'user-1',
-      email: 'user@the-guild.dev',
-    }),
-    attemptRefreshingSession: async () => true,
-    signOut: async () => {},
-  },
-  SessionAuth: (props: { children: ReactNode }) => props.children,
-  useSessionContext: () => ({ loading: false, doesSessionExist: true, userId: 'user-1' }),
-}));
+vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
+vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
 
 // The one spec on the app's own client, exchanges and all, with fetch answering by operation
 // name: the updater's refetch has to reach the subscribed table through that chain, not only

@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { type ReactNode } from 'react';
 import { CDNAccessTokenCreateMutation } from '@/components/target/settings/cdn-access-tokens';
 import { CHECKS, checksFixtures } from '@/lib/testing/fixtures/checks';
 import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
@@ -27,28 +26,13 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
 }));
 
 // A signed-in session without SuperTokens: the wrappers pass through and the session exists.
-vi.mock('supertokens-auth-react', async importOriginal => ({
-  ...(await importOriginal<typeof import('supertokens-auth-react')>()),
-  default: { init: () => {} },
-  SuperTokensWrapper: (props: { children: ReactNode }) => props.children,
-}));
+vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
 // The OIDC interstitial redirects away unless the provider is on.
 vi.mock('@/lib/supertokens/thirdparty', async importOriginal => ({
   ...(await importOriginal<typeof import('@/lib/supertokens/thirdparty')>()),
   isProviderEnabled: () => true,
 }));
-vi.mock('supertokens-auth-react/recipe/session', () => ({
-  default: {
-    doesSessionExist: async () => true,
-    getAccessTokenPayloadSecurely: async () => ({
-      superTokensUserId: 'user-1',
-      email: 'user@the-guild.dev',
-    }),
-    attemptRefreshingSession: async () => true,
-  },
-  SessionAuth: (props: { children: ReactNode }) => props.children,
-  useSessionContext: () => ({ loading: false, doesSessionExist: true, userId: 'user-1' }),
-}));
+vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
 
 // The layout queries are answered; every other query stays in flight, so pages show their loading
 // branch and the chrome around them is what gets asserted.
@@ -137,6 +121,23 @@ describe('chrome at every page', () => {
     });
     await screen.findByRole('link', { name: 'Insights', current: 'page' });
     expect(screen.getByRole('banner')).toBe(header);
+  });
+
+  it('keeps a target without versions on the history list', { timeout: 30_000 }, async () => {
+    client.current!.fixtures.set('TargetLayoutQuery', targetLayout({ latestSchemaVersion: null }));
+    client.current!.fixtures.set('TargetHistoryPageQuery', {
+      __typename: 'Query',
+      target: {
+        __typename: 'Target',
+        id: 'target-1',
+        project: { __typename: 'Project', id: 'project-1', type: 'SINGLE' },
+        latestSchemaVersion: null,
+      },
+    });
+    const { router } = at(`${TARGET}/history`);
+    await screen.findByText(/waiting for your first/);
+    expect(router.state.location.pathname).toBe(`${TARGET}/history`);
+    expect(client.current!.seen).not.toContain('TargetHistoryLatestVersionQuery');
   });
 
   // The layout document carries latestSchemaVersion, so the redirect is a cache read, not a request.
@@ -359,6 +360,9 @@ describe('target settings sections', () => {
     const { router } = renderSettings(SETTINGS, targetSettings({ viewerCanAccessSettings: false }));
     await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
     expect(screen.queryByRole('navigation', { name: 'Settings' })).toBeNull();
+    // The page and the section both awaited and redirected; one request, no error boundary.
+    expect(screen.queryByText('Oops, something went wrong.')).toBeNull();
+    expect(client.current!.requests('TargetSettingsPageQuery')).toHaveLength(1);
   });
 
   it(
@@ -373,9 +377,7 @@ describe('target settings sections', () => {
 
       const seen = client.current.seen;
       expect(seen.filter(name => name === 'TargetSettingsPageQuery')).toHaveLength(1);
-      const cdn = client.current.operations.filter(
-        (_, index) => seen[index] === 'CDNAccessTokensQuery',
-      );
+      const cdn = client.current.requests('CDNAccessTokensQuery');
       expect(cdn.map(operation => operation.variables)).toEqual([
         { selector: SLUGS, first: 10, after: null },
       ]);
@@ -714,7 +716,7 @@ describe('layout loaders', () => {
     async (url, name, variables) => {
       const client = await loadedAt(url);
       expect(client.seen).toContain('ViewerQuery');
-      const operation = client.operations.find((_, index) => client.seen[index] === name);
+      const operation = client.requests(name)[0];
       expect(operation?.variables).toEqual(variables);
     },
   );
@@ -849,9 +851,7 @@ describe('hover preloading', () => {
       await waitFor(() => expect(testClient.seen).toContain('ChecksPageQuery'));
       expect(router.state.location.pathname).toBe(TARGET);
       const requests = testClient.seen.length;
-      const preloaded = testClient.operations.filter(
-        (_, index) => testClient.seen[index] === 'ChecksPageQuery',
-      );
+      const preloaded = testClient.requests('ChecksPageQuery');
       expect(preloaded.map(operation => operation.context.preload)).toEqual([true]);
 
       fireEvent.click(link);

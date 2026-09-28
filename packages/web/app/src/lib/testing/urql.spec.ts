@@ -100,6 +100,7 @@ describe('createTestClient', () => {
     await client.query(ProjectQuery, { n: 1 }, { preload: true }).toPromise();
 
     expect(client.operations).toHaveLength(1);
+    expect(client.requests('ProjectQuery')).toEqual(client.operations);
     expect(client.operations[0].variables).toEqual({ n: 1 });
     expect(client.operations[0].context.preload).toBe(true);
   });

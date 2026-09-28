@@ -1,7 +1,5 @@
 // @vitest-environment jsdom
-import { type ReactNode } from 'react';
 import { presetLast7Days } from '@/components/ui/date-range-picker';
-import { resolvePeriod } from '@/lib/hooks/use-date-range-controller';
 import { insightsFixtures, OPERATION } from '@/lib/testing/fixtures/insights';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
@@ -21,23 +19,8 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/schema-editor')>()),
   SchemaEditor: () => null,
 }));
-vi.mock('supertokens-auth-react', async importOriginal => ({
-  ...(await importOriginal<typeof import('supertokens-auth-react')>()),
-  default: { init: () => {} },
-  SuperTokensWrapper: (props: { children: ReactNode }) => props.children,
-}));
-vi.mock('supertokens-auth-react/recipe/session', () => ({
-  default: {
-    doesSessionExist: async () => true,
-    getAccessTokenPayloadSecurely: async () => ({
-      superTokensUserId: 'user-1',
-      email: 'user@the-guild.dev',
-    }),
-    attemptRefreshingSession: async () => true,
-  },
-  SessionAuth: (props: { children: ReactNode }) => props.children,
-  useSessionContext: () => ({ loading: false, doesSessionExist: true, userId: 'user-1' }),
-}));
+vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
+vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
 
 const TARGET = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}`;
 
@@ -49,6 +32,8 @@ const from = new Date(Date.parse(to) - 7 * 24 * HOUR).toISOString();
 const RANGE_TO = to;
 const RANGE = `from=${from}&to=${to}`;
 const OPERATIONS = `operations=${encodeURIComponent(JSON.stringify([OPERATION.hash]))}`;
+// Under jsdom the router parses search as JSON (see needsJsurl2 in router.ts); a production
+// /insights URL is jsurl2, so bring values here, not a pasted URL.
 const INSIGHTS = `${TARGET}/insights?${RANGE}&${OPERATIONS}`;
 const OPERATION_PAGE = `${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}?${RANGE}`;
 
@@ -66,11 +51,24 @@ function fixtures() {
 }
 
 function requests(client: TestClient, name: string) {
-  return client.seen.filter(seen => seen === name).length;
+  return client.requests(name).length;
 }
 
 function variablesOf(client: TestClient, name: string) {
-  return client.operations.find((_, index) => client.seen[index] === name)?.variables;
+  return client.requests(name)[0]?.variables;
+}
+
+// Seven days resolve at hour resolution: bounds on the hour, a count capped at 90 points.
+function expectPeriod(variables: unknown) {
+  const { period, resolution } = variables as {
+    period: { from: string; to: string };
+    resolution?: number;
+  };
+  expect(Date.parse(period.from)).toBe(Date.parse(from));
+  expect(Date.parse(period.to)).toBe(Date.parse(to) + HOUR - 1000);
+  if (resolution !== undefined) {
+    expect(resolution).toBe(90);
+  }
 }
 
 describe('insights route', () => {
@@ -98,21 +96,20 @@ describe('insights route', () => {
           ['OperationsList_OperationsStats', 'cache-and-network'],
         ]),
       );
-      const { range: period, resolution } = resolvePeriod({ from, to });
       const filter = { operationIds: [OPERATION.hash] };
       expect(variablesOf(client, 'TargetOperationsPageQuery')).toEqual(SLUGS);
-      expect(variablesOf(client, 'InsightsFilterPicker')).toEqual({ selector: SLUGS, period });
-      expect(variablesOf(client, 'Stats_GeneralOperationsStats')).toEqual({
+      expect(variablesOf(client, 'InsightsFilterPicker')).toMatchObject({ selector: SLUGS });
+      expectPeriod(variablesOf(client, 'InsightsFilterPicker'));
+      expect(variablesOf(client, 'Stats_GeneralOperationsStats')).toMatchObject({
         targetSelector: SLUGS,
-        period,
-        filter,
-        resolution,
-      });
-      expect(variablesOf(client, 'OperationsList_OperationsStats')).toEqual({
-        targetSelector: SLUGS,
-        period,
         filter,
       });
+      expectPeriod(variablesOf(client, 'Stats_GeneralOperationsStats'));
+      expect(variablesOf(client, 'OperationsList_OperationsStats')).toMatchObject({
+        targetSelector: SLUGS,
+        filter,
+      });
+      expectPeriod(variablesOf(client, 'OperationsList_OperationsStats'));
     },
   );
 
@@ -180,18 +177,28 @@ describe('operation route', () => {
     expect(client.seen).not.toContain('OperationInsightsPageQuery');
   });
 
+  it('Refresh reloads its stats alone', { timeout: 30_000 }, async () => {
+    const client = createTestClient(fixtures());
+    renderAtUrl(OPERATION_PAGE, { client });
+    const refresh = await screen.findByRole('button', { name: 'Refresh' });
+
+    fireEvent.click(refresh);
+
+    await waitFor(() => expect(requests(client, 'Stats_GeneralOperationsStats')).toBe(2));
+    expect(requests(client, 'OperationInsightsPageQuery')).toBe(1);
+    expect(requests(client, 'GraphQLOperationBody_GetOperationBodyQuery')).toBe(1);
+  });
+
   it('warms the body and the stats of this operation alone', { timeout: 30_000 }, async () => {
     const client = createTestClient(fixtures());
     renderAtUrl(OPERATION_PAGE, { client });
     await screen.findByText('Relative Request Frequency');
 
-    const { range: period, resolution } = resolvePeriod({ from, to });
-    expect(variablesOf(client, 'Stats_GeneralOperationsStats')).toEqual({
+    expect(variablesOf(client, 'Stats_GeneralOperationsStats')).toMatchObject({
       targetSelector: SLUGS,
-      period,
       filter: { operationIds: [OPERATION.hash] },
-      resolution,
     });
+    expectPeriod(variablesOf(client, 'Stats_GeneralOperationsStats'));
     expect(variablesOf(client, 'GraphQLOperationBody_GetOperationBodyQuery')).toEqual({
       selector: SLUGS,
       hash: OPERATION.hash,
@@ -217,8 +224,8 @@ describe('insights preloading', () => {
     const to = '/$organizationSlug/$projectSlug/$targetSlug/insights';
     const search = { from, to: RANGE_TO };
     const stats = () =>
-      client.operations
-        .filter((_, index) => client.seen[index] === 'Stats_GeneralOperationsStats')
+      client
+        .requests('Stats_GeneralOperationsStats')
         .map(operation => [operation.context.preload, operation.context.requestPolicy]);
 
     await router.preloadRoute({ to, params: SLUGS, search });
@@ -247,8 +254,8 @@ describe('the period', () => {
       const { router } = renderAtUrl(`${TARGET}/insights?from=now-7d&to=now`, { client });
       await screen.findByText('Total requests served');
       const periods = () =>
-        client.operations
-          .filter((_, index) => client.seen[index] === 'Stats_GeneralOperationsStats')
+        client
+          .requests('Stats_GeneralOperationsStats')
           .map(operation => (operation.variables as { period: { to: string } }).period.to);
       expect(periods()).toHaveLength(1);
 

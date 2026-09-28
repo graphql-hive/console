@@ -133,10 +133,12 @@ export function projectLayout() {
   return { __typename: 'Query' as const, organization: { ...organization, project } };
 }
 
-export function targetLayout() {
+export function targetLayout(
+  overrides: { latestSchemaVersion?: typeof target.latestSchemaVersion | null } = {},
+) {
   return {
     __typename: 'Query' as const,
-    organization: { ...organization, project: { ...project, target } },
+    organization: { ...organization, project: { ...project, target: { ...target, ...overrides } } },
   };
 }
 

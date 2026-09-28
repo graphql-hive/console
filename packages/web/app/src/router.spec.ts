@@ -50,7 +50,7 @@ describe('router module', () => {
   });
 
   it(
-    'shows the page skeleton for a route still pending after 250 ms',
+    'configures the page skeleton as the pending default after 250 ms',
     { timeout: 30_000 },
     async () => {
       const { createAppRouter } = await import('./router');

@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { type ReactNode } from 'react';
 import { CHECKS, checksFixtures } from '@/lib/testing/fixtures/checks';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
@@ -19,23 +18,8 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/schema-editor')>()),
   SchemaEditor: () => null,
 }));
-vi.mock('supertokens-auth-react', async importOriginal => ({
-  ...(await importOriginal<typeof import('supertokens-auth-react')>()),
-  default: { init: () => {} },
-  SuperTokensWrapper: (props: { children: ReactNode }) => props.children,
-}));
-vi.mock('supertokens-auth-react/recipe/session', () => ({
-  default: {
-    doesSessionExist: async () => true,
-    getAccessTokenPayloadSecurely: async () => ({
-      superTokensUserId: 'user-1',
-      email: 'user@the-guild.dev',
-    }),
-    attemptRefreshingSession: async () => true,
-  },
-  SessionAuth: (props: { children: ReactNode }) => props.children,
-  useSessionContext: () => ({ loading: false, doesSessionExist: true, userId: 'user-1' }),
-}));
+vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
+vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
 
 const CHECKS_PAGE = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}/checks`;
 
@@ -46,9 +30,7 @@ function client() {
 }
 
 function listRequests(client: TestClient) {
-  return client.operations
-    .filter((_, index) => client.seen[index] === 'SchemaChecks_NavigationQuery')
-    .map(operation => operation.variables);
+  return client.requests('SchemaChecks_NavigationQuery').map(operation => operation.variables);
 }
 
 describe('schema checks list', () => {
@@ -81,14 +63,15 @@ describe('schema checks list', () => {
     fireEvent.click(toggle);
 
     await waitFor(() => expect(screen.queryByText(CHECKS.first[0])).toBeNull());
-    expect(screen.getByText(CHECKS.failed[0])).toBeTruthy();
+    expect(screen.queryByText(CHECKS.second[0])).toBeNull();
+    expect(screen.getByText(CHECKS.failedOnly)).toBeTruthy();
     expect(listRequests(testClient).at(-1)).toMatchObject({
       after: null,
       filters: { changed: false, failed: true },
     });
     // The side nav stayed mounted: whether checks exist does not depend on the filters.
     expect(screen.getByLabelText('Show only failed checks')).toBe(toggle);
-    expect(testClient.seen.filter(name => name === 'ChecksPageQuery')).toHaveLength(1);
+    expect(testClient.requests('ChecksPageQuery')).toHaveLength(1);
   });
 
   it('does not preload a check when its row is hovered', { timeout: 30_000 }, async () => {
@@ -112,7 +95,8 @@ describe('schema checks list', () => {
       expect(router.state.location.search).toMatchObject({ filter_failed: true }),
     );
     expect(router.state.location.pathname).toBe(`${CHECKS_PAGE}/check-2`);
-    expect(screen.getByText(CHECKS.failed[0])).toBeTruthy();
+    expect(screen.getByText(CHECKS.failedOnly)).toBeTruthy();
+    expect(screen.getByText(CHECKS.first[1])).toBeTruthy();
     expect(screen.queryByText('Select a schema check')).toBeNull();
   });
 });
@@ -141,7 +125,7 @@ describe('checks route loaders', () => {
     renderAtUrl(CHECKS_PAGE, { client: testClient });
     await screen.findByText(CHECKS.first[0]);
 
-    expect(testClient.seen.filter(name => name === 'ChecksPageQuery')).toHaveLength(1);
+    expect(testClient.requests('ChecksPageQuery')).toHaveLength(1);
     expect(listRequests(testClient)).toHaveLength(1);
   });
 
@@ -151,9 +135,7 @@ describe('checks route loaders', () => {
     renderAtUrl(`${CHECKS_PAGE}/check-2`, { client: testClient });
     await screen.findByText(CHECKS.first[1]);
 
-    const active = testClient.operations.filter(
-      (_, index) => testClient.seen[index] === 'ActiveSchemaCheck_ActiveSchemaCheckQuery',
-    );
+    const active = testClient.requests('ActiveSchemaCheck_ActiveSchemaCheckQuery');
     expect(active.map(operation => operation.variables)).toEqual([
       { ...SLUGS, schemaCheckId: 'check-2' },
     ]);

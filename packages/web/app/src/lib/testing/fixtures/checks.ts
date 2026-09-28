@@ -26,18 +26,24 @@ function page(nodes: ReturnType<typeof check>[], endCursor: string | null) {
   };
 }
 
-/** Three checks over two pages; the failed filter leaves one, on a single page. */
+/**
+ * Three checks over two pages. The failed filter shows page one's failed check and one more that
+ * only it returns, so a spec can tell the filtered page from what was already on screen.
+ */
 export const CHECKS = {
   first: ['a1b2c3d', 'b2c3d4e'],
   second: ['c3d4e5f'],
-  failed: ['b2c3d4e'],
+  failedOnly: 'f4i1l3d',
   nextCursor: 'cursor-2',
 } as const;
 
 /** `SchemaChecks_NavigationQuery`, answered per page and filter. */
 export function schemaChecksNavigation(variables: Variables) {
   const schemaChecks = variables.filters?.failed
-    ? page([check('check-2', CHECKS.failed[0], true)], null)
+    ? page(
+        [check('check-2', CHECKS.first[1], true), check('check-4', CHECKS.failedOnly, true)],
+        null,
+      )
     : variables.after
       ? page([check('check-3', CHECKS.second[0])], null)
       : page(
