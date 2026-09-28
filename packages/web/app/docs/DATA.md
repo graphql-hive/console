@@ -32,9 +32,9 @@ defaults, and `null` is not `undefined`, because urql keys a request by document
 Anything computed from the URL alone is a pure function both sides call: `buildGraphQLFilter` for
 insights, `settingsSections` for the settings routes. Anything that also depends on the clock is
 resolved once, by the loader, and returned as loader data: the insights loaders return the period
-and resolution from `resolveDateRange` and the page reads them with `useLoaderData`, so a filter
-change after the hour rolls over cannot leave the two on different buckets. `loaderDeps` names the
-search params a query takes, so a change to one of them re-runs the loader and a change to any other
+and resolution from `loaderPeriod` and the page reads them with `useLoaderData`, so a filter change
+after the hour rolls over cannot leave the two on different buckets. `loaderDeps` names the search
+params a query takes, so a change to one of them re-runs the loader and a change to any other
 (`viewId` on insights) does not.
 
 ## Request policies
@@ -116,14 +116,18 @@ development; a hover preload moves a route's burst ahead of the click.
 ## Where things live
 
 ```
-src/lib/route-utils.ts                    loadQuery(loader, document, variables, policy?), LoaderContext
+src/lib/route-utils.ts                    loadQuery(loader, document, variables, policy?), LoaderContext,
+                                          revalidate(loader), requireLayoutFlag.<scope>(loader, ...flags),
+                                          defaultRange(range, to) for a beforeLoad
 src/lib/urql.ts                           the app client: POST only, auth exchange, persisted operations, SSE
 src/lib/urql-cache.ts                     cacheOptions: keys, relayPagination resolvers, mutation updaters,
                                           optimistic results; the app client and the test client both use it
 src/lib/urql-exchanges/state.ts           the network status behind the progress bar; preloads leave it alone
 src/components/layouts/queries.ts         ViewerQuery and the three layout documents
 src/lib/hooks/use-layout-query.ts         useLayoutQuery(scope); use-viewer.ts: useViewer()
-src/lib/hooks/use-date-range-controller.ts  resolveDateRange for a loader and its page; Refresh
+src/lib/hooks/use-date-range-controller.ts  loaderPeriod(deps, preset) for a loader and its page; Refresh
+src/lib/overview-period.ts                overviewPeriod(now?): the overviews' 14-day window as loader data
+src/lib/hooks/use-interval.ts             useInterval(ms, fn): a poll that never fires on mount
 src/routes/with-header.tsx                the viewer's loader and its freshness stamp
 src/routes/<scope>/route.tsx              the layout loaders
 src/routes/target/insights.tsx            warm + revalidate, loaderDeps, a beforeLoad default, preload policy

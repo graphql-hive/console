@@ -5,8 +5,8 @@ import {
 } from '@/components/target/insights/search-schemas';
 import { Stats_GeneralOperationsStatsQuery } from '@/components/target/insights/stats';
 import { presetLast1Day, presetLast7Days } from '@/components/ui/date-range-picker';
-import { resolveDateRange } from '@/lib/hooks/use-date-range-controller';
-import { loadQuery, type LoaderContext } from '@/lib/route-utils';
+import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
+import { defaultRange, loadQuery, revalidate } from '@/lib/route-utils';
 import {
   buildGraphQLFilter,
   InsightsFilterPicker_Query,
@@ -21,28 +21,17 @@ import {
   OperationInsightsPageQuery,
   TargetInsightsOperationPage,
 } from '@/pages/target-insights-operation';
-import { createRoute, redirect } from '@tanstack/react-router';
+import { createRoute } from '@tanstack/react-router';
 import { targetRoute } from './route';
-
-// Stats move, so their documents revalidate on every visit and on Refresh (router.invalidate);
-// the rest is read once, and a hover preload only warms.
-const revalidate = (loader: LoaderContext) =>
-  loader.preload ? ('cache-first' as const) : ('cache-and-network' as const);
 
 export const targetInsightsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights',
   validateSearch: InsightsFilterSearch.parse,
-  // A bare URL names the default range, so a shared link always says what it shows.
-  beforeLoad: ({ search, params }) => {
-    if (search.from === undefined && search.to === undefined) {
-      throw redirect({
-        to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
-        params,
-        search: { ...search, from: presetLast7Days.range.from, to: presetLast7Days.range.to },
-      });
-    }
-  },
+  beforeLoad: defaultRange(
+    presetLast7Days.range,
+    '/$organizationSlug/$projectSlug/$targetSlug/insights',
+  ),
   // Everything in the search but the saved filter's id reaches a query.
   loaderDeps: ({ search: { viewId: _viewId, ...deps } }) => deps,
   // A preload only warms, so the visit that follows it still runs the loader.
@@ -50,11 +39,7 @@ export const targetInsightsRoute = createRoute({
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
-    const { range: period, resolution } = resolveDateRange({
-      from: loader.deps.from,
-      to: loader.deps.to,
-      defaultPreset: presetLast7Days,
-    });
+    const { period, resolution } = loaderPeriod(loader.deps, presetLast7Days);
     const filter = buildGraphQLFilter(loader.deps);
     void loadQuery(loader, TargetOperationsPageQuery, selector);
     void loadQuery(loader, InsightsFilterPicker_Query, { selector, period });
@@ -112,10 +97,7 @@ export const targetInsightsOperationsRoute = createRoute({
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug, operationHash } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
-    const { range: period, resolution } = resolveDateRange({
-      ...loader.deps,
-      defaultPreset: presetLast1Day,
-    });
+    const { period, resolution } = loaderPeriod(loader.deps, presetLast1Day);
     void loadQuery(loader, OperationInsightsPageQuery, selector);
     void loadQuery(loader, Operation_View_OperationBodyQuery, { selector, hash: operationHash });
     void loadQuery(

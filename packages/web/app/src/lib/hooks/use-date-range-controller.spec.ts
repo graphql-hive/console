@@ -1,7 +1,11 @@
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { UTCDate } from '@date-fns/utc';
 import { parse } from '../date-math';
-import { resolveDateRange, resolveRangeAndResolution } from './use-date-range-controller';
+import {
+  loaderPeriod,
+  resolveDateRange,
+  resolveRangeAndResolution,
+} from './use-date-range-controller';
 
 describe('useDateRangeController', () => {
   const testCases = [
@@ -241,5 +245,24 @@ describe('resolveDateRange', () => {
     expect(resolveDateRange(args, now)).toEqual(first);
     expect(iso(first.range.from)).toBe('1992-10-15T10:00:00.000Z');
     expect(iso(first.range.to)).toBe('1992-10-22T10:59:59.000Z');
+  });
+});
+
+describe('loaderPeriod', () => {
+  const now = new UTCDate('1992-10-22T10:10:00.000Z');
+
+  it('is the resolved range in the shape a loader returns, ignoring other deps', () => {
+    const deps = { from: 'now-7d', to: 'now', operations: ['abc'] };
+    const { range, resolution } = resolveDateRange(
+      { ...deps, defaultPreset: presetLast7Days },
+      now,
+    );
+    expect(loaderPeriod(deps, presetLast7Days, now)).toEqual({ period: range, resolution });
+  });
+
+  it('takes the default preset for a bare URL', () => {
+    expect(loaderPeriod({}, presetLast7Days, now)).toEqual(
+      loaderPeriod(presetLast7Days.range, presetLast7Days, now),
+    );
   });
 });

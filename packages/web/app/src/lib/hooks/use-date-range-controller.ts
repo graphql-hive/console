@@ -119,6 +119,19 @@ export function resolveDateRange(args: DateRangeArgs, now: UTCDate = new UTCDate
   return { selectedPreset, ...resolvePeriod(selectedPreset.range, now) };
 }
 
+// The URL's range as a loader returns it and its page reads it.
+export function loaderPeriod(
+  deps: { from?: string; to?: string },
+  defaultPreset: Preset,
+  now?: UTCDate,
+) {
+  const { range: period, resolution } = resolveDateRange(
+    { from: deps.from, to: deps.to, defaultPreset },
+    now,
+  );
+  return { period, resolution };
+}
+
 const maximumResolution = 90;
 const minimumResolution = 1;
 
