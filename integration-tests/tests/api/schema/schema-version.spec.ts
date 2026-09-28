@@ -1,7 +1,7 @@
 import { ProjectType } from 'testkit/gql/graphql';
 import { assertNonNullish } from 'testkit/utils';
 import { psql } from '@hive/postgres';
-import { graphql } from '../../../testkit/gql';
+import { DocumentType, graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
 
@@ -79,9 +79,10 @@ test.concurrent(
 
     const commits: Array<string | null> = [];
     let after: string | null = null;
+    let result: DocumentType<typeof PaginatedSchemaVersionsQuery>;
 
     do {
-      const result = await execute({
+      result = await execute({
         document: PaginatedSchemaVersionsQuery,
         authToken: token.secret,
         variables: {
@@ -150,9 +151,10 @@ test.concurrent(
 
     const commits: Array<string | null> = [];
     let after: string | null = null;
+    let result: DocumentType<typeof PaginatedSchemaVersionsQuery>;
 
     do {
-      const result = await execute({
+      result = await execute({
         document: PaginatedSchemaVersionsQuery,
         authToken: token.secret,
         variables: {

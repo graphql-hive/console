@@ -343,7 +343,7 @@ export class SchemaVersionStore {
       organizationId: string;
       schemaRevisionId: string | null;
       revision: string | null;
-      graph: Graph;
+      graph: Pick<Graph, 'id' | 'name'>;
     } & (
       | {
           compositeSchemaSDL: null;
