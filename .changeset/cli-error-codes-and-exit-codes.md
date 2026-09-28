@@ -1,11 +1,15 @@
 ---
-'@graphql-hive/cli': major
+'@graphql-hive/cli': minor
 ---
 
 Report every CLI failure with an accurate, unique and documented error code, and report schema check
 results accurately when using `--github`.
 
-**Breaking changes**
+**Note for self-hosted Hive:** `hive schema:check --github` relies on new fields added to the Hive
+GraphQL API (`GitHubSchemaCheckSuccess`). If you self-host Hive and the CLI reports error `[125]`
+(unsupported Hive server version), deploy the latest Hive backend before upgrading the CLI.
+
+**Behavior changes**
 
 - `hive schema:check --github` now exits with code 1 when the schema check fails. Previously it
   exited with 0 whenever the GitHub check-run was created. The failure is reported as error `[202]`,
