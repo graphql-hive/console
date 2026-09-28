@@ -473,6 +473,7 @@ export function Content() {
       </div>
       {loading ? (
         <div role="status" aria-label="Loading collections" className="flex flex-col gap-3 px-2">
+          <span className="sr-only">Loading collections</span>
           {[0, 1, 2].map(index => (
             <Skeleton key={index} variants={{ width: 'full' }} />
           ))}

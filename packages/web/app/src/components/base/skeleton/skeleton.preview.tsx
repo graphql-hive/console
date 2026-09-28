@@ -44,28 +44,76 @@ export const LineWidths = createPreview(() => (
   </div>
 ));
 
-// The SSO settings loading state (single-sign-on-subpage.tsx), transcribed.
+// The SSO settings loading state (single-sign-on-subpage.tsx), transcribed: fixed-width spans
+// around full-width lines, as the page sizes them.
 export const SettingsSections = createPreview(() => (
   <div className="flex w-[48rem] flex-col gap-12">
     <section className="space-y-8">
-      <Skeleton variants={{ size: 'xl', width: 'sm' }} />
-      <Skeleton variants={{ width: 'lg' }} />
+      <span className="flex w-24">
+        <Skeleton variants={{ size: 'xl', width: 'full' }} />
+      </span>
+      <span className="flex w-72">
+        <Skeleton variants={{ width: 'full' }} />
+      </span>
       <div className="space-y-3">
         {[0, 1, 2].map(i => (
           <div key={i} className="flex gap-8">
-            <Skeleton variants={{ width: 'md' }} />
-            <Skeleton variants={{ width: 'xl' }} />
+            <span className="flex w-36">
+              <Skeleton variants={{ width: 'full' }} />
+            </span>
+            <span className="flex w-80">
+              <Skeleton variants={{ width: 'full' }} />
+            </span>
           </div>
         ))}
       </div>
     </section>
     <section className="space-y-8">
-      <Skeleton variants={{ size: 'xl', width: 'md' }} />
+      <span className="flex w-40">
+        <Skeleton variants={{ size: 'xl', width: 'full' }} />
+      </span>
+      <div className="space-y-3">
+        {[0, 1, 2, 3, 4, 5].map(i => (
+          <div key={i} className="flex gap-8">
+            <span className="flex w-36">
+              <Skeleton variants={{ width: 'full' }} />
+            </span>
+            <span className="flex w-72">
+              <Skeleton variants={{ width: 'full' }} />
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+    <section className="space-y-8">
+      <span className="flex w-44">
+        <Skeleton variants={{ size: 'xl', width: 'full' }} />
+      </span>
+      <span className="flex w-96">
+        <Skeleton variants={{ width: 'full' }} />
+      </span>
+      <div className="flex gap-8">
+        <span className="flex w-24">
+          <Skeleton variants={{ width: 'full' }} />
+        </span>
+        <span className="flex w-24">
+          <Skeleton variants={{ width: 'full' }} />
+        </span>
+      </div>
+    </section>
+    <section className="space-y-8">
+      <span className="flex w-36">
+        <Skeleton variants={{ size: 'xl', width: 'full' }} />
+      </span>
       {[0, 1, 2, 3].map(i => (
         <div key={i} className="flex items-start justify-between">
           <div className="space-y-2">
-            <Skeleton variants={{ width: 'md' }} />
-            <Skeleton variants={{ size: 'sm', width: 'lg' }} />
+            <span className="flex w-40">
+              <Skeleton variants={{ width: 'full' }} />
+            </span>
+            <span className="flex w-72">
+              <Skeleton variants={{ size: 'sm', width: 'full' }} />
+            </span>
           </div>
           <span className="block h-6 w-11">
             <Skeleton variants={{ shape: 'block' }} />
@@ -73,25 +121,6 @@ export const SettingsSections = createPreview(() => (
         </div>
       ))}
     </section>
-  </div>
-));
-
-// The access-token table while it loads (access-tokens-sub-page.tsx), transcribed.
-export const TableRows = createPreview(() => (
-  <div className="w-[48rem] space-y-3">
-    {[0, 1, 2].map(i => (
-      <div key={i} className="flex w-full items-center space-x-4">
-        <span className="block h-10 w-1/4">
-          <Skeleton variants={{ shape: 'block' }} />
-        </span>
-        <span className="block h-10 w-1/2">
-          <Skeleton variants={{ shape: 'block' }} />
-        </span>
-        <span className="block h-10 w-1/4">
-          <Skeleton variants={{ shape: 'block' }} />
-        </span>
-      </div>
-    ))}
   </div>
 ));
 

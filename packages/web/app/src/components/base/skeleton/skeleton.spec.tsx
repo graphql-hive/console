@@ -29,3 +29,10 @@ describe('Skeleton', () => {
     );
   });
 });
+
+describe('circle', () => {
+  it("defaults to the app's avatar size", () => {
+    const { container } = render(<Skeleton variants={{ shape: 'circle' }} />);
+    expect(container.firstElementChild?.className).toContain('size-9');
+  });
+});

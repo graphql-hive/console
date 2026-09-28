@@ -101,7 +101,8 @@ export function Groups(props: {
         </div>
         <div className="divide-y">
           {!organization ? (
-            <div className="divide-y" aria-label="Loading groups" aria-busy="true">
+            <div role="status" aria-label="Loading groups" className="divide-y">
+              <span className="sr-only">Loading groups</span>
               {Array.from({ length: 8 }, (_, index) => (
                 <div
                   key={index}

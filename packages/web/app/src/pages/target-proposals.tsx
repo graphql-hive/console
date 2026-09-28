@@ -195,6 +195,7 @@ const ProposalsListPage = (props: {
       ) : null}
       {query.fetching && !query.data ? (
         <div role="status" aria-label="Loading" className="flex flex-col">
+          <span className="sr-only">Loading</span>
           {[0, 1, 2, 3].map(index => (
             <div key={index} className="flex flex-col gap-2 p-2.5">
               <Skeleton variants={{ size: 'lg', width: 'lg' }} />

@@ -255,7 +255,9 @@ export function DataTable<TData>({
                   {table.getVisibleLeafColumns().map((column, columnIndex) => (
                     <DataTableCellSlot key={column.id} layout={column.columnDef.meta}>
                       {index === 0 && columnIndex === 0 ? (
-                        <span role="status" aria-label="Loading" className="sr-only" />
+                        <span role="status" aria-label="Loading" className="sr-only">
+                          Loading
+                        </span>
                       ) : null}
                       {/* Fills the column up to a cap without widening it; inline, so the
                           column's alignment places it. */}

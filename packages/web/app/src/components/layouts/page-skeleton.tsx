@@ -1,11 +1,13 @@
 import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { LayoutContent } from './layout-content';
 
+// Screen readers announce what a live region gains, not its label, so each carries the word.
 /** A page while its route loads: the title block every page opens with, then its content. */
 export function PageSkeleton() {
   return (
     <LayoutContent>
       <div role="status" aria-label="Loading">
+        <span className="sr-only">Loading</span>
         <div className="space-y-2 py-6">
           <Skeleton variants={{ size: 'xl', width: 'md' }} />
           <Skeleton variants={{ width: 'lg' }} />
@@ -22,6 +24,7 @@ export function PageSkeleton() {
 export function SectionSkeleton() {
   return (
     <div role="status" aria-label="Loading" className="space-y-6">
+      <span className="sr-only">Loading</span>
       <div className="space-y-2">
         <Skeleton variants={{ size: 'lg', width: 'md' }} />
         <Skeleton variants={{ width: 'xl' }} />

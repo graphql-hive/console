@@ -788,8 +788,13 @@ function ManageFiltersContent() {
   );
 }
 
+// Sized to the stat's line box, so the card keeps its height while it loads.
 function StatSkeleton() {
-  return <Skeleton variants={{ size: 'xl', width: 'xs' }} />;
+  return (
+    <span className="flex h-8 items-center">
+      <Skeleton variants={{ size: 'xl', width: 'xs' }} />
+    </span>
+  );
 }
 
 export function TargetInsightsManageFiltersPage(): ReactElement {

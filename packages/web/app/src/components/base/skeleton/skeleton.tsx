@@ -1,5 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 
+// bg-fixed pins the gradient to the viewport, so every skeleton on the page shares one shimmer
+// instead of each running its own.
 const skeletonVariants = cva(
   [
     'bg-neutral-5 block shrink-0 animate-skeleton bg-fixed bg-size-[200%_100%]',
@@ -33,7 +35,8 @@ const skeletonVariants = cva(
       { shape: 'line', width: 'xl', className: 'w-96' },
       { shape: 'line', width: 'full', className: 'w-full' },
       { shape: 'circle', size: ['xs', 'sm'], className: 'size-6' },
-      { shape: 'circle', size: 'default', className: 'size-8' },
+      // The app's avatars are size-9.
+      { shape: 'circle', size: 'default', className: 'size-9' },
       { shape: 'circle', size: ['lg', 'xl'], className: 'size-10' },
     ],
     defaultVariants: { shape: 'line', size: 'default', width: 'md' },
