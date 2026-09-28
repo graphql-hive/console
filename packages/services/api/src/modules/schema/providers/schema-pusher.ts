@@ -15,9 +15,6 @@ import {
   unexpectedErrorMetricLabels,
 } from '../../shared/providers/registry-operation-metrics';
 import { Storage } from '../../shared/providers/storage';
-import { TargetStore } from '../../target/providers/target-store';
-import { ensureCompositeSchemas, serviceExists } from './schema-helper';
-import { SchemaManager } from './schema-manager';
 import { isValidServiceName } from './schema-publisher';
 import { SchemaRevisionStore } from './schema-revision-store';
 
@@ -38,8 +35,6 @@ export class SchemaPusher {
     private idTranslator: IdTranslator,
     private storage: Storage,
     private projectStore: ProjectStore,
-    private targetStore: TargetStore,
-    private schemaManager: SchemaManager,
     private revisions: SchemaRevisionStore,
   ) {}
 
@@ -109,8 +104,9 @@ export class SchemaPusher {
         return { error: { message: 'Missing service name' } };
       }
 
-      // Like schema check and publish, only new services must follow the naming rules.
-      if (!isValidServiceName(service) && !(await this.isExistingService(selector, service))) {
+      // Unlike schema check and publish, existing services are not exempt from the naming rules,
+      // so that services are migrated to the new name format.
+      if (!isValidServiceName(service)) {
         return {
           error: {
             message:
@@ -142,14 +138,5 @@ export class SchemaPusher {
       sdl: input.sdl,
       expiresAt: new Date(Date.now() + REVISION_RETENTION_MS),
     });
-  }
-
-  private async isExistingService(
-    selector: { organizationId: string; projectId: string; targetId: string },
-    service: string,
-  ) {
-    const target = await this.targetStore.getTarget(selector);
-    const latestVersion = await this.schemaManager.getLatestSchemaVersionWithSchemaLogs({ target });
-    return !!latestVersion && serviceExists(ensureCompositeSchemas(latestVersion.schemas), service);
   }
 }
