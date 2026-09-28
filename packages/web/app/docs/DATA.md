@@ -131,7 +131,8 @@ src/lib/hooks/use-date-range-controller.ts  loaderPeriod(deps, preset) for a loa
 src/lib/overview-period.ts                overviewPeriod(now?): the overviews' 14-day window as loader data
 src/lib/hooks/use-interval.ts             useInterval(ms, fn): a poll that never fires on mount
 src/routes/with-header.tsx                the viewer's loader and its freshness stamp
-src/routes/<scope>/route.tsx              the layout loaders
+src/routes/<scope>/route.tsx              the layout loaders; the overviews (overviewPeriod as loader data, revalidate),
+                                          support, subscription (a Stripe beforeLoad), project alerts (warm + gate)
 src/routes/target/insights.tsx            warm + revalidate, loaderDeps, a beforeLoad default, preload policy;
                                           operation, client and coordinate the same without the redirect
 src/routes/target/checks.tsx              warm, loaderDeps on the filters, a child route's own document
@@ -192,6 +193,8 @@ Run from the repo root: `pnpm vitest run packages/web/app/src`.
 | `routes/target/insights.spec.ts`      | The loader's variables and policies before render; one request per document with the page mounted; Refresh on both pages; the bare URL's default range; the period resolved once across an hour boundary; a hover warms and the visit revalidates; rows don't preload. |
 | `routes/target/checks.spec.ts`        | Load more merges pages; a filter change starts over and keeps the selected check; the loaders' variables; one request per document; rows don't preload.                                                                                                                |
 | `routes/target/alerts.spec.ts`        | The bare URL's default range; retention and the log started together with the loader's period; the poll repeats the bounds within a minute and moves them at the roll; rules and detail revalidate their configuration and leave the state log to the page; the create form's three documents. |
+| `routes/organization/route.spec.ts`   | The overview started with the 14-day window as loader data, revalidating; support and a ticket warmed; the subscription pages redirect without Stripe and warm their documents with it. |
+| `routes/project/route.spec.ts`        | The overview as above; project alerts warmed read-once beside the gate, and the gate's redirect. |
 | `routes/target/proposals.spec.ts`     | The list started with the stages from the URL, or the default three, revalidating; the proposal started with version and timestamp, its changes left to the page; the list renders from the cache with no load-more control. |
 | `routes/target/explorer.spec.ts`      | Each view's loader starts its documents with the loader's period, the type name where it applies, gates cache-first and usage revalidating; one request per document with the view mounted. A bare URL on any of the four views takes the remembered preset, else the last week; the filters it carries survive the redirect; a preset picked on a view lands in the URL beside them and is remembered. |
 | `routes/target/traces.spec.ts`        | The bare URL's default range; the list started with the loader's period, the default filter and sort, revalidating; a URL's filter and sort reach the variables; the trace loader's variables; the error branch before not-found. |

@@ -15,6 +15,11 @@ vi.mock(
   '@/lib/laboratory-history-storage',
   () => import('@/lib/testing/mocks/laboratory-history-storage'),
 );
+// Stripe on, so the old subscription URL lands on the billing page instead of the organization.
+vi.mock('@/lib/billing/stripe-public-key', () => ({
+  getStripePublicKey: () => 'pk_test',
+  getIsStripeEnabled: () => true,
+}));
 
 async function loadAt(url: string, client = createTestClient()) {
   const { createAppRouter } = await import('@/router');

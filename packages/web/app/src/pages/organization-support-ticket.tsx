@@ -235,7 +235,7 @@ const SupportTicket_OrganizationFragment = graphql(`
   }
 `);
 
-const SupportTicketPageQuery = graphql(`
+export const SupportTicketPageQuery = graphql(`
   query SupportTicketPageQuery($organizationSlug: String!, $ticketId: ID!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...SupportTicket_OrganizationFragment
