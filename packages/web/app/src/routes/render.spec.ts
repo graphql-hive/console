@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { type ReactNode } from 'react';
+import { CDNAccessTokenCreateMutation } from '@/components/target/settings/cdn-access-tokens';
 import { CHECKS, checksFixtures } from '@/lib/testing/fixtures/checks';
 import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
 import { organizationMembers } from '@/lib/testing/fixtures/organization-members';
@@ -378,6 +379,77 @@ describe('target settings sections', () => {
       expect(cdn.map(operation => operation.variables)).toEqual([
         { selector: SLUGS, first: 10, after: null },
       ]);
+    },
+  );
+
+  it(
+    'shows a CDN token in the open page right after it is created',
+    { timeout: 30_000 },
+    async () => {
+      const tokens = ['token-1'];
+      const token = (id: string) => ({
+        __typename: 'CdnAccessToken' as const,
+        id,
+        firstCharacters: 'hv2ab',
+        lastCharacters: 'yz==',
+        alias: id,
+        createdAt: '2026-09-27T10:00:00.000Z',
+      });
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set('TargetSettingsPageQuery', targetSettings());
+      // Answered on a later tick, as a network would, once the first page has rendered.
+      let answered = false;
+      const later = <T>(value: T) =>
+        answered ? new Promise<T>(resolve => setTimeout(() => resolve(value), 10)) : value;
+      client.current.fixtures.set('CDNAccessTokensQuery', () =>
+        later({
+          __typename: 'Query',
+          target: {
+            __typename: 'Target',
+            id: 'target-1',
+            cdnAccessTokens: {
+              __typename: 'TargetCdnAccessTokenConnection',
+              edges: tokens.map(id => ({
+                __typename: 'TargetCdnAccessTokenEdge',
+                node: token(id),
+              })),
+              pageInfo: {
+                __typename: 'PageInfo',
+                hasNextPage: false,
+                hasPreviousPage: false,
+                endCursor: null,
+              },
+            },
+          },
+        }),
+      );
+      client.current.fixtures.set('CDNAccessTokens_CDNAccessTokenCreateMutation', () => {
+        tokens.unshift('token-2');
+        return later({
+          __typename: 'Mutation',
+          createCdnAccessToken: {
+            __typename: 'CdnAccessTokenCreateResult',
+            error: null,
+            ok: {
+              __typename: 'CdnAccessTokenCreateResultOk',
+              secretAccessToken: 'secret',
+              createdCdnAccessToken: token('token-2'),
+            },
+          },
+        });
+      });
+      at(`${SETTINGS}/cdn`);
+      await screen.findByText('token-1');
+      answered = true;
+
+      await client.current
+        .mutation(CDNAccessTokenCreateMutation, {
+          input: { target: { bySelector: SLUGS }, alias: 'token-2' },
+        })
+        .toPromise();
+
+      expect(await screen.findByText('token-2')).toBeTruthy();
+      expect(client.current.seen.filter(name => name === 'CDNAccessTokensQuery')).toHaveLength(2);
     },
   );
 

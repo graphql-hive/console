@@ -124,3 +124,185 @@ describe('createTarget updater', () => {
     },
   );
 });
+
+describe('cdn access token updaters', () => {
+  const selector = { organizationSlug: 'acme', projectSlug: 'shop', targetSlug: 'staging' };
+  const args = { input: { target: { bySelector: selector }, alias: 'ci' } };
+
+  function cacheWithPages() {
+    return {
+      resolve: vi.fn(() => 'Target:target-1'),
+      inspectFields: vi.fn(() => [
+        { fieldKey: 'id', fieldName: 'id', arguments: null },
+        { fieldKey: 'p1', fieldName: 'cdnAccessTokens', arguments: { first: 10, after: null } },
+        { fieldKey: 'p2', fieldName: 'cdnAccessTokens', arguments: { first: 10, after: 'c1' } },
+      ]),
+      invalidate: vi.fn(),
+    };
+  }
+
+  it(
+    "drops every cached page of the target's tokens after a create",
+    { timeout: 30_000 },
+    async () => {
+      const { Mutation } = await import('./urql-cache');
+      const cache = cacheWithPages();
+      const result: Parameters<typeof Mutation.createCdnAccessToken>[0] = {
+        __typename: 'Mutation',
+        createCdnAccessToken: {
+          __typename: 'CdnAccessTokenCreateResult',
+          error: null,
+          ok: {
+            __typename: 'CdnAccessTokenCreateResultOk',
+            secretAccessToken: 'secret',
+            createdCdnAccessToken: { __typename: 'CdnAccessToken', id: 'token-1' },
+          },
+        },
+      };
+
+      Mutation.createCdnAccessToken(result, args, cache as unknown as Cache, {} as never);
+
+      expect(cache.resolve).toHaveBeenCalledWith('Query', 'target', {
+        reference: { bySelector: selector },
+      });
+      expect(cache.invalidate.mock.calls).toEqual([
+        ['Target:target-1', 'cdnAccessTokens', { first: 10, after: null }],
+        ['Target:target-1', 'cdnAccessTokens', { first: 10, after: 'c1' }],
+      ]);
+    },
+  );
+
+  it('does the same after a delete', { timeout: 30_000 }, async () => {
+    const { Mutation } = await import('./urql-cache');
+    const cache = cacheWithPages();
+
+    Mutation.deleteCdnAccessToken(
+      {
+        __typename: 'Mutation',
+        deleteCdnAccessToken: {
+          __typename: 'DeleteCdnAccessTokenResult',
+          error: null,
+          ok: { __typename: 'DeleteCdnAccessTokenResultOk', deletedCdnAccessTokenId: 'token-1' },
+        },
+      },
+      { input: { target: { bySelector: selector }, cdnAccessTokenId: 'token-1' } },
+      cache as unknown as Cache,
+      {} as never,
+    );
+
+    expect(cache.invalidate).toHaveBeenCalledTimes(2);
+  });
+
+  it(
+    'does nothing when the mutation failed or the target is not cached',
+    { timeout: 30_000 },
+    async () => {
+      const { Mutation } = await import('./urql-cache');
+      const failed = cacheWithPages();
+      Mutation.createCdnAccessToken(
+        {
+          __typename: 'Mutation',
+          createCdnAccessToken: {
+            __typename: 'CdnAccessTokenCreateResult',
+            error: { __typename: 'CdnAccessTokenCreateResultError', message: 'nope' },
+            ok: null,
+          },
+        },
+        args,
+        failed as unknown as Cache,
+        {} as never,
+      );
+      expect(failed.invalidate).not.toHaveBeenCalled();
+
+      const unknown = { ...cacheWithPages(), resolve: vi.fn(() => null) };
+      Mutation.deleteCdnAccessToken(
+        {
+          __typename: 'Mutation',
+          deleteCdnAccessToken: {
+            __typename: 'DeleteCdnAccessTokenResult',
+            error: null,
+            ok: { __typename: 'DeleteCdnAccessTokenResultOk', deletedCdnAccessTokenId: 'token-1' },
+          },
+        },
+        { input: { target: { bySelector: selector }, cdnAccessTokenId: 'token-1' } },
+        unknown as unknown as Cache,
+        {} as never,
+      );
+      expect(unknown.invalidate).not.toHaveBeenCalled();
+    },
+  );
+});
+
+describe('cdn access token updaters through the cache', () => {
+  it('refetch the page a list has open after a create', { timeout: 30_000 }, async () => {
+    const { pipe, subscribe } = await import('wonka');
+    const { createTestClient } = await import('@/lib/testing/urql');
+    const { CDNAccessTokensQuery, CDNAccessTokenCreateMutation } = await import(
+      '@/components/target/settings/cdn-access-tokens'
+    );
+    const selector = { organizationSlug: 'acme', projectSlug: 'shop', targetSlug: 'staging' };
+    const token = (id: string) => ({
+      __typename: 'CdnAccessToken' as const,
+      id,
+      firstCharacters: 'ab',
+      lastCharacters: 'yz',
+      alias: id,
+      createdAt: '2026-09-27T10:00:00.000Z',
+    });
+    const client = createTestClient(
+      new Map<string, unknown>([
+        [
+          'CDNAccessTokensQuery',
+          {
+            __typename: 'Query',
+            target: {
+              __typename: 'Target',
+              id: 'target-1',
+              cdnAccessTokens: {
+                __typename: 'TargetCdnAccessTokenConnection',
+                edges: [{ __typename: 'TargetCdnAccessTokenEdge', node: token('token-1') }],
+                pageInfo: {
+                  __typename: 'PageInfo',
+                  hasNextPage: false,
+                  hasPreviousPage: false,
+                  endCursor: null,
+                },
+              },
+            },
+          },
+        ],
+        [
+          'CDNAccessTokens_CDNAccessTokenCreateMutation',
+          {
+            __typename: 'Mutation',
+            createCdnAccessToken: {
+              __typename: 'CdnAccessTokenCreateResult',
+              error: null,
+              ok: {
+                __typename: 'CdnAccessTokenCreateResultOk',
+                secretAccessToken: 'secret',
+                createdCdnAccessToken: token('token-2'),
+              },
+            },
+          },
+        ],
+      ]),
+    );
+    const requests = () => client.seen.filter(name => name === 'CDNAccessTokensQuery').length;
+
+    const page = pipe(
+      client.query(CDNAccessTokensQuery, { selector, first: 10, after: null }),
+      subscribe(() => {}),
+    );
+    expect(requests()).toBe(1);
+
+    await client
+      .mutation(CDNAccessTokenCreateMutation, {
+        input: { target: { bySelector: selector }, alias: 'token-2' },
+      })
+      .toPromise();
+
+    expect(requests()).toBe(2);
+    page.unsubscribe();
+  });
+});

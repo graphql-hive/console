@@ -12,6 +12,10 @@ import type { AlertForm_AddMetricAlertRuleMutation } from '@/components/target/a
 import type { CreateOperationMutationType } from '@/components/target/laboratory/create-operation-modal';
 import type { DeleteCollectionMutationType } from '@/components/target/laboratory/delete-collection-modal';
 import type { DeleteOperationMutationType } from '@/components/target/laboratory/delete-operation-modal';
+import type {
+  CDNAccessTokenCreateMutation,
+  CDNAccessTokenDeleteMutation,
+} from '@/components/target/settings/cdn-access-tokens';
 import type { CreateAccessToken_CreateTokenMutation } from '@/components/target/settings/registry-access-token';
 import { graphql } from '@/gql';
 import schema from '@/gql/schema';
@@ -417,6 +421,47 @@ const deleteSavedFilter: TypedDocumentNodeUpdateResolver<
   );
 };
 
+/**
+ * Drops every cached page of `Target.cdnAccessTokens` for the target the mutation named, so the
+ * open page refetches; the pages are keyed by cursor, so a written result could not reach them.
+ */
+function invalidateCdnAccessTokens(
+  cache: Cache,
+  selector: { organizationSlug: string; projectSlug: string; targetSlug: string },
+) {
+  const target = cache.resolve('Query', 'target', { reference: { bySelector: selector } });
+  if (typeof target !== 'string') {
+    return;
+  }
+  for (const field of cache.inspectFields(target)) {
+    if (field.fieldName === 'cdnAccessTokens') {
+      cache.invalidate(target, field.fieldName, field.arguments ?? undefined);
+    }
+  }
+}
+
+const createCdnAccessToken: TypedDocumentNodeUpdateResolver<typeof CDNAccessTokenCreateMutation> = (
+  { createCdnAccessToken },
+  args,
+  cache,
+) => {
+  const selector = args.input.target.bySelector;
+  if (createCdnAccessToken.ok && selector) {
+    invalidateCdnAccessTokens(cache, selector);
+  }
+};
+
+const deleteCdnAccessToken: TypedDocumentNodeUpdateResolver<typeof CDNAccessTokenDeleteMutation> = (
+  { deleteCdnAccessToken },
+  args,
+  cache,
+) => {
+  const selector = args.input.target.bySelector;
+  if (deleteCdnAccessToken.ok && selector) {
+    invalidateCdnAccessTokens(cache, selector);
+  }
+};
+
 const addMetricAlertRule: TypedDocumentNodeUpdateResolver<
   typeof AlertForm_AddMetricAlertRuleMutation
 > = ({ addMetricAlertRule }, _args, cache) => {
@@ -460,6 +505,8 @@ export const Mutation = {
   deleteOperationInDocumentCollection,
   createOperationInDocumentCollection,
   deleteSavedFilter,
+  createCdnAccessToken,
+  deleteCdnAccessToken,
   addMetricAlertRule,
   updateMetricAlertRule,
 };

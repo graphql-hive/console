@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
+import { ReactElement, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
@@ -28,7 +28,7 @@ const cdnRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
 );
 
-const CDNAccessTokenCreateMutation = graphql(`
+export const CDNAccessTokenCreateMutation = graphql(`
   mutation CDNAccessTokens_CDNAccessTokenCreateMutation($input: CreateCdnAccessTokenInput!) {
     createCdnAccessToken(input: $input) {
       error {
@@ -48,7 +48,6 @@ const CDNAccessTokenCreateMutation = graphql(`
 export function CreateCDNAccessTokenModal(props: {
   open: boolean;
   onOpenChangeComplete: (open: boolean) => void;
-  onCreateCDNAccessToken: () => void;
   onClose: () => void;
 }): ReactElement {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
@@ -76,12 +75,6 @@ export function CreateCDNAccessTokenModal(props: {
       },
     });
   }
-
-  useEffect(() => {
-    if (createCdnAccessToken.data?.createCdnAccessToken.ok?.createdCdnAccessToken.id) {
-      props.onCreateCDNAccessToken();
-    }
-  }, [createCdnAccessToken.data?.createCdnAccessToken.ok?.createdCdnAccessToken.id]);
 
   const result = createCdnAccessToken.data?.createCdnAccessToken;
 
@@ -158,7 +151,7 @@ export function CreateCDNAccessTokenModal(props: {
   );
 }
 
-const CDNAccessTokenDeleteMutation = graphql(`
+export const CDNAccessTokenDeleteMutation = graphql(`
   mutation CDNAccessTokens_DeleteCDNAccessToken($input: DeleteCdnAccessTokenInput!) {
     deleteCdnAccessToken(input: $input) {
       error {
@@ -175,7 +168,6 @@ function DeleteCDNAccessTokenModal(props: {
   open: boolean;
   /** Null while closed. */
   cdnAccessTokenId: string | null;
-  onDeletedAccessTokenId: (deletedAccessTokenId: string) => void;
   onClose: () => void;
 }): ReactElement {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
@@ -214,7 +206,6 @@ function DeleteCDNAccessTokenModal(props: {
           }).then(result => {
             const ok = result.data?.deleteCdnAccessToken.ok;
             if (ok) {
-              props.onDeletedAccessTokenId(ok.deletedCdnAccessTokenId);
               toast({
                 title: 'CDN access token deleted',
                 description:
@@ -280,7 +271,7 @@ export function CDNAccessTokens(): React.ReactElement {
     }
   };
 
-  const [target, reexecuteQuery] = useQuery({
+  const [target] = useQuery({
     query: CDNAccessTokensQuery,
     variables: {
       selector: {
@@ -342,17 +333,11 @@ export function CDNAccessTokens(): React.ReactElement {
         key={overlaySession}
         open={cdn === 'create'}
         onOpenChangeComplete={resetOnClose}
-        onCreateCDNAccessToken={() => {
-          reexecuteQuery({ requestPolicy: 'network-only' });
-        }}
         onClose={closeModal}
       />
       <DeleteCDNAccessTokenModal
         open={cdn === 'delete'}
         cdnAccessTokenId={cdn === 'delete' ? (id ?? null) : null}
-        onDeletedAccessTokenId={() => {
-          reexecuteQuery({ requestPolicy: 'network-only' });
-        }}
         onClose={closeModal}
       />
     </SubPageLayout>
