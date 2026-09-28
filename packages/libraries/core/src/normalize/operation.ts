@@ -8,7 +8,6 @@ import {
   OperationDefinitionNode,
   print,
   SelectionNode,
-  separateOperations,
   stripIgnoredCharacters,
   TypeInfo,
   VariableDefinitionNode,
@@ -23,84 +22,76 @@ import { collectSchemaCoordinates } from '../client/collect-schema-coordinates.j
  */
 export function normalizeOperation({
   document,
-  operationName,
   hideLiterals = true,
   removeAliases = true,
 }: {
   document: DocumentNode;
   hideLiterals?: boolean;
   removeAliases?: boolean;
-  operationName?: string;
 }): string {
   return stripIgnoredCharacters(
     print(
-      visit(
-        dropUnusedDefinitions(
-          document,
-          operationName ?? document.definitions.find(isOperationDef)?.name?.value,
-        ),
-        {
-          // hide literals
-          IntValue(node) {
-            return hideLiterals ? { ...node, value: '0' } : node;
-          },
-          FloatValue(node) {
-            return hideLiterals ? { ...node, value: '0' } : node;
-          },
-          StringValue(node) {
-            return hideLiterals ? { ...node, value: '', block: false } : node;
-          },
-          Field(node) {
-            return {
-              ...node,
-              // remove aliases
-              alias: removeAliases ? undefined : node.alias,
-              // sort arguments
-              arguments: sortNodes(node.arguments),
-            };
-          },
-          Document(node) {
-            return {
-              ...node,
-              definitions: sortNodes(node.definitions),
-            };
-          },
-          OperationDefinition(node) {
-            return {
-              ...node,
-              variableDefinitions: sortNodes(node.variableDefinitions),
-            };
-          },
-          SelectionSet(node) {
-            return {
-              ...node,
-              selections: sortNodes(node.selections),
-            };
-          },
-          FragmentSpread(node) {
-            return {
-              ...node,
-              directives: sortNodes(node.directives),
-            };
-          },
-          InlineFragment(node) {
-            return {
-              ...node,
-              directives: sortNodes(node.directives),
-            };
-          },
-          FragmentDefinition(node) {
-            return {
-              ...node,
-              directives: sortNodes(node.directives),
-              variableDefinitions: sortNodes(node.variableDefinitions),
-            };
-          },
-          Directive(node) {
-            return { ...node, arguments: sortNodes(node.arguments) };
-          },
+      visit(document, {
+        // hide literals
+        IntValue(node) {
+          return hideLiterals ? { ...node, value: '0' } : node;
         },
-      ),
+        FloatValue(node) {
+          return hideLiterals ? { ...node, value: '0' } : node;
+        },
+        StringValue(node) {
+          return hideLiterals ? { ...node, value: '', block: false } : node;
+        },
+        Field(node) {
+          return {
+            ...node,
+            // remove aliases
+            alias: removeAliases ? undefined : node.alias,
+            // sort arguments
+            arguments: sortNodes(node.arguments),
+          };
+        },
+        Document(node) {
+          return {
+            ...node,
+            definitions: sortNodes(node.definitions),
+          };
+        },
+        OperationDefinition(node) {
+          return {
+            ...node,
+            variableDefinitions: sortNodes(node.variableDefinitions),
+          };
+        },
+        SelectionSet(node) {
+          return {
+            ...node,
+            selections: sortNodes(node.selections),
+          };
+        },
+        FragmentSpread(node) {
+          return {
+            ...node,
+            directives: sortNodes(node.directives),
+          };
+        },
+        InlineFragment(node) {
+          return {
+            ...node,
+            directives: sortNodes(node.directives),
+          };
+        },
+        FragmentDefinition(node) {
+          return {
+            ...node,
+            directives: sortNodes(node.directives),
+            variableDefinitions: sortNodes(node.variableDefinitions),
+          };
+        },
+        Directive(node) {
+          return { ...node, arguments: sortNodes(node.arguments) };
+        },
+      }),
     ),
   );
 }
@@ -150,14 +141,6 @@ function isOfKindList<T>(nodes: readonly any[], kind: string | string[]): nodes 
 
 function isOperationDef(def: DefinitionNode): def is OperationDefinitionNode {
   return def.kind === Kind.OPERATION_DEFINITION;
-}
-
-function dropUnusedDefinitions(doc: DocumentNode, operationName?: string) {
-  if (!operationName) {
-    return doc;
-  }
-
-  return separateOperations(doc)[operationName] ?? doc;
 }
 
 function findOperationDefinition(doc: DocumentNode) {
