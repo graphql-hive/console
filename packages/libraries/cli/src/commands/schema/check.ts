@@ -164,7 +164,7 @@ const schemaCheckGitHubMutation = graphql(/* GraphQL */ `
       }
       ... on GitHubSchemaCheckSuccess {
         message
-        valid
+        isValid
         schemaCheck {
           id
           webUrl
@@ -517,7 +517,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       } else if (payload.__typename === 'GitHubSchemaCheckSuccess') {
         const gitHubResult = payload as GitHubSchemaCheckSuccessResult;
 
-        if (gitHubResult.valid) {
+        if (gitHubResult.isValid) {
           this.logSuccess(gitHubResult.message);
         }
 
@@ -525,7 +525,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           this.log(`View full report:\n${gitHubResult.schemaCheck.webUrl}`);
         }
 
-        if (!gitHubResult.valid) {
+        if (!gitHubResult.isValid) {
           await handleFailedCheck(gitHubResult.schemaCheck?.id);
         }
       } else {

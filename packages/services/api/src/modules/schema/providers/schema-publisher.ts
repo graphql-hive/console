@@ -3530,7 +3530,7 @@ export class SchemaPublisher {
       return {
         __typename: 'GitHubSchemaCheckSuccess' as const,
         message: 'Check-run created',
-        valid: conclusion === SchemaCheckConclusion.Success,
+        isValid: conclusion === SchemaCheckConclusion.Success,
         schemaCheck,
         checkRun,
       };

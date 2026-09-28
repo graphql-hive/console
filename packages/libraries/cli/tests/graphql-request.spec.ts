@@ -94,7 +94,7 @@ describe('registry errors', () => {
   });
 
   test.each([
-    'Cannot query field "valid" on type "GitHubSchemaCheckSuccess".',
+    'Cannot query field "isValid" on type "GitHubSchemaCheckSuccess".',
     'Variable "$input" got invalid value { sdl: "type Query" }; Field "baseline" is not defined by type "SchemaCheckInput".',
     'Unknown argument "withSafeBasedOnUsageNote" on field "SchemaChange.message".',
   ])('validation error "%s" means the server is older than the CLI', async message => {
