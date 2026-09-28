@@ -504,6 +504,7 @@ export const cacheOptions = {
   resolvers: {
     Target: {
       appDeployments: relayPagination(),
+      schemaChecks: relayPagination(),
       traces: relayPagination(),
     },
     AppDeployment: {
