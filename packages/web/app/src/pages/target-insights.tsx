@@ -115,6 +115,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const search = insightsRoute.useSearch();
   const navigate = insightsRoute.useNavigate();
+  const { period, resolution } = insightsRoute.useLoaderData();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays,
     defaultPreset: presetLast7Days,
@@ -124,7 +125,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     query: InsightsFilterPicker_Query,
     variables: {
       selector: { organizationSlug, projectSlug, targetSlug },
-      period: dateRangeController.resolvedRange,
+      period,
     },
   });
 
@@ -337,14 +338,14 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
         </div>
       </div>
       <OperationsStats
-        period={dateRangeController.resolvedRange}
+        period={period}
         filter={filter}
         dateRangeText={dateRangeController.selectedPreset.label}
         mode="operation-list"
-        resolution={dateRangeController.resolution}
+        resolution={resolution}
       />
       <OperationsList
-        period={dateRangeController.resolvedRange}
+        period={period}
         filter={filter}
         selectedPeriod={dateRangeController.selectedPreset.range}
       />

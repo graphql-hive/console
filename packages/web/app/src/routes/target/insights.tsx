@@ -25,8 +25,7 @@ import { createRoute, redirect } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
 // Stats move, so their documents revalidate on every visit and on Refresh (router.invalidate);
-// the rest is read once, and a hover preload only warms. The page reads cache-first and never
-// requests on its own.
+// the rest is read once, and a hover preload only warms.
 const revalidate = (loader: LoaderContext) =>
   loader.preload ? ('cache-first' as const) : ('cache-and-network' as const);
 
@@ -47,6 +46,8 @@ export const targetInsightsRoute = createRoute({
   },
   // Everything in the search but the saved filter's id reaches a query.
   loaderDeps: ({ search: { viewId: _viewId, ...deps } }) => deps,
+  // A preload only warms, so the visit that follows it still runs the loader.
+  preloadStaleTime: 0,
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
@@ -70,6 +71,8 @@ export const targetInsightsRoute = createRoute({
       { targetSelector: selector, period, filter },
       revalidate(loader),
     );
+    // The page reads the period from here, so both sides resolve "now" once.
+    return { period, resolution };
   },
   component: TargetInsightsPage,
 });
@@ -106,6 +109,7 @@ export const targetInsightsOperationsRoute = createRoute({
     from: search.from ?? presetLast1Day.range.from,
     to: search.to ?? presetLast1Day.range.to,
   }),
+  preloadStaleTime: 0,
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug, operationHash } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
@@ -121,6 +125,7 @@ export const targetInsightsOperationsRoute = createRoute({
       { targetSelector: selector, period, filter: { operationIds: [operationHash] }, resolution },
       revalidate(loader),
     );
+    return { period, resolution };
   },
   component: function TargetInsightsRoute() {
     const { operationName, operationHash } = targetInsightsOperationsRoute.useParams();

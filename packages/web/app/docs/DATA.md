@@ -12,8 +12,9 @@ the variables the page will use, through `loadQuery` (`src/lib/route-utils.ts`).
 `useQuery` for the same document and variables is then a cache hit, or joins the request still in
 flight; it never starts one of its own on a first render. On a cold load every document for the
 screen starts in one burst as soon as the router has matched, before anything renders, alongside the
-viewer and layout documents. There is no `useLoaderData`: the page reads through urql, so mutations,
-updaters and revalidation reach it the same way they reach everything else.
+viewer and layout documents. Loader data never carries GraphQL data: the page reads through urql, so
+mutations, updaters and revalidation reach it the same way they reach everything else. It carries
+only what the loader decided, such as the insights period below.
 
 **2. Warm by default; await only to decide.** A loader `void`s `loadQuery` for what the page shows,
 and the page renders at once with its regions behind their own skeletons (`DataTable loading`, the
@@ -27,10 +28,13 @@ load that finishes inside the delay never shows it.
 **The rule that makes 1 work: the variables must match.** The loader builds them from `params` and
 `loaderDeps` exactly as the page builds them from `useSlugs` and `useSearch`: same shape, same
 defaults, and `null` is not `undefined`, because urql keys a request by document and variables.
-Anything computed is shared as a pure function so both sides call it: `resolveDateRange` and
-`buildGraphQLFilter` for insights, `settingsSections` for the settings routes. `loaderDeps` names
-the search params a query takes, so a change to one of them re-runs the loader and a change to any
-other (`viewId` on insights) does not.
+Anything computed from the URL alone is a pure function both sides call: `buildGraphQLFilter` for
+insights, `settingsSections` for the settings routes. Anything that also depends on the clock is
+resolved once, by the loader, and returned as loader data: the insights loaders return the period
+and resolution from `resolveDateRange` and the page reads them with `useLoaderData`, so a filter
+change after the hour rolls over cannot leave the two on different buckets. `loaderDeps` names the
+search params a query takes, so a change to one of them re-runs the loader and a change to any other
+(`viewId` on insights) does not.
 
 ## Request policies
 
@@ -46,11 +50,13 @@ other (`viewId` on insights) does not.
 - **Preloads.** `loader.preload` is true when a hover or focus preload runs the loader
   (`defaultPreload: 'intent'`). A loader that revalidates switches to `cache-first` for it, so a
   hover only warms. The router keeps a preloaded match fresh for 30 s (`defaultPreloadStaleTime`),
-  so the click that follows runs no loader at all; on a `cache-first` route that means no request at
-  click time either.
+  so on a `cache-first` route the click that follows runs no loader and no request. A route that
+  revalidates sets `preloadStaleTime: 0`, so the visit that follows a hover still runs its loader;
+  the insights routes do.
 - **Refresh** is `router.invalidate()`: it re-runs the current matches' loaders, and each loader's
   policy decides what that costs. `useDateRangeController().refreshResolvedRange()` does this, so a
-  Refresh button is one call and reloads exactly what its route declared live.
+  Refresh button is one call and reloads exactly what its route declared live, recomputing anything
+  the loader resolved, such as the insights period.
 - **`network-only`** after a mutation whose result no updater can write, to re-execute a list.
 - An error result is never cached. `loadQuery` resolves with it rather than throwing, the page's
   `useQuery` sees it and renders `QueryError` as before, and a loader redirects only on an explicit
@@ -173,4 +179,5 @@ the `preload` flag. A promise fixture holds its request in flight until it settl
 spec proves a page joined the loader's request. Fixtures (`src/lib/testing/fixtures/`) carry
 `__typename` on every object below the root, as the server would, and are checked against the
 document they answer: a missing field, including a typename, fails with its path named. No fake
-timers.
+timers, except the clock alone (`vi.useFakeTimers({ toFake: ['Date'] })`) when a case needs time to
+move: timers, the router and `waitFor` stay real.

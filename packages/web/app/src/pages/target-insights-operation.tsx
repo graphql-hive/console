@@ -16,6 +16,11 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { getRouteApi } from '@tanstack/react-router';
+
+const operationRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
+);
 
 const GraphQLOperationBody_OperationFragment = graphql(`
   fragment GraphQLOperationBody_OperationFragment on Operation {
@@ -61,6 +66,7 @@ function OperationView({
     dataRetentionInDays,
     defaultPreset: presetLast1Day,
   });
+  const { period, resolution } = operationRoute.useLoaderData();
   const operationFilter = useMemo(() => ({ operationIds: [operationHash] }), [operationHash]);
 
   const [result] = useQuery({
@@ -106,11 +112,11 @@ function OperationView({
       </div>
       {!result.fetching && isNotNoQueryOrMutation === false ? (
         <OperationsStats
-          period={dateRangeController.resolvedRange}
+          period={period}
           dateRangeText={dateRangeController.selectedPreset.label}
           filter={operationFilter}
           mode="operation-page"
-          resolution={dateRangeController.resolution}
+          resolution={resolution}
         />
       ) : (
         <Alert>

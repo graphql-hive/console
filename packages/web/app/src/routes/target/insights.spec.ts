@@ -196,30 +196,63 @@ describe('operation route', () => {
 });
 
 describe('insights preloading', () => {
-  // A preloaded match stays fresh for preloadStaleTime, so the click that follows runs no loader.
+  it('a hover only warms; the visit that follows revalidates', { timeout: 30_000 }, async () => {
+    const client = createTestClient(fixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({ initialEntries: [TARGET] }),
+      urqlClient: client,
+    });
+    await router.load();
+    const to = '/$organizationSlug/$projectSlug/$targetSlug/insights';
+    const search = { from, to: RANGE_TO };
+    const stats = () =>
+      client.operations
+        .filter((_, index) => client.seen[index] === 'Stats_GeneralOperationsStats')
+        .map(operation => [operation.context.preload, operation.context.requestPolicy]);
+
+    await router.preloadRoute({ to, params: SLUGS, search });
+    expect(stats()).toEqual([[true, 'cache-first']]);
+
+    await router.navigate({ to, params: SLUGS, search });
+    await waitFor(() => expect(stats()).toHaveLength(2));
+    // The network leg of a cache-and-network hit reaches the network as network-only.
+    expect(stats()[1]).toEqual([false, 'network-only']);
+  });
+});
+
+describe('the period', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // Only the clock is faked; timers stay real so the router and waitFor run as usual.
   it(
-    'a preload only warms, and the click that follows needs no request',
+    'is resolved once, by the loader, so a filter change after the hour rolls over stays on one period',
     { timeout: 30_000 },
     async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-09-28T10:59:30.000Z'));
       const client = createTestClient(fixtures());
-      const router = createAppRouter({
-        history: createMemoryHistory({ initialEntries: [TARGET] }),
-        urqlClient: client,
-      });
-      await router.load();
-      const to = '/$organizationSlug/$projectSlug/$targetSlug/insights';
-      const search = { from, to: RANGE_TO };
-      const stats = () =>
+      const { router } = renderAtUrl(`${TARGET}/insights?from=now-7d&to=now`, { client });
+      await screen.findByText('Total requests served');
+      const periods = () =>
         client.operations
           .filter((_, index) => client.seen[index] === 'Stats_GeneralOperationsStats')
-          .map(operation => [operation.context.preload, operation.context.requestPolicy]);
+          .map(operation => (operation.variables as { period: { to: string } }).period.to);
+      expect(periods()).toHaveLength(1);
 
-      await router.preloadRoute({ to, params: SLUGS, search });
-      expect(stats()).toEqual([[true, 'cache-first']]);
+      vi.setSystemTime(new Date('2026-09-28T11:00:30.000Z'));
+      await router.navigate({
+        to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
+        params: SLUGS,
+        search: { from: 'now-7d', to: 'now', operations: [OPERATION.hash] },
+      });
+      await waitFor(() => expect(periods()).toHaveLength(2));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      await router.navigate({ to, params: SLUGS, search });
-      expect(router.state.location.pathname).toBe(`${TARGET}/insights`);
-      expect(stats()).toEqual([[true, 'cache-first']]);
+      // One request per filter, both on the new bucket: the page did not ask for the old one.
+      expect(periods()).toHaveLength(2);
+      expect(new Date(periods()[1]).getUTCHours()).toBe(11);
     },
   );
 });
