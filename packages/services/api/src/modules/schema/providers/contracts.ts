@@ -69,10 +69,12 @@ export class Contracts {
       };
     }
 
-    let result: unknown;
+    let contract: Contract;
     try {
-      await this.pool.transaction('create contract', async trx => {
-        result = await trx.maybeOne(psql`
+      contract = await this.pool.transaction('create contract', async trx => {
+        const contract = await trx
+          .maybeOne(
+            psql`
           INSERT INTO "contracts" (
             "target_id"
             , "contract_name"
@@ -88,13 +90,16 @@ export class Contracts {
           )
           RETURNING
             ${contractFields}
-        `);
+        `,
+          )
+          .then(ContractModel.parse);
 
         // Only create the graph record if the source graph id already exists
         if (args.sourceGraphId) {
           await this.graphStore.createGraph(
             {
               type: 'CONTRACT',
+              id: contract.id,
               name: `default/${validatedContract.data.contractName}`,
               organizationId: args.organizationId,
               projectId: args.projectId,
@@ -111,6 +116,7 @@ export class Contracts {
             trx,
           );
         }
+        return contract;
       });
     } catch (err: unknown) {
       if (
@@ -127,8 +133,6 @@ export class Contracts {
       throw err;
     }
 
-    const contract = ContractModel.parse(result);
-
     this.logger.debug(
       'Created contract successfully. (targetId=%s, contractId=%s, contractName=%s)',
       args.contract.targetId,
@@ -138,7 +142,7 @@ export class Contracts {
 
     return {
       type: 'success' as const,
-      contract: ContractModel.parse(result),
+      contract,
     };
   }
 
