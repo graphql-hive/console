@@ -1214,6 +1214,133 @@ describe('changes with usage data', () => {
   });
 });
 
+test.concurrent(
+  'report all schema coordinates from a document with multiple operations',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const {
+      target,
+      createTargetAccessToken,
+      toggleTargetValidation,
+      readOperationBody,
+      readOperationsStats,
+      waitForOperationsCollected,
+    } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({ target });
+    const schema = /* GraphQL */ `
+      type Query {
+        user: User
+        product: Product
+      }
+
+      type User {
+        name: String
+      }
+
+      type Product {
+        name: String
+      }
+    `;
+    const operation = /* GraphQL */ `
+      query UserName {
+        user {
+          name
+        }
+      }
+
+      query ProductName {
+        product {
+          name
+        }
+      }
+    `;
+    const graphqlSchema = buildSchema(schema);
+    const fields = Array.from(
+      collectSchemaCoordinates({
+        documentNode: parse(operation),
+        variables: null,
+        processVariables: false,
+        schema: graphqlSchema,
+        typeInfo: new TypeInfo(graphqlSchema),
+      }),
+    );
+
+    const schemaPublishResult = await token
+      .publishSchema({ author: 'Kamil', commit: 'initial', sdl: schema })
+      .then(r => r.expectNoGraphQLErrors());
+    expect((schemaPublishResult.schemaPublish as any).valid).toBe(true);
+
+    await toggleTargetValidation(true);
+
+    const collectResult = await token.collectLegacyOperations([
+      {
+        operation,
+        operationName: 'UserName',
+        fields,
+        execution: {
+          ok: true,
+          duration: 200_000_000,
+          errorsTotal: 0,
+        },
+      },
+    ]);
+    expect(collectResult.status).toBe(200);
+    await waitForOperationsCollected(1);
+
+    const from = formatISO(subHours(Date.now(), 1));
+    const to = formatISO(Date.now());
+    const operationsStats = await readOperationsStats(from, to);
+    expect(operationsStats.totalOperations).toBe(1);
+    expect(operationsStats.operations.edges).toHaveLength(1);
+
+    const reportedOperation = operationsStats.operations.edges[0].node;
+    expect(reportedOperation).toMatchObject({
+      count: 1,
+      kind: 'query',
+    });
+    expect(reportedOperation.name).toContain('UserName');
+    expect(await readOperationBody(reportedOperation.operationHash)).toEqual(
+      'query ProductName{product{name}}query UserName{user{name}}',
+    );
+
+    const operationCollectionResult = await clickHouseQuery<unknown>(`
+      SELECT body, coordinates
+      FROM operation_collection
+      WHERE target = '${target.id}'
+    `);
+    expect(operationCollectionResult.data).toEqual([
+      {
+        body: 'query ProductName{product{name}}query UserName{user{name}}',
+        coordinates: expect.arrayContaining([
+          'Query.user',
+          'User.name',
+          'Query.product',
+          'Product.name',
+        ]),
+      },
+    ]);
+
+    const schemaCheckResult = await token
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          user: User
+          product: Product
+        }
+
+        type User {
+          id: ID
+        }
+
+        type Product {
+          id: ID
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+    expect(schemaCheckResult.schemaCheck.__typename).toBe('SchemaCheckError');
+  },
+);
+
 test.concurrent('number of produced and collected operations should match', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
