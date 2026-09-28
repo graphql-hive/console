@@ -1433,7 +1433,7 @@ const ActiveSchemaCheck_SchemaCheckFragment = graphql(`
   }
 `);
 
-const ActiveSchemaCheckQuery = graphql(`
+export const ActiveSchemaCheckQuery = graphql(`
   query ActiveSchemaCheck_ActiveSchemaCheckQuery(
     $organizationSlug: String!
     $projectSlug: String!

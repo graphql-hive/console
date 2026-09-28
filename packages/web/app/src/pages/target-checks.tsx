@@ -25,7 +25,7 @@ const checksRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/checks',
 );
 
-const SchemaChecks_NavigationQuery = graphql(`
+export const SchemaChecks_NavigationQuery = graphql(`
   query SchemaChecks_NavigationQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -190,7 +190,7 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
   );
 }
 
-const ChecksPageQuery = graphql(`
+export const ChecksPageQuery = graphql(`
   query ChecksPageQuery($organizationSlug: String!, $projectSlug: String!, $targetSlug: String!) {
     target(
       reference: {

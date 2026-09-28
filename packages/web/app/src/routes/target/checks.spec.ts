@@ -4,6 +4,8 @@ import { CHECKS, checksFixtures } from '@/lib/testing/fixtures/checks';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
+import { createAppRouter } from '@/router';
+import { createMemoryHistory } from '@tanstack/react-router';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
@@ -101,5 +103,48 @@ describe('schema checks list', () => {
     expect(router.state.location.pathname).toBe(`${CHECKS_PAGE}/check-2`);
     expect(screen.getByText(CHECKS.failed[0])).toBeTruthy();
     expect(screen.queryByText('Select a schema check')).toBeNull();
+  });
+});
+
+describe('checks route loaders', () => {
+  it(
+    'start the page and the first list page, with the filters from the URL, before rendering',
+    { timeout: 30_000 },
+    async () => {
+      const testClient = client();
+      const router = createAppRouter({
+        history: createMemoryHistory({ initialEntries: [`${CHECKS_PAGE}?filter_failed=true`] }),
+        urqlClient: testClient,
+      });
+      await router.load();
+
+      expect(testClient.seen).toContain('ChecksPageQuery');
+      expect(listRequests(testClient)).toEqual([
+        { ...SLUGS, after: null, filters: { changed: false, failed: true } },
+      ]);
+    },
+  );
+
+  it('render the page from the cache: one request per document', { timeout: 30_000 }, async () => {
+    const testClient = client();
+    renderAtUrl(CHECKS_PAGE, { client: testClient });
+    await screen.findByText(CHECKS.first[0]);
+
+    expect(testClient.seen.filter(name => name === 'ChecksPageQuery')).toHaveLength(1);
+    expect(listRequests(testClient)).toHaveLength(1);
+  });
+
+  it("start a check's own document on its route, once", { timeout: 30_000 }, async () => {
+    const testClient = client();
+    testClient.fixtures.set('ActiveSchemaCheck_ActiveSchemaCheckQuery', new Promise(() => {}));
+    renderAtUrl(`${CHECKS_PAGE}/check-2`, { client: testClient });
+    await screen.findByText(CHECKS.first[1]);
+
+    const active = testClient.operations.filter(
+      (_, index) => testClient.seen[index] === 'ActiveSchemaCheck_ActiveSchemaCheckQuery',
+    );
+    expect(active.map(operation => operation.variables)).toEqual([
+      { ...SLUGS, schemaCheckId: 'check-2' },
+    ]);
   });
 });
