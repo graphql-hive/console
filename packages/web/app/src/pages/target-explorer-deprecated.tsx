@@ -25,6 +25,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { getRouteApi } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
 
@@ -171,7 +172,9 @@ function InternalDeprecatedSchemaView(props: {
 
 const DeprecatedSchemaView = memo(InternalDeprecatedSchemaView);
 
-const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
+const deprecatedRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated');
+
+export const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
   query DeprecatedSchemaExplorer_DeprecatedSchemaQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -226,14 +229,12 @@ function DeprecatedSchemaExplorer() {
     defaultPreset: presetLast7Days,
   });
 
+  // Resolved by the route loader, so the page and the loader ask for one period.
+  const { period } = deprecatedRoute.useLoaderData();
+
   const [query] = useQuery({
     query: DeprecatedSchemaExplorer_DeprecatedSchemaQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-      period: dateRangeController.resolvedRange,
-    },
+    variables: { organizationSlug, projectSlug, targetSlug, period },
   });
 
   if (query.error) {
@@ -253,7 +254,7 @@ function DeprecatedSchemaExplorer() {
       <ExplorerHeader
         title="Deprecated Schema"
         description="Understand the deprecated part of GraphQL schema"
-        period={dateRangeController.resolvedRange}
+        period={period}
         subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
         metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
         dateRangeControl={<DateRangeFilter controller={dateRangeController} />}
@@ -309,7 +310,7 @@ function DeprecatedSchemaExplorer() {
   );
 }
 
-const TargetExplorerDeprecatedSchemaPageQuery = graphql(`
+export const TargetExplorerDeprecatedSchemaPageQuery = graphql(`
   query TargetExplorerDeprecatedSchemaPageQuery(
     $organizationSlug: String!
     $projectSlug: String!

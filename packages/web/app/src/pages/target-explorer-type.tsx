@@ -26,6 +26,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { getRouteApi } from '@tanstack/react-router';
 
 export const TypeRenderFragment = graphql(`
   fragment TypeRenderFragment on GraphQLNamedType {
@@ -88,7 +89,9 @@ export function TypeRenderer(props: {
   }
 }
 
-const TargetExplorerTypenamePageQuery = graphql(`
+const typeRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename');
+
+export const TargetExplorerTypenamePageQuery = graphql(`
   query TargetExplorerTypenamePageQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -145,7 +148,8 @@ function TypeExplorerPageContent(props: { typename: string }) {
     dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
-  const period = dateRangeController.resolvedRange;
+  // Resolved by the route loader, so the page and the loader ask for one period.
+  const { period } = typeRoute.useLoaderData();
   const [query] = useQuery({
     query: TargetExplorerTypenamePageQuery,
     variables: { organizationSlug, projectSlug, targetSlug, period, typename: props.typename },

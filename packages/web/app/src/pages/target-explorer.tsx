@@ -19,7 +19,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { Link } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 
 const ExplorerPage_SchemaExplorerFragment = graphql(`
   fragment ExplorerPage_SchemaExplorerFragment on SchemaExplorer {
@@ -75,7 +75,9 @@ function SchemaView(props: {
   );
 }
 
-const TargetExplorerPageQuery = graphql(`
+const explorerRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer');
+
+export const TargetExplorerPageQuery = graphql(`
   query TargetExplorerPageQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -132,7 +134,8 @@ function ExplorerPageContent() {
     dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
-  const period = dateRangeController.resolvedRange;
+  // Resolved by the route loader, so the page and the loader ask for one period.
+  const { period } = explorerRoute.useLoaderData();
   const [query] = useQuery({
     query: TargetExplorerPageQuery,
     variables: { organizationSlug, projectSlug, targetSlug, period },

@@ -25,6 +25,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { getRouteApi } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
 
@@ -232,7 +233,9 @@ function InternalUnusedSchemaView(props: {
 
 const UnusedSchemaView = memo(InternalUnusedSchemaView);
 
-const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
+const unusedRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer/unused');
+
+export const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
   query UnusedSchemaExplorer_UnusedSchemaQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -287,14 +290,12 @@ function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperatio
     defaultPreset: presetLast7Days,
   });
 
+  // Resolved by the route loader, so the page and the loader ask for one period.
+  const { period } = unusedRoute.useLoaderData();
+
   const [query] = useQuery({
     query: UnusedSchemaExplorer_UnusedSchemaQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-      period: dateRangeController.resolvedRange,
-    },
+    variables: { organizationSlug, projectSlug, targetSlug, period },
     pause: !hasCollectedOperations,
   });
 
@@ -315,7 +316,7 @@ function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperatio
       <ExplorerHeader
         title="Unused Schema"
         description="Helps you understand the coverage of GraphQL schema and safely remove the unused part"
-        period={dateRangeController.resolvedRange}
+        period={period}
         subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
         metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
         dateRangeControl={<DateRangeFilter controller={dateRangeController} />}
@@ -380,7 +381,7 @@ function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperatio
   );
 }
 
-const TargetExplorerUnusedSchemaPageQuery = graphql(`
+export const TargetExplorerUnusedSchemaPageQuery = graphql(`
   query TargetExplorerUnusedSchemaPageQuery(
     $organizationSlug: String!
     $projectSlug: String!
