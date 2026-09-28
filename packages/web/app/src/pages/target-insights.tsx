@@ -1,7 +1,6 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
-import { RefreshCw } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { RefreshButton } from '@/components/base/button/refresh-button';
 import { Filters } from '@/components/base/floating/filter-menu/filters';
 import type { FilterItem } from '@/components/base/floating/filter-menu/types';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -327,11 +326,8 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
             }
           />
           <div className="flex items-center gap-x-2">
-            <Button
-              layout="iconOnly"
-              icon={RefreshCw}
+            <RefreshButton
               size="compact"
-              aria-label="Refresh"
               onClick={() => dateRangeController.refreshResolvedRange()}
             />
           </div>

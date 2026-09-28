@@ -6,12 +6,11 @@ import {
   AlertCircleIcon,
   BookIcon,
   GlobeIcon,
-  RefreshCw,
   TabletSmartphoneIcon,
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { RefreshButton } from '@/components/base/button/refresh-button';
 import { Card } from '@/components/base/card/card';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
@@ -220,12 +219,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
-          <Button
-            layout="iconOnly"
-            icon={RefreshCw}
-            aria-label="Refresh"
-            onClick={() => dateRangeController.refreshResolvedRange()}
-          />
+          <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
         </div>
       </div>
       {query.data?.target?.hasCollectedSubscriptionOperations && (

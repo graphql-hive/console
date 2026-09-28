@@ -1,7 +1,7 @@
 import { ReactElement, useMemo } from 'react';
-import { AlertCircleIcon, RefreshCw } from 'lucide-react';
+import { AlertCircleIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { RefreshButton } from '@/components/base/button/refresh-button';
 import { Card } from '@/components/base/card/card';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -101,12 +101,7 @@ function OperationView({
               align="end"
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
             />
-            <Button
-              layout="iconOnly"
-              icon={RefreshCw}
-              aria-label="Refresh"
-              onClick={() => dateRangeController.refreshResolvedRange()}
-            />
+            <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
           </div>
         )}
       </div>

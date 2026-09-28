@@ -1,12 +1,13 @@
 import { memo, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import { Clock, ExternalLinkIcon, RefreshCw, XIcon } from 'lucide-react';
+import { Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
 import { Badge } from '@/components/base/badge/badge';
 import { Button } from '@/components/base/button/button';
+import { RefreshButton } from '@/components/base/button/refresh-button';
 import { DataTable, type DataTablePaginationProp } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DescriptionList } from '@/components/base/description-list/description-list';
@@ -1177,10 +1178,7 @@ function TargetTracesPageContent(
               align="end"
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
             />
-            <Button
-              layout="iconOnly"
-              icon={RefreshCw}
-              aria-label="Refresh"
+            <RefreshButton
               onClick={() => dateRangeController.refreshResolvedRange()}
               disabled={isLoading}
             />

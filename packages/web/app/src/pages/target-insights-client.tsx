@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { differenceInMilliseconds } from 'date-fns';
 import ReactECharts from 'echarts-for-react';
-import { ActivityIcon, BookIcon, GlobeIcon, HistoryIcon, RefreshCw } from 'lucide-react';
+import { ActivityIcon, BookIcon, GlobeIcon, HistoryIcon } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { RefreshButton } from '@/components/base/button/refresh-button';
 import { Card } from '@/components/base/card/card';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
@@ -123,12 +123,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
-          <Button
-            layout="iconOnly"
-            icon={RefreshCw}
-            aria-label="Refresh"
-            onClick={() => dateRangeController.refreshResolvedRange()}
-          />
+          <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
         </div>
       </div>
       <div className="space-y-4 pb-8">
