@@ -39,7 +39,7 @@ export const AboveContent = createPreview(() => (
         ]}
       />
     </div>
-    <div className="border-neutral-5 text-neutral-10 rounded-md border p-4 text-sm">
+    <div className="border-line text-fg-secondary rounded-md border p-4 text-sm">
       The band with the picker goes here.
     </div>
   </div>

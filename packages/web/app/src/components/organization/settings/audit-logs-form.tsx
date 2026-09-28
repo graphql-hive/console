@@ -34,7 +34,7 @@ export function AuditLogsForm(props: {
           )}
         />
         <div className="mt-2">
-          <ArrowRightIcon className="text-neutral-10 size-6" />
+          <ArrowRightIcon className="text-fg-secondary size-6" />
         </div>
         <FormField
           control={form.control}

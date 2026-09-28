@@ -72,3 +72,9 @@ export function useTheme(): ThemeContextValue {
   }
   return context;
 }
+
+/** Monaco's built-in theme names: `vs` is light, there is no `vs-light`. */
+export function useMonacoTheme() {
+  const { resolvedTheme } = useTheme();
+  return resolvedTheme === 'dark' ? 'vs-dark' : 'vs';
+}

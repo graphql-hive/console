@@ -144,7 +144,7 @@ export function ChannelForm(props: {
                   href={setupGuide.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-accent hover:text-accent/80 text-sm"
+                  className="text-accent hover:text-accent-muted text-sm"
                 >
                   {setupGuide.label}
                 </a>

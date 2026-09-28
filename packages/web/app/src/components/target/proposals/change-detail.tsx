@@ -18,7 +18,7 @@ export function ProposalChangeDetail(props: {
         {
           value: 'item-1',
           label: (
-            <div className="text-neutral-8 flex w-full flex-row items-center">
+            <div className="text-fg-subtle flex w-full flex-row items-center">
               <div>{labelize(props.change.message)}</div>
               <div className="min-w-fit grow pr-2 md:flex-none">{props.icon}</div>
             </div>
@@ -42,7 +42,7 @@ export function ChangeBlock(props: {
   return (
     props.changes.length !== 0 && (
       <>
-        <h2 className="text-neutral-10 mb-2 mt-6 flex items-center font-bold">
+        <h2 className="text-fg-secondary mb-2 mt-6 flex items-center font-bold">
           {props.title}
           {props.info && <ChangesBlockTooltip info={props.info} />}
         </h2>
@@ -51,14 +51,14 @@ export function ChangeBlock(props: {
             let icon: ReactNode | undefined;
             if (mergeStatus === MergeStatus.CONFLICT) {
               icon = (
-                <span className="flex items-center justify-end pl-4 text-red-400">
+                <span className="text-critical flex items-center justify-end pl-4">
                   <TriangleAlert className="mr-2 size-4" />
                   CONFLICT
                 </span>
               );
             } else if (mergeStatus === MergeStatus.IGNORED) {
               icon = (
-                <span className="text-neutral-10 flex items-center justify-end pl-4">
+                <span className="text-fg-secondary flex items-center justify-end pl-4">
                   <Diamond className="mr-2 size-4" strokeDasharray="2 2" /> NO CHANGE
                 </span>
               );
@@ -88,7 +88,7 @@ function ChangesBlockTooltip(props: { info: string }) {
       }
       openOnHover
       width="lg"
-      content={<p className="text-neutral-11 text-sm font-normal">{props.info}</p>}
+      content={<p className="text-fg-default text-sm font-normal">{props.info}</p>}
     />
   );
 }

@@ -105,7 +105,7 @@ export function LegacyCompositionSettings(props: {
   return (
     <div className="flex flex-col items-start gap-y-6">
       <div>
-        <p className="text-neutral-10 text-sm">
+        <p className="text-fg-secondary text-sm">
           Not recommended. Migrate towards using Native Federation v2.
         </p>
         <ProductUpdatesLink href="2023-10-10-native-federation-2" text="Read the announcement!" />

@@ -509,7 +509,7 @@ function RoleNameCell(props: {
             content={
               <div className="flex flex-col items-start gap-y-1 p-2">
                 <div className="text-xs font-medium">This role is locked</div>
-                <div className="text-neutral-10 text-xs">
+                <div className="text-fg-secondary text-xs">
                   Locked roles are created by the system and cannot be modified or deleted.
                 </div>
               </div>
@@ -528,7 +528,7 @@ function RoleNameCell(props: {
             content={
               <div className="flex flex-col items-start gap-y-2">
                 <div className="font-medium">Default role for new members</div>
-                <div className="text-neutral-10 text-sm">
+                <div className="text-fg-secondary text-sm">
                   <p>New members will be assigned to this role by default.</p>
                   {props.canChangeOIDCDefaultRole ? (
                     <p>

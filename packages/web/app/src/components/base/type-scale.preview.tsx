@@ -25,14 +25,14 @@ export const Steps = createPreview(() => (
   <div className="flex flex-col gap-4">
     {STEPS.map(step => (
       <div key={step.name} className="grid grid-cols-[6rem_1fr] items-baseline gap-4">
-        <div className="text-neutral-9 text-2xs font-mono">
+        <div className="text-fg-muted text-2xs font-mono">
           {step.name}
           <br />
           {step.px}/{step.lh}
         </div>
         <div>
-          <div className={`text-neutral-12 ${step.cls}`}>{SAMPLE}</div>
-          <div className="text-neutral-9 text-2xs">{step.use}</div>
+          <div className={`text-fg ${step.cls}`}>{SAMPLE}</div>
+          <div className="text-fg-muted text-2xs">{step.use}</div>
         </div>
       </div>
     ))}
@@ -45,12 +45,10 @@ export const Steps = createPreview(() => (
  */
 export const SideBySide = createPreview(() => (
   <div className="flex items-center gap-3">
-    <span className="border-neutral-5 bg-neutral-2 dark:bg-neutral-3 text-neutral-11 text-control rounded-sm border px-3 py-1.5 font-medium">
+    <span className="border-line bg-neutral-2 dark:bg-neutral-3 text-fg-default text-control rounded-sm border px-3 py-1.5 font-medium">
       Filter
     </span>
-    <span className="text-neutral-11 text-xs">3 dimensions selected</span>
-    <span className="bg-neutral-4 text-neutral-12 text-2xs rounded-sm px-1.5 py-0.5 uppercase">
-      beta
-    </span>
+    <span className="text-fg-default text-xs">3 dimensions selected</span>
+    <span className="bg-neutral-4 text-fg text-2xs rounded-sm px-1.5 py-0.5 uppercase">beta</span>
   </div>
 ));

@@ -64,7 +64,7 @@ export const MaxWidths = createPreview(() => {
 export const Paragraph = createPreview(() => (
   <Tooltip
     trigger={
-      <button type="button" className="text-yellow-500">
+      <button type="button" className="text-warning">
         <CircleHelp className="size-4" />
       </button>
     }
@@ -211,13 +211,13 @@ export const Infotip = createPreview(() => (
       }
       openOnHover
       content={
-        <p className="text-neutral-11 text-sm">
+        <p className="text-fg-default text-sm">
           Your membership has insufficient authority for assigning this permission.
         </p>
       }
     />
     <div className="flex items-center">
-      <span className="text-yellow-500">Inactive</span>
+      <span className="text-warning">Inactive</span>
       <Popover
         trigger={
           <Button variant="ghost" size="icon-sm" aria-label="Why inactive">
@@ -227,7 +227,7 @@ export const Infotip = createPreview(() => (
         openOnHover
         width="lg"
         content={
-          <div className="text-neutral-11 text-sm font-normal">
+          <div className="text-fg-default text-sm font-normal">
             <p>
               This Contract is no longer active and no more contract versions or contract checks
               will be published for it.

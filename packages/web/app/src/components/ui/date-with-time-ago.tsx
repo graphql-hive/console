@@ -10,7 +10,7 @@ export function DateWithTimeAgo(props: {
   return (
     <>
       {format(date, dateFormatStr)}{' '}
-      <span className="text-neutral-10 font-normal">
+      <span className="text-fg-secondary font-normal">
         (<TimeAgo date={date} />)
       </span>
     </>

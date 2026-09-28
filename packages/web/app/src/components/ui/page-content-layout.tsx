@@ -20,7 +20,7 @@ const PageLayoutContent = forwardRef<HTMLDivElement, PageLayoutContentProps>(
       {mainTitlePage ? (
         <>
           <h1 className="mb-2 text-2xl font-semibold">{mainTitlePage}</h1>
-          <div className="bg-neutral-2 mb-3 h-[1px] w-full" />
+          <div className="bg-line-subtle mb-3 h-[1px] w-full" />
         </>
       ) : null}
       {children}
@@ -57,7 +57,7 @@ const SubPageLayoutHeader = ({
 }: SubPageLayoutHeaderProps) => {
   const header = (
     <div className="max-w-[600px] space-y-2">
-      <h3 className="text-neutral-12 text-lg font-medium">{subPageTitle}</h3>
+      <h3 className="text-fg text-lg font-medium">{subPageTitle}</h3>
       {typeof description === 'string' ? <p>{description}</p> : description}
       {docsLink && <DocsLink {...docsLink} />}
     </div>

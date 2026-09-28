@@ -784,7 +784,7 @@ function LaboratoryPageContent(props: {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Title>Laboratory</Title>
-              <div className="bg-neutral-5 h-4 w-px" />
+              <div className="bg-line h-4 w-px" />
               <ToggleGroup
                 aria-label="Laboratory version"
                 value={props.defaultLaboratoryTab}
@@ -914,7 +914,7 @@ export function TargetLaboratoryPage(props: {
           </Button>
         }
       >
-        <p className="text-neutral-11 text-sm">
+        <p className="text-fg-default text-sm">
           You always can switch to the old GraphiQL based Laboratory by using the tab switcher in
           the top left cornder.
         </p>

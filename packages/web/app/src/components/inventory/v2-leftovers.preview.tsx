@@ -127,7 +127,7 @@ export const MarkdownPreview = createPreview({
       >
         <div className="w-[32rem]">
           <Markdown
-            className="text-neutral-10 text-left text-sm"
+            className="text-fg-secondary text-left text-sm"
             content={
               'The `products` connection returns a paginated list.\n\nSee the [pagination guide](https://example.com) for cursor semantics. Supports **forward** and *backward* paging.'
             }
@@ -140,9 +140,9 @@ export const MarkdownPreview = createPreview({
         origin="v2"
         note="The same component inside a tooltip, rendering a deprecation reason. Markdown in a tooltip is the case most likely to overflow, since the content is author-supplied."
       >
-        <div className="border-neutral-5 w-[20rem] rounded-md border p-2">
+        <div className="border-line w-[20rem] rounded-md border p-2">
           <Markdown
-            className="text-neutral-10"
+            className="text-fg-secondary"
             content="Use `productsConnection` instead. This field will be removed in **v3**."
           />
         </div>

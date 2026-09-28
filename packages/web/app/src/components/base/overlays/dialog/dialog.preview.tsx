@@ -66,7 +66,7 @@ export const Widths = createPreview(() => (
         description="The dialog is full width below this width's max-width and never wider than it."
         footer={<Button variant="primary">Done</Button>}
       >
-        <p className="text-neutral-11 text-sm">
+        <p className="text-fg-default text-sm">
           Contracts, delete confirmations and most forms sit at md. Role editors and the OIDC debug
           view need xl.
         </p>
@@ -98,7 +98,7 @@ export const LongContent = createPreview(() => (
   >
     <div className="flex flex-col gap-3 text-sm">
       {Array.from({ length: 24 }, (_, i) => (
-        <p key={i} className="text-neutral-11">
+        <p key={i} className="text-fg-default">
           Line {i + 1}: lab.environment.set('token', await fetch('/auth').then(r =&gt; r.text()))
         </p>
       ))}

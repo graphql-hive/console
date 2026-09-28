@@ -9,8 +9,8 @@ const textVariants = cva('inline', {
       block: 'block',
     },
     color: {
-      primary: 'text-neutral-12',
-      secondary: 'text-neutral-11',
+      primary: 'text-fg',
+      secondary: 'text-fg-default',
     },
     size: {
       'x-small': 'text-xs',

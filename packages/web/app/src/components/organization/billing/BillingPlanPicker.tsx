@@ -86,16 +86,16 @@ function Plan(plan: {
           ) : (
             <>
               ${plan.price}
-              <span className="text-neutral-10 text-sm">/mo</span>
+              <span className="text-fg-secondary text-sm">/mo</span>
             </>
           )}
         </div>
-        <div className="text-neutral-10 text-sm">{plan.description}</div>
+        <div className="text-fg-secondary text-sm">{plan.description}</div>
         <div className="mt-6 flex flex-col gap-2">
           {plan.features.map((feature, i) => (
             <div key={i}>
               <Section.Subtitle className="flex items-center gap-1">
-                <Check className="text-neutral-10 size-5" />
+                <Check className="text-fg-secondary size-5" />
                 {feature}
               </Section.Subtitle>
             </div>
@@ -104,8 +104,8 @@ function Plan(plan: {
       </div>
       {plan.footer && (
         <div>
-          <div className="border-neutral-5 mx-auto my-4 w-9/12 border-b" />
-          <div className="text-neutral-11 text-xs">{plan.footer}</div>
+          <div className="border-line mx-auto my-4 w-9/12 border-b" />
+          <div className="text-fg-default text-xs">{plan.footer}</div>
         </div>
       )}
     </div>

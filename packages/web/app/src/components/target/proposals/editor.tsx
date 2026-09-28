@@ -291,7 +291,7 @@ export function ProposalEditor(props: {
                   <>
                     {isNewService ? (
                       <Circle
-                        className="-ml-2 size-4 p-1 text-green-600"
+                        className="text-success -ml-2 size-4 p-1"
                         fill="currentColor"
                         strokeWidth={0}
                       />
@@ -304,7 +304,7 @@ export function ProposalEditor(props: {
                     ) : (
                       schemaTitle(service)
                     )}
-                    {nameError ? <TriangleAlertIcon className="size-4 text-red-600" /> : null}
+                    {nameError ? <TriangleAlertIcon className="text-critical size-4" /> : null}
                     {service.__typename === 'CompositeSchema' ? (
                       <span className="ml-2" onClick={() => onRemoveTab(idx)}>
                         <XIcon className={cn('size-4', !isActiveTab && 'hidden')} />

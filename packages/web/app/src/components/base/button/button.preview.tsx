@@ -31,13 +31,13 @@ export const TriggerVariants = createPreview(() => (
 export const Sizes = createPreview(() => (
   <div className="flex flex-col gap-4">
     <div className="flex items-center gap-4">
-      <span className="text-neutral-9 w-16 text-xs">default</span>
+      <span className="text-fg-muted w-16 text-xs">default</span>
       <Button variant="primary">Save alert</Button>
       <Button label="Last 7 days" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
       <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" />
     </div>
     <div className="flex items-center gap-4">
-      <span className="text-neutral-9 w-16 text-xs">compact</span>
+      <span className="text-fg-muted w-16 text-xs">compact</span>
       <Button variant="primary" size="compact">
         Save alert
       </Button>
@@ -49,7 +49,7 @@ export const Sizes = createPreview(() => (
       <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" size="compact" />
     </div>
     <div className="flex items-center gap-4">
-      <span className="text-neutral-9 w-16 text-xs">icon-sm</span>
+      <span className="text-fg-muted w-16 text-xs">icon-sm</span>
       <Button variant="ghost" size="icon-sm">
         <X className="size-4" />
       </Button>
@@ -87,7 +87,7 @@ export const WithIcon = createPreview(() => (
 
 /** Text that acts, inline with the copy around it: no box, accent, underlined on hover. */
 export const Link = createPreview(() => (
-  <p className="text-neutral-11 max-w-md text-sm">
+  <p className="text-fg-default max-w-md text-sm">
     The schema check failed on a breaking change.{' '}
     <Button variant="link">See the affected deployments</Button> before approving it, or{' '}
     <Button variant="link" disabled>
@@ -150,7 +150,7 @@ export const FullWidth = createPreview(() => (
 /** Without `raised`, the default fill disappears into a dialog or sheet in dark mode. */
 export const OnRaisedSurface = createPreview(() => (
   <div className="flex flex-wrap gap-6">
-    <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-4 flex w-[24rem] flex-col gap-3 rounded-md border p-6">
+    <div className="bg-neutral-2 dark:bg-neutral-3 border-line-subtle flex w-[24rem] flex-col gap-3 rounded-md border p-6">
       <Button type="submit" width="full" onSurface="raised">
         Sign in
       </Button>
@@ -158,7 +158,7 @@ export const OnRaisedSurface = createPreview(() => (
         Login with GitHub
       </Button>
     </div>
-    <div className="bg-neutral-3 border-neutral-5 flex w-[28rem] flex-col gap-6 rounded-md border p-6">
+    <div className="bg-neutral-3 border-line flex w-[28rem] flex-col gap-6 rounded-md border p-6">
       <div className="flex justify-end gap-2">
         <Button variant="outline">Cancel</Button>
         <Button onSurface="raised">Transfer this organization</Button>

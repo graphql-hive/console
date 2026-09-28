@@ -69,7 +69,7 @@ export const TextOnThePage = createPreview(() => (
 
 /** The same controls on a raised surface: the outline sits off the edge, so the fill does not matter. */
 export const OnRaised = createPreview(() => (
-  <div className="bg-neutral-2 dark:bg-neutral-3 border-neutral-4 flex w-[26rem] flex-wrap items-center gap-3 rounded-md border p-4">
+  <div className="bg-neutral-2 dark:bg-neutral-3 border-line-subtle flex w-[26rem] flex-wrap items-center gap-3 rounded-md border p-4">
     <Button variant="outline">On a card</Button>
     <Button label="Raised trigger" onSurface="raised" />
     <Switch defaultChecked aria-label="Enable" />

@@ -27,8 +27,8 @@ export function labelize(message: string) {
 }
 
 const severityLevelMapping = {
-  [SeverityLevelType.Safe]: clsx('text-emerald-400'),
-  [SeverityLevelType.Dangerous]: clsx('text-yellow-400'),
+  [SeverityLevelType.Safe]: clsx('text-success'),
+  [SeverityLevelType.Dangerous]: clsx('text-warning'),
 } as Record<SeverityLevelType, string>;
 
 const ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment = graphql(`
@@ -155,7 +155,7 @@ export function ChangesBlock(
 ): ReactElement | null {
   return (
     <div>
-      {props.title && <h2 className="text-neutral-10 mb-3 font-bold">{props.title}</h2>}
+      {props.title && <h2 className="text-fg-secondary mb-3 font-bold">{props.title}</h2>}
       <div className="list-inside list-disc space-y-2 text-sm/relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
@@ -226,9 +226,9 @@ function ChangeItem(
               )}
             >
               <div>
-                <span className="text-neutral-10">{labelize(change.message)}</span>
+                <span className="text-fg-secondary">{labelize(change.message)}</span>
                 {change.isSafeBasedOnUsage && (
-                  <span className="cursor-pointer text-yellow-700 dark:text-yellow-500">
+                  <span className="text-warning cursor-pointer">
                     {' '}
                     <CheckIcon className="inline size-3" /> Safe based on usage data
                   </span>
@@ -236,7 +236,7 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="bg-neutral-5 text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="bg-surface-selected text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
                       <ActivityIcon className="size-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}
@@ -256,7 +256,7 @@ function ChangeItem(
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <>
                     {' '}
-                    <span className="text-neutral-1 inline-flex items-center space-x-1 rounded-sm bg-orange-500 px-2 py-1 align-middle font-bold">
+                    <span className="text-fg-inverse bg-warning inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
                       <BoxIcon className="size-4 stroke-[2px]" />
                       <span className="text-xs">
                         {change.affectedAppDeployments.totalCount}{' '}
@@ -287,15 +287,15 @@ function ChangeItem(
               )}
               {'usageStatistics' in change && change.usageStatistics && metadata ? (
                 <div>
-                  <h4 className="text-neutral-12 mb-1 text-sm font-medium">
+                  <h4 className="text-fg mb-1 text-sm font-medium">
                     Affected Operations (based on usage)
                   </h4>
-                  <div className="text-neutral-10 mb-2 flex justify-between text-sm">
+                  <div className="text-fg-secondary mb-2 flex justify-between text-sm">
                     <span>
                       Top 10 operations and clients affected by this change based on usage data.
                     </span>
                     {metadata && (
-                      <span className="text-neutral-11 text-xs">
+                      <span className="text-fg-default text-xs">
                         See{' '}
                         {metadata.settings.targets.map((target, index, arr) => (
                           <>
@@ -308,7 +308,7 @@ function ChangeItem(
                             ) : (
                               <Link
                                 key={index}
-                                className="text-accent_80 hover:text-accent"
+                                className="text-accent-muted hover:text-accent"
                                 to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
                                 params={{
                                   organizationSlug,
@@ -549,11 +549,11 @@ function AffectedAppDeploymentsPanel(props: {
                 arrow
                 content={
                   <div className="space-y-2">
-                    <h5 className="text-neutral-12 font-medium">Affected Operations</h5>
+                    <h5 className="text-fg font-medium">Affected Operations</h5>
                     <ScrollArea maxHeight="sm">
                       <ul className="space-y-1 text-sm">
                         {deployment.affectedOperations.edges.map(({ node: op }) => (
-                          <li key={op.hash} className="text-neutral-11">
+                          <li key={op.hash} className="text-fg-default">
                             {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
                           </li>
                         ))}
@@ -577,8 +577,8 @@ function AffectedAppDeploymentsPanel(props: {
 
   return (
     <div>
-      <h4 className="text-neutral-12 mb-1 text-sm font-medium">Affected App Deployments</h4>
-      <p className="text-neutral-10 mb-2 text-sm">
+      <h4 className="text-fg mb-1 text-sm font-medium">Affected App Deployments</h4>
+      <p className="text-fg-secondary mb-2 text-sm">
         Top 5 active app deployments that have operations using this schema coordinate (snapshot
         from when the check was run).
       </p>
@@ -598,7 +598,7 @@ function AffectedAppDeploymentsPanel(props: {
             schemaCheckId: props.schemaCheckId,
           }}
           search={{ coordinate: props.coordinate }}
-          className="mt-2 block text-sm text-orange-500 hover:underline"
+          className="text-warning mt-2 block text-sm hover:underline"
         >
           View all ({props.connection.totalCount}) affected app deployments
         </Link>
@@ -615,7 +615,7 @@ function ApprovedByBadge(props: {
     approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
 
   return (
-    <span className="cursor-pointer text-green-500">
+    <span className="text-success cursor-pointer">
       <CheckIcon className="inline size-3" /> Approved by {approvalName}
     </span>
   );
@@ -688,7 +688,7 @@ export function CompositionErrorsList(props: {
         <CompositionErrorsPopover />
       </Heading>
       {props.description ? (
-        <p className="text-neutral-11 mb-2 text-sm">{props.description}</p>
+        <p className="text-fg-default mb-2 text-sm">{props.description}</p>
       ) : null}
       <ul>
         {props.errors.map((error, index) => (
@@ -727,10 +727,12 @@ export function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="size-4 text-emerald-500" />
-        <h2 className="text-neutral-12 text-base font-medium">No Graph Changes</h2>
+        <CircleCheckIcon className="text-success size-4" />
+        <h2 className="text-fg text-base font-medium">No Graph Changes</h2>
       </div>
-      <p className="text-neutral-10 text-xs">There are no changes in this graph for this graph.</p>
+      <p className="text-fg-secondary text-xs">
+        There are no changes in this graph for this graph.
+      </p>
     </div>
   );
 }

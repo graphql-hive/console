@@ -6,7 +6,6 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DataWrapper, Stat } from '@/components/v2';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
-import { theme } from '@/lib/charts';
 import { useChartStyles } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -64,7 +63,6 @@ function CollectedOperationsOverTime(props: {
       {size => (
         <ReactECharts
           style={{ width: size.width, height: 200 }}
-          theme={theme.theme}
           option={{
             ...chartStyles,
             grid: {
@@ -300,7 +298,7 @@ export function AdminStats({
     <DataWrapper query={query} organizationSlug={null}>
       {({ data }) => (
         <div className="flex flex-col gap-6">
-          <div className="border-neutral-5 bg-neutral-2/50 flex justify-between rounded-md border p-5">
+          <div className="border-line bg-surface-inset flex justify-between rounded-md border p-5">
             <OverallStat label="Users" value={overall.users} />
             <OverallStat label="Organizations" value={overall.organizations} />
             <OverallStat label="Projects" value={overall.projects} />
