@@ -3084,7 +3084,7 @@ export class SchemaPublisher {
           this.registryChecks
             .diff({
               existingSdl: contract.latestValidVersion?.supergraphSdl ?? null,
-              incomingSdl: contractResult.result.fullSchemaSdl,
+              incomingSdl: contractResult.result.supergraph,
               conditionalBreakingChangeConfig: null,
               includeUrlChanges: false,
               filterOutFederationChanges: false,
