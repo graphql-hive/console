@@ -534,7 +534,7 @@
         "code": {
           "language": "markdown"
         },
-        "content": "**Stalled writes**: *ClickHouse write requests/s* drops to 0 or shifts to error statuses while *Committed offset lag* rises.  \n**Stuck message**: *Failing messages* stays above 0 while write requests continue; the ingestor logs the deduplication token, source offset, HTTP status and ClickHouse error.  \n**Poison pill**: an unparseable message was dropped and counted; the error log has its topic, partition and offset.  \n**Backpressure**: *Processing duration* grows because the ingestor waits for in-flight bytes to drain.  \n**Commits failing**: writes are healthy but lag still rises; `usage_ingestor_errors` counts rejected commits (usually a rebalance).  \nClickHouse server metrics (active parts, async-insert queue) are not scraped; check `system.parts` and `system.asynchronous_inserts` directly.",
+        "content": "**Stalled writes**: *ClickHouse write requests/s* drops to 0 or shifts to error statuses while *Committed offset lag* rises.  \n**Stuck message**: *Failing messages* stays above 0 while write requests continue; the ingestor logs the deduplication token, source offset, HTTP status and ClickHouse error.  \n**Poison pill**: an unparseable message was dropped and counted; the error log has its topic, partition and offset.  \n**Given up**: an insert kept failing past the budget while the table accepted other inserts, so the message was dropped and counted; the error log has its payload, token and outcome per table.  \n**Backpressure**: *Processing duration* grows because the ingestor waits for in-flight bytes to drain.  \n**Commits failing**: writes are healthy but lag still rises; `usage_ingestor_errors` counts rejected commits (usually a rebalance).  \nClickHouse server metrics (active parts, async-insert queue) are not scraped; check `system.parts` and `system.asynchronous_inserts` directly.",
         "mode": "markdown"
       },
       "title": "How to read this dashboard",
@@ -1189,6 +1189,16 @@
           "expr": "sum(usage_ingestor_failing_messages)",
           "legendFormat": "failing messages",
           "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({__name__=~\"usage_ingestor_given_up_messages(_total)?\"}[$__rate_interval]))",
+          "legendFormat": "given up (insert kept failing, dropped)",
+          "refId": "D"
         }
       ],
       "title": "Errors, poison pills and failing messages",

@@ -7,7 +7,13 @@ import { decompress } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
 import type { KafkaEnvironment } from './environment';
 import { createInflightTracker } from './inflight';
-import { errors, poisonPillMessages, processDuration, reportMessageBytes } from './metrics';
+import {
+  errors,
+  givenUpMessages,
+  poisonPillMessages,
+  processDuration,
+  reportMessageBytes,
+} from './metrics';
 import { createProcessor } from './processor';
 import { ClickHouseConfig, createWriter } from './writer';
 
@@ -114,8 +120,8 @@ export function createIngestor(config: {
     );
   });
 
-  consumer.on('consumer.group_join', event => {
-    tracker.retainPartitions(event.payload.memberAssignment);
+  consumer.on('consumer.group_join', () => {
+    tracker.reset();
   });
 
   async function stop() {
@@ -265,8 +271,9 @@ function serializedBytes(rows: string[]) {
 /**
  * Parses one Kafka message and starts its ClickHouse writes. Resolves as soon as the writes
  * are handed to the in-flight tracker; the tracker commits the offset when they are all
- * acknowledged. A message that cannot be parsed is dropped and its offset committed, so this
- * rejects only on unexpected processing errors, which kafkajs retries.
+ * acknowledged, or when the message has been given up on (see `writer.writeMessage`). A
+ * message that cannot be parsed is dropped and its offset committed, so this rejects only on
+ * unexpected processing errors, which kafkajs retries.
  */
 export async function processMessage({
   processor,
@@ -280,7 +287,7 @@ export async function processMessage({
 }: {
   processor: ReturnType<typeof createProcessor>;
   writer: ReturnType<typeof createWriter>;
-  tracker: Pick<ReturnType<typeof createInflightTracker>, 'track' | 'waitForCapacity'>;
+  tracker: Pick<ReturnType<typeof createInflightTracker>, 'track' | 'skip' | 'waitForCapacity'>;
   message: KafkaMessage;
   heartbeat: () => Promise<void>;
   logger: ServiceLogger;
@@ -314,13 +321,7 @@ export async function processMessage({
       'Poison pill message full payload',
     );
     Sentry.captureException(error, { level: 'error', extra: summary });
-    tracker.track({
-      topic,
-      partition,
-      offset: message.offset,
-      bytes: 0,
-      promise: Promise.resolve(),
-    });
+    tracker.skip(topic, partition, message.offset);
     return;
   }
 
@@ -343,14 +344,45 @@ export async function processMessage({
 
   await tracker.waitForCapacity(bytes, heartbeat);
 
-  const options = { deduplicationToken, source };
-  const written = Promise.all([
-    writer.writeRegistry(registryRecords, options),
-    writer.writeOperations(operations, options),
-    writer.writeSubscriptionOperations(subscriptionOperations, options),
-    writer.writeAppDeploymentUsage(appDeploymentUsageRecords, options),
-    writer.writeOperationErrors(errorRecords, options),
-  ]);
+  const written = writer
+    .writeMessage(
+      {
+        registryRecords,
+        operations,
+        subscriptionOperations,
+        appDeploymentUsageRecords,
+        errorRecords,
+      },
+      { deduplicationToken, source },
+    )
+    .then(result => {
+      if (result.status !== 'given-up') {
+        return;
+      }
+      givenUpMessages.inc();
+      const summary = {
+        topic,
+        partition,
+        offset: message.offset,
+        deduplicationToken,
+        messageBytes: message.value?.byteLength,
+        reportCount: rawReports.length,
+        outcomes: result.outcomes,
+        query: result.error.details.query,
+        attempts: result.error.details.attempts,
+        failingForMs: result.error.details.failingForMs,
+        status: result.error.details.status,
+        clickhouseError: result.error.details.clickhouseError,
+      };
+      // Until a dead-letter queue exists the payload survives only here. A re-drive must reuse
+      // the token and is only safe for the tables that did not succeed while the token is still
+      // in ClickHouse's deduplication log.
+      logger.error(
+        { ...summary, value: message.value?.toString('base64') },
+        'Report write given up - message dropped, offset will be committed',
+      );
+      Sentry.captureException(result.error, { level: 'error', extra: summary });
+    });
 
   tracker.track({
     topic,

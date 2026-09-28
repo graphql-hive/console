@@ -84,6 +84,7 @@ const ClickHouseModel = zod.object({
   CLICKHOUSE_MAX_INFLIGHT_BYTES: emptyString(NumberFromString.optional()),
   CLICKHOUSE_MAX_SOCKETS: emptyString(NumberFromString.optional()),
   CLICKHOUSE_WRITE_RETRY_BACKOFF_MS: emptyString(NumberFromString.optional()),
+  CLICKHOUSE_WRITE_GIVE_UP_AFTER_MS: emptyString(NumberFromString.optional()),
 });
 
 const PrometheusModel = zod.object({
@@ -243,6 +244,7 @@ export const env = {
     async_insert_max_data_size: clickhouse.CLICKHOUSE_ASYNC_INSERT_MAX_DATA_SIZE ?? 200_000_000,
     max_sockets: clickhouse.CLICKHOUSE_MAX_SOCKETS ?? 500,
     write_retry_backoff_ms: clickhouse.CLICKHOUSE_WRITE_RETRY_BACKOFF_MS ?? 1_000,
+    write_give_up_after_ms: clickhouse.CLICKHOUSE_WRITE_GIVE_UP_AFTER_MS ?? 120_000,
   },
   inflight: {
     maxBytes: clickhouse.CLICKHOUSE_MAX_INFLIGHT_BYTES ?? 50_000_000,

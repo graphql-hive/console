@@ -198,7 +198,7 @@ export function deployGrafanaAlerts(envName: string) {
         annotations: {
           summary: 'Usage ingestor inserts are failing',
           description:
-            "At least one Kafka usage message has had a ClickHouse insert retrying in place for 5 minutes. Its partition's offset is frozen and its bytes count against the in-flight cap; a sustained value means a stuck message or a ClickHouse outage. See the Usage Ingestion dashboard; the log line 'Write failed - offset not committed, retrying the same insert in place' carries the source offset, deduplication token, HTTP status and ClickHouse error.",
+            "At least one Kafka usage message has had a ClickHouse insert retrying in place for 5 minutes. Its partition's offset is frozen and its bytes count against the in-flight cap; a sustained value means a stuck message or a ClickHouse outage. See the Usage Ingestion dashboard; the log line 'Write failed - offset not committed, retrying the same insert in place' carries the source offset, deduplication token, HTTP status and ClickHouse error. A message whose insert keeps failing while other inserts to the same table succeed is given up on after CLICKHOUSE_WRITE_GIVE_UP_AFTER_MS (default 2 minutes) and counted in usage_ingestor_given_up_messages, so a value that stays above 0 for longer than that means the failure is systemic (ClickHouse outage, schema lagging a deploy).",
           runbook_url:
             'https://github.com/graphql-hive/console/blob/main/packages/services/usage-ingestor/src/writer.ts',
         },
@@ -262,9 +262,9 @@ export function deployGrafanaAlerts(envName: string) {
         noDataState: 'OK',
         execErrState: 'Alerting',
         annotations: {
-          summary: 'Usage ingestor dropped an unparseable message',
+          summary: 'Usage ingestor dropped a message',
           description:
-            "A Kafka usage message could not be decompressed or parsed and was dropped; its offset was committed and its operations are lost. The log line 'Report decompression/parsing failed - message dropped, offset will be committed' has the topic, partition and offset, and the base64 payload is logged at debug level. There is no dead-letter queue yet.",
+            "A Kafka usage message was dropped and its offset committed, so its operations are lost unless re-driven from the log. Either it could not be decompressed or parsed (usage_ingestor_poison_pill_messages; log line 'Report decompression/parsing failed - message dropped, offset will be committed', payload at debug level) or one of its ClickHouse inserts kept failing past CLICKHOUSE_WRITE_GIVE_UP_AFTER_MS while the table accepted other inserts (usage_ingestor_given_up_messages; log line 'Report write given up - message dropped, offset will be committed' carries the base64 payload, the deduplication token and the outcome per table). There is no dead-letter queue yet.",
           runbook_url:
             'https://github.com/graphql-hive/console/blob/main/packages/services/usage-ingestor/src/ingestor.ts',
         },
@@ -280,7 +280,7 @@ export function deployGrafanaAlerts(envName: string) {
               refId: 'A',
               // The collector path may store the counter as `..._total`, so match
               // both spellings like the dashboards do.
-              expr: 'sum(increase({__name__=~"usage_ingestor_poison_pill_messages(_total)?"}[10m]))',
+              expr: 'sum(increase({__name__=~"usage_ingestor_(poison_pill|given_up)_messages(_total)?"}[10m]))',
               instant: false,
               range: true,
               intervalMs: 30_000,

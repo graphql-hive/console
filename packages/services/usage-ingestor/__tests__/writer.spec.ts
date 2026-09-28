@@ -5,7 +5,7 @@ import {
   ingestedOperationsWrites,
   poisonPillMessages,
 } from '../src/metrics';
-import { createWriter } from '../src/writer';
+import { createWriter, WriteAbortedError, WriteGivenUpError } from '../src/writer';
 
 const clickhouse = {
   protocol: 'http',
@@ -17,6 +17,7 @@ const clickhouse = {
   async_insert_max_data_size: 1000,
   max_sockets: 5,
   write_retry_backoff_ms: 10,
+  write_give_up_after_ms: 50,
 };
 
 const options = { deduplicationToken: 'a'.repeat(64), source: 'usage_reports/0@1' };
@@ -185,4 +186,179 @@ test('the request timeout covers the busy timeout the insert waits for', async (
   await expect(writer.writeOperations(['row'], options)).resolves.toBeUndefined();
   writer.destroy();
   expect(scope.isDone()).toBe(true);
+});
+
+async function waitFor(predicate: () => boolean, timeoutMs = 10_000) {
+  const start = Date.now();
+  while (!predicate()) {
+    if (Date.now() - start > timeoutMs) {
+      throw new Error('Timed out waiting for condition');
+    }
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+}
+
+test('gives up on an insert that keeps failing past the budget once another insert to the same table has succeeded', async () => {
+  const bad = { deduplicationToken: 'b'.repeat(64), source: 'usage_reports/0@2' };
+  const good = { deduplicationToken: 'c'.repeat(64), source: 'usage_reports/0@3' };
+  nock('http://clickhouse.test:8123')
+    .post('/')
+    .query(query => query.insert_deduplication_token === bad.deduplicationToken)
+    .reply(500, 'boom')
+    .persist();
+  nock('http://clickhouse.test:8123')
+    .post('/')
+    .query(query => query.insert_deduplication_token === good.deduplicationToken)
+    .reply(200, '{}')
+    .persist();
+  const logger = buildLogger();
+  const failingIncSpy = vi.spyOn(failingMessages, 'inc');
+  const failingDecSpy = vi.spyOn(failingMessages, 'dec');
+  const writer = createWriter({ clickhouse, logger });
+
+  const failing = writer.writeOperations(['row'], bad);
+  // The rule needs a success on the same table after the first failure.
+  await waitFor(() =>
+    logger.error.mock.calls.some(
+      ([, msg]) => msg === 'Write failed - offset not committed, retrying the same insert in place',
+    ),
+  );
+  await writer.writeOperations(['row'], good);
+
+  await expect(failing).rejects.toBeInstanceOf(WriteGivenUpError);
+  const error = (await failing.catch(e => e)) as WriteGivenUpError;
+  expect(error.details).toMatchObject({
+    source: bad.source,
+    deduplicationToken: bad.deduplicationToken,
+    status: 500,
+    clickhouseError: 'boom',
+  });
+  expect(error.details.attempts).toBeGreaterThanOrEqual(2);
+  expect(error.details.failingForMs).toBeGreaterThanOrEqual(clickhouse.write_give_up_after_ms);
+  expect(logger.error.mock.calls.at(-1)![1]).toEqual(
+    'Write failed past the give-up budget while other inserts to the table succeed - giving up on the message',
+  );
+  expect(failingIncSpy).toHaveBeenCalledTimes(1);
+  expect(failingDecSpy).toHaveBeenCalledTimes(1);
+
+  writer.destroy();
+  failingIncSpy.mockRestore();
+  failingDecSpy.mockRestore();
+}, 20_000);
+
+test('does not give up while every insert to the table is failing', async () => {
+  nock('http://clickhouse.test:8123').post('/').query(true).reply(500, 'boom').persist();
+  const writer = createWriter({ clickhouse, logger: buildLogger() });
+
+  const failing = writer.writeOperations(['row'], options);
+  let settled = false;
+  failing.then(
+    () => {
+      settled = true;
+    },
+    () => {
+      settled = true;
+    },
+  );
+  // Several attempts, all far past the 50ms budget, but nothing else succeeded on the table.
+  await new Promise(resolve => setTimeout(resolve, 3500));
+  expect(settled).toBe(false);
+
+  writer.destroy();
+  await expect(failing).rejects.toBeInstanceOf(WriteAbortedError);
+}, 15_000);
+
+test('an insert aborted mid-request is not counted as a failure', async () => {
+  nock('http://clickhouse.test:8123').post('/').query(true).delay(1000).reply(200, '{}');
+  const failuresSpy = vi.spyOn(ingestedOperationsFailures, 'inc');
+  const failingIncSpy = vi.spyOn(failingMessages, 'inc');
+  const writer = createWriter({ clickhouse, logger: buildLogger() });
+
+  const write = writer.writeOperations(['row'], options);
+  await new Promise(resolve => setTimeout(resolve, 100));
+  writer.destroy();
+
+  await expect(write).rejects.toBeInstanceOf(WriteAbortedError);
+  expect(failuresSpy).not.toHaveBeenCalled();
+  expect(failingIncSpy).not.toHaveBeenCalled();
+  failuresSpy.mockRestore();
+  failingIncSpy.mockRestore();
+});
+
+const emptyRows = {
+  registryRecords: [],
+  operations: [],
+  subscriptionOperations: [],
+  appDeploymentUsageRecords: [],
+  errorRecords: [],
+};
+
+test('writeMessage resolves acknowledged once every table has acknowledged', async () => {
+  const scope = nock('http://clickhouse.test:8123').post('/').query(true).times(3).reply(200, '{}');
+  const writer = createWriter({ clickhouse, logger: buildLogger() });
+
+  await expect(
+    writer.writeMessage(
+      { ...emptyRows, registryRecords: ['record'], operations: ['row'], errorRecords: ['err'] },
+      options,
+    ),
+  ).resolves.toEqual({ status: 'acknowledged' });
+  writer.destroy();
+
+  expect(scope.isDone()).toBe(true);
+});
+
+test('writeMessage gives up on one table after another message succeeded on it, cancels the rest and reports the outcome per table', async () => {
+  const bad = { deduplicationToken: 'd'.repeat(64), source: 'usage_reports/0@4' };
+  const good = { deduplicationToken: 'e'.repeat(64), source: 'usage_reports/0@5' };
+  // Every insert of the bad message fails; only its operations insert will see a success from
+  // another message on the same table, so only that one gives up.
+  nock('http://clickhouse.test:8123')
+    .post('/')
+    .query(query => query.insert_deduplication_token === bad.deduplicationToken)
+    .reply(500, 'boom')
+    .persist();
+  nock('http://clickhouse.test:8123')
+    .post('/')
+    .query(query => query.insert_deduplication_token === good.deduplicationToken)
+    .reply(200, '{}')
+    .persist();
+  const logger = buildLogger();
+  const writer = createWriter({ clickhouse, logger });
+
+  const result = writer.writeMessage(
+    { ...emptyRows, registryRecords: ['record'], operations: ['row'] },
+    bad,
+  );
+  await waitFor(() =>
+    logger.error.mock.calls.some(
+      ([arg, msg]) =>
+        msg === 'Write failed - offset not committed, retrying the same insert in place' &&
+        String(arg.query).startsWith('INSERT INTO operations'),
+    ),
+  );
+  await writer.writeMessage({ ...emptyRows, operations: ['row'] }, good);
+
+  await expect(result).resolves.toMatchObject({
+    status: 'given-up',
+    outcomes: {
+      operations: 'gave-up',
+      operation_collection: 'cancelled',
+      subscription_operations: 'succeeded',
+      app_deployment_usage: 'succeeded',
+      operation_errors: 'succeeded',
+    },
+  });
+  writer.destroy();
+}, 20_000);
+
+test('writeMessage rejects when the writer is destroyed mid-retry, so the offset stays uncommitted', async () => {
+  nock('http://clickhouse.test:8123').post('/').query(true).reply(500, 'boom').persist();
+  const writer = createWriter({ clickhouse, logger: buildLogger() });
+
+  const result = writer.writeMessage({ ...emptyRows, operations: ['row'] }, options);
+  await new Promise(resolve => setTimeout(resolve, 200));
+  writer.destroy();
+
+  await expect(result).rejects.toBeInstanceOf(WriteAbortedError);
 });

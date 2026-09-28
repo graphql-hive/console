@@ -4,9 +4,14 @@ import nock from 'nock';
 import { compressZstd, type RawReport } from '@hive/usage-common';
 import { createInflightTracker } from '../src/inflight';
 import { createDeduplicationToken, createIngestor, processMessage } from '../src/ingestor';
-import { committedOffsetLag, poisonPillMessages } from '../src/metrics';
+import { committedOffsetLag, givenUpMessages, poisonPillMessages } from '../src/metrics';
 import type { createProcessor } from '../src/processor';
-import type { createWriter } from '../src/writer';
+import {
+  WriteAbortedError,
+  WriteGivenUpError,
+  type createWriter,
+  type MessageRows,
+} from '../src/writer';
 
 const fakeConsumer = vi.hoisted(() => ({
   connect: vi.fn().mockResolvedValue(undefined),
@@ -81,28 +86,29 @@ const processedRows = {
   errors: ['err1'],
 };
 
+const expectedRows: MessageRows = {
+  registryRecords: processedRows.registryRecords,
+  operations: processedRows.operations,
+  subscriptionOperations: processedRows.subscriptionOperations,
+  appDeploymentUsageRecords: processedRows.appDeploymentUsageRecords,
+  errorRecords: processedRows.errors,
+};
+
 function buildProcessor(): ReturnType<typeof createProcessor> {
   return {
     processReports: vi.fn().mockResolvedValue(processedRows),
   };
 }
 
-function deferred() {
-  let resolve!: () => void;
-  const promise = new Promise<void>(res => {
+function deferred<T = void>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(res => {
     resolve = res;
   });
   return { promise, resolve };
 }
 
 type WriterMock = ReturnType<typeof createWriter>;
-const writeMethods = [
-  'writeRegistry',
-  'writeOperations',
-  'writeSubscriptionOperations',
-  'writeAppDeploymentUsage',
-  'writeOperationErrors',
-] as const;
 
 function buildWriter(overrides: Partial<WriterMock> = {}): WriterMock {
   return {
@@ -111,6 +117,7 @@ function buildWriter(overrides: Partial<WriterMock> = {}): WriterMock {
     writeSubscriptionOperations: vi.fn().mockResolvedValue(undefined),
     writeAppDeploymentUsage: vi.fn().mockResolvedValue(undefined),
     writeOperationErrors: vi.fn().mockResolvedValue(undefined),
+    writeMessage: vi.fn().mockResolvedValue({ status: 'acknowledged' }),
     destroy: vi.fn(),
     ...overrides,
   };
@@ -127,13 +134,21 @@ function buildTracker() {
   return { tracker, onCommit };
 }
 
+function mockTracker() {
+  return {
+    waitForCapacity: vi.fn().mockResolvedValue(undefined),
+    track: vi.fn(),
+    skip: vi.fn(),
+  };
+}
+
 const heartbeat = () => Promise.resolve();
 
-test('tags every write with a hash of the report ids and resolves before the writes settle', async () => {
+test('tags the message with a hash of the report ids and resolves before the writes settle', async () => {
   const processor = buildProcessor();
-  const pending = deferred();
-  const writer = buildWriter({ writeOperations: vi.fn().mockReturnValue(pending.promise) });
-  const tracker = { waitForCapacity: vi.fn().mockResolvedValue(undefined), track: vi.fn() };
+  const pending = deferred<{ status: 'acknowledged' }>();
+  const writer = buildWriter({ writeMessage: vi.fn().mockReturnValue(pending.promise) });
+  const tracker = mockTracker();
   const message = await buildMessage();
   const expectedToken = createHash('sha256')
     .update(rawReports.map(report => report.id).join(','))
@@ -152,18 +167,10 @@ test('tags every write with a hash of the report ids and resolves before the wri
     }),
   ).resolves.toBeUndefined();
 
-  const options = { deduplicationToken: expectedToken, source: 'usage_reports/2@123' };
-  expect(writer.writeRegistry).toHaveBeenCalledWith(processedRows.registryRecords, options);
-  expect(writer.writeOperations).toHaveBeenCalledWith(processedRows.operations, options);
-  expect(writer.writeSubscriptionOperations).toHaveBeenCalledWith(
-    processedRows.subscriptionOperations,
-    options,
-  );
-  expect(writer.writeAppDeploymentUsage).toHaveBeenCalledWith(
-    processedRows.appDeploymentUsageRecords,
-    options,
-  );
-  expect(writer.writeOperationErrors).toHaveBeenCalledWith(processedRows.errors, options);
+  expect(writer.writeMessage).toHaveBeenCalledWith(expectedRows, {
+    deduplicationToken: expectedToken,
+    source: 'usage_reports/2@123',
+  });
 
   const expectedBytes = Object.values(processedRows)
     .flat()
@@ -177,19 +184,19 @@ test('tags every write with a hash of the report ids and resolves before the wri
     promise: expect.any(Promise),
   });
 
-  pending.resolve();
+  pending.resolve({ status: 'acknowledged' });
 });
 
 test('two copies of the same message produce the same token, and different reports do not', async () => {
   const message = await buildMessage();
   const tokens: string[] = [];
   const writer = buildWriter({
-    writeOperations: vi.fn((_rows, options) => {
+    writeMessage: vi.fn((_rows: MessageRows, options: { deduplicationToken: string }) => {
       tokens.push(options.deduplicationToken);
-      return Promise.resolve();
+      return Promise.resolve({ status: 'acknowledged' as const });
     }),
   });
-  const tracker = { waitForCapacity: vi.fn().mockResolvedValue(undefined), track: vi.fn() };
+  const tracker = mockTracker();
 
   for (const offset of ['1', '2']) {
     await processMessage({
@@ -222,7 +229,7 @@ test('two copies of the same message produce the same token, and different repor
   expect(tokens[2]).not.toEqual(tokens[0]);
 });
 
-describe('the offset is committed only once every table has acknowledged', () => {
+describe('the offset is committed only once the writer has acknowledged the message', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -231,9 +238,9 @@ describe('the offset is committed only once every table has acknowledged', () =>
     vi.useRealTimers();
   });
 
-  test.each(writeMethods)('%s pending keeps the offset uncommitted', async method => {
-    const pending = deferred();
-    const writer = buildWriter({ [method]: vi.fn().mockReturnValue(pending.promise) });
+  test('a pending writeMessage keeps the offset uncommitted', async () => {
+    const pending = deferred<{ status: 'acknowledged' }>();
+    const writer = buildWriter({ writeMessage: vi.fn().mockReturnValue(pending.promise) });
     const { tracker, onCommit } = buildTracker();
     const message = await buildMessage();
 
@@ -251,11 +258,108 @@ describe('the offset is committed only once every table has acknowledged', () =>
     await vi.advanceTimersByTimeAsync(1000);
     expect(onCommit).not.toHaveBeenCalled();
 
-    pending.resolve();
+    pending.resolve({ status: 'acknowledged' });
     await vi.advanceTimersByTimeAsync(1000);
     expect(onCommit).toHaveBeenCalledWith([
       { topic: 'usage_reports', partition: 0, offset: '124' },
     ]);
+  });
+});
+
+describe('a message given up on', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test('is logged with the outcome per table, counted and committed', async () => {
+    const givenUp = new WriteGivenUpError(
+      {
+        query: 'INSERT INTO operations',
+        source: 'usage_reports/0@123',
+        deduplicationToken: 'token',
+        attempts: 3,
+        failingForMs: 120_000,
+        status: 500,
+        clickhouseError: 'boom',
+      },
+      new Error('boom'),
+    );
+    const outcomes = {
+      operations: 'gave-up',
+      operation_collection: 'cancelled',
+      subscription_operations: 'succeeded',
+      app_deployment_usage: 'succeeded',
+      operation_errors: 'succeeded',
+    } as const;
+    const writer = buildWriter({
+      writeMessage: vi.fn().mockResolvedValue({ status: 'given-up', error: givenUp, outcomes }),
+    });
+    const { tracker, onCommit } = buildTracker();
+    const logger = buildLogger();
+    const incSpy = vi.spyOn(givenUpMessages, 'inc');
+    const message = await buildMessage();
+
+    await processMessage({
+      processor: buildProcessor(),
+      writer,
+      tracker,
+      message,
+      heartbeat,
+      logger,
+      topic: 'usage_reports',
+      partition: 0,
+    });
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(onCommit).toHaveBeenCalledWith([
+      { topic: 'usage_reports', partition: 0, offset: '124' },
+    ]);
+    expect(incSpy).toHaveBeenCalledTimes(1);
+    const [errorArg, errorMsg] = logger.error.mock.calls.at(-1)!;
+    expect(errorMsg).toEqual('Report write given up - message dropped, offset will be committed');
+    expect(errorArg).toMatchObject({
+      topic: 'usage_reports',
+      partition: 0,
+      offset: '123',
+      outcomes,
+      attempts: 3,
+      status: 500,
+      clickhouseError: 'boom',
+      value: message.value!.toString('base64'),
+    });
+    expect(tracker.inflight()).toEqual({ bytes: 0, count: 0 });
+    incSpy.mockRestore();
+  });
+
+  test('stays uncommitted when its writes are aborted by shutdown instead', async () => {
+    const writer = buildWriter({
+      writeMessage: vi
+        .fn()
+        .mockRejectedValue(new WriteAbortedError('INSERT INTO operations', new Error('aborted'))),
+    });
+    const { tracker, onCommit } = buildTracker();
+    const incSpy = vi.spyOn(givenUpMessages, 'inc');
+
+    await processMessage({
+      processor: buildProcessor(),
+      writer,
+      tracker,
+      message: await buildMessage(),
+      heartbeat,
+      logger: buildLogger(),
+      topic: 'usage_reports',
+      partition: 0,
+    });
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(incSpy).not.toHaveBeenCalled();
+    expect(tracker.inflight()).toEqual({ bytes: 0, count: 0 });
+    incSpy.mockRestore();
   });
 });
 
@@ -284,10 +388,10 @@ describe('createDeduplicationToken', () => {
   });
 });
 
-test('a corrupt/unparseable message is dropped, counted as a poison pill and logged', async () => {
+test('a corrupt/unparseable message is dropped, counted as a poison pill, logged and skipped', async () => {
   const processor = buildProcessor();
   const writer = buildWriter();
-  const tracker = { waitForCapacity: vi.fn().mockResolvedValue(undefined), track: vi.fn() };
+  const tracker = mockTracker();
   const logger = buildLogger();
   const corruptMessage: KafkaMessage = {
     key: null,
@@ -314,13 +418,9 @@ test('a corrupt/unparseable message is dropped, counted as a poison pill and log
 
   expect(incSpy).toHaveBeenCalledTimes(1);
   expect(processor.processReports).not.toHaveBeenCalled();
-  expect(tracker.track).toHaveBeenCalledWith({
-    topic: 'usage_reports',
-    partition: 4,
-    offset: '999',
-    bytes: 0,
-    promise: expect.any(Promise),
-  });
+  expect(writer.writeMessage).not.toHaveBeenCalled();
+  expect(tracker.skip).toHaveBeenCalledWith('usage_reports', 4, '999');
+  expect(tracker.track).not.toHaveBeenCalled();
 
   const [errorArg, errorMsg] = logger.error.mock.calls.at(-1)!;
   expect(errorMsg).toEqual(
@@ -353,6 +453,7 @@ describe('createIngestor', () => {
     async_insert_max_data_size: 1000,
     max_sockets: 5,
     write_retry_backoff_ms: 10,
+    write_give_up_after_ms: 50,
   };
 
   function build() {

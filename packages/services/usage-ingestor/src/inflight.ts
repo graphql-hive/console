@@ -1,5 +1,10 @@
 import type { ServiceLogger } from '@hive/service-common';
-import { committedOffsetLag, errors } from './metrics';
+import {
+  committedOffsetLag,
+  errors,
+  inflightBytes as inflightBytesGauge,
+  inflightMessages as inflightMessagesGauge,
+} from './metrics';
 
 export interface InflightEntry {
   topic: string;
@@ -7,8 +12,9 @@ export interface InflightEntry {
   offset: string;
   bytes: number;
   /**
-   * Resolves once every ClickHouse write for the message is acknowledged.
-   * Rejects only when the writer is destroyed mid-retry.
+   * Resolves once the message is acknowledged by every table or given up on. Rejects when
+   * the writes were abandoned (shutdown, an unexpected error), which leaves the offset
+   * uncommitted so the message is replayed.
    */
   promise: Promise<unknown>;
 }
@@ -107,6 +113,11 @@ export function createInflightTracker(config: {
     );
   }
 
+  function updateInflightGauges() {
+    inflightBytesGauge.set(inflightBytes);
+    inflightMessagesGauge.set(inflightCount);
+  }
+
   function notifySettled() {
     const waiters = settleWaiters;
     settleWaiters = [];
@@ -133,15 +144,11 @@ export function createInflightTracker(config: {
     }
   }
 
-  function settle(
-    state: PartitionState,
-    pending: Pending | null,
-    bytes: number,
-    succeeded: boolean,
-  ) {
+  function settle(state: PartitionState, pending: Pending, bytes: number, succeeded: boolean) {
     inflightBytes -= bytes;
     inflightCount -= 1;
-    if (succeeded && pending) {
+    updateInflightGauges();
+    if (succeeded) {
       pending.done = true;
       advance(state);
     }
@@ -196,25 +203,30 @@ export function createInflightTracker(config: {
 
   return {
     /**
-     * After every group join kafkajs resumes each assigned partition from its committed offset,
-     * so a message whose writes are still in flight is delivered again. Both copies carry the
-     * same deduplication token, so whichever ClickHouse acknowledges first proves the rows are
-     * stored: a repeat shares its first delivery's slot instead of appending one that would move
-     * the commit offset backwards, and a repeat of an already acknowledged offset needs no slot.
+     * Tracker state lives for one consumer generation (see `reset`). An entry tracked late by
+     * a handler from the previous generation is kept in offset order by the sorted insert, so
+     * it can never move the commit offset past a message the new generation has not
+     * acknowledged; a repeated offset shares its entry.
      */
     track(entry: InflightEntry) {
       const state = getPartition(entry.topic, entry.partition);
-      const offset = BigInt(entry.offset);
       inflightBytes += entry.bytes;
       inflightCount += 1;
-      const pending =
-        state.nextOffset !== null && offset < state.nextOffset
-          ? null
-          : findOrInsert(state.queue, offset);
+      updateInflightGauges();
+      const pending = findOrInsert(state.queue, BigInt(entry.offset));
       entry.promise.then(
         () => settle(state, pending, entry.bytes, true),
         () => settle(state, pending, entry.bytes, false),
       );
+    },
+
+    /**
+     * Commits past a message without waiting for anything: a poison pill that was dropped.
+     */
+    skip(topic: string, partition: number, offset: string) {
+      const state = getPartition(topic, partition);
+      findOrInsert(state.queue, BigInt(offset)).done = true;
+      advance(state);
     },
 
     async waitForCapacity(bytes: number, heartbeat: () => Promise<void>) {
@@ -224,9 +236,11 @@ export function createInflightTracker(config: {
 
       const heartbeatTimer = setInterval(() => {
         heartbeat().catch(error => {
-          logger.debug(
+          // If the group is rebalancing this consumer cannot rejoin until the handler
+          // returns, which needs in-flight capacity to free up first.
+          logger.warn(
             { error: error instanceof Error ? error.message : String(error) },
-            'Heartbeat failed while waiting for capacity',
+            'Heartbeat failed while waiting for in-flight capacity',
           );
         });
       }, heartbeatIntervalMs);
@@ -247,19 +261,18 @@ export function createInflightTracker(config: {
     },
 
     /**
-     * Drops state for partitions this consumer no longer owns after a rebalance.
-     * Their uncommitted messages are replayed by the new owner and deduplicated by token.
+     * Forgets every partition. Called on every group join: kafkajs re-delivers whatever the
+     * broker has not committed (it resumes each partition from its last successful commit),
+     * and those deliveries re-establish the queue; ClickHouse deduplicates the repeated
+     * writes. Writes still in flight from before the join settle into the forgotten state and
+     * only release their bytes.
      */
-    retainPartitions(assignment: Record<string, number[]>) {
-      for (const [key, state] of partitions) {
-        if (!assignment[state.topic]?.includes(state.partition)) {
-          partitions.delete(key);
-          committedOffsetLag.remove({ partition: String(state.partition) });
-        }
+    reset() {
+      for (const state of partitions.values()) {
+        committedOffsetLag.remove({ partition: String(state.partition) });
       }
+      partitions.clear();
     },
-
-    flushCommits,
 
     /**
      * Waits for in-flight writes to be acknowledged, then commits what completed.
@@ -279,6 +292,10 @@ export function createInflightTracker(config: {
         }
       }
 
+      // A commit that was already running when the last writes settled does not include them.
+      if (commitInProgress) {
+        await commitInProgress;
+      }
       await flushCommits();
 
       if (inflightCount > 0) {

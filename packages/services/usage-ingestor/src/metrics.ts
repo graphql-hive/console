@@ -17,7 +17,7 @@ export const totalOperations = new metrics.Counter({
 
 export const processDuration = new metrics.Histogram({
   name: 'usage_ingestor_process_duration_seconds',
-  help: 'Time spent processing and writing reports',
+  help: 'Time from receiving a Kafka message to handing its ClickHouse writes to the in-flight tracker (decompress, normalize, wait for in-flight capacity); the writes themselves are measured by usage_ingestor_write_duration_seconds',
 });
 
 export const writeDuration = new metrics.Histogram({
@@ -90,6 +90,21 @@ export const poisonPillMessages = new metrics.Counter({
 export const failingMessages = new metrics.Gauge({
   name: 'usage_ingestor_failing_messages',
   help: 'Kafka messages with at least one ClickHouse insert that failed and is being retried in place; drops back when the insert succeeds or the ingestor shuts down. Sustained values mean a stuck message (the log carries its token, offset, HTTP status and ClickHouse error) or a ClickHouse outage',
+});
+
+export const givenUpMessages = new metrics.Counter({
+  name: 'usage_ingestor_given_up_messages',
+  help: 'Messages dropped because one of their ClickHouse inserts kept failing past CLICKHOUSE_WRITE_GIVE_UP_AFTER_MS while other inserts to the same table succeeded; the offset is committed and the payload, token and outcome per table are in the error log until a dead-letter queue exists',
+});
+
+export const inflightBytes = new metrics.Gauge({
+  name: 'usage_ingestor_inflight_bytes',
+  help: 'Serialized row bytes of messages whose ClickHouse writes are awaiting acknowledgement; consumption pauses when this reaches CLICKHOUSE_MAX_INFLIGHT_BYTES',
+});
+
+export const inflightMessages = new metrics.Gauge({
+  name: 'usage_ingestor_inflight_messages',
+  help: 'Messages whose ClickHouse writes are awaiting acknowledgement',
 });
 
 export const committedOffsetLag = new metrics.Gauge({

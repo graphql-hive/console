@@ -8,9 +8,9 @@ import type { Action } from '../clickhouse';
  * which only holds if every table it writes to, directly or through a materialized view,
  * has such a log.
  *
- * ClickHouse deduplicates coalesced async inserts individually on plain MergeTree from 26.1 and
- * accepts them together with deduplication in dependent materialized views from 26.2; older
- * servers reject the ingestor's inserts outright.
+ * ClickHouse 26.1 is the first release that deduplicates coalesced async inserts individually on
+ * plain MergeTree (ClickHouse#89140) and accepts them together with deduplication in dependent
+ * materialized views (ClickHouse#93957); older servers reject the ingestor's inserts outright.
  *
  * This action only covers tables that exist when it runs. New MergeTree tables must declare
  * `non_replicated_deduplication_window` in their `SETTINGS` clause.
