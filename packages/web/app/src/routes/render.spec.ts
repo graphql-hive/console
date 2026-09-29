@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 import { CDNAccessTokenCreateMutation } from '@/components/target/settings/cdn-access-tokens';
 import { CHECKS, checksFixtures } from '@/lib/testing/fixtures/checks';
-import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
+import {
+  layoutFixtures,
+  organizationLayout,
+  SLUGS,
+  targetLayout,
+} from '@/lib/testing/fixtures/layouts';
 import { organizationMembers } from '@/lib/testing/fixtures/organization-members';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
 import { projectSettings } from '@/lib/testing/fixtures/project-settings';
@@ -622,10 +627,17 @@ describe('members sections', () => {
     'sends a viewer who may not see members back to the organization',
     { timeout: 30_000 },
     async () => {
-      const { router } = renderMembers(
-        MEMBERS,
+      // The gate reads the layout document; the page document describes the same organization.
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set(
+        'OrganizationLayoutQuery',
+        organizationLayout({ viewerCanSeeMembers: false }),
+      );
+      client.current.fixtures.set(
+        'OrganizationMembersPageQuery',
         organizationMembers({ viewerCanSeeMembers: false }),
       );
+      const { router } = at(MEMBERS);
       await waitFor(() => expect(router.state.location.pathname).toBe(ORGANIZATION));
     },
   );

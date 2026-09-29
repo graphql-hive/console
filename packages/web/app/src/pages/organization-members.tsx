@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback } from 'react';
 import { useQuery } from 'urql';
 import { Navigation } from '@/components/base/navigation/navigation';
 import { Spinner } from '@/components/base/spinner/spinner';
@@ -11,16 +11,10 @@ import { Meta } from '@/components/ui/meta';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql, useFragment } from '@/gql';
-import { useRedirect } from '@/lib/access/common';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import {
-  getRouteApi,
-  Outlet,
-  useChildMatches,
-  type RegisteredRouter,
-  type RouteIds,
-} from '@tanstack/react-router';
+import { useResetState } from '@/lib/hooks/use-reset-state';
+import { getRouteApi, Outlet } from '@tanstack/react-router';
 
 const membersListRoute = getRouteApi('/authenticated/with-header/$organizationSlug/view/members/');
 
@@ -29,14 +23,13 @@ const OrganizationMembersPage_OrganizationFragment = graphql(`
     ...OrganizationInvitations_OrganizationFragment
     ...OrganizationMemberRoles_OrganizationFragment
     ...OrganizationMembers_OrganizationFragment
-    ...Groups_OrganizationFragment
 
     viewerCanManageInvitations
     viewerCanManageRoles
   }
 `);
 
-const OrganizationMembersPageQuery = graphql(`
+export const OrganizationMembersPageQuery = graphql(`
   query OrganizationMembersPageQuery(
     $organizationSlug: String!
     $searchTerm: String
@@ -47,6 +40,8 @@ const OrganizationMembersPageQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...OrganizationMembersPage_OrganizationFragment
       viewerCanSeeMembers
+      viewerCanManageRoles
+      viewerCanManageInvitations
     }
   }
 `);
@@ -57,7 +52,7 @@ const PAGE_SIZE = 20;
  * One document serves the layout and every section; the list adds its filter and cursor. Roles,
  * groups and invitations ask for the unfiltered first page, which the layout has already fetched.
  */
-function membersVariables(
+export function membersVariables(
   organizationSlug: string,
   list: { searchTerm?: string; needsSCIMManagementConfirmation?: boolean; after: string | null } = {
     after: null,
@@ -66,49 +61,37 @@ function membersVariables(
   return { organizationSlug, first: PAGE_SIZE, ...list };
 }
 
-const MEMBERS = '/authenticated/with-header/$organizationSlug/view/members';
-
-type SectionId = 'list' | 'roles' | 'groups' | 'invitations';
+export type MembersSectionId = 'list' | 'roles' | 'groups' | 'invitations';
 
 type Section = {
-  id: SectionId;
+  id: MembersSectionId;
   label: string;
-  routeId: RouteIds<RegisteredRouter['routeTree']>;
-  to: `/$organizationSlug/view/members${'' | `/${Exclude<SectionId, 'list'>}`}`;
+  to: `/$organizationSlug/view/members${'' | `/${Exclude<MembersSectionId, 'list'>}`}`;
   exact?: boolean;
 };
 
-/**
- * The sections in nav order, with the route each renders under; the permission gate compares the
- * matched child route against the items the viewer may see. The bare URL is the list.
- */
+// The sections in nav order. The bare URL is the list.
 const sections: readonly Section[] = [
-  {
-    id: 'list',
-    label: 'Members',
-    routeId: `${MEMBERS}/`,
-    to: '/$organizationSlug/view/members',
-    exact: true,
-  },
-  {
-    id: 'roles',
-    label: 'Roles',
-    routeId: `${MEMBERS}/roles`,
-    to: '/$organizationSlug/view/members/roles',
-  },
-  {
-    id: 'groups',
-    label: 'Groups',
-    routeId: `${MEMBERS}/groups`,
-    to: '/$organizationSlug/view/members/groups',
-  },
-  {
-    id: 'invitations',
-    label: 'Invitations',
-    routeId: `${MEMBERS}/invitations`,
-    to: '/$organizationSlug/view/members/invitations',
-  },
+  { id: 'list', label: 'Members', to: '/$organizationSlug/view/members', exact: true },
+  { id: 'roles', label: 'Roles', to: '/$organizationSlug/view/members/roles' },
+  { id: 'groups', label: 'Groups', to: '/$organizationSlug/view/members/groups' },
+  { id: 'invitations', label: 'Invitations', to: '/$organizationSlug/view/members/invitations' },
 ];
+
+// The sections this viewer may open; the route loaders and the nav both read it.
+export function membersSections(organization: {
+  viewerCanManageRoles: boolean;
+  viewerCanManageInvitations: boolean;
+}) {
+  const ids = new Set<MembersSectionId>(['list', 'groups']);
+  if (organization.viewerCanManageRoles) {
+    ids.add('roles');
+  }
+  if (organization.viewerCanManageInvitations) {
+    ids.add('invitations');
+  }
+  return sections.filter(section => ids.has(section.id));
+}
 
 export function OrganizationMembersPage() {
   const slugs = useSlugs('organization');
@@ -121,41 +104,7 @@ export function OrganizationMembersPage() {
     OrganizationMembersPage_OrganizationFragment,
     query.data?.organization,
   );
-
-  useRedirect({
-    canAccess: query.data?.organization?.viewerCanSeeMembers === true,
-    entity: query.data?.organization,
-    redirectTo: router => {
-      void router.navigate({ to: '/$organizationSlug', params: slugs });
-    },
-  });
-
-  const visible = useMemo(() => {
-    const ids = new Set<SectionId>(['list', 'groups']);
-    if (organization?.viewerCanManageRoles) {
-      ids.add('roles');
-    }
-    if (organization?.viewerCanManageInvitations) {
-      ids.add('invitations');
-    }
-    return sections.filter(section => ids.has(section.id));
-  }, [organization]);
-
-  const sectionRouteId = useChildMatches({ select: matches => matches.at(-1)?.routeId });
-  const allowed = visible.some(section => section.routeId === sectionRouteId);
-
-  // A section the viewer may not open falls back to the list.
-  useRedirect({
-    canAccess: allowed,
-    entity: organization,
-    redirectTo: router => {
-      void router.navigate({ to: '/$organizationSlug/view/members', params: slugs, replace: true });
-    },
-  });
-
-  if (query.data?.organization?.viewerCanSeeMembers === false) {
-    return null;
-  }
+  const visible = query.data?.organization ? membersSections(query.data.organization) : [];
 
   if (query.error) {
     return <QueryError organizationSlug={organizationSlug} error={query.error} />;
@@ -165,7 +114,7 @@ export function OrganizationMembersPage() {
     <>
       <Meta title="Members" />
       <LayoutContent className="flex flex-col gap-y-10">
-        {allowed && organization ? (
+        {organization ? (
           <PageLayout>
             <Navigation
               aria-label="Members"
@@ -194,12 +143,7 @@ export function OrganizationMembersPage() {
 export function OrganizationMembersListSection() {
   const { organizationSlug } = useSlugs('organization');
   const search = membersListRoute.useSearch();
-  const [after, setAfter] = useState<string | null>(null);
-
-  // Reset cursor when search changes
-  useEffect(() => {
-    setAfter(null);
-  }, [search.search]);
+  const [after, setAfter] = useResetState<string | null>(null, [search.search]);
 
   const [query, refetch] = useQuery({
     query: OrganizationMembersPageQuery,
@@ -262,7 +206,7 @@ export function OrganizationMembersRolesSection() {
 export function OrganizationMembersGroupsSection() {
   const { organizationSlug } = useSlugs('organization');
   const { organization } = useMembersOrganization(organizationSlug);
-  return organization ? <Groups organization={organization} /> : null;
+  return organization ? <Groups /> : null;
 }
 
 export function OrganizationMembersInvitationsSection() {

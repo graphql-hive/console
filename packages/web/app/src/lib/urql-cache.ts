@@ -561,6 +561,7 @@ export const cacheOptions = {
     Organization: {
       accessTokens: relayPagination(),
       allAccessTokens: relayPagination(),
+      groups: relayPagination(),
     },
     Project: {
       accessTokens: relayPagination(),
