@@ -27,6 +27,7 @@ import { psql } from '@hive/postgres';
 import { invariant } from '@hive/service-common';
 import { createStorage } from '@hive/storage';
 import { clickHouseQuery } from '../../../testkit/clickhouse';
+import { assertSignInUpSucceeded } from '../../../testkit/oidc-integration';
 import { createScimTestkit } from '../../../testkit/scim';
 import { fetchPermissions } from '../access-tokens/shared';
 
@@ -4016,7 +4017,7 @@ test.concurrent('user cannot login via OIDC if SCIM user provisioning is require
   signInUpResult = await oidcAuth.runSignInUp({
     state: authPayload.state,
   });
-  invariant(signInUpResult.type === 'success', 'Expected sign in/up to succeed.');
+  assertSignInUpSucceeded(signInUpResult, 'Expected sign in/up to succeed.');
 });
 
 test.concurrent(
@@ -4289,7 +4290,7 @@ test.concurrent(
     const result = await oidcMock.runSignInUp({
       state: auth.state,
     });
-    invariant(result.type === 'success', 'expected sign in to succeed');
+    assertSignInUpSucceeded(result, 'expected sign in to succeed');
 
     // fetch all the projects the user has access to
     let projectsResult = await org.projects(result.accessToken);
@@ -4429,7 +4430,7 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
   let result = await oidcMock.runSignInUp({
     state: auth.state,
   });
-  invariant(result.type === 'success', 'expected sign in to succeed');
+  assertSignInUpSucceeded(result, 'expected sign in to succeed');
 
   // fetch all the projects the user has access to
   const projectsResult = await org.projects(result.accessToken);
@@ -4460,7 +4461,7 @@ test.concurrent('disabled user is revoked access', async ({ expect }) => {
   result = await oidcMock.runSignInUp({
     state: auth.state,
   });
-  invariant(result.type === 'success', 'expected sign in to fail as the user was disabled');
+  assertSignInUpSucceeded(result, 'expected sign in to succeed after the user was re-enabled');
 });
 
 describe('Personal Access Tokens', () => {
@@ -4506,7 +4507,7 @@ describe('Personal Access Tokens', () => {
       const authResult = await oidcMock.runSignInUp({
         state: auth.state,
       });
-      invariant(authResult.type === 'success', 'expected sign in to succeed');
+      assertSignInUpSucceeded(authResult, 'expected sign in to succeed');
 
       // Initially, the user should not be able to create any personal access token as he does not have sufficient permissions
       // assigned via the Group
@@ -4728,7 +4729,7 @@ describe('Personal Access Tokens', () => {
       const authResult = await oidcMock.runSignInUp({
         state: auth.state,
       });
-      invariant(authResult.type === 'success', 'expected sign in to succeed');
+      assertSignInUpSucceeded(authResult, 'expected sign in to succeed');
 
       const project1 = await org.createProject();
       const project2 = await org.createProject();
@@ -5011,7 +5012,7 @@ describe('provisioned user jail', () => {
       oidcMock.setUser({ email, userIdClaim: externalId });
       const auth = await oidcMock.runGetAuthorizationUrl();
       const signInResult = await oidcMock.runSignInUp({ state: auth.state });
-      invariant(signInResult.type === 'success', 'Expected sign in to succeed.');
+      assertSignInUpSucceeded(signInResult, 'Expected sign in to succeed.');
 
       const result = await updateMe(
         {
@@ -5056,10 +5057,7 @@ describe('provisioned user jail', () => {
     oidcMock.setUser({ email, userIdClaim: externalId });
     const auth = await oidcMock.runGetAuthorizationUrl();
     const signInResult = await oidcMock.runSignInUp({ state: auth.state });
-    invariant(
-      signInResult.type === 'success',
-      `Expected sign in to succeed. But got ${JSON.stringify(signInResult.body)}`,
-    );
+    assertSignInUpSucceeded(signInResult, 'Expected sign in to succeed.');
 
     const slug = `scim-${crypto.randomUUID()}`;
     const result = await createOrganization({ slug }, signInResult.accessToken).then(response =>
@@ -5108,7 +5106,7 @@ describe('provisioned user jail', () => {
     oidcMock.setUser({ email, userIdClaim: externalId });
     const auth = await oidcMock.runGetAuthorizationUrl();
     const signInResult = await oidcMock.runSignInUp({ state: auth.state });
-    invariant(signInResult.type === 'success', 'Expected sign in to succeed.');
+    assertSignInUpSucceeded(signInResult, 'Expected sign in to succeed.');
 
     const result = await leaveOrganization(
       { organizationSlug: org.organization.slug },
@@ -5162,7 +5160,7 @@ describe('provisioned user jail', () => {
       oidcMock.setUser({ email, userIdClaim: externalId });
       const auth = await oidcMock.runGetAuthorizationUrl();
       const signInResult = await oidcMock.runSignInUp({ state: auth.state });
-      invariant(signInResult.type === 'success', 'Expected sign in to succeed.');
+      assertSignInUpSucceeded(signInResult, 'Expected sign in to succeed.');
       const resources = {
         mode: ResourceAssignmentModeType.Granular,
         projects: [

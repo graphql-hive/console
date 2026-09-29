@@ -182,6 +182,13 @@ async function waitForTraceInNormalized(traceId: string, maxAttempts = 30) {
   return false;
 }
 
+async function dumpNormalizedTraces(traceIds: string[]) {
+  const result = await clickHouseQuery<Record<string, unknown>>(
+    `SELECT target_id, trace_id, span_id, toString(timestamp) AS timestamp, graphql_operation_name, graphql_operation_type, http_status_code, graphql_error_count FROM otel_traces_normalized WHERE trace_id IN (${traceIds.map(traceId => `'${traceId}'`).join(', ')}) ORDER BY timestamp, trace_id`,
+  );
+  return JSON.stringify(result.data, null, 2);
+}
+
 test('otel-collector accepts traces with access token and inserts to ClickHouse', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, createOrganizationAccessToken, setFeatureFlag } = await createOrg();
@@ -485,7 +492,7 @@ test('traces can be filtered via GraphQL API', async () => {
   const trace3Id = generateTraceId();
 
   // Trace 1: Query, success, 200
-  await sendTrace({
+  const trace1Response = await sendTrace({
     otelCollectorAddress,
     accessToken,
     targetRef: target.id,
@@ -500,9 +507,10 @@ test('traces can be filtered via GraphQL API', async () => {
       'http.method': { stringValue: 'POST' },
     },
   });
+  expect(trace1Response.status).toBe(200);
 
   // Trace 2: Mutation, success, 200
-  await sendTrace({
+  const trace2Response = await sendTrace({
     otelCollectorAddress,
     accessToken,
     targetRef: target.id,
@@ -517,9 +525,10 @@ test('traces can be filtered via GraphQL API', async () => {
       'http.method': { stringValue: 'POST' },
     },
   });
+  expect(trace2Response.status).toBe(200);
 
   // Trace 3: Query, failure, 500 with GraphQL errors
-  await sendTrace({
+  const trace3Response = await sendTrace({
     otelCollectorAddress,
     accessToken,
     targetRef: target.id,
@@ -535,107 +544,115 @@ test('traces can be filtered via GraphQL API', async () => {
       'hive.graphql.error.count': { intValue: '1' },
     },
   });
+  expect(trace3Response.status).toBe(200);
 
   // Wait for all traces to appear in normalized view
-  await waitForTraceInNormalized(trace1Id);
-  await waitForTraceInNormalized(trace2Id);
-  await waitForTraceInNormalized(trace3Id);
+  await expect(waitForTraceInNormalized(trace1Id)).resolves.toBe(true);
+  await expect(waitForTraceInNormalized(trace2Id)).resolves.toBe(true);
+  await expect(waitForTraceInNormalized(trace3Id)).resolves.toBe(true);
 
-  // Test 1: Filter by operation name
-  await waitForExpectations(async () => {
-    const resultByOpName = await execute({
-      document: TargetTracesWithFiltersQuery,
-      variables: {
-        targetId: target.id,
-        operationNames: ['GetUsers'],
-      },
-      authToken: ownerToken,
+  try {
+    // Test 1: Filter by operation name
+    await waitForExpectations(async () => {
+      const resultByOpName = await execute({
+        document: TargetTracesWithFiltersQuery,
+        variables: {
+          targetId: target.id,
+          operationNames: ['GetUsers'],
+        },
+        authToken: ownerToken,
+      });
+      const dataByOpName = await resultByOpName.expectNoGraphQLErrors();
+      expect(dataByOpName.target?.traces.edges.length).toBe(1);
+      expect(dataByOpName.target?.traces.edges[0].node.operationName).toBe('GetUsers');
     });
-    const dataByOpName = await resultByOpName.expectNoGraphQLErrors();
-    expect(dataByOpName.target?.traces.edges.length).toBe(1);
-    expect(dataByOpName.target?.traces.edges[0].node.operationName).toBe('GetUsers');
-  });
 
-  // Test 2: Filter by operation type (query only)
-  await waitForExpectations(async () => {
-    const resultByOpType = await execute({
-      document: TargetTracesWithFiltersQuery,
-      variables: {
-        targetId: target.id,
-        operationTypes: [GraphQlOperationType.Query],
-      },
-      authToken: ownerToken,
+    // Test 2: Filter by operation type (query only)
+    await waitForExpectations(async () => {
+      const resultByOpType = await execute({
+        document: TargetTracesWithFiltersQuery,
+        variables: {
+          targetId: target.id,
+          operationTypes: [GraphQlOperationType.Query],
+        },
+        authToken: ownerToken,
+      });
+      const dataByOpType = await resultByOpType.expectNoGraphQLErrors();
+      expect(dataByOpType.target?.traces.edges.length).toBe(2);
+      const opNames = dataByOpType.target?.traces.edges.map(e => e.node.operationName);
+      expect(opNames).toContain('GetUsers');
+      expect(opNames).toContain('GetProducts');
     });
-    const dataByOpType = await resultByOpType.expectNoGraphQLErrors();
-    expect(dataByOpType.target?.traces.edges.length).toBe(2);
-    const opNames = dataByOpType.target?.traces.edges.map(e => e.node.operationName);
-    expect(opNames).toContain('GetUsers');
-    expect(opNames).toContain('GetProducts');
-  });
 
-  // Test 3: Filter by success status
-  await waitForExpectations(async () => {
-    const resultBySuccess = await execute({
-      document: TargetTracesWithFiltersQuery,
-      variables: {
-        targetId: target.id,
-        success: [false],
-      },
-      authToken: ownerToken,
+    // Test 3: Filter by success status
+    await waitForExpectations(async () => {
+      const resultBySuccess = await execute({
+        document: TargetTracesWithFiltersQuery,
+        variables: {
+          targetId: target.id,
+          success: [false],
+        },
+        authToken: ownerToken,
+      });
+      const dataBySuccess = await resultBySuccess.expectNoGraphQLErrors();
+      expect(dataBySuccess.target?.traces.edges.length).toBe(1);
+      expect(dataBySuccess.target?.traces.edges[0].node.httpStatusCode).toBe('500');
     });
-    const dataBySuccess = await resultBySuccess.expectNoGraphQLErrors();
-    expect(dataBySuccess.target?.traces.edges.length).toBe(1);
-    expect(dataBySuccess.target?.traces.edges[0].node.httpStatusCode).toBe('500');
-  });
 
-  // Test 4: Filter by HTTP status code
-  await waitForExpectations(async () => {
-    const resultByStatus = await execute({
-      document: TargetTracesWithFiltersQuery,
-      variables: {
-        targetId: target.id,
-        httpStatusCodes: ['200'],
-      },
-      authToken: ownerToken,
+    // Test 4: Filter by HTTP status code
+    await waitForExpectations(async () => {
+      const resultByStatus = await execute({
+        document: TargetTracesWithFiltersQuery,
+        variables: {
+          targetId: target.id,
+          httpStatusCodes: ['200'],
+        },
+        authToken: ownerToken,
+      });
+      const dataByStatus = await resultByStatus.expectNoGraphQLErrors();
+      expect(dataByStatus.target?.traces.edges.length).toBe(2);
+      expect(dataByStatus.target?.traces.edges.every(e => e.node.httpStatusCode === '200')).toBe(
+        true,
+      );
     });
-    const dataByStatus = await resultByStatus.expectNoGraphQLErrors();
-    expect(dataByStatus.target?.traces.edges.length).toBe(2);
-    expect(dataByStatus.target?.traces.edges.every(e => e.node.httpStatusCode === '200')).toBe(
-      true,
+
+    // Test 5: Verify filter options are populated
+    await waitForExpectations(async () => {
+      const resultFilterOptions = await execute({
+        document: TargetTracesWithFiltersQuery,
+        variables: {
+          targetId: target.id,
+        },
+        authToken: ownerToken,
+      });
+      const dataFilterOptions = await resultFilterOptions.expectNoGraphQLErrors();
+      const filterOptions = dataFilterOptions.target?.tracesFilterOptions;
+
+      // Check operation names are available
+      expect(filterOptions?.operationName.length).toBeGreaterThanOrEqual(3);
+      const opNameValues = filterOptions?.operationName.map(o => o.value);
+      expect(opNameValues).toContain('GetUsers');
+      expect(opNameValues).toContain('CreateUser');
+      expect(opNameValues).toContain('GetProducts');
+
+      // Check operation types are available
+      expect(filterOptions?.operationType.length).toBeGreaterThanOrEqual(2);
+      const opTypeValues = filterOptions?.operationType.map(o => o.value);
+      expect(opTypeValues).toContain('query');
+      expect(opTypeValues).toContain('mutation');
+
+      // Check HTTP status codes are available
+      expect(filterOptions?.httpStatusCode.length).toBeGreaterThanOrEqual(2);
+      const statusValues = filterOptions?.httpStatusCode.map(o => o.value);
+      expect(statusValues).toContain('200');
+      expect(statusValues).toContain('500');
+    });
+  } catch (error) {
+    throw new Error(
+      `Trace filter assertions failed for target ${target.id}. Rows in otel_traces_normalized for the sent traces:\n${await dumpNormalizedTraces([trace1Id, trace2Id, trace3Id])}`,
+      { cause: error },
     );
-  });
-
-  // Test 5: Verify filter options are populated
-  await waitForExpectations(async () => {
-    const resultFilterOptions = await execute({
-      document: TargetTracesWithFiltersQuery,
-      variables: {
-        targetId: target.id,
-      },
-      authToken: ownerToken,
-    });
-    const dataFilterOptions = await resultFilterOptions.expectNoGraphQLErrors();
-    const filterOptions = dataFilterOptions.target?.tracesFilterOptions;
-
-    // Check operation names are available
-    expect(filterOptions?.operationName.length).toBeGreaterThanOrEqual(3);
-    const opNameValues = filterOptions?.operationName.map(o => o.value);
-    expect(opNameValues).toContain('GetUsers');
-    expect(opNameValues).toContain('CreateUser');
-    expect(opNameValues).toContain('GetProducts');
-
-    // Check operation types are available
-    expect(filterOptions?.operationType.length).toBeGreaterThanOrEqual(2);
-    const opTypeValues = filterOptions?.operationType.map(o => o.value);
-    expect(opTypeValues).toContain('query');
-    expect(opTypeValues).toContain('mutation');
-
-    // Check HTTP status codes are available
-    expect(filterOptions?.httpStatusCode.length).toBeGreaterThanOrEqual(2);
-    const statusValues = filterOptions?.httpStatusCode.map(o => o.value);
-    expect(statusValues).toContain('200');
-    expect(statusValues).toContain('500');
-  });
+  }
 });
 
 test('otel-collector populates otel_traces_normalized for GraphQL spans', async () => {

@@ -63,83 +63,90 @@ export function waitFor(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function pollInternal(
+class PollTimeoutError extends Error {
+  constructor(maxWait: number, attempts: number, lastError: unknown) {
+    const lastFailure =
+      lastError === undefined
+        ? ''
+        : `\nLast failure: ${lastError instanceof Error ? lastError.message : String(lastError)}`;
+    super(
+      `Polling failed. Condition was not satisfied within ${maxWait}ms (${attempts} attempts).${lastFailure}`,
+      { cause: lastError },
+    );
+    this.name = 'PollTimeoutError';
+  }
+}
+
+/**
+ * Polls `check` until it resolves to `true`. A `check` that throws is retried like one that
+ * resolves to `false`; the last error is reported when `maxWait` is exceeded.
+ */
+export function pollFor(
   check: () => Promise<boolean>,
-
-  /** In milliseconds */
-  pollFrequency: number,
-
-  /** In milliseconds */
-  maxWait: number,
-
-  /** In milliseconds. A random number between 0 and Jitter is added to the pollFrequency to add some
-   * noise and prevent test cases where exact durations are required.
-   * */
-  jitter: number,
-
-  resolve: (value: void | PromiseLike<void>) => void,
-  reject: (reason?: any) => void,
-
-  /** In milliseconds */
-  startTime: number = Date.now(),
-) {
+  opts?: {
+    /** In milliseconds */
+    pollFrequency?: number;
+    /** In milliseconds */
+    maxWait?: number;
+    /** In milliseconds. A random number between 0 and `jitter` is added to `pollFrequency` to add
+     * some noise and prevent test cases where exact durations are required. */
+    jitter?: number;
+  },
+): Promise<void> {
+  const pollFrequency = opts?.pollFrequency ?? 500;
+  const maxWait = opts?.maxWait ?? 15_000;
+  const jitter = opts?.jitter ?? 100;
+  const startTime = Date.now();
+  let attempts = 0;
   let lastError: unknown;
-  setTimeout(
-    async () => {
-      try {
-        const passes = await check();
-        if (passes) {
-          resolve();
-        } else {
-          const waited = Date.now() - startTime;
-          if (waited > maxWait) {
-            reject(
-              new Error(
-                `Polling failed. Condition was not satisfied within ${maxWait}ms. Causeed by ${String(lastError)}`,
-                {
-                  cause: lastError,
-                },
-              ),
-            );
-          } else {
-            pollInternal(check, pollFrequency, maxWait, jitter, resolve, reject, startTime);
+
+  return new Promise((resolve, reject) => {
+    function scheduleAttempt() {
+      setTimeout(
+        async () => {
+          attempts++;
+          try {
+            if (await check()) {
+              resolve();
+              return;
+            }
+          } catch (error) {
+            lastError = error;
           }
-        }
-      } catch (e) {
-        lastError = e;
-        reject(e);
-      }
-    },
-    Math.round(pollFrequency + Math.random() * jitter),
-  );
+
+          if (Date.now() - startTime > maxWait) {
+            reject(new PollTimeoutError(maxWait, attempts, lastError));
+            return;
+          }
+
+          scheduleAttempt();
+        },
+        Math.round(pollFrequency + Math.random() * jitter),
+      );
+    }
+
+    scheduleAttempt();
+  });
 }
 
 // Use this function to give our backend (clickhouse) time to insert into the materialized views' tables
 export const waitForExpectations = (expectation: () => Promise<void>) => {
   return pollFor(async () => {
-    try {
-      await expectation();
-      return true;
-    } catch (e) {
-      return false;
-    }
+    await expectation();
+    return true;
   });
 };
 
-export function pollFor(
-  check: () => Promise<boolean>,
-  opts?: { pollFrequency?: number; maxWait?: number; jitter?: number },
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    pollInternal(
-      check,
-      opts?.pollFrequency ?? 500,
-      opts?.maxWait ?? 15_000,
-      opts?.jitter ?? 100,
-      resolve,
-      reject,
-    );
+export async function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
   });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export function createOrganization(input: CreateOrganizationInput, authToken: string) {
