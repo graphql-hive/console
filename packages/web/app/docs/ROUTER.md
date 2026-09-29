@@ -32,9 +32,9 @@ and commits with `replace`, so the old URL never enters history. Every redirect 
 a URL moved is an entry in `src/routes/legacy.ts` (see below). Redirects that depend on config or on
 the URL alone live in `beforeLoad` (`/auth` → sign-in, `/oidc-request` when the provider is off, a
 bare `/insights` → its default range); one that depends on query data awaits the document in the
-route's loader (`/history` → latest version, a viewer landing on a settings section they may not
-open; see [DATA.md](./DATA.md)). The organization and project settings and members pages still use
-the `useRedirect` hook in the page until they get loaders.
+route's loader (`/history` → latest version, a viewer landing on a settings or members section they
+may not open, a permission gate on a layout flag; see [DATA.md](./DATA.md)). No page redirects from
+a render effect any more.
 
 ## Where things live
 
@@ -169,11 +169,11 @@ Put a detail page under the tab's path (`thing/$id`) so the item stays current o
 
 ### Add a section to a settings page (a tertiary nav)
 
-1. Add a route under the settings route: `path: 'thing'`, component rendering the section. Under a
-   target, give it `loader: loader => loadSection(loader, 'thing')` (see DATA.md).
-2. Add the section to the `sections` table in the settings page (`id`, `label`, `to`) and to the set
-   under its permission: `settingsSections` for a target, the `visible` memo (with `routeId`) on the
-   organization and project settings pages until they get loaders.
+1. Add a route under the settings route: `path: 'thing'`, component rendering the section, and
+   `loader: loader => loadSection(loader, 'thing')` (see DATA.md).
+2. Add the section to the `sections` table in the settings page (`id`, `label`, `to`) and to the
+   page's `*Sections` function under its permission (`settingsSections`,
+   `organizationSettingsSections`, `projectSettingsSections`, `membersSections`).
 3. If the section replaces an old `?page=thing`, add the value to the matching `legacySearch`
    entry's `values` and an example.
 4. Tests: `tree.spec.ts` id + example; a `render.spec.ts` case in that screen's block.
@@ -213,7 +213,7 @@ Run from the repo root: `pnpm vitest run packages/web/app/src`.
 | `routes/render.spec.ts`    | The real tree rendered at every page URL: one secondary nav, the expected item current, no error boundary; per-screen blocks for each tertiary nav and gate.                                                           |
 | `router.spec.ts`           | `createAppRouter` has no side effects and owns the default error/not-found boundaries, the pending defaults and `defaultPreload`.                                                                                      |
 | `lib/testing/urql.spec.ts` | The test client answers by operation name and fails a fixture that no longer covers its document.                                                                                                                      |
-| `routes/target/*.spec.ts`  | For the areas whose loaders warm page documents (insights, checks): what the loaders request and that the page reads it from the cache; the settings and history loaders are covered in `render.spec.ts`. See DATA.md. |
+| `routes/<scope>/*.spec.ts` | Per area: what the loaders request, with which variables and policies, that the page reads it from the cache, and where a gate or section check redirects. See DATA.md.                                              |
 
 `renderAtUrl(url, { client })` (`src/lib/testing/router.tsx`) renders the app in a memory history
 with `client` (a `createTestClient`) in router context. Specs that use it mock `@/env/frontend`,
