@@ -898,15 +898,21 @@ describe.each(['js', 'rust'] as const)('GraphQL Hive Plugin (%s)', gatewayType =
         },
       },
     });
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const period = {
+      from: yesterday.toISOString(),
+      to: new Date().toISOString(),
+    };
+
     await waitForExpectations(async () => {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const period = {
-        from: yesterday.toISOString(),
-        to: new Date().toISOString(),
-      };
-      const stats = await readSchemaCoordinateStats('RootQuery.product', period);
+      const stats = await readSchemaCoordinateStats('Query.product', period);
       expect(stats.target?.schemaCoordinateStats.totalResolutions).toBe(1);
+      expect(stats.target?.schemaCoordinateStats.totalRequests).toBe(1);
+      expect(stats.target?.schemaCoordinateStats.totalFailures).toBe(0);
     });
+
+    const subgraphStats = await readSchemaCoordinateStats('RootQuery.product', period);
+    expect(subgraphStats.target?.schemaCoordinateStats.totalResolutions).toBe(0);
   });
 });
