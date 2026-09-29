@@ -107,7 +107,6 @@ export default defineConfig({
           label: 'Charts',
           children: [
             { label: 'Chart' },
-            { label: 'Component Examples' },
             { label: 'Sparkline' },
             { label: 'TimeSeriesChart' },
           ],
