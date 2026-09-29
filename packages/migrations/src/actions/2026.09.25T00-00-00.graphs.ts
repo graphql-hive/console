@@ -1,6 +1,5 @@
 import { type MigrationExecutor } from '../pg-migrator';
 
-
 export default {
   name: '2026.09.25T00-00-00.graphs.ts',
   run: ({ psql }) => psql`
