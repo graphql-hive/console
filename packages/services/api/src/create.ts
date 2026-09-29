@@ -54,10 +54,6 @@ import { sharedModule } from './modules/shared';
 import { DistributedCache } from './modules/shared/providers/distributed-cache';
 import { HttpClient } from './modules/shared/providers/http-client';
 import { IdTranslator } from './modules/shared/providers/id-translator';
-import {
-  InMemoryRateLimiter,
-  InMemoryRateLimitStore,
-} from './modules/shared/providers/in-memory-rate-limiter';
 import { Logger } from './modules/shared/providers/logger';
 import { Mutex } from './modules/shared/providers/mutex';
 import { PrometheusConfig } from './modules/shared/providers/prometheus-config';
@@ -211,8 +207,6 @@ export function createRegistry({
     IdTranslator,
     Mutex,
     DistributedCache,
-    InMemoryRateLimitStore,
-    InMemoryRateLimiter,
     RedisRateLimiter,
     ArtifactStorageWriter,
     {
