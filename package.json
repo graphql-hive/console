@@ -141,7 +141,6 @@
       "cookie@<0.7.0": "0.7.2",
       "tar-fs": "2.1.4",
       "ip": "npm:neoip@2.1.0",
-      "miniflare@3>undici": "7.29.0",
       "tailwindcss": "3.4.17",
       "@graphql-hive/laboratory>tailwindcss": "4.1.18",
       "@hive/app>tailwindcss": "4.1.18",
@@ -186,7 +185,8 @@
       "sharp@<0.35.4": "^0.35.4",
       "body-parser@1.x.x": "1.20.6",
       "prettier-plugin-sh": "0.19.0",
-      "pacote@<21.5.1": "^21.5.1"
+      "pacote@<21.5.1": "^21.5.1",
+      "miniflare@3>undici": "7.30.0"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
