@@ -14,9 +14,9 @@ import { ProjectType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useSlugs, useToggle, useViewer } from '@/lib/hooks';
 import { carriedRange } from '@/lib/hooks/use-date-range-controller';
-import { useLocation } from '@tanstack/react-router';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
+import { useLocation } from '@tanstack/react-router';
 import { Tabs } from '../ui/primitives/tabs/tabs';
 import { TargetLayoutQuery } from './queries';
 

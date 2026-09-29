@@ -30,11 +30,11 @@ import {
   useFormattedThroughput,
   useSlugs,
 } from '@/lib/hooks';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { pick } from '@/lib/object';
 import { useRouter } from '@tanstack/react-router';
 import { OperationsFallback } from './fallback';
 import { resolutionToMilliseconds } from './utils';
-import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 
 export const Stats_GeneralOperationsStatsQuery = graphql(`
   query Stats_GeneralOperationsStats(

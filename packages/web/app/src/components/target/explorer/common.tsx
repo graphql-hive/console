@@ -9,6 +9,7 @@ import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, toDecimal, useSlugs } from '@/lib/hooks';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { capitalize, cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -16,7 +17,6 @@ import AvailabilityBar from './availability-bar';
 import { useDescriptionsVisibleToggle, useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
 import { matchesSubgraphFilter, useExplorerFieldFiltering } from './utils';
-import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 
 export function Description(props: { description: string }) {
   const { isDescriptionsVisible } = useDescriptionsVisibleToggle();

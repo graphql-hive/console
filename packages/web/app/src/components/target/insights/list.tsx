@@ -8,9 +8,9 @@ import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { DateRangeInput, OperationStatsFilterInput } from '@/gql/graphql';
 import { formatDuration, useSlugs } from '@/lib/hooks';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import type { ColumnDef } from '@tanstack/react-table';
 import { OperationsFallback } from './fallback';
-import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 
 interface Operation {
   id: string;

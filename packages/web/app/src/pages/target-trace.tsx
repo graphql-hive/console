@@ -940,7 +940,11 @@ export function TraceSheet(props: TraceSheetProps) {
         onClose={() =>
           navigate({
             to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
-            search: previous => ({ ...previous, activeSpanId: undefined, activeSpanTab: undefined }),
+            search: previous => ({
+              ...previous,
+              activeSpanId: undefined,
+              activeSpanTab: undefined,
+            }),
           })
         }
         traceId={trace.id}
