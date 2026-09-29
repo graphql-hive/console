@@ -31,7 +31,7 @@
     "@opentelemetry/sdk-trace-node": "2.9.0",
     "@opentelemetry/semantic-conventions": "1.43.0",
     "@sentry/integrations": "7.114.0",
-    "@sentry/node": "7.120.2",
+    "@sentry/node": "catalog:",
     "@sentry/types": "catalog:",
     "@sentry/utils": "7.120.2",
     "@smithy/protocol-http": "5.4.3",

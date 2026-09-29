@@ -15,7 +15,7 @@
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@hive/usage-common": "workspace:*",
-    "@sentry/node": "7.120.2",
+    "@sentry/node": "catalog:",
     "@sinclair/typebox": "0.34.41",
     "@trpc/client": "catalog:",
     "ajv": "catalog:",

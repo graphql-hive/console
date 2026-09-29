@@ -15,7 +15,7 @@
     "@graphql-tools/stitching-directives": "4.0.27",
     "@graphql-tools/utils": "12.0.0",
     "@hive/service-common": "workspace:*",
-    "@sentry/node": "7.120.2",
+    "@sentry/node": "catalog:",
     "@theguild/federation-composition": "catalog:",
     "@trpc/server": "catalog:",
     "@types/async-retry": "catalog:",

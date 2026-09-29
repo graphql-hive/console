@@ -18,7 +18,7 @@
     "@graphql-inspector/core": "8.0.0",
     "@hive/postgres": "workspace:*",
     "@hive/service-common": "workspace:*",
-    "@sentry/node": "7.120.2",
+    "@sentry/node": "catalog:",
     "@tgriesser/schemats": "9.0.1",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",

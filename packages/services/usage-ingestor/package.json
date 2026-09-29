@@ -12,7 +12,7 @@
     "@graphql-hive/core": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/usage-common": "workspace:*",
-    "@sentry/node": "7.120.2",
+    "@sentry/node": "catalog:",
     "agentkeepalive": "catalog:",
     "dotenv": "catalog:",
     "got": "catalog:",

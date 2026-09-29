@@ -52,8 +52,8 @@
     "tiny-lru": "*"
   },
   "devDependencies": {
-    "@envelop/types": "5.2.1",
-    "graphql-yoga": "5.22.0",
+    "@envelop/types": "catalog:",
+    "graphql-yoga": "catalog:",
     "tiny-lru": "11.4.7"
   },
   "publishConfig": {

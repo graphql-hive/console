@@ -14,7 +14,7 @@
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@hive/workflows": "workspace:*",
-    "@sentry/node": "7.120.2",
+    "@sentry/node": "catalog:",
     "@trpc/server": "catalog:",
     "date-fns": "4.1.0",
     "dotenv": "catalog:",

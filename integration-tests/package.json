@@ -44,7 +44,7 @@
     "dotenv": "catalog:",
     "graphql": "16.9.0",
     "graphql-sse": "2.6.0",
-    "graphql-yoga": "5.22.0",
+    "graphql-yoga": "catalog:",
     "human-id": "4.1.1",
     "set-cookie-parser": "2.7.1",
     "strip-ansi": "7.1.2",
