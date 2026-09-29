@@ -24,13 +24,5 @@ export default {
         WHERE "source_schema_version_id" IS NOT NULL
       `,
     },
-    {
-      name: 'create schema_versions_graph_id index',
-      query: psql`
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS "schema_versions_graph_id"
-        ON "schema_versions" ("graph_id")
-        WHERE "graph_id" IS NOT NULL
-      `,
-    },
   ],
 } satisfies MigrationExecutor;
