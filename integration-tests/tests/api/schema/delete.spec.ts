@@ -5,9 +5,7 @@ import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { assertNonNull, getServiceHost } from 'testkit/utils';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { GraphStore } from '@hive/api/modules/graph/providers/graph-store';
 import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
-import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { invariant } from '@hive/service-common';
 import { createStorage } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
@@ -132,13 +130,14 @@ test.concurrent(
 test.concurrent(
   'the changes and schema sdl is persisted in the database when the super schema schema is composable',
   async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
     let storage: Awaited<ReturnType<typeof createStorage>> | undefined = undefined;
 
     try {
       storage = await createStorage(connectionString(), 1);
       const schemaVersions = new SchemaVersionStore(storage.pool);
-      const graphStore = new GraphStore(new NoopLogger(), storage.pool);
-      const { createOrg } = await initSeed().createOwner();
+      const graphStore = await seed.getGraphStore();
       const { createProject } = await createOrg();
       const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
@@ -225,13 +224,14 @@ test.concurrent(
 test.concurrent(
   'composition error is persisted in the database when the supergraph is not composable',
   async ({ expect }) => {
+    const seed = initSeed();
     let storage: Awaited<ReturnType<typeof createStorage>> | undefined = undefined;
 
     try {
       storage = await createStorage(connectionString(), 1);
-      const graphStore = new GraphStore(new NoopLogger(), storage.pool);
+      const graphStore = await seed.getGraphStore();
       const schemaVersions = new SchemaVersionStore(storage.pool);
-      const { createOrg, ownerToken } = await initSeed().createOwner();
+      const { createOrg, ownerToken } = await seed.createOwner();
       const { createProject, organization } = await createOrg();
       const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
         ProjectType.Federation,
