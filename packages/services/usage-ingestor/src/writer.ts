@@ -1,15 +1,26 @@
 import Agent from 'agentkeepalive';
 import { got, Response as GotResponse } from 'got';
 import type { ServiceLogger } from '@hive/service-common';
-import { compressGzip } from '@hive/usage-common';
+import type {
+  ProcessedAppDeploymentUsageRecord,
+  ProcessedOperation,
+  ProcessedOperationErrorRecord,
+  ProcessedRegistryRecord,
+  ProcessedSubscriptionOperation,
+} from '@hive/usage-common';
+import { compressZstdStream } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
 import { writeDuration } from './metrics';
 import {
   appDeploymentUsageOrder,
-  joinIntoSingleMessage,
   operationErrorsOrder,
   operationsOrder,
   registryOrder,
+  serializeAppDeploymentUsageRowBinary,
+  serializeOperationErrorsRowBinary,
+  serializeOperationsRowBinary,
+  serializeRegistryRecordsRowBinary,
+  serializeSubscriptionOperationsRowBinary,
   subscriptionOperationsOrder,
 } from './serializer';
 
@@ -60,94 +71,59 @@ export function createWriter({
   };
 
   return {
-    async writeOperations(operations: string[]) {
-      if (operations.length === 0) {
-        return;
-      }
-
-      const csv = joinIntoSingleMessage(operations);
-      const compressed = await compressGzip(csv);
-
-      // Note that `SETTINGS input_format_with_names_use_header = 1` is enabled by default.
-      // If migrating this table in the future, be sure to double check this via
-      // SELECT name, value, changed, description FROM system.settings WHERE name = 'input_format_with_names_use_header';
-      await writeCsv(
+    async writeOperations(operations: ProcessedOperation[]) {
+      await writeRecords(
         clickhouse,
         agents,
-        `INSERT INTO operations (${operationsFields})
-        FORMAT CSV`,
-        compressed,
+        'operations',
+        operationsFields,
+        operations,
+        serializeOperationsRowBinary,
         logger,
-        3,
       );
     },
-    async writeSubscriptionOperations(operations: string[]) {
-      if (operations.length === 0) {
-        return;
-      }
-
-      const csv = joinIntoSingleMessage(operations);
-      const compressed = await compressGzip(csv);
-
-      await writeCsv(
+    async writeSubscriptionOperations(operations: ProcessedSubscriptionOperation[]) {
+      await writeRecords(
         clickhouse,
         agents,
-        `INSERT INTO subscription_operations (${subscriptionOperationsFields}) FORMAT CSV`,
-        compressed,
+        'subscription_operations',
+        subscriptionOperationsFields,
+        operations,
+        serializeSubscriptionOperationsRowBinary,
         logger,
-        3,
       );
     },
-    async writeRegistry(records: string[]) {
-      if (records.length === 0) {
-        return;
-      }
-
-      const csv = joinIntoSingleMessage(records);
-      const compressed = await compressGzip(csv);
-
-      await writeCsv(
+    async writeRegistry(records: ProcessedRegistryRecord[]) {
+      await writeRecords(
         clickhouse,
         agents,
-        `INSERT INTO operation_collection (${registryFields}) FORMAT CSV`,
-        compressed,
+        'operation_collection',
+        registryFields,
+        records,
+        serializeRegistryRecordsRowBinary,
         logger,
-        3,
       );
     },
-    async writeAppDeploymentUsage(records: string[]) {
-      if (records.length === 0) {
-        return;
-      }
-
-      const csv = joinIntoSingleMessage(records);
-      const compressed = await compressGzip(csv);
-
-      await writeCsv(
+    async writeAppDeploymentUsage(records: ProcessedAppDeploymentUsageRecord[]) {
+      await writeRecords(
         clickhouse,
         agents,
-        `INSERT INTO "app_deployment_usage" (${appDeploymentUsageFields}) FORMAT CSV`,
-        compressed,
+        '"app_deployment_usage"',
+        appDeploymentUsageFields,
+        records,
+        serializeAppDeploymentUsageRowBinary,
         logger,
-        3,
       );
     },
-    async writeOperationErrors(records: string[]) {
-      if (records.length === 0) {
-        return;
-      }
-
-      const csv = joinIntoSingleMessage(records);
-      const compressed = await compressGzip(csv);
-      // create input structure schema
-
-      await writeCsv(
+    async writeOperationErrors(records: ProcessedOperationErrorRecord[]) {
+      await writeRecords(
         clickhouse,
         agents,
-        `INSERT INTO operation_errors (${operationErrorsFields}) FORMAT CSV`,
-        compressed,
+        'operation_errors',
+        operationErrorsFields,
+        records,
+        serializeOperationErrorsRowBinary,
         logger,
-        3,
       );
     },
     destroy() {
@@ -157,7 +133,35 @@ export function createWriter({
   };
 }
 
-async function writeCsv(
+async function writeRecords<T>(
+  config: ClickHouseConfig,
+  agents: {
+    http: Agent;
+    https: Agent.HttpsAgent;
+  },
+  table: string,
+  fields: string,
+  records: readonly T[],
+  serializeRowBinary: (records: readonly T[]) => Iterable<Buffer>,
+  logger: ServiceLogger,
+) {
+  if (records.length === 0) return;
+
+  const query = `INSERT INTO ${table} (${fields}) FORMAT RowBinary`;
+  const compressed = await compressZstdStream(serializeRowBinary(records));
+
+  await writeClickHouse(
+    config,
+    agents,
+    query,
+    compressed,
+    'application/octet-stream',
+    logger,
+    3,
+  );
+}
+
+async function writeClickHouse(
   config: ClickHouseConfig,
   agents: {
     http: Agent;
@@ -165,6 +169,7 @@ async function writeCsv(
   },
   query: string,
   body: Buffer,
+  contentType: string,
   logger: ServiceLogger,
   maxRetry: number,
 ) {
@@ -190,8 +195,8 @@ async function writeCsv(
       password: config.password,
       headers: {
         Accept: 'application/json',
-        'Content-Type': 'text/csv',
-        'Content-Encoding': 'gzip',
+        'Content-Type': contentType,
+        'Content-Encoding': 'zstd',
       },
       retry: {
         calculateDelay(info) {

@@ -1967,6 +1967,104 @@ test.concurrent('ensure correct data', async ({ expect }) => {
   ).toBe(organization.usageRetentionInDays);
 });
 
+test.concurrent('round-trip usage values through ClickHouse', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    ProjectType.Single,
+  );
+  const writeToken = await createTargetAccessToken({});
+
+  await writeToken.collectLegacyOperations([
+    {
+      operation: 'query rowBinaryRoundTrip { ping }',
+      operationName: 'rowBinaryRoundTrip',
+      fields: ['Query', 'Query.ping'],
+      execution: {
+        ok: false,
+        duration: 123_456_789,
+        errorsTotal: 17,
+      },
+      metadata: {
+        client: {
+          name: 'rowbinary-client',
+          version: '1.2.3',
+        },
+      },
+    },
+    {
+      operation: 'query { ping }',
+      fields: ['Query', 'Query.ping'],
+      execution: {
+        ok: true,
+        duration: 98_765_432,
+        errorsTotal: 0,
+      },
+    },
+  ]);
+
+  await waitForRequestsCollected(2);
+
+  const operationsResult = await clickHouseQuery<{
+    target: string;
+    ok: boolean;
+    errors: number;
+    duration: string;
+    client_name: string;
+    client_version: string;
+  }>(`
+    SELECT target, toBool(ok) AS ok, errors, duration, client_name, client_version
+    FROM operations
+    WHERE target = '${target.id}'
+  `);
+  expect(operationsResult.data).toHaveLength(2);
+  expect(operationsResult.data).toContainEqual({
+    target: target.id,
+    ok: false,
+    errors: 17,
+    duration: '123456789',
+    client_name: 'rowbinary-client',
+    client_version: '1.2.3',
+  });
+  expect(operationsResult.data).toContainEqual({
+    target: target.id,
+    ok: true,
+    errors: 0,
+    duration: '98765432',
+    client_name: '',
+    client_version: '',
+  });
+
+  const registryResult = await clickHouseQuery<{
+    name: string;
+    body: string;
+    operation_kind: string;
+    coordinates: string[];
+    total: number;
+  }>(`
+    SELECT name, body, operation_kind, coordinates, total
+    FROM operation_collection
+    WHERE target = '${target.id}'
+  `);
+  expect(registryResult.data).toHaveLength(2);
+  expect(registryResult.data).toContainEqual(
+    expect.objectContaining({
+      name: 'rowBinaryRoundTrip',
+      body: 'query rowBinaryRoundTrip{ping}',
+      operation_kind: 'query',
+      total: 1,
+    }),
+  );
+  expect(registryResult.data).toContainEqual(
+    expect.objectContaining({
+      name: '',
+      operation_kind: 'query',
+      total: 1,
+      coordinates: expect.arrayContaining(['Query', 'Query.ping']),
+    }),
+  );
+});
+
 test.concurrent(
   'ensure correct data when data retention period is non-default',
   async ({ expect }) => {

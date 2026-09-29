@@ -1,4 +1,24 @@
-import { constants, gunzip, gzip, zstdCompress, zstdDecompress } from 'node:zlib';
+import { Readable, Writable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import {
+  constants,
+  createZstdCompress,
+  gunzip,
+  gzip,
+  zstdCompress,
+  zstdDecompress,
+} from 'node:zlib';
+
+function zstdOptions() {
+  // Ran a bunch of benchmarks and found 1 to be the best compression level
+  // with minimal CPU overhead and memory usage, and good compressed size.
+  return {
+    params: {
+      [constants.ZSTD_c_compressionLevel]: 1,
+      [constants.ZSTD_c_windowLog]: 23,
+    },
+  };
+}
 
 export async function compressGzip(data: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -12,30 +32,29 @@ export async function compressGzip(data: string): Promise<Buffer> {
   });
 }
 
-export async function compressZstd(data: string): Promise<Buffer> {
+export async function compressZstd(data: string | Buffer): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    zstdCompress(
-      data,
-      {
-        // Ran a bunch of benchmarks
-        // and found 1 to be the best compression level
-        // with minimal CPU overhead
-        // and minimal memory usage
-        // and good compressed size.
-        params: {
-          [constants.ZSTD_c_compressionLevel]: 1,
-          [constants.ZSTD_c_windowLog]: 23,
-        },
-      },
-      (error, buffer) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(buffer);
-        }
-      },
-    );
+    zstdCompress(data, zstdOptions(), (error, buffer) => {
+      if (error) reject(error);
+      else resolve(buffer);
+    });
   });
+}
+
+/** Compress RowBinary chunks without assembling the uncompressed payload first. */
+export async function compressZstdStream(
+  chunks: Iterable<Buffer> | AsyncIterable<Buffer>,
+): Promise<Buffer> {
+  const compressedChunks: Buffer[] = [];
+  const collector = new Writable({
+    write(chunk, _encoding, callback) {
+      compressedChunks.push(Buffer.from(chunk));
+      callback();
+    },
+  });
+
+  await pipeline(Readable.from(chunks), createZstdCompress(zstdOptions()), collector);
+  return Buffer.concat(compressedChunks);
 }
 
 // Magic numbers, so decompress() can read either format.

@@ -3,8 +3,11 @@ import { lru } from 'tiny-lru';
 import { preprocessOperation } from '@graphql-hive/core';
 import type { ServiceLogger } from '@hive/service-common';
 import type {
+  ProcessedAppDeploymentUsageRecord,
   ProcessedOperation,
   ProcessedOperationErrorRecord,
+  ProcessedRegistryRecord,
+  ProcessedSubscriptionOperation,
   RawAppDeploymentUsageTimestampMap,
   RawOperation,
   RawOperationMap,
@@ -20,13 +23,6 @@ import {
   schemaCoordinatesSize,
   totalOperations,
 } from './metrics';
-import {
-  stringifyAppDeploymentUsageRecord,
-  stringifyOperationErrors,
-  stringifyQueryOrMutationOperation,
-  stringifyRegistryRecord,
-  stringifySubscriptionOperation,
-} from './serializer';
 
 interface NormalizationResult {
   type: OperationTypeNode;
@@ -81,10 +77,10 @@ export function createProcessor(config: { logger: ServiceLogger }) {
 
       logger.info(`Processing (reports=%s, operations=%s)`, rawReports.length, sizeOfAllReports);
 
-      const serializedOperations: string[] = [];
-      const serializedSubscriptionOperations: string[] = [];
-      const serializedRegistryRecords: string[] = [];
-      const serializedErrorRecords: string[] = [];
+      const operations: ProcessedOperation[] = [];
+      const subscriptionOperations: ProcessedSubscriptionOperation[] = [];
+      const registryRecords: ProcessedRegistryRecord[] = [];
+      const errorRecords: ProcessedOperationErrorRecord[] = [];
 
       const allAppDeploymentTimeStamps = new Map<
         string,
@@ -138,7 +134,7 @@ export function createProcessor(config: { logger: ServiceLogger }) {
             sample.size += 1;
           }
 
-          serializedOperations.push(stringifyQueryOrMutationOperation(processedOperation));
+          operations.push(processedOperation);
         }
 
         for (const raw of rawReport.errors ?? []) {
@@ -149,7 +145,7 @@ export function createProcessor(config: { logger: ServiceLogger }) {
             target: rawReport.target,
             timestamp: raw.timestamp,
           };
-          serializedErrorRecords.push(stringifyOperationErrors(err));
+          errorRecords.push(err);
         }
 
         if (rawReport.subscriptionOperations) {
@@ -180,9 +176,7 @@ export function createProcessor(config: { logger: ServiceLogger }) {
               sample.size += 1;
             }
 
-            serializedSubscriptionOperations.push(
-              stringifySubscriptionOperation(processedOperation),
-            );
+            subscriptionOperations.push(processedOperation);
           }
         }
 
@@ -207,23 +201,21 @@ export function createProcessor(config: { logger: ServiceLogger }) {
               ? parseInt(group.operation.timestamp, 10)
               : group.operation.timestamp;
 
-          serializedRegistryRecords.push(
-            stringifyRegistryRecord({
-              size: group.size,
-              target: rawReport.target,
-              hash: operationHash,
-              name: operationMapRecord.operationName ?? normalized.name,
-              body: normalized.body,
-              operation_kind: normalized.type,
-              coordinates: normalized.coordinates,
-              expires_at: group.operation.expiresAt || timestamp + RETENTION_FALLBACK * DAY_IN_MS,
-              timestamp,
-            }),
-          );
+          registryRecords.push({
+            size: group.size,
+            target: rawReport.target,
+            hash: operationHash,
+            name: operationMapRecord.operationName ?? normalized.name,
+            body: normalized.body,
+            operation_kind: normalized.type,
+            coordinates: normalized.coordinates,
+            expires_at: group.operation.expiresAt || timestamp + RETENTION_FALLBACK * DAY_IN_MS,
+            timestamp,
+          });
         }
       }
 
-      const serializedAppDeploymentUsageRecords: string[] = [];
+      const appDeploymentUsageRecords: ProcessedAppDeploymentUsageRecord[] = [];
 
       if (allAppDeploymentTimeStamps.size > 0) {
         for (const [target, records] of allAppDeploymentTimeStamps) {
@@ -239,24 +231,22 @@ export function createProcessor(config: { logger: ServiceLogger }) {
 
           for (const [key, timestamp] of max.entries()) {
             const [appName, appVersion] = key.split('/');
-            serializedAppDeploymentUsageRecords.push(
-              stringifyAppDeploymentUsageRecord({
-                target,
-                appName,
-                appVersion,
-                lastRequestTimestamp: timestamp,
-              }),
-            );
+            appDeploymentUsageRecords.push({
+              target,
+              appName,
+              appVersion,
+              lastRequestTimestamp: timestamp,
+            });
           }
         }
       }
 
       return {
-        operations: serializedOperations,
-        subscriptionOperations: serializedSubscriptionOperations,
-        registryRecords: serializedRegistryRecords,
-        appDeploymentUsageRecords: serializedAppDeploymentUsageRecords,
-        errors: serializedErrorRecords,
+        operations,
+        subscriptionOperations,
+        registryRecords,
+        appDeploymentUsageRecords,
+        errors: errorRecords,
       };
     },
   };

@@ -1,39 +1,24 @@
-import { lru } from 'tiny-lru';
 import {
-  castTuple,
-  castValue,
+  parseUUID,
+  reserve,
+  type Sink,
+  type Writer,
+  writeBool,
+  writeRows,
+  writeString,
+  writeUInt16,
+  writeUInt32,
+  writeUInt64,
+  writeUVarint,
+  writeUUID,
+} from '@clickhouse/rowbinary/writer';
+import type {
   ProcessedAppDeploymentUsageRecord,
   ProcessedOperationErrorRecord,
-  type ProcessedOperation,
-  type ProcessedRegistryRecord,
-  type ProcessedSubscriptionOperation,
+  ProcessedOperation,
+  ProcessedRegistryRecord,
+  ProcessedSubscriptionOperation,
 } from '@hive/usage-common';
-import { cache } from './helpers';
-
-const delimiter = '\n';
-const formatter = Intl.DateTimeFormat('en-GB', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: false,
-  timeZone: 'UTC',
-});
-
-export function formatDate(date: number): string {
-  return formatter
-    .format(date)
-    .replace(',', '')
-    .replace(/(\d+)\/(\d+)\/(\d+)/, (_, d, m, y) => `${y}-${m}-${d}`);
-}
-
-function dateCacheKey(date: number): string {
-  return String(Math.floor(date / 1000) * 1000);
-}
-
-const cachedFormatDate = cache(formatDate, dateCacheKey, lru(50_000));
 
 export const operationsOrder = [
   'organization',
@@ -86,87 +71,133 @@ export const operationErrorsOrder = [
   'errors',
 ] as const;
 
-export function joinIntoSingleMessage(items: string[]): string {
-  return items.join(delimiter);
+const UINT32_BYTES = 4;
+const DATE_TIME_PAIR_BYTES = UINT32_BYTES * 2;
+const UINT32_RANGE = 0x1_0000_0000;
+
+/** Yield operation_collection rows as complete, chunked ClickHouse RowBinary buffers. */
+export function serializeRegistryRecordsRowBinary(
+  records: readonly ProcessedRegistryRecord[],
+): Generator<Buffer> {
+  return writeRows(writeRegistryRecord)(records);
 }
 
-type KeysOfArray<T extends readonly any[]> = T extends readonly (infer U)[] ? U : never;
+export function serializeOperationsRowBinary(records: readonly ProcessedOperation[]): Generator<Buffer> {
+  return writeRows(writeOperation)(records);
+}
 
-// Important, it has to be in the same order as columns in the table
-export function stringifyQueryOrMutationOperation(operation: ProcessedOperation): string {
-  const mapper: Record<KeysOfArray<typeof operationsOrder>, any> = {
-    organization: castValue(operation.organization),
-    target: castValue(operation.target),
-    timestamp: castDate(operation.timestamp),
-    expires_at: castDate(operation.expiresAt),
-    hash: castValue(operation.operationHash),
-    ok: castValue(operation.execution.ok),
-    errors: castValue(operation.execution.errorsTotal),
-    duration: castValue(operation.execution.duration),
-    client_name: castValue(operation.metadata?.client?.name),
-    client_version: castValue(operation.metadata?.client?.version),
-    coordinate_totals: castValue(operation.execution.coordinateTotals),
+export function serializeSubscriptionOperationsRowBinary(
+  records: readonly ProcessedSubscriptionOperation[],
+): Generator<Buffer> {
+  return writeRows(writeSubscriptionOperation)(records);
+}
+
+export function serializeAppDeploymentUsageRowBinary(
+  records: readonly ProcessedAppDeploymentUsageRecord[],
+): Generator<Buffer> {
+  return writeRows(writeAppDeploymentUsageRecord)(records);
+}
+
+export function serializeOperationErrorsRowBinary(
+  records: readonly ProcessedOperationErrorRecord[],
+): Generator<Buffer> {
+  return writeRows(writeOperationError)(records);
+}
+
+const writeDateTimeMilliseconds: Writer<number> = (sink, milliseconds) => {
+  // ClickHouse DateTime is encoded as UInt32 seconds since the Unix epoch.
+  writeUInt32(sink, Math.floor(milliseconds / 1000));
+};
+
+function writeDateTimePair(sink: Sink, firstMilliseconds: number, secondMilliseconds: number) {
+  // The adjacent DateTime columns share one capacity check.
+  const offset = reserve(sink, DATE_TIME_PAIR_BYTES);
+  sink.view.setUint32(offset, Math.floor(firstMilliseconds / 1000), true);
+  sink.view.setUint32(
+    offset + UINT32_BYTES,
+    Math.floor(secondMilliseconds / 1000),
+    true,
+  );
+}
+
+const writeRegistryRecord: Writer<ProcessedRegistryRecord> = (sink, record) => {
+  writeUInt32(sink, record.size);
+  // LowCardinality(String) has the same RowBinary representation as String.
+  writeString(sink, record.target);
+  writeString(sink, record.hash);
+  // The ClickHouse column is non-nullable String, so missing names use its default.
+  writeString(sink, record.name ?? '');
+  writeString(sink, record.body);
+  writeString(sink, record.operation_kind);
+  writeStringArray(sink, record.coordinates);
+  writeDateTimePair(sink, record.timestamp, record.expires_at);
+};
+
+const writeOperation: Writer<ProcessedOperation> = (sink, record) => {
+  writeString(sink, record.organization);
+  writeString(sink, record.target);
+  writeDateTimePair(sink, record.timestamp, record.expiresAt);
+  writeString(sink, record.operationHash);
+  writeBool(sink, record.execution.ok);
+  writeUInt16(sink, record.execution.errorsTotal);
+  // Duration is a UInt64. The incoming report schema bounds it below 2^63.
+  writeDuration(sink, record.execution.duration);
+  writeString(sink, record.metadata?.client?.name ?? '');
+  writeString(sink, record.metadata?.client?.version ?? '');
+
+  const coordinateTotals = record.execution.coordinateTotals ?? {};
+  const coordinates = Object.keys(coordinateTotals);
+  writeUVarint(sink, coordinates.length);
+  for (const coordinate of coordinates) {
+    writeString(sink, coordinate);
+    writeUInt32(sink, coordinateTotals[coordinate]);
+  }
+};
+
+function writeDuration(sink: Sink, duration: number) {
+  if (!Number.isSafeInteger(duration) || duration < 0) {
+    // Preserve the package writer's full UInt64 behavior for out-of-range JS numbers.
+    writeUInt64(sink, BigInt(duration));
+    return;
+  }
+
+  // Durations are normally small safe integers; avoid allocating a BigInt per row.
+  const offset = reserve(sink, DATE_TIME_PAIR_BYTES);
+  const high = Math.floor(duration / UINT32_RANGE);
+  const low = duration - high * UINT32_RANGE;
+  sink.view.setUint32(offset, low, true);
+  sink.view.setUint32(offset + UINT32_BYTES, high, true);
+}
+
+const writeSubscriptionOperation: Writer<ProcessedSubscriptionOperation> = (sink, record) => {
+  writeString(sink, record.organization);
+  writeString(sink, record.target);
+  writeDateTimePair(sink, record.timestamp, record.expiresAt);
+  writeString(sink, record.operationHash);
+  writeString(sink, record.metadata?.client?.name ?? '');
+  writeString(sink, record.metadata?.client?.version ?? '');
+};
+
+const writeAppDeploymentUsageRecord: Writer<ProcessedAppDeploymentUsageRecord> =
+  (sink, record) => {
+    writeString(sink, record.target);
+    writeString(sink, record.appName);
+    writeString(sink, record.appVersion);
+    writeDateTimeMilliseconds(sink, record.lastRequestTimestamp);
   };
-  return Object.values(mapper).join(',');
-}
 
-export function stringifySubscriptionOperation(operation: ProcessedSubscriptionOperation): string {
-  const mapper: Record<KeysOfArray<typeof subscriptionOperationsOrder>, any> = {
-    organization: castValue(operation.organization),
-    target: castValue(operation.target),
-    timestamp: castDate(operation.timestamp),
-    expires_at: castDate(operation.expiresAt),
-    hash: castValue(operation.operationHash),
-    client_name: castValue(operation.metadata?.client?.name),
-    client_version: castValue(operation.metadata?.client?.version),
-  };
+const writeOperationError: Writer<ProcessedOperationErrorRecord> = (sink, record) => {
+  writeUUID(sink, parseUUID(record.target));
+  writeString(sink, record.hash);
+  writeDateTimePair(sink, record.timestamp, record.expires_at);
+  writeUVarint(sink, record.errors.length);
+  for (const [code, path] of record.errors) {
+    writeString(sink, code);
+    writeString(sink, path);
+  }
+};
 
-  return Object.values(mapper).join(',');
-}
-
-export function stringifyRegistryRecord(record: ProcessedRegistryRecord): string {
-  const mapper: Record<KeysOfArray<typeof registryOrder>, any> = {
-    total: castValue(record.size),
-    target: castValue(record.target),
-    hash: castValue(record.hash),
-    name: castValue(record.name),
-    body: castValue(record.body),
-    operation_kind: castValue(record.operation_kind),
-    coordinates: castValue(record.coordinates),
-    timestamp: castDate(record.timestamp),
-    expires_at: castDate(record.expires_at),
-  };
-
-  return Object.values(mapper).join(',');
-}
-
-export function stringifyAppDeploymentUsageRecord(
-  record: ProcessedAppDeploymentUsageRecord,
-): string {
-  const mapper: Record<KeysOfArray<typeof appDeploymentUsageOrder>, any> = {
-    target_id: castValue(record.target),
-    app_name: castValue(record.appName),
-    app_version: castValue(record.appVersion),
-    last_request: castDate(record.lastRequestTimestamp),
-  };
-
-  return Object.values(mapper).join(',');
-}
-
-export function stringifyOperationErrors(record: ProcessedOperationErrorRecord): string {
-  const mapper: Record<KeysOfArray<typeof operationErrorsOrder>, any> = {
-    target: castValue(record.target),
-    hash_raw: castValue(record.hash),
-    timestamp: castDate(record.timestamp),
-    expires_at: castDate(record.expires_at),
-    errors: record.errors
-      ? `"[${record.errors?.map(castTuple).join(',')}]"`
-      : castValue(record.errors),
-  };
-
-  return Object.values(mapper).join(',');
-}
-
-function castDate(date: number): string {
-  return cachedFormatDate(date).value;
+function writeStringArray(sink: Sink, values: readonly string[]) {
+  writeUVarint(sink, values.length);
+  for (const value of values) writeString(sink, value);
 }

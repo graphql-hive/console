@@ -53,8 +53,29 @@ function buildLogger() {
 function buildProcessor(): ReturnType<typeof createProcessor> {
   return {
     processReports: vi.fn().mockResolvedValue({
-      registryRecords: ['reg1'],
-      operations: ['op1'],
+      registryRecords: [
+        {
+          size: 1,
+          target: 'target-1',
+          hash: 'registry-hash',
+          name: 'operation',
+          body: '{ field }',
+          operation_kind: 'query',
+          timestamp: Date.now(),
+          expires_at: Date.now() + 60_000,
+          coordinates: ['Query.field'],
+        },
+      ],
+      operations: [
+        {
+          target: 'target-1',
+          organization: 'org-1',
+          operationHash: 'operation-hash',
+          timestamp: Date.now(),
+          expiresAt: Date.now() + 60_000,
+          execution: { ok: true, duration: 1, errorsTotal: 0 },
+        },
+      ],
       subscriptionOperations: [],
       appDeploymentUsageRecords: [],
       errors: [],

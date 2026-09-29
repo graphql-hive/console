@@ -3,7 +3,7 @@ import Agent from 'agentkeepalive';
 import { Inject, Injectable } from 'graphql-modules';
 import { printWithValues, sql, SqlStatement, toQueryParams } from '@hive/clickhouse';
 import { setErrorSource, SpanKind, trace } from '@hive/service-common';
-import { castValue, compressGzip } from '@hive/usage-common';
+import { castValue, compressZstd } from '@hive/usage-common';
 import { atomic } from '../../../shared/helpers';
 import { HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
@@ -429,7 +429,7 @@ export class ClickHouse {
       .post(
         this.endpoint,
         {
-          body: await compressGzip(
+          body: await compressZstd(
             args.data.map(row => row.map(value => castValue(value)).join(',')).join('\n'),
           ),
           searchParams: {
@@ -442,7 +442,7 @@ export class ClickHouse {
           headers: {
             Accept: 'application/json',
             'Content-Type': 'text/csv',
-            'Content-Encoding': 'gzip',
+            'Content-Encoding': 'zstd',
           },
           retry: {
             calculateDelay: info => {
