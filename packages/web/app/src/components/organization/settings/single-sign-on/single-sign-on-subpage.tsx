@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { KeyIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Skeleton } from '@/components/ui/skeleton';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { OIDCIntegrationConfiguration } from './oidc-integration-configuration';
 
-const SingleSignOnSubpageQuery = graphql(`
+export const SingleSignOnSubpageQuery = graphql(`
   query SingleSignOnSubpageQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
@@ -64,7 +64,6 @@ export function SingleSignOnSubpage(): React.ReactNode {
     variables: {
       organizationSlug,
     },
-    requestPolicy: 'network-only',
   });
   const { toast } = useToast();
   const [_, mutate] = useMutation(SingleSignOnSubpage_CreateOIDCIntegrationMutation);
@@ -87,7 +86,7 @@ export function SingleSignOnSubpage(): React.ReactNode {
         }}
       />
       <div className="text-fg-secondary max-w-[800px] space-y-4">
-        {query.fetching ? (
+        {(query.fetching || query.stale) && !oidcIntegration ? (
           <LoadingSkeleton />
         ) : oidcIntegration ? (
           <OIDCIntegrationConfiguration
@@ -168,13 +167,21 @@ function LoadingSkeleton() {
     <>
       {/* Overview Section */}
       <section className="space-y-8">
-        <Skeleton className="h-6 w-24" />
-        <Skeleton className="h-4 w-72" />
+        <span className="flex w-24">
+          <Skeleton variants={{ size: 'xl', width: 'full' }} />
+        </span>
+        <span className="flex w-72">
+          <Skeleton variants={{ width: 'full' }} />
+        </span>
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="flex gap-8">
-              <Skeleton className="h-4 w-36" />
-              <Skeleton className="h-4 w-80" />
+              <span className="flex w-36">
+                <Skeleton variants={{ width: 'full' }} />
+              </span>
+              <span className="flex w-80">
+                <Skeleton variants={{ width: 'full' }} />
+              </span>
             </div>
           ))}
         </div>
@@ -182,12 +189,18 @@ function LoadingSkeleton() {
 
       {/* OIDC Configuration Section */}
       <section className="space-y-8">
-        <Skeleton className="h-6 w-40" />
+        <span className="flex w-40">
+          <Skeleton variants={{ size: 'xl', width: 'full' }} />
+        </span>
         <div className="space-y-3">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="flex gap-8">
-              <Skeleton className="h-4 w-36" />
-              <Skeleton className="h-4 w-72" />
+              <span className="flex w-36">
+                <Skeleton variants={{ width: 'full' }} />
+              </span>
+              <span className="flex w-72">
+                <Skeleton variants={{ width: 'full' }} />
+              </span>
             </div>
           ))}
         </div>
@@ -195,24 +208,40 @@ function LoadingSkeleton() {
 
       {/* Registered Domains Section */}
       <section className="space-y-8">
-        <Skeleton className="h-6 w-44" />
-        <Skeleton className="h-4 w-96" />
+        <span className="flex w-44">
+          <Skeleton variants={{ size: 'xl', width: 'full' }} />
+        </span>
+        <span className="flex w-96">
+          <Skeleton variants={{ width: 'full' }} />
+        </span>
         <div className="flex gap-8">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-24" />
+          <span className="flex w-24">
+            <Skeleton variants={{ width: 'full' }} />
+          </span>
+          <span className="flex w-24">
+            <Skeleton variants={{ width: 'full' }} />
+          </span>
         </div>
       </section>
 
       {/* Access Settings Section */}
       <section className="space-y-8">
-        <Skeleton className="h-6 w-36" />
+        <span className="flex w-36">
+          <Skeleton variants={{ size: 'xl', width: 'full' }} />
+        </span>
         {[...Array(4)].map((_, i) => (
           <div key={i} className="flex items-start justify-between">
             <div className="space-y-2">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="h-3 w-72" />
+              <span className="flex w-40">
+                <Skeleton variants={{ width: 'full' }} />
+              </span>
+              <span className="flex w-72">
+                <Skeleton variants={{ size: 'sm', width: 'full' }} />
+              </span>
             </div>
-            <Skeleton className="h-6 w-11 rounded-full" />
+            <span className="block h-6 w-11">
+              <Skeleton variants={{ shape: 'block' }} />
+            </span>
           </div>
         ))}
       </section>

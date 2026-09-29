@@ -8,11 +8,10 @@ import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
-import { Spinner } from '@/components/ui/spinner';
 import { graphql, useFragment, type DocumentType } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
-import { useRedirect } from '@/lib/access/common';
-import { useLayoutQuery, usePagedConnection, useSlugs } from '@/lib/hooks';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
+import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { getRouteApi } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -26,6 +25,21 @@ export const TargetAppsSortSchema = z.object({
 });
 
 export type SortState = z.output<typeof TargetAppsSortSchema>;
+
+export const defaultAppsSort: SortState = { field: 'ACTIVATED_AT', direction: 'DESC' };
+
+export function appsVariables(
+  slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
+  sorting: SortState,
+) {
+  return {
+    ...slugs,
+    sort: {
+      field: sorting.field as AppDeploymentsSortField,
+      direction: sorting.direction as SortDirectionType,
+    },
+  };
+}
 
 const AppTableRow_AppDeploymentFragment = graphql(`
   fragment AppTableRow_AppDeploymentFragment on AppDeployment {
@@ -41,7 +55,7 @@ const AppTableRow_AppDeploymentFragment = graphql(`
   }
 `);
 
-const TargetAppsViewQuery = graphql(`
+export const TargetAppsViewQuery = graphql(`
   query TargetAppsViewQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -124,20 +138,9 @@ type AppDeploymentRow = DocumentType<typeof AppTableRow_AppDeploymentFragment>;
 function TargetAppsView(props: { sorting: SortState }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const navigate = appsRoute.useNavigate();
-  const sortVariable = {
-    field: props.sorting.field as AppDeploymentsSortField,
-    direction: props.sorting.direction as SortDirectionType,
-  };
+  const variables = appsVariables({ organizationSlug, projectSlug, targetSlug }, props.sorting);
 
-  const [data] = useQuery({
-    query: TargetAppsViewQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-      sort: sortVariable,
-    },
-  });
+  const [data] = useQuery({ query: TargetAppsViewQuery, variables });
   const client = useClient();
   const connection = data.data?.target?.appDeployments;
   const deployments = useFragment(
@@ -150,44 +153,20 @@ function TargetAppsView(props: { sorting: SortState }) {
     pageSize: 20,
     total: connection?.total,
     loadMore: after =>
-      client
-        .query(TargetAppsViewFetchMoreQuery, {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-          after,
-          sort: sortVariable,
-        })
-        .toPromise(),
+      client.query(TargetAppsViewFetchMoreQuery, { ...variables, after }).toPromise(),
   });
   const sortingState = [{ id: props.sorting.field, desc: props.sorting.direction === 'DESC' }];
-
-  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
-
-  useRedirect({
-    entity: layoutTarget,
-    canAccess: layoutTarget?.viewerCanViewAppDeployments === true,
-    redirectTo(router) {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-        },
-        replace: true,
-      });
-    },
-  });
+  // A sort change reads the target from the cache before its new list arrives (a partial, stale
+  // result), so only a settled result decides between the empty states and the table; until then
+  // the last settled rows stay up, dimmed.
+  const settled = !!data.data && !data.stale;
+  const previousRows = useKeepPreviousData(rows, !settled);
+  const refreshing = !settled && !!previousRows?.length;
 
   if (data.error) {
     return (
       <QueryError organizationSlug={organizationSlug} error={data.error} showLogoutButton={false} />
     );
-  }
-
-  if (layoutTarget?.viewerCanViewAppDeployments === false) {
-    return null;
   }
 
   const columns: ColumnDef<AppDeploymentRow, unknown>[] = [
@@ -284,19 +263,12 @@ function TargetAppsView(props: { sorting: SortState }) {
         }}
       />
       <div className="mt-4" />
-      {data.fetching || data.stale ? (
-        <div className="flex h-fit flex-1 items-center justify-center">
-          <div className="flex flex-col items-center">
-            <Spinner />
-            <div className="mt-2 text-xs">Loading app deployments</div>
-          </div>
-        </div>
-      ) : !data.data?.target?.latestSchemaVersion ? (
+      {settled && !data.data?.target?.latestSchemaVersion ? (
         <NoSchemaVersion
           recommendedAction="publish"
           projectType={data.data?.target?.project?.type ?? null}
         />
-      ) : !connection?.edges.length ? (
+      ) : settled && !connection?.edges.length ? (
         <EmptyList
           title="Hive is waiting for your first app deployment"
           description="You can create an app deployment with the Hive CLI"
@@ -304,12 +276,14 @@ function TargetAppsView(props: { sorting: SortState }) {
         />
       ) : (
         <DataTable
-          data={rows}
+          loading={!settled && !refreshing}
+          data={refreshing ? previousRows! : rows}
           columns={columns}
           getRowId={deployment => deployment.id}
           sorting={{
             state: sortingState,
             manual: true,
+            loading: refreshing,
             onChange: updater => {
               const [next] = typeof updater === 'function' ? updater(sortingState) : updater;
               if (!next) {
@@ -328,7 +302,9 @@ function TargetAppsView(props: { sorting: SortState }) {
           }}
           pagination={{
             ...pagination,
-            summary: `${pagination.summary} · ${connection.total} deployments`,
+            summary: connection
+              ? `${pagination.summary} · ${connection.total} deployments`
+              : pagination.summary,
           }}
         />
       )}

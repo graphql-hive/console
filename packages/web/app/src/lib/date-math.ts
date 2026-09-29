@@ -149,8 +149,7 @@ function parseDateMath(mathString: string, now: Date): Date | undefined {
   return result;
 }
 
-export function resolveRange(period: Period) {
-  const now = new UTCDate();
+export function resolveRange(period: Period, now: UTCDate = new UTCDate()) {
   const from = parse(period.from, now);
   const to = parse(period.to, now);
 

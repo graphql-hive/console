@@ -1,7 +1,7 @@
 import { ReactElement, useMemo } from 'react';
-import { AlertCircleIcon, RefreshCw } from 'lucide-react';
+import { AlertCircleIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { RefreshButton } from '@/components/base/button/refresh-button';
 import { Card } from '@/components/base/card/card';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -16,6 +16,11 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { getRouteApi } from '@tanstack/react-router';
+
+const operationRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
+);
 
 const GraphQLOperationBody_OperationFragment = graphql(`
   fragment GraphQLOperationBody_OperationFragment on Operation {
@@ -35,7 +40,7 @@ function GraphQLOperationBody(props: {
   return <div>Operation not found.</div>;
 }
 
-const Operation_View_OperationBodyQuery = graphql(`
+export const Operation_View_OperationBodyQuery = graphql(`
   query GraphQLOperationBody_GetOperationBodyQuery($selector: TargetSelectorInput!, $hash: ID!) {
     target(reference: { bySelector: $selector }) {
       id
@@ -61,6 +66,7 @@ function OperationView({
     dataRetentionInDays,
     defaultPreset: presetLast1Day,
   });
+  const { period, resolution } = operationRoute.useLoaderData();
   const operationFilter = useMemo(() => ({ operationIds: [operationHash] }), [operationHash]);
 
   const [result] = useQuery({
@@ -95,22 +101,17 @@ function OperationView({
               align="end"
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
             />
-            <Button
-              layout="iconOnly"
-              icon={RefreshCw}
-              aria-label="Refresh"
-              onClick={() => dateRangeController.refreshResolvedRange()}
-            />
+            <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
           </div>
         )}
       </div>
       {!result.fetching && isNotNoQueryOrMutation === false ? (
         <OperationsStats
-          period={dateRangeController.resolvedRange}
+          period={period}
           dateRangeText={dateRangeController.selectedPreset.label}
           filter={operationFilter}
           mode="operation-page"
-          resolution={dateRangeController.resolution}
+          resolution={resolution}
         />
       ) : (
         <Alert>
@@ -139,7 +140,7 @@ function OperationView({
   );
 }
 
-const OperationInsightsPageQuery = graphql(`
+export const OperationInsightsPageQuery = graphql(`
   query OperationInsightsPageQuery(
     $organizationSlug: String!
     $projectSlug: String!

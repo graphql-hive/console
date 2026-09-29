@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
@@ -10,21 +10,23 @@ import {
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
 import { ExplorerHeader } from '@/components/target/explorer/explorer-header';
+import { DateRangeFilter } from '@/components/target/explorer/filter';
 import {
   SchemaExplorerProvider,
   useSchemaExplorerContext,
 } from '@/components/target/explorer/provider';
 import { matchesSubgraphFilter } from '@/components/target/explorer/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
+import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useSlugs } from '@/lib/hooks';
+import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
+import { getRouteApi } from '@tanstack/react-router';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
 
 const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
@@ -231,7 +233,11 @@ function InternalUnusedSchemaView(props: {
 
 const UnusedSchemaView = memo(InternalUnusedSchemaView);
 
-const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
+const unusedRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer/unused',
+);
+
+export const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
   query UnusedSchemaExplorer_UnusedSchemaQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -277,35 +283,23 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
   }
 `);
 
-function UnusedSchemaExplorer({
-  dataRetentionInDays,
-  hasCollectedOperations,
-}: {
-  dataRetentionInDays: number;
-  hasCollectedOperations: boolean;
-}) {
+function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperations: boolean }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const dataRetentionInDays =
+    useLayoutQuery('target').data?.organization?.usageRetentionInDays ?? 7;
   const dateRangeController = useDateRangeController({
     dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
 
-  const [query, refresh] = useQuery({
+  // Resolved by the route loader, so the page and the loader ask for one period.
+  const { period } = unusedRoute.useLoaderData();
+
+  const [query] = useQuery({
     query: UnusedSchemaExplorer_UnusedSchemaQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-      period: dateRangeController.resolvedRange,
-    },
+    variables: { organizationSlug, projectSlug, targetSlug, period },
     pause: !hasCollectedOperations,
   });
-
-  useEffect(() => {
-    if (!query.fetching) {
-      refresh({ requestPolicy: 'network-only' });
-    }
-  }, [dateRangeController.resolvedRange]);
 
   if (query.error) {
     return (
@@ -319,26 +313,15 @@ function UnusedSchemaExplorer({
 
   const latestSchemaVersion = query.data?.target?.latestSchemaVersion;
   const latestValidSchemaVersion = query.data?.target?.latestValidSchemaVersion;
-  const dateRangeFilter = (
-    <DateRangePicker
-      size="compact"
-      validUnits={['y', 'M', 'w', 'd', 'h']}
-      selectedRange={dateRangeController.selectedPreset.range}
-      startDate={dateRangeController.startDate}
-      align="start"
-      onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
-    />
-  );
-
   return (
     <>
       <ExplorerHeader
         title="Unused Schema"
         description="Helps you understand the coverage of GraphQL schema and safely remove the unused part"
-        period={dateRangeController.resolvedRange}
+        period={period}
         subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
         metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
-        dateRangeControl={dateRangeFilter}
+        dateRangeControl={<DateRangeFilter controller={dateRangeController} />}
       />
 
       {!hasCollectedOperations ? (
@@ -400,7 +383,7 @@ function UnusedSchemaExplorer({
   );
 }
 
-const TargetExplorerUnusedSchemaPageQuery = graphql(`
+export const TargetExplorerUnusedSchemaPageQuery = graphql(`
   query TargetExplorerUnusedSchemaPageQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -449,12 +432,7 @@ function ExplorerUnusedSchemaPageContent() {
     return null;
   }
 
-  return (
-    <UnusedSchemaExplorer
-      dataRetentionInDays={currentOrganization.usageRetentionInDays}
-      hasCollectedOperations={hasCollectedOperations}
-    />
-  );
+  return <UnusedSchemaExplorer hasCollectedOperations={hasCollectedOperations} />;
 }
 
 export function TargetExplorerUnusedPage() {

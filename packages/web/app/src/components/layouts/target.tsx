@@ -44,7 +44,7 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
       (currentProject === null || currentOrganization === null || currentTarget === null) ? (
         <NotFound
           variants={{ layout: 'horizontal', illustration: 'connection' }}
-          title="404 - This project does not seem to exist."
+          title="404 - This target does not seem to exist."
           description={resourceAccessDescription}
         />
       ) : (

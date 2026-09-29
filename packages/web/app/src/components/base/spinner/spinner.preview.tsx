@@ -1,4 +1,5 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { Button } from '../button/button';
 import { Spinner } from './spinner';
 
 export const nav: NavPath = 'Base/Primitives/Spinner';
@@ -39,11 +40,29 @@ export const InContext = createPreview(() => (
   </div>
 ));
 
+export const InButton = createPreview(() => (
+  <div className="flex items-center gap-4">
+    <Button>
+      <Spinner variants={{ size: 'sm', tone: 'current' }} />
+      Creating...
+    </Button>
+    <Button variant="outline">
+      <Spinner variants={{ size: 'sm', tone: 'current' }} />
+      Save Changes
+    </Button>
+    <Button variant="primary">
+      <Spinner variants={{ size: 'sm', tone: 'current' }} />
+      Submit Proposal
+    </Button>
+  </div>
+));
+
 export const Playground = createPreview({
   controls: controlsFor(Spinner, {
     label: { type: 'text', default: 'Loading' },
     variants: {
       size: { type: 'radio', options: ['sm', 'default', 'lg'], default: 'default' },
+      tone: { type: 'radio', options: ['accent', 'current'], default: 'accent' },
     },
   }),
   render: v => <Spinner label={v.label} variants={v.variants} />,

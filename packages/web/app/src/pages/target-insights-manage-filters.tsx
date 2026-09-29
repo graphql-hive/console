@@ -9,6 +9,8 @@ import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filte
 import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
 import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { useToast } from '@/components/base/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -18,7 +20,6 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
-import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';
@@ -735,15 +736,9 @@ function ManageFiltersContent() {
     );
   }
 
-  if (!query.data?.target) {
-    return (
-      <div className="flex h-fit flex-1 items-center justify-center py-28">
-        <Spinner />
-      </div>
-    );
-  }
+  const loading = query.fetching && !query.data;
 
-  if (filters.length === 0) {
+  if (!loading && filters.length === 0) {
     return (
       <div className="py-8">
         <EmptyList
@@ -760,22 +755,23 @@ function ManageFiltersContent() {
         <StatCard
           variants={{ tone: 'muted' }}
           title="Total Filters"
-          value={stats.total.toLocaleString()}
+          value={loading ? <StatSkeleton /> : stats.total.toLocaleString()}
         />
         <StatCard
           variants={{ tone: 'muted' }}
           title="Shared Filters"
-          value={stats.shared.toLocaleString()}
+          value={loading ? <StatSkeleton /> : stats.shared.toLocaleString()}
         />
         <StatCard
           variants={{ tone: 'muted' }}
           title="Total Views"
-          value={stats.totalViews.toLocaleString()}
+          value={loading ? <StatSkeleton /> : stats.totalViews.toLocaleString()}
         />
       </div>
 
       <div className="mt-8">
         <DataTable
+          loading={loading}
           data={filters}
           columns={columns}
           getRowId={f => f.id}
@@ -789,6 +785,15 @@ function ManageFiltersContent() {
         />
       </div>
     </>
+  );
+}
+
+// Sized to the stat's line box, so the card keeps its height while it loads.
+function StatSkeleton() {
+  return (
+    <span className="flex h-8 items-center">
+      <Skeleton variants={{ size: 'xl', width: 'xs' }} />
+    </span>
   );
 }
 

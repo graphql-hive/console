@@ -137,6 +137,36 @@ describe('DataTable', () => {
     ]);
   });
 
+  it('spins the sorted header and dims the old rows while a server sort loads', () => {
+    render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        sorting={{
+          state: [{ id: 'count', desc: true }],
+          onChange: vi.fn(),
+          manual: true,
+          loading: true,
+        }}
+      />,
+    );
+    expect(screen.getByRole('status', { name: 'Sorting' }).closest('th')).not.toBeNull();
+    expect(screen.queryByRole('status', { name: 'Loading' })).toBeNull();
+    expect(screen.getByRole('table').getAttribute('aria-busy')).toBe('true');
+    expect(screen.getByText('alpha').closest('tbody')!.className).toContain('opacity-50');
+  });
+
+  it('dims the rows it keeps while refreshing, without touching the header', () => {
+    render(<DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} refreshing />);
+    expect(screen.getByText('alpha').closest('tbody')!.className).toContain('pointer-events-none');
+    expect(screen.getByRole('table').getAttribute('aria-busy')).toBe('true');
+    expect(screen.queryByRole('status')).toBeNull();
+
+    render(<DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} />);
+    expect(screen.getAllByRole('table')[1].getAttribute('aria-busy')).toBeNull();
+  });
+
   it('toggles a server-sorted column between descending and ascending', () => {
     const onChange = vi.fn();
     const { rerender } = render(
@@ -374,6 +404,13 @@ describe('DataTable', () => {
 
     rerender(<DataTable data={[]} columns={COLUMNS} getRowId={row => row.id} loading />);
     expect(screen.getByLabelText('Loading')).toBeTruthy();
+    // Skeleton rows, one line per column, under the real header.
+    const skeletonRows = container.querySelectorAll('tbody tr');
+    expect(skeletonRows).toHaveLength(5);
+    expect(skeletonRows[0].querySelectorAll('td [aria-hidden="true"]')).toHaveLength(
+      COLUMNS.length,
+    );
+    expect(container.querySelector('thead')).not.toBeNull();
 
     rerender(
       <DataTable

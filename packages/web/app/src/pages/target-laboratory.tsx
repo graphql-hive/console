@@ -17,7 +17,7 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
-import { useClipboard, useLayoutQuery, useSlugs, useToggle } from '@/lib/hooks';
+import { useClipboard, useSlugs, useToggle } from '@/lib/hooks';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
 import { useCurrentOperation } from '@/lib/hooks/laboratory/use-current-operation';
 import {
@@ -51,7 +51,6 @@ import '@graphiql/plugin-explorer/style.css';
 import { Menu } from '@/components/base/floating/menu/menu';
 import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
-import { useRedirect } from '@/lib/access/common';
 import { Kit } from '@/lib/kit';
 
 const explorer = explorerPlugin();
@@ -410,22 +409,6 @@ function LaboratoryPageContent(props: {
     [userOperations],
   );
 
-  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
-  useRedirect({
-    canAccess: layoutTarget?.viewerCanViewLaboratory === true,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-        },
-      });
-    },
-    entity: layoutTarget,
-  });
-
   if (query.error) {
     return (
       <QueryError
@@ -434,10 +417,6 @@ function LaboratoryPageContent(props: {
         showLogoutButton={false}
       />
     );
-  }
-
-  if (layoutTarget?.viewerCanViewLaboratory === false) {
-    return null;
   }
 
   return (

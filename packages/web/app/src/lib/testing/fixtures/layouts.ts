@@ -41,7 +41,10 @@ const target = {
   __typename: 'Target' as const,
   id: 'target-1',
   slug: SLUGS.targetSlug,
-  latestSchemaVersion: { __typename: 'SchemaVersion' as const, id: 'version-42' },
+  latestSchemaVersion: { __typename: 'SchemaVersion' as const, id: 'version-42' } as {
+    __typename: 'SchemaVersion';
+    id: string;
+  } | null,
   viewerCanAccessSettings: true,
   viewerCanAccessTraces: true,
   viewerCanUseMetricAlertRules: true,
@@ -125,18 +128,21 @@ export function userMenuOrganization() {
   return { __typename: 'Query' as const, organizationBySlug: organization };
 }
 
-export function organizationLayout() {
-  return { __typename: 'Query' as const, organizationBySlug: organization };
+export function organizationLayout(overrides: Partial<typeof organization> = {}) {
+  return { __typename: 'Query' as const, organizationBySlug: { ...organization, ...overrides } };
 }
 
-export function projectLayout() {
-  return { __typename: 'Query' as const, organization: { ...organization, project } };
-}
-
-export function targetLayout() {
+export function projectLayout(overrides: Partial<typeof project> = {}) {
   return {
     __typename: 'Query' as const,
-    organization: { ...organization, project: { ...project, target } },
+    organization: { ...organization, project: { ...project, ...overrides } },
+  };
+}
+
+export function targetLayout(overrides: Partial<typeof target> = {}) {
+  return {
+    __typename: 'Query' as const,
+    organization: { ...organization, project: { ...project, target: { ...target, ...overrides } } },
   };
 }
 

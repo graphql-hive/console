@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { differenceInMilliseconds } from 'date-fns';
 import ReactECharts from 'echarts-for-react';
 import {
@@ -6,12 +6,11 @@ import {
   AlertCircleIcon,
   BookIcon,
   GlobeIcon,
-  RefreshCw,
   TabletSmartphoneIcon,
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { RefreshButton } from '@/components/base/button/refresh-button';
 import { Card } from '@/components/base/card/card';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
@@ -29,9 +28,18 @@ import { FieldLevelMetricsDisplayState } from '@/gql/graphql';
 import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn, stringToHiveColor, useChartStyles } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 
-const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
+const coordinateRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate',
+);
+
+// The type a coordinate belongs to, as the stats query wants it beside the coordinate.
+export function coordinateType(coordinate: string) {
+  return coordinate.split('.')[0];
+}
+
+export const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
   query SchemaCoordinateView_SchemaCoordinateStatsQuery(
     $targetSelector: TargetSelectorInput!
     $period: DateRangeInput!
@@ -114,29 +122,20 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
     dataRetentionInDays: props.dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
+  // Resolved by the route loader, so both sides ask for one period.
+  const { period, resolution } = coordinateRoute.useLoaderData();
+  const typeName = coordinateType(props.coordinate);
 
-  const typeName = props.coordinate.split('.')[0];
-
-  const [query, refetch] = useQuery({
+  const [query] = useQuery({
     query: SchemaCoordinateView_SchemaCoordinateStatsQuery,
     variables: {
-      targetSelector: {
-        organizationSlug,
-        projectSlug,
-        targetSlug,
-      },
+      targetSelector: { organizationSlug, projectSlug, targetSlug },
       type: typeName,
       schemaCoordinate: props.coordinate,
-      period: dateRangeController.resolvedRange,
-      resolution: dateRangeController.resolution,
+      period,
+      resolution,
     },
   });
-
-  useEffect(() => {
-    if (!query.fetching) {
-      refetch({ requestPolicy: 'network-only' });
-    }
-  }, [dateRangeController.resolvedRange]);
 
   const isLoading = query.fetching;
   const points = query.data?.target?.schemaCoordinateStats?.requestsOverTime;
@@ -220,12 +219,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
-          <Button
-            layout="iconOnly"
-            icon={RefreshCw}
-            aria-label="Refresh"
-            onClick={() => dateRangeController.refreshResolvedRange()}
-          />
+          <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
         </div>
       </div>
       {query.data?.target?.hasCollectedSubscriptionOperations && (
@@ -309,10 +303,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                     ? '-'
                     : formatThroughput(
                         totalRequests,
-                        differenceInMilliseconds(
-                          new Date(dateRangeController.resolvedRange.to),
-                          new Date(dateRangeController.resolvedRange.from),
-                        ),
+                        differenceInMilliseconds(new Date(period.to), new Date(period.from)),
                       )
                 }
                 caption={`RPM in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
@@ -674,7 +665,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
   );
 }
 
-const TargetSchemaCoordinatePageQuery = graphql(`
+export const TargetSchemaCoordinatePageQuery = graphql(`
   query TargetSchemaCoordinatePageQuery(
     $organizationSlug: String!
     $projectSlug: String!

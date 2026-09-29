@@ -15,29 +15,25 @@ import { Button } from '@/components/base/button/button';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Input } from '@/components/base/input/input';
 import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Skeleton } from '@/components/ui/skeleton';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
 import { ManageGroupMappingSheet } from './groups/manage-group-mapping-sheet';
 
-const Groups_OrganizationFragment = graphql(`
-  fragment Groups_OrganizationFragment on Organization {
-    id
-  }
-`);
-
-const Groups_OrganizationGroupQuery = graphql(`
+// By slug, so the route loader can start it from the URL alone.
+export const Groups_OrganizationGroupQuery = graphql(`
   query Groups_OrganizationGroupQuery(
-    $organizationId: ID!
+    $organizationSlug: String!
     $first: Int
     $after: String
     $searchTerm: String
   ) {
-    organization(reference: { byId: $organizationId }) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       groups(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
         edges {
@@ -57,19 +53,22 @@ const Groups_OrganizationGroupQuery = graphql(`
   }
 `);
 
-export function Groups(props: {
-  organization: FragmentType<typeof Groups_OrganizationFragment>;
-}): React.ReactElement | null {
-  const oorganization = useFragment(Groups_OrganizationFragment, props.organization);
+export function groupsVariables(
+  organizationSlug: string,
+  searchTerm: string | null,
+  after: string | null,
+) {
+  return { organizationSlug, searchTerm, after };
+}
+
+export function Groups(): React.ReactElement | null {
+  const { organizationSlug } = useSlugs('organization');
   const client = useClient();
   const [searchValue, setSearchValue] = useSearchParamsFilter<string>('search', '');
+  // A page loaded by "Load more" merges into this list (Organization.groups in urql-cache.ts).
   const [query] = useQuery({
     query: Groups_OrganizationGroupQuery,
-    requestPolicy: 'network-only',
-    variables: {
-      organizationId: oorganization.id,
-      searchTerm: searchValue || null,
-    },
+    variables: groupsVariables(organizationSlug, searchValue || null, null),
   });
   const handleSearchChange = useDebouncedCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
@@ -101,22 +100,31 @@ export function Groups(props: {
         </div>
         <div className="divide-y">
           {!organization ? (
-            <div className="divide-y" aria-label="Loading groups" aria-busy="true">
+            <div role="status" aria-label="Loading groups" className="divide-y">
+              <span className="sr-only">Loading groups</span>
               {Array.from({ length: 8 }, (_, index) => (
                 <div
                   key={index}
                   className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3"
                 >
                   <div className="flex items-center gap-3">
-                    <Skeleton className="size-4" />
-                    <Skeleton className="size-9 rounded-full" />
+                    <span className="block size-4">
+                      <Skeleton variants={{ shape: 'block' }} />
+                    </span>
+                    <Skeleton variants={{ shape: 'circle' }} />
                     <div className="flex items-center gap-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-5 w-28 rounded-full" />
+                      <span className="flex w-32">
+                        <Skeleton variants={{ width: 'full' }} />
+                      </span>
+                      <span className="flex w-28">
+                        <Skeleton variants={{ size: 'lg', width: 'full' }} />
+                      </span>
                     </div>
                   </div>
                   <div className="flex w-24 justify-center">
-                    <Skeleton className="h-4 w-6" />
+                    <span className="flex w-6">
+                      <Skeleton variants={{ width: 'full' }} />
+                    </span>
                   </div>
                   <div className="w-10" />
                 </div>
@@ -142,14 +150,17 @@ export function Groups(props: {
         <Button
           variant="ghost"
           width="full"
-          onClick={() =>
-            !!organization?.groups.pageInfo.hasNextPage &&
-            void client.query(Groups_OrganizationGroupQuery, {
-              organizationId: organization.id,
-              after: organization.groups.pageInfo.endCursor,
-              searchTerm: searchValue || null,
-            })
-          }
+          onClick={() => {
+            const endCursor = organization?.groups.pageInfo.endCursor;
+            if (organization?.groups.pageInfo.hasNextPage && endCursor) {
+              void client
+                .query(
+                  Groups_OrganizationGroupQuery,
+                  groupsVariables(organizationSlug, searchValue || null, endCursor),
+                )
+                .toPromise();
+            }
+          }}
           disabled={!organization?.groups.pageInfo.hasNextPage}
         >
           Load more

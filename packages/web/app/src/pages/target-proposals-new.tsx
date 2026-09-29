@@ -17,6 +17,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Input } from '@/components/base/input/input';
 import { Label } from '@/components/base/label/label';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { Textarea } from '@/components/base/textarea/textarea';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -32,7 +33,6 @@ import { Callout } from '@/components/ui/callout';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
@@ -59,7 +59,7 @@ const ProposeChangesMutation = graphql(`
   }
 `);
 
-const ProposalsNewProposalQuery = graphql(`
+export const ProposalsNewProposalQuery = graphql(`
   query ProposalsNewProposalQuery($targetReference: TargetReferenceInput!) {
     me {
       id
@@ -555,7 +555,11 @@ function ProposalsNewContent(props: { page?: string }) {
             disabled={query.fetching || isSubmitting}
             onClick={onSubmitProposal}
           >
-            {isSubmitting ? <Spinner /> : 'Submit Proposal'}
+            {isSubmitting ? (
+              <Spinner variants={{ size: 'sm', tone: 'current' }} />
+            ) : (
+              'Submit Proposal'
+            )}
           </Button>
         }
       />

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { useQuery } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
@@ -7,13 +7,13 @@ import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
-import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
+import { useResetState } from '@/lib/hooks/use-reset-state';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
-const AffectedDeploymentsQuery = graphql(`
+export const AffectedDeploymentsQuery = graphql(`
   query AffectedDeploymentsQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -110,6 +110,14 @@ type AffectedDeployment = {
 
 const PAGE_SIZE = 20;
 
+export function affectedDeploymentsVariables(
+  slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
+  schemaCheckId: string,
+  after: string | null,
+) {
+  return { ...slugs, schemaCheckId, first: PAGE_SIZE, after };
+}
+
 const EMPTY_PAGE = {
   deployments: [] as AffectedDeployment[],
   hasNextPage: false,
@@ -122,18 +130,18 @@ function TargetChecksAffectedDeploymentsContent(props: {
   coordinate?: string;
 }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const [endCursors, setEndCursors] = useState<string[]>([]);
+  const [endCursors, setEndCursors] = useResetState<string[]>(
+    [],
+    [props.schemaCheckId, props.coordinate],
+  );
 
   const [data] = useQuery({
     query: AffectedDeploymentsQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-      schemaCheckId: props.schemaCheckId,
-      first: PAGE_SIZE,
-      after: endCursors[endCursors.length - 1] ?? null,
-    },
+    variables: affectedDeploymentsVariables(
+      { organizationSlug, projectSlug, targetSlug },
+      props.schemaCheckId,
+      endCursors[endCursors.length - 1] ?? null,
+    ),
   });
 
   const page = useMemo(() => {
@@ -293,14 +301,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
           }
         />
         <div className="mt-4" />
-        {loading && deployments.length === 0 ? (
-          <div className="flex h-fit flex-1 items-center justify-center">
-            <div className="flex flex-col items-center">
-              <Spinner />
-              <div className="mt-2 text-xs">Loading affected deployments</div>
-            </div>
-          </div>
-        ) : deployments.length === 0 ? (
+        {!loading && deployments.length === 0 ? (
           <EmptyList
             title="No affected app deployments"
             description={
@@ -311,6 +312,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
           />
         ) : (
           <DataTable
+            loading={loading && deployments.length === 0}
             data={deployments}
             columns={columns}
             getRowId={deployment => deployment.id}

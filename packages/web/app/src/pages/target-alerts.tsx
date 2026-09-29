@@ -2,31 +2,11 @@ import { Navigation } from '@/components/base/navigation/navigation';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { Meta } from '@/components/ui/meta';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
-import { useRedirect } from '@/lib/access/common';
-import { useLayoutQuery, useSlugs } from '@/lib/hooks';
+import { useSlugs } from '@/lib/hooks';
 import { Outlet } from '@tanstack/react-router';
 
-/** The gate every alerts page sits behind; the pages with the nav and the rule detail render in it. */
+// The pages with the nav and the rule detail render in here; the route's loader gates them.
 export function TargetAlertsPage() {
-  const slugs = useSlugs('target');
-  const target = useLayoutQuery('target').data?.organization?.project?.target;
-
-  useRedirect({
-    entity: target,
-    canAccess: target?.viewerCanUseMetricAlertRules === true,
-    redirectTo(router) {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: slugs,
-        replace: true,
-      });
-    },
-  });
-
-  if (target?.viewerCanUseMetricAlertRules === false) {
-    return null;
-  }
-
   return (
     <LayoutContent>
       <Meta title="Alerts" />

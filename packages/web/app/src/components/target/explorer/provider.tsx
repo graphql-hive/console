@@ -1,32 +1,11 @@
-import {
-  createContext,
-  ReactElement,
-  ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react';
-import { startOfDay } from 'date-fns';
+import { createContext, ReactElement, ReactNode, useCallback, useContext } from 'react';
 import { z } from 'zod';
-import { Period, resolveRange } from '@/lib/date-math';
-import { subDays } from '@/lib/date-time';
 import { useLocalStorageJson } from '@/lib/hooks';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
-import { UTCDate } from '@date-fns/utc';
 
 type SchemaExplorerContextType = {
   isDescriptionsVisible: boolean;
   setDescriptionsVisible(isCollapsed: boolean): void;
-  setDataRetentionInDays(days: number): void;
-  dataRetentionInDays: number;
-  startDate: Date;
-  period: Period;
-  setPeriod(period: { from: string; to: string }): void;
-  /** the actual date. */
-  resolvedPeriod: { from: string; to: string };
-  /** refresh the resolved period (aka trigger refetch) */
-  refreshResolvedPeriod(): void;
   setMetadataFilter(name: string, value: string): void;
   bulkSetMetadataFilter(filters: Array<{ name: string; values: string[] }>): void;
   /** Replaces the whole `meta` param with `name:value` entries. */
@@ -40,21 +19,9 @@ type SchemaExplorerContextType = {
   clearSubgraphFilter(): void;
 };
 
-const defaultPeriod: Period = {
-  from: 'now-7d',
-  to: 'now',
-};
-
 const SchemaExplorerContext = createContext<SchemaExplorerContextType>({
   isDescriptionsVisible: true,
   setDescriptionsVisible: () => {},
-  dataRetentionInDays: 7,
-  startDate: startOfDay(subDays(new UTCDate(), 7)),
-  period: defaultPeriod,
-  resolvedPeriod: resolveRange(defaultPeriod),
-  setPeriod: () => {},
-  setDataRetentionInDays: () => {},
-  refreshResolvedPeriod: () => {},
   setMetadataFilter: () => {},
   bulkSetMetadataFilter: () => {},
   setMetadataFilters: () => {},
@@ -72,24 +39,10 @@ function filterUnique(array: string[]) {
 }
 
 export function SchemaExplorerProvider({ children }: { children: ReactNode }): ReactElement {
-  const [dataRetentionInDays, setDataRetentionInDays] = useState(
-    7 /* Minimum possible data retention period - Free plan */,
-  );
-
-  const startDate = useMemo(
-    () => startOfDay(subDays(new UTCDate(), dataRetentionInDays)),
-    [dataRetentionInDays],
-  );
-
   const [isDescriptionsVisible, setDescriptionsVisible] = useLocalStorageJson(
     'hive:schema-explorer:collapsed',
     z.boolean().default(false),
   );
-  const [period, setPeriod] = useLocalStorageJson(
-    'hive:schema-explorer:period-1',
-    Period.default(defaultPeriod),
-  );
-  const [resolvedPeriod, setResolvedPeriod] = useState<Period>(() => resolveRange(period));
   const [metadata, setMetadataFilter] = useSearchParamsFilter('meta', [] as string[]);
   const [subgraphs, setSubgraphs] = useSearchParamsFilter('subgraph', [] as string[]);
 
@@ -98,18 +51,6 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
       value={{
         isDescriptionsVisible,
         setDescriptionsVisible,
-        period,
-        setPeriod(period) {
-          setPeriod(period);
-          setResolvedPeriod(resolveRange(period));
-        },
-        dataRetentionInDays,
-        setDataRetentionInDays,
-        startDate,
-        resolvedPeriod,
-        refreshResolvedPeriod() {
-          setResolvedPeriod(resolveRange(period));
-        },
         setMetadataFilter(name, value) {
           setMetadataFilter(filterUnique([...metadata, `${name}:${value}`]));
         },
@@ -169,18 +110,4 @@ export function useDescriptionsVisibleToggle() {
   }, [setDescriptionsVisible, isDescriptionsVisible]);
 
   return { isDescriptionsVisible, toggleDescriptionsVisible };
-}
-
-export function usePeriodSelector() {
-  const ctx = useSchemaExplorerContext();
-  const selector = useMemo(() => {
-    const { period, setPeriod, startDate, refreshResolvedPeriod } = ctx;
-    return {
-      setPeriod,
-      period,
-      startDate,
-      refreshResolvedPeriod,
-    };
-  }, [ctx]);
-  return selector;
 }

@@ -129,6 +129,7 @@
   --animate-slide-down-fade: slide-down-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-slide-left-fade: slide-left-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shimmer: shimmer 1.5s linear infinite;
+  --animate-skeleton: shimmer 1.15s linear infinite, skeleton-in 135ms var(--ease-authentic) both;
   --animate-shake: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
   --animate-spinner-spin: spinner-spin 1.6s linear infinite;
   --animate-spinner-arc: spinner-arc 1.6s var(--ease-authentic) infinite;
@@ -563,6 +564,12 @@
   100% {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes skeleton-in {
+  from {
+    opacity: 0;
   }
 }
 

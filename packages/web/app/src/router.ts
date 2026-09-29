@@ -1,6 +1,7 @@
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import type { Client } from 'urql';
 import { ErrorComponent } from '@/components/error';
+import { PagePending } from '@/components/layouts/page-pending';
 import {
   createRouter,
   parseSearchWith,
@@ -28,6 +29,12 @@ export function createAppRouter(options: { history?: RouterHistory; urqlClient: 
     // Every route gets these boundaries; a route declares its own only when it needs different behavior.
     defaultErrorComponent: ErrorComponent,
     defaultNotFoundComponent: RouteNotFound,
+    // Only a route that awaits before rendering is ever pending; a load that finishes inside the
+    // delay never shows the spinner.
+    defaultPendingComponent: PagePending,
+    defaultPendingMs: 250,
+    // Hovering or focusing a link runs its route's loaders, so the click finds the cache warm.
+    defaultPreload: 'intent',
     parseSearch: parseSearchWith(str => {
       if (needsJsurl2()) {
         return jsUrlParse(str);

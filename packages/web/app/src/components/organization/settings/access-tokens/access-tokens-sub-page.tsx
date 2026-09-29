@@ -3,7 +3,7 @@ import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Skeleton } from '@/components/ui/skeleton';
+import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -11,7 +11,7 @@ import { AccessTokenCreatedDialog } from './access-token-created-dialog';
 import { AccessTokensTable } from './access-tokens-table';
 import { CreateAccessTokenSheetContent } from './create-access-token-sheet-content';
 
-const AccessTokensSubPage_OrganizationQuery = graphql(`
+export const AccessTokensSubPage_OrganizationQuery = graphql(`
   query AccessTokensSubPage_OrganizationQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
@@ -38,8 +38,9 @@ export function AccessTokensSubPage(): React.ReactNode {
     variables: {
       organizationSlug,
     },
-    requestPolicy: 'network-only',
   });
+  // The route revalidates on a visit; after a mutation here, the page asks the server itself.
+  const refetch = () => refetchQuery({ requestPolicy: 'network-only' });
 
   const [createAccessTokenState, setCreateAccessTokenState] = useState<CreateAccessTokenState>(
     CreateAccessTokenState.closed,
@@ -102,7 +103,7 @@ export function AccessTokensSubPage(): React.ReactNode {
                   onSuccess={privateAccessKey => {
                     setCreatedKey(privateAccessKey);
                     setCreateAccessTokenState(CreateAccessTokenState.closed);
-                    refetchQuery();
+                    refetch();
                   }}
                 />
               </>
@@ -125,29 +126,17 @@ export function AccessTokensSubPage(): React.ReactNode {
         }
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-access-tokens">
-        {query.fetching && !query.data?.organization && (
-          <div className="space-y-3">
-            <div className="flex w-full items-center space-x-4">
-              <Skeleton className="h-10 w-1/4" />
-              <Skeleton className="h-10 w-1/2" />
-              <Skeleton className="h-10 w-1/4" />
-            </div>
-            <div className="flex w-full items-center space-x-4">
-              <Skeleton className="h-10 w-1/4" />
-              <Skeleton className="h-10 w-1/2" />
-              <Skeleton className="h-10 w-1/4" />
-            </div>
-            <div className="flex w-full items-center space-x-4">
-              <Skeleton className="h-10 w-1/4" />
-              <Skeleton className="h-10 w-1/2" />
-              <Skeleton className="h-10 w-1/4" />
-            </div>
-          </div>
-        )}
-        {query.data?.organization && (
+        {query.error ? (
+          <QueryError
+            organizationSlug={organizationSlug}
+            error={query.error}
+            showLogoutButton={false}
+          />
+        ) : (
           <AccessTokensTable
-            accessTokens={query.data.organization.allAccessTokens}
-            refetch={refetchQuery}
+            accessTokens={query.data?.organization?.allAccessTokens ?? null}
+            loading={(query.fetching || query.stale) && !query.data?.organization?.allAccessTokens}
+            refetch={refetch}
           />
         )}
       </div>

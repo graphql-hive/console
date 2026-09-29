@@ -25,6 +25,7 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Label } from '@/components/base/label/label';
 import { Legend } from '@/components/base/legend/legend';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { Switch } from '@/components/base/switch/switch';
 import { TabbedView, type TabbedViewItem } from '@/components/base/tabs/tabbed-view';
 import { Textarea } from '@/components/base/textarea/textarea';
@@ -43,7 +44,6 @@ import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { DownloadButton } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -1433,7 +1433,7 @@ const ActiveSchemaCheck_SchemaCheckFragment = graphql(`
   }
 `);
 
-const ActiveSchemaCheckQuery = graphql(`
+export const ActiveSchemaCheckQuery = graphql(`
   query ActiveSchemaCheck_ActiveSchemaCheckQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -1483,7 +1483,9 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
     return (
       <div className="flex h-fit flex-1 items-center justify-center self-center">
         <div className="text-fg-secondary flex flex-col items-center text-sm">
-          <Spinner className="mb-3 size-8" />
+          <span className="mb-3">
+            <Spinner variants={{ size: 'lg' }} />
+          </span>
           Loading Schema Check...
         </div>
       </div>

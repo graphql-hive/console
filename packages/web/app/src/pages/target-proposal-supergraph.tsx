@@ -1,8 +1,8 @@
 import { buildSchema } from 'graphql';
 import { useQuery } from 'urql';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { Proposal_ChangeFragment, toUpperSnakeCase } from '@/components/target/proposals';
 import { SchemaDiff } from '@/components/target/proposals/schema-diff/core';
-import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { Change } from '@graphql-inspector/core';

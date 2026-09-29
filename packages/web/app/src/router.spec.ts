@@ -49,6 +49,26 @@ describe('router module', () => {
     expect(router.options.context.urqlClient).toBe(client);
   });
 
+  it(
+    'configures the pending spinner as the default after 250 ms',
+    { timeout: 30_000 },
+    async () => {
+      const { createAppRouter } = await import('./router');
+      const router = createAppRouter({ urqlClient: createTestClient() });
+      const { PagePending } = await import('@/components/layouts/page-pending');
+
+      expect(router.options.defaultPendingComponent).toBe(PagePending);
+      expect(router.options.defaultPendingMs).toBe(250);
+    },
+  );
+
+  it('preloads routes on intent', { timeout: 30_000 }, async () => {
+    const { createAppRouter } = await import('./router');
+    const router = createAppRouter({ urqlClient: createTestClient() });
+
+    expect(router.options.defaultPreload).toBe('intent');
+  });
+
   it('owns the error and not-found boundaries for every route', { timeout: 30_000 }, async () => {
     const { createAppRouter } = await import('./router');
     const router = createAppRouter({ urqlClient: createTestClient() });

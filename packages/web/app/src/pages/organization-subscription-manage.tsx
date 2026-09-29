@@ -13,7 +13,6 @@ import {
 import { BillingPlanPicker } from '@/components/organization/billing/BillingPlanPicker';
 import { formatMillionOrBillion } from '@/components/organization/billing/helpers';
 import { PlanSummary } from '@/components/organization/billing/PlanSummary';
-import { RenderIfStripeAvailable } from '@/components/organization/stripe';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
@@ -50,7 +49,7 @@ const ManageSubscriptionInner_BillingPlansFragment = graphql(`
   }
 `);
 
-const BillingsPlanQuery = graphql(`
+export const BillingsPlanQuery = graphql(`
   query ManageSubscription_BillingPlans {
     billingPlans {
       id
@@ -123,7 +122,7 @@ function Inner(props: {
   );
   const stripe = useStripe();
   const elements = useElements();
-  const [query] = useQuery({ query: BillingsPlanQuery });
+  const [query] = useQuery({ query: BillingsPlanQuery, variables: {} });
 
   const [paymentDetailsValid, setPaymentDetailsValid] = useState(
     !!organization.billingConfiguration?.paymentMethod,
@@ -517,7 +516,7 @@ export function parseToMillions(input: string): number | null {
   return number;
 }
 
-const ManageSubscriptionPageQuery = graphql(`
+export const ManageSubscriptionPageQuery = graphql(`
   query ManageSubscriptionPageQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
@@ -584,9 +583,7 @@ export function OrganizationSubscriptionManagePage(): ReactElement {
   return (
     <>
       <Meta title="Manage Subscription" />
-      <RenderIfStripeAvailable>
-        <ManageSubscriptionPageContent />
-      </RenderIfStripeAvailable>
+      <ManageSubscriptionPageContent />
     </>
   );
 }

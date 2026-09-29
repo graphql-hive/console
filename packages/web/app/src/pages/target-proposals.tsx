@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
@@ -9,12 +9,11 @@ import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Spinner } from '@/components/ui/spinner';
+import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
-import { useRedirect } from '@/lib/access/common';
-import { useLayoutQuery, useSlugs } from '@/lib/hooks';
+import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { getRouteApi, useNavigate, useSearch } from '@tanstack/react-router';
 
@@ -27,23 +26,6 @@ export function TargetProposalsPage(props: {
   filterStages?: string[];
   selectedProposalId?: string;
 }) {
-  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const target = useLayoutQuery('target').data?.organization?.project?.target;
-
-  useRedirect({
-    canAccess: target?.viewerCanViewSchemaProposals === true,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-        },
-      });
-    },
-    entity: target,
-  });
   return (
     <>
       <Meta title="Schema proposals" />
@@ -85,7 +67,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
   );
 };
 
-const ProposalsQuery = graphql(`
+export const ProposalsQuery = graphql(`
   query listProposals($input: SchemaProposalsInput!) {
     schemaProposals(input: $input) {
       edges {
@@ -106,8 +88,26 @@ const ProposalsQuery = graphql(`
   }
 `);
 
+function proposalStages(stages?: string[]) {
+  return [
+    ...(stages ?? [
+      SchemaProposalStage.Draft,
+      SchemaProposalStage.Open,
+      SchemaProposalStage.Approved,
+    ]),
+  ]
+    .sort()
+    .map(s => s.toUpperCase() as SchemaProposalStage);
+}
+
+export function proposalsVariables(
+  slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
+  stages?: string[],
+) {
+  return { input: { target: { bySelector: slugs }, stages: proposalStages(stages) } };
+}
+
 function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
-  const [pageVariables, setPageVariables] = useState([{ first: 20, after: null as string | null }]);
   const navigate = proposalsRoute.useNavigate();
   const reset = () => {
     void navigate({
@@ -128,64 +128,49 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
       </div>
 
       <div className="border-line-subtle bg-surface-inset min-h-full gap-2.5 rounded-md border p-2.5">
-        {pageVariables.map(({ after }, i) => (
-          <ProposalsListPage
-            key={after ?? i}
-            {...props}
-            isLastPage={i === pageVariables.length - 1}
-            onLoadMore={(after: string) => {
-              setPageVariables([...pageVariables, { after, first: 10 }]);
-            }}
-          />
-        ))}
+        <ProposalsList {...props} />
       </div>
     </>
   );
 }
 
-/**
- * This renders a single page of proposals for the ProposalList component.
- */
-const ProposalsListPage = (props: {
+// The document passes no cursor, so this is the API's first page; a "load more" only repeated it.
+const ProposalsList = (props: {
   filterUserIds?: string[];
   filterStages?: string[];
   selectedProposalId?: string;
-  isLastPage: boolean;
-  onLoadMore: (after: string) => void | Promise<void>;
 }) => {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ProposalsQuery,
-    variables: {
-      input: {
-        target: {
-          bySelector: {
-            organizationSlug,
-            projectSlug,
-            targetSlug,
-          },
-        },
-        stages: (
-          props.filterStages ?? [
-            SchemaProposalStage.Draft,
-            SchemaProposalStage.Open,
-            SchemaProposalStage.Approved,
-          ]
-        )
-          .sort()
-          .map(s => s.toUpperCase() as SchemaProposalStage),
-        // userIds: props.filterUserIds,
-      },
-    },
-    requestPolicy: 'cache-and-network',
+    variables: proposalsVariables(
+      { organizationSlug, projectSlug, targetSlug },
+      props.filterStages,
+    ),
   });
-  const pageInfo = query.data?.schemaProposals?.pageInfo;
   const search = useSearch({ strict: false });
   const hasFilter = props.filterStages?.length || props.filterUserIds?.length;
 
   return (
     <>
-      {query.fetching ? <Spinner /> : null}
+      {query.error && !query.data ? (
+        <QueryError
+          organizationSlug={organizationSlug}
+          error={query.error}
+          showLogoutButton={false}
+        />
+      ) : null}
+      {query.fetching && !query.data ? (
+        <div role="status" aria-label="Loading" className="flex flex-col">
+          <span className="sr-only">Loading</span>
+          {[0, 1, 2, 3].map(index => (
+            <div key={index} className="flex flex-col gap-2 p-2.5">
+              <Skeleton variants={{ size: 'lg', width: 'lg' }} />
+              <Skeleton variants={{ size: 'sm', width: 'md' }} />
+            </div>
+          ))}
+        </div>
+      ) : null}
       {query.data?.schemaProposals?.edges?.length === 0 && (
         <div className="my-8 flex min-h-48 items-center text-center">
           <div className="w-full">
@@ -251,11 +236,6 @@ const ProposalsListPage = (props: {
           </div>
         );
       })}
-      {props.isLastPage && pageInfo?.hasNextPage ? (
-        <Button variant="link" onClick={_e => props.onLoadMore(pageInfo?.endCursor)}>
-          Load more
-        </Button>
-      ) : null}
     </>
   );
 };

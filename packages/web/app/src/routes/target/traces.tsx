@@ -1,11 +1,16 @@
-import { useMemo } from 'react';
 import { z } from 'zod';
-import { TargetTracePage } from '@/pages/target-trace';
+import { presetLast7Days } from '@/components/ui/date-range-picker';
+import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
+import { defaultRange, loadQuery, revalidate } from '@/lib/route-utils';
+import { TargetInsightsNewPageContent_TraceQuery, TargetTracePage } from '@/pages/target-trace';
 import {
-  FilterState,
+  defaultTracesFilter,
+  defaultTracesSort,
   TargetTracesFilterState,
   TargetTracesPage,
+  TargetTracesPageQuery,
   TargetTracesSort,
+  tracesPageVariables,
 } from '@/pages/target-traces';
 import { createRoute } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
@@ -22,34 +27,37 @@ export const targetTracesRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'traces',
   validateSearch: zodValidator(TargetTracesRouteSearch),
+  beforeLoad: defaultRange(
+    presetLast7Days.range,
+    '/$organizationSlug/$projectSlug/$targetSlug/traces',
+  ),
+  loaderDeps: ({ search }) => ({
+    filter: search.filter ?? defaultTracesFilter,
+    sort: search.sort ?? defaultTracesSort,
+    from: search.from,
+    to: search.to,
+  }),
+  preloadStaleTime: 0,
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug } = loader.params;
+    const { period } = loaderPeriod(loader.deps, presetLast7Days);
+    void loadQuery(
+      loader,
+      TargetTracesPageQuery,
+      tracesPageVariables(
+        { organizationSlug, projectSlug, targetSlug },
+        loader.deps.filter,
+        loader.deps.sort,
+        period,
+      ),
+      revalidate(loader),
+    );
+    return { period };
+  },
   component: function TargetTracesRoute() {
-    const {
-      filter = {
-        'graphql.client': [],
-        'graphql.errorCode': [],
-        'graphql.kind': [],
-        'graphql.operation': [],
-        'graphql.status': [],
-        'graphql.subgraph': [],
-        'http.host': [],
-        'http.method': [],
-        'http.route': [],
-        'http.status': [],
-        'http.url': [],
-        'trace.id': [],
-        duration: [],
-      } satisfies FilterState,
-      sort = {
-        id: 'timestamp',
-        desc: true,
-      },
-      from,
-      to,
-    } = targetTracesRoute.useSearch();
-
-    const range = useMemo(() => (from && to ? { from, to } : null), [from, to]);
-
-    return <TargetTracesPage sorting={sort} filter={filter} range={range} />;
+    const { filter = defaultTracesFilter, sort = defaultTracesSort } =
+      targetTracesRoute.useSearch();
+    return <TargetTracesPage sorting={sort} filter={filter} />;
   },
 });
 
@@ -64,6 +72,13 @@ export const targetTraceRoute = createRoute({
     return TargetTraceRouteSearchModel.parse(search);
   },
   path: 'traces/$traceId',
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug, traceId } = loader.params;
+    void loadQuery(loader, TargetInsightsNewPageContent_TraceQuery, {
+      targetSelector: { organizationSlug, projectSlug, targetSlug },
+      traceId,
+    });
+  },
   component: function TargetTraceRoute() {
     const { traceId } = targetTraceRoute.useParams();
     const { activeSpanId, activeSpanTab } = targetTraceRoute.useSearch();

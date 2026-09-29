@@ -6,7 +6,6 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { PageLead } from '@/components/base/page-lead';
-import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import {
   AlertChannelType,
@@ -19,7 +18,7 @@ import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 
-const TargetAlertsRulesPage_Query = graphql(`
+export const TargetAlertsRulesPage_Query = graphql(`
   query TargetAlertsRulesPage_Query(
     $organizationSlug: String!
     $projectSlug: String!
@@ -292,7 +291,6 @@ export function TargetAlertsRulesPage() {
   const [result] = useQuery({
     query: TargetAlertsRulesPage_Query,
     variables: { organizationSlug, projectSlug, targetSlug },
-    requestPolicy: 'cache-and-network',
   });
 
   const previousData = useKeepPreviousData(result.data, result.fetching || result.stale);
@@ -342,12 +340,9 @@ export function TargetAlertsRulesPage() {
         <div className="text-critical flex justify-center py-12 text-sm">
           Failed to load alert rules: {result.error.message}
         </div>
-      ) : result.fetching && !data ? (
-        <div className="flex justify-center py-12">
-          <Spinner />
-        </div>
       ) : (
         <DataTable
+          loading={result.fetching && !data}
           data={rules}
           columns={RULE_COLUMNS}
           getRowId={r => r.id}

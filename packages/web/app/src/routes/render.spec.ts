@@ -1,13 +1,22 @@
 // @vitest-environment jsdom
-import { type ReactNode } from 'react';
-import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
+import { CDNAccessTokenCreateMutation } from '@/components/target/settings/cdn-access-tokens';
+import { CHECKS, checksFixtures } from '@/lib/testing/fixtures/checks';
+import {
+  layoutFixtures,
+  organizationLayout,
+  projectLayout,
+  SLUGS,
+  targetLayout,
+} from '@/lib/testing/fixtures/layouts';
 import { organizationMembers } from '@/lib/testing/fixtures/organization-members';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
 import { projectSettings } from '@/lib/testing/fixtures/project-settings';
 import { targetSettings } from '@/lib/testing/fixtures/target-settings';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
-import { screen, waitFor, within } from '@testing-library/react';
+import { createAppRouter } from '@/router';
+import { createMemoryHistory } from '@tanstack/react-router';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
@@ -23,28 +32,13 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
 }));
 
 // A signed-in session without SuperTokens: the wrappers pass through and the session exists.
-vi.mock('supertokens-auth-react', async importOriginal => ({
-  ...(await importOriginal<typeof import('supertokens-auth-react')>()),
-  default: { init: () => {} },
-  SuperTokensWrapper: (props: { children: ReactNode }) => props.children,
-}));
+vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
 // The OIDC interstitial redirects away unless the provider is on.
 vi.mock('@/lib/supertokens/thirdparty', async importOriginal => ({
   ...(await importOriginal<typeof import('@/lib/supertokens/thirdparty')>()),
   isProviderEnabled: () => true,
 }));
-vi.mock('supertokens-auth-react/recipe/session', () => ({
-  default: {
-    doesSessionExist: async () => true,
-    getAccessTokenPayloadSecurely: async () => ({
-      superTokensUserId: 'user-1',
-      email: 'user@the-guild.dev',
-    }),
-    attemptRefreshingSession: async () => true,
-  },
-  SessionAuth: (props: { children: ReactNode }) => props.children,
-  useSessionContext: () => ({ loading: false, doesSessionExist: true, userId: 'user-1' }),
-}));
+vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
 
 // The layout queries are answered; every other query stays in flight, so pages show their loading
 // branch and the chrome around them is what gets asserted.
@@ -135,21 +129,31 @@ describe('chrome at every page', () => {
     expect(screen.getByRole('banner')).toBe(header);
   });
 
-  it('sends the bare history URL to the latest version', { timeout: 30_000 }, async () => {
-    client.current!.fixtures.set('TargetHistoryLatestVersionQuery', {
-      organization: {
-        id: 'org-1',
-        project: {
-          id: 'project-1',
-          target: { id: 'target-1', latestSchemaVersion: { id: 'version-42' } },
-        },
+  it('keeps a target without versions on the history list', { timeout: 30_000 }, async () => {
+    client.current!.fixtures.set('TargetLayoutQuery', targetLayout({ latestSchemaVersion: null }));
+    client.current!.fixtures.set('TargetHistoryPageQuery', {
+      __typename: 'Query',
+      target: {
+        __typename: 'Target',
+        id: 'target-1',
+        project: { __typename: 'Project', id: 'project-1', type: 'SINGLE' },
+        latestSchemaVersion: null,
       },
     });
+    const { router } = at(`${TARGET}/history`);
+    await screen.findByText(/waiting for your first/);
+    expect(router.state.location.pathname).toBe(`${TARGET}/history`);
+    expect(client.current!.seen).not.toContain('TargetHistoryLatestVersionQuery');
+  });
+
+  // The layout document carries latestSchemaVersion, so the redirect is a cache read, not a request.
+  it('sends the bare history URL to the latest version', { timeout: 30_000 }, async () => {
     const { router } = at(`${TARGET}/history`);
     await waitFor(() =>
       expect(router.state.location.pathname).toBe(`${TARGET}/history/version-42`),
     );
     expect(router.history.length).toBe(1);
+    expect(client.current!.seen).not.toContain('TargetHistoryLatestVersionQuery');
   });
 
   it('keeps the project layout mounted across its pages', { timeout: 30_000 }, async () => {
@@ -229,7 +233,8 @@ describe('chrome at every page', () => {
         'animate-pulse',
       ),
     );
-    expect(client.current!.seen).toContain('UserMenu_OrganizationQuery');
+    // The layout document already holds every field the menu selects, so the menu reads the cache.
+    expect(client.current!.seen).not.toContain('UserMenu_OrganizationQuery');
   });
 
   it('renders a missing page inside the chrome, not over it', { timeout: 30_000 }, async () => {
@@ -273,9 +278,13 @@ async function sectionNav(name = 'Settings') {
 describe('target settings sections', () => {
   const SETTINGS = `${TARGET}/settings`;
 
-  function renderSettings(url: string, fixture = targetSettings()) {
+  // A permission the layout document also selects is flipped on both, as one entity in the cache.
+  function renderSettings(url: string, fixture = targetSettings(), layout?: unknown) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('TargetSettingsPageQuery', fixture);
+    if (layout) {
+      client.current.fixtures.set('TargetLayoutQuery', layout);
+    }
     return at(url);
   }
 
@@ -356,14 +365,133 @@ describe('target settings sections', () => {
     );
     await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
   });
+
+  it('sends a viewer without settings access back to the target', { timeout: 30_000 }, async () => {
+    const { router } = renderSettings(
+      SETTINGS,
+      targetSettings({ viewerCanAccessSettings: false }),
+      targetLayout({ viewerCanAccessSettings: false }),
+    );
+    await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
+    expect(screen.queryByRole('navigation', { name: 'Settings' })).toBeNull();
+    // The page and the section both awaited and redirected; one request, no error boundary.
+    expect(screen.queryByText('Oops, something went wrong.')).toBeNull();
+    expect(client.current!.requests('TargetSettingsPageQuery')).toHaveLength(1);
+  });
+
+  it(
+    'loads the page document once for the page and its section, and warms the section',
+    { timeout: 30_000 },
+    async () => {
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set('TargetSettingsPageQuery', targetSettings());
+      client.current.fixtures.set('CDNAccessTokensQuery', new Promise(() => {}));
+      at(`${SETTINGS}/cdn`);
+      await screen.findByText('CDN Access Token');
+
+      const seen = client.current.seen;
+      expect(seen.filter(name => name === 'TargetSettingsPageQuery')).toHaveLength(1);
+      const cdn = client.current.requests('CDNAccessTokensQuery');
+      expect(cdn.map(operation => operation.variables)).toEqual([
+        { selector: SLUGS, first: 10, after: null },
+      ]);
+    },
+  );
+
+  it(
+    'shows a CDN token in the open page right after it is created',
+    { timeout: 30_000 },
+    async () => {
+      const tokens = ['token-1'];
+      const token = (id: string) => ({
+        __typename: 'CdnAccessToken' as const,
+        id,
+        firstCharacters: 'hv2ab',
+        lastCharacters: 'yz==',
+        alias: id,
+        createdAt: '2026-09-27T10:00:00.000Z',
+      });
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set('TargetSettingsPageQuery', targetSettings());
+      // Answered on a later tick, as a network would, once the first page has rendered.
+      let answered = false;
+      const later = <T>(value: T) =>
+        answered ? new Promise<T>(resolve => setTimeout(() => resolve(value), 10)) : value;
+      client.current.fixtures.set('CDNAccessTokensQuery', () =>
+        later({
+          __typename: 'Query',
+          target: {
+            __typename: 'Target',
+            id: 'target-1',
+            cdnAccessTokens: {
+              __typename: 'TargetCdnAccessTokenConnection',
+              edges: tokens.map(id => ({
+                __typename: 'TargetCdnAccessTokenEdge',
+                node: token(id),
+              })),
+              pageInfo: {
+                __typename: 'PageInfo',
+                hasNextPage: false,
+                hasPreviousPage: false,
+                endCursor: null,
+              },
+            },
+          },
+        }),
+      );
+      client.current.fixtures.set('CDNAccessTokens_CDNAccessTokenCreateMutation', () => {
+        tokens.unshift('token-2');
+        return later({
+          __typename: 'Mutation',
+          createCdnAccessToken: {
+            __typename: 'CdnAccessTokenCreateResult',
+            error: null,
+            ok: {
+              __typename: 'CdnAccessTokenCreateResultOk',
+              secretAccessToken: 'secret',
+              createdCdnAccessToken: token('token-2'),
+            },
+          },
+        });
+      });
+      at(`${SETTINGS}/cdn`);
+      await screen.findByText('token-1');
+      answered = true;
+
+      await client.current
+        .mutation(CDNAccessTokenCreateMutation, {
+          input: { target: { bySelector: SLUGS }, alias: 'token-2' },
+        })
+        .toPromise();
+
+      expect(await screen.findByText('token-2')).toBeTruthy();
+      expect(client.current.seen.filter(name => name === 'CDNAccessTokensQuery')).toHaveLength(2);
+    },
+  );
+
+  it('keeps the settings nav mounted from General to CDN', { timeout: 30_000 }, async () => {
+    const { router } = renderSettings(SETTINGS);
+    await screen.findByText('Target ID');
+    const nav = screen.getByRole('navigation', { name: 'Settings' });
+    await router.navigate({
+      to: '/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
+      params: SLUGS,
+    });
+    await screen.findByText('CDN Access Token');
+    expect(screen.getByRole('navigation', { name: 'Settings' })).toBe(nav);
+  });
 });
 
 describe('organization settings sections', () => {
   const SETTINGS = `${ORGANIZATION}/view/settings`;
 
-  function renderSettings(url: string, fixture = organizationSettings()) {
+  // A permission the layout document also selects is flipped on both, as one entity in the cache.
+  function renderSettings(url: string, fixture = organizationSettings(), layout?: unknown) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('OrganizationSettingsPageQuery', fixture);
+    if (layout) {
+      client.current.fixtures.set('OrganizationLayoutQuery', layout);
+    }
     return at(url);
   }
 
@@ -394,6 +522,7 @@ describe('organization settings sections', () => {
         viewerCanManageOIDCIntegration: false,
         viewerCanManagePersonalAccessTokens: false,
       }),
+      organizationLayout({ viewerCanManagePersonalAccessTokens: false }),
     );
     expect((await sectionNav()).labels).toEqual(['General', 'Policy', 'Access Tokens']);
   });
@@ -402,6 +531,7 @@ describe('organization settings sections', () => {
     const { router } = renderSettings(
       SETTINGS,
       organizationSettings({ viewerCanAccessSettings: false }),
+      organizationLayout({ viewerCanAccessSettings: false }),
     );
     await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));
     expect((await sectionNav()).current).toBe('Policy');
@@ -411,9 +541,13 @@ describe('organization settings sections', () => {
 describe('project settings sections', () => {
   const SETTINGS = `${PROJECT}/view/settings`;
 
-  function renderSettings(url: string, fixture = projectSettings()) {
+  // A permission the layout document also selects is flipped on both, as one entity in the cache.
+  function renderSettings(url: string, fixture = projectSettings(), layout?: unknown) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('ProjectSettingsPageQuery', fixture);
+    if (layout) {
+      client.current.fixtures.set('ProjectLayoutQuery', layout);
+    }
     return at(url);
   }
 
@@ -445,6 +579,7 @@ describe('project settings sections', () => {
     const { router } = renderSettings(
       SETTINGS,
       projectSettings({ viewerCanModifySettings: false }),
+      projectLayout({ viewerCanModifySettings: false }),
     );
     await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));
     expect((await sectionNav()).current).toBe('Policy');
@@ -454,13 +589,12 @@ describe('project settings sections', () => {
     'sends a viewer without settings access back to the project',
     { timeout: 30_000 },
     async () => {
-      const { router } = renderSettings(
-        `${SETTINGS}/policy`,
-        projectSettings({
-          viewerCanModifySettings: false,
-          viewerCanManageProjectAccessTokens: false,
-        }),
-      );
+      // The gate reads the layout document; the page document describes the same project.
+      const denied = { viewerCanModifySettings: false, viewerCanManageProjectAccessTokens: false };
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set('ProjectLayoutQuery', projectLayout(denied));
+      client.current.fixtures.set('ProjectSettingsPageQuery', projectSettings(denied));
+      const { router } = at(`${SETTINGS}/policy`);
       await waitFor(() => expect(router.state.location.pathname).toBe(PROJECT));
     },
   );
@@ -512,10 +646,17 @@ describe('members sections', () => {
     'sends a viewer who may not see members back to the organization',
     { timeout: 30_000 },
     async () => {
-      const { router } = renderMembers(
-        MEMBERS,
+      // The gate reads the layout document; the page document describes the same organization.
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set(
+        'OrganizationLayoutQuery',
+        organizationLayout({ viewerCanSeeMembers: false }),
+      );
+      client.current.fixtures.set(
+        'OrganizationMembersPageQuery',
         organizationMembers({ viewerCanSeeMembers: false }),
       );
+      const { router } = at(MEMBERS);
       await waitFor(() => expect(router.state.location.pathname).toBe(ORGANIZATION));
     },
   );
@@ -526,12 +667,10 @@ describe('alerts sections', () => {
 
   function renderAlerts(url: string, viewerCanUseMetricAlertRules = true) {
     client.current = createTestClient(layoutFixtures());
-    const layout = targetLayout();
-    layout.organization.project.target = {
-      ...layout.organization.project.target,
-      viewerCanUseMetricAlertRules,
-    };
-    client.current.fixtures.set('TargetLayoutQuery', layout);
+    client.current.fixtures.set(
+      'TargetLayoutQuery',
+      targetLayout({ viewerCanUseMetricAlertRules }),
+    );
     return at(url);
   }
 
@@ -571,12 +710,198 @@ describe('alerts sections', () => {
       await sectionNav('Alerts');
       const seen = client.current!.seen;
       expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
-      expect(seen).not.toContain('TargetAlertsPageQuery');
+    },
+  );
+});
+
+describe('permission gates', () => {
+  // Each gated URL and the layout flag that opens it. A route may start its page documents beside
+  // the gate, so what a viewer without the flag never gets is the page, not the request.
+  const gates = [
+    [`${TARGET}/alerts/rules`, 'viewerCanUseMetricAlertRules'],
+    [`${TARGET}/apps`, 'viewerCanViewAppDeployments'],
+    [`${TARGET}/apps/app/1.0.0`, 'viewerCanViewAppDeployments'],
+    [`${TARGET}/laboratory`, 'viewerCanViewLaboratory'],
+    [`${TARGET}/proposals`, 'viewerCanViewSchemaProposals'],
+    [`${TARGET}/proposals/new`, 'viewerCanViewSchemaProposals'],
+    [`${TARGET}/proposals/proposal-1`, 'viewerCanViewSchemaProposals'],
+  ] as const;
+
+  beforeEach(() => {
+    localStorage.setItem('hive:laboratory:welcome-dialog-shown', 'true');
+  });
+
+  it.each(gates)(
+    '%s sends a viewer without %s to the target, replacing the entry',
+    { timeout: 30_000 },
+    async (url, flag) => {
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set('TargetLayoutQuery', targetLayout({ [flag]: false }));
+      const { router } = at(url);
+
+      await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
+
+      expect(router.history.length).toBe(1);
+      expect(client.current.requests('TargetLayoutQuery')).toHaveLength(1);
+    },
+  );
+
+  it.each(gates)(
+    '%s reads %s from the layout request, adding none of its own',
+    { timeout: 30_000 },
+    async url => {
+      const client = createTestClient(layoutFixtures());
+      const router = createAppRouter({
+        history: createMemoryHistory({ initialEntries: [url] }),
+        urqlClient: client,
+      });
+      await router.load();
+
+      expect(router.state.location.pathname).toBe(url);
+      expect(client.requests('TargetLayoutQuery')).toHaveLength(1);
+    },
+  );
+});
+
+describe('read-once page loaders', () => {
+  // Loaded but not rendered: the request can only have come from the route.
+  it.each([
+    [TARGET, 'TargetSchemaPageQuery', SLUGS],
+    [
+      `${TARGET}/proposals/new`,
+      'ProposalsNewProposalQuery',
+      { targetReference: { bySelector: SLUGS } },
+    ],
+  ])(
+    '%s starts %s with the page variables before render',
+    { timeout: 30_000 },
+    async (url, name, variables) => {
+      const client = createTestClient(layoutFixtures());
+      const router = createAppRouter({
+        history: createMemoryHistory({ initialEntries: [url] }),
+        urqlClient: client,
+      });
+      await router.load();
+
+      expect(client.requests(name).map(operation => operation.variables)).toEqual([variables]);
+    },
+  );
+});
+
+describe('layout loaders', () => {
+  async function loadedAt(url: string) {
+    const client = createTestClient(layoutFixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({ initialEntries: [url] }),
+      urqlClient: client,
+    });
+    await router.load();
+    return client;
+  }
+
+  // Loaded but not rendered: the requests can only have come from the loaders.
+  it.each([
+    [
+      `${ORGANIZATION}/view/settings`,
+      'OrganizationLayoutQuery',
+      { organizationSlug: SLUGS.organizationSlug },
+    ],
+    [
+      `${PROJECT}/view/settings`,
+      'ProjectLayoutQuery',
+      { organizationSlug: SLUGS.organizationSlug, projectSlug: SLUGS.projectSlug },
+    ],
+    [`${TARGET}/checks/check-1`, 'TargetLayoutQuery', SLUGS],
+  ])(
+    '%s starts %s with exactly its layout variables before render',
+    { timeout: 30_000 },
+    async (url, name, variables) => {
+      const client = await loadedAt(url);
+      expect(client.seen).toContain('ViewerQuery');
+      const operation = client.requests(name)[0];
+      expect(operation?.variables).toEqual(variables);
+    },
+  );
+});
+
+describe('tables while they load', () => {
+  beforeEach(() => {
+    client.current = createTestClient(layoutFixtures());
+    // The settings layouts gate their sections on these.
+    client.current.fixtures.set('OrganizationSettingsPageQuery', organizationSettings());
+    client.current.fixtures.set('ProjectSettingsPageQuery', projectSettings());
+  });
+
+  // Held in flight, as the page's own query is on a real first load.
+  it.each([
+    [`${TARGET}/apps`, 'TargetAppsViewQuery'],
+    [`${TARGET}/alerts/rules`, 'TargetAlertsRulesPage_Query'],
+    [`${ORGANIZATION}/view/settings/access-tokens`, 'AccessTokensSubPage_OrganizationQuery'],
+    [
+      `${ORGANIZATION}/view/settings/personal-access-tokens`,
+      'PersonalAccessTokensSubPage_OrganizationQuery',
+    ],
+    [`${PROJECT}/view/settings/access-tokens`, 'ProjectAccessTokensSubPage_OrganizationQuery'],
+  ])('%s shows skeleton rows, not a spinner', { timeout: 30_000 }, async (url, pageQuery) => {
+    client.current!.fixtures.set(pageQuery, new Promise(() => {}));
+    at(url);
+    const status = await screen.findByRole('status', { name: 'Loading' });
+    expect(status.closest('tbody')).not.toBeNull();
+  });
+});
+
+describe('a failed page query', () => {
+  beforeEach(() => {
+    client.current = createTestClient(layoutFixtures());
+    client.current.fixtures.set('OrganizationSettingsPageQuery', organizationSettings());
+    client.current.fixtures.set('ProjectSettingsPageQuery', projectSettings());
+  });
+
+  it.each([
+    [`${TARGET}/proposals`, 'listProposals'],
+    [`${ORGANIZATION}/view/settings/access-tokens`, 'AccessTokensSubPage_OrganizationQuery'],
+    [
+      `${ORGANIZATION}/view/settings/personal-access-tokens`,
+      'PersonalAccessTokensSubPage_OrganizationQuery',
+    ],
+    [`${PROJECT}/view/settings/access-tokens`, 'ProjectAccessTokensSubPage_OrganizationQuery'],
+  ])(
+    '%s shows the error, not a skeleton or an empty state',
+    { timeout: 30_000 },
+    async (url, pageQuery) => {
+      client.current!.fixtures.set(pageQuery, new Error('the server is away'));
+      at(url);
+      await screen.findByText('Oops, something went wrong.');
+      expect(screen.queryByRole('status', { name: 'Loading' })).toBeNull();
+      expect(screen.queryByText(/No .* yet\./)).toBeNull();
+    },
+  );
+
+  it(
+    'manage filters settles on its empty state for a target with none',
+    { timeout: 30_000 },
+    async () => {
+      client.current!.fixtures.set('ManageFilters_SavedFiltersQuery', {
+        __typename: 'Query',
+        organization: {
+          __typename: 'Organization',
+          id: 'organization-1',
+          usageRetentionInDays: 30,
+        },
+        target: null,
+      });
+      at(`${TARGET}/insights/manage-filters`);
+      await screen.findByText('No saved filters');
+      expect(screen.queryByRole('status', { name: 'Loading' })).toBeNull();
     },
   );
 });
 
 describe('insights', () => {
+  beforeEach(() => {
+    client.current = createTestClient(layoutFixtures());
+  });
+
   const INSIGHTS = `${TARGET}/insights`;
   const emptyState = /waiting for your first collected operation/;
 
@@ -597,6 +922,10 @@ describe('insights', () => {
 });
 
 describe('proposals', () => {
+  beforeEach(() => {
+    client.current = createTestClient(layoutFixtures());
+  });
+
   it(
     'reads the permission from the layout, not a document of its own',
     { timeout: 30_000 },
@@ -605,7 +934,31 @@ describe('proposals', () => {
       await screen.findByRole('link', { name: 'Proposals', current: 'page' });
       const seen = client.current!.seen;
       expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
-      expect(seen).not.toContain('TargetProposalsQuery');
+    },
+  );
+});
+
+describe('hover preloading', () => {
+  it(
+    "runs a link's loaders on hover, so the click needs no request",
+    { timeout: 30_000 },
+    async () => {
+      const testClient = createTestClient(new Map([...layoutFixtures(), ...checksFixtures()]));
+      const { router } = renderAtUrl(TARGET, { client: testClient });
+      const link = await screen.findByRole('link', { name: 'Checks' });
+
+      fireEvent.mouseEnter(link);
+
+      await waitFor(() => expect(testClient.seen).toContain('ChecksPageQuery'));
+      expect(router.state.location.pathname).toBe(TARGET);
+      const requests = testClient.seen.length;
+      const preloaded = testClient.requests('ChecksPageQuery');
+      expect(preloaded.map(operation => operation.context.preload)).toEqual([true]);
+
+      fireEvent.click(link);
+
+      await screen.findByText(CHECKS.first[0]);
+      expect(testClient.seen).toHaveLength(requests);
     },
   );
 });

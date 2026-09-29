@@ -27,21 +27,15 @@ vi.mock('@/lib/hooks', async importOriginal => ({
 }));
 
 function renderModal() {
-  const onCreateCDNAccessToken = vi.fn();
   const onClose = vi.fn();
   // A fresh element each time, or React skips the update and never reads the mutation state.
   const element = () => (
     <ToastProvider>
-      <CreateCDNAccessTokenModal
-        open
-        onOpenChangeComplete={() => {}}
-        onCreateCDNAccessToken={onCreateCDNAccessToken}
-        onClose={onClose}
-      />
+      <CreateCDNAccessTokenModal open onOpenChangeComplete={() => {}} onClose={onClose} />
     </ToastProvider>
   );
   const view = render(element());
-  return { ...view, element, onCreateCDNAccessToken, onClose };
+  return { ...view, element, onClose };
 }
 
 const aliasInput = () => screen.getByLabelText('CDN Access Token Alias') as HTMLInputElement;
@@ -72,7 +66,7 @@ describe('CreateCDNAccessTokenModal', () => {
     expect(urql.mutate).not.toHaveBeenCalled();
   });
 
-  it('creates the token for the target, then shows the secret once and reports it', async () => {
+  it('creates the token for the target, then shows the secret once', async () => {
     const result = {
       data: {
         createCdnAccessToken: {
@@ -85,7 +79,7 @@ describe('CreateCDNAccessTokenModal', () => {
       },
     };
     urql.mutate.mockResolvedValue(result);
-    const { rerender, element, onCreateCDNAccessToken } = renderModal();
+    const { rerender, element } = renderModal();
     await submitWith('edge cache');
     expect(urql.mutate).toHaveBeenCalledTimes(1);
     expect(urql.mutate.mock.calls[0][0]).toEqual({
@@ -96,7 +90,6 @@ describe('CreateCDNAccessTokenModal', () => {
     rerender(element());
     expect(screen.getByText('hv2-secret')).toBeTruthy();
     expect(screen.getByText(/store this access token securely/)).toBeTruthy();
-    expect(onCreateCDNAccessToken).toHaveBeenCalledTimes(1);
   });
 
   it('shows the failure in place of the form', async () => {
@@ -104,12 +97,11 @@ describe('CreateCDNAccessTokenModal', () => {
       data: { createCdnAccessToken: { error: { message: 'Alias already taken' }, ok: null } },
     };
     urql.mutate.mockResolvedValue(result);
-    const { rerender, element, onCreateCDNAccessToken } = renderModal();
+    const { rerender, element } = renderModal();
     await submitWith('edge cache');
     urql.mutation.data = result.data;
     rerender(element());
     expect(screen.getByText('Alias already taken')).toBeTruthy();
     expect(screen.getByText('Something went wrong.')).toBeTruthy();
-    expect(onCreateCDNAccessToken).not.toHaveBeenCalled();
   });
 });

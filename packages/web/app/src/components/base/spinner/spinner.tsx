@@ -1,23 +1,28 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { LoaderCircle } from 'lucide-react';
 
-const spinnerVariants = cva(
-  'text-accent shrink-0 animate-spinner-spin [&>path]:animate-spinner-arc',
-  {
-    variants: {
-      size: {
-        /** Beside text: a paging bar, a button label. */
-        sm: 'size-4',
-        default: 'size-6',
-        /** A page or panel that has nothing else to show yet. */
-        lg: 'size-8',
-      },
+const spinnerVariants = cva('shrink-0 animate-spinner-spin [&>path]:animate-spinner-arc', {
+  variants: {
+    size: {
+      /** In an icon's slot, such as a sort header's arrow. */
+      xs: 'size-3',
+      /** Beside text: a paging bar, a button label. */
+      sm: 'size-4',
+      default: 'size-6',
+      /** A page or panel that has nothing else to show yet. */
+      lg: 'size-8',
     },
-    defaultVariants: {
-      size: 'default',
+    tone: {
+      accent: 'text-accent',
+      /** Inside a button: takes the button's text color. */
+      current: '',
     },
   },
-);
+  defaultVariants: {
+    size: 'default',
+    tone: 'accent',
+  },
+});
 
 type SpinnerProps = {
   /** What assistive tech announces; the icon itself is decorative. */
@@ -27,12 +32,13 @@ type SpinnerProps = {
 
 /**
  * Placement is the parent's job. The wrapper is inline so `text-center` on a table cell and
- * `items-center` on a flex row both position it.
+ * `items-center` on a flex row both position it. The label is also sr-only text: live regions announce content, not labels.
  */
 export function Spinner({ label = 'Loading', variants }: SpinnerProps) {
   return (
     <span role="status" aria-label={label} className="inline-flex">
       <LoaderCircle aria-hidden className={spinnerVariants({ ...variants })} />
+      <span className="sr-only">{label}</span>
     </span>
   );
 }

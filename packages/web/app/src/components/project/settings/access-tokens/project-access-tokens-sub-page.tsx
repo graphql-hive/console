@@ -4,6 +4,7 @@ import { Button } from '@/components/base/button/button';
 import { PageLead } from '@/components/base/page-lead';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { SubPageLayout } from '@/components/ui/page-content-layout';
+import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -12,7 +13,7 @@ import { CreateAccessTokenState } from '../../../organization/settings/access-to
 import { CreateProjectAccessTokenSheetContent } from './create-project-access-token-sheet-content';
 import { ProjectAccessTokensTable } from './project-access-tokens-table';
 
-const ProjectAccessTokensSubPage_OrganizationQuery = graphql(`
+export const ProjectAccessTokensSubPage_OrganizationQuery = graphql(`
   query ProjectAccessTokensSubPage_OrganizationQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -40,8 +41,9 @@ export function ProjectAccessTokensSubPage(): React.ReactNode {
       organizationSlug,
       projectSlug,
     },
-    requestPolicy: 'network-only',
   });
+  // The route revalidates on a visit; after a mutation here, the page asks the server itself.
+  const refetch = () => refetchQuery({ requestPolicy: 'network-only' });
   const [createAccessTokenState, setCreateAccessTokenState] = useState<CreateAccessTokenState>(
     CreateAccessTokenState.closed,
   );
@@ -91,7 +93,7 @@ export function ProjectAccessTokensSubPage(): React.ReactNode {
               onSuccess={privateAccessKey => {
                 setCreatedKey(privateAccessKey);
                 setCreateAccessTokenState(CreateAccessTokenState.closed);
-                refetchQuery();
+                refetch();
               }}
             />
           </>
@@ -111,10 +113,19 @@ export function ProjectAccessTokensSubPage(): React.ReactNode {
           onClose={() => setCreatedKey(null)}
         />
 
-        {query.data?.organization?.project?.accessTokens && (
+        {query.error ? (
+          <QueryError
+            organizationSlug={organizationSlug}
+            error={query.error}
+            showLogoutButton={false}
+          />
+        ) : (
           <ProjectAccessTokensTable
-            accessTokens={query.data.organization.project.accessTokens}
-            refetch={refetchQuery}
+            accessTokens={query.data?.organization?.project?.accessTokens ?? null}
+            loading={
+              (query.fetching || query.stale) && !query.data?.organization?.project?.accessTokens
+            }
+            refetch={refetch}
           />
         )}
       </div>

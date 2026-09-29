@@ -30,7 +30,7 @@ const PersonalAccessTokensTable_PersonalAccessTokenConnectionFragment = graphql(
   }
 `);
 
-const PersonalAccessTokensTable_MoreAccessTokensQuery = graphql(`
+export const PersonalAccessTokensTable_MoreAccessTokensQuery = graphql(`
   query PersonalAccessTokensTable_MoreAccessTokensQuery(
     $organizationSlug: String!
     $after: String
@@ -57,7 +57,8 @@ type AccessTokenEdge = DocumentType<
 type AccessTokensTable = {
   accessTokens: FragmentType<
     typeof PersonalAccessTokensTable_PersonalAccessTokenConnectionFragment
-  >;
+  > | null;
+  loading: boolean;
   refetch: () => void;
 };
 
@@ -72,8 +73,8 @@ export function PersonalAccessTokensTable(props: AccessTokensTable) {
   const [deleteAccessTokenId, setDeleteAccessTokenId] = useState<string | null>(null);
   const [detailViewId, setDetailViewId] = useState<string | null>(null);
   const { rows, pagination } = usePagedConnection({
-    edges: accessTokens.edges,
-    pageInfo: accessTokens.pageInfo,
+    edges: accessTokens?.edges ?? [],
+    pageInfo: accessTokens?.pageInfo ?? { hasNextPage: false },
     pageSize: 10,
     loadMore: after =>
       client
@@ -149,6 +150,7 @@ export function PersonalAccessTokensTable(props: AccessTokensTable) {
   return (
     <>
       <DataTable
+        loading={props.loading}
         data={rows}
         columns={columns}
         getRowId={edge => edge.node.id}

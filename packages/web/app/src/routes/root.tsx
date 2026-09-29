@@ -1,4 +1,4 @@
-import { lazy, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { SuperTokensWrapper } from 'supertokens-auth-react';
 import Session from 'supertokens-auth-react/recipe/session';
@@ -53,7 +53,11 @@ function RootComponent() {
               </QueryClientProvider>
             </SuperTokensWrapper>
             {/* eslint-disable-next-line no-process-env */}
-            {process.env.NODE_ENV === 'development' && <LazyTanStackRouterDevtools />}
+            {process.env.NODE_ENV === 'development' && (
+              <Suspense fallback={null}>
+                <LazyTanStackRouterDevtools />
+              </Suspense>
+            )}
           </HelmetProvider>
         </ToastProvider>
       </TooltipProvider>

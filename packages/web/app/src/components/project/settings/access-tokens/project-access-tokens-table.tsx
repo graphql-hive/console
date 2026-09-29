@@ -57,7 +57,10 @@ type AccessTokenEdge = DocumentType<
 >['edges'][number];
 
 type ProjectAccessTokensTable = {
-  accessTokens: FragmentType<typeof ProjectAccessTokensTable_ProjectAccessTokenConnectionFragment>;
+  accessTokens: FragmentType<
+    typeof ProjectAccessTokensTable_ProjectAccessTokenConnectionFragment
+  > | null;
+  loading: boolean;
   refetch: () => void;
 };
 
@@ -72,8 +75,8 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
   const [deleteAccessTokenId, setDeleteAccessTokenId] = useState<string | null>(null);
   const [detailViewId, setDetailViewId] = useState<string | null>(null);
   const { rows, pagination } = usePagedConnection({
-    edges: accessTokens.edges,
-    pageInfo: accessTokens.pageInfo,
+    edges: accessTokens?.edges ?? [],
+    pageInfo: accessTokens?.pageInfo ?? { hasNextPage: false },
     pageSize: 10,
     loadMore: after =>
       client
@@ -150,6 +153,7 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
   return (
     <>
       <DataTable
+        loading={props.loading}
         data={rows}
         columns={columns}
         getRowId={edge => edge.node.id}

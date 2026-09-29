@@ -4,6 +4,8 @@ import { ChartPie, CheckIcon, FileDiffIcon, List, PencilIcon, XIcon } from 'luci
 import { useMutation, useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -17,8 +19,6 @@ import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -51,7 +51,7 @@ enum Tab {
   EDIT = 'edit',
 }
 
-const ProposalQuery = graphql(/* GraphQL  */ `
+export const ProposalQuery = graphql(/* GraphQL  */ `
   query ProposalQuery(
     $id: ID!
     $projectRef: ProjectReferenceInput!
@@ -168,31 +168,35 @@ export function TargetProposalsSinglePage(props: {
   );
 }
 
+// `timestamp` is not a variable of the document: a new value is a new request key, which is how
+// a mutation forces the proposal to reload.
+export function proposalVariables(
+  slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
+  id: string,
+  version?: string,
+  timestamp?: number,
+) {
+  const { organizationSlug, projectSlug } = slugs;
+  return {
+    projectRef: { bySelector: { organizationSlug, projectSlug } },
+    targetRef: { bySelector: slugs },
+    id,
+    version,
+    timestamp,
+  };
+}
+
 const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]) => {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   // fetch main page details
   const [query, refreshProposal] = useQuery({
     query: ProposalQuery,
-    variables: {
-      projectRef: {
-        bySelector: {
-          organizationSlug,
-          projectSlug,
-        },
-      },
-      targetRef: {
-        bySelector: {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-        },
-      },
-      id: props.proposalId,
-      version: props.version,
-      // pass the timestamp to force a refresh when proposals are updated
-      timestamp: props.timestamp,
-    },
-    requestPolicy: 'cache-and-network',
+    variables: proposalVariables(
+      { organizationSlug, projectSlug, targetSlug },
+      props.proposalId,
+      props.version,
+      props.timestamp,
+    ),
   });
 
   // fetch all proposed changes for the selected version
@@ -402,7 +406,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 {props.proposalId ? (
                   `${props.proposalId}`
                 ) : (
-                  <Skeleton className="inline-block h-5 w-[150px]" />
+                  <span className="inline-flex w-[150px] align-middle">
+                    <Skeleton variants={{ size: 'lg', width: 'full' }} />
+                  </span>
                 )}
               </span>
             }
@@ -466,7 +472,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                         },
                       });
                       // @todo use urqlCache to invalidate the proposal and refresh?
-                      refreshProposal();
+                      refreshProposal({ requestPolicy: 'network-only' });
                     }}
                   />
                 </div>

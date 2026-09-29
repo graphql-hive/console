@@ -21,7 +21,6 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql } from '@/gql';
-import { useRedirect } from '@/lib/access/common';
 import { useSlugs, useToggle } from '@/lib/hooks';
 
 function Channels(props: { channels: FragmentType<typeof ChannelsTable_AlertChannelFragment>[] }) {
@@ -135,7 +134,7 @@ function Alerts(props: {
   );
 }
 
-const ProjectAlertsPageQuery = graphql(`
+export const ProjectAlertsPageQuery = graphql(`
   query ProjectAlertsPageQuery($organizationSlug: String!, $projectSlug: String!) {
     project(
       reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
@@ -155,7 +154,6 @@ const ProjectAlertsPageQuery = graphql(`
         ...ChannelsTable_AlertChannelFragment
         ...CreateAlertModal_AlertChannelFragment
       }
-      viewerCanModifyAlerts
     }
   }
 `);
@@ -168,28 +166,9 @@ function AlertsPageContent() {
       organizationSlug,
       projectSlug,
     },
-    requestPolicy: 'cache-and-network',
   });
 
   const currentProject = query.data?.project;
-
-  useRedirect({
-    canAccess: currentProject?.viewerCanModifyAlerts === true,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug',
-        params: {
-          organizationSlug,
-          projectSlug,
-        },
-      });
-    },
-    entity: currentProject,
-  });
-
-  if (query.data?.project?.viewerCanModifyAlerts === false) {
-    return null;
-  }
 
   if (query.error) {
     return (

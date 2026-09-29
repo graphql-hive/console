@@ -12,6 +12,7 @@ import {
 import { availablePresets, buildDateRangeString, Preset } from '@/components/ui/date-range-picker';
 import { parse, resolveRange } from '@/lib/date-math';
 import { subDays } from '@/lib/date-time';
+import { UTCDate } from '@date-fns/utc';
 import { useRouter } from '@tanstack/react-router';
 import { useResetState } from './use-reset-state';
 
@@ -34,51 +35,16 @@ export function useDateRangeController(args: {
     args.range?.from ?? ((('from' in searchParams && searchParams.from) ?? '') as string);
   const toRaw = args.range?.to ?? ((('to' in searchParams && searchParams.to) ?? 'now') as string);
 
-  const [selectedPreset] = useResetState(() => {
-    const preset = availablePresets.find(p => p.range.from === fromRaw && p.range.to === toRaw);
-
-    if (preset) {
-      return preset;
-    }
-
-    const from = parse(fromRaw);
-    const to = parse(toRaw);
-
-    if (!from || !to) {
-      return args.defaultPreset;
-    }
-
-    return {
-      name: `${fromRaw}_${toRaw}`,
-      label: buildDateRangeString({ from, to }),
-      range: { from: fromRaw, to: toRaw },
-    };
-  }, [fromRaw, toRaw]);
+  const [selectedPreset] = useResetState(
+    () => selectPreset({ from: fromRaw, to: toRaw, defaultPreset: args.defaultPreset }),
+    [fromRaw, toRaw],
+  );
 
   const [triggerRefreshCounter, setTriggerRefreshCounter] = useState(0);
-  const [resolved] = useResetState(() => {
-    const parsed = resolveRange(selectedPreset.range);
-
-    const from = new Date(parsed.from);
-    let to = new Date(parsed.to);
-
-    if (from.getTime() === to.getTime()) {
-      to = subSeconds(addHours(to, 24), 1);
-    }
-
-    const resolved = resolveRangeAndResolution({
-      from,
-      to,
-    });
-
-    return {
-      resolution: resolved.resolution,
-      range: {
-        from: formatISO(resolved.range.from),
-        to: formatISO(resolved.range.to),
-      },
-    };
-  }, [selectedPreset.range, triggerRefreshCounter]);
+  const [resolved] = useResetState(
+    () => resolvePeriod(selectedPreset.range),
+    [selectedPreset.range, triggerRefreshCounter],
+  );
 
   return {
     startDate,
@@ -97,9 +63,73 @@ export function useDateRangeController(args: {
     resolvedRange: resolved.range,
     refreshResolvedRange() {
       setTriggerRefreshCounter(c => c + 1);
+      // A loader-backed route reloads its documents; elsewhere this only re-runs the layout loaders.
+      void router.invalidate();
     },
     resolution: resolved.resolution,
   } as const;
+}
+
+type DateRangeArgs = { from?: string; to?: string; defaultPreset: Preset };
+
+/** The preset the URL names, a custom one for a range it spells out, or the default. */
+export function selectPreset(args: DateRangeArgs, now: UTCDate = new UTCDate()): Preset {
+  const fromRaw = args.from ?? '';
+  const toRaw = args.to ?? 'now';
+  const preset = availablePresets.find(p => p.range.from === fromRaw && p.range.to === toRaw);
+  if (preset) {
+    return preset;
+  }
+
+  const from = parse(fromRaw, now);
+  const to = parse(toRaw, now);
+  if (!from || !to) {
+    return args.defaultPreset;
+  }
+
+  return {
+    name: `${fromRaw}_${toRaw}`,
+    label: buildDateRangeString({ from, to }),
+    range: { from: fromRaw, to: toRaw },
+  };
+}
+
+/** A range's period and resolution, as the insights queries take them. */
+export function resolvePeriod(range: Preset['range'], now: UTCDate = new UTCDate()) {
+  const parsed = resolveRange(range, now);
+  const from = new Date(parsed.from);
+  let to = new Date(parsed.to);
+  if (from.getTime() === to.getTime()) {
+    to = subSeconds(addHours(to, 24), 1);
+  }
+
+  const resolved = resolveRangeAndResolution({ from, to }, now);
+  return {
+    resolution: resolved.resolution,
+    range: {
+      from: formatISO(resolved.range.from),
+      to: formatISO(resolved.range.to),
+    },
+  };
+}
+
+/** Both, from the URL's search: what a route loader and the page must agree on. */
+export function resolveDateRange(args: DateRangeArgs, now: UTCDate = new UTCDate()) {
+  const selectedPreset = selectPreset(args, now);
+  return { selectedPreset, ...resolvePeriod(selectedPreset.range, now) };
+}
+
+// The URL's range as a loader returns it and its page reads it.
+export function loaderPeriod(
+  deps: { from?: string; to?: string },
+  defaultPreset: Preset,
+  now?: UTCDate,
+) {
+  const { range: period, resolution } = resolveDateRange(
+    { from: deps.from, to: deps.to, defaultPreset },
+    now,
+  );
+  return { period, resolution };
 }
 
 const maximumResolution = 90;
