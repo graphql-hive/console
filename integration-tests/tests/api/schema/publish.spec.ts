@@ -3926,6 +3926,12 @@ test.concurrent(
         serviceUrl: 'https://api.com/products',
       });
 
+      await pool.query(psql`
+        UPDATE "graphs"
+        SET "is_backfilled" = TRUE
+        WHERE "target_id" = ${target.id}
+      `);
+
       const publishProductsResult = await writeToken
         .publishSchema({
           url: 'https://api.com/nah',
@@ -3996,6 +4002,12 @@ test.concurrent(
         sdl,
         serviceUrl: 'https://api.com/nah',
       });
+
+      await pool.query(psql`
+        UPDATE "graphs"
+        SET "is_backfilled" = TRUE
+        WHERE "target_id" = ${target.id}
+      `);
 
       const newVersionId = (await writeToken.fetchLatestValidSchema())?.latestValidVersion?.id;
 
