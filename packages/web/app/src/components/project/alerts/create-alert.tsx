@@ -5,6 +5,7 @@ import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { AlertType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ALERT_FORM_ID, AlertForm, alertFormSchema, type AlertFormValues } from './alert-form';
 
@@ -46,9 +47,8 @@ export const CreateAlertModal = (props: {
   onOpenChangeComplete?: (open: boolean) => void;
   targets: FragmentType<typeof CreateAlertModal_TargetFragment>[];
   channels: FragmentType<typeof CreateAlertModal_AlertChannelFragment>[];
-  organizationSlug: string;
-  projectSlug: string;
 }): ReactElement => {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const { isOpen, toggleModalOpen } = props;
   const targets = useFragment(CreateAlertModal_TargetFragment, props.targets);
   const channels = useFragment(CreateAlertModal_AlertChannelFragment, props.channels);
@@ -76,8 +76,8 @@ export const CreateAlertModal = (props: {
   async function onSubmit(values: AlertFormValues) {
     const { error, data } = await mutate({
       input: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
+        organizationSlug,
+        projectSlug,
         targetSlug: values.target,
         channelId: values.channel,
         type: values.type,

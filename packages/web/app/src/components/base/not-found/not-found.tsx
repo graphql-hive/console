@@ -71,11 +71,11 @@ export function NotFound({
   const heading = bigHeading ? <p className="mb-3 text-4xl font-medium">{bigHeading}</p> : null;
   const titleEl = <h2 className="text-xl font-medium">{title}</h2>;
   const descriptionEl = description ? (
-    <div className="text-neutral-10 text-sm">{description}</div>
+    <div className="text-fg-secondary text-sm">{description}</div>
   ) : null;
   const backButton = showBackButton ? (
     <div className="mt-2">
-      <Button variant="outline" onClick={router.history.back}>
+      <Button variant="outline" onClick={() => router.history.back()}>
         Go back
       </Button>
     </div>

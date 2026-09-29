@@ -10,6 +10,7 @@ import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
@@ -129,11 +130,8 @@ const tagsCell = (tags: readonly string[] | null | undefined) =>
     <DataTableCell kind="text" value="None" tone="muted" />
   );
 
-export function SchemaContracts(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function SchemaContracts() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [disabledContractId, setDisabledContractId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [overlaySession, setOverlaySession] = useState(0);
@@ -147,9 +145,9 @@ export function SchemaContracts(props: {
     query: SchemaContractsQuery,
     variables: {
       selector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
     },
   });

@@ -1,5 +1,136 @@
 # hive
 
+## 11.16.0
+
+### Minor Changes
+
+- [#8556](https://github.com/graphql-hive/console/pull/8556)
+  [`0961843`](https://github.com/graphql-hive/console/commit/0961843fdac3b2f9ae0e25d05bc48d25d2c63d4d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Report schema check results to the Hive CLI when
+  the GitHub integration is used.
+
+  - `GitHubSchemaCheckSuccess` now has a `valid` field and the stored `schemaCheck`, so the CLI can
+    fail a CI job when a schema check fails, and approve it with `--forceSafe`.
+  - When the GitHub check-run can not be updated after a schema check ran, the error now says that
+    the check ran, instead of saying that the check-run could not be created.
+
+- [#8558](https://github.com/graphql-hive/console/pull/8558)
+  [`cc0119f`](https://github.com/graphql-hive/console/commit/cc0119f0396aa483060d1395c964f7d78f41bcc5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix how schema push and publishing a revision
+  handle repeated pushes, service names, concurrent pushes and expired revisions.
+
+  - Pushing a revision that already exists with the same schema succeeds and extends the revision's
+    expiry, so an unpublished revision stays available for 30 days after its most recent push. A
+    revision that has been published never expires.
+  - Concurrent pushes of the same revision no longer fail with an unexpected error.
+  - A publish whose revision expires and is removed while it is being published now reports that the
+    revision was not found, instead of an unexpected error.
+  - Schema push now rejects invalid service names instead of accepting them and failing when the
+    revision is published. Unlike schema check and publish, this also applies to existing services
+    whose names are no longer valid, so that services can be migrated to the new name format.
+  - Schema push now ignores the service name for single-schema projects, like schema publish does.
+  - Publishing a schema revision without a service name in a Federation or schema stitching project
+    now reports the missing service name, instead of reporting that the revision was not found.
+
+- [#8577](https://github.com/graphql-hive/console/pull/8577)
+  [`a9c60cf`](https://github.com/graphql-hive/console/commit/a9c60cf614993f3f9e9a0adf38e8dac0b38c02cf)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Use redis based rate limiting for email
+  verification and organization invite sending instead of in-memory based rate limiting.
+
+### Patch Changes
+
+- [#8573](https://github.com/graphql-hive/console/pull/8573)
+  [`89f83ab`](https://github.com/graphql-hive/console/commit/89f83abd9b61a0cc83e992f4ec5623b74d8f8d1d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix the Docker `HEALTHCHECK` of the service images.
+  The probe command was never baked into the image, so every service reported healthy right after
+  starting. Containers now become healthy only once their `/_readiness` endpoint responds, which
+  makes `depends_on: service_healthy` and `docker compose up --wait` wait for the services to
+  actually be ready. The `org.opencontainers.image.title`, `version` and `description` labels are
+  now populated as well.
+
+- [#8578](https://github.com/graphql-hive/console/pull/8578)
+  [`e2caad6`](https://github.com/graphql-hive/console/commit/e2caad6a07fcf6238929b9c9767cc4b31fc650ad)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-6vj9-mwq6-2f5v](https://github.com/advisories/GHSA-6vj9-mwq6-2f5v).
+
+- [#8565](https://github.com/graphql-hive/console/pull/8565)
+  [`e30136b`](https://github.com/graphql-hive/console/commit/e30136baac429d2d77992e693b5a02eab5147977)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Preserve all executable definitions when
+  normalizing operation documents for usage reporting.
+
+- [#8544](https://github.com/graphql-hive/console/pull/8544)
+  [`e9d2ff8`](https://github.com/graphql-hive/console/commit/e9d2ff83a511ac32a8955edae8722595bda05103)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Allow schema versions without an action ID and
+  exclude those records from the action ID index.
+
+## 11.15.0
+
+### Minor Changes
+
+- [#8512](https://github.com/graphql-hive/console/pull/8512)
+  [`ab9c3bd`](https://github.com/graphql-hive/console/commit/ab9c3bdbec300703f398f553f989d8472c3be53b)
+  Thanks [@Abhist17](https://github.com/Abhist17)! - Add configurable superadmin access for
+  self-hosted deployments.
+
+  Set `SUPERADMIN_FOREIGN_ORGANIZATION_ACTIONS` to a comma-separated list of actions granted in
+  organizations where a superadmin is not a member (defaults to `*:describe`).
+
+  Set `SUPERADMIN_ORGANIZATION_ID` to an organization UUID to treat its active SCIM-provisioned
+  users as superadmins.
+
+- [#8547](https://github.com/graphql-hive/console/pull/8547)
+  [`b0d4e55`](https://github.com/graphql-hive/console/commit/b0d4e557a438059e06bca83406ab4855f5905710)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Replace MinIO with versitygw in the docker compose
+  files, since MinIO's docker images are no longer published. The S3 data volume moves from
+  `.hive/minio` to `.hive/versitygw`; existing objects are not migrated.
+
+  The S3 credentials the community compose file reads from your `.env` are renamed:
+
+  1. Rename `MINIO_ROOT_USER` to `S3_ROOT_USER`
+  2. Rename `MINIO_ROOT_PASSWORD` to `S3_ROOT_PASSWORD`
+
+  The old names are no longer read, so the S3 service and the server would otherwise start with
+  empty credentials.
+
+### Patch Changes
+
+- [#8536](https://github.com/graphql-hive/console/pull/8536)
+  [`c9328ea`](https://github.com/graphql-hive/console/commit/c9328ea8d833b074c0bb607dc67d2d2fd35d7a50)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Upgrades composition library to
+  `v0.27.0` - adds satisfiability checking for `@fromContext` arguments
+
+- [#8540](https://github.com/graphql-hive/console/pull/8540)
+  [`7f86749`](https://github.com/graphql-hive/console/commit/7f867499c4cf8d9e2efbd51138543581e7813f2a)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix usage-ingestor async inserts being written to
+  ClickHouse one Kafka message at a time instead of batched. ClickHouse enables an adaptive
+  async-insert busy timeout by default; it starts at 50ms and only grows when inserts arrive within
+  50ms of each other, so at the ingestor's insert rate the configured
+  `CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS` was never reached and every INSERT was flushed on its
+  own, creating one part per Kafka message per replica in `operations` and in every rollup fed from
+  it. The adaptive timeout is now disabled so the configured busy timeout is a fixed flush interval.
+  Expect roughly one part per busy timeout per replica per rollup instead of one per message; usage
+  data is buffered in ClickHouse memory for up to that timeout before it is written.
+
+- [#8492](https://github.com/graphql-hive/console/pull/8492)
+  [`466b08e`](https://github.com/graphql-hive/console/commit/466b08edb92540ad5f69f3c911c5b96a308bf0e2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add a metric and a logged payload when the usage
+  ingestor hits a corrupt/unparseable usage report. Previously, the message retried silently forever
+  with no way for an operator to notice a stuck partition.
+
+- [#8539](https://github.com/graphql-hive/console/pull/8539)
+  [`edaee3a`](https://github.com/graphql-hive/console/commit/edaee3a4e947354f96c0dda256bf0cebc65239fc)
+  Thanks [@jdolle](https://github.com/jdolle)! - Clarify the wording of the target picker in the
+  Conditional Breaking Changes settings. The section now explains that checked targets are the
+  source of usage data the threshold is measured against, and includes examples such as checking
+  only the production target on a development target.
+
+- [#8448](https://github.com/graphql-hive/console/pull/8448)
+  [`559f1e3`](https://github.com/graphql-hive/console/commit/559f1e320207fba57a401110bc69c2c01a4c1791)
+  Thanks [@jdolle](https://github.com/jdolle)! - Replace the `ZENDESK_SUBDOMAIN` environment
+  variable with `ZENDESK_BASE_URL`. When `ZENDESK_SUPPORT=1`, set
+  `ZENDESK_BASE_URL=https://<subdomain>.zendesk.com` (a trailing slash is ignored). This allows
+  pointing the support integration at a non-Zendesk host, such as a local mock server.
+
 ## 11.14.2
 
 ### Patch Changes

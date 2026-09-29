@@ -5,7 +5,7 @@ import { Accordion } from '@/components/base/accordion/accordion';
 import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
 import { Select } from '@/components/base/floating/select/select';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList, noSchema, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -13,7 +13,12 @@ import { QueryError } from '@/components/ui/query-error';
 import { GraphQLBlock, GraphQLHighlight } from '@/components/v2/graphql-block';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
-import { Link, useRouter } from '@tanstack/react-router';
+import { useSlugs } from '@/lib/hooks';
+import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
+
+const schemaRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/',
+);
 
 type CompositeSchema = Extract<
   DocumentType<typeof SchemaView_SchemaFragment>,
@@ -42,7 +47,9 @@ function serviceHeader(schema: CompositeSchema) {
       <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>
         {schema.service ?? 'SDL'}
       </div>
-      {schema.url ? <div className="text-neutral-10 text-xs font-normal">{schema.url}</div> : null}
+      {schema.url ? (
+        <div className="text-fg-secondary text-xs font-normal">{schema.url}</div>
+      ) : null}
     </div>
   );
 }
@@ -151,6 +158,7 @@ function SchemaView(props: {
   const project = useFragment(SchemaView_ProjectFragment, props.project);
   const target = useFragment(SchemaView_TargetFragment, props.target);
   const router = useRouter();
+  const navigate = schemaRoute.useNavigate();
   const selectedServiceName =
     'service' in router.latestLocation.search &&
     typeof router.latestLocation.search.service === 'string'
@@ -158,7 +166,7 @@ function SchemaView(props: {
       : null;
 
   const reset = () => {
-    void router.navigate({
+    void navigate({
       search: {},
     });
   };
@@ -203,7 +211,7 @@ function SchemaView(props: {
                 }))}
                 value={selectedServiceName ?? undefined}
                 onValueChange={serviceName => {
-                  void router.navigate({
+                  void navigate({
                     search: { service: serviceName },
                   });
                 }}
@@ -243,34 +251,26 @@ const TargetSchemaPageQuery = graphql(`
   }
 `);
 
-function TargetSchemaPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function TargetSchemaPage() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetSchemaPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   const currentProject = query.data?.project;
   const target = currentProject?.target;
 
   return (
-    <TargetLayout
-      targetSlug={props.targetSlug}
-      projectSlug={props.projectSlug}
-      organizationSlug={props.organizationSlug}
-      page={Page.Schema}
-    >
+    <LayoutContent>
       <div className="flex flex-row items-center justify-between py-6">
         <div>
           <Title>Schema</Title>
@@ -283,9 +283,9 @@ function TargetSchemaPage(props: {
               <Link
                 to="/$organizationSlug/$projectSlug/$targetSlug/explorer/unused"
                 params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                  organizationSlug,
+                  projectSlug,
+                  targetSlug,
                 }}
               />
             }
@@ -299,9 +299,9 @@ function TargetSchemaPage(props: {
               <Link
                 to="/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated"
                 params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                  organizationSlug,
+                  projectSlug,
+                  targetSlug,
                 }}
               />
             }
@@ -315,23 +315,15 @@ function TargetSchemaPage(props: {
           <SchemaView project={currentProject} target={target} />
         ) : null}
       </div>
-    </TargetLayout>
+    </LayoutContent>
   );
 }
 
-export function TargetPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function TargetPage() {
   return (
     <>
       <Meta title="Schema" />
-      <TargetSchemaPage
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-      />
+      <TargetSchemaPage />
     </>
   );
 }

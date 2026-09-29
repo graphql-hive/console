@@ -6,9 +6,6 @@ import { cn } from '@/lib/utils';
 import { ServiceProposalDetails } from './target-proposal-types';
 
 export function TargetProposalSchemaPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   proposalId: string; // @todo pass to proposal for commenting etc
   services: ServiceProposalDetails[];
   reviews: FragmentType<typeof Proposal_ReviewsFragment>;

@@ -36,6 +36,20 @@ async function exec(cmd: string, env?: Record<string, string>) {
   return outout.stdout;
 }
 
+/**
+ * Returns the error output of a CLI command that is expected to fail.
+ * The CLI wraps error messages at the terminal width, so the wrapped lines are joined.
+ */
+export async function cliErrorMessage(command: Promise<unknown>): Promise<string> {
+  const message = await command.then(
+    () => {
+      throw new Error('Expected the CLI command to fail.');
+    },
+    (error: Error) => error.message,
+  );
+  return message.replace(/\s*\n\s*›\s+/g, ' ');
+}
+
 export async function schemaPublish(args: string[]) {
   const registryAddress = await getServiceHost('server', 8082);
   return await exec(
@@ -310,10 +324,14 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       name: string;
       url: string;
       sdl?: string;
+      /** Headers scoped to this service (rendered after this --service, before the next). */
+      headers?: string[];
     }>;
     remote: boolean;
     write?: string;
     useLatestVersion?: boolean;
+    /** Global headers (rendered before the first --service). */
+    headers?: string[];
   }) {
     return dev([
       ...(input.remote
@@ -325,14 +343,16 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
           ]
         : []),
       input.write ? `--write ${input.write}` : '',
+      ...(input.headers ?? []).flatMap(header => ['--header', header]),
       ...(await Promise.all(
-        input.services.map(async ({ name, url, sdl }) => {
+        input.services.map(async ({ name, url, sdl, headers }) => {
           return [
             '--service',
             name,
             '--url',
             url,
             ...(sdl ? ['--schema', await generateTmpFile(sdl, 'graphql')] : []),
+            ...(headers ?? []).flatMap(header => ['--header', header]),
           ].join(' ');
         }),
       )),

@@ -14,6 +14,7 @@ import {
   MetricAlertRuleState,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
@@ -220,7 +221,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
                 <button
                   type="button"
                   aria-label="Destinations"
-                  className="text-neutral-9 hover:text-neutral-11 inline-flex"
+                  className="text-fg-muted hover:text-fg-default inline-flex"
                   // The row opens the rule; a click on the icon only means the popover.
                   onClick={event => event.stopPropagation()}
                 >
@@ -233,10 +234,10 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
                 <div className="space-y-1 text-xs">
                   {channels.map(c => (
                     <div key={c.id} className="flex items-center gap-2">
-                      <span className="text-neutral-10">
+                      <span className="text-fg-secondary">
                         {CHANNEL_TYPE_LABEL[c.type] ?? c.type}
                       </span>
-                      <span className="text-neutral-12 font-mono">{c.detail ?? c.name}</span>
+                      <span className="text-fg font-mono">{c.detail ?? c.name}</span>
                     </div>
                   ))}
                 </div>
@@ -265,10 +266,10 @@ function UsageChip({ used, limit }: { used: number; limit: number }) {
   const ratio = limit > 0 ? used / limit : 0;
   const color =
     used >= limit
-      ? 'border-critical_30 bg-critical_08 text-critical'
+      ? 'border-critical-line bg-critical-tint-subtle text-critical'
       : ratio >= 0.8
-        ? 'border-warning/40 bg-warning/10 text-warning'
-        : 'border-neutral-5 bg-neutral-3 text-neutral-11';
+        ? 'border-warning-line bg-warning-tint text-warning'
+        : 'border-line bg-surface-card text-fg-default';
   const label = `${used} / ${limit} rules`;
   const title =
     used >= limit
@@ -284,12 +285,8 @@ function UsageChip({ used, limit }: { used: number; limit: number }) {
   );
 }
 
-export function TargetAlertsRulesPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
-  const { organizationSlug, projectSlug, targetSlug } = props;
+export function TargetAlertsRulesPage() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const navigate = useNavigate();
 
   const [result] = useQuery({
@@ -342,7 +339,7 @@ export function TargetAlertsRulesPage(props: {
       />
 
       {result.error && !data ? (
-        <div className="flex justify-center py-12 text-sm text-red-500">
+        <div className="text-critical flex justify-center py-12 text-sm">
           Failed to load alert rules: {result.error.message}
         </div>
       ) : result.fetching && !data ? (

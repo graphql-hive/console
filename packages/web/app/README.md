@@ -2,6 +2,10 @@
 
 The Hive application as seen on https://app.graphql-hive.com/.
 
+## Docs
+
+- [Routing](./docs/ROUTER.md): layouts, navigation, redirects and how to add a page.
+
 ## Configuration
 
 The following environment variables configure the application.

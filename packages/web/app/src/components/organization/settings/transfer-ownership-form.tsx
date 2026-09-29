@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from '@/components/base/form/form';
 import { Input } from '@/components/base/input/input';
+import { useSlugs } from '@/lib/hooks';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
 export const TRANSFER_OWNERSHIP_FORM_ID = 'transfer-ownership-form';
@@ -38,8 +39,8 @@ export function TransferOwnershipForm(props: {
   form: UseFormReturn<TransferOwnershipFormValues>;
   onSubmit: (values: TransferOwnershipFormValues) => void | Promise<void>;
   members: readonly TransferableMember[];
-  organizationSlug: string;
 }) {
+  const { organizationSlug } = useSlugs('organization');
   const { form } = props;
   return (
     <Form form={form} onSubmit={props.onSubmit} attrs={{ id: TRANSFER_OWNERSHIP_FORM_ID }}>
@@ -80,7 +81,7 @@ export function TransferOwnershipForm(props: {
           <FormItem>
             <FormLabel
               label="Type the name of this organization to confirm"
-              tooltip={`This organization is named "${props.organizationSlug}".`}
+              tooltip={`This organization is named "${organizationSlug}".`}
             />
             <FormControl>
               <Input autoComplete="off" onSurface="raised" {...field} />

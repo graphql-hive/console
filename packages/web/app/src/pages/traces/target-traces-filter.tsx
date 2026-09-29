@@ -35,7 +35,7 @@ export function FilterLocalSearch(props: { value: string; onChange(value: string
 
 /** A row in a filter group. */
 const filterRowClass = cn(
-  'hover:bg-neutral-5/50 flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm transition-colors',
+  'hover:bg-surface-hover flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm transition-colors',
   focusRing,
 );
 
@@ -178,7 +178,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
         <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />
       )}
       {filteredOptions.length === 0 ? (
-        <div className="text-neutral-8 text-center text-sm">No option available</div>
+        <div className="text-fg-subtle text-center text-sm">No option available</div>
       ) : (
         filteredOptions.map((option, index) => (
           <FilterOption
@@ -194,7 +194,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
             }}
           >
             {option.label === '' ? (
-              <span className="text-neutral-10">{'<unknown>'}</span>
+              <span className="text-fg-secondary">{'<unknown>'}</span>
             ) : (
               option.label
             )}
@@ -240,7 +240,7 @@ function Filter(props: { name: string; changes?: number; onReset(): void; childr
                 type="button"
                 aria-label={`Reset ${props.name} filter`}
                 className={cn(
-                  'hover:bg-neutral-2 text-neutral-10 group ml-auto flex h-6 w-8 items-center justify-center rounded-md px-1 text-xs transition-colors',
+                  'hover:bg-surface-hover text-fg-secondary group ml-auto flex h-6 w-8 items-center justify-center rounded-md px-1 text-xs transition-colors',
                   focusRing,
                 )}
                 onClick={props.onReset}
@@ -319,25 +319,25 @@ export const DurationFilter = memo(
         <div className="space-y-6 p-2">
           <div className="space-y-2">
             <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-400">MIN</label>
+              <label className="text-fg-secondary font-mono text-xs">MIN</label>
               <Input
                 type="number"
                 value={values[0]}
                 onChange={handleMinInputChange}
                 size="compact"
                 mono
-                trailing={<span className="text-neutral-10 font-mono text-xs">ms</span>}
+                trailing={<span className="text-fg-secondary font-mono text-xs">ms</span>}
               />
             </div>
             <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-400">MAX</label>
+              <label className="text-fg-secondary font-mono text-xs">MAX</label>
               <Input
                 type="number"
                 value={values[1]}
                 onChange={handleMaxInputChange}
                 size="compact"
                 mono
-                trailing={<span className="text-neutral-10 font-mono text-xs">ms</span>}
+                trailing={<span className="text-fg-secondary font-mono text-xs">ms</span>}
               />
             </div>
           </div>

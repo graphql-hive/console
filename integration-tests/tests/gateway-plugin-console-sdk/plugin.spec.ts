@@ -11,7 +11,7 @@ import {
   type FieldNode,
 } from 'graphql';
 import { createLogger, createYoga } from 'graphql-yoga';
-import { pollFor, readOperationsStats } from 'testkit/flow';
+import { pollFor, readOperationsStats, waitForExpectations } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
@@ -898,15 +898,21 @@ describe.each(['js', 'rust'] as const)('GraphQL Hive Plugin (%s)', gatewayType =
         },
       },
     });
-    pollFor(async () => {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const period = {
-        from: yesterday.toISOString(),
-        to: new Date().toISOString(),
-      };
-      const stats = await readSchemaCoordinateStats('RootQuery', period);
-      return stats.target?.schemaCoordinateStats.totalResolutions === 1;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const period = {
+      from: yesterday.toISOString(),
+      to: new Date().toISOString(),
+    };
+
+    await waitForExpectations(async () => {
+      const stats = await readSchemaCoordinateStats('Query.product', period);
+      expect(stats.target?.schemaCoordinateStats.totalResolutions).toBe(1);
+      expect(stats.target?.schemaCoordinateStats.totalRequests).toBe(1);
+      expect(stats.target?.schemaCoordinateStats.totalFailures).toBe(0);
     });
+
+    const subgraphStats = await readSchemaCoordinateStats('RootQuery.product', period);
+    expect(subgraphStats.target?.schemaCoordinateStats.totalResolutions).toBe(0);
   });
 });

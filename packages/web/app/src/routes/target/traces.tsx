@@ -1,0 +1,78 @@
+import { useMemo } from 'react';
+import { z } from 'zod';
+import { TargetTracePage } from '@/pages/target-trace';
+import {
+  FilterState,
+  TargetTracesFilterState,
+  TargetTracesPage,
+  TargetTracesSort,
+} from '@/pages/target-traces';
+import { createRoute } from '@tanstack/react-router';
+import { zodValidator } from '@tanstack/zod-adapter';
+import { targetRoute } from './route';
+
+const TargetTracesRouteSearch = z.object({
+  filter: TargetTracesFilterState.optional(),
+  sort: TargetTracesSort.shape.optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+});
+
+export const targetTracesRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'traces',
+  validateSearch: zodValidator(TargetTracesRouteSearch),
+  component: function TargetTracesRoute() {
+    const {
+      filter = {
+        'graphql.client': [],
+        'graphql.errorCode': [],
+        'graphql.kind': [],
+        'graphql.operation': [],
+        'graphql.status': [],
+        'graphql.subgraph': [],
+        'http.host': [],
+        'http.method': [],
+        'http.route': [],
+        'http.status': [],
+        'http.url': [],
+        'trace.id': [],
+        duration: [],
+      } satisfies FilterState,
+      sort = {
+        id: 'timestamp',
+        desc: true,
+      },
+      from,
+      to,
+    } = targetTracesRoute.useSearch();
+
+    const range = useMemo(() => (from && to ? { from, to } : null), [from, to]);
+
+    return <TargetTracesPage sorting={sort} filter={filter} range={range} />;
+  },
+});
+
+const TargetTraceRouteSearchModel = z.object({
+  activeSpanId: z.string().optional(),
+  activeSpanTab: z.string().optional(),
+});
+
+export const targetTraceRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  validateSearch(search) {
+    return TargetTraceRouteSearchModel.parse(search);
+  },
+  path: 'traces/$traceId',
+  component: function TargetTraceRoute() {
+    const { traceId } = targetTraceRoute.useParams();
+    const { activeSpanId, activeSpanTab } = targetTraceRoute.useSearch();
+    return (
+      <TargetTracePage
+        traceId={traceId}
+        activeSpanId={activeSpanId ?? null}
+        activeSpanTab={activeSpanTab ?? null}
+      />
+    );
+  },
+});

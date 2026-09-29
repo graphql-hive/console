@@ -16,15 +16,15 @@ vi.mock('urql', async importOriginal => ({
 }));
 
 // The settings page imports resolve docs links through the env, which jsdom does not carry.
-vi.mock('@/env/frontend', () => ({
-  env: {
-    appBaseUrl: 'http://localhost:3000',
-    graphqlPublicOrigin: 'http://localhost:3001',
-    docsUrl: 'https://the-guild.dev/graphql/hive/docs',
-  },
-}));
+vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
 
 const selector = { organizationSlug: 'acme', projectSlug: 'shop', targetSlug: 'production' };
+
+// The modal reads the current target from the URL; here it renders outside a router.
+vi.mock('@/lib/hooks', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/lib/hooks')>()),
+  useSlugs: () => selector,
+}));
 
 function renderModal() {
   const onCreateCDNAccessToken = vi.fn();
@@ -37,7 +37,6 @@ function renderModal() {
         onOpenChangeComplete={() => {}}
         onCreateCDNAccessToken={onCreateCDNAccessToken}
         onClose={onClose}
-        {...selector}
       />
     </ToastProvider>
   );

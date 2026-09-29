@@ -27,6 +27,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
@@ -239,9 +240,9 @@ const THRESHOLD_TYPE_OPTIONS = [
 ] as const;
 
 const SEVERITIES = [
-  { value: 'INFO' as const, label: 'Info', dotClass: 'bg-blue-400' },
-  { value: 'WARNING' as const, label: 'Warning', dotClass: 'bg-yellow-400' },
-  { value: 'CRITICAL' as const, label: 'Critical', dotClass: 'bg-red-400' },
+  { value: 'INFO' as const, label: 'Info', dotClass: 'bg-info' },
+  { value: 'WARNING' as const, label: 'Warning', dotClass: 'bg-warning' },
+  { value: 'CRITICAL' as const, label: 'Critical', dotClass: 'bg-critical' },
 ];
 
 export const AlertFormSchema = z
@@ -389,9 +390,6 @@ export function ruleToFormDefaults(rule: AlertFormRuleSeed): AlertFormValues {
 }
 
 type AlertFormProps = {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   defaultValues?: AlertFormValues;
   showPreview?: boolean;
   /** When true, the "Advanced settings" accordion is expanded by default. */
@@ -402,9 +400,6 @@ type AlertFormProps = {
 
 export function AlertForm(props: AlertFormProps) {
   const {
-    organizationSlug,
-    projectSlug,
-    targetSlug,
     defaultValues,
     showPreview = false,
     expandAdvanced = false,
@@ -412,6 +407,7 @@ export function AlertForm(props: AlertFormProps) {
     onCancel,
     mode,
   } = props;
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { toast } = useToast();
 
   // Matches the link the workflows notifier builds (buildAlertUrl in
@@ -835,7 +831,7 @@ export function AlertForm(props: AlertFormProps) {
                     )}
                   />
                 </div>
-                <p className="text-neutral-10 text-control">
+                <p className="text-fg-secondary text-control">
                   {isPercentageChange
                     ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. With "${
                         watchedValues.direction === 'BELOW' ? 'a Decrease' : 'an Increase'
@@ -925,7 +921,7 @@ export function AlertForm(props: AlertFormProps) {
                                 tooltip={
                                   <>
                                     Wait for the condition to exist for{' '}
-                                    <span className="text-neutral-12 font-medium">
+                                    <span className="text-fg font-medium">
                                       {field.value || '0'}
                                     </span>{' '}
                                     minutes before firing. Helps prevent false alarms from brief

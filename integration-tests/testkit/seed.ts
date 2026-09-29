@@ -5,6 +5,7 @@ import { createPostgresDatabasePool, psql } from '@hive/postgres';
 import { createRedisClient, type ServiceLogger } from '@hive/service-common';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { authenticate, userEmail } from './auth';
+import { flushAsyncInserts } from './clickhouse';
 import {
   CreateCollectionMutation,
   CreateOperationMutation,
@@ -1288,6 +1289,7 @@ export function initSeed() {
                   const from = formatISO(_from ?? subHours(Date.now(), 1));
                   const to = formatISO(_to ?? Date.now());
                   await waitForExpectations(async () => {
+                    await flushAsyncInserts();
                     const statsResult = await readOperationsStats(
                       {
                         bySelector: {
@@ -1305,6 +1307,8 @@ export function initSeed() {
                     ).then(r => r.expectNoGraphQLErrors());
                     expect(statsResult.target?.operationsStats.totalOperations).toBe(n);
                   });
+                  // the registry insert for the last counted message may have arrived after the flush above
+                  await flushAsyncInserts();
                 },
                 async waitForRequestsCollected(
                   n: number,
@@ -1318,6 +1322,7 @@ export function initSeed() {
                   const to = formatISO(opts?.to ?? Date.now());
 
                   await waitForExpectations(async () => {
+                    await flushAsyncInserts();
                     const statsResult = await readTotalRequests(
                       {
                         bySelector: {
@@ -1334,6 +1339,7 @@ export function initSeed() {
                     ).then(r => r.expectNoGraphQLErrors());
                     expect(statsResult.target?.totalRequests).toBe(n);
                   });
+                  await flushAsyncInserts();
                 },
                 async readOperationsStats(
                   from: string,

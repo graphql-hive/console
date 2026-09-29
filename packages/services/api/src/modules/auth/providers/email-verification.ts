@@ -3,10 +3,11 @@ import bcrypt from 'bcryptjs';
 import { Inject, Injectable } from 'graphql-modules';
 import zod from 'zod';
 import { PostgresDatabasePool, psql, TaggedTemplateLiteralInvocation } from '@hive/postgres';
+import { FastifyRequest } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
 import { HiveError } from '../../../shared/errors';
-import { InMemoryRateLimiter } from '../../shared/providers/in-memory-rate-limiter';
+import { RedisRateLimiter } from '../../shared/providers/redis-rate-limiter';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
 
 const EmailVerificationModelBase = zod.object({
@@ -53,9 +54,9 @@ const emailVerificationFields = (r: TaggedTemplateLiteralInvocation) => psql`
 export class EmailVerification {
   constructor(
     private taskScheduler: TaskScheduler,
-    private rateLimiter: InMemoryRateLimiter,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
     private pool: PostgresDatabasePool,
+    private rateLimiter: RedisRateLimiter,
   ) {}
 
   async checkUserEmailVerified(input: { userIdentityId: string; email: string }) {
@@ -101,7 +102,7 @@ export class EmailVerification {
       userIdentityId: string;
       resend?: boolean;
     },
-    ipAddress: string | null,
+    req: FastifyRequest,
   ): Promise<
     | { ok: true; expiresAt: Date }
     | {
@@ -110,14 +111,8 @@ export class EmailVerification {
         emailAlreadyVerified: boolean;
       }
   > {
-    if (ipAddress) {
-      await this.rateLimiter.check(
-        'sendVerificationEmail',
-        ipAddress,
-        60_000,
-        3,
-        `Exceeded rate limit for sending verification emails.`,
-      );
+    if (await this.rateLimiter.isActionRateLimited(req, 'sendVerificationEmail', 60 * 5, 10)) {
+      throw new HiveError('Exceeded rate limit for sending verification emails.');
     }
 
     const superTokensUser = await this.pool

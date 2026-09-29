@@ -3,6 +3,7 @@ import { CustomProviderConfig } from 'supertokens-auth-react/lib/build/recipe/th
 import SessionReact from 'supertokens-auth-react/recipe/session';
 import ThirdPartyEmailPasswordReact from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import { env } from '@/env/frontend';
+import { isSafeRedirectPath } from '@/lib/route-utils';
 import { appInfo } from '@/lib/supertokens/app-info';
 import {
   createThirdPartyEmailPasswordReactOIDCProvider,
@@ -70,7 +71,10 @@ export const frontendConfig = () => {
         async getRedirectionURL(context) {
           if (context.action === 'SUCCESS') {
             // Allow only local pages to be redirected to
-            if (context.redirectToPath !== undefined && /^\/[^/]+/.test(context.redirectToPath)) {
+            if (
+              context.redirectToPath !== undefined &&
+              isSafeRedirectPath(context.redirectToPath)
+            ) {
               // we are navigating back to where the user was before they authenticated
               return context.redirectToPath;
             }

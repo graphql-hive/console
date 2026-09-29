@@ -30,6 +30,12 @@ const organization = makeFragmentData(
   TransferOrganizationOwnershipModal_OrganizationFragment,
 );
 
+// The form reads the current organization from the URL; here it renders outside a router.
+vi.mock('@/lib/hooks', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/lib/hooks')>()),
+  useSlugs: () => ({ organizationSlug: 'acme' }),
+}));
+
 function renderModal() {
   const toggleModalOpen = vi.fn();
   render(

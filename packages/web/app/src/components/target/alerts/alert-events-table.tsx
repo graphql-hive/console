@@ -15,9 +15,6 @@ export type AlertEventsTableRule = AlertEventDetailRule;
 type AlertEventsTableProps = {
   stateLog: AlertEventRow[];
   rule: AlertEventsTableRule;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   /** Optional — only used by the activity page to type-narrow; unused on detail page */
   ruleType?: MetricAlertRuleType;
 };
@@ -48,28 +45,14 @@ const COLUMNS = [
   }),
 ];
 
-export function AlertEventsTable({
-  stateLog,
-  rule,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-}: AlertEventsTableProps) {
+export function AlertEventsTable({ stateLog, rule }: AlertEventsTableProps) {
   return (
     <DataTable
       data={stateLog}
       columns={COLUMNS}
       getRowId={row => row.id}
       emptyMessage="No state transitions in the selected time range."
-      renderSubComponent={row => (
-        <AlertEventDetail
-          rule={rule}
-          event={row.original}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
-        />
-      )}
+      renderSubComponent={row => <AlertEventDetail rule={rule} event={row.original} />}
     />
   );
 }

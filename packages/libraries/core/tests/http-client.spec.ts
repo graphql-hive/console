@@ -1,4 +1,4 @@
-import { makeFetchCall } from '../src/client/http-client';
+import { HTTPResponseError, makeFetchCall } from '../src/client/http-client';
 import { createHiveTestingLogger, fastFetchError } from './test-utils';
 
 test('HTTP call without retries and system level error', async () => {
@@ -142,4 +142,25 @@ test('HTTP with status 3xx will not be retried with custom "isRequestOk" impleme
     [DBG] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
     [DBG] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 302 (666ms).
   `);
+});
+
+test('HTTP error for an unaccepted status code exposes the status', async () => {
+  const error = await makeFetchCall('https://ap.localhost.noop', {
+    method: 'GET',
+    retry: false,
+    headers: {},
+    logger: createHiveTestingLogger(),
+    fetchImplementation: async () => {
+      return new Response('Forbidden', {
+        status: 403,
+        statusText: 'Forbidden',
+      });
+    },
+  }).then(
+    () => null,
+    error => error,
+  );
+
+  expect(error).toBeInstanceOf(HTTPResponseError);
+  expect(error).toMatchObject({ status: 403, statusText: 'Forbidden' });
 });

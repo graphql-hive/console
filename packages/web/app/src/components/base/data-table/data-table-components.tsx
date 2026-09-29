@@ -48,12 +48,12 @@ function layoutClass(layout: DataTableColumnLayout | undefined) {
 const surface = {
   base: {
     wrapper: 'bg-neutral-1 dark:bg-neutral-2',
-    head: 'bg-neutral-2 dark:bg-neutral-3',
+    head: 'bg-surface-card',
     stripe: 'bg-neutral-2/60 dark:bg-neutral-3/60',
     hover: 'hover:bg-neutral-3 dark:hover:bg-neutral-4',
   },
   raised: {
-    wrapper: 'bg-neutral-2 dark:bg-neutral-3',
+    wrapper: 'bg-surface-card',
     head: 'bg-neutral-3 dark:bg-neutral-4',
     stripe: 'bg-neutral-3/60 dark:bg-neutral-4/60',
     hover: 'hover:bg-neutral-4 dark:hover:bg-neutral-5',
@@ -64,7 +64,7 @@ const surface = {
 export function wrapperClass(onSurface: OnSurface, bordered: boolean) {
   return cn(
     'overflow-hidden rounded-md',
-    bordered && cn('border-neutral-5 border', surface[onSurface].wrapper),
+    bordered && cn('border-line border', surface[onSurface].wrapper),
   );
 }
 
@@ -95,7 +95,7 @@ export function DataTableRow({
   expanded?: boolean;
   /** The row the page is showing details for; brighter than hover so it survives the pointer leaving. */
   selected?: boolean;
-  /** A row that is over, such as a solved ticket: text drops to neutral-10. */
+  /** A row that is over, such as a solved ticket: text drops to fg-secondary. */
   muted?: boolean;
   /** A row that no longer applies, such as a disabled contract: faded, still readable. */
   disabled?: boolean;
@@ -107,16 +107,16 @@ export function DataTableRow({
       data-state={expanded ? 'expanded' : selected ? 'selected' : undefined}
       onClick={onClick}
       className={cn(
-        'border-neutral-5 border-b transition-colors',
+        'border-line border-b transition-colors',
         // Hover means "this row does something": only a clickable or expandable row gets it.
         onClick && surface[onSurface].hover,
         // The critical tint replaces the stripe rather than layering on it.
         striped && !critical && surface[onSurface].stripe,
-        critical && 'bg-critical_08',
+        critical && 'bg-critical-tint-subtle',
         'data-[state=expanded]:bg-neutral-3 data-[state=expanded]:border-b-0',
         'data-[state=selected]:bg-neutral-12/10 dark:data-[state=selected]:bg-neutral-12/10',
         onClick && 'cursor-pointer',
-        muted && 'text-neutral-10',
+        muted && 'text-fg-secondary',
         disabled && 'opacity-40',
       )}
     >
@@ -142,7 +142,7 @@ export function DataTableHead({
   return (
     <th
       className={cn(
-        'text-neutral-10 h-10 whitespace-nowrap px-4 text-left align-middle text-xs font-normal',
+        'text-fg-secondary h-10 whitespace-nowrap px-4 text-left align-middle text-xs font-normal',
         surface[onSurface].head,
         layoutClass(layout),
       )}
@@ -165,9 +165,9 @@ export function DataTableCellSlot({
 }) {
   const className =
     variant === 'compact'
-      ? 'text-neutral-10 h-12 w-10 px-2 align-middle'
+      ? 'text-fg-secondary h-12 w-10 px-2 align-middle'
       : variant === 'empty'
-        ? 'text-neutral-10 h-24 text-center align-middle'
+        ? 'text-fg-secondary h-24 text-center align-middle'
         : variant === 'panel'
           ? 'p-0 align-middle'
           : // Cells keep their content on one line; a `fill` column absorbs the width and a cell
@@ -188,7 +188,7 @@ export function DataTableExpandedRow({
   children: React.ReactNode;
 }) {
   return (
-    <tr className="bg-neutral-3 border-neutral-5 border-b">
+    <tr className="bg-neutral-3 border-line border-b">
       <DataTableCellSlot colSpan={colSpan} variant="panel">
         {children}
       </DataTableCellSlot>
@@ -207,14 +207,14 @@ export function DataTableFooterRow({
 }) {
   return (
     <tfoot>
-      <tr className="border-neutral-5 border-t">
+      <tr className="border-line border-t">
         <td
           colSpan={Math.max(1, columnCount - 1)}
-          className="text-neutral-12 h-12 px-4 align-middle font-medium"
+          className="text-fg h-12 px-4 align-middle font-medium"
         >
           {label}
         </td>
-        <td className="text-neutral-12 h-12 px-4 text-right align-middle font-medium">{value}</td>
+        <td className="text-fg h-12 px-4 text-right align-middle font-medium">{value}</td>
       </tr>
     </tfoot>
   );

@@ -5,6 +5,7 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useTheme } from '@/components/theme/theme-provider';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { Link } from '@tanstack/react-router';
 
 function stringToHue(str: string) {
@@ -30,13 +31,13 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
     <Popover
       trigger={
         <button type="button" aria-label="Supergraph metadata" className="my-[5px]">
-          <MetadataIcon className="text-neutral-12 size-4" />
+          <MetadataIcon className="text-fg size-4" />
         </button>
       }
       openOnHover
       width="auto"
       content={
-        <div className="text-neutral-11 text-xs">
+        <div className="text-fg-default text-xs">
           {props.supergraphMetadata.map((m, i) => (
             <div key={i}>
               <span className="font-bold">{m.name}:</span> {m.content}
@@ -51,20 +52,18 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
 function SubgraphChip(props: {
   text: string;
   tooltip: boolean;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   metadata?: Array<{ name: string; content: string }>;
 }): React.ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { resolvedTheme } = useTheme();
 
   const inner = (
     <Link
       to="/$organizationSlug/$projectSlug/$targetSlug"
       params={{
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       }}
       search={{
         service: props.text,
@@ -114,9 +113,6 @@ const SupergraphMetadataList_SupergraphMetadataFragment = graphql(`
 const DEFAULT_PREVIEW_THRESHOLD = 3;
 
 export function SupergraphMetadataList(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   supergraphMetadata: FragmentType<typeof SupergraphMetadataList_SupergraphMetadataFragment>;
   previewThreshold?: number;
 }) {
@@ -150,9 +146,6 @@ export function SupergraphMetadataList(props: {
           const meta = supergraphMetadata.metadata?.filter(({ source }) => source === serviceName);
           return (
             <SubgraphChip
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
               key={`${serviceName}-${index}`}
               text={serviceName}
               tooltip
@@ -171,9 +164,6 @@ export function SupergraphMetadataList(props: {
           const meta = supergraphMetadata.metadata?.filter(({ source }) => source === serviceName);
           return (
             <SubgraphChip
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
               key={`${serviceName}-${index}`}
               text={serviceName}
               tooltip
@@ -185,9 +175,6 @@ export function SupergraphMetadataList(props: {
         const meta = supergraphMetadata.metadata?.filter(({ source }) => source === serviceName);
         return (
           <SubgraphChip
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
             key={`${serviceName}-${index}`}
             text={serviceName}
             tooltip={false}
@@ -211,17 +198,14 @@ export function SupergraphMetadataList(props: {
       {allItems && (
         <Popover
           trigger={
-            <button
-              type="button"
-              className="text-neutral-12 flex items-center pl-1 text-xs font-bold"
-            >
+            <button type="button" className="text-fg flex items-center pl-1 text-xs font-bold">
               + {allItems.length - previewItems.length} more
             </button>
           }
           openOnHover
           width="auto"
           content={
-            <div className="text-neutral-11 text-xs">
+            <div className="text-fg-default text-xs">
               <div className="mb-2 font-bold">All Subgraphs</div>
               <div className="w-[250px]">
                 <ScrollArea maxHeight="md">

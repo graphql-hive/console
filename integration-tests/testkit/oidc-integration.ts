@@ -124,6 +124,23 @@ const VerifyEmailMutation = graphql(`
   }
 `);
 
+export type SignInUpResult =
+  | { type: 'error'; body: unknown }
+  | {
+      type: 'success';
+      accessToken: string;
+      user: { id: string; email: string; userIdentityId: string };
+    };
+
+export function assertSignInUpSucceeded(
+  result: SignInUpResult,
+  message = 'Expected sign in/up to succeed.',
+): asserts result is Extract<SignInUpResult, { type: 'success' }> {
+  if (result.type !== 'success') {
+    throw new Error(`${message} Server response: ${JSON.stringify(result.body)}`);
+  }
+}
+
 export async function createOIDCIntegration(args: {
   organizationId: string;
   accessToken: string;
@@ -261,7 +278,7 @@ export async function createOIDCIntegration(args: {
             state: urlWithQueryParams.searchParams.get('state') ?? '',
           };
         },
-        async runSignInUp(args: { state: string; code?: string }) {
+        async runSignInUp(args: { state: string; code?: string }): Promise<SignInUpResult> {
           const url = new URL('http://' + apiAddress + '/auth-api/signinup');
           url.searchParams.set('oidc_id', oidcIntegration.id);
 

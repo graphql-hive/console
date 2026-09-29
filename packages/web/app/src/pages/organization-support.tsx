@@ -7,7 +7,7 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { useToast } from '@/components/base/toast/toast';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   NEW_TICKET_FORM_ID,
   NewTicketForm,
@@ -20,7 +20,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -37,12 +37,8 @@ const NewTicketForm_SupportTicketCreateMutation = graphql(`
   }
 `);
 
-function NewTicketSheet(props: {
-  organizationSlug: string;
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: () => void;
-}) {
+function NewTicketSheet(props: { isOpen: boolean; onClose: () => void; onSubmit: () => void }) {
+  const { organizationSlug } = useSlugs('organization');
   const { toast } = useToast();
   const form = useForm<NewTicketFormValues>({
     resolver: zodResolver(NewTicketFormSchema),
@@ -62,7 +58,7 @@ function NewTicketSheet(props: {
     try {
       const result = await mutate({
         input: {
-          organizationSlug: props.organizationSlug,
+          organizationSlug,
           subject: data.subject,
           priority: data.priority,
           description: data.description,
@@ -247,12 +243,7 @@ function Support(props: {
               <PencilIcon className="mr-2 size-4" />
               New ticket
             </Button>
-            <NewTicketSheet
-              isOpen={isOpen}
-              onClose={toggle}
-              organizationSlug={organization.slug}
-              onSubmit={onSubmit}
-            />
+            <NewTicketSheet isOpen={isOpen} onClose={toggle} onSubmit={onSubmit} />
           </div>
         </div>
         <div className="flex flex-col gap-y-4">
@@ -280,11 +271,12 @@ const SupportPageQuery = graphql(`
   }
 `);
 
-function SupportPageContent(props: { organizationSlug: string }) {
+function SupportPageContent() {
+  const { organizationSlug } = useSlugs('organization');
   const [query, refetchQuery] = useQuery({
     query: SupportPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
     },
     requestPolicy: 'cache-first',
   });
@@ -294,29 +286,25 @@ function SupportPageContent(props: { organizationSlug: string }) {
   }, [refetchQuery]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   const currentOrganization = query.data?.organization;
 
   return (
-    <OrganizationLayout
-      page={Page.Support}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
+    <LayoutContent className="flex flex-col gap-y-10">
       {currentOrganization ? (
         <Support organization={currentOrganization} refetch={refetch} />
       ) : null}
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 
-export function OrganizationSupportPage(props: { organizationSlug: string }) {
+export function OrganizationSupportPage() {
   return (
     <>
       <Meta title="Support" />
-      <SupportPageContent organizationSlug={props.organizationSlug} />
+      <SupportPageContent />
     </>
   );
 }

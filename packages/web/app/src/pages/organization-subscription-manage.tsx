@@ -5,7 +5,7 @@ import { Card } from '@/components/base/card/card';
 import { Input } from '@/components/base/input/input';
 import { PageLead } from '@/components/base/page-lead';
 import { Slider } from '@/components/base/slider/slider';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   BillingPaymentMethodForm,
   ManagePaymentMethod,
@@ -20,6 +20,7 @@ import { QueryError } from '@/components/ui/query-error';
 import Stat from '@/components/v2/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { Link } from '@tanstack/react-router';
 
@@ -277,10 +278,7 @@ function Inner(props: {
       return (
         <>
           <div className="my-8 flex flex-row gap-6">
-            <BillingPaymentMethodForm
-              className="w-1/2"
-              onValidationChange={setPaymentDetailsValid}
-            />
+            <BillingPaymentMethodForm onValidationChange={setPaymentDetailsValid} />
             <div className="w-1/2">
               {plan === BillingPlanType.Pro && plan !== organization.plan ? (
                 <div>
@@ -371,14 +369,14 @@ function Inner(props: {
                   <>
                     <div className="my-8 w-1/2">
                       <Heading>Define your reserved volume</Heading>
-                      <p className="text-neutral-10 text-sm">
+                      <p className="text-fg-secondary text-sm">
                         Pro plan requires to defined quota of reported operations.
                       </p>
-                      <p className="text-neutral-10 text-sm">
+                      <p className="text-fg-secondary text-sm">
                         Pick a volume a little higher than you think you'll need to avoid being rate
                         limited.
                       </p>
-                      <p className="text-neutral-10 text-sm">
+                      <p className="text-fg-secondary text-sm">
                         Don't worry, you can always adjust it later.
                       </p>
                       <div className="mt-5 pl-2.5">
@@ -487,7 +485,7 @@ function SubscriptionSlider({
 
       <div className="ml-auto w-48">
         <Input ref={inputRef} value={inputValue} onChange={handleInputChange} onBlur={handleBlur} />
-        {inputError && <div className="mt-1 text-end text-sm text-red-500">{inputError}</div>}
+        {inputError && <div className="text-critical mt-1 text-end text-sm">{inputError}</div>}
       </div>
     </div>
   );
@@ -532,11 +530,12 @@ const ManageSubscriptionPageQuery = graphql(`
   }
 `);
 
-function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
+function ManageSubscriptionPageContent() {
+  const { organizationSlug } = useSlugs('organization');
   const [query] = useQuery({
     query: ManageSubscriptionPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
     },
   });
 
@@ -544,15 +543,11 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
   const billingPlans = query.data?.billingPlans;
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return <QueryError organizationSlug={organizationSlug} error={query.error} />;
   }
 
   return (
-    <OrganizationLayout
-      page={Page.Subscription}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
+    <LayoutContent className="flex flex-col gap-y-10">
       <div className="grow">
         <div className="flex flex-row items-center justify-between py-6">
           <PageLead
@@ -581,18 +576,16 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
           ) : null}
         </div>
       </div>
-    </OrganizationLayout>
+    </LayoutContent>
   );
 }
 
-export function OrganizationSubscriptionManagePage(props: {
-  organizationSlug: string;
-}): ReactElement {
+export function OrganizationSubscriptionManagePage(): ReactElement {
   return (
     <>
       <Meta title="Manage Subscription" />
-      <RenderIfStripeAvailable organizationSlug={props.organizationSlug}>
-        <ManageSubscriptionPageContent organizationSlug={props.organizationSlug} />
+      <RenderIfStripeAvailable>
+        <ManageSubscriptionPageContent />
       </RenderIfStripeAvailable>
     </>
   );

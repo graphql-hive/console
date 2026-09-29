@@ -167,9 +167,6 @@ export const nav: NavPath = 'Base/FormControls/Form/Component Examples';
  *
  * Two forms are not mounted: the metric alert form and the schema policy form run their own
  * queries. The support forms have a preview of their own under Components.
- *
- * History: `ui/form` (the shadcn parts over react-hook-form) on twenty-six files and nine Formik
- * forms with hand-wired fields, until round 7. Every form moved into its own file with a spec.
  */
 
 const ENTRIES = [
@@ -340,14 +337,14 @@ export const Inventory = createPreview({
 
 function Submitted(props: { values: unknown }) {
   return props.values ? (
-    <pre className="text-neutral-11 mt-4 text-xs">{JSON.stringify(props.values, null, 2)}</pre>
+    <pre className="text-fg-default mt-4 text-xs">{JSON.stringify(props.values, null, 2)}</pre>
   ) : null;
 }
 
 /** A slot the page fills with a component that runs its own query. */
 function QueryBacked(props: { name: string }) {
   return (
-    <div className="border-neutral-6 text-neutral-10 rounded-sm border border-dashed p-3 text-xs">
+    <div className="border-line-strong text-fg-secondary rounded-sm border border-dashed p-3 text-xs">
       {props.name} runs its own query, so the page supplies it.
     </div>
   );
@@ -365,9 +362,7 @@ const panelWidth = {
 /** The raised panel a dialog, sheet or card puts the form on, at that overlay's width. */
 function Raised(props: { children: ReactNode; width: keyof typeof panelWidth }) {
   return (
-    <div
-      className={`bg-neutral-3 border-neutral-5 rounded-md border p-6 ${panelWidth[props.width]}`}
-    >
+    <div className={`bg-neutral-3 border-line rounded-md border p-6 ${panelWidth[props.width]}`}>
       {props.children}
     </div>
   );
@@ -748,12 +743,7 @@ function TransferOwnershipExample() {
       note="In a dialog. The confirmation must match the organization slug, which the label's tooltip names."
     >
       <Raised width="dialog-xl">
-        <TransferOwnershipForm
-          form={form}
-          onSubmit={setSubmitted}
-          members={MEMBERS}
-          organizationSlug="the-guild"
-        />
+        <TransferOwnershipForm form={form} onSubmit={setSubmitted} members={MEMBERS} />
         <Submitted values={submitted} />
       </Raised>
     </CallSite>
@@ -1141,7 +1131,7 @@ function DangerousChangesExample() {
           form={form}
           onSubmit={setSubmitted}
           enabled
-          status={<span className="text-neutral-10 text-sm">Saved</span>}
+          status={<span className="text-fg-secondary text-sm">Saved</span>}
         />
         <Submitted values={submitted} />
       </div>

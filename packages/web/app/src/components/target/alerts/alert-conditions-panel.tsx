@@ -14,6 +14,7 @@ import {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
 } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
@@ -115,9 +116,6 @@ export type AlertConditionsPanelProps = {
     updatedAt: string;
     updatedBy?: User;
   };
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   /**
    * Called after the user confirms a delete via the Delete-rule dialog. The
    * page that hosts this panel is responsible for navigation (typically back
@@ -128,17 +126,17 @@ export type AlertConditionsPanelProps = {
 
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
-    <span className="text-neutral-12 text-2xs inline-flex items-center gap-1 font-mono">
+    <span className="text-fg text-2xs inline-flex items-center gap-1 font-mono">
       <TimeAgo date={iso} />
       <Popover
         trigger={
-          <button type="button" aria-label="Exact time" className="text-neutral-10 inline-flex">
+          <button type="button" aria-label="Exact time" className="text-fg-secondary inline-flex">
             <Info className="size-3" />
           </button>
         }
         openOnHover
         width="auto"
-        content={<span className="text-neutral-11 text-xs">{new Date(iso).toUTCString()}</span>}
+        content={<span className="text-fg-default text-xs">{new Date(iso).toUTCString()}</span>}
       />
     </span>
   );
@@ -154,13 +152,8 @@ function UserCell({ user }: { user: User }) {
   );
 }
 
-export function AlertConditionsPanel({
-  rule,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-  onRuleDeleted,
-}: AlertConditionsPanelProps) {
+export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPanelProps) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const metricLabel =
     rule.type === MetricAlertRuleType.Latency && rule.metric
       ? `${rule.metric.toLowerCase()} latency`
@@ -200,7 +193,7 @@ export function AlertConditionsPanel({
       })}
       target="_blank"
       rel="noreferrer"
-      className="text-accent hover:text-accent/80 inline-flex items-center gap-1"
+      className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
     >
       {rule.savedFilter.name}
       <ExternalLink className="size-3" />
@@ -210,8 +203,8 @@ export function AlertConditionsPanel({
   );
 
   return (
-    <div className="border-neutral-5 bg-neutral-2 space-y-6 border-l px-5 py-3">
-      <h2 className="text-neutral-12 mb-2 block text-sm font-semibold">Alert conditions</h2>
+    <div className="border-line bg-surface-card space-y-6 border-l px-5 py-3">
+      <h2 className="text-fg mb-2 block text-sm font-semibold">Alert conditions</h2>
 
       <DescriptionList
         rows={[
@@ -274,53 +267,27 @@ export function AlertConditionsPanel({
         ]}
       />
 
-      <div className="border-neutral-5 flex items-center justify-between border-y py-4">
+      <div className="border-line flex items-center justify-between border-y py-4">
         <span className="flex flex-col gap-0.5">
-          <span className="text-neutral-12 text-sm font-medium">Alert status</span>
-          <span className="text-neutral-10 text-xs">
+          <span className="text-fg text-sm font-medium">Alert status</span>
+          <span className="text-fg-secondary text-xs">
             {rule.enabled
               ? 'Evaluating conditions and sending notifications'
               : "Paused (conditions aren't evaluated)"}
           </span>
         </span>
-        <AlertRuleEnabledToggle
-          ruleId={rule.id}
-          enabled={rule.enabled}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-        />
+        <AlertRuleEnabledToggle ruleId={rule.id} enabled={rule.enabled} />
       </div>
 
       <div className="flex items-center gap-2">
-        <ModifyAlertSheet
-          rule={rule}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
-        />
-        <DeleteRuleButton
-          ruleId={rule.id}
-          ruleName={rule.name}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          onDeleted={onRuleDeleted}
-        />
+        <ModifyAlertSheet rule={rule} />
+        <DeleteRuleButton ruleId={rule.id} ruleName={rule.name} onDeleted={onRuleDeleted} />
       </div>
     </div>
   );
 }
 
-function ModifyAlertSheet({
-  rule,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-}: {
-  rule: AlertConditionsPanelProps['rule'];
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function ModifyAlertSheet({ rule }: { rule: AlertConditionsPanelProps['rule'] }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -334,9 +301,6 @@ function ModifyAlertSheet({
       <AlertForm
         mode="edit"
         ruleId={rule.id}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         defaultValues={ruleToFormDefaults(rule)}
         onSuccess={() => setOpen(false)}
         onCancel={() => setOpen(false)}
@@ -348,14 +312,10 @@ function ModifyAlertSheet({
 function DeleteRuleButton({
   ruleId,
   ruleName,
-  organizationSlug,
-  projectSlug,
   onDeleted,
 }: {
   ruleId: string;
   ruleName: string;
-  organizationSlug: string;
-  projectSlug: string;
   onDeleted?: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -366,8 +326,6 @@ function DeleteRuleButton({
         open={open}
         ruleId={ruleId}
         ruleName={ruleName}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
         onCancel={() => setOpen(false)}
         onConfirm={() => {
           setOpen(false);

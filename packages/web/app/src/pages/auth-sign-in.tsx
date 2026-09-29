@@ -34,7 +34,7 @@ export function SignInButton(props: {
         <Tooltip trigger={props.children} content="You signed in with it last time." side="top" />
         <span
           aria-hidden
-          className="animate-shimmer bg-size-[200%_100%] pointer-events-none absolute inset-0 rounded-sm bg-[linear-gradient(110deg,transparent,30%,hsl(var(--neutral-6)/0.35),70%,transparent)]"
+          className="animate-shimmer bg-size-[200%_100%] pointer-events-none absolute inset-0 rounded-sm bg-[linear-gradient(110deg,transparent,30%,hsl(var(--line-strong)/0.35),70%,transparent)]"
         />
       </span>
     );

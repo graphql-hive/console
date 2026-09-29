@@ -15,6 +15,7 @@ import { CompositionErrorsPopover } from '@/components/target/history/compositio
 import { Heading } from '@/components/ui/heading';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -26,8 +27,8 @@ export function labelize(message: string) {
 }
 
 const severityLevelMapping = {
-  [SeverityLevelType.Safe]: clsx('text-emerald-400'),
-  [SeverityLevelType.Dangerous]: clsx('text-yellow-400'),
+  [SeverityLevelType.Safe]: clsx('text-success'),
+  [SeverityLevelType.Dangerous]: clsx('text-warning'),
 } as Record<SeverityLevelType, string>;
 
 const ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment = graphql(`
@@ -136,10 +137,8 @@ type InsightsTarget = DocumentType<
 export function ChangesBlock(
   props: {
     title?: string | React.ReactElement;
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
-    schemaCheckId: string;
+    /** The check being viewed, when there is one: a schema version shows the same changes without. */
+    schemaCheckId?: string;
     conditionBreakingChangeMetadata?: FragmentType<
       typeof ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment
     > | null;
@@ -156,13 +155,10 @@ export function ChangesBlock(
 ): ReactElement | null {
   return (
     <div>
-      {props.title && <h2 className="text-neutral-10 mb-3 font-bold">{props.title}</h2>}
+      {props.title && <h2 className="text-fg-secondary mb-3 font-bold">{props.title}</h2>}
       <div className="list-inside list-disc space-y-2 text-sm/relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
             schemaCheckId={props.schemaCheckId}
             key={key}
             change={null}
@@ -172,9 +168,6 @@ export function ChangesBlock(
         ))}
         {props.changes?.map((change, key) => (
           <ChangeItem
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
             schemaCheckId={props.schemaCheckId}
             key={key}
             change={change}
@@ -192,10 +185,7 @@ function ChangeItem(
     conditionBreakingChangeMetadata: FragmentType<
       typeof ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment
     > | null;
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
-    schemaCheckId: string;
+    schemaCheckId?: string;
   } & (
     | {
         change: FragmentType<typeof ChangesBlock_SchemaChangeFragment>;
@@ -207,6 +197,7 @@ function ChangeItem(
       }
   ),
 ) {
+  const { organizationSlug, projectSlug } = useSlugs('target');
   const cchange = useFragment(ChangesBlock_SchemaChangeFragment, props.change);
   const cchangeWithUsage = useFragment(
     ChangesBlock_SchemaChangeWithUsageFragment,
@@ -235,9 +226,9 @@ function ChangeItem(
               )}
             >
               <div>
-                <span className="text-neutral-10">{labelize(change.message)}</span>
+                <span className="text-fg-secondary">{labelize(change.message)}</span>
                 {change.isSafeBasedOnUsage && (
-                  <span className="cursor-pointer text-yellow-700 dark:text-yellow-500">
+                  <span className="text-warning cursor-pointer">
                     {' '}
                     <CheckIcon className="inline size-3" /> Safe based on usage data
                   </span>
@@ -245,7 +236,7 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="bg-neutral-5 text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="bg-surface-selected text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
                       <ActivityIcon className="size-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}
@@ -265,7 +256,7 @@ function ChangeItem(
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <>
                     {' '}
-                    <span className="text-neutral-1 inline-flex items-center space-x-1 rounded-sm bg-orange-500 px-2 py-1 align-middle font-bold">
+                    <span className="text-fg-inverse bg-warning inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
                       <BoxIcon className="size-4 stroke-[2px]" />
                       <span className="text-xs">
                         {change.affectedAppDeployments.totalCount}{' '}
@@ -290,24 +281,21 @@ function ChangeItem(
             <div className="pb-4 pt-4">
               {change.approval && (
                 <SchemaChangeApproval
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
                   schemaCheckId={props.schemaCheckId}
                   approval={change.approval}
                 />
               )}
               {'usageStatistics' in change && change.usageStatistics && metadata ? (
                 <div>
-                  <h4 className="text-neutral-12 mb-1 text-sm font-medium">
+                  <h4 className="text-fg mb-1 text-sm font-medium">
                     Affected Operations (based on usage)
                   </h4>
-                  <div className="text-neutral-10 mb-2 flex justify-between text-sm">
+                  <div className="text-fg-secondary mb-2 flex justify-between text-sm">
                     <span>
                       Top 10 operations and clients affected by this change based on usage data.
                     </span>
                     {metadata && (
-                      <span className="text-neutral-11 text-xs">
+                      <span className="text-fg-default text-xs">
                         See{' '}
                         {metadata.settings.targets.map((target, index, arr) => (
                           <>
@@ -320,11 +308,11 @@ function ChangeItem(
                             ) : (
                               <Link
                                 key={index}
-                                className="text-accent_80 hover:text-accent"
+                                className="text-accent-muted hover:text-accent"
                                 to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
                                 params={{
-                                  organizationSlug: props.organizationSlug,
-                                  projectSlug: props.projectSlug,
+                                  organizationSlug,
+                                  projectSlug,
                                   targetSlug: target.target.slug,
                                   coordinate: change.path!.join('.'),
                                 }}
@@ -345,18 +333,14 @@ function ChangeItem(
                     )}
                   </div>
                   <UsageStatisticsPanels
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
                     usageStatistics={change.usageStatistics}
                     targets={metadata.settings.targets}
                   />
-                  {'affectedAppDeployments' in change &&
+                  {props.schemaCheckId &&
+                  'affectedAppDeployments' in change &&
                   change.affectedAppDeployments?.edges?.length ? (
                     <div className="mt-6">
                       <AffectedAppDeploymentsPanel
-                        organizationSlug={props.organizationSlug}
-                        projectSlug={props.projectSlug}
-                        targetSlug={props.targetSlug}
                         schemaCheckId={props.schemaCheckId}
                         coordinate={change.path?.join('.')}
                         connection={change.affectedAppDeployments}
@@ -364,12 +348,10 @@ function ChangeItem(
                     </div>
                   ) : null}
                 </div>
-              ) : 'affectedAppDeployments' in change &&
+              ) : props.schemaCheckId &&
+                'affectedAppDeployments' in change &&
                 change.affectedAppDeployments?.edges?.length ? (
                 <AffectedAppDeploymentsPanel
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
                   schemaCheckId={props.schemaCheckId}
                   coordinate={change.path?.join('.')}
                   connection={change.affectedAppDeployments}
@@ -410,11 +392,10 @@ function trafficColumns<
 }
 
 function UsageStatisticsPanels(props: {
-  organizationSlug: string;
-  projectSlug: string;
   usageStatistics: UsageStatistics;
   targets: InsightsTarget[];
 }) {
+  const { organizationSlug, projectSlug } = useSlugs('target');
   const operationColumns: ColumnDef<AffectedOperation, unknown>[] = [
     {
       id: 'name',
@@ -430,8 +411,8 @@ function UsageStatisticsPanels(props: {
                   link: {
                     to: '/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash' as const,
                     params: {
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
+                      organizationSlug,
+                      projectSlug,
                       targetSlug: target.target.slug,
                       operationName,
                       operationHash: row.original.hash,
@@ -493,19 +474,17 @@ function UsageStatisticsPanels(props: {
 }
 
 function AffectedAppDeploymentsPanel(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   schemaCheckId: string;
   coordinate: string | undefined;
   connection: AffectedDeploymentConnection;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const appVersionLink = (deployment: AffectedDeployment) => ({
     to: '/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion' as const,
     params: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       appName: deployment.name,
       appVersion: deployment.version,
     },
@@ -570,11 +549,11 @@ function AffectedAppDeploymentsPanel(props: {
                 arrow
                 content={
                   <div className="space-y-2">
-                    <h5 className="text-neutral-12 font-medium">Affected Operations</h5>
+                    <h5 className="text-fg font-medium">Affected Operations</h5>
                     <ScrollArea maxHeight="sm">
                       <ul className="space-y-1 text-sm">
                         {deployment.affectedOperations.edges.map(({ node: op }) => (
-                          <li key={op.hash} className="text-neutral-11">
+                          <li key={op.hash} className="text-fg-default">
                             {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
                           </li>
                         ))}
@@ -598,8 +577,8 @@ function AffectedAppDeploymentsPanel(props: {
 
   return (
     <div>
-      <h4 className="text-neutral-12 mb-1 text-sm font-medium">Affected App Deployments</h4>
-      <p className="text-neutral-10 mb-2 text-sm">
+      <h4 className="text-fg mb-1 text-sm font-medium">Affected App Deployments</h4>
+      <p className="text-fg-secondary mb-2 text-sm">
         Top 5 active app deployments that have operations using this schema coordinate (snapshot
         from when the check was run).
       </p>
@@ -613,13 +592,13 @@ function AffectedAppDeploymentsPanel(props: {
         <Link
           to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId/affected-deployments"
           params={{
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
             schemaCheckId: props.schemaCheckId,
           }}
           search={{ coordinate: props.coordinate }}
-          className="mt-2 block text-sm text-orange-500 hover:underline"
+          className="text-warning mt-2 block text-sm hover:underline"
         >
           View all ({props.connection.totalCount}) affected app deployments
         </Link>
@@ -636,7 +615,7 @@ function ApprovedByBadge(props: {
     approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
 
   return (
-    <span className="cursor-pointer text-green-500">
+    <span className="text-success cursor-pointer">
       <CheckIcon className="inline size-3" /> Approved by {approvalName}
     </span>
   );
@@ -644,24 +623,15 @@ function ApprovedByBadge(props: {
 
 function SchemaChangeApproval(props: {
   approval: FragmentType<typeof ChangesBlock_SchemaChangeApprovalFragment>;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  schemaCheckId: string;
+  schemaCheckId?: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const approval = useFragment(ChangesBlock_SchemaChangeApprovalFragment, props.approval);
   const approvalName =
     approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
   const approvalDate = format(new Date(approval.approvedAt), 'do MMMM yyyy');
   const schemaCheckPath =
-    '/' +
-    [
-      props.organizationSlug,
-      props.projectSlug,
-      props.targetSlug,
-      'checks',
-      approval.schemaCheckId,
-    ].join('/');
+    '/' + [organizationSlug, projectSlug, targetSlug, 'checks', approval.schemaCheckId].join('/');
 
   return (
     <div className="mb-3">
@@ -718,7 +688,7 @@ export function CompositionErrorsList(props: {
         <CompositionErrorsPopover />
       </Heading>
       {props.description ? (
-        <p className="text-neutral-11 mb-2 text-sm">{props.description}</p>
+        <p className="text-fg-default mb-2 text-sm">{props.description}</p>
       ) : null}
       <ul>
         {props.errors.map((error, index) => (
@@ -757,10 +727,12 @@ export function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="size-4 text-emerald-500" />
-        <h2 className="text-neutral-12 text-base font-medium">No Graph Changes</h2>
+        <CircleCheckIcon className="text-success size-4" />
+        <h2 className="text-fg text-base font-medium">No Graph Changes</h2>
       </div>
-      <p className="text-neutral-10 text-xs">There are no changes in this graph for this graph.</p>
+      <p className="text-fg-secondary text-xs">
+        There are no changes in this graph for this graph.
+      </p>
     </div>
   );
 }

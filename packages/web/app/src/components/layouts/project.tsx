@@ -6,70 +6,22 @@ import { Button } from '@/components/base/button/button';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { useToast } from '@/components/base/toast/toast';
-import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import {
   CreateTargetForm,
   CreateTargetFormSchema,
   type CreateTargetFormValues,
 } from '@/components/target/create-target-form';
-import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
-import { HiveLink } from '../ui/hive-link';
-import { ProjectSelector } from './project-selector';
+import { ProjectLayoutQuery } from './queries';
 
-export enum Page {
-  Targets = 'targets',
-  Alerts = 'alerts',
-  Settings = 'settings',
-}
-
-const ProjectLayoutQuery = graphql(`
-  query ProjectLayoutQuery($organizationSlug: String!, $projectSlug: String!) {
-    me {
-      id
-      ...UserMenu_MeFragment
-    }
-    organizations {
-      ...ProjectSelector_OrganizationConnectionFragment
-      ...UserMenu_OrganizationConnectionFragment
-    }
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      project: projectBySlug(projectSlug: $projectSlug) {
-        id
-        slug
-        viewerCanModifySchemaPolicy
-        viewerCanCreateTarget
-        viewerCanModifyAlerts
-        viewerCanModifySettings
-        viewerCanManageProjectAccessTokens
-        ...LegacyCompositionWarn_ProjectFragment
-      }
-      ...UserMenu_OrganizationFragment
-    }
-  }
-`);
-
-export function ProjectLayout({
-  children,
-  page,
-  className,
-  organizationSlug,
-  projectSlug,
-}: {
-  page: Page;
-  organizationSlug: string;
-  projectSlug: string;
-  className?: string;
-  children: ReactNode;
-}) {
+export function ProjectLayout({ children }: { children: ReactNode }) {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const params = { organizationSlug, projectSlug };
 
   const [isModalOpen, toggleModalOpen] = useToggle();
@@ -79,7 +31,6 @@ export function ProjectLayout({
     variables: params,
   });
 
-  const me = query.data?.me;
   const currentOrganization = query.data?.organization;
   const currentProject = currentOrganization?.project;
 
@@ -87,23 +38,6 @@ export function ProjectLayout({
 
   return (
     <>
-      <Header>
-        <div className="flex flex-row items-center gap-4">
-          <HiveLink className="size-8" />
-          <ProjectSelector
-            currentOrganizationSlug={organizationSlug}
-            currentProjectSlug={projectSlug}
-            organizations={query.data?.organizations ?? null}
-          />
-        </div>
-        <div>
-          <UserMenu
-            me={me ?? null}
-            currentOrganization={currentOrganization ?? null}
-            organizations={query.data?.organizations ?? null}
-          />
-        </div>
-      </Header>
       {query.fetching === false &&
       query.stale === false &&
       (currentProject === null || currentOrganization === null) ? (
@@ -115,26 +49,23 @@ export function ProjectLayout({
       ) : (
         <>
           <SecondaryNavigation
-            page={page}
             loading={!currentOrganization || !currentProject}
             links={
               currentOrganization && currentProject
                 ? [
                     {
-                      value: Page.Targets,
                       label: 'Targets',
                       to: '/$organizationSlug/$projectSlug',
                       params,
+                      exact: true,
                     },
                     {
-                      value: Page.Alerts,
                       label: 'Alerts',
                       visible: currentProject.viewerCanModifyAlerts,
                       to: '/$organizationSlug/$projectSlug/view/alerts',
                       params,
                     },
                     {
-                      value: Page.Settings,
                       label: 'Settings',
                       visible:
                         currentProject.viewerCanModifySettings ||
@@ -154,22 +85,17 @@ export function ProjectLayout({
                       New target
                     </span>
                   </Button>
-                  <CreateTargetModal
-                    organizationSlug={organizationSlug}
-                    projectSlug={projectSlug}
-                    isOpen={isModalOpen}
-                    toggleModalOpen={toggleModalOpen}
-                  />
+                  <CreateTargetModal isOpen={isModalOpen} toggleModalOpen={toggleModalOpen} />
                 </>
               ) : null
             }
           />
-          <div className="min-h-(--content-height) container pb-7">
-            {currentProject ? (
-              <LegacyCompositionWarn organizationSlug={organizationSlug} project={currentProject} />
-            ) : null}
-            <div className={className}>{children}</div>
-          </div>
+          {currentProject ? (
+            <div className="container">
+              <LegacyCompositionWarn project={currentProject} />
+            </div>
+          ) : null}
+          {children}
         </>
       )}
     </>
@@ -188,6 +114,9 @@ export const CreateTarget_CreateTargetMutation = graphql(`
         createdTarget {
           id
           slug
+          project {
+            id
+          }
         }
       }
       error {
@@ -200,13 +129,8 @@ export const CreateTarget_CreateTargetMutation = graphql(`
   }
 `);
 
-function CreateTargetModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-}) {
-  const { organizationSlug, projectSlug } = props;
+function CreateTargetModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const [_, mutate] = useMutation(CreateTarget_CreateTargetMutation);
   const router = useRouter();
   const { toast } = useToast();
@@ -224,8 +148,8 @@ function CreateTargetModal(props: {
       input: {
         project: {
           bySelector: {
-            projectSlug: props.projectSlug,
-            organizationSlug: props.organizationSlug,
+            projectSlug,
+            organizationSlug,
           },
         },
         slug: values.targetSlug,

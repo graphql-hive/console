@@ -1,4 +1,5 @@
-import { concatAST, parse, print, stripIgnoredCharacters } from 'graphql';
+import { statSync } from 'node:fs';
+import { concatAST, GraphQLError, parse, print, stripIgnoredCharacters } from 'graphql';
 import { LegacyLogger } from '@graphql-hive/core/typings/client/types';
 import { CodeFileLoader } from '@graphql-tools/code-file-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
@@ -9,7 +10,15 @@ import type { BaseLoaderOptions, Loader, Source } from '@graphql-tools/utils';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { FragmentType, graphql, useFragment as unmaskFragment, useFragment } from '../gql';
 import { SeverityLevelType } from '../gql/graphql';
-import { APIError, IntrospectionError, InvalidFederationSubgraphError } from './errors';
+import {
+  APIError,
+  HiveCLIError,
+  IntrospectionError,
+  InvalidFederationSubgraphError,
+  InvalidSDLError,
+  SchemaFileEmptyError,
+  SchemaFileNotFoundError,
+} from './errors';
 import { graphqlRequest } from './graphql-request';
 import { Texture } from './texture/texture';
 
@@ -200,6 +209,70 @@ export async function loadSchema(
   return print(concatAST(sources.map(s => s.document!)));
 }
 
+/**
+ * Load the SDL of a schema file, glob or URL, and report failures with the matching CLI error:
+ * a missing file, an empty file and invalid SDL each have their own error code.
+ */
+export async function loadSchemaSdl(
+  pointer: string,
+  options: {
+    logger: LegacyLogger;
+    headers?: Record<string, string>;
+    httpLoadingIntent?: Parameters<typeof loadSchema>[0];
+  },
+): Promise<string> {
+  const { httpLoadingIntent = 'first-federation-then-graphql-introspection', ...loadOptions } =
+    options;
+  let rawSdl: string;
+  try {
+    rawSdl = await loadSchema(httpLoadingIntent, pointer, loadOptions);
+  } catch (error) {
+    if (error instanceof HiveCLIError) {
+      throw error;
+    }
+    if (isUrlPointer(pointer)) {
+      throw new SchemaFileNotFoundError(pointer, error instanceof Error ? error : String(error));
+    }
+    if (error instanceof GraphQLError) {
+      throw new InvalidSDLError(error);
+    }
+    if (error instanceof Error && error.name === 'NoTypeDefinitionsFound') {
+      if (isExistingFile(pointer)) {
+        throw new SchemaFileEmptyError(pointer);
+      }
+      if (isPlainFilePath(pointer)) {
+        throw new SchemaFileNotFoundError(pointer, 'The file does not exist.');
+      }
+    }
+    throw new SchemaFileNotFoundError(pointer, error instanceof Error ? error : String(error));
+  }
+
+  if (rawSdl.trim().length === 0) {
+    throw new SchemaFileEmptyError(pointer);
+  }
+
+  return rawSdl;
+}
+
+export function isUrlPointer(pointer: string): boolean {
+  return /^https?:\/\//.test(pointer);
+}
+
+function isPlainFilePath(pointer: string): boolean {
+  return !isUrlPointer(pointer) && !/[*?{}[\]!]/.test(pointer);
+}
+
+function isExistingFile(pointer: string): boolean {
+  if (!isPlainFilePath(pointer)) {
+    return false;
+  }
+  try {
+    return statSync(pointer).isFile();
+  } catch {
+    return false;
+  }
+}
+
 export function minifySchema(schema: string): string {
   return stripIgnoredCharacters(schema);
 }
@@ -282,7 +355,7 @@ class FederationSubgraphIntrospectionThenGraphQLIntrospectionUrlLoader implement
         // otherwise, raise an introspection error because some unknown error happened during introspection.
         // this may be unintuitive, but we don't want to raise an API Error since users may believe our API is the one at fault.
         // We'd rather nudge them to look into their service's behavior.
-        throw new IntrospectionError();
+        throw new IntrospectionError(pointer);
       }
     }
 

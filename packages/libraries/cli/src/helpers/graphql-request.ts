@@ -3,13 +3,17 @@ import { http } from '@graphql-hive/core';
 import { LegacyLogger } from '@graphql-hive/core/typings/client/types';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import {
+  AccessDeniedError,
   APIError,
   HTTPError,
   IntrospectionError,
   InvalidRegistryTokenError,
   isAggregateError,
+  isTimeoutError,
   MissingArgumentsError,
   NetworkError,
+  RequestTimeoutError,
+  UnsupportedServerError,
 } from './errors';
 
 export function graphqlRequest(config: {
@@ -17,6 +21,8 @@ export function graphqlRequest(config: {
   additionalHeaders?: Record<string, string>;
   version?: string;
   logger?: LegacyLogger;
+  /** Map errors returned by the Hive registry API, and timeouts, to dedicated CLI errors. */
+  isHiveRegistry?: boolean;
 }) {
   const requestHeaders = {
     'Content-Type': 'application/json',
@@ -54,6 +60,12 @@ export function graphqlRequest(config: {
           },
         );
       } catch (e: any) {
+        if (typeof e?.status === 'number') {
+          throw new HTTPError(config.endpoint, e.status, e.statusText || e.message);
+        }
+        if (config.isHiveRegistry && isTimeoutError(e)) {
+          throw new RequestTimeoutError(config.endpoint, e?.cause ?? e);
+        }
         const sourceError = e?.cause ?? e;
         if (isAggregateError(sourceError)) {
           throw new NetworkError(sourceError.errors[0]?.message);
@@ -85,24 +97,17 @@ export function graphqlRequest(config: {
       if (jsonData.errors && jsonData.errors.length > 0) {
         config.logger?.debug?.(jsonData.errors.map(String).join('\n'));
 
-        if (jsonData.errors[0].extensions?.code === 'ERR_MISSING_TARGET') {
-          throw new MissingArgumentsError([
-            'target',
-            'The target on which the action is performed.' +
-              ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
-              ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
-          ]);
-        }
-        if (jsonData.errors[0].message === 'Invalid token provided') {
-          throw new InvalidRegistryTokenError();
-        }
-        if (isIntrospectionDisabledError(jsonData.errors[0])) {
-          throw new IntrospectionError();
+        const requestId = cleanRequestId(response?.headers?.get('x-request-id'));
+
+        if (config.isHiveRegistry) {
+          throwRegistryError(config.endpoint, jsonData.errors, requestId);
+        } else if (isIntrospectionDisabledError(jsonData.errors[0])) {
+          throw new IntrospectionError(config.endpoint);
         }
 
         throw new APIError(
           jsonData.errors.map(e => e.message).join('\n'),
-          cleanRequestId(response?.headers?.get('x-request-id')),
+          requestId,
           jsonData.errors,
         );
       }
@@ -110,6 +115,76 @@ export function graphqlRequest(config: {
       return jsonData.data!;
     },
   };
+}
+
+const missingPermissionPattern = /Missing permission for performing '([^']+)'/;
+
+/** GraphQL validation errors caused by the server not knowing a field, argument, input field or type the CLI sends. */
+const unsupportedByServerPatterns = [
+  /^Cannot query field "[^"]+" on type "[^"]+"\./,
+  /^Unknown argument "[^"]+" on field "[^"]+"\./,
+  /^Unknown type "[^"]+"\./,
+  /^Variable "\$[^"]+" got invalid value [\s\S]*; Field "[^"]+" is not defined by type "[^"]+"\./,
+];
+/** Reported alongside "Unknown type" when a variable of that type exists. */
+const unusedVariablePattern = /^Variable "\$[^"]+" is never used/;
+
+function isUnsupportedByServer(errors: ReadonlyArray<GraphQLError>): boolean {
+  return (
+    errors.some(error =>
+      unsupportedByServerPatterns.some(pattern => pattern.test(error.message)),
+    ) &&
+    errors.every(
+      error =>
+        unusedVariablePattern.test(error.message) ||
+        unsupportedByServerPatterns.some(pattern => pattern.test(error.message)),
+    )
+  );
+}
+
+/**
+ * Hive registry API errors that have a dedicated CLI error.
+ * The registry reports authentication failures either as "Invalid token provided" (access tokens)
+ * or with the UNAUTHENTICATED / NEEDS_REFRESH codes (session tokens),
+ * and authorization failures with the UNAUTHORISED code.
+ */
+function throwRegistryError(
+  endpoint: string,
+  errors: ReadonlyArray<GraphQLError>,
+  requestId: string | undefined,
+): void {
+  if (errors.some(error => error.extensions?.code === 'ERR_MISSING_TARGET')) {
+    throw new MissingArgumentsError([
+      'target',
+      'The target on which the action is performed.' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    ]);
+  }
+
+  if (
+    errors.some(
+      error =>
+        error.message === 'Invalid token provided' ||
+        error.extensions?.code === 'UNAUTHENTICATED' ||
+        error.extensions?.code === 'NEEDS_REFRESH',
+    )
+  ) {
+    throw new InvalidRegistryTokenError();
+  }
+
+  const accessError = errors.find(error => error.extensions?.code === 'UNAUTHORISED');
+  if (accessError) {
+    throw new AccessDeniedError(
+      accessError.message,
+      accessError.message.match(missingPermissionPattern)?.[1] ?? null,
+      requestId,
+    );
+  }
+
+  if (isUnsupportedByServer(errors)) {
+    throw new UnsupportedServerError(endpoint, errors);
+  }
 }
 
 export function cleanRequestId(requestId?: string | null) {

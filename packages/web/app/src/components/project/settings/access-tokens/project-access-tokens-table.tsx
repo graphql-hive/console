@@ -5,7 +5,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DeleteAccessTokenConfirmationDialog } from '@/components/organization/settings/access-tokens/delete-access-token-confirmation-dialog';
 import { TokenExpiration } from '@/components/organization/settings/access-tokens/token-expiration';
 import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';
-import { usePagedConnection } from '@/lib/hooks';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ProjectAccessTokenDetailViewSheet } from './project-access-token-detail-view-sheet';
 
@@ -57,13 +57,12 @@ type AccessTokenEdge = DocumentType<
 >['edges'][number];
 
 type ProjectAccessTokensTable = {
-  organizationSlug: string;
-  projectSlug: string;
   accessTokens: FragmentType<typeof ProjectAccessTokensTable_ProjectAccessTokenConnectionFragment>;
   refetch: () => void;
 };
 
 export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const accessTokens = useFragment(
     ProjectAccessTokensTable_ProjectAccessTokenConnectionFragment,
     props.accessTokens,
@@ -79,8 +78,8 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
     loadMore: after =>
       client
         .query(ProjectAccessTokensTable_MoreAccessTokensQuery, {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
+          organizationSlug,
+          projectSlug,
           after,
         })
         .toPromise(),
@@ -168,8 +167,6 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
       />
       <ProjectAccessTokenDetailViewSheet
         open={detailViewId !== null}
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
         accessTokenId={detailViewId}
         onClose={() => setDetailViewId(null)}
       />

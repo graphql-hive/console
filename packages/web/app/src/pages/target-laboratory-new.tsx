@@ -6,7 +6,7 @@ import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { useTheme } from '@/components/theme/theme-provider';
 import { DocsLink } from '@/components/ui/docs-note';
@@ -15,7 +15,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useRedirect } from '@/lib/access/common';
-import { useLocalStorage, useToggle } from '@/lib/hooks';
+import { useLayoutQuery, useLocalStorage, useSlugs, useToggle } from '@/lib/hooks';
 import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use-current-operation';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
@@ -111,7 +111,6 @@ export const LaboratoryQuery = graphql(`
       }
       ...LaboratoryPreflightScriptTargetFragment
       viewerCanModifyLaboratory
-      viewerCanViewLaboratory
     }
   }
 `);
@@ -312,19 +311,15 @@ export const UpdatePreflightScriptMutation = graphql(`
   }
 `);
 
-function useLaboratoryState(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  defaultEndpoint: string | null;
-}) {
+function useLaboratoryState() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [{ data, fetching: dataFetching }] = useQuery({
     query: LaboratoryQuery,
     variables: {
       selector: {
-        targetSlug: props.targetSlug,
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
+        targetSlug,
+        organizationSlug,
+        projectSlug,
       },
     },
   });
@@ -380,9 +375,9 @@ function useLaboratoryState(props: {
       throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
         void mutateUpdate({
           selector: {
-            targetSlug: props.targetSlug,
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
+            targetSlug,
+            organizationSlug,
+            projectSlug,
           },
           input: {
             operationId: operation.id,
@@ -394,7 +389,7 @@ function useLaboratoryState(props: {
           },
         });
       }, 1000),
-    [mutateUpdate, props.targetSlug, props.organizationSlug, props.projectSlug],
+    [mutateUpdate, targetSlug, organizationSlug, projectSlug],
   );
 
   const [, mutateCreate] = useMutation(CreateOperationMutation);
@@ -404,9 +399,9 @@ function useLaboratoryState(props: {
       throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
         void mutateCreate({
           selector: {
-            targetSlug: props.targetSlug,
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
+            targetSlug,
+            organizationSlug,
+            projectSlug,
           },
           input: {
             collectionId: collection.id,
@@ -417,7 +412,7 @@ function useLaboratoryState(props: {
           },
         });
       }, 1000),
-    [mutateCreate, props.targetSlug, props.organizationSlug, props.projectSlug],
+    [mutateCreate, targetSlug, organizationSlug, projectSlug],
   );
 
   const [, mutateDelete] = useMutation(DeleteOperationMutation);
@@ -427,14 +422,14 @@ function useLaboratoryState(props: {
       throttle((_collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
         void mutateDelete({
           selector: {
-            targetSlug: props.targetSlug,
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
+            targetSlug,
+            organizationSlug,
+            projectSlug,
           },
           id: operation.id,
         });
       }, 1000),
-    [mutateDelete, props.targetSlug, props.organizationSlug, props.projectSlug],
+    [mutateDelete, targetSlug, organizationSlug, projectSlug],
   );
 
   const [, mutateDeleteCollection] = useMutation(DeleteCollectionMutation);
@@ -443,14 +438,14 @@ function useLaboratoryState(props: {
       throttle((collection: LaboratoryCollection) => {
         void mutateDeleteCollection({
           selector: {
-            targetSlug: props.targetSlug,
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
+            targetSlug,
+            organizationSlug,
+            projectSlug,
           },
           id: collection.id,
         });
       }, 1000),
-    [mutateDeleteCollection, props.targetSlug, props.organizationSlug, props.projectSlug],
+    [mutateDeleteCollection, targetSlug, organizationSlug, projectSlug],
   );
 
   const [, mutateAddCollection] = useMutation(CreateCollectionMutation);
@@ -460,9 +455,9 @@ function useLaboratoryState(props: {
       throttle((collection: LaboratoryCollection) => {
         void mutateAddCollection({
           selector: {
-            targetSlug: props.targetSlug,
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
+            targetSlug,
+            organizationSlug,
+            projectSlug,
           },
           input: {
             name: collection.name,
@@ -470,7 +465,7 @@ function useLaboratoryState(props: {
           },
         });
       }, 1000),
-    [mutateAddCollection, props.targetSlug, props.organizationSlug, props.projectSlug],
+    [mutateAddCollection, targetSlug, organizationSlug, projectSlug],
   );
 
   const [, mutateUpdateCollection] = useMutation(UpdateCollectionMutation);
@@ -479,9 +474,9 @@ function useLaboratoryState(props: {
       throttle((collection: LaboratoryCollection) => {
         void mutateUpdateCollection({
           selector: {
-            targetSlug: props.targetSlug,
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
+            targetSlug,
+            organizationSlug,
+            projectSlug,
           },
           input: {
             collectionId: collection.id,
@@ -490,7 +485,7 @@ function useLaboratoryState(props: {
           },
         });
       }, 1000),
-    [mutateUpdateCollection, props.targetSlug, props.organizationSlug, props.projectSlug],
+    [mutateUpdateCollection, targetSlug, organizationSlug, projectSlug],
   );
 
   const [, mutateUpdatePreflight] = useMutation(UpdatePreflightScriptMutation);
@@ -501,22 +496,22 @@ function useLaboratoryState(props: {
         void mutateUpdatePreflight({
           input: {
             selector: {
-              targetSlug: props.targetSlug,
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
+              targetSlug,
+              organizationSlug,
+              projectSlug,
             },
             sourceCode: preflight.script,
           },
         });
       }, 1000),
-    [mutateUpdatePreflight, props.targetSlug, props.organizationSlug, props.projectSlug],
+    [mutateUpdatePreflight, targetSlug, organizationSlug, projectSlug],
   );
 
   const { currentOperation, fetching: currentOperationFetching } =
     useCurrentOperationWithFetchingState({
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     });
 
   const router = useRouter();
@@ -708,19 +703,17 @@ function useLaboratoryState(props: {
 }
 
 function LaboratoryPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   selectedOperationId?: string;
   defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
   onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
 
@@ -728,35 +721,31 @@ function LaboratoryPageContent(props: {
     query.data?.target?.graphqlEndpointUrl ?? null,
   );
 
-  const mockEndpoint = `${location.origin}/api/lab/${props.organizationSlug}/${props.projectSlug}/${props.targetSlug}`;
+  const mockEndpoint = `${location.origin}/api/lab/${organizationSlug}/${projectSlug}/${targetSlug}`;
 
   const url =
     (actualSelectedApiEndpoint === 'linkedApi'
       ? query.data?.target?.graphqlEndpointUrl
       : undefined) ?? mockEndpoint;
 
-  const laboratoryState = useLaboratoryState({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
-    defaultEndpoint: url ?? null,
-  });
+  const laboratoryState = useLaboratoryState();
 
   const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
 
+  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
   useRedirect({
-    canAccess: query.data?.target?.viewerCanViewLaboratory === true,
+    canAccess: layoutTarget?.viewerCanViewLaboratory === true,
     redirectTo: router => {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
       });
     },
-    entity: query.data?.target,
+    entity: layoutTarget,
   });
 
   const { resolvedTheme } = useTheme();
@@ -795,7 +784,7 @@ function LaboratoryPageContent(props: {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Title>Laboratory</Title>
-              <div className="bg-neutral-5 h-4 w-px" />
+              <div className="bg-line h-4 w-px" />
               <ToggleGroup
                 aria-label="Laboratory version"
                 value={props.defaultLaboratoryTab}
@@ -829,11 +818,10 @@ function LaboratoryPageContent(props: {
                 <RouterLink
                   to="/$organizationSlug/$projectSlug/$targetSlug/settings"
                   params={{
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
+                    organizationSlug,
+                    projectSlug,
+                    targetSlug,
                   }}
-                  search={{ page: 'general' }}
                 >
                   <Button variant="outline" size="compact">
                     Connect GraphQL API Endpoint
@@ -879,9 +867,9 @@ function LaboratoryPageContent(props: {
             {...laboratoryState}
             plugins={[
               TargetEnvPlugin({
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
               }),
             ]}
           />
@@ -892,9 +880,6 @@ function LaboratoryPageContent(props: {
 }
 
 export function TargetLaboratoryPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   selectedOperationId: string | undefined;
   defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
   onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
@@ -929,20 +914,14 @@ export function TargetLaboratoryPage(props: {
           </Button>
         }
       >
-        <p className="text-neutral-11 text-sm">
+        <p className="text-fg-default text-sm">
           You always can switch to the old GraphiQL based Laboratory by using the tab switcher in
           the top left cornder.
         </p>
       </Dialog>
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Laboratory}
-        className="h-(--content-height) flex flex-col pb-0"
-      >
+      <LayoutContent className="h-(--content-height) flex flex-col pb-0">
         <LaboratoryPageContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }

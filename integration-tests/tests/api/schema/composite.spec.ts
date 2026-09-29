@@ -278,9 +278,7 @@ describe('Federation projects support @oneOf directive natively', () => {
   test('check', async () => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, target, fetchVersions } = await createProject(
-      ProjectType.Federation,
-    );
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
     const { publishSchema, checkSchema } = await createTargetAccessToken({});
     const serviceA = /* GraphQL */ `
       type Query {

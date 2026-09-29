@@ -7,6 +7,7 @@ import { useToast } from '@/components/base/toast/toast';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ExternalCompositionForm,
@@ -77,13 +78,8 @@ enum TestState {
   SUCCESS,
 }
 
-const ExternalCompositionStatus = ({
-  projectSlug,
-  organizationSlug,
-}: {
-  projectSlug: string;
-  organizationSlug: string;
-}) => {
+const ExternalCompositionStatus = () => {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const [{ data, error: gqlError, fetching }, executeTestQuery] = useQuery({
     query: ExternalCompositionStatus_TestQuery,
     variables: {
@@ -126,7 +122,7 @@ const ExternalCompositionStatus = ({
           trigger={
             <span className="inline-flex">
               <RefreshCw
-                className="text-neutral-10 size-5 animate-spin cursor-default"
+                className="text-fg-secondary size-5 animate-spin cursor-default"
                 onClick={e => e.preventDefault()}
               />
             </span>
@@ -158,7 +154,10 @@ const ExternalCompositionStatus = ({
           defaultOpen
           trigger={
             <span className="inline-flex">
-              <X className="size-5 cursor-default text-red-500" onClick={e => e.preventDefault()} />
+              <X
+                className="text-critical size-5 cursor-default"
+                onClick={e => e.preventDefault()}
+              />
             </span>
           }
           content={error}
@@ -171,7 +170,7 @@ const ExternalCompositionStatus = ({
           trigger={
             <span className="inline-flex">
               <Check
-                className="size-5 cursor-default text-green-500"
+                className="text-success size-5 cursor-default"
                 onClick={e => e.preventDefault()}
               />
             </span>
@@ -288,7 +287,7 @@ export const ExternalCompositionSettings = (props: {
   return (
     <div className="flex flex-col items-start gap-y-6">
       <div>
-        <p className="text-neutral-10 max-w-2xl text-sm">
+        <p className="text-fg-secondary max-w-2xl text-sm">
           For advanced users, you can configure an endpoint for external schema compositions. This
           can be used to implement custom composition logic.
         </p>
@@ -302,12 +301,7 @@ export const ExternalCompositionSettings = (props: {
           form={form}
           onSubmit={onSubmit}
           endpointStatus={
-            project.externalSchemaComposition?.endpoint ? (
-              <ExternalCompositionStatus
-                projectSlug={project.slug}
-                organizationSlug={organization.slug}
-              />
-            ) : null
+            project.externalSchemaComposition?.endpoint ? <ExternalCompositionStatus /> : null
           }
           error={error}
           submitLabel={

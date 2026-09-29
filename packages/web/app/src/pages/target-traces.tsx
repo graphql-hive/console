@@ -12,6 +12,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { DescriptionList } from '@/components/base/description-list/description-list';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ChartConfig,
   ChartContainer,
@@ -20,19 +21,24 @@ import {
 } from '@/components/ui/chart';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DateRangePicker, Preset, presetLast7Days } from '@/components/ui/date-range-picker';
+import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
-import { usePagedConnection } from '@/lib/hooks';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
-import { Link, useNavigate, useParams, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
 import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
+
+const tracesRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces',
+);
 
 const chartConfig = {
   ok: {
@@ -100,7 +106,7 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
     [isSelecting],
   );
 
-  const navigate = useNavigate();
+  const navigate = tracesRoute.useNavigate();
 
   // Handle mouse up event to end selection
   const handleMouseUp = useCallback(() => {
@@ -184,7 +190,12 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
         {/*TODO: hide this if there is no filter declared */}
         <Bar stackId="all" dataKey="remaining" fill="rgba(170,175,180,0.1)" name="Filtered out" />
         {refAreaLeft && refAreaRight && (
-          <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="white" fillOpacity={0.2} />
+          <ReferenceArea
+            x1={refAreaLeft}
+            x2={refAreaRight}
+            fill="var(--color-fg)"
+            fillOpacity={0.1}
+          />
         )}
       </BarChart>
     </ChartContainer>
@@ -241,12 +252,10 @@ const TracesList = memo(function TracesList(
     pagination: DataTablePaginationProp;
   },
 ) {
-  const router = useRouter();
+  const navigate = tracesRoute.useNavigate();
   const data = useFragment(TracesList_Trace, props.traces);
 
-  const targetRef = useParams({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces',
-  });
+  const targetRef = tracesRoute.useParams();
 
   const rows = useMemo(() => [...data], [data]);
 
@@ -261,7 +270,7 @@ const TracesList = memo(function TracesList(
             mono
             label={row.original.id.substring(0, 8)}
             link={{
-              to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+              to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
               params: {
                 organizationSlug: targetRef.organizationSlug,
                 projectSlug: targetRef.projectSlug,
@@ -351,11 +360,11 @@ const TracesList = memo(function TracesList(
                 maxWidth="md"
                 trigger={
                   <span className="inline-flex items-center gap-2">
-                    <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 text-xs uppercase">
+                    <span className="bg-surface-card text-fg-secondary inline-flex items-center rounded-sm px-1 py-0.5 text-xs uppercase">
                       {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                     </span>
                     {row.original.operationName ?? (
-                      <span className="text-neutral-10">{'<unknown>'}</span>
+                      <span className="text-fg-secondary">{'<unknown>'}</span>
                     )}
                   </span>
                 }
@@ -482,7 +491,7 @@ const TracesList = memo(function TracesList(
           if (!next) {
             return;
           }
-          void router.navigate({
+          void navigate({
             search(params) {
               return { ...params, sort: next as SortState };
             },
@@ -549,12 +558,13 @@ function Filters(
 
   // Stores the update handlers in a ref to prevent unnecessary re-renders
   const router = useRouter();
+  const navigate = tracesRoute.useNavigate();
   const updateHandlersRef = useRef(new Map<FilterKeys, (value: any) => void>());
   const updateFilter = useCallback(
     <$Key extends FilterKeys>(key: $Key): ((value: FilterState[$Key]) => void) => {
       if (!updateHandlersRef.current.has(key)) {
         const handler = (value: FilterState[$Key]) => {
-          void router.navigate({
+          void navigate({
             search(params) {
               return {
                 ...params,
@@ -574,7 +584,7 @@ function Filters(
   );
 
   const resetFilters = () => {
-    void router.navigate({
+    void navigate({
       search(params) {
         return {
           ...params,
@@ -608,7 +618,7 @@ function Filters(
 
   return (
     <>
-      <div className="text-neutral-12 flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium">
+      <div className="text-fg flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium">
         <div>Filters</div>
         {hasChanges ? (
           <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
@@ -629,7 +639,7 @@ function Filters(
         options={filterOptions['graphql.status'].map(option => ({
           ...option,
           label: (
-            <LabelWithColor className={option.value === 'ok' ? 'bg-green-600' : 'bg-red-600'}>
+            <LabelWithColor className={option.value === 'ok' ? 'bg-success' : 'bg-critical'}>
               {option.label}
             </LabelWithColor>
           ),
@@ -643,7 +653,7 @@ function Filters(
         name="Error Code"
         options={filterOptions['graphql.errorCode'].map(option => ({
           ...option,
-          label: <LabelWithColor className="bg-red-600">{option.label}</LabelWithColor>,
+          label: <LabelWithColor className="bg-critical">{option.label}</LabelWithColor>,
         }))}
         selectedValues={filterSelector('graphql.errorCode')}
         onChange={updateFilter('graphql.errorCode')}
@@ -722,9 +732,6 @@ function Filters(
 type SelectedTraceSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   /** Null until a trace has been selected. */
   traceId: string | null;
 };
@@ -746,13 +753,14 @@ const SelectedTraceSheetQuery = graphql(`
 `);
 
 function SelectedTraceSheet(props: SelectedTraceSheetProps) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [queryResult] = useQuery({
     query: SelectedTraceSheetQuery,
     variables: {
       targetSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
       traceId: props.traceId ?? '',
     },
@@ -770,8 +778,8 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
       title={
         trace ? (
           <>
-            {trace.operationName ?? <span className="text-neutral-10">{'<unknown>'}</span>}
-            <span className="text-neutral-10 ml-2 font-mono font-normal">
+            {trace.operationName ?? <span className="text-fg-secondary">{'<unknown>'}</span>}
+            <span className="text-fg-secondary ml-2 font-mono font-normal">
               {trace.id.substring(0, 4)}
             </span>
           </>
@@ -793,18 +801,18 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
         </>
       }
     >
-      <div className="border-neutral-5 flex items-center gap-3 border-b px-6 pb-4 text-xs">
+      <div className="border-line flex items-center gap-3 border-b px-6 pb-4 text-xs">
         {trace ? (
           <>
             <div className="flex items-center gap-1">
-              <Clock className="text-neutral-10 size-3" />
-              <span className="text-neutral-11">{formatNanoseconds(BigInt(trace.duration))}</span>
+              <Clock className="text-fg-secondary size-3" />
+              <span className="text-fg-default">{formatNanoseconds(BigInt(trace.duration))}</span>
             </div>
             <Badge
               content={trace.success ? 'Ok' : 'Error'}
               variants={{ variant: trace.success ? 'success' : 'critical' }}
             />
-            <span className="text-neutral-11 font-mono uppercase">
+            <span className="text-fg-default font-mono uppercase">
               {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
             </span>
           </>
@@ -818,11 +826,11 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
               size="compact"
               render={
                 <Link
-                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                   params={{
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
+                    organizationSlug,
+                    projectSlug,
+                    targetSlug,
                     traceId: props.traceId,
                   }}
                 />
@@ -834,16 +842,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           </div>
         ) : null}
       </div>
-      {trace && (
-        <ImportedTraceSheet
-          activeSpanId={null}
-          activeSpanTab={null}
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          trace={trace}
-        />
-      )}
+      {trace && <ImportedTraceSheet activeSpanId={null} activeSpanTab={null} trace={trace} />}
     </Sheet>
   );
 }
@@ -947,15 +946,29 @@ const TargetTracesFetchMoreTracesQuery = graphql(`
   }
 `);
 
-export function TargetTracesPageContent(
+export function TargetTracesPage(
   props: SortProps &
     FilterProps & {
       range: Preset['range'] | null;
     },
 ) {
-  const targetRef = useParams({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/traces',
-  });
+  return (
+    <>
+      <Meta title="Traces" />
+      <LayoutContent>
+        <TargetTracesPageContent {...props} />
+      </LayoutContent>
+    </>
+  );
+}
+
+function TargetTracesPageContent(
+  props: SortProps &
+    FilterProps & {
+      range: Preset['range'] | null;
+    },
+) {
+  const targetRef = tracesRoute.useParams();
 
   const dateRangeController = useDateRangeController({
     // TODO: ressolve retention from account
@@ -1169,7 +1182,7 @@ export function TargetTracesPageContent(
         }
       />
       <div className="mt-4 flex min-h-svh w-full">
-        <aside className="text-neutral-11 sticky top-4 flex h-full w-64 flex-col">
+        <aside className="text-fg-default sticky top-4 flex h-full w-64 flex-col">
           <div className="flex min-h-0 flex-1 flex-col gap-2">
             <Filters filter={props.filter} options={filterOptions} />
           </div>
@@ -1197,9 +1210,6 @@ export function TargetTracesPageContent(
             setSelectedTraceId(null);
           }
         }}
-        organizationSlug={targetRef.organizationSlug}
-        projectSlug={targetRef.projectSlug}
-        targetSlug={targetRef.targetSlug}
         traceId={sheetTraceId}
       />
     </div>

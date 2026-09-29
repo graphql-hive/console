@@ -20,13 +20,7 @@ vi.mock('urql', async importOriginal => ({
 }));
 
 // The settings page imports resolve docs links through the env, which jsdom does not carry.
-vi.mock('@/env/frontend', () => ({
-  env: {
-    appBaseUrl: 'http://localhost:3000',
-    graphqlPublicOrigin: 'http://localhost:3001',
-    docsUrl: 'https://the-guild.dev/graphql/hive/docs',
-  },
-}));
+vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
 
 const target = makeFragmentData(
   {

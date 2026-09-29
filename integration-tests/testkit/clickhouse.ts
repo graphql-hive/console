@@ -33,6 +33,12 @@ export async function clickHouseQuery<T>(query: string): Promise<{
   return response.json();
 }
 
+// The ingestor writes operations and the operation registry as separate async inserts that flush on
+// independent timers, so a read that follows a visible count can still miss the registry rows.
+export async function flushAsyncInserts(): Promise<void> {
+  await clickHouseInsert('SYSTEM FLUSH ASYNC INSERT QUEUE');
+}
+
 export async function clickHouseInsert<T>(query: string): Promise<void> {
   const clickhouseAddress = await getServiceHost('clickhouse', 8123);
   const url = new URL(`http://${clickhouseAddress}`);

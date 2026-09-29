@@ -14,7 +14,7 @@ import { graphql } from '@/gql';
 import { HiveStripeWrapper } from '@/lib/billing/stripe';
 import { Link, useRouter } from '@tanstack/react-router';
 
-const JoinOrganizationPage_JoinOrganizationMutation = graphql(`
+export const JoinOrganizationPage_JoinOrganizationMutation = graphql(`
   mutation JoinOrganizationPage_JoinOrganizationMutation($code: String!) {
     joinOrganization(code: $code) {
       __typename
@@ -128,7 +128,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
               <LogOutIcon className="mr-2 size-4" /> Sign out
             </Button>
           </div>
-          <Link href="/" className="absolute left-6 top-6">
+          <Link to="/" className="absolute left-6 top-6">
             <HiveLogo className="size-10" />
           </Link>
           <div className="container md:w-3/5 lg:w-1/2">
@@ -141,7 +141,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
 
                 if (invitation.__typename === 'OrganizationInvitationError') {
                   return (
-                    <div className="bg-neutral-1">
+                    <div className="bg-surface-inset">
                       <Card
                         variants={{ onSurface: 'raised', titleSize: 'large' }}
                         title="Invitation Error"
@@ -158,7 +158,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                 }
 
                 return (
-                  <div className="bg-neutral-1">
+                  <div className="bg-surface-inset">
                     <Card
                       variants={{ onSurface: 'raised', titleSize: 'large' }}
                       title={`Join "${invitation.name}" organization`}
@@ -167,7 +167,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                         You've been invited to become a member of{' '}
                         <span className="font-semibold">{invitation.name}</span>.
                       </p>
-                      <p className="text-neutral-10 mt-2">
+                      <p className="text-fg-secondary mt-2">
                         By accepting the invitation, you will be able to collaborate with other
                         members of this organization.
                       </p>

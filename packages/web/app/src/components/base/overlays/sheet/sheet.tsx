@@ -47,10 +47,6 @@ export type SheetProps = {
    * tree or a tab strip over a list. It gets the remaining height as a flex column.
    */
   padding?: 'default' | 'none';
-  /** The × in the corner. */
-  closeButton?: boolean;
-  /** Clicking the backdrop closes the sheet. Off for a form a stray click would lose. */
-  dismissible?: boolean;
   attrs?: Record<string, string>;
 };
 
@@ -66,8 +62,6 @@ export function Sheet({
   footer,
   width = 'md',
   padding = 'default',
-  closeButton = true,
-  dismissible = true,
   attrs,
 }: SheetProps) {
   // See Dialog: base menus, selects and tooltips inside the sheet render their popups into it.
@@ -79,21 +73,20 @@ export function Sheet({
       defaultOpen={defaultOpen}
       onOpenChange={onOpenChange}
       onOpenChangeComplete={onOpenChangeComplete}
-      disablePointerDismissal={!dismissible}
     >
       {trigger ? <BaseDialog.Trigger render={trigger as ReactElement} /> : null}
       <BaseDialog.Portal>
         <BaseDialog.Backdrop className={backdropClass} />
         <BaseDialog.Popup className={cn(popupClass, widthClass[width])} {...attrs}>
           <FloatingPortalContainerProvider container={portalMount}>
-            <OverlayHeader title={title} description={description} clearCloseButton={closeButton} />
+            <OverlayHeader title={title} description={description} clearCloseButton />
             {children != null ? (
               <OverlayBody padding={padding} padBottom={footer == null && padding === 'default'}>
                 {children}
               </OverlayBody>
             ) : null}
             {footer != null ? <OverlayFooter>{footer}</OverlayFooter> : null}
-            {closeButton ? <OverlayCloseButton /> : null}
+            <OverlayCloseButton />
           </FloatingPortalContainerProvider>
           <OverlayPortalMount mountRef={setPortalMount} />
         </BaseDialog.Popup>

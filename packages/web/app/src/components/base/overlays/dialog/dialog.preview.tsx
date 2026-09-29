@@ -8,8 +8,7 @@ export const nav: NavPath = 'Base/Overlays/Dialog';
 
 /**
  * A centred modal with a title, an optional description, a body that scrolls once the dialog
- * reaches the viewport height, and a right-aligned footer. Replaces `ui/dialog` and `v2/modal`,
- * which were the same Radix dialog dressed two ways.
+ * reaches the viewport height, and a right-aligned footer.
  *
  * Every preview opens from a button, since a dialog rendered open cannot show its backdrop, its
  * focus trap or its way out.
@@ -55,7 +54,7 @@ export const Default = createPreview(() => {
   );
 });
 
-/** The four widths. `md` is the default and the most common legacy width. */
+/** The four widths. `md` is the default. */
 export const Widths = createPreview(() => (
   <div className="flex flex-wrap gap-3">
     {(['sm', 'md', 'lg', 'xl'] as const).map(width => (
@@ -67,7 +66,7 @@ export const Widths = createPreview(() => (
         description="The dialog is full width below this width's max-width and never wider than it."
         footer={<Button variant="primary">Done</Button>}
       >
-        <p className="text-neutral-11 text-sm">
+        <p className="text-fg-default text-sm">
           Contracts, delete confirmations and most forms sit at md. Role editors and the OIDC debug
           view need xl.
         </p>
@@ -99,7 +98,7 @@ export const LongContent = createPreview(() => (
   >
     <div className="flex flex-col gap-3 text-sm">
       {Array.from({ length: 24 }, (_, i) => (
-        <p key={i} className="text-neutral-11">
+        <p key={i} className="text-fg-default">
           Line {i + 1}: lab.environment.set('token', await fetch('/auth').then(r =&gt; r.text()))
         </p>
       ))}

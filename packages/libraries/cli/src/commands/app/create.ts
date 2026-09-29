@@ -8,6 +8,7 @@ import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
   InvalidTargetError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
 } from '../../helpers/errors';
@@ -65,8 +66,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
         description: AppCreate.flags['registry.endpoint'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingEndpointError();
+      throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
     }
 
     try {
@@ -77,8 +77,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
         description: AppCreate.flags['registry.accessToken'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingRegistryTokenError();
+      throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
     }
 
     let target: GraphQLSchema.TargetReferenceInput | null = null;
@@ -118,7 +117,12 @@ export default class AppCreate extends Command<typeof AppCreate> {
     });
 
     if (result.createAppDeployment.error) {
-      throw new APIError(result.createAppDeployment.error.message);
+      const { message, details } = result.createAppDeployment.error;
+      const reasons = [
+        details?.appName ? `--name: ${details.appName}` : null,
+        details?.appVersion ? `--version: ${details.appVersion}` : null,
+      ].filter(Boolean);
+      throw new APIError(reasons.length ? `${message}\n${reasons.join('\n')}` : message);
     }
 
     if (!result.createAppDeployment.ok) {
@@ -243,6 +247,10 @@ const CreateAppDeploymentMutation = graphql(/* GraphQL */ `
       }
       error {
         message
+        details {
+          appName
+          appVersion
+        }
       }
     }
   }

@@ -1,6 +1,7 @@
 import { useMutation } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 
 export const DeleteAlertsButton_DeleteAlertsMutation = graphql(`
   mutation DeleteAlertsButton_DeleteAlertsMutation($input: DeleteAlertsInput!) {
@@ -20,14 +21,11 @@ export const DeleteAlertsButton_DeleteAlertsMutation = graphql(`
 export function DeleteAlertsButton({
   selected,
   onSuccess,
-  organizationSlug,
-  projectSlug,
 }: {
   selected: string[];
   onSuccess(): void;
-  organizationSlug: string;
-  projectSlug: string;
 }) {
+  const { organizationSlug, projectSlug } = useSlugs('project');
   const [mutation, mutate] = useMutation(DeleteAlertsButton_DeleteAlertsMutation);
 
   return (

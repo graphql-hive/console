@@ -1,5 +1,5 @@
 import { ProjectType } from 'testkit/gql/graphql';
-import { schemaPublish, schemaPush } from '../../testkit/cli';
+import { cliErrorMessage, schemaPublish, schemaPush } from '../../testkit/cli';
 import { initSeed } from '../../testkit/seed';
 
 test('schema:publish requires a file or revision', async ({ expect }) => {
@@ -142,7 +142,30 @@ describe.each([
         'fixtures/init-schema.graphql',
       ]);
 
-      const conflictingPush = schemaPush([
+      const conflictMessage = await cliErrorMessage(
+        schemaPush([
+          '--registry.accessToken',
+          secret,
+          '--target',
+          target.id,
+          '--revision',
+          revision,
+          ...serviceArgs,
+          'fixtures/nonbreaking-schema.graphql',
+        ]),
+      );
+      expect(conflictMessage).toContain(
+        `Revision rejected by the server: Revision '${identifier}' already exists with a different schema.`,
+      );
+      expect(conflictMessage).toContain('[115]');
+    });
+
+    test.concurrent('pushing the same revision again succeeds', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { target, createTargetAccessToken } = await createProject(projectType);
+      const { secret } = await createTargetAccessToken({ mode: 'readWrite' });
+      const pushArgs = [
         '--registry.accessToken',
         secret,
         '--target',
@@ -150,11 +173,51 @@ describe.each([
         '--revision',
         revision,
         ...serviceArgs,
-        'fixtures/nonbreaking-schema.graphql',
-      ]);
-      await expect(conflictingPush).rejects.toThrow(`Revision '${identifier}' already exists`);
-      await expect(conflictingPush).rejects.toThrow('with a different');
-      await expect(conflictingPush).rejects.toThrow('schema.');
+        'fixtures/init-schema.graphql',
+      ];
+
+      await expect(schemaPush(pushArgs)).resolves.toContain('Schema revision pushed.');
+
+      const repeatedPush = await schemaPush(pushArgs);
+      expect(repeatedPush).toContain('Schema revision pushed.');
+      expect(repeatedPush).toContain(`Revision: ${revision}`);
+      expect(repeatedPush).toContain('Expires:');
     });
   },
 );
+
+test('schema:publish --revision without --service reports the missing service', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target, createTargetAccessToken } = await createProject(ProjectType.Federation);
+  const { secret } = await createTargetAccessToken({ mode: 'readWrite' });
+
+  await schemaPush([
+    '--registry.accessToken',
+    secret,
+    '--target',
+    target.id,
+    '--revision',
+    'v1',
+    '--service',
+    'products',
+    'fixtures/init-schema.graphql',
+  ]);
+
+  const publish = schemaPublish([
+    '--registry.accessToken',
+    secret,
+    '--target',
+    target.id,
+    '--author',
+    'HiveCLI',
+    '--commit',
+    'v1',
+    '--revision',
+    'v1',
+  ]);
+  await expect(publish).rejects.toThrow('Missing service name');
+  await expect(publish).rejects.toThrow('[302]');
+});

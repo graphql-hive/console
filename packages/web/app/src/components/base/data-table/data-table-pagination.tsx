@@ -9,14 +9,13 @@ export type DataTablePaginationProps = {
   onPageChange: (page: number) => void;
 };
 
-const barClass =
-  'border-neutral-4 bg-neutral-2 dark:bg-neutral-3 flex h-9 w-full items-center border-t text-sm';
+const barClass = 'border-line-subtle bg-surface-card flex h-9 w-full items-center border-t text-sm';
 
 const arrowClass =
-  'text-neutral-10 hover:text-neutral-12 disabled:hover:text-neutral-10 inline-flex size-8 items-center justify-center rounded-md transition-colors disabled:opacity-40';
+  'text-fg-secondary hover:text-fg disabled:hover:text-fg-secondary inline-flex size-8 items-center justify-center rounded-md transition-colors disabled:opacity-40';
 
 const wordClass =
-  'text-neutral-10 hover:text-neutral-12 disabled:hover:text-neutral-10 inline-flex h-8 items-center rounded-md px-2 text-xs transition-colors disabled:opacity-40';
+  'text-fg-secondary hover:text-fg disabled:hover:text-fg-secondary inline-flex h-8 items-center rounded-md px-2 text-xs transition-colors disabled:opacity-40';
 
 /**
  * First, previous, next and last with the page position between them and a field to jump to a
@@ -65,7 +64,7 @@ export function DataTablePagination({
       >
         <ChevronLeft className="size-4" />
       </button>
-      <span className="text-neutral-12 px-2 font-mono text-xs tabular-nums" aria-live="polite">
+      <span className="text-fg px-2 font-mono text-xs tabular-nums" aria-live="polite">
         {pageIndex + 1} / {pageCount}
       </span>
       <button
@@ -85,7 +84,7 @@ export function DataTablePagination({
       >
         Last
       </button>
-      <label className="text-neutral-10 ml-4 inline-flex items-center gap-2 text-xs">
+      <label className="text-fg-secondary ml-4 inline-flex items-center gap-2 text-xs">
         Go to
         <Input
           size="compact"
@@ -134,7 +133,7 @@ export function DataTableCursorPagination({
 }: DataTableCursorPaginationProps) {
   return (
     <nav role="navigation" aria-label="Pagination" className={`${barClass} justify-between px-2`}>
-      <span className="text-neutral-10 px-2 text-xs">{summary}</span>
+      <span className="text-fg-secondary px-2 text-xs">{summary}</span>
       <span className="inline-flex items-center gap-1">
         {loading ? <Spinner variants={{ size: 'sm' }} /> : null}
         <button

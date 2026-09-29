@@ -57,7 +57,7 @@ const viewportClass = cn(
 );
 
 const rootClass = cn(
-  'bg-neutral-3 border-neutral-5 text-neutral-12 absolute right-0 w-full select-none rounded-lg border shadow-lg',
+  'bg-neutral-3 border-line text-fg absolute right-0 w-full select-none rounded-lg border shadow-lg',
   'top-0 origin-top sm:bottom-0 sm:top-auto sm:origin-bottom',
   'z-[calc(1000-var(--toast-index))]',
   'h-[var(--toast-frontmost-height,var(--toast-height))] data-[expanded]:h-[var(--toast-height)]',
@@ -89,8 +89,8 @@ function ToastList() {
       <BaseToast.Content className={contentClass}>
         {iconByVariant[(toast.type as ToastVariant | undefined) ?? 'default']}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <BaseToast.Title className="text-neutral-12 select-text text-sm font-medium" />
-          <BaseToast.Description className="text-neutral-11 select-text text-sm" />
+          <BaseToast.Title className="text-fg select-text text-sm font-medium" />
+          <BaseToast.Description className="text-fg-default select-text text-sm" />
         </div>
       </BaseToast.Content>
       <span className="absolute right-2 top-2">

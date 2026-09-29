@@ -32,7 +32,9 @@ export function ErrorComponent(props: { error: any; message?: string }) {
   const isLoggedIn = !session.loading && session.doesSessionExist;
 
   return (
-    <div className="flex size-full items-center justify-center">
+    // `relative` so the sign-out button below sits in this block's corner: the error renders
+    // inside a layout now, and an unpositioned `absolute` would put it over the header.
+    <div className="relative flex size-full items-center justify-center">
       {isLoggedIn ? (
         <div className="absolute right-6 top-6">
           <Button

@@ -11,7 +11,7 @@ import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
-import { useClipboard } from '@/lib/hooks';
+import { useClipboard, useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
@@ -95,8 +95,8 @@ function SendInvitation(props: {
     console.error('Viewer role not found in organization member roles');
     return (
       <>
-        <div className="text-red-500">Viewer role not found in organization member roles</div>
-        <div className="text-neutral-10">Please contact support.</div>
+        <div className="text-critical">Viewer role not found in organization member roles</div>
+        <div className="text-fg-secondary">Please contact support.</div>
       </>
     );
   }
@@ -245,11 +245,8 @@ function InvitationExpiryCell(props: { invitation: InvitationNode }) {
 }
 
 /** The row's menu, and the delete confirmation it opens. */
-function InvitationActions(props: {
-  invitation: InvitationNode;
-  organizationSlug: string;
-  refetchInvitations(): void;
-}) {
+function InvitationActions(props: { invitation: InvitationNode; refetchInvitations(): void }) {
+  const { organizationSlug } = useSlugs('organization');
   const invitation = useFragment(Members_Invitation, props.invitation);
   const copyToClipboard = useClipboard();
   const copyLink = useCallback(async () => {
@@ -283,7 +280,7 @@ function InvitationActions(props: {
                 input: {
                   organization: {
                     bySelector: {
-                      organizationSlug: props.organizationSlug,
+                      organizationSlug,
                     },
                   },
                   email: invitation.email,
@@ -393,7 +390,6 @@ export function OrganizationInvitations(props: {
         cell: ({ row }) => (
           <InvitationActions
             invitation={row.original}
-            organizationSlug={organization.slug}
             refetchInvitations={props.refetchInvitations}
           />
         ),
@@ -436,10 +432,10 @@ export function OrganizationInvitations(props: {
       ) : (
         <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
           <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-            <MailQuestionIcon className="text-neutral-10 size-10" />
+            <MailQuestionIcon className="text-fg-secondary size-10" />
 
             <h3 className="mt-4 text-lg font-semibold">No invitations</h3>
-            <p className="text-neutral-10 mb-4 mt-2 text-sm">
+            <p className="text-fg-secondary mb-4 mt-2 text-sm">
               Invitations to join this organization will appear here.
             </p>
           </div>

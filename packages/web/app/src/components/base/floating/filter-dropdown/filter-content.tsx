@@ -144,7 +144,7 @@ export function FilterContent({
       {showSearch && <FloatingSearch label={label} onSearch={setSearch} value={search} />}
       {/* Note about unavailable items */}
       {items.some(item => item.unavailable) && (
-        <div className="text-neutral-11 mt-2 px-4 py-1 text-xs">
+        <div className="text-fg-default mt-2 px-4 py-1 text-xs">
           <span className="line-through">Struck-through</span> items are not found in the selected
           date range.
         </div>

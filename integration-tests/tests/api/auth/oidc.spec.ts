@@ -2,6 +2,7 @@ import { graphql } from 'testkit/gql';
 import { execute } from 'testkit/graphql';
 import { initSeed } from 'testkit/seed';
 import { invariant } from '@hive/service-common';
+import { assertSignInUpSucceeded } from '../../../testkit/oidc-integration';
 
 const TestMeQuery = graphql(`
   query OIDC_TestMeQuery {
@@ -33,7 +34,7 @@ test.concurrent(
     const result = await oidc.runSignInUp({
       state: auth.state,
     });
-    invariant(result.type === 'success', 'Expected sign in up to succeed.');
+    assertSignInUpSucceeded(result, 'Expected sign in up to succeed.');
 
     const [error] = await execute({
       document: TestMeQuery,
@@ -87,7 +88,7 @@ test.concurrent(
     let result = await oidc.runSignInUp({
       state: auth.state,
     });
-    invariant(result.type === 'success', 'Expected sign in/up to succeed.');
+    assertSignInUpSucceeded(result, 'Expected sign in/up to succeed.');
 
     let meResult = await execute({
       document: TestMeQuery,
@@ -110,7 +111,7 @@ test.concurrent(
     result = await oidc.runSignInUp({
       state: auth.state,
     });
-    invariant(result.type === 'success', 'Expected sign in/up to succeed.');
+    assertSignInUpSucceeded(result, 'Expected sign in/up to succeed.');
 
     meResult = await execute({
       document: TestMeQuery,
@@ -149,7 +150,7 @@ test.concurrent(
     const result = await oidc.runSignInUp({
       state: auth.state,
     });
-    invariant(result.type === 'success', 'Expected sign up to succeed');
+    assertSignInUpSucceeded(result, 'Expected sign up to succeed');
     const meResult = await execute({
       document: TestMeQuery,
       authToken: result.accessToken,
@@ -190,6 +191,7 @@ test.concurrent(
     const result = await oidc.runSignInUp({
       state: auth.state,
     });
+    assertSignInUpSucceeded(result);
     const meResult = await execute({
       document: TestMeQuery,
       authToken: result.accessToken,
@@ -275,6 +277,6 @@ test.concurrent(
     result = await oidcAuth.runSignInUp({
       state: auth.state,
     });
-    invariant(result.type === 'success', 'Expected sign in/up to succeed.');
+    assertSignInUpSucceeded(result, 'Expected sign in/up to succeed.');
   },
 );

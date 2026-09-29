@@ -6,92 +6,20 @@ import { Select } from '@/components/base/floating/select/select';
 import { Label } from '@/components/base/label/label';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { Header } from '@/components/navigation/header';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
-import { HiveLink } from '@/components/ui/hive-link';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link as UiLink } from '@/components/ui/link';
-import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
-import { useToggle } from '@/lib/hooks';
+import { useSlugs, useToggle, useViewer } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
-import { cn } from '@/lib/utils';
 import { Tabs } from '../base/tabs/tabs';
-import { TargetSelector } from './target-selector';
+import { TargetLayoutQuery } from './queries';
 
-export enum Page {
-  Schema = 'schema',
-  Explorer = 'explorer',
-  Checks = 'checks',
-  History = 'history',
-  Insights = 'insights',
-  Traces = 'traces',
-  Laboratory = 'laboratory',
-  Apps = 'apps',
-  Proposals = 'proposals',
-  Alerts = 'alerts',
-  Settings = 'settings',
-}
-
-const TargetLayoutQuery = graphql(`
-  query TargetLayoutQuery($organizationSlug: String!, $projectSlug: String!, $targetSlug: String!) {
-    me {
-      id
-      ...UserMenu_MeFragment
-    }
-    organizations {
-      ...TargetSelector_OrganizationConnectionFragment
-      ...UserMenu_OrganizationConnectionFragment
-    }
-    isCDNEnabled
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      project: projectBySlug(projectSlug: $projectSlug) {
-        id
-        slug
-        target: targetBySlug(targetSlug: $targetSlug) {
-          id
-          slug
-          viewerCanViewLaboratory
-          viewerCanViewAppDeployments
-          viewerCanAccessSettings
-          viewerCanAccessTraces
-          viewerCanViewSchemaProposals
-          viewerCanUseMetricAlertRules
-          latestSchemaVersion {
-            id
-          }
-        }
-      }
-      ...UserMenu_OrganizationFragment
-    }
-  }
-`);
-
-export const TargetLayout = ({
-  children,
-  page,
-  className,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
-}: {
-  page: Page;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  className?: string;
-  children: ReactNode;
-}): ReactElement | null => {
-  const params = {
-    organizationSlug,
-    projectSlug,
-    targetSlug,
-  };
+export const TargetLayout = ({ children }: { children: ReactNode }): ReactElement | null => {
+  const params = useSlugs('target');
 
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
@@ -100,37 +28,17 @@ export const TargetLayout = ({
     variables: params,
   });
 
-  const me = query.data?.me;
+  const viewer = useViewer();
   const currentOrganization = query.data?.organization;
   const currentProject = query.data?.organization?.project;
   const currentTarget = query.data?.organization?.project?.target;
-  const latestSchemaVersion = query.data?.organization?.project?.target?.latestSchemaVersion?.id;
 
-  const isCDNEnabled = query.data?.isCDNEnabled === true;
+  const isCDNEnabled = viewer.data?.isCDNEnabled === true;
 
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
   return (
     <>
-      <Header>
-        <div className="flex flex-row items-center gap-4">
-          <HiveLink className="size-8" />
-          <TargetSelector
-            organizations={query.data?.organizations ?? null}
-            currentOrganizationSlug={organizationSlug}
-            currentProjectSlug={projectSlug}
-            currentTargetSlug={targetSlug}
-          />
-        </div>
-        <div>
-          <UserMenu
-            me={me ?? null}
-            currentOrganization={currentOrganization ?? null}
-            organizations={query.data?.organizations ?? null}
-          />
-        </div>
-      </Header>
-
       {query.fetching === false &&
       query.stale === false &&
       (currentProject === null || currentOrganization === null || currentTarget === null) ? (
@@ -142,82 +50,68 @@ export const TargetLayout = ({
       ) : (
         <>
           <SecondaryNavigation
-            page={page}
             loading={!currentOrganization || !currentProject || !currentTarget}
             links={
               currentOrganization && currentProject && currentTarget
                 ? [
                     {
-                      value: Page.Schema,
                       label: 'Schema',
                       to: '/$organizationSlug/$projectSlug/$targetSlug',
                       params,
+                      exact: true,
                     },
                     {
-                      value: Page.Checks,
                       label: 'Checks',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
                       params,
                     },
                     {
-                      value: Page.Explorer,
                       label: 'Explorer',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
                       params,
                     },
                     {
-                      value: Page.History,
                       label: 'History',
-                      to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
-                      params: {
-                        ...params,
-                        versionId: latestSchemaVersion ?? '',
-                      },
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/history',
+                      params,
                     },
                     {
-                      value: Page.Insights,
                       label: 'Insights',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
                       params,
                       search: {},
                     },
                     {
-                      value: Page.Traces,
                       label: 'Traces',
                       visible: currentTarget.viewerCanAccessTraces,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
                       params,
                     },
                     {
-                      value: Page.Apps,
                       label: 'Apps',
                       visible: currentTarget.viewerCanViewAppDeployments,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
                       params,
                     },
                     {
-                      value: Page.Laboratory,
                       label: 'Laboratory',
                       visible: currentTarget.viewerCanViewLaboratory,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/laboratory',
                       params,
                     },
                     {
-                      value: Page.Proposals,
                       label: 'Proposals',
                       visible: currentTarget.viewerCanViewSchemaProposals,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
                       params,
                     },
                     {
-                      value: Page.Alerts,
                       label: 'Alerts',
                       visible: currentTarget.viewerCanUseMetricAlertRules,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
                       params,
                     },
                     {
-                      value: Page.Settings,
                       label: 'Settings',
                       visible: currentTarget.viewerCanAccessSettings,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
@@ -237,18 +131,12 @@ export const TargetLayout = ({
                       </span>
                     </Button>
                   </div>
-                  <ConnectSchemaModal
-                    organizationSlug={organizationSlug}
-                    projectSlug={projectSlug}
-                    targetSlug={targetSlug}
-                    isOpen={isModalOpen}
-                    toggleModalOpen={toggleModalOpen}
-                  />
+                  <ConnectSchemaModal isOpen={isModalOpen} toggleModalOpen={toggleModalOpen} />
                 </>
               ) : null
             }
           />
-          <div className={cn('min-h-(--content-height) container pb-7', className)}>{children}</div>
+          {children}
         </>
       )}
     </>
@@ -296,20 +184,15 @@ function composeEndpoint(baseUrl: string, artifactType: CdnArtifactType): string
   return `${baseUrl}/${artifactType}`;
 }
 
-export function ConnectSchemaModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function ConnectSchemaModal(props: { isOpen: boolean; toggleModalOpen: () => void }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ConnectSchemaModalQuery,
     variables: {
       targetSelector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
     },
     requestPolicy: 'cache-and-network',
@@ -406,12 +289,7 @@ export function ConnectSchemaModal(props: {
               </div>
             </div>
             {selectedArtifact === 'supergraph' ? (
-              <FederationModalContent
-                cdnUrl={selectedContract?.cdnUrl ?? target.cdnUrl}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
+              <FederationModalContent cdnUrl={selectedContract?.cdnUrl ?? target.cdnUrl} />
             ) : (
               <div className="space-y-2 text-sm">
                 <p>To access your schema from Hive's CDN, use the following endpoint:</p>
@@ -425,16 +303,12 @@ export function ConnectSchemaModal(props: {
                 <p>
                   To authenticate,{' '}
                   <UiLink
-                    as="a"
-                    search={{
-                      page: 'cdn',
-                    }}
                     variant="primary"
-                    to="/$organizationSlug/$projectSlug/$targetSlug/settings"
+                    to="/$organizationSlug/$projectSlug/$targetSlug/settings/cdn"
                     params={{
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
-                      targetSlug: props.targetSlug,
+                      organizationSlug,
+                      projectSlug,
+                      targetSlug,
                     }}
                     target="_blank"
                     rel="noreferrer"
@@ -454,27 +328,20 @@ export function ConnectSchemaModal(props: {
   );
 }
 
-function FederationModalContent(props: {
-  cdnUrl: string;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function FederationModalContent(props: { cdnUrl: string }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   // reference local machine and not the docker container
   const dockerCdnUrl = props.cdnUrl.replace('http://localhost:', 'http://host.docker.internal:');
   const authenticateSection = (
     <p>
       Replace "{'<hive_cdn_access_key>'}" with a{' '}
       <UiLink
-        search={{
-          page: 'cdn',
-        }}
         variant="primary"
-        to="/$organizationSlug/$projectSlug/$targetSlug/settings"
+        to="/$organizationSlug/$projectSlug/$targetSlug/settings/cdn"
         params={{
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         }}
         target="_blank"
         rel="noreferrer"

@@ -3,7 +3,7 @@ import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { focusRingQuiet } from '@/components/base/shared-styles';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ExplorerFilteredEmptyState,
   GraphQLFieldsSkeleton,
@@ -22,6 +22,7 @@ import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
@@ -71,9 +72,6 @@ const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
 function InternalUnusedSchemaView(props: {
   explorer: FragmentType<typeof UnusedSchemaView_UnusedSchemaExplorerFragment>;
   totalRequests: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
   const [selectedLetter, setSelectedLetter] = useState<string>();
   const { types } = useFragment(UnusedSchemaView_UnusedSchemaExplorerFragment, props.explorer);
@@ -154,10 +152,10 @@ function InternalUnusedSchemaView(props: {
     return (
       <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
         <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-          <PartyPopperIcon className="size-10 text-emerald-500" />
+          <PartyPopperIcon className="text-success size-10" />
 
           <h3 className="mt-4 text-lg font-semibold">No unused types</h3>
-          <p className="text-neutral-10 mb-4 mt-2 text-sm">
+          <p className="text-fg-secondary mb-4 mt-2 text-sm">
             It looks like you are using all typea in your schema, congratulations!
           </p>
         </div>
@@ -184,7 +182,7 @@ function InternalUnusedSchemaView(props: {
     <div className="space-y-6">
       {unusedFieldsMessage.length ? (
         <div>
-          <p className="text-neutral-10 text-sm">
+          <p className="text-fg-secondary text-sm">
             You have a total of {unusedFieldsMessage} within {unused.types} different types in the
             selected time period
           </p>
@@ -203,8 +201,8 @@ function InternalUnusedSchemaView(props: {
                     'inline-flex h-9 items-center px-2 py-1 text-sm font-medium transition-colors',
                     focusRingQuiet,
                     letter === activeLetter
-                      ? 'bg-neutral-2 text-accent'
-                      : 'text-neutral-10 hover:bg-neutral-2 hover:text-accent',
+                      ? 'bg-surface-selected text-accent'
+                      : 'text-fg-secondary hover:bg-surface-hover hover:text-accent',
                   )}
                 >
                   {letter}
@@ -221,9 +219,6 @@ function InternalUnusedSchemaView(props: {
             <TypeRenderer
               key={i}
               type={type}
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
               warnAboutDeprecatedArguments={false}
               warnAboutUnusedArguments
             />
@@ -285,16 +280,11 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
 function UnusedSchemaExplorer({
   dataRetentionInDays,
   hasCollectedOperations,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
 }: {
   dataRetentionInDays: number;
   hasCollectedOperations: boolean;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const dateRangeController = useDateRangeController({
     dataRetentionInDays,
     defaultPreset: presetLast7Days,
@@ -345,11 +335,7 @@ function UnusedSchemaExplorer({
       <ExplorerHeader
         title="Unused Schema"
         description="Helps you understand the coverage of GraphQL schema and safely remove the unused part"
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         period={dateRangeController.resolvedRange}
-        variant="unused"
         subgraphNames={latestValidSchemaVersion?.explorer?.subgraphNames}
         metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes}
         dateRangeControl={dateRangeFilter}
@@ -396,9 +382,6 @@ function UnusedSchemaExplorer({
               <UnusedSchemaView
                 totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.unusedSchema}
-                organizationSlug={organizationSlug}
-                projectSlug={projectSlug}
-                targetSlug={targetSlug}
               />
             </>
           ) : (
@@ -438,24 +421,21 @@ const TargetExplorerUnusedSchemaPageQuery = graphql(`
   }
 `);
 
-function ExplorerUnusedSchemaPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function ExplorerUnusedSchemaPageContent() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetExplorerUnusedSchemaPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
 
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -473,30 +453,18 @@ function ExplorerUnusedSchemaPageContent(props: {
     <UnusedSchemaExplorer
       dataRetentionInDays={currentOrganization.usageRetentionInDays}
       hasCollectedOperations={hasCollectedOperations}
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
     />
   );
 }
 
-export function TargetExplorerUnusedPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function TargetExplorerUnusedPage() {
   return (
     <>
       <Meta title="Unused Schema Explorer" />
       <SchemaExplorerProvider>
-        <TargetLayout
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          page={Page.Explorer}
-        >
-          <ExplorerUnusedSchemaPageContent {...props} />
-        </TargetLayout>
+        <LayoutContent>
+          <ExplorerUnusedSchemaPageContent />
+        </LayoutContent>
       </SchemaExplorerProvider>
     </>
   );

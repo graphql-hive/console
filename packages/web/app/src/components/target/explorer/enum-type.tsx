@@ -46,9 +46,6 @@ const GraphQLEnumTypeComponent_TypeFragment = graphql(`
 export function GraphQLEnumTypeComponent(props: {
   type: FragmentType<typeof GraphQLEnumTypeComponent_TypeFragment>;
   totalRequests?: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
 }) {
   const router = useRouter();
   const searchObj = router.latestLocation.search;
@@ -82,9 +79,6 @@ export function GraphQLEnumTypeComponent(props: {
       kind="enum"
       description={ttype.description}
       supergraphMetadata={ttype.supergraphMetadata}
-      targetSlug={props.targetSlug}
-      projectSlug={props.projectSlug}
-      organizationSlug={props.organizationSlug}
       totalRequests={props.totalRequests}
       usage={ttype.usage}
     >
@@ -96,24 +90,14 @@ export function GraphQLEnumTypeComponent(props: {
             <GraphQLTypeCardListItem key={value.name} index={i}>
               <div className="flex flex-col">
                 <DeprecationNote deprecationReason={value.deprecationReason}>
-                  <LinkToCoordinatePage
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                    coordinate={`${ttype.name}.${value.name}`}
-                  >
+                  <LinkToCoordinatePage coordinate={`${ttype.name}.${value.name}`}>
                     {value.name}
                   </LinkToCoordinatePage>
                 </DeprecationNote>
                 {value.description && <Description description={value.description} />}
               </div>
               {value.supergraphMetadata && (
-                <SupergraphMetadataList
-                  targetSlug={props.targetSlug}
-                  projectSlug={props.projectSlug}
-                  organizationSlug={props.organizationSlug}
-                  supergraphMetadata={value.supergraphMetadata}
-                />
+                <SupergraphMetadataList supergraphMetadata={value.supergraphMetadata} />
               )}
             </GraphQLTypeCardListItem>
           ))}

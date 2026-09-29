@@ -121,9 +121,24 @@ export async function subscribe<TResult, TVariables>(
     },
   });
 
-  return client.iterate({
-    operationName: params.operationName,
-    query: print(params.document),
-    variables: params.variables ?? {},
+  let markConnected = () => {};
+  const connected = new Promise<void>(resolve => {
+    markConnected = resolve;
+  });
+
+  const iterator = client.iterate<TResult>(
+    {
+      operationName: params.operationName,
+      query: print(params.document),
+      variables: params.variables ?? {},
+    },
+    {
+      connected: () => markConnected(),
+    },
+  );
+
+  return Object.assign(iterator, {
+    /** Resolves once the server has accepted the subscription stream. */
+    connected,
   });
 }

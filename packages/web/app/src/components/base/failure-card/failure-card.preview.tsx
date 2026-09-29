@@ -30,7 +30,7 @@ export const Default = createPreview(() => {
         aside="9 passed"
         items={CHECK_FAILURES.map(item => ({ ...item, onView: () => setViewing(item.key) }))}
       />
-      <p className="text-neutral-10 text-xs">
+      <p className="text-fg-secondary text-xs">
         {viewing ? `Scoped to ${viewing}` : 'Nothing picked yet'}
       </p>
     </div>

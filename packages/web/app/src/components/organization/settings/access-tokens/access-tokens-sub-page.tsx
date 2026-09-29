@@ -5,14 +5,11 @@ import { DiscardAccessTokenDraft } from '@/components/common/discard-access-toke
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { AccessTokenCreatedDialog } from './access-token-created-dialog';
 import { AccessTokensTable } from './access-tokens-table';
 import { CreateAccessTokenSheetContent } from './create-access-token-sheet-content';
-
-type AccessTokensSubPageProps = {
-  organizationSlug: string;
-};
 
 const AccessTokensSubPage_OrganizationQuery = graphql(`
   query AccessTokensSubPage_OrganizationQuery($organizationSlug: String!) {
@@ -34,11 +31,12 @@ export const enum CreateAccessTokenState {
   closing,
 }
 
-export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.ReactNode {
+export function AccessTokensSubPage(): React.ReactNode {
+  const { organizationSlug } = useSlugs('organization');
   const [query, refetchQuery] = useQuery({
     query: AccessTokensSubPage_OrganizationQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
+      organizationSlug,
     },
     requestPolicy: 'network-only',
   });
@@ -149,7 +147,6 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
         {query.data?.organization && (
           <AccessTokensTable
             accessTokens={query.data.organization.allAccessTokens}
-            organizationSlug={props.organizationSlug}
             refetch={refetchQuery}
           />
         )}

@@ -8,7 +8,7 @@ import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
-import { formatNumber, toDecimal } from '@/lib/hooks';
+import { formatNumber, toDecimal, useSlugs } from '@/lib/hooks';
 import { capitalize, cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -26,7 +26,10 @@ export function Description(props: { description: string }) {
         hidden: !isDescriptionsVisible,
       })}
     >
-      <Markdown className={clsx('text-neutral-10 text-left text-sm')} content={props.description} />
+      <Markdown
+        className={clsx('text-fg-secondary text-left text-sm')}
+        content={props.description}
+      />
     </div>
   );
 }
@@ -53,11 +56,9 @@ type TopOperation = NonNullable<
 export function SchemaExplorerUsageStats(props: {
   usage: FragmentType<typeof SchemaExplorerUsageStats_UsageFragment>;
   totalRequests: number;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   kindLabel?: string;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const usage = useFragment(SchemaExplorerUsageStats_UsageFragment, props.usage);
   const percentage = props.totalRequests ? (usage.total / props.totalRequests) * 100 : 0;
   const hasFieldLevelMetrics = !!(usage.errorTotal != null || usage.totalResolutions);
@@ -84,9 +85,9 @@ export function SchemaExplorerUsageStats(props: {
             link={{
               to: '/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
               params: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 operationName,
                 operationHash: row.original.hash,
               },
@@ -156,9 +157,7 @@ export function SchemaExplorerUsageStats(props: {
                   ) : null}
                   <div>
                     for{' '}
-                    <span className="text-orange-800 dark:text-orange-500">
-                      {availability.toFixed(2)}% Availability
-                    </span>
+                    <span className="text-warning">{availability.toFixed(2)}% Availability</span>
                   </div>
                 </div>
               </div>
@@ -186,12 +185,12 @@ export function SchemaExplorerUsageStats(props: {
                 <ul>
                   <li>
                     This {kindLabel} has been queried in{' '}
-                    <span className="text-neutral-12 font-medium">{formatNumber(usage.total)}</span>{' '}
+                    <span className="text-fg font-medium">{formatNumber(usage.total)}</span>{' '}
                     requests.
                   </li>
                   <li>
-                    <span className="text-neutral-12 font-medium">{toDecimal(percentage)}%</span> of
-                    all requests use this {kindLabel}.
+                    <span className="text-fg font-medium">{toDecimal(percentage)}%</span> of all
+                    requests use this {kindLabel}.
                   </li>
                 </ul>
 
@@ -232,12 +231,12 @@ export function SchemaExplorerUsageStats(props: {
                   {usage.usedByClients.map(clientName => (
                     <li key={clientName} className="font-bold">
                       <Link
-                        className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
+                        className="text-warning hover:underline hover:underline-offset-2"
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                         params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
+                          organizationSlug,
+                          projectSlug,
+                          targetSlug,
                           name: clientName,
                         }}
                       >
@@ -302,7 +301,7 @@ export function DeprecationNote(props: {
       content={
         <>
           <div className="mb-2">Deprecation reason</div>
-          <Markdown className="text-neutral-10" content={props.deprecationReason} />
+          <Markdown className="text-fg-secondary" content={props.deprecationReason} />
         </>
       }
     />
@@ -317,9 +316,6 @@ export function GraphQLTypeCard(props: {
   totalRequests?: number;
   usage?: FragmentType<typeof SchemaExplorerUsageStats_UsageFragment>;
   supergraphMetadata?: FragmentType<typeof GraphQLTypeCard_SupergraphMetadataFragment> | null;
-  targetSlug: string;
-  projectSlug: string;
-  organizationSlug: string;
   children: ReactNode;
 }): ReactElement | null {
   const supergraphMetadata = useFragment(
@@ -333,34 +329,23 @@ export function GraphQLTypeCard(props: {
   }
 
   return (
-    <div className="border-neutral-5 rounded-md border-2">
+    <div className="border-line rounded-md border-2">
       <div className="flex flex-row justify-between p-4">
         <div>
           <div className="flex flex-row items-center gap-2">
-            <div className="text-neutral-10 font-normal">{props.kind}</div>
+            <div className="text-fg-secondary font-normal">{props.kind}</div>
             <div className="font-semibold">
-              <GraphQLTypeAsLink
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                type={props.name}
-              />
+              <GraphQLTypeAsLink type={props.name} />
             </div>
           </div>
           {props.description && <Description description={props.description} />}
         </div>
         {Array.isArray(props.implements) && props.implements.length > 0 && (
-          <div className="text-neutral-10 flex flex-row items-center text-sm">
+          <div className="text-fg-secondary flex flex-row items-center text-sm">
             <div className="mx-2">implements</div>
             <div className="flex flex-row gap-2">
               {props.implements.map(t => (
-                <GraphQLTypeAsLink
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  key={t}
-                  type={t}
-                />
+                <GraphQLTypeAsLink key={t} type={t} />
               ))}
             </div>
           </div>
@@ -370,19 +355,9 @@ export function GraphQLTypeCard(props: {
             kindLabel={props.kind}
             totalRequests={props.totalRequests}
             usage={props.usage}
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
           />
         )}
-        {supergraphMetadata && (
-          <SupergraphMetadataList
-            targetSlug={props.targetSlug}
-            projectSlug={props.projectSlug}
-            organizationSlug={props.organizationSlug}
-            supergraphMetadata={supergraphMetadata}
-          />
-        )}
+        {supergraphMetadata && <SupergraphMetadataList supergraphMetadata={supergraphMetadata} />}
       </div>
       <div>{props.children}</div>
     </div>
@@ -400,7 +375,7 @@ export function GraphQLTypeCardListItem(props: {
       onClick={props.onClick}
       className={clsx(
         'flex flex-row items-center justify-between p-4 text-sm',
-        props.index % 2 ? '' : 'bg-neutral-2/50',
+        props.index % 2 ? '' : 'bg-surface-stripe',
         props.className,
       )}
     >
@@ -411,7 +386,7 @@ export function GraphQLTypeCardListItem(props: {
 
 export function ExplorerFilteredEmptyState() {
   return (
-    <div className="text-neutral-10 border-neutral-5 rounded-md border border-dashed px-4 py-8 text-center text-sm">
+    <div className="text-fg-secondary border-line rounded-md border border-dashed px-4 py-8 text-center text-sm">
       No schema coordinates match the active filters.
     </div>
   );
@@ -421,9 +396,6 @@ export function GraphQLInputFields(props: {
   typeName: string;
   fields: FragmentType<typeof GraphQLInputFields_InputFieldFragment>[];
   totalRequests?: number;
-  targetSlug: string;
-  projectSlug: string;
-  organizationSlug: string;
 }): ReactElement {
   const fields = useFragment(GraphQLInputFields_InputFieldFragment, props.fields);
 
@@ -443,34 +415,19 @@ export function GraphQLInputFields(props: {
           <GraphQLTypeCardListItem key={field.name} index={i}>
             <div>
               <div className="flex w-full flex-row items-center justify-between">
-                <div className="text-neutral-10">
+                <div className="text-fg-secondary">
                   <DeprecationNote deprecationReason={field.deprecationReason}>
-                    <LinkToCoordinatePage
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      targetSlug={props.targetSlug}
-                      coordinate={coordinate}
-                      className="text-neutral-12 font-semibold"
-                    >
+                    <LinkToCoordinatePage coordinate={coordinate} className="text-fg font-semibold">
                       {field.name}
                     </LinkToCoordinatePage>
                   </DeprecationNote>
                   <span className="mr-1">:</span>
-                  <GraphQLTypeAsLink
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                    className="font-semibold"
-                    type={field.type}
-                  />
+                  <GraphQLTypeAsLink className="font-semibold" type={field.type} />
                 </div>
                 {typeof props.totalRequests === 'number' && (
                   <SchemaExplorerUsageStats
                     totalRequests={props.totalRequests}
                     usage={field.usage}
-                    targetSlug={props.targetSlug}
-                    projectSlug={props.projectSlug}
-                    organizationSlug={props.organizationSlug}
                   />
                 )}
               </div>
@@ -483,13 +440,8 @@ export function GraphQLInputFields(props: {
   );
 }
 
-export function GraphQLTypeAsLink(props: {
-  type: string;
-  className?: string;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}): ReactElement {
+export function GraphQLTypeAsLink(props: { type: string; className?: string }): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const router = useRouter();
   const typename = props.type.replace(/[[\]!]+/g, '');
 
@@ -512,32 +464,32 @@ export function GraphQLTypeAsLink(props: {
               className="text-xs font-normal hover:underline hover:underline-offset-2"
               to="/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename"
               params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 typename,
               }}
               search={router.latestLocation.search}
             >
               Visit in <span className="font-medium">Explorer</span>
             </Link>
-            <span className="text-neutral-10 text-xs"> - displays a full type</span>
+            <span className="text-fg-secondary text-xs"> - displays a full type</span>
           </p>
           <p>
             <Link
               className="text-xs font-normal hover:underline hover:underline-offset-2"
               to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
               params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 coordinate: typename,
               }}
               search={router.latestLocation.search}
             >
               Visit in <span className="font-medium">Insights</span>
             </Link>
-            <span className="text-neutral-10 text-xs"> - usage insights</span>
+            <span className="text-fg-secondary text-xs"> - usage insights</span>
           </p>
         </div>
       }
@@ -550,12 +502,10 @@ export const LinkToCoordinatePage = React.forwardRef<
   {
     coordinate: string;
     children: ReactNode;
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
     className?: string;
   }
 >((props, ref) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const router = useRouter();
 
   return (
@@ -564,9 +514,9 @@ export const LinkToCoordinatePage = React.forwardRef<
       className={cn('hover:underline hover:underline-offset-2', props.className)}
       to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
       params={{
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
         coordinate: props.coordinate,
       }}
       search={router.latestLocation.search}
@@ -594,11 +544,11 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
       {widths.map((width, index) => (
         <GraphQLTypeCardListItem key={index} index={index} className="w-full">
           <div className="flex w-full flex-row items-center gap-2">
-            <Skeleton className={cn('bg-neutral-3 my-1 h-4', width)} />
+            <Skeleton className={cn('bg-surface-skeleton my-1 h-4', width)} />
             <div className="ml-auto flex flex-row items-center gap-2">
-              <Skeleton className="bg-neutral-3 my-1 size-4" />
-              <Skeleton className="bg-neutral-3 my-1 size-4" />
-              <Skeleton className="bg-neutral-3 my-1 size-4" />
+              <Skeleton className="bg-surface-skeleton my-1 size-4" />
+              <Skeleton className="bg-surface-skeleton my-1 size-4" />
+              <Skeleton className="bg-surface-skeleton my-1 size-4" />
             </div>
           </div>
         </GraphQLTypeCardListItem>
@@ -609,10 +559,10 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
 
 export const GraphQLTypeCardSkeleton = (props: { children: ReactNode }) => {
   return (
-    <div className="border-neutral-2 rounded-md border-2">
+    <div className="border-line-subtle rounded-md border-2">
       <div className="flex flex-row justify-between p-4">
         <div className="flex flex-row items-center gap-2">
-          <Skeleton className="bg-neutral-3 my-1 h-4 w-32" />
+          <Skeleton className="bg-surface-skeleton my-1 h-4 w-32" />
         </div>
       </div>
       <div>{props.children}</div>

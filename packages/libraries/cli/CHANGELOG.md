@@ -1,5 +1,134 @@
 # @graphql-hive/cli
 
+## 0.66.0
+
+### Minor Changes
+
+- [#8556](https://github.com/graphql-hive/console/pull/8556)
+  [`0961843`](https://github.com/graphql-hive/console/commit/0961843fdac3b2f9ae0e25d05bc48d25d2c63d4d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Report every CLI failure with an accurate, unique
+  and documented error code, and report schema check results accurately when using `--github`.
+
+  **Note for self-hosted Hive:** `hive schema:check --github` relies on new fields added to the Hive
+  GraphQL API (`GitHubSchemaCheckSuccess`). If you self-host Hive and the CLI reports error `[125]`
+  (unsupported Hive server version), deploy the latest Hive backend before upgrading the CLI.
+
+  **Behavior changes**
+
+  - `hive schema:check --github` now exits with code 1 when the schema check fails. Previously it
+    exited with 0 whenever the GitHub check-run was created. The failure is reported as error
+    `[202]`, and `--forceSafe` now approves failed checks in GitHub mode as well.
+  - A failed schema check now prints `Schema check failed. [202]` to stderr. The exit code is
+    unchanged.
+  - `hive schema:check --forceSafe` now exits with code 1 (error `[203]`) when the registry did not
+    store a schema check that could be approved, instead of exiting with 0.
+  - Exit codes are now consistent: `1` means the operation failed, `2` means a request timed out,
+    and `3` means invalid input or setup. Invalid arguments and flags, and unknown commands, now
+    exit with `3` instead of `2`. A missing CDN endpoint now exits with `3` instead of `1`.
+  - Error codes are now unique: `InvalidVersionIdError` is now `[122]` and `ConflictingOptionsError`
+    is now `[123]` (both were `[121]`).
+  - An invalid `hive.json`, a file set with `HIVE_CONFIG` that does not exist, or an unknown
+    `HIVE_SPACE` now fails with error `[100]`. Previously the configuration was silently ignored, so
+    the CLI fell back to the default registry endpoint or reported a missing access token. The
+    legacy `{ "registry": "...", "token": "..." }` format is read correctly again.
+  - Passing both a schema file and `--revision` to `hive schema:publish` now fails with error
+    `[123]` instead of ignoring the file.
+  - `hive schema:check --github` needs a Hive server that includes the new
+    `GitHubSchemaCheckSuccess` fields. Older servers are reported with error `[125]`.
+
+  **New error codes**
+
+  - `[124]` Access denied: the access token is missing the named permission, or the target does not
+    exist or is not accessible to the token. Previously reported as `[115]`.
+  - `[125]` Unsupported Hive server version: the server does not know a field the CLI sends.
+  - `[126]` A request to the Hive registry or CDN timed out. The operation may still have completed
+    on the server, so check the result before retrying. Other network errors, including timeouts
+    while introspecting a GraphQL service, remain `[114]`.
+  - `[127]` Invalid command input, `[128]` invalid header.
+  - `[202]` Schema check failed, `[203]` schema check approval failed.
+
+  Other errors that were previously reported as unexpected (`[199]`) or without a code now use the
+  matching code, for example a missing or empty schema file (`[200]`, `[201]`), invalid SDL in
+  `schema:check` (`[301]`), an invalid CDN access token (`[107]`), HTTP error responses (`[113]`)
+  and `--forceSafe` without a target slug (`[102]`). `hive introspect` reports a missing, empty or
+  invalid schema file as `[200]`, `[201]` or `[301]`, and keeps `[116]` for GraphQL services that
+  cannot be introspected. `hive schema:check` now also reports a URL that cannot be introspected as
+  `[116]` (exit code `1`) instead of `[200]`, like `schema:publish`, and introspection errors name
+  the URL that failed. Invalid registry access tokens that expired are reported as `[106]`.
+
+  **New features**
+
+  - `hive schema:publish --github` prints the reason for errors that happen before a GitHub
+    check-run is created, such as an unknown revision.
+  - `hive app:create` shows why the app name or version was rejected.
+  - Error messages link to the documentation of their error code, and the CLI README lists every
+    error code with its exit code and recommended fix. The list is also published as `errors.json`
+    in the package.
+
+- [#8558](https://github.com/graphql-hive/console/pull/8558)
+  [`cc0119f`](https://github.com/graphql-hive/console/commit/cc0119f0396aa483060d1395c964f7d78f41bcc5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Show when a pushed schema revision expires.
+
+  - `hive schema:push` shows when the pushed revision expires, and warns when `--service` is ignored
+    for a single-schema project.
+
+### Patch Changes
+
+- Updated dependencies
+  [[`0961843`](https://github.com/graphql-hive/console/commit/0961843fdac3b2f9ae0e25d05bc48d25d2c63d4d),
+  [`e30136b`](https://github.com/graphql-hive/console/commit/e30136baac429d2d77992e693b5a02eab5147977)]:
+  - @graphql-hive/core@0.23.0
+
+## 0.65.0
+
+### Minor Changes
+
+- [#8543](https://github.com/graphql-hive/console/pull/8543)
+  [`e45846e`](https://github.com/graphql-hive/console/commit/e45846e63782e12c35b9ba068721e732769deafe)
+  Thanks [@BuddhaBing](https://github.com/BuddhaBing)! - Add a `--header`/`-H` flag to `hive dev` to
+  attach custom HTTP headers to the introspection requests sent to locally running subgraphs. This
+  allows introspecting subgraphs that require authentication.
+
+  Headers are supplied in `key:value` format. The position of `--header` relative to `--service`
+  determines its scope:
+
+  - A `--header` specified **before** the first `--service` is global and applies to every service.
+  - A `--header` specified **after** a `--service` applies only to that service (until the next
+    `--service`), and overrides a global header of the same name for that service.
+
+  Services provided via `--schema` are not introspected, so headers don't apply to them.
+
+  ```shell
+  hive dev \
+    --header 'X-Foo:shared-value' \
+    --service reviews --url http://localhost:3001/graphql --header 'Authorization:Bearer REVIEWS_TOKEN' \
+    --service products --url http://localhost:3002/graphql --header 'Authorization:Bearer PRODUCTS_TOKEN'
+  ```
+
+  In this example:
+
+  - `reviews` receives `X-Foo:shared-value` and `Authorization:Bearer REVIEWS_TOKEN`
+  - `products` receives `X-Foo:shared-value` and `Authorization:Bearer PRODUCTS_TOKEN`
+
+  **Note:** a `--header` placed after the _last_ `--service` scopes only to that final service — it
+  is not treated as global. To apply a header to every service, place it before the first
+  `--service`:
+
+  ```shell
+  # ✅ applies to both reviews and products
+  hive dev --header 'X-Foo:shared-value' --service reviews --url ... --service products --url ...
+  
+  # ⚠️ applies to `products` only, NOT to `reviews`
+  hive dev --service reviews --url ... --service products --url ... --header 'X-Foo:shared-value'
+  ```
+
+### Patch Changes
+
+- [#8536](https://github.com/graphql-hive/console/pull/8536)
+  [`c9328ea`](https://github.com/graphql-hive/console/commit/c9328ea8d833b074c0bb607dc67d2d2fd35d7a50)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Upgrades composition library to
+  `v0.27.0` - adds satisfiability checking for `@fromContext` arguments
+
 ## 0.64.1
 
 ### Patch Changes

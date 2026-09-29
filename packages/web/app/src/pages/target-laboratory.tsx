@@ -8,15 +8,16 @@ import { Button } from '@/components/base/button/button';
 import { Collapsible } from '@/components/base/collapsible/collapsible';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { useToast } from '@/components/base/toast/toast';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
+import { useTheme } from '@/components/theme/theme-provider';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
-import { useClipboard, useToggle } from '@/lib/hooks';
+import { useClipboard, useLayoutQuery, useSlugs, useToggle } from '@/lib/hooks';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
 import { useCurrentOperation } from '@/lib/hooks/laboratory/use-current-operation';
 import {
@@ -102,30 +103,27 @@ const UpdateOperationMutation = graphql(`
   }
 `);
 
-function Save(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}): ReactElement {
+function Save(): ReactElement {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const router = useRouter();
   const [operationModalOpen, toggleOperationModal] = useToggle();
   const { collections } = useCollections({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
+    organizationSlug,
+    projectSlug,
+    targetSlug,
   });
   const { toast } = useToast();
   const currentOperation = useCurrentOperation({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
+    organizationSlug,
+    projectSlug,
+    targetSlug,
   });
   const [, mutateUpdate] = useMutation(UpdateOperationMutation);
   const { queryEditor, variableEditor, headerEditor, updateActiveTabValues } = useEditorContext()!;
   const { clearOperation } = useSyncOperationState({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
+    organizationSlug,
+    projectSlug,
+    targetSlug,
   });
   const operationFromQueryString = useOperationFromQueryString();
 
@@ -138,9 +136,9 @@ function Save(props: {
         void router.navigate({
           to: '/$organizationSlug/$projectSlug/$targetSlug/laboratory',
           params: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
           },
           search: { operation: id },
         });
@@ -200,9 +198,9 @@ function Save(props: {
                 }
                 const { error, data } = await mutateUpdate({
                   selector: {
-                    targetSlug: props.targetSlug,
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
+                    targetSlug,
+                    organizationSlug,
+                    projectSlug,
                   },
                   input: {
                     name: currentOperation.name,
@@ -237,9 +235,6 @@ function Save(props: {
         ]}
       />
       <CreateOperationModal
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
         isOpen={operationModalOpen}
         close={toggleOperationModal}
         onSaveSuccess={onSaveSuccess}
@@ -268,28 +263,27 @@ function substituteVariablesInHeaders(
 }
 
 function LaboratoryPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   selectedOperationId?: string;
   defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
   onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
     },
   });
   const router = useRouter();
   const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const { resolvedTheme } = useTheme();
   const { collections } = useCollections({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
+    organizationSlug,
+    projectSlug,
+    targetSlug,
   });
 
   const userOperations = useMemo(() => {
@@ -306,7 +300,7 @@ function LaboratoryPageContent(props: {
     query.data?.target?.graphqlEndpointUrl ?? null,
   );
 
-  const mockEndpoint = `${location.origin}/api/lab/${props.organizationSlug}/${props.projectSlug}/${props.targetSlug}`;
+  const mockEndpoint = `${location.origin}/api/lab/${organizationSlug}/${projectSlug}/${targetSlug}`;
   const target = query.data?.target;
 
   const preflight = usePreflight({ target: target ?? null });
@@ -406,9 +400,9 @@ function LaboratoryPageContent(props: {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug/laboratory',
         params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
         search: { operation: userOperations.has(activeTab.id) ? activeTab.id : undefined },
       });
@@ -416,32 +410,33 @@ function LaboratoryPageContent(props: {
     [userOperations],
   );
 
+  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
   useRedirect({
-    canAccess: target?.viewerCanViewLaboratory === true,
+    canAccess: layoutTarget?.viewerCanViewLaboratory === true,
     redirectTo: router => {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
       });
     },
-    entity: target,
+    entity: layoutTarget,
   });
 
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
     );
   }
 
-  if (target?.viewerCanViewLaboratory === false) {
+  if (layoutTarget?.viewerCanViewLaboratory === false) {
     return null;
   }
 
@@ -452,7 +447,7 @@ function LaboratoryPageContent(props: {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <Title>Laboratory</Title>
-            <div className="bg-neutral-5 h-4 w-px" />
+            <div className="bg-line h-4 w-px" />
             <ToggleGroup
               aria-label="Laboratory version"
               value={props.defaultLaboratoryTab}
@@ -484,11 +479,10 @@ function LaboratoryPageContent(props: {
               <RouterLink
                 to="/$organizationSlug/$projectSlug/$targetSlug/settings"
                 params={{
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                  organizationSlug,
+                  projectSlug,
+                  targetSlug,
                 }}
-                search={{ page: 'general' }}
               >
                 <Button variant="outline" size="compact">
                   Connect GraphQL API Endpoint
@@ -527,11 +521,6 @@ function LaboratoryPageContent(props: {
       </div>
       <Helmet>
         <style key="laboratory">{`
-          .graphiql-container,
-          .graphiql-dialog a {
-            --color-neutral-11: 40, 89%, 60% !important;
-          }
-
           .graphiql-container {
             overflow: unset; /* remove default overflow */
           }
@@ -540,19 +529,19 @@ function LaboratoryPageContent(props: {
           .doc-explorer-title {
             font-size: 1.125rem !important;
             line-height: 1.75rem !important;
-            color: white;
+            color: var(--color-fg);
           }
 
-          .graphiql-container,
-          .graphiql-dialog,
-          .CodeMirror-info {
+          .dark .graphiql-container,
+          .dark .graphiql-dialog,
+          .dark .CodeMirror-info {
             --color-base: 223, 70%, 3.9% !important;
           }
 
           .graphiql-tooltip,
           .graphiql-dropdown-content,
           .CodeMirror-lint-tooltip {
-            background: #030711;
+            background: var(--color-editor-backdrop);
           }
 
           .graphiql-tab {
@@ -585,8 +574,8 @@ function LaboratoryPageContent(props: {
             plugins={plugins}
             visiblePlugin={operationCollectionsPlugin}
             schema={schema}
-            forcedTheme="dark"
-            className={isFullScreen ? 'fixed inset-0 bg-[#030711]' : ''}
+            forcedTheme={resolvedTheme}
+            className={isFullScreen ? 'bg-editor-backdrop fixed inset-0' : ''}
             onTabChange={handleTabChange}
             readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
           >
@@ -601,13 +590,7 @@ function LaboratoryPageContent(props: {
             <GraphiQL.Toolbar>
               {({ prettify }) => (
                 <>
-                  {query.data?.target?.viewerCanModifyLaboratory && (
-                    <Save
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      targetSlug={props.targetSlug}
-                    />
-                  )}
+                  {query.data?.target?.viewerCanModifyLaboratory && <Save />}
                   <Share />
                   {/* if people have no modify access they should still be able to format their own queries. */}
                   {(query.data?.target?.viewerCanModifyLaboratory === true ||
@@ -637,9 +620,6 @@ function LaboratoryPageContent(props: {
 }
 
 export function TargetLaboratoryPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   selectedOperationId: string | undefined;
   defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
   onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
@@ -647,18 +627,12 @@ export function TargetLaboratoryPage(props: {
   return (
     <>
       <Meta title="Schema laboratory" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Laboratory}
-        className="h-(--content-height) flex flex-col pb-0"
-      >
+      <LayoutContent className="h-(--content-height) flex flex-col pb-0">
         <PromptProvider>
           <LaboratoryPageContent {...props} />
           <PromptManager />
         </PromptProvider>
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }
@@ -700,7 +674,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
   return (
     <div
       id="preflight-logs"
-      className="flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]"
+      className="bg-editor-backdrop flex max-h-[200px] w-full flex-col overflow-hidden"
     >
       <Collapsible
         variant="panel"
@@ -726,7 +700,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
             {props.logs.length === 0 ? (
               <div
                 data-cy="empty-state"
-                className="text-neutral-10 flex flex-col items-center justify-center"
+                className="text-fg-secondary flex flex-col items-center justify-center"
               >
                 <p>No logs available</p>
                 <p>Execute a query to see logs</p>

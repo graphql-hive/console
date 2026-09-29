@@ -2,6 +2,7 @@ import { useMutation } from 'urql';
 import { Switch } from '@/components/base/switch/switch';
 import { useToast } from '@/components/base/toast/toast';
 import { graphql } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 
 const AlertRuleEnabledToggle_Mutation = graphql(`
   mutation AlertRuleEnabledToggle_Mutation($input: UpdateMetricAlertRuleInput!) {
@@ -20,12 +21,8 @@ const AlertRuleEnabledToggle_Mutation = graphql(`
   }
 `);
 
-export function AlertRuleEnabledToggle(props: {
-  ruleId: string;
-  enabled: boolean;
-  organizationSlug: string;
-  projectSlug: string;
-}) {
+export function AlertRuleEnabledToggle(props: { ruleId: string; enabled: boolean }) {
+  const { organizationSlug, projectSlug } = useSlugs('target');
   const [, mutate] = useMutation(AlertRuleEnabledToggle_Mutation);
   const { toast } = useToast();
 
@@ -38,8 +35,8 @@ export function AlertRuleEnabledToggle(props: {
           input: {
             project: {
               bySelector: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
+                organizationSlug,
+                projectSlug,
               },
             },
             ruleId: props.ruleId,

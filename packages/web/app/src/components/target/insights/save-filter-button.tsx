@@ -8,6 +8,7 @@ import { useToast } from '@/components/base/toast/toast';
 import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { UpdateFilterButton } from './update-filter-button';
 import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';
 
@@ -47,9 +48,6 @@ type SaveFilterButtonProps = {
   viewerCanCreate: boolean;
   viewerCanShare: boolean;
   currentFilters: CurrentFilters;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   onSaved: (viewId: string) => void;
   onUpdated: () => void;
 };
@@ -59,9 +57,6 @@ export function SaveFilterButton({
   viewerCanCreate,
   viewerCanShare,
   currentFilters,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   onSaved,
   onUpdated,
 }: SaveFilterButtonProps) {
@@ -76,18 +71,12 @@ export function SaveFilterButton({
         <UpdateFilterButton
           activeView={activeView}
           currentFilters={currentFilters}
-          organizationSlug={organizationSlug}
-          projectSlug={projectSlug}
-          targetSlug={targetSlug}
           onUpdated={onUpdated}
         />
         {viewerCanCreate && (
           <CreateFilterButton
             viewerCanShare={viewerCanShare}
             currentFilters={currentFilters}
-            organizationSlug={organizationSlug}
-            projectSlug={projectSlug}
-            targetSlug={targetSlug}
             onSaved={onSaved}
           />
         )}
@@ -100,9 +89,6 @@ export function SaveFilterButton({
       <CreateFilterButton
         viewerCanShare={viewerCanShare}
         currentFilters={currentFilters}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
         onSaved={onSaved}
       />
     );
@@ -114,18 +100,13 @@ export function SaveFilterButton({
 function CreateFilterButton({
   viewerCanShare,
   currentFilters,
-  organizationSlug,
-  projectSlug,
-  targetSlug,
   onSaved,
 }: {
   viewerCanShare: boolean;
   currentFilters: CurrentFilters;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   onSaved: (viewId: string) => void;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [visibility, setVisibility] = useState<SavedFilterVisibilityType>(

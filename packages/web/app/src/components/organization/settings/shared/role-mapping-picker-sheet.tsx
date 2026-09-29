@@ -1,8 +1,7 @@
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { Heading } from '@/components/ui/heading';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { ReactNode } from '@tanstack/react-router';
 import { MemberRoleSelector } from '../../members/member-role-selector';
 import { ResourceSelection, ResourceSelector } from '../../members/resource-selector';
 import { SelectedPermissionOverview } from '../../members/selected-permission-overview';
@@ -74,7 +73,7 @@ export function RoleMappingPickerSheet(props: {
           selectedRoleId={props.selectedRoleId}
           onSelectRoleId={props.onSelectedRoleIdChange}
         />
-        <p className="text-neutral-10 mt-2 text-sm">
+        <p className="text-fg-secondary mt-2 text-sm">
           The role assigned to the user that will grant permissions.
         </p>
         {selectedRole && (
@@ -90,7 +89,7 @@ export function RoleMappingPickerSheet(props: {
         <Heading size="lg" className="mb-1 text-sm">
           Assigned Resources
         </Heading>
-        <p className="text-neutral-10 mt-2 text-sm">
+        <p className="text-fg-secondary mt-2 text-sm">
           Specify the resources on which the permissions will be granted.
         </p>
         <ResourceSelector

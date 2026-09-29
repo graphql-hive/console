@@ -3,7 +3,7 @@ import { useClient } from 'urql';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';
-import { usePagedConnection } from '@/lib/hooks';
+import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import type { ColumnDef } from '@tanstack/react-table';
 import { AccessTokenDetailViewSheet } from './access-token-detail-view-sheet';
 import { DeleteAccessTokenConfirmationDialog } from './delete-access-token-confirmation-dialog';
@@ -50,12 +50,12 @@ type AccessTokenEdge = DocumentType<
 >['edges'][number];
 
 type AccessTokensTable = {
-  organizationSlug: string;
   accessTokens: FragmentType<typeof AccessTokensTable_AccessTokenConnectionFragment>;
   refetch: () => void;
 };
 
 export function AccessTokensTable(props: AccessTokensTable) {
+  const { organizationSlug } = useSlugs('organization');
   const accessTokens = useFragment(
     AccessTokensTable_AccessTokenConnectionFragment,
     props.accessTokens,
@@ -71,7 +71,7 @@ export function AccessTokensTable(props: AccessTokensTable) {
     loadMore: after =>
       client
         .query(AccessTokensTable_MoreAccessTokensQuery, {
-          organizationSlug: props.organizationSlug,
+          organizationSlug,
           after,
         })
         .toPromise(),
@@ -169,7 +169,6 @@ export function AccessTokensTable(props: AccessTokensTable) {
       />
       <AccessTokenDetailViewSheet
         open={detailViewId !== null}
-        organizationSlug={props.organizationSlug}
         accessTokenId={detailViewId}
         onClose={() => setDetailViewId(null)}
       />

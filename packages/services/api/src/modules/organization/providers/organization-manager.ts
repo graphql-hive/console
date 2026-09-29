@@ -1,5 +1,6 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import { FastifyRequest } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { OrganizationInvitationTask } from '@hive/workflows/tasks/organization-invitation';
 import { OrganizationOwnershipTransferTask } from '@hive/workflows/tasks/organization-ownership-transfer';
@@ -12,8 +13,8 @@ import { AuthManager } from '../../auth/providers/auth-manager';
 import { BillingProvider } from '../../commerce/providers/billing.provider';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
 import { IdTranslator } from '../../shared/providers/id-translator';
-import { InMemoryRateLimiter } from '../../shared/providers/in-memory-rate-limiter';
 import { Logger } from '../../shared/providers/logger';
+import { RedisRateLimiter } from '../../shared/providers/redis-rate-limiter';
 import type { OrganizationSelector } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
@@ -50,7 +51,7 @@ export class OrganizationManager {
     private organizationMembers: OrganizationMembers,
     private provisionedUsersStore: ProvisionedUsersStore,
     private resourceAssignments: ResourceAssignments,
-    private inMemoryRateLimiter: InMemoryRateLimiter,
+    private rateLimiter: RedisRateLimiter,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
     private idTranslator: IdTranslator,
   ) {
@@ -545,20 +546,25 @@ export class OrganizationManager {
     });
   }
 
-  async inviteByEmail(input: {
-    organization: GraphQLSchema.OrganizationReferenceInput;
-    email: string;
-    role: string | null;
-    resources: GraphQLSchema.ResourceAssignmentInput | null;
-  }) {
-    const actor = await this.session.getActor();
-    await this.inMemoryRateLimiter.check(
-      'inviteToOrganizationByEmail',
-      actor.type === 'user' ? actor.user.id : actor.organizationAccessToken.id,
-      5_000, // 5 seconds
-      6, // 6 invites
-      `Exceeded rate limit for inviting to organization by email.`,
-    );
+  async inviteByEmail(
+    input: {
+      organization: GraphQLSchema.OrganizationReferenceInput;
+      email: string;
+      role: string | null;
+      resources: GraphQLSchema.ResourceAssignmentInput | null;
+    },
+    req: FastifyRequest,
+  ) {
+    if (
+      await this.rateLimiter.isActionRateLimited(
+        req,
+        'inviteToOrganizationByEmail',
+        5_000, // 5 seconds
+        6, // 6 invites
+      )
+    ) {
+      throw new HiveError(`Exceeded rate limit for inviting to organization by email.`);
+    }
 
     const { organizationId } = await this.idTranslator.resolveOrganizationReference({
       reference: input.organization,

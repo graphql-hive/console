@@ -133,5 +133,7 @@ export const runPGMigrations = async (args: { slonik: PostgresDatabasePool; runT
       import('./actions/2026.08.11T00-00-00.schema-check-baseline-sdl'),
       import('./actions/2026.08.11T00-00-01.schema-check-baseline-sdl-indexes'),
       import('./actions/2026.08.27T00-00-00.schema-push'),
+      import('./actions/2026.09.24T00-00-00.schema-versions-action-id-index'),
+      import('./actions/2026.09.24T00-00-01.schema-versions-action-id-nullability'),
     ]),
   });

@@ -1,6 +1,6 @@
 import { createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../button/button';
-import { useToast } from './toast';
+import { useToast, type ToastVariant } from './toast';
 
 export const nav: NavPath = 'Base/Feedback/Toast';
 
@@ -8,7 +8,7 @@ export const nav: NavPath = 'Base/Feedback/Toast';
  * One call shape, `toast({ title, description, variant })`, drawn on the neutral-3 surface with a
  * status icon. Up to three stack in the corner, collapsed to the front one until hovered or
  * focused; default and success toasts leave after 5s, destructive ones stay until closed. Swipe
- * right or down to dismiss. Replaces `ui/toast`, `ui/toaster`, `ui/use-toast` and react-toastify.
+ * right or down to dismiss.
  *
  * The provider is mounted by foundry's providers, as the router mounts it in the app.
  */
@@ -126,4 +126,36 @@ export const Duration = createPreview(() => {
       </Button>
     </div>
   );
+});
+
+export const Playground = createPreview({
+  controls: {
+    variant: { type: 'radio', options: ['default', 'success', 'destructive'], default: 'default' },
+    title: { type: 'text', default: 'Schema published' },
+    description: { type: 'text', default: 'Version 3f9a is live on the CDN.' },
+    duration: {
+      type: 'select',
+      options: ['variant default', '2s', '10s', 'sticky'],
+      default: 'variant default',
+      derive: d => ({ '2s': 2000, '10s': 10_000, sticky: 0 })[d],
+    },
+  },
+  render: v => {
+    const { toast } = useToast();
+    return (
+      <Button
+        variant="outline"
+        onClick={() =>
+          toast({
+            variant: v.variant as ToastVariant,
+            title: v.title || undefined,
+            description: v.description || undefined,
+            duration: v.duration as number | undefined,
+          })
+        }
+      >
+        Fire toast
+      </Button>
+    );
+  },
 });

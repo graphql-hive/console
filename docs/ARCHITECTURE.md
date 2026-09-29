@@ -37,7 +37,7 @@ flowchart TB
       redis[(Redis)]
       clickhouse[(ClickHouse)]
       broker[(Redpanda / Kafka)]
-      s3[(MinIO S3)]
+      s3[(versitygw S3)]
     end
 
     subgraph bootstrap[Bootstrap services]
@@ -133,10 +133,9 @@ flowchart LR
   app -.->|errors| observability
 ```
 
-PostgreSQL, Redis, ClickHouse, Redpanda, and MinIO persist their data under `docker/.hive/` by
-default. MinIO exposes its API and administration console directly in addition to the Caddy reverse
-proxy. Redpanda also publishes its Kafka listener on port `9092` and metrics/admin endpoint on port
-`9644`.
+PostgreSQL, Redis, ClickHouse, Redpanda, and versitygw persist their data under `docker/.hive/` by
+default. versitygw exposes its S3 API and web UI directly in addition to the Caddy reverse proxy.
+Redpanda also publishes its Kafka listener on port `9092` and metrics/admin endpoint on port `9644`.
 
 The observability integrations are optional. The community Compose file does not run an
 OpenTelemetry collector, Prometheus, or Sentry; operators provide and configure these externally.

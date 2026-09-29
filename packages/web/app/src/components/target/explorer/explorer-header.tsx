@@ -16,14 +16,12 @@ import {
 export function ExplorerHeader({
   title,
   description,
-  variant,
   dateRangeControl,
   showFilters = true,
   ...dimensionOptions
 }: ExplorerFilterDimensionsOptions & {
   title: string;
   description: string;
-  variant: 'all' | 'unused' | 'deprecated';
   /**
    * Passed in rather than built here: the All and Type views drive the picker
    * off the provider's period, while Unused and Deprecated own a local
@@ -42,12 +40,7 @@ export function ExplorerHeader({
           the gap down to the filter bar. */}
       <div className="flex items-start justify-between gap-4">
         <PageLead title={title} description={description} />
-        <SchemaVariantFilter
-          organizationSlug={dimensionOptions.organizationSlug}
-          projectSlug={dimensionOptions.projectSlug}
-          targetSlug={dimensionOptions.targetSlug}
-          variant={variant}
-        />
+        <SchemaVariantFilter />
       </div>
       {showFilters && <Filters dimensions={dimensions} pinnedControls={dateRangeControl} />}
     </div>

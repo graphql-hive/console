@@ -6,7 +6,7 @@ import { Label } from '@/components/base/label/label';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Switch } from '@/components/base/switch/switch';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -16,14 +16,13 @@ import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-import {
-  Outlet,
-  Link as RouterLink,
-  useNavigate,
-  useParams,
-  useSearch,
-} from '@tanstack/react-router';
+import { getRouteApi, Link, Outlet, useParams } from '@tanstack/react-router';
+
+const checksRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/checks',
+);
 
 const SchemaChecks_NavigationQuery = graphql(`
   query SchemaChecks_NavigationQuery(
@@ -77,12 +76,10 @@ const Navigation = (
     after: string | null;
     isLastPage: boolean;
     onLoadMore: (cursor: string) => void;
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
     schemaCheckId?: string;
   } & SchemaCheckFilters,
 ) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const search = useMemo(() => {
     return {
       filter_changed: props.showOnlyChanged,
@@ -92,9 +89,9 @@ const Navigation = (
   const [query] = useQuery({
     query: SchemaChecks_NavigationQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       after: props.after,
       filters: {
         changed: props.showOnlyChanged,
@@ -125,33 +122,28 @@ const Navigation = (
         <div
           key={edge.node.id}
           className={cn(
-            'hover:bg-neutral-5/40 flex flex-col rounded-md p-2.5',
-            edge.node.id === props.schemaCheckId ? 'bg-neutral-5/40' : null,
+            'hover:bg-surface-hover flex flex-col rounded-md p-2.5',
+            edge.node.id === props.schemaCheckId ? 'bg-surface-selected' : null,
           )}
         >
-          <RouterLink
+          <Link
             key={edge.node.id}
             to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-              schemaCheckId: edge.node.id,
-            }}
+            params={{ organizationSlug, projectSlug, targetSlug, schemaCheckId: edge.node.id }}
             search={search}
           >
             <h3 className="truncate text-sm font-semibold">
               {edge.node.meta?.commit ?? edge.node.id}
             </h3>
             {edge.node.meta?.author ? (
-              <div className="text-neutral-10 truncate text-xs font-medium">
+              <div className="text-fg-secondary truncate text-xs font-medium">
                 <span className="overflow-hidden truncate">{edge.node.meta.author}</span>
               </div>
             ) : null}
-            <div className="text-neutral-10 mb-1.5 mt-2.5 flex align-middle text-xs font-medium">
+            <div className="text-fg-secondary mb-1.5 mt-2.5 flex align-middle text-xs font-medium">
               <div
                 className={cn(
-                  edge.node.__typename === 'FailedSchemaCheck' ? 'text-red-500' : null,
+                  edge.node.__typename === 'FailedSchemaCheck' ? 'text-critical' : null,
                   'flex flex-row items-center gap-1',
                 )}
               >
@@ -168,10 +160,10 @@ const Navigation = (
                 </div>
               ) : null}
             </div>
-          </RouterLink>
+          </Link>
           {edge.node.githubRepository && edge.node.meta ? (
             <a
-              className="text-neutral-10 hover:text-neutral-10 -ml-px text-xs font-medium"
+              className="text-fg-secondary hover:text-fg-secondary -ml-px text-xs font-medium"
               target="_blank"
               rel="noreferrer"
               href={`https://github.com/${edge.node.githubRepository}/commit/${edge.node.meta.commit}`}
@@ -197,9 +189,6 @@ const ChecksPageQuery = graphql(`
     $targetSlug: String!
     $filters: SchemaChecksFilter
   ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-    }
     target(
       reference: {
         bySelector: {
@@ -236,9 +225,7 @@ function useTargetCheckUrlParams() {
   const { schemaCheckId } = useParams({
     strict: false /* allows to read the $schemaCheckId param of its child route */,
   }) as { schemaCheckId?: string };
-  const search = useSearch({
-    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/checks',
-  }) as {
+  const search = checksRoute.useSearch() as {
     filter_changed?: boolean;
     filter_failed?: boolean;
   };
@@ -250,19 +237,16 @@ function useTargetCheckUrlParams() {
   };
 }
 
-function ChecksPageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+function ChecksPageContent() {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { showOnlyChanged, showOnlyFailed, schemaCheckId } = useTargetCheckUrlParams();
 
   const [query] = useQuery({
     query: ChecksPageQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       filters: {
         changed: showOnlyChanged,
         failed: showOnlyFailed,
@@ -294,7 +278,7 @@ function ChecksPageContent(props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -310,20 +294,13 @@ function ChecksPageContent(props: {
         </div>
         {/* if done loading and there are schema checks found associated w this target */}
         {hasSchemaChecks && (
-          <SchemaChecksSideNav
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.organizationSlug}
-            targetSlug={props.targetSlug}
-          >
+          <SchemaChecksSideNav>
             {hasFilteredSchemaChecks ? (
-              <div className="border-neutral-5/50 flex min-h-0 w-[300px] grow flex-col rounded-md border">
+              <div className="border-line-subtle flex min-h-0 w-[300px] grow flex-col rounded-md border">
                 <ScrollArea fill>
                   <div className="flex flex-col gap-2.5 p-2.5">
                     {paginationVariables.map((cursor, index) => (
                       <Navigation
-                        organizationSlug={props.organizationSlug}
-                        projectSlug={props.projectSlug}
-                        targetSlug={props.targetSlug}
                         schemaCheckId={schemaCheckId}
                         after={cursor}
                         isLastPage={index + 1 === paginationVariables.length}
@@ -338,7 +315,7 @@ function ChecksPageContent(props: {
               </div>
             ) : (
               !isLoading && (
-                <div className="text-neutral-10 my-4 cursor-default text-center text-sm">
+                <div className="text-fg-secondary my-4 cursor-default text-center text-sm">
                   No schema checks found with the current filters
                 </div>
               )
@@ -383,13 +360,8 @@ function NoSchemaChecks(props: { projectType: ProjectType | null }) {
 /**
  * Renders the section of the checks page for when there are checks existing in the backend
  */
-function SchemaChecksSideNav(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  children: ReactNode;
-}) {
-  const navigate = useNavigate();
+function SchemaChecksSideNav(props: { children: ReactNode }) {
+  const navigate = checksRoute.useNavigate();
   const { showOnlyChanged, showOnlyFailed, rawSearch } = useTargetCheckUrlParams();
 
   const handleShowOnlyFilterChange = () => {
@@ -447,23 +419,13 @@ function SchemaChecksSideNav(props: {
   );
 }
 
-export function TargetChecksPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function TargetChecksPage() {
   return (
     <>
       <Meta title="Schema Checks" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Checks}
-        className="flex flex-row gap-x-6"
-      >
-        <ChecksPageContent {...props} />
-      </TargetLayout>
+      <LayoutContent className="flex flex-row gap-x-6">
+        <ChecksPageContent />
+      </LayoutContent>
     </>
   );
 }

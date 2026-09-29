@@ -1,4 +1,8 @@
 import { createHash } from 'node:crypto';
+import type {
+  FailedSchemaCheckMapper,
+  SuccessfulSchemaCheckMapper,
+} from '../module.graphql.mappers';
 import stringify from 'fast-json-stable-stringify';
 import { GraphQLError, parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
@@ -77,7 +81,7 @@ import {
   type SchemaInput,
 } from './schema-helper';
 import { SchemaManager } from './schema-manager';
-import { SchemaRevisionStore } from './schema-revision-store';
+import { SchemaRevisionStore, SchemaRevisionUnavailableError } from './schema-revision-store';
 import { SchemaVersionHelper } from './schema-version-helper';
 import {
   SchemaVersionStore,
@@ -85,6 +89,7 @@ import {
   type SchemaLogDiffInput,
   type SchemaLogWithEdges,
   type SchemaVersion,
+  type SchemaVersionMeta,
 } from './schema-version-store';
 
 const schemaCheckCount = new promClient.Counter({
@@ -133,6 +138,15 @@ type PublishResult =
       readonly __typename: 'SchemaPublishRetry';
       readonly reason: string;
     };
+
+function revisionNotFoundResult(revision: string) {
+  return {
+    __typename: 'SchemaPublishError' as const,
+    valid: false,
+    changes: [],
+    errors: [{ message: `Schema revision '${revision}' was not found.` }],
+  };
+}
 
 function registryLockId(targetId: string) {
   return `registry-lock:${targetId}`;
@@ -991,6 +1005,14 @@ export class SchemaPublisher {
       this.logger.info('created skipped schema check. (schemaCheckId=%s)', schemaCheck.id);
     }
 
+    const schemaCheckSelector = {
+      organizationId: target.orgId,
+      projectId: target.projectId,
+    };
+    const graphQLSchemaCheck = schemaCheck
+      ? toGraphQLSchemaCheck(schemaCheckSelector, schemaCheck)
+      : null;
+
     if (githubCheckRun) {
       if (checkResult.conclusion === SchemaCheckConclusion.Success) {
         const failedContractCompositionCount =
@@ -1015,6 +1037,7 @@ export class SchemaPublisher {
           compositionErrors: null,
           errors: null,
           schemaCheckId: schemaCheck?.id ?? null,
+          schemaCheck: graphQLSchemaCheck,
           githubCheckRun: githubCheckRun,
           failedContractCompositionCount,
         });
@@ -1038,6 +1061,7 @@ export class SchemaPublisher {
           warnings: checkResult.reason.schemaPolicy?.warnings ?? [],
           errors,
           schemaCheckId: schemaCheck?.id ?? null,
+          schemaCheck: graphQLSchemaCheck,
           githubCheckRun: githubCheckRun,
           failedContractCompositionCount,
         });
@@ -1069,6 +1093,7 @@ export class SchemaPublisher {
           compositionErrors: null,
           errors: null,
           schemaCheckId: schemaCheck?.id ?? null,
+          schemaCheck: graphQLSchemaCheck,
           githubCheckRun: githubCheckRun,
           failedContractCompositionCount,
         });
@@ -1087,6 +1112,7 @@ export class SchemaPublisher {
         warnings: null,
         errors: null,
         schemaCheckId: schemaCheck?.id ?? null,
+        schemaCheck: graphQLSchemaCheck,
         githubCheckRun: githubCheckRun,
         failedContractCompositionCount: 0,
       });
@@ -1095,11 +1121,6 @@ export class SchemaPublisher {
     if (schemaCheck == null) {
       throw new Error('Invalid state. Schema check can not be null at this point.');
     }
-
-    const schemaCheckSelector = {
-      organizationId: target.orgId,
-      projectId: target.projectId,
-    };
 
     if (checkResult.conclusion === SchemaCheckConclusion.Success) {
       increaseSchemaCheckCountMetric('accepted');
@@ -1360,6 +1381,13 @@ export class SchemaPublisher {
       );
     }
 
+    if (project.type !== Types.ProjectType.SINGLE && !input.service) {
+      return {
+        __typename: 'SchemaPublishMissingServiceError' as const,
+        message: 'Missing service name',
+      } as const;
+    }
+
     let revisionId: string | null = null;
     let revisionName: string | null = null;
     let resolvedSdl = input.sdl ?? input.schema?.sdl ?? null;
@@ -1372,12 +1400,7 @@ export class SchemaPublisher {
       });
 
       if (!revision) {
-        return {
-          __typename: 'SchemaPublishError',
-          valid: false,
-          changes: [],
-          errors: [{ message: `Schema revision '${input.schema.revision}' was not found.` }],
-        };
+        return revisionNotFoundResult(input.schema.revision);
       }
       revisionId = revision.id;
       revisionName = revision.revision;
@@ -1402,12 +1425,7 @@ export class SchemaPublisher {
     ]);
 
     if (project.type !== Types.ProjectType.SINGLE) {
-      if (!input.service) {
-        return {
-          __typename: 'SchemaPublishMissingServiceError' as const,
-          message: 'Missing service name',
-        } as const;
-      }
+      invariant(input.service, 'Service name is required for composite projects.');
 
       let serviceExists = false;
       if (latestVersion?.schemas) {
@@ -2312,96 +2330,104 @@ export class SchemaPublisher {
       serviceUrl = pushedSchema.serviceUrl;
     }
 
-    const schemaVersion = await this.schemaManager.createPublishVersion({
-      valid: composable,
-      organizationId: organizationId,
-      projectId: project.id,
-      targetId: target.id,
-      commit: input.commit,
-      existingSchemaLogs: previousSchemaLogs,
-      schema: input.sdl,
-      author: input.author,
-      previousSchemaLogId:
-        publishResult.state.previousSchemas?.find(schema => schema.serviceName === serviceName)
-          ?.id ?? null,
-      service:
-        serviceUrl && serviceName
-          ? {
-              name: serviceName,
-              url: serviceUrl,
+    let schemaVersion: SchemaVersion;
+    try {
+      schemaVersion = await this.schemaManager.createPublishVersion({
+        valid: composable,
+        organizationId: organizationId,
+        projectId: project.id,
+        targetId: target.id,
+        commit: input.commit,
+        existingSchemaLogs: previousSchemaLogs,
+        schema: input.sdl,
+        author: input.author,
+        previousSchemaLogId:
+          publishResult.state.previousSchemas?.find(schema => schema.serviceName === serviceName)
+            ?.id ?? null,
+        service:
+          serviceUrl && serviceName
+            ? {
+                name: serviceName,
+                url: serviceUrl,
+              }
+            : null,
+        serviceChanges: publishResult.state.serviceChanges ?? null,
+        base_schema: baseSchema,
+        metadata: input.metadata ?? null,
+        schemaRevisionId: input.schemaRevisionId,
+        revision: input.revision,
+        github,
+        actionFn: async (versionId: string) => {
+          if (composable && fullSchemaSdl) {
+            const contracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
+            for (const contract of publishState.contracts ?? []) {
+              if (contract.fullSchemaSdl && contract.supergraph) {
+                contracts.push({
+                  name: contract.contractName,
+                  sdl: contract.fullSchemaSdl,
+                  supergraph: contract.supergraph,
+                });
+              }
             }
-          : null,
-      serviceChanges: publishResult.state.serviceChanges ?? null,
-      base_schema: baseSchema,
-      metadata: input.metadata ?? null,
-      schemaRevisionId: input.schemaRevisionId,
-      revision: input.revision,
-      github,
-      actionFn: async (versionId: string) => {
-        if (composable && fullSchemaSdl) {
-          const contracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
-          for (const contract of publishState.contracts ?? []) {
-            if (contract.fullSchemaSdl && contract.supergraph) {
-              contracts.push({
-                name: contract.contractName,
-                sdl: contract.fullSchemaSdl,
-                supergraph: contract.supergraph,
-              });
-            }
-          }
 
-          await this.publishToCDN({
-            target,
-            project,
-            supergraph,
-            fullSchemaSdl,
-            schemas,
-            contracts,
-            versionId,
-          });
-        }
-      },
-      changes,
-      diffSchemaVersionId: latestComposable?.version.id ?? null,
-      previousSchemaVersion: latestVersion?.version.id ?? null,
-      conditionalBreakingChangeMetadata: await this.getConditionalBreakingChangeMetadata({
-        conditionalBreakingChangeConfiguration,
-        organizationId,
-        projectId,
-        targetId,
-      }),
-      contracts:
-        publishResult.state.contracts?.map(contract => ({
-          contractId: contract.contractId,
-          contractName: contract.contractName,
-          compositeSchemaSDL: contract.fullSchemaSdl,
-          supergraphSDL: contract.supergraph,
-          schemaCompositionErrors: contract.compositionErrors,
-          changes: contract.changes,
-        })) ?? null,
-      ...(fullSchemaSdl
-        ? {
-            compositeSchemaSDL: fullSchemaSdl,
-            supergraphSDL: supergraph,
-            supergraphChanges: publishResult.state.supergraphChanges ?? null,
-            schemaCompositionErrors: null,
-            tags: publishResult.state?.tags ?? null,
-            schemaMetadata: publishResult.state?.schemaMetadata ?? null,
-            metadataAttributes: publishResult.state?.metadataAttributes ?? null,
+            await this.publishToCDN({
+              target,
+              project,
+              supergraph,
+              fullSchemaSdl,
+              schemas,
+              contracts,
+              versionId,
+            });
           }
-        : {
-            compositeSchemaSDL: null,
-            supergraphSDL: null,
-            supergraphChanges: null,
-            schemaCompositionErrors: assertNonNull(
-              publishResult.state.compositionErrors,
-              "Can't be null",
-            ),
-            tags: null,
-            schemaMetadata: null,
-            metadataAttributes: null,
-          }),
-    });
+        },
+        changes,
+        diffSchemaVersionId: latestComposable?.version.id ?? null,
+        previousSchemaVersion: latestVersion?.version.id ?? null,
+        conditionalBreakingChangeMetadata: await this.getConditionalBreakingChangeMetadata({
+          conditionalBreakingChangeConfiguration,
+          organizationId,
+          projectId,
+          targetId,
+        }),
+        contracts:
+          publishResult.state.contracts?.map(contract => ({
+            contractId: contract.contractId,
+            contractName: contract.contractName,
+            compositeSchemaSDL: contract.fullSchemaSdl,
+            supergraphSDL: contract.supergraph,
+            schemaCompositionErrors: contract.compositionErrors,
+            changes: contract.changes,
+          })) ?? null,
+        ...(fullSchemaSdl
+          ? {
+              compositeSchemaSDL: fullSchemaSdl,
+              supergraphSDL: supergraph,
+              supergraphChanges: publishResult.state.supergraphChanges ?? null,
+              schemaCompositionErrors: null,
+              tags: publishResult.state?.tags ?? null,
+              schemaMetadata: publishResult.state?.schemaMetadata ?? null,
+              metadataAttributes: publishResult.state?.metadataAttributes ?? null,
+            }
+          : {
+              compositeSchemaSDL: null,
+              supergraphSDL: null,
+              supergraphChanges: null,
+              schemaCompositionErrors: assertNonNull(
+                publishResult.state.compositionErrors,
+                "Can't be null",
+              ),
+              tags: null,
+              schemaMetadata: null,
+              metadataAttributes: null,
+            }),
+      });
+    } catch (error: unknown) {
+      if (error instanceof SchemaRevisionUnavailableError && input.revision != null) {
+        return revisionNotFoundResult(input.revision);
+      }
+      throw error;
+    }
 
     if (changes.length > 0 || errors.length > 0) {
       void this.alertsManager
@@ -2656,11 +2682,9 @@ export class SchemaPublisher {
       changed: [
         {
           id: args.logs.origin[0].actionId,
-          // we do not need a direct link to the previous log
-          previousId: null,
+          previousId: args.logs.target[0]?.actionId ?? null,
           serviceName: null,
-          // we can omit the type for a monolith schema; there is always only one "subgraph"
-          type: null,
+          type: 'changed',
           // there are no service specific changes
           // the changes are already covered via the main graph
           changes: null,
@@ -3281,10 +3305,20 @@ export class SchemaPublisher {
       }),
     ]);
 
-    const actionLog =
-      originLogEdges.find(log => log.actionId === originSchemaVersion.actionId)?.node ?? null;
+    let meta: SchemaVersionMeta | null = originSchemaVersion.meta;
 
-    invariant(actionLog !== null, 'Could not find action log that caused the origin version.');
+    if (!meta) {
+      // in case the schema version has no "meta" field the `actionId` MUST be populated.
+      const actionLog =
+        originLogEdges.find(log => log.actionId === originSchemaVersion.actionId)?.node ?? null;
+
+      if (actionLog) {
+        meta = {
+          author: actionLog.author,
+          commit: actionLog.commit,
+        };
+      }
+    }
 
     // NOTE: We re-use the values (sdl; errors; etc) from the existing origin values were possible to ensure a promotion results in the !!exact state!!
     // e.g. if we would compose from scratch but the external composition has changed a promotion would be unpredictable
@@ -3301,7 +3335,7 @@ export class SchemaPublisher {
         publicSchemaSdl: originPublicSchemaSdl,
         supergraphSdl: originSupergraphSdl,
       },
-      actionLog,
+      meta,
       schemaLogs: schemaLogDiffs,
       publicSchemaChanges,
       supergraphSchemaChanges,
@@ -3423,6 +3457,7 @@ export class SchemaPublisher {
     errors,
     warnings,
     schemaCheckId,
+    schemaCheck,
     ...args
   }: {
     organization: Organization;
@@ -3450,6 +3485,7 @@ export class SchemaPublisher {
       message: string;
     }> | null;
     schemaCheckId: string | null;
+    schemaCheck: SuccessfulSchemaCheckMapper | FailedSchemaCheckMapper | null;
     failedContractCompositionCount: number;
   }) {
     try {
@@ -3517,13 +3553,15 @@ export class SchemaPublisher {
       return {
         __typename: 'GitHubSchemaCheckSuccess' as const,
         message: 'Check-run created',
+        isValid: conclusion === SchemaCheckConclusion.Success,
+        schemaCheck,
         checkRun,
       };
     } catch (error: any) {
       Sentry.captureException(error);
       return {
         __typename: 'GitHubSchemaCheckError' as const,
-        message: `Failed to create the check-run`,
+        message: 'The schema check ran, but the GitHub check-run could not be updated.',
       };
     }
   }

@@ -29,11 +29,12 @@ import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
+
+const membersRoute = getRouteApi('/authenticated/with-header/$organizationSlug/view/members/');
 
 const MemberGroups_GroupFragment = graphql(`
   fragment MemberGroups_GroupFragment on Group {
@@ -124,7 +125,7 @@ export const authProviderToIconAndTextMap: Record<
   },
 };
 
-const OrganizationMemberRow_DeleteMember = graphql(`
+export const OrganizationMemberRow_DeleteMember = graphql(`
   mutation OrganizationMemberRow_DeleteMember($input: OrganizationMemberInput!) {
     deleteOrganizationMember(input: $input) {
       organization {
@@ -192,7 +193,7 @@ function MemberStatusIcon({ member }: { member: MemberRow }) {
   if (info?.provisioningStatus === GraphQLSchema.ProvisioningStatus.Active && info.isDisabled) {
     return (
       <span
-        className="bg-critical_10 text-critical flex size-9 items-center justify-center rounded-full"
+        className="bg-critical-tint text-critical flex size-9 items-center justify-center rounded-full"
         aria-label="Disabled user"
       >
         <UserRoundX className="size-5" />
@@ -202,7 +203,7 @@ function MemberStatusIcon({ member }: { member: MemberRow }) {
   const Icon = info ? UserLock : UserRound;
   return (
     <span
-      className="bg-neutral-3 flex size-9 items-center justify-center rounded-full"
+      className="bg-surface-card flex size-9 items-center justify-center rounded-full"
       aria-label={info ? 'Provisioned user' : 'User'}
     >
       <Icon className="size-5" />
@@ -228,7 +229,7 @@ function MemberNameCell({ member }: { member: MemberRow }) {
               openOnHover
               width="auto"
               content={
-                <div className="text-neutral-11 text-xs">
+                <div className="text-fg-default text-xs">
                   <div>Provisioned via SCIM</div>
                   <div>
                     External ID:{' '}
@@ -248,7 +249,7 @@ function MemberNameCell({ member }: { member: MemberRow }) {
                 trigger={
                   <span className="inline-flex">
                     <providerDisplay.Icon
-                      className={cn('size-4', provider.disabledReason && 'text-neutral-7')}
+                      className={cn('size-4', provider.disabledReason && 'text-fg-subtle')}
                     />
                   </span>
                 }
@@ -290,7 +291,7 @@ function MemberRoleCell(props: {
               <button
                 type="button"
                 aria-label="About the owner role"
-                className="text-neutral-9 hover:text-neutral-11 inline-flex"
+                className="text-fg-muted hover:text-fg-default inline-flex"
               >
                 <Info className="size-3.5" />
               </button>
@@ -385,7 +386,7 @@ function MemberRoleCell(props: {
             }}
             cancel={{ disabled: confirmManagementState.fetching }}
           >
-            <p className="text-neutral-11 text-sm">
+            <p className="text-fg-default text-sm">
               After confirmation, your identity provider will control this user's status and
               group-based access. Review the pending SCIM values below to avoid removing access
               unintentionally.
@@ -432,7 +433,7 @@ function MemberActionsCell(props: {
         <Tooltip
           trigger={
             <span className="inline-flex">
-              <ShieldCheck size={16} className="text-neutral-8" />
+              <ShieldCheck size={16} className="text-fg-subtle" />
             </span>
           }
           content="Provisioned users can only be updated via the SCIM endpoints."
@@ -620,7 +621,7 @@ export function OrganizationMembers(props: {
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null]);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const search = organizationMembersRoute.useSearch();
+  const search = membersRoute.useSearch();
 
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
   const members = useFragment(
@@ -734,9 +735,8 @@ export function OrganizationMembers(props: {
           Showing members with unresolved SCIM provisioning conflicts.{' '}
           <Link
             to="/$organizationSlug/view/members"
-            search={{ page: 'list' }}
             params={{ organizationSlug: organization.slug }}
-            className="text-neutral-1 hover:text-neutral-8"
+            className="text-fg-inverse hover:text-fg-subtle"
           >
             Show all members
           </Link>
@@ -756,9 +756,8 @@ export function OrganizationMembers(props: {
                 No members with provisioning conflict found
                 <Link
                   to="/$organizationSlug/view/members"
-                  search={{ page: 'list' }}
                   params={{ organizationSlug: organization.slug }}
-                  className="text-accent hover:text-accent/80"
+                  className="text-accent hover:text-accent-muted"
                 >
                   Show all members
                 </Link>

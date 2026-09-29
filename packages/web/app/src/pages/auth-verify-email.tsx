@@ -6,8 +6,9 @@ import { Button } from '@/components/base/button/button';
 import { useToast } from '@/components/base/toast/toast';
 import { Meta } from '@/components/ui/meta';
 import { graphql } from '@/gql';
-import { authVerifyEmailRoute } from '@/router';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
+
+const verifyEmailRoute = getRouteApi('/anonymous/auth/verify-email');
 
 const SendVerificationEmailMutation = graphql(`
   mutation SendVerificationEmailMutation($input: SendVerificationEmailInput!) {
@@ -37,7 +38,7 @@ const VerifyEmailMutation = graphql(`
 `);
 
 function AuthVerifyEmail() {
-  const search = authVerifyEmailRoute.useSearch();
+  const search = verifyEmailRoute.useSearch();
   const { toast } = useToast();
   const session = useSessionContext();
   const navigate = useNavigate();
@@ -181,7 +182,7 @@ function AuthVerifyEmail() {
         content={
           <AuthCardStack>
             <div className="flex justify-center">
-              <div className="size-8 animate-spin rounded-full border-2 border-t-[#3c3c3c]" />
+              <div className="border-t-fg-muted size-8 animate-spin rounded-full border-2" />
             </div>
           </AuthCardStack>
         }

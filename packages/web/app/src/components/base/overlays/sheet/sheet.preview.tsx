@@ -10,8 +10,7 @@ export const nav: NavPath = 'Base/Overlays/Sheet';
 /**
  * A panel from the right edge, for a task with more to it than a dialog holds: the token and SSO
  * forms, the trace details. The header stays at the top and the footer at the bottom while the
- * body scrolls, which every legacy sheet built by hand. Replaces `ui/sheet`; the top, bottom and
- * left sides had no call site and are gone.
+ * body scrolls.
  */
 
 function TokenFields({ count = 3 }: { count?: number }) {
@@ -60,7 +59,7 @@ export const Default = createPreview(() => {
   );
 });
 
-/** `md` is the default and what nine of the legacy sheets set; `half` is the trace panels. */
+/** `md` is the default; `half` is the trace panels. */
 export const Widths = createPreview(() => (
   <div className="flex flex-wrap gap-3">
     {(['md', 'lg', 'half'] as const).map(width => (
@@ -107,20 +106,20 @@ export const EdgeToEdge = createPreview(() => (
     title={
       <>
         Span Details
-        <span className="text-neutral-10 ml-2 font-mono font-normal">a3f9</span>
+        <span className="text-fg-secondary ml-2 font-mono font-normal">a3f9</span>
       </>
     }
     description="Span ID: a3f9c2d1e8b74f60"
   >
     <ScrollArea fill>
-      <ul className="divide-neutral-5 border-neutral-5 divide-y border-t text-sm">
+      <ul className="divide-line border-line divide-y border-t text-sm">
         {[
           'http.method GET',
           'http.route /graphql',
           'graphql.operation.name GetUser',
           'db.system postgres',
         ].map(row => (
-          <li key={row} className="text-neutral-11 px-6 py-3 font-mono">
+          <li key={row} className="text-fg-default px-6 py-3 font-mono">
             {row}
           </li>
         ))}
@@ -138,8 +137,6 @@ export const Playground = createPreview({
     },
     width: { type: 'radio', options: ['md', 'lg', 'half'], default: 'md' },
     padding: { type: 'radio', options: ['default', 'none'], default: 'default' },
-    closeButton: { type: 'boolean', default: true },
-    dismissible: { type: 'boolean', default: true },
   }),
   render: v => (
     <Sheet
@@ -148,8 +145,6 @@ export const Playground = createPreview({
       description={v.description}
       width={v.width}
       padding={v.padding}
-      closeButton={v.closeButton}
-      dismissible={v.dismissible}
       footer={<Button variant="primary">Done</Button>}
     >
       <TokenFields />

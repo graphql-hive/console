@@ -1394,6 +1394,12 @@ export class SchemaManager {
       };
     }
 
+    // A schema version must have an action id if it has no github property
+    // So we can short-circuit here and resolve to "null"
+    if (!schemaVersion.actionId) {
+      return null;
+    }
+
     const log = await this.getSchemaLogById(schemaVersion.actionId);
 
     if ('commit' in log && log.commit) {

@@ -39,7 +39,7 @@ function MissingOIDCId() {
       title="Missing ID"
       description="You need to provide an OIDC ID to sign in."
       content={
-        <p className="text-neutral-10">
+        <p className="text-fg-secondary">
           <DocsLink
             href="/management/sso-oidc-provider#login-via-oidc"
             text="Learn how to login via OIDC"

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CircleHelp, Info, ShieldAlert } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Select } from '../floating/select/select';
 import { Input } from '../input/input';
@@ -61,15 +62,33 @@ export const Inline = createPreview(() => {
   );
 });
 
+const ICONS = { info: Info, 'circle-help': CircleHelp, 'shield-alert': ShieldAlert };
+
 export const Playground = createPreview({
   controls: controlsFor(Label, {
     label: { type: 'text', default: 'Graph Variant' },
     variant: { type: 'radio', options: ['caps', 'inline'], default: 'caps' },
-    tooltip: { type: 'text', default: '', derive: text => text || undefined },
+    tooltip: {
+      type: 'text',
+      default: 'Shown in the proposals list and in notifications.',
+      derive: text => text || undefined,
+    },
+    icon: {
+      type: 'radio',
+      options: ['info', 'circle-help', 'shield-alert'],
+      default: 'info',
+      derive: name => ICONS[name],
+    },
   }),
   render: v => (
     <div>
-      <Label htmlFor="playground-input" label={v.label} variant={v.variant} tooltip={v.tooltip} />
+      <Label
+        htmlFor="playground-input"
+        label={v.label}
+        variant={v.variant}
+        tooltip={v.tooltip}
+        icon={v.icon}
+      />
       <Input id="playground-input" placeholder="Type here" />
     </div>
   ),

@@ -27,19 +27,19 @@ const SEVERITIES: FilterItem[] = [
 
 function SelectionReadout({ selected }: { selected: FilterSelection[] }) {
   if (selected.length === 0) {
-    return <div className="text-neutral-8 text-sm">No filters active</div>;
+    return <div className="text-fg-subtle text-sm">No filters active</div>;
   }
 
   return (
     <ul className="space-y-1 text-sm">
       {selected.map(selection => (
-        <li key={selection.name} className="text-neutral-11">
-          <span className="text-neutral-12 font-medium">{selection.name}</span>
+        <li key={selection.name} className="text-fg-default">
+          <span className="text-fg font-medium">{selection.name}</span>
           {': '}
           {selection.values === null ? (
-            <span className="text-neutral-8 italic">all</span>
+            <span className="text-fg-subtle italic">all</span>
           ) : (
-            <span className="text-neutral-9">{selection.values.join(', ')}</span>
+            <span className="text-fg-muted">{selection.values.join(', ')}</span>
           )}
         </li>
       ))}
@@ -54,6 +54,9 @@ function FilterHarness({
   valuesLabel,
   initial = [],
   withExcludeMode = false,
+  disabled,
+  singleSelect,
+  alwaysShowSearch,
 }: {
   items: FilterItem[];
   label: string;
@@ -61,6 +64,9 @@ function FilterHarness({
   valuesLabel?: string;
   initial?: FilterSelection[];
   withExcludeMode?: boolean;
+  disabled?: boolean;
+  singleSelect?: boolean;
+  alwaysShowSearch?: boolean;
 }) {
   const [selected, setSelected] = useState<FilterSelection[]>(initial);
   const [exclude, setExclude] = useState(false);
@@ -79,9 +85,12 @@ function FilterHarness({
         valuesLabel={valuesLabel}
         excludeMode={withExcludeMode ? exclude : undefined}
         onExcludeModeChange={withExcludeMode ? setExclude : undefined}
+        disabled={disabled}
+        singleSelect={singleSelect}
+        alwaysShowSearch={alwaysShowSearch}
       />
       <div>
-        <div className="text-neutral-8 mb-2 text-xs font-medium uppercase tracking-wider">
+        <div className="text-fg-subtle mb-2 text-xs font-medium uppercase tracking-wider">
           Selection
         </div>
         <SelectionReadout selected={selected} />
@@ -125,3 +134,37 @@ export const FlatItems = createPreview(() => (
     initial={[{ name: 'Breaking', values: null }]}
   />
 ));
+
+export const Playground = createPreview({
+  controls: {
+    items: { type: 'radio', options: ['clients', 'severities'], default: 'clients' },
+    excludeMode: { type: 'boolean', default: false },
+    singleSelect: { type: 'boolean', default: false },
+    alwaysShowSearch: { type: 'boolean', default: false },
+    disabled: { type: 'boolean', default: false },
+  },
+  render: v =>
+    v.items === 'clients' ? (
+      <FilterHarness
+        key="clients"
+        items={CLIENTS}
+        label="Client"
+        valuesLabel="versions"
+        withExcludeMode={v.excludeMode}
+        singleSelect={v.singleSelect}
+        alwaysShowSearch={v.alwaysShowSearch}
+        disabled={v.disabled}
+      />
+    ) : (
+      <FilterHarness
+        key="severities"
+        items={SEVERITIES}
+        label="Severity"
+        labelPlural="severities"
+        withExcludeMode={v.excludeMode}
+        singleSelect={v.singleSelect}
+        alwaysShowSearch={v.alwaysShowSearch}
+        disabled={v.disabled}
+      />
+    ),
+});

@@ -20,6 +20,12 @@ vi.mock('urql', async importOriginal => ({
 }));
 
 const slugs = { organizationSlug: 'acme', projectSlug: 'shop' };
+
+// The modal reads the current project from the URL; here it renders outside a router.
+vi.mock('@/lib/hooks', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/lib/hooks')>()),
+  useSlugs: () => slugs,
+}));
 const targets = ['production', 'staging'].map(slug =>
   makeFragmentData(
     { __typename: 'Target' as const, id: `t-${slug}`, slug },
@@ -45,7 +51,6 @@ function renderModal() {
       toggleModalOpen={toggleModalOpen}
       targets={targets}
       channels={channels}
-      {...slugs}
     />
   );
   const view = render(element());

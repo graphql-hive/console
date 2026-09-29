@@ -542,7 +542,7 @@ export interface schema_version_to_log {
 }
 
 export interface schema_versions {
-  action_id: string;
+  action_id: string | null;
   base_schema: string | null;
   composite_schema_sdl: string | null;
   conditional_breaking_change_metadata: any | null;

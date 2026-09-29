@@ -8,6 +8,7 @@ import {
 } from '@/components/target/proposals/save-proposal-modal';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useSlugs } from '@/lib/hooks';
 
 export const Proposals_EditProposalProposalFragment = graphql(`
   fragment Proposals_EditProposalProposalFragment on SchemaProposal {
@@ -84,14 +85,12 @@ export const Proposals_EditProposalTargetFragment = graphql(`
 `);
 
 export function TargetProposalEditPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   proposalId: string;
   proposal: FragmentType<typeof Proposals_EditProposalProposalFragment>;
   target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
   me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
 }) {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { isSaving, saveChanges } = useContext(SaveProposalContext);
   const me = useFragment(Proposals_EditProposalMeFragment, props.me);
   const schemaProposal = useFragment(Proposals_EditProposalProposalFragment, props.proposal);
@@ -129,9 +128,9 @@ export function TargetProposalEditPage(props: {
             variant="outline"
             onClick={async () => {
               await saveChanges({
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 schemaProposalId: props.proposalId,
                 author: me?.displayName ?? null,
                 changes: changedServices,

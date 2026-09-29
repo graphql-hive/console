@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
 import { stageToColor } from '@/components/target/proposals/util';
 import { Link } from '@/components/ui/link';
@@ -14,48 +14,21 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
+import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
+import { getRouteApi, useNavigate, useSearch } from '@tanstack/react-router';
 
-const TargetProposalsQuery = graphql(`
-  query TargetProposalsQuery(
-    $organizationSlug: String!
-    $projectSlug: String!
-    $targetSlug: String!
-  ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      slug
-      project: projectBySlug(projectSlug: $projectSlug) {
-        id
-        slug
-        target: targetBySlug(targetSlug: $targetSlug) {
-          id
-          slug
-          viewerCanViewSchemaProposals
-        }
-      }
-    }
-  }
-`);
+const proposalsRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/proposals',
+);
 
 export function TargetProposalsPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   filterUserIds?: string[];
   filterStages?: string[];
   selectedProposalId?: string;
 }) {
-  const [query] = useQuery({
-    query: TargetProposalsQuery,
-    variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
-    },
-  });
-  const target = query.data?.organization?.project?.target;
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const target = useLayoutQuery('target').data?.organization?.project?.target;
 
   useRedirect({
     canAccess: target?.viewerCanViewSchemaProposals === true,
@@ -63,9 +36,9 @@ export function TargetProposalsPage(props: {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
+          organizationSlug,
+          projectSlug,
+          targetSlug,
         },
       });
     },
@@ -74,28 +47,23 @@ export function TargetProposalsPage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Proposals}
-        className="flex min-h-[300px] flex-col"
-      >
+      <LayoutContent className="flex min-h-[300px] flex-col">
         <ProposalsContent {...props} />
-      </TargetLayout>
+      </LayoutContent>
     </>
   );
 }
 
 const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const navigate = useNavigate();
   const proposeChange = () => {
     void navigate({
       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/new',
       params: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
+        organizationSlug,
+        projectSlug,
+        targetSlug,
       },
     });
   };
@@ -140,9 +108,9 @@ const ProposalsQuery = graphql(`
 
 function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
   const [pageVariables, setPageVariables] = useState([{ first: 20, after: null as string | null }]);
-  const router = useRouter();
+  const navigate = proposalsRoute.useNavigate();
   const reset = () => {
-    void router.navigate({
+    void navigate({
       search: { stage: undefined, user: undefined },
     });
   };
@@ -159,7 +127,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
         ) : null}
       </div>
 
-      <div className="border-neutral-5/50 bg-neutral-2/50 min-h-full gap-2.5 rounded-md border p-2.5">
+      <div className="border-line-subtle bg-surface-inset min-h-full gap-2.5 rounded-md border p-2.5">
         {pageVariables.map(({ after }, i) => (
           <ProposalsListPage
             key={after ?? i}
@@ -179,24 +147,22 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
  * This renders a single page of proposals for the ProposalList component.
  */
 const ProposalsListPage = (props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
   filterUserIds?: string[];
   filterStages?: string[];
   selectedProposalId?: string;
   isLastPage: boolean;
   onLoadMore: (after: string) => void | Promise<void>;
 }) => {
+  const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ProposalsQuery,
     variables: {
       input: {
         target: {
           bySelector: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            organizationSlug,
+            projectSlug,
+            targetSlug,
           },
         },
         stages: (
@@ -235,17 +201,17 @@ const ProposalsListPage = (props: {
           <div
             key={proposal.id}
             className={cn(
-              'hover:bg-neutral-5/40 flex w-full flex-col rounded-md p-2.5',
-              props.selectedProposalId === proposal.id && 'bg-neutral-5/40',
+              'hover:bg-surface-hover flex w-full flex-col rounded-md p-2.5',
+              props.selectedProposalId === proposal.id && 'bg-surface-selected',
             )}
           >
             <Link
               key={proposal.id}
               to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
               params={{
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 proposalId: proposal.id,
               }}
               search={{
@@ -257,15 +223,15 @@ const ProposalsListPage = (props: {
               <div className="flex flex-row items-start">
                 <div className="flex min-w-0 grow flex-col">
                   <div className="mr-6 flex min-w-0 flex-row gap-1 text-sm md:text-base">
-                    <span className="text-neutral-11 mr-6 truncate font-semibold">
+                    <span className="text-fg-default mr-6 truncate font-semibold">
                       {proposal.title}
                     </span>
-                    <span className="text-neutral-2 flex items-center">
+                    <span className="text-fg-inverse flex items-center">
                       <StatusDot color={stageToColor(proposal.stage)} />
                     </span>
-                    <span className="text-neutral-10">{proposal.stage}</span>
+                    <span className="text-fg-secondary">{proposal.stage}</span>
                   </div>
-                  <div className="text-neutral-10 mb-1.5 mt-2 flex flex-col gap-x-1 align-middle text-xs font-medium md:flex-row">
+                  <div className="text-fg-secondary mb-1.5 mt-2 flex flex-col gap-x-1 align-middle text-xs font-medium md:flex-row">
                     <div className="truncate">
                       proposed <TimeAgo date={proposal.updatedAt} />
                     </div>
@@ -274,7 +240,7 @@ const ProposalsListPage = (props: {
                 </div>
                 {/* <div
                   className={cn(
-                    'hidden items-center justify-end gap-1 text-right text-neutral-10 sm:flex',
+                    'hidden items-center justify-end gap-1 text-right text-fg-secondary sm:flex',
                   )}
                 >
                   <span>{proposal.commentsCount}</span>
