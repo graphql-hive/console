@@ -4,8 +4,16 @@ import {
   AlertForm_SavedFiltersQuery,
 } from '@/components/target/alerts/alert-form';
 import { AlertActivitySearch } from '@/components/target/alerts/search-schemas';
+import { activityUnits } from '@/components/ui/date-range-picker';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
-import { defaultRange, loadQuery, requireLayoutFlag, revalidate } from '@/lib/route-utils';
+import {
+  defaultRange,
+  loadQuery,
+  requireLayoutFlag,
+  requireUnits,
+  revalidate,
+  type RangeBounds,
+} from '@/lib/route-utils';
 import { TargetAlertsPage, TargetAlertsWithNav } from '@/pages/target-alerts';
 import {
   presetLast1Hour,
@@ -39,17 +47,21 @@ export const targetAlertsWithNavRoute = createRoute({
   component: TargetAlertsWithNav,
 });
 
+const activity: RangeBounds = {
+  range: presetLast1Hour.range,
+  units: activityUnits,
+  to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
+};
+
 export const targetAlertsIndexRoute = createRoute({
   getParentRoute: () => targetAlertsWithNavRoute,
   path: '/',
   validateSearch: AlertActivitySearch.parse,
-  beforeLoad: defaultRange(
-    presetLast1Hour.range,
-    '/$organizationSlug/$projectSlug/$targetSlug/alerts',
-  ),
+  beforeLoad: defaultRange(activity),
   loaderDeps: ({ search }) => ({ from: search.from, to: search.to }),
   preloadStaleTime: 0,
   loader: loader => {
+    requireUnits(loader, activity);
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const slugs = { organizationSlug, projectSlug, targetSlug };
     const { period } = loaderPeriod(loader.deps, presetLast1Hour);

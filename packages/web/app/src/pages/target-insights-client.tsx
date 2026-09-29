@@ -3,7 +3,7 @@ import { differenceInMilliseconds } from 'date-fns';
 import { ActivityIcon, BookIcon, GlobeIcon, HistoryIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
-import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
+import { DateRangePicker, presetLast7Days, usageUnits } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -110,7 +110,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
         </div>
         <div className="flex justify-end gap-x-2">
           <DateRangePicker
-            validUnits={['y', 'M', 'w', 'd', 'h']}
+            validUnits={usageUnits}
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
             align="end"

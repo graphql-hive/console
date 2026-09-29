@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   addDays,
   addHours,
@@ -9,11 +9,12 @@ import {
   subMilliseconds,
   subSeconds,
 } from 'date-fns';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { availablePresets, buildDateRangeString, Preset } from '@/components/ui/date-range-picker';
 import { parse, resolveRange } from '@/lib/date-math';
 import { subDays } from '@/lib/date-time';
 import { UTCDate } from '@date-fns/utc';
-import { useRouter } from '@tanstack/react-router';
+import { useRouter, useRouterState } from '@tanstack/react-router';
 import { useResetState } from './use-reset-state';
 
 export function useDateRangeController(args: {
@@ -46,6 +47,19 @@ export function useDateRangeController(args: {
     [selectedPreset.range, triggerRefreshCounter],
   );
 
+  // A route that reset the range to this default left a note in history state; say so once.
+  const { toast } = useToast();
+  const state = useRouterState({ select: current => current.location.state });
+  useEffect(() => {
+    if (!state.rangeReset || announced(state.key ?? '')) {
+      return;
+    }
+    toast({
+      title: `Date range reset to ${args.defaultPreset.label}`,
+      description: 'This page cannot show the range the URL carried.',
+    });
+  }, [state, toast, args.defaultPreset.label]);
+
   return {
     startDate,
     selectedPreset,
@@ -68,6 +82,20 @@ export function useDateRangeController(args: {
     },
     resolution: resolved.resolution,
   } as const;
+}
+
+// The note stays in the entry (a reload keeps it, so does going back to it): remember the one announced.
+const ANNOUNCED = 'hive:range-reset:announced';
+function announced(entryKey: string): boolean {
+  try {
+    if (sessionStorage.getItem(ANNOUNCED) === entryKey) {
+      return true;
+    }
+    sessionStorage.setItem(ANNOUNCED, entryKey);
+  } catch {
+    // Without storage the toast repeats on a reload, nothing worse.
+  }
+  return false;
 }
 
 type DateRangeArgs = { from?: string; to?: string; defaultPreset: Preset };

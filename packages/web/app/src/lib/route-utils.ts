@@ -4,6 +4,7 @@ import {
   ProjectLayoutQuery,
   TargetLayoutQuery,
 } from '@/components/layouts/queries';
+import { withinUnits, type DurationUnit } from '@/lib/date-math';
 import { redirect, type AnyRedirect } from '@tanstack/react-router';
 import type {
   AnyVariables,
@@ -17,6 +18,13 @@ declare module '@urql/core' {
   interface OperationContext {
     /** Set by `loadQuery` on a route preload; the progress bar leaves those out. */
     preload?: boolean;
+  }
+}
+
+declare module '@tanstack/history' {
+  interface HistoryState {
+    /** Set by a range reset; the page's picker announces it once. */
+    rangeReset?: true;
   }
 }
 
@@ -131,19 +139,41 @@ export const requireLayoutFlag = {
 };
 
 type Range = { from: string; to: string };
+type RangeSearch = Partial<Range> & Record<string, unknown>;
 
-// A `beforeLoad` that sends a bare URL to `range`, so a shared link always says what it shows.
-export function defaultRange(range: Range | (() => Range), to: string) {
-  return ({
-    search,
-    params,
-  }: {
-    search: Partial<Range> & Record<string, unknown>;
-    params: Record<string, string>;
-  }) => {
+// What a screen can show: its default range, the units its picker offers, and its own path.
+export type RangeBounds = { range: Range; units: DurationUnit[]; to: string };
+
+// A `beforeLoad` that sends a bare URL to the default range, so a shared link always says what it shows.
+export function defaultRange({ range, to }: Pick<RangeBounds, 'range' | 'to'>) {
+  return ({ search, params }: { search: RangeSearch; params: Record<string, string> }) => {
     if (search.from === undefined && search.to === undefined) {
-      const { from, to: until } = typeof range === 'function' ? range() : range;
-      throw redirect({ to, params, search: { ...search, from, to: until } });
+      throw redirect({ to, params, search: { ...search, ...range } });
     }
   };
+}
+
+export type RangeLoader = {
+  params: Record<string, string>;
+  deps: Partial<Range>;
+  location: { search: RangeSearch };
+};
+
+// Back to the default; the note in history state is what the page's toast reads.
+function resetRange(loader: RangeLoader, { range, to }: RangeBounds) {
+  return redirect({
+    to,
+    params: loader.params,
+    search: { ...loader.location.search, ...range },
+    state: { rangeReset: true },
+  });
+}
+
+// Before a loader warms anything: a range in a unit this screen's picker does not offer resets.
+export function requireUnits(loader: RangeLoader, bounds: RangeBounds): void {
+  for (const bound of [loader.deps.from, loader.deps.to]) {
+    if (bound !== undefined && !withinUnits(bound, bounds.units)) {
+      throw resetRange(loader, bounds);
+    }
+  }
 }

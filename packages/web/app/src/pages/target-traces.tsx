@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
 import { QueryError } from '@/components/ui/query-error';
 import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
+import { units } from '@/lib/date-math';
 import { formatNumber, usePagedConnection, useSlugs } from '@/lib/hooks';
 import { carriedRange, useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -1051,7 +1052,7 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
         sideContent={
           <div className="flex flex-1 justify-end gap-x-4">
             <DateRangePicker
-              validUnits={['y', 'M', 'w', 'd', 'h', 'm']}
+              validUnits={units}
               selectedRange={dateRangeController.selectedPreset.range}
               startDate={dateRangeController.startDate}
               align="end"

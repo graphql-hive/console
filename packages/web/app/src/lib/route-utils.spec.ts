@@ -8,6 +8,7 @@ import {
   targetLayout,
 } from '@/lib/testing/fixtures/layouts';
 import { createTestClient } from '@/lib/testing/urql';
+import type { DurationUnit } from '@/lib/date-math';
 import { isRedirect } from '@tanstack/react-router';
 import { createClient, makeResult, type Exchange, type Operation } from '@urql/core';
 import {
@@ -16,6 +17,7 @@ import {
   loadQuery,
   redirectToPathSchema,
   requireLayoutFlag,
+  requireUnits,
   revalidate,
 } from './route-utils';
 
@@ -214,11 +216,14 @@ describe('requireLayoutFlag', () => {
 });
 
 describe('defaultRange', () => {
-  const to = '/$organizationSlug/$projectSlug/$targetSlug/insights';
-  const range = { from: 'now-7d', to: 'now' };
+  const bounds = {
+    range: { from: 'now-7d', to: 'now' },
+    units: ['y', 'M', 'w', 'd', 'h'] as DurationUnit[],
+    to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
+  };
 
   it('sends a bare URL to the range, keeping the rest of its search and the params', () => {
-    const beforeLoad = defaultRange(range, to);
+    const beforeLoad = defaultRange(bounds);
     const search = { operations: ['abc'] };
 
     const error = (() => {
@@ -230,34 +235,64 @@ describe('defaultRange', () => {
     })();
 
     expect(redirectOf(error)).toMatchObject({
-      to,
+      to: bounds.to,
       params: SLUGS,
       search: { operations: ['abc'], from: 'now-7d', to: 'now' },
     });
   });
 
   it('leaves a URL that names either bound alone', () => {
-    const beforeLoad = defaultRange(range, to);
+    const beforeLoad = defaultRange(bounds);
     expect(beforeLoad({ search: { from: 'now-1d' }, params: SLUGS })).toBeUndefined();
     expect(beforeLoad({ search: { to: 'now' }, params: SLUGS })).toBeUndefined();
   });
+});
 
-  it('asks a range function on every bare URL, for a remembered range', () => {
-    const remembered = vi
-      .fn()
-      .mockReturnValueOnce({ from: 'now-1d', to: 'now' })
-      .mockReturnValueOnce({ from: 'now-30m', to: 'now' });
-    const beforeLoad = defaultRange(remembered, to);
-    const from = () => {
-      try {
-        beforeLoad({ search: {}, params: SLUGS });
-      } catch (caught) {
-        return (redirectOf(caught).search as { from: string }).from;
-      }
-    };
+describe('requireUnits', () => {
+  const bounds = {
+    range: { from: 'now-7d', to: 'now' },
+    units: ['y', 'M', 'w', 'd', 'h'] as DurationUnit[],
+    to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
+  };
 
-    expect(from()).toBe('now-1d');
-    expect(from()).toBe('now-30m');
-    expect(remembered).toHaveBeenCalledTimes(2);
+  function loader(deps: { from?: string; to?: string }, search: Record<string, unknown> = deps) {
+    return { params: SLUGS, deps, location: { search } };
+  }
+
+  function resetOf(deps: { from?: string; to?: string }, search?: Record<string, unknown>) {
+    try {
+      requireUnits(loader(deps, search), bounds);
+    } catch (caught) {
+      return redirectOf(caught) as ReturnType<typeof redirectOf> & { state?: unknown };
+    }
+    throw new Error('expected a reset');
+  }
+
+  it('resets a range in a unit the picker does not offer, keeping the rest of the search', () => {
+    const reset = resetOf({ from: 'now-30m', to: 'now' }, {
+      from: 'now-30m',
+      to: 'now',
+      operations: ['abc'],
+    });
+
+    expect(reset).toMatchObject({
+      to: bounds.to,
+      params: SLUGS,
+      search: { operations: ['abc'], from: 'now-7d', to: 'now' },
+      state: { rangeReset: true },
+    });
+  });
+
+  it('looks at both bounds', () => {
+    expect(resetOf({ from: 'now-1d', to: 'now-5m' }).search).toMatchObject(bounds.range);
+  });
+
+  it('admits the units the picker offers, absolute dates, and a bare URL', () => {
+    expect(requireUnits(loader({ from: 'now-1h', to: 'now' }), bounds)).toBeUndefined();
+    expect(requireUnits(loader({ from: 'now-6M', to: 'now' }), bounds)).toBeUndefined();
+    expect(
+      requireUnits(loader({ from: '2026-09-01T10:00:00.000Z', to: 'now' }), bounds),
+    ).toBeUndefined();
+    expect(requireUnits(loader({}), bounds)).toBeUndefined();
   });
 });

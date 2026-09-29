@@ -167,6 +167,35 @@ describe('explorer period', () => {
   });
 
   it(
+    'resets a range in minutes to the last week, keeping the filters and noting it',
+    { timeout: 30_000 },
+    async () => {
+      const router = await loadedAt(`${EXPLORER}/unused?from=now-30m&to=now&subgraph=users`);
+
+      await waitFor(() =>
+        expect(router.state.location.search).toEqual({ ...LAST_WEEK, subgraph: 'users' }),
+      );
+      expect(router.state.location.pathname).toBe(`${EXPLORER}/unused`);
+      expect(router.history.length).toBe(1);
+      expect(router.state.location.state.rangeReset).toBe(true);
+      // Nothing asked for the range the picker cannot show.
+      const periods = router.client
+        .requests('UnusedSchemaExplorer_UnusedSchemaQuery')
+        .map(o => (o.variables as { period: { from: string } }).period.from);
+      expect(periods).toHaveLength(1);
+      expect(Date.now() - Date.parse(periods[0])).toBeGreaterThan(6 * 24 * 60 * 60 * 1000);
+    },
+  );
+
+  it('the page says the range was reset, once', { timeout: 30_000 }, async () => {
+    vi.useRealTimers();
+    renderAtUrl(`${EXPLORER}/deprecated?from=now-30m&to=now`, { client: client() });
+
+    await screen.findByRole('button', { name: 'Last 7 days' });
+    expect(await screen.findAllByText('Date range reset to Last 7 days')).toHaveLength(1);
+  });
+
+  it(
     'a preset picked on a view lands in the URL beside the filters, and the view re-queries',
     { timeout: 30_000 },
     async () => {

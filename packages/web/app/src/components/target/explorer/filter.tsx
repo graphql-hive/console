@@ -1,4 +1,4 @@
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { DateRangePicker, usageUnits } from '@/components/ui/date-range-picker';
 import { Navigation, type NavigationItem } from '@/components/ui/navigation/navigation';
 import { useSlugs } from '@/lib/hooks';
 import type { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
@@ -10,7 +10,7 @@ export function DateRangeFilter(props: { controller: ReturnType<typeof useDateRa
   return (
     <DateRangePicker
       size="compact"
-      validUnits={['y', 'M', 'w', 'd', 'h']}
+      validUnits={usageUnits}
       selectedRange={controller.selectedPreset.range}
       startDate={controller.startDate}
       align="start"

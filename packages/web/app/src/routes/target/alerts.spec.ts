@@ -83,6 +83,22 @@ describe('alerts activity route', () => {
     },
   );
 
+  it('resets a range in months to the last hour and notes it', { timeout: 30_000 }, async () => {
+    const client = createTestClient(activityFixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({ initialEntries: [`${ALERTS}?from=now-6M&to=now&types=["x"]`] }),
+      urqlClient: client,
+    });
+    await router.load();
+
+    await waitFor(() =>
+      expect(router.state.location.search).toEqual({ ...presetLast1Hour.range, types: ['x'] }),
+    );
+    expect(router.history.length).toBe(1);
+    expect(router.state.location.state.rangeReset).toBe(true);
+    expect(client.requests(ACTIVITY)).toHaveLength(1);
+  });
+
   it(
     'polls through the router: the same bounds within the minute, new ones when it rolls',
     { timeout: 30_000 },

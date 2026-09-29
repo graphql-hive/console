@@ -228,6 +228,25 @@ describe('operation route', () => {
   });
 });
 
+describe('a range the pickers cannot show', () => {
+  it('resets to the last day on an operation, noting it', { timeout: 30_000 }, async () => {
+    const client = createTestClient(layoutFixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({
+        initialEntries: [`${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}?from=now-15m&to=now`],
+      }),
+      urqlClient: client,
+    });
+    await router.load();
+
+    await waitFor(() =>
+      expect(router.state.location.search).toEqual({ from: 'now-1d', to: 'now' }),
+    );
+    expect(router.state.location.state.rangeReset).toBe(true);
+    expect(router.history.length).toBe(1);
+  });
+});
+
 describe('client and coordinate routes', () => {
   async function loadedAt(url: string) {
     const client = createTestClient(layoutFixtures());

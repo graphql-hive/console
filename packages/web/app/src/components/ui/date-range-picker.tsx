@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/primitives/input/input';
 import { Label } from '@/components/ui/primitives/label/label';
 import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { type ControlSize } from '@/components/ui/primitives/shared-styles';
-import { DurationUnit, formatDateToString, parse, units } from '@/lib/date-math';
+import { DurationUnit, formatDateToString, parse, units, withinUnits } from '@/lib/date-math';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { Calendar } from './calendar';
 
@@ -81,6 +81,10 @@ function resolveRange(rawFrom: string, rawTo: string): ResolvedDateRange | null 
   }
   return null;
 }
+
+// The units each kind of screen offers; its routes reset a range outside them.
+export const usageUnits: DurationUnit[] = ['y', 'M', 'w', 'd', 'h'];
+export const activityUnits: DurationUnit[] = ['d', 'h', 'm'];
 
 export const presetLast7Days: Preset = {
   name: 'last7d',
@@ -205,19 +209,9 @@ export function getDateRangeDisplayLabel(
  */
 export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
   const validUnits = props.validUnits ?? units;
-  const disallowedUnits = units.filter(unit => !validUnits.includes(unit));
-  const hasInvalidUnitRegex = disallowedUnits?.length
-    ? new RegExp(`[0-9]+(${disallowedUnits.join('|')})`)
-    : null;
-
-  let staticPresets = props.presets ?? availablePresets;
-
-  if (hasInvalidUnitRegex) {
-    staticPresets = staticPresets.filter(
-      preset =>
-        !hasInvalidUnitRegex.test(preset.range.from) && !hasInvalidUnitRegex.test(preset.range.to),
-    );
-  }
+  const staticPresets = (props.presets ?? availablePresets).filter(
+    preset => withinUnits(preset.range.from, validUnits) && withinUnits(preset.range.to, validUnits),
+  );
 
   const disabledDays: Matcher[] = [
     {
@@ -239,8 +233,8 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
 
     if (
       !props.selectedRange ||
-      hasInvalidUnitRegex?.test(props.selectedRange.from) ||
-      hasInvalidUnitRegex?.test(props.selectedRange.to)
+      !withinUnits(props.selectedRange.from, validUnits) ||
+      !withinUnits(props.selectedRange.to, validUnits)
     ) {
       return fallbackPreset;
     }
@@ -351,8 +345,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
 
     const validDynamicPresets = uniqueDynamicPresets.filter(
       preset =>
-        !hasInvalidUnitRegex?.test(preset.range.from) &&
-        !hasInvalidUnitRegex?.test(preset.range.to),
+        withinUnits(preset.range.from, validUnits) && withinUnits(preset.range.to, validUnits),
     );
 
     if (number > 0 && validDynamicPresets.length > 0) {
@@ -393,7 +386,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                   />
                 </div>
                 <div className="text-critical">
-                  {hasInvalidUnitRegex?.test(fromValue) ? (
+                  {!withinUnits(fromValue, validUnits) ? (
                     <>Only allowed units are {validUnits.join(', ')}</>
                   ) : !fromParsed ? (
                     <>Invalid date string</>
@@ -424,7 +417,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                   />
                 </div>
                 <div className="text-critical">
-                  {hasInvalidUnitRegex?.test(toValue) ? (
+                  {!withinUnits(toValue, validUnits) ? (
                     <>Only allowed units are {validUnits.join(', ')}</>
                   ) : !toParsed ? (
                     <>Invalid date string</>
@@ -544,18 +537,9 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
 
   const validUnits = props.validUnits ?? units;
-  const disallowedUnits = units.filter(unit => !validUnits.includes(unit));
-  const hasInvalidUnitRegex = disallowedUnits?.length
-    ? new RegExp(`[0-9]+(${disallowedUnits.join('|')})`)
-    : null;
-
-  let staticPresets = props.presets ?? availablePresets;
-  if (hasInvalidUnitRegex) {
-    staticPresets = staticPresets.filter(
-      preset =>
-        !hasInvalidUnitRegex.test(preset.range.from) && !hasInvalidUnitRegex.test(preset.range.to),
-    );
-  }
+  const staticPresets = (props.presets ?? availablePresets).filter(
+    preset => withinUnits(preset.range.from, validUnits) && withinUnits(preset.range.to, validUnits),
+  );
 
   const label = getDateRangeDisplayLabel(props.selectedRange, staticPresets, validUnits);
 
