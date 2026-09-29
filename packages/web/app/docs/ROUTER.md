@@ -147,6 +147,8 @@ For the rest of the route state:
   other route uses JSON. See `src/router.ts`.
 - A redirect target read from the URL (`redirectToPath`) goes through `redirectToPathSchema` in
   `src/lib/route-utils.ts`, so it is a path on this app or `/` by the time anything follows it.
+- A date range (`from`, `to`) is URL state and nothing else: a link into a period page carries the
+  current one with `carriedRange(search)`, a bare URL takes the page's default. See DATA.md.
 
 ## Recipes
 

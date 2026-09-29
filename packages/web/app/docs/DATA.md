@@ -111,10 +111,14 @@ the URL until it settles: the app version's search box writes the URL 500 ms aft
   redirect a hidden section to the first visible one, else the scope root, through the page's
   exported `*Sections(entity)` function, which the nav also renders from. The project settings and
   members pages put a layout-flag gate beside the page document as well.
-- **A period lives in the URL.** `defaultRange(range, to)` is the `beforeLoad` that sends a bare URL
-  to its default range, so a shared link always says what it shows: the last week for insights,
-  traces and the explorer, the last hour for alert activity. Client, coordinate and operation
-  insights default in `loaderDeps` without a redirect.
+- **A period lives in the URL, and only there.** `defaultRange(range, to)` is the `beforeLoad` that
+  sends a bare URL to its default range, so a shared link always says what it shows: the last week
+  for insights, traces and the explorer, the last hour for alert activity. Client, coordinate and
+  operation insights default in `loaderDeps` without a redirect. Nothing remembers a range: a link
+  from a page that has one into another period page carries it (`carriedRange(search)`, spread into
+  the link's `search` by the target nav, the insights and explorer links, and the trace rows and
+  breadcrumb), and a link from a page without one carries nothing, so the destination defaults.
+  Links that mean a range of their own, such as an alert's view of its saved filter, set it.
 - **Stripe** decides in `beforeLoad` too: the subscription routes redirect to the organization when
   it is not configured.
 
@@ -178,7 +182,8 @@ src/lib/urql-cache.ts                     cacheOptions: keys, relayPagination re
 src/lib/urql-exchanges/state.ts           the network status behind the progress bar; preloads leave it alone
 src/components/layouts/queries.ts         ViewerQuery and the three layout documents
 src/lib/hooks/use-layout-query.ts         useLayoutQuery(scope); use-viewer.ts: useViewer()
-src/lib/hooks/use-date-range-controller.ts  loaderPeriod(deps, preset) for a loader and its page; the picker's
+src/lib/hooks/use-date-range-controller.ts  loaderPeriod(deps, preset) for a loader and its page; carriedRange(search)
+                                          for a link into a period page; the picker's
                                           controller and Refresh
 src/lib/overview-period.ts                overviewPeriod(now?): the overviews' 14-day window as loader data
 src/lib/hooks/use-interval.ts             useInterval(ms, fn): a poll that never fires on mount
@@ -257,29 +262,29 @@ warming the section's own document first; add the section to the page's `section
 
 Run from the repo root: `pnpm vitest run packages/web/app/src`.
 
-| Spec                                   | Guards                                                                                  |
-| -------------------------------------- | --------------------------------------------------------------------------------------- |
-| `lib/route-utils.spec.ts`              | `loadQuery`, `revalidate`, the gate's admit and redirect rules, `defaultRange`.         |
-| `routes/target/insights.spec.ts`       | Loader variables and policies, one request per document, Refresh, the period once.      |
-| `routes/target/checks.spec.ts`         | Load more merges, a filter resets the cursor and keeps the selection, no row preload.   |
-| `routes/target/history.spec.ts`        | Load more merges, a revisit revalidates the list alone, error before not-found.         |
-| `routes/target/apps.spec.ts`           | Sort and search from the URL, one URL write per pause, rows kept while loading.         |
-| `routes/target/alerts.spec.ts`         | The default range, the poll across a minute roll, rules and detail revalidating.        |
-| `routes/target/traces.spec.ts`         | The default range, filter and sort reaching the variables, error before not-found.      |
-| `routes/target/explorer.spec.ts`       | Each view's documents, the remembered preset, filters surviving the redirect.           |
-| `routes/target/proposals.spec.ts`      | Stages from the URL, a new timestamp is a new request, no load-more control.            |
-| `routes/organization/route.spec.ts`    | The overview window, support warmed, the Stripe redirect and the warms with it.         |
-| `routes/organization/settings.spec.ts` | Sections revalidating, hidden sections falling back, personal tokens merging.           |
-| `routes/organization/members.spec.ts`  | The gate beside the page document, the list filter, groups by slug, section fallback.   |
-| `routes/project/route.spec.ts`         | The overview window, project alerts warmed beside the gate, the gate's redirect.        |
-| `routes/project/settings.spec.ts`      | GitHub details warmed, tokens revalidating, section fallbacks, the two-flag gate.       |
-| `routes/render.spec.ts`                | The chrome at every page, the gates' redirects, section navs, loading and error states. |
-| `routes/legacy.spec.ts`                | Every old URL lands on its new path, keeping its search, with one history entry.        |
-| `routes/target/settings-cdn.spec.tsx`  | On the app's own client: a CDN create refetches the open page.                          |
-| `lib/urql-cache.spec.ts`               | The updaters, against a stub cache and the real one.                                    |
-| `lib/*.spec.ts`, `lib/hooks/*.spec.ts` | The helpers alone.                                                                      |
-| `router.spec.ts`                       | The pending defaults and `defaultPreload`.                                              |
-| `lib/testing/urql.spec.ts`             | The test client and the fixture checker.                                                |
+| Spec                                   | Guards                                                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `lib/route-utils.spec.ts`              | `loadQuery`, `revalidate`, the gate's admit and redirect rules, `defaultRange`.                                            |
+| `routes/target/insights.spec.ts`       | Loader variables and policies, one request per document, Refresh, the period once, a row carries the range.                |
+| `routes/target/checks.spec.ts`         | Load more merges, a filter resets the cursor and keeps the selection, no row preload.                                      |
+| `routes/target/history.spec.ts`        | Load more merges, a revisit revalidates the list alone, error before not-found.                                            |
+| `routes/target/apps.spec.ts`           | Sort and search from the URL, one URL write per pause, rows kept while loading.                                            |
+| `routes/target/alerts.spec.ts`         | The default range, the poll across a minute roll, rules and detail revalidating.                                           |
+| `routes/target/traces.spec.ts`         | The default range, filter and sort reaching the variables, the breadcrumb carrying the range back, error before not-found. |
+| `routes/target/explorer.spec.ts`       | Each view's documents, the remembered preset, filters surviving the redirect.                                              |
+| `routes/target/proposals.spec.ts`      | Stages from the URL, a new timestamp is a new request, no load-more control.                                               |
+| `routes/organization/route.spec.ts`    | The overview window, support warmed, the Stripe redirect and the warms with it.                                            |
+| `routes/organization/settings.spec.ts` | Sections revalidating, hidden sections falling back, personal tokens merging.                                              |
+| `routes/organization/members.spec.ts`  | The gate beside the page document, the list filter, groups by slug, section fallback.                                      |
+| `routes/project/route.spec.ts`         | The overview window, project alerts warmed beside the gate, the gate's redirect.                                           |
+| `routes/project/settings.spec.ts`      | GitHub details warmed, tokens revalidating, section fallbacks, the two-flag gate.                                          |
+| `routes/render.spec.ts`                | The chrome at every page, the nav carrying the range, the gates' redirects, section navs, loading and error states.        |
+| `routes/legacy.spec.ts`                | Every old URL lands on its new path, keeping its search, with one history entry.                                           |
+| `routes/target/settings-cdn.spec.tsx`  | On the app's own client: a CDN create refetches the open page.                                                             |
+| `lib/urql-cache.spec.ts`               | The updaters, against a stub cache and the real one.                                                                       |
+| `lib/*.spec.ts`, `lib/hooks/*.spec.ts` | The helpers alone.                                                                                                         |
+| `router.spec.ts`                       | The pending defaults and `defaultPreload`.                                                                                 |
+| `lib/testing/urql.spec.ts`             | The test client and the fixture checker.                                                                                   |
 
 `createTestClient(fixtures)` (`src/lib/testing/urql.ts`) runs the app's own graphcache configuration
 over a network that is a lookup by operation name; `requests(name)` lists what reached it. What a
