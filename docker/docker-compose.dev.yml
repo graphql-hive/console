@@ -67,7 +67,7 @@ services:
       - './.hive-dev/versitygw/metadata:/metadata'
 
   clickhouse:
-    image: clickhouse/clickhouse-server:26.3.12.3-alpine
+    image: clickhouse/clickhouse-server:26.8.11.7-alpine
     mem_limit: 4096m
     environment:
       CLICKHOUSE_USER: test

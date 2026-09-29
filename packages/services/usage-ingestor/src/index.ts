@@ -35,6 +35,7 @@ async function main() {
     const { readiness, start, stop } = createIngestor({
       logger: server.log,
       clickhouse: env.clickhouse,
+      inflight: env.inflight,
       kafka: {
         topic: env.kafka.topic,
         consumerGroup: env.kafka.consumerGroup,

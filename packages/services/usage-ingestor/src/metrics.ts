@@ -17,7 +17,7 @@ export const totalOperations = new metrics.Counter({
 
 export const processDuration = new metrics.Histogram({
   name: 'usage_ingestor_process_duration_seconds',
-  help: 'Time spent processing and writing reports',
+  help: 'Time from receiving a Kafka message to handing its ClickHouse writes to the in-flight tracker (decompress, normalize, wait for in-flight capacity); the writes themselves are measured by usage_ingestor_write_duration_seconds',
 });
 
 export const writeDuration = new metrics.Histogram({
@@ -58,7 +58,7 @@ export const ingestedOperationErrorsWrites = new metrics.Counter({
 
 export const ingestedOperationsFailures = new metrics.Counter({
   name: 'usage_ingested_operation_failures',
-  help: 'Number of failed to ingest operations',
+  help: 'Rows in operations and subscription_operations insert attempts that failed; counts every attempt, so it rises with retries during an outage',
 });
 
 export const ingestedOperationRegistryWrites = new metrics.Counter({
@@ -68,12 +68,12 @@ export const ingestedOperationRegistryWrites = new metrics.Counter({
 
 export const ingestedOperationRegistryFailures = new metrics.Counter({
   name: 'usage_ingested_operation_registry_failures',
-  help: 'Number of failed to ingest registry records',
+  help: 'Rows in operation_collection insert attempts that failed; counts every attempt, so it rises with retries during an outage',
 });
 
 export const ingestedOperationErrorsFailures = new metrics.Counter({
   name: 'usage_ingested_operation_errors_failures',
-  help: 'Number of failed to ingest operations_errors',
+  help: 'Rows in operation_errors insert attempts that failed; counts every attempt, so it rises with retries during an outage',
 });
 
 /**
@@ -84,5 +84,31 @@ export const ingestedOperationErrorsFailures = new metrics.Counter({
  */
 export const poisonPillMessages = new metrics.Counter({
   name: 'usage_ingestor_poison_pill_messages',
-  help: 'Number of times a report failed to write and its offset was not committed, so the message will be reprocessed - sustained/repeated firing for the same message signals a stuck partition',
+  help: 'Number of messages that could not be decompressed or parsed and were dropped so the partition keeps flowing; the offset is committed and the payload is only in the debug log until a dead-letter queue exists',
+});
+
+export const failingMessages = new metrics.Gauge({
+  name: 'usage_ingestor_failing_messages',
+  help: 'Kafka messages with at least one ClickHouse insert that failed and is being retried in place; drops back when the insert succeeds or the ingestor shuts down. Sustained values mean a stuck message (the log carries its token, offset, HTTP status and ClickHouse error) or a ClickHouse outage',
+});
+
+export const givenUpMessages = new metrics.Counter({
+  name: 'usage_ingestor_given_up_messages',
+  help: 'Messages dropped because one of their ClickHouse inserts kept failing past CLICKHOUSE_WRITE_GIVE_UP_AFTER_MS while other inserts to the same table succeeded; the offset is committed and the payload, token and outcome per table are in the error log until a dead-letter queue exists',
+});
+
+export const inflightBytes = new metrics.Gauge({
+  name: 'usage_ingestor_inflight_bytes',
+  help: 'Serialized row bytes of messages whose ClickHouse writes are awaiting acknowledgement; consumption pauses when this reaches CLICKHOUSE_MAX_INFLIGHT_BYTES',
+});
+
+export const inflightMessages = new metrics.Gauge({
+  name: 'usage_ingestor_inflight_messages',
+  help: 'Messages whose ClickHouse writes are awaiting acknowledgement',
+});
+
+export const committedOffsetLag = new metrics.Gauge({
+  name: 'usage_ingestor_committed_offset_lag',
+  help: 'Messages between the partition high watermark and the next offset to commit; grows when ClickHouse is not acknowledging writes or offset commits are failing',
+  labelNames: ['partition'],
 });
