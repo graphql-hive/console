@@ -103,6 +103,10 @@ export default defineConfig({
           label: 'Navigation',
           children: [{ label: 'Navigation', children: [{ label: 'Component Examples' }] }],
         },
+        {
+          label: 'Charts',
+          children: [{ label: 'Chart' }],
+        },
         // Data and layout
         { label: 'DataTable' },
         { label: 'DescriptionList' },
