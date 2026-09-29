@@ -667,7 +667,10 @@ describe('alerts sections', () => {
 
   function renderAlerts(url: string, viewerCanUseMetricAlertRules = true) {
     client.current = createTestClient(layoutFixtures());
-    client.current.fixtures.set('TargetLayoutQuery', targetLayout({ viewerCanUseMetricAlertRules }));
+    client.current.fixtures.set(
+      'TargetLayoutQuery',
+      targetLayout({ viewerCanUseMetricAlertRules }),
+    );
     return at(url);
   }
 
@@ -764,17 +767,25 @@ describe('read-once page loaders', () => {
   // Loaded but not rendered: the request can only have come from the route.
   it.each([
     [TARGET, 'TargetSchemaPageQuery', SLUGS],
-    [`${TARGET}/proposals/new`, 'ProposalsNewProposalQuery', { targetReference: { bySelector: SLUGS } }],
-  ])('%s starts %s with the page variables before render', { timeout: 30_000 }, async (url, name, variables) => {
-    const client = createTestClient(layoutFixtures());
-    const router = createAppRouter({
-      history: createMemoryHistory({ initialEntries: [url] }),
-      urqlClient: client,
-    });
-    await router.load();
+    [
+      `${TARGET}/proposals/new`,
+      'ProposalsNewProposalQuery',
+      { targetReference: { bySelector: SLUGS } },
+    ],
+  ])(
+    '%s starts %s with the page variables before render',
+    { timeout: 30_000 },
+    async (url, name, variables) => {
+      const client = createTestClient(layoutFixtures());
+      const router = createAppRouter({
+        history: createMemoryHistory({ initialEntries: [url] }),
+        urqlClient: client,
+      });
+      await router.load();
 
-    expect(client.requests(name).map(operation => operation.variables)).toEqual([variables]);
-  });
+      expect(client.requests(name).map(operation => operation.variables)).toEqual([variables]);
+    },
+  );
 });
 
 describe('layout loaders', () => {

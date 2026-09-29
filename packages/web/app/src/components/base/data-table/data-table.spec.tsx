@@ -143,7 +143,12 @@ describe('DataTable', () => {
         data={ROWS}
         columns={COLUMNS}
         getRowId={row => row.id}
-        sorting={{ state: [{ id: 'count', desc: true }], onChange: vi.fn(), manual: true, loading: true }}
+        sorting={{
+          state: [{ id: 'count', desc: true }],
+          onChange: vi.fn(),
+          manual: true,
+          loading: true,
+        }}
       />,
     );
     expect(screen.getByRole('status', { name: 'Sorting' }).closest('th')).not.toBeNull();

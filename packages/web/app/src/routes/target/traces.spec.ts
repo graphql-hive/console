@@ -60,9 +60,14 @@ describe('traces route', () => {
         presetLast7Days,
         new UTCDate('2026-09-28T10:59:50.000Z'),
       );
-      expect(client.requests(LIST_DOCUMENT).map(o => [o.variables, o.context.requestPolicy])).toEqual(
-        [[tracesPageVariables(SLUGS, defaultTracesFilter, defaultTracesSort, period), 'cache-and-network']],
-      );
+      expect(
+        client.requests(LIST_DOCUMENT).map(o => [o.variables, o.context.requestPolicy]),
+      ).toEqual([
+        [
+          tracesPageVariables(SLUGS, defaultTracesFilter, defaultTracesSort, period),
+          'cache-and-network',
+        ],
+      ]);
     },
   );
 
@@ -82,27 +87,35 @@ describe('traces route', () => {
 });
 
 describe('trace route', () => {
-  it('starts the trace document with the page variables before rendering', { timeout: 30_000 }, async () => {
-    const client = createTestClient(layoutFixtures());
-    const router = createAppRouter({
-      history: createMemoryHistory({ initialEntries: [TRACE] }),
-      urqlClient: client,
-    });
-    await router.load();
+  it(
+    'starts the trace document with the page variables before rendering',
+    { timeout: 30_000 },
+    async () => {
+      const client = createTestClient(layoutFixtures());
+      const router = createAppRouter({
+        history: createMemoryHistory({ initialEntries: [TRACE] }),
+        urqlClient: client,
+      });
+      await router.load();
 
-    expect(client.requests(TRACE_DOCUMENT).map(operation => operation.variables)).toEqual([
-      { targetSelector: SLUGS, traceId: 'trace-1' },
-    ]);
-  });
+      expect(client.requests(TRACE_DOCUMENT).map(operation => operation.variables)).toEqual([
+        { targetSelector: SLUGS, traceId: 'trace-1' },
+      ]);
+    },
+  );
 
-  it('shows the error when the trace request fails, not "not found"', { timeout: 30_000 }, async () => {
-    const client = createTestClient(layoutFixtures());
-    client.fixtures.set(TRACE_DOCUMENT, new Error('the server is away'));
-    renderAtUrl(TRACE, { client });
+  it(
+    'shows the error when the trace request fails, not "not found"',
+    { timeout: 30_000 },
+    async () => {
+      const client = createTestClient(layoutFixtures());
+      client.fixtures.set(TRACE_DOCUMENT, new Error('the server is away'));
+      renderAtUrl(TRACE, { client });
 
-    await screen.findByText('Oops, something went wrong.');
-    expect(screen.queryByText('Trace not found.')).toBeNull();
-  });
+      await screen.findByText('Oops, something went wrong.');
+      expect(screen.queryByText('Trace not found.')).toBeNull();
+    },
+  );
 
   it('shows "not found" for a trace the server does not have', { timeout: 30_000 }, async () => {
     const client = createTestClient(layoutFixtures());

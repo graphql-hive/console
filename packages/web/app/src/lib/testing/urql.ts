@@ -1,7 +1,13 @@
-import { Kind, type DocumentNode, type FragmentDefinitionNode, type SelectionSetNode, type IntrospectionQuery } from 'graphql';
+import {
+  Kind,
+  type DocumentNode,
+  type FragmentDefinitionNode,
+  type IntrospectionQuery,
+  type SelectionSetNode,
+} from 'graphql';
 import { filter, fromPromise, fromValue, mergeMap, pipe } from 'wonka';
-import { cacheOptions } from '@/lib/urql-cache';
 import schema from '@/gql/schema';
+import { cacheOptions } from '@/lib/urql-cache';
 import {
   createClient,
   makeErrorResult,
@@ -88,7 +94,9 @@ export function missingSelections(
       return false;
     }
     const name = typeCondition.name.value;
-    return name !== object.__typename && !(possibleTypes.get(name)?.has(object.__typename) ?? false);
+    return (
+      name !== object.__typename && !(possibleTypes.get(name)?.has(object.__typename) ?? false)
+    );
   }
 
   function walk(selectionSet: SelectionSetNode, value: unknown, path: string) {
@@ -125,10 +133,11 @@ export function missingSelections(
         if (fragment && !isOtherMember(fragment.typeCondition, object)) {
           walk(fragment.selectionSet, value, path);
         }
-      } else if (selection.kind === Kind.INLINE_FRAGMENT) {
-        if (!isOtherMember(selection.typeCondition, object)) {
-          walk(selection.selectionSet, value, path);
-        }
+      } else if (
+        selection.kind === Kind.INLINE_FRAGMENT &&
+        !isOtherMember(selection.typeCondition, object)
+      ) {
+        walk(selection.selectionSet, value, path);
       }
     }
   }

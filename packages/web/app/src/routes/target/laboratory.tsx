@@ -1,7 +1,7 @@
 import { useLocalStorage } from '@/lib/hooks';
+import { requireLayoutFlag } from '@/lib/route-utils';
 import { TargetLaboratoryPage } from '@/pages/target-laboratory';
 import { TargetLaboratoryPage as TargetLaboratoryPageNew } from '@/pages/target-laboratory-new';
-import { requireLayoutFlag } from '@/lib/route-utils';
 import { createRoute } from '@tanstack/react-router';
 import { targetRoute } from './route';
 

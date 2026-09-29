@@ -57,14 +57,18 @@ describe('proposals route', () => {
     ]);
   });
 
-  it('carries the stage filter from the URL, upper-cased and sorted', { timeout: 30_000 }, async () => {
-    const stage = encodeURIComponent(JSON.stringify(['open', 'draft']));
-    const testClient = await loadedAt(`${PROPOSALS}?stage=${stage}`);
+  it(
+    'carries the stage filter from the URL, upper-cased and sorted',
+    { timeout: 30_000 },
+    async () => {
+      const stage = encodeURIComponent(JSON.stringify(['open', 'draft']));
+      const testClient = await loadedAt(`${PROPOSALS}?stage=${stage}`);
 
-    expect(requestsOf(testClient, LIST)[0]?.[0]).toMatchObject({
-      input: { stages: ['DRAFT', 'OPEN'] },
-    });
-  });
+      expect(requestsOf(testClient, LIST)[0]?.[0]).toMatchObject({
+        input: { stages: ['DRAFT', 'OPEN'] },
+      });
+    },
+  );
 
   it('renders the list from the cache with no load more', { timeout: 30_000 }, async () => {
     const testClient = client();

@@ -33,7 +33,10 @@ const TARGET_NODE = { __typename: 'Target', id: 'target-1' };
 function activityFixtures() {
   return new Map<string, unknown>([
     ...layoutFixtures(),
-    [RETENTION, { __typename: 'Query', target: { ...TARGET_NODE, metricAlertStateLogRetentionDays: 30 } }],
+    [
+      RETENTION,
+      { __typename: 'Query', target: { ...TARGET_NODE, metricAlertStateLogRetentionDays: 30 } },
+    ],
     [ACTIVITY, { __typename: 'Query', target: { ...TARGET_NODE, metricAlertRuleStateLog: [] } }],
   ]);
 }
@@ -134,7 +137,8 @@ describe('alerts create route', () => {
     { timeout: 30_000 },
     async () => {
       const { client } = await loadedAt(`${ALERTS}/create`);
-      const variables = (name: string) => client.requests(name).map(operation => operation.variables);
+      const variables = (name: string) =>
+        client.requests(name).map(operation => operation.variables);
 
       expect(variables('TargetAlertsCreatePage_CapQuery')).toEqual([SLUGS]);
       expect(variables('AlertForm_ChannelsQuery')).toEqual([

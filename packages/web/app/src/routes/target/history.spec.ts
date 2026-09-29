@@ -87,26 +87,30 @@ describe('history route loaders', () => {
     expect(testClient.requests(PANE)).toHaveLength(1);
   });
 
-  it('a revisit revalidates the list and reads the page again from the cache', { timeout: 30_000 }, async () => {
-    const testClient = client();
-    const { router } = renderAtUrl(VERSION_PAGE, { client: testClient });
-    await screen.findByText(VERSIONS.first[0]);
+  it(
+    'a revisit revalidates the list and reads the page again from the cache',
+    { timeout: 30_000 },
+    async () => {
+      const testClient = client();
+      const { router } = renderAtUrl(VERSION_PAGE, { client: testClient });
+      await screen.findByText(VERSIONS.first[0]);
 
-    await router.navigate({
-      to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
-      params: SLUGS,
-      search: {},
-    });
-    await screen.findByRole('link', { name: 'Checks', current: 'page' });
-    await router.navigate({
-      to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
-      params: { ...SLUGS, versionId: 'version-42' },
-    });
-    await screen.findByText(VERSIONS.first[0]);
+      await router.navigate({
+        to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
+        params: SLUGS,
+        search: {},
+      });
+      await screen.findByRole('link', { name: 'Checks', current: 'page' });
+      await router.navigate({
+        to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
+        params: { ...SLUGS, versionId: 'version-42' },
+      });
+      await screen.findByText(VERSIONS.first[0]);
 
-    await waitFor(() => expect(listRequests(testClient)).toHaveLength(2));
-    expect(testClient.requests('TargetHistoryPageQuery')).toHaveLength(1);
-  });
+      await waitFor(() => expect(listRequests(testClient)).toHaveLength(2));
+      expect(testClient.requests('TargetHistoryPageQuery')).toHaveLength(1);
+    },
+  );
 
   it('shows the error on the version pane, not "not found"', { timeout: 30_000 }, async () => {
     const testClient = client();

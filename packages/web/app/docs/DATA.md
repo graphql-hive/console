@@ -19,14 +19,14 @@ only what the loader decided, such as a resolved period.
 **2. Warm by default; await only to decide.** A loader `void`s `loadQuery` for what the page shows,
 and the page renders at once with its regions behind their own loading states. A loader awaits only
 when the route must decide before rendering: a permission gate (`requireLayoutFlag`, below), a
-section check (`/settings` and `/members` await their page document to see which sections the
-viewer may open), a data redirect (`/history` awaits the latest version to redirect to it) or a
-not-found. Everything else the route warms starts beside the await, so a cold load pays no extra
-round trip for the decision. While an awaiting loader runs, the router shows `PagePending`, a
-centered spinner, after 250 ms (`defaultPendingComponent` and `defaultPendingMs` in `src/router.ts`);
-a load that finishes inside the delay never shows it. A warmed document the page turns out not to
-read (the stats of a target that has no operations yet, the unused schema of a target without usage)
-is the accepted cost of not awaiting.
+section check (`/settings` and `/members` await their page document to see which sections the viewer
+may open), a data redirect (`/history` awaits the latest version to redirect to it) or a not-found.
+Everything else the route warms starts beside the await, so a cold load pays no extra round trip for
+the decision. While an awaiting loader runs, the router shows `PagePending`, a centered spinner,
+after 250 ms (`defaultPendingComponent` and `defaultPendingMs` in `src/router.ts`); a load that
+finishes inside the delay never shows it. A warmed document the page turns out not to read (the
+stats of a target that has no operations yet, the unused schema of a target without usage) is the
+accepted cost of not awaiting.
 
 **The rule that makes 1 work: the variables must match.** The loader builds them from `params` and
 `loaderDeps` exactly as the page builds them from `useSlugs` and `useSearch`: same shape, same
@@ -36,11 +36,11 @@ Anything computed from the URL alone is a pure function both sides call, exporte
 `versionsPageVariables`, and the `*Sections` functions of the settings and members pages. Anything
 that also depends on the clock is resolved once, by the loader, and returned as loader data: the
 period pages return the period from `loaderPeriod`, with the resolution where a query takes one, and
-the overviews return `overviewPeriod()`; the page reads them with `useLoaderData`, so a filter change after the hour
-rolls over cannot leave the two on different buckets. `loaderDeps` names the search params a query
-takes, so a change to one of them re-runs the loader and a change to any other (`viewId` on
-insights) does not. A search param that changes on every keystroke does not belong in the URL
-until it settles: the app version's search box writes the URL 500 ms after typing pauses
+the overviews return `overviewPeriod()`; the page reads them with `useLoaderData`, so a filter
+change after the hour rolls over cannot leave the two on different buckets. `loaderDeps` names the
+search params a query takes, so a change to one of them re-runs the loader and a change to any other
+(`viewId` on insights) does not. A search param that changes on every keystroke does not belong in
+the URL until it settles: the app version's search box writes the URL 500 ms after typing pauses
 (`src/components/apps/app-filter.tsx`), so the loader runs once per pause.
 
 ## Request policies
@@ -60,8 +60,8 @@ until it settles: the app version's search box writes the URL 500 ms after typin
 - **Preloads.** `loader.preload` is true when a hover or focus preload runs the loader
   (`defaultPreload: 'intent'`). `revalidate` switches to `cache-first` for it, so a hover only
   warms. The router keeps a preloaded match fresh for 30 s (`defaultPreloadStaleTime`), so on a
-  `cache-first` route the click that follows runs no loader and no request. A route that
-  revalidates sets `preloadStaleTime: 0`, so the visit that follows a hover still runs its loader.
+  `cache-first` route the click that follows runs no loader and no request. A route that revalidates
+  sets `preloadStaleTime: 0`, so the visit that follows a hover still runs its loader.
 - **Refresh** is `router.invalidate()`: it re-runs the current matches' loaders, and each loader's
   policy decides what that costs. `useDateRangeController().refreshResolvedRange()` does this, so a
   Refresh button is one call and reloads exactly what its route declared live, recomputing anything
@@ -91,8 +91,8 @@ until it settles: the app version's search box writes the URL 500 ms after typin
   `TargetLayoutQuery`: slugs, `viewerCan*`, `latestSchemaVersion.id`, `usageRetentionInDays`). A
   page under it reads the same document through `useLayoutQuery(scope)` instead of selecting those
   fields again (the explorer views read their retention there rather than from their own documents),
-  and a loader under it can rely on the same
-  cache: the `/history` redirect is a cache read, and every permission gate is.
+  and a loader under it can rely on the same cache: the `/history` redirect is a cache read, and
+  every permission gate is.
 - The user menu's own organization document is a cache hit once the layout has answered, because the
   layout document spreads the menu's fragment.
 - The client rides in router context (`createAppRouter({ urqlClient })`); a loader reads it as
@@ -114,9 +114,9 @@ until it settles: the app version's search box writes the URL 500 ms after typin
 - **A period lives in the URL.** `defaultRange(range, to)` is the `beforeLoad` that sends a bare URL
   to its default range, so a shared link always says what it shows: the last week for insights,
   traces and the explorer, the last hour for alert activity. The explorer's default is a function,
-  the preset last picked on any of its four views (`src/components/target/explorer/period.ts`,
-  over localStorage); the URL is the state and storage only remembers. Client, coordinate and
-  operation insights default in `loaderDeps` without a redirect.
+  the preset last picked on any of its four views (`src/components/target/explorer/period.ts`, over
+  localStorage); the URL is the state and storage only remembers. Client, coordinate and operation
+  insights default in `loaderDeps` without a redirect.
 - **Stripe** decides in `beforeLoad` too: the subscription routes redirect to the organization when
   it is not configured.
 
@@ -128,10 +128,10 @@ A paginated list keeps one query and moves its cursor. The field gets `relayPagi
 other token connections), the list holds `after` in `useResetState(null, [...filters])`, and the
 query for the latest cursor reads every page loaded so far, so "load more" is
 `setAfter(pageInfo.endCursor)` and a filter change resets the cursor. The route warms the first page
-with `after: null` and the filters from `loaderDeps`. The checks side list (`src/pages/target-checks.tsx`)
-and the history list are the examples; the token tables page through `usePagedConnection` over the
-same merged connection, and the groups list's "Load more" runs the page query for the next cursor
-and reads the merged result.
+with `after: null` and the filters from `loaderDeps`. The checks side list
+(`src/pages/target-checks.tsx`) and the history list are the examples; the token tables page through
+`usePagedConnection` over the same merged connection, and the groups list's "Load more" runs the
+page query for the next cursor and reads the merged result.
 
 Two fields deliberately have no resolver. `Organization.members` pages with previous and next, so
 each page replaces the last. `affectedAppDeployments` is read by the affected deployments page at
@@ -149,9 +149,10 @@ A spinner marks a wait that promises no shape: a button while it saves, a switch
 a route while its awaiting loader decides what the page is (`PagePending` / `SectionPending`,
 `src/components/layouts/page-pending.tsx`). A region whose shape is known loads behind a skeleton:
 `DataTable loading` renders skeleton rows under the real header, stat cards and lists use the
-`Skeleton` primitives. A table whose rows are being replaced keeps them, dimmed (`DataTable
-refreshing`, or `sorting.loading` for a sort, which also spins the sorted header's arrow); the page
-keeps the last settled rows through `useKeepPreviousData` and passes them while the new ones load.
+`Skeleton` primitives. A table whose rows are being replaced keeps them, dimmed
+(`DataTable refreshing`, or `sorting.loading` for a sort, which also spins the sorted header's
+arrow); the page keeps the last settled rows through `useKeepPreviousData` and passes them while the
+new ones load.
 
 A page's first result can be a partial cache hit: the layout document already cached the
 organization, project or target the page selects, so graphcache answers with those fields, the
@@ -226,8 +227,8 @@ src/lib/testing/urql.ts                   createTestClient on cacheOptions; fixt
 3. If a mount-time refetch effect existed, delete it. If the data moves on its own, pass
    `revalidate(loader)` to those `loadQuery` calls, set `preloadStaleTime: 0` on the route, and make
    the page's Refresh call `router.invalidate()`.
-4. If the route must decide, `await` that one thing: `requireLayoutFlag.<scope>(loader, flag)` for
-   a permission, the page document for a section check, `throw redirect(...)` on an explicit answer.
+4. If the route must decide, `await` that one thing: `requireLayoutFlag.<scope>(loader, flag)` for a
+   permission, the page document for a section check, `throw redirect(...)` on an explicit answer.
    Start the page documents before the await, not after it.
 5. Spec, in `src/routes/<scope>/<area>.spec.ts`: `router.load()` at the URL, then the documents are
    in `client.requests(name)` with the loader's variables and policy; render, then each document is
@@ -239,8 +240,8 @@ src/lib/testing/urql.ts                   createTestClient on cacheOptions; fixt
 `beforeLoad: defaultRange(preset.range, '/the/route')`, `loaderDeps` on `from` and `to`, the loader
 resolves `loaderPeriod(loader.deps, preset)` and returns it, the page reads it with
 `useLoaderData()` for its query and any figure derived from the bounds, and keeps a
-`useDateRangeController` only for the picker. Never build the period in the page: the loader and
-the page would read the clock at different moments.
+`useDateRangeController` only for the picker. Never build the period in the page: the loader and the
+page would read the clock at different moments.
 
 ### Keep a list right after a mutation
 
@@ -259,29 +260,29 @@ warming the section's own document first; add the section to the page's `section
 
 Run from the repo root: `pnpm vitest run packages/web/app/src`.
 
-| Spec                                    | Guards                                                                                                                                                                                                                                                                                                  |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lib/route-utils.spec.ts`               | `loadQuery` on the client in context with the preload flag; `revalidate`; the gate admits on the flag, on an error and on missing data, strips extra params, redirects per scope only when every flag is false; `defaultRange` keeps the rest of the search and asks a range function each time.       |
-| `routes/target/insights.spec.ts`        | The loaders' variables and policies before render; one request per document with the page mounted; Refresh; the bare URL's default range; the period resolved once across an hour boundary; a hover warms and the visit revalidates; rows don't preload; client and coordinate start gate and stats together. |
-| `routes/target/checks.spec.ts`          | Load more merges pages; a filter change starts over and keeps the selected check; the loaders' variables; one request per document; rows don't preload; the affected deployments' first page.                                                                                                          |
-| `routes/target/history.spec.ts`         | The list's next page merges into the same list; the loaders' variables; one request per document; a revisit revalidates the list alone; the version pane shows an error before not-found.                                                                                                              |
-| `routes/target/apps.spec.ts`            | The sort from the URL and its default; the documents' search and coordinate from the URL and their defaults; one request per render; typing writes the URL once per pause and requests once; a new sort or search keeps the rows, dimmed, never the empty state.                                        |
-| `routes/target/alerts.spec.ts`          | The bare URL's default range; retention and the log started together with the loader's period; the poll repeats the bounds within a minute and moves them at the roll; rules and detail revalidate their configuration and leave the state log to the page; the create form's three documents.           |
-| `routes/target/traces.spec.ts`          | The bare URL's default range; the list started with the loader's period, the default filter and sort, revalidating; a URL's filter and sort reach the variables; the trace loader's variables; the error branch before not-found.                                                                      |
-| `routes/target/explorer.spec.ts`        | Each view's documents with the loader's period, the type name where it applies, gates read once and usage revalidating; one request per document with a view mounted; a bare URL takes the remembered preset, else the last week; filters survive the redirect; a preset lands in the URL and is remembered. |
-| `routes/target/proposals.spec.ts`       | The list started with the stages from the URL, or the default three, revalidating; the proposal started with version and timestamp, its changes left to the page; a new timestamp is a new request; the list renders from the cache with no load-more control.                                          |
-| `routes/organization/route.spec.ts`     | The overview started with the 14-day window as loader data, revalidating; support and a ticket warmed; the subscription pages redirect without Stripe and warm their documents with it.                                                                                                                 |
-| `routes/organization/settings.spec.ts`  | The page document once for the page and its section; token and SSO sections started revalidating; a hidden section falls back to the first visible one; the personal tokens' pages merge into one list.                                                                                                |
-| `routes/organization/members.spec.ts`   | The gate on the layout flag beside the page document; the list's filter reaching the variables; groups started by slug, revalidating, with the URL's search; a hidden section falls back to the list.                                                                                                  |
-| `routes/project/route.spec.ts`          | The overview as above; project alerts warmed read-once beside the gate, and the gate's redirect.                                                                                                                                                                                                        |
-| `routes/project/settings.spec.ts`       | The page document once beside one layout request; General warms the GitHub details; tokens revalidate; Composition falls back to General for a single-schema project; a viewer without General lands on Policy; a viewer with neither flag lands on the project.                                        |
-| `routes/render.spec.ts`                 | The chrome at every page; the layout loaders' variables; the permission gates redirect with one history entry and one layout request; the settings, members and alerts sections; tables show skeleton rows while they load; failed page queries show the error; a CDN create refetches the open page.     |
-| `routes/legacy.spec.ts`                 | Every old URL shape lands on its new path, carrying its search, without a history entry.                                                                                                                                                                                                                |
-| `routes/target/settings-cdn.spec.tsx`   | The one spec on the app's own client, exchanges and all: a CDN create through the modal refetches the open page.                                                                                                                                                                                        |
-| `lib/urql-cache.spec.ts`                | The updaters against a stub cache, and the CDN updaters through the real cache.                                                                                                                                                                                                                         |
-| `lib/overview-period.spec.ts`, `lib/hooks/use-interval.spec.ts`, `lib/hooks/use-date-range-controller.spec.ts` | The helpers alone: the window, the poll that never fires on mount, `loaderPeriod` against `resolveDateRange`.                                                                                                                                                                  |
-| `router.spec.ts`                        | The pending defaults and `defaultPreload`.                                                                                                                                                                                                                                                              |
-| `lib/testing/urql.spec.ts`              | The test client answers by operation name, records variables and context, holds promise fixtures, fails a fixture that no longer covers its document, and checks only the fragments of the union member a fixture is.                                                                                   |
+| Spec                                                                                                           | Guards                                                                                                                                                                                                                                                                                                        |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/route-utils.spec.ts`                                                                                      | `loadQuery` on the client in context with the preload flag; `revalidate`; the gate admits on the flag, on an error and on missing data, strips extra params, redirects per scope only when every flag is false; `defaultRange` keeps the rest of the search and asks a range function each time.              |
+| `routes/target/insights.spec.ts`                                                                               | The loaders' variables and policies before render; one request per document with the page mounted; Refresh; the bare URL's default range; the period resolved once across an hour boundary; a hover warms and the visit revalidates; rows don't preload; client and coordinate start gate and stats together. |
+| `routes/target/checks.spec.ts`                                                                                 | Load more merges pages; a filter change starts over and keeps the selected check; the loaders' variables; one request per document; rows don't preload; the affected deployments' first page.                                                                                                                 |
+| `routes/target/history.spec.ts`                                                                                | The list's next page merges into the same list; the loaders' variables; one request per document; a revisit revalidates the list alone; the version pane shows an error before not-found.                                                                                                                     |
+| `routes/target/apps.spec.ts`                                                                                   | The sort from the URL and its default; the documents' search and coordinate from the URL and their defaults; one request per render; typing writes the URL once per pause and requests once; a new sort or search keeps the rows, dimmed, never the empty state.                                              |
+| `routes/target/alerts.spec.ts`                                                                                 | The bare URL's default range; retention and the log started together with the loader's period; the poll repeats the bounds within a minute and moves them at the roll; rules and detail revalidate their configuration and leave the state log to the page; the create form's three documents.                |
+| `routes/target/traces.spec.ts`                                                                                 | The bare URL's default range; the list started with the loader's period, the default filter and sort, revalidating; a URL's filter and sort reach the variables; the trace loader's variables; the error branch before not-found.                                                                             |
+| `routes/target/explorer.spec.ts`                                                                               | Each view's documents with the loader's period, the type name where it applies, gates read once and usage revalidating; one request per document with a view mounted; a bare URL takes the remembered preset, else the last week; filters survive the redirect; a preset lands in the URL and is remembered.  |
+| `routes/target/proposals.spec.ts`                                                                              | The list started with the stages from the URL, or the default three, revalidating; the proposal started with version and timestamp, its changes left to the page; a new timestamp is a new request; the list renders from the cache with no load-more control.                                                |
+| `routes/organization/route.spec.ts`                                                                            | The overview started with the 14-day window as loader data, revalidating; support and a ticket warmed; the subscription pages redirect without Stripe and warm their documents with it.                                                                                                                       |
+| `routes/organization/settings.spec.ts`                                                                         | The page document once for the page and its section; token and SSO sections started revalidating; a hidden section falls back to the first visible one; the personal tokens' pages merge into one list.                                                                                                       |
+| `routes/organization/members.spec.ts`                                                                          | The gate on the layout flag beside the page document; the list's filter reaching the variables; groups started by slug, revalidating, with the URL's search; a hidden section falls back to the list.                                                                                                         |
+| `routes/project/route.spec.ts`                                                                                 | The overview as above; project alerts warmed read-once beside the gate, and the gate's redirect.                                                                                                                                                                                                              |
+| `routes/project/settings.spec.ts`                                                                              | The page document once beside one layout request; General warms the GitHub details; tokens revalidate; Composition falls back to General for a single-schema project; a viewer without General lands on Policy; a viewer with neither flag lands on the project.                                              |
+| `routes/render.spec.ts`                                                                                        | The chrome at every page; the layout loaders' variables; the permission gates redirect with one history entry and one layout request; the settings, members and alerts sections; tables show skeleton rows while they load; failed page queries show the error; a CDN create refetches the open page.         |
+| `routes/legacy.spec.ts`                                                                                        | Every old URL shape lands on its new path, carrying its search, without a history entry.                                                                                                                                                                                                                      |
+| `routes/target/settings-cdn.spec.tsx`                                                                          | The one spec on the app's own client, exchanges and all: a CDN create through the modal refetches the open page.                                                                                                                                                                                              |
+| `lib/urql-cache.spec.ts`                                                                                       | The updaters against a stub cache, and the CDN updaters through the real cache.                                                                                                                                                                                                                               |
+| `lib/overview-period.spec.ts`, `lib/hooks/use-interval.spec.ts`, `lib/hooks/use-date-range-controller.spec.ts` | The helpers alone: the window, the poll that never fires on mount, `loaderPeriod` against `resolveDateRange`.                                                                                                                                                                                                 |
+| `router.spec.ts`                                                                                               | The pending defaults and `defaultPreload`.                                                                                                                                                                                                                                                                    |
+| `lib/testing/urql.spec.ts`                                                                                     | The test client answers by operation name, records variables and context, holds promise fixtures, fails a fixture that no longer covers its document, and checks only the fragments of the union member a fixture is.                                                                                         |
 
 `createTestClient(fixtures)` (`src/lib/testing/urql.ts`) is a client on the app's own graphcache
 configuration whose network is a lookup by operation name. `seen` and `operations` are the requests
@@ -289,12 +290,12 @@ that reached the network, and `requests(name)` narrows them to one document: a c
 the network leg of a `cache-and-network` hit arrives as `network-only`, including a partial hit
 where the layout already cached the entity, and an invalidated or partial read arrives again. A spec
 asserts variables, policies and the `preload` flag on them; where the policy may have been forwarded
-either way, it asserts "revalidating" as either. Graphcache also strips a variable the document
-does not declare (the proposal's `timestamp`) from what reaches the network, though the request key
-still carries it. A promise fixture holds its request in flight until it settles, which is how a
-spec proves a page joined the loader's request; an `Error` fixture answers as a failed request. The
-env, laboratory, SuperTokens and AutoSizer stand-ins live in `src/lib/testing/mocks/`, one `vi.mock`
-line each in the spec, since there is no app-scoped vitest project to hold `setupFiles`. Fixtures
+either way, it asserts "revalidating" as either. Graphcache also strips a variable the document does
+not declare (the proposal's `timestamp`) from what reaches the network, though the request key still
+carries it. A promise fixture holds its request in flight until it settles, which is how a spec
+proves a page joined the loader's request; an `Error` fixture answers as a failed request. The env,
+laboratory, SuperTokens and AutoSizer stand-ins live in `src/lib/testing/mocks/`, one `vi.mock` line
+each in the spec, since there is no app-scoped vitest project to hold `setupFiles`. Fixtures
 (`src/lib/testing/fixtures/`) carry `__typename` on every object below the root, as the server
 would, and are checked against the document they answer: a missing field, including a typename,
 fails with its path named. Two documents that describe the same entity must agree in their fixtures,

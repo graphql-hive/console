@@ -83,7 +83,7 @@ export function DataTableBody({
   return (
     <tbody
       className={cn(
-        '[&>tr:last-child]:border-0 transition-opacity',
+        'transition-opacity [&>tr:last-child]:border-0',
         refreshing && 'pointer-events-none opacity-50',
       )}
     >

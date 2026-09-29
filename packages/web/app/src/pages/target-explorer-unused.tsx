@@ -25,8 +25,8 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { getRouteApi } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
+import { getRouteApi } from '@tanstack/react-router';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
 
 const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
@@ -233,7 +233,9 @@ function InternalUnusedSchemaView(props: {
 
 const UnusedSchemaView = memo(InternalUnusedSchemaView);
 
-const unusedRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer/unused');
+const unusedRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer/unused',
+);
 
 export const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
   query UnusedSchemaExplorer_UnusedSchemaQuery(

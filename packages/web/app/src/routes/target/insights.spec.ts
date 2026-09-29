@@ -224,29 +224,37 @@ describe('client and coordinate routes', () => {
     return client;
   }
 
-  it('start the gate and the client stats together, revalidating', { timeout: 30_000 }, async () => {
-    const client = await loadedAt(`${TARGET}/insights/client/web?${RANGE}`);
+  it(
+    'start the gate and the client stats together, revalidating',
+    { timeout: 30_000 },
+    async () => {
+      const client = await loadedAt(`${TARGET}/insights/client/web?${RANGE}`);
 
-    expect(variablesOf(client, 'ClientInsightsPageQuery')).toEqual(SLUGS);
-    const [stats] = client.requests('ClientView_ClientStatsQuery');
-    expect(stats.variables).toMatchObject({ targetSelector: SLUGS, clientName: 'web' });
-    expectPeriod(stats.variables);
-    expect(stats.context.requestPolicy).toBe('cache-and-network');
-  });
+      expect(variablesOf(client, 'ClientInsightsPageQuery')).toEqual(SLUGS);
+      const [stats] = client.requests('ClientView_ClientStatsQuery');
+      expect(stats.variables).toMatchObject({ targetSelector: SLUGS, clientName: 'web' });
+      expectPeriod(stats.variables);
+      expect(stats.context.requestPolicy).toBe('cache-and-network');
+    },
+  );
 
-  it('start the gate and the coordinate stats together, with the type', { timeout: 30_000 }, async () => {
-    const client = await loadedAt(`${TARGET}/insights/schema-coordinate/Query.me?${RANGE}`);
+  it(
+    'start the gate and the coordinate stats together, with the type',
+    { timeout: 30_000 },
+    async () => {
+      const client = await loadedAt(`${TARGET}/insights/schema-coordinate/Query.me?${RANGE}`);
 
-    expect(variablesOf(client, 'TargetSchemaCoordinatePageQuery')).toEqual(SLUGS);
-    const [stats] = client.requests('SchemaCoordinateView_SchemaCoordinateStatsQuery');
-    expect(stats.variables).toMatchObject({
-      targetSelector: SLUGS,
-      type: 'Query',
-      schemaCoordinate: 'Query.me',
-    });
-    expectPeriod(stats.variables);
-    expect(stats.context.requestPolicy).toBe('cache-and-network');
-  });
+      expect(variablesOf(client, 'TargetSchemaCoordinatePageQuery')).toEqual(SLUGS);
+      const [stats] = client.requests('SchemaCoordinateView_SchemaCoordinateStatsQuery');
+      expect(stats.variables).toMatchObject({
+        targetSelector: SLUGS,
+        type: 'Query',
+        schemaCoordinate: 'Query.me',
+      });
+      expectPeriod(stats.variables);
+      expect(stats.context.requestPolicy).toBe('cache-and-network');
+    },
+  );
 
   it('default a bare URL to the last week without a redirect', { timeout: 30_000 }, async () => {
     const client = createTestClient(layoutFixtures());

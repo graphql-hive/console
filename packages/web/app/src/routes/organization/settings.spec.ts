@@ -152,7 +152,11 @@ describe('personal access tokens', () => {
     );
     const query = (after: string | null, requestPolicy?: 'cache-only') =>
       client
-        .query(PersonalAccessTokensTable_MoreAccessTokensQuery, { ...SLUG, after }, { requestPolicy })
+        .query(
+          PersonalAccessTokensTable_MoreAccessTokensQuery,
+          { ...SLUG, after },
+          { requestPolicy },
+        )
         .toPromise();
 
     await query(null);

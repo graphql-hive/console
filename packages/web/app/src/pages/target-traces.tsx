@@ -275,9 +275,9 @@ const TracesList = memo(function TracesList(
             link={{
               to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
               params: {
-                organizationSlug: organizationSlug,
-                projectSlug: projectSlug,
-                targetSlug: targetSlug,
+                organizationSlug,
+                projectSlug,
+                targetSlug,
                 traceId: row.original.id,
               },
             }}

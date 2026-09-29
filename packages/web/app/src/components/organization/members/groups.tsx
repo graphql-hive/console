@@ -9,7 +9,6 @@ import {
   UsersIcon,
 } from 'lucide-react';
 import { useClient, useMutation, useQuery } from 'urql';
-import { useSlugs } from '@/lib/hooks';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/base/badge/badge';
 import { Button } from '@/components/base/button/button';
@@ -21,6 +20,7 @@ import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
+import { useSlugs } from '@/lib/hooks';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
 import { ManageGroupMappingSheet } from './groups/manage-group-mapping-sheet';

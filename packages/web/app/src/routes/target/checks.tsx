@@ -6,8 +6,8 @@ import {
   TargetChecksPage,
 } from '@/pages/target-checks';
 import {
-  affectedDeploymentsVariables,
   AffectedDeploymentsQuery,
+  affectedDeploymentsVariables,
   TargetChecksAffectedDeploymentsPage,
 } from '@/pages/target-checks-affected-deployments';
 import { ActiveSchemaCheckQuery, TargetChecksSinglePage } from '@/pages/target-checks-single';
@@ -69,7 +69,11 @@ export const targetChecksAffectedDeploymentsRoute = createRoute({
     void loadQuery(
       loader,
       AffectedDeploymentsQuery,
-      affectedDeploymentsVariables({ organizationSlug, projectSlug, targetSlug }, schemaCheckId, null),
+      affectedDeploymentsVariables(
+        { organizationSlug, projectSlug, targetSlug },
+        schemaCheckId,
+        null,
+      ),
     );
   },
   component: function TargetChecksAffectedDeploymentsRoute() {

@@ -1,5 +1,11 @@
 import { z } from 'zod';
+import {
+  AlertForm_ChannelsQuery,
+  AlertForm_SavedFiltersQuery,
+} from '@/components/target/alerts/alert-form';
 import { AlertActivitySearch } from '@/components/target/alerts/search-schemas';
+import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
+import { defaultRange, loadQuery, requireLayoutFlag, revalidate } from '@/lib/route-utils';
 import { TargetAlertsPage, TargetAlertsWithNav } from '@/pages/target-alerts';
 import {
   presetLast1Hour,
@@ -7,10 +13,6 @@ import {
   TargetAlertsActivityPage_Query,
   TargetAlertsActivityPage_RetentionQuery,
 } from '@/pages/target-alerts-activity';
-import {
-  AlertForm_ChannelsQuery,
-  AlertForm_SavedFiltersQuery,
-} from '@/components/target/alerts/alert-form';
 import {
   TargetAlertsCreatePage,
   TargetAlertsCreatePage_CapQuery,
@@ -20,8 +22,6 @@ import {
   TargetAlertsDetailPage_RuleConfigQuery,
 } from '@/pages/target-alerts-detail';
 import { TargetAlertsRulesPage, TargetAlertsRulesPage_Query } from '@/pages/target-alerts-rules';
-import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
-import { defaultRange, loadQuery, requireLayoutFlag, revalidate } from '@/lib/route-utils';
 import { createRoute } from '@tanstack/react-router';
 import { targetRoute } from './route';
 

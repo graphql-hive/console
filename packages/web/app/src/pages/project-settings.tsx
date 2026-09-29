@@ -439,7 +439,12 @@ type Section = {
 
 // The sections in nav order. The bare URL is General.
 const sections: readonly Section[] = [
-  { id: 'general', label: 'General', to: '/$organizationSlug/$projectSlug/view/settings', exact: true },
+  {
+    id: 'general',
+    label: 'General',
+    to: '/$organizationSlug/$projectSlug/view/settings',
+    exact: true,
+  },
   { id: 'policy', label: 'Policy', to: '/$organizationSlug/$projectSlug/view/settings/policy' },
   {
     id: 'composition',

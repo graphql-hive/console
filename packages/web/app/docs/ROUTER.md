@@ -160,8 +160,8 @@ For the rest of the route state:
    route component is the page itself unless the route carries a parameter of its own, like
    `$schemaCheckId`, which it then passes as a prop.
 3. Add the item to the target layout's nav (`src/components/layouts/target.tsx`):
-   `{ label: 'Thing', to: '/$organizationSlug/$projectSlug/$targetSlug/thing', params }`.
-   Gate it with `visible` if it needs a permission.
+   `{ label: 'Thing', to: '/$organizationSlug/$projectSlug/$targetSlug/thing', params }`. Gate it
+   with `visible` if it needs a permission.
 4. Tests: `tree.spec.ts` needs the new id in its snapshot and an example URL; `render.spec.ts`'s
    `pages` table gets `{ url, current: 'Thing' }`.
 
@@ -206,14 +206,14 @@ goes in `beforeLoad`. Do not redirect from a render effect, which races data and
 
 Run from the repo root: `pnpm vitest run packages/web/app/src`.
 
-| Spec                       | Guards                                                                                                                                                                                                                 |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `routes/tree.spec.ts`      | The exact set of route ids (inline snapshot) and one example URL per id; a route without an example fails the suite.                                                                                                   |
-| `routes/legacy.spec.ts`    | Every catalog entry's example lands on its new URL with a single history entry; the config-dependent redirects.                                                                                                        |
-| `routes/render.spec.ts`    | The real tree rendered at every page URL: one secondary nav, the expected item current, no error boundary; per-screen blocks for each tertiary nav and gate.                                                           |
-| `router.spec.ts`           | `createAppRouter` has no side effects and owns the default error/not-found boundaries, the pending defaults and `defaultPreload`.                                                                                      |
-| `lib/testing/urql.spec.ts` | The test client answers by operation name and fails a fixture that no longer covers its document.                                                                                                                      |
-| `routes/<scope>/*.spec.ts` | Per area: what the loaders request, with which variables and policies, that the page reads it from the cache, and where a gate or section check redirects. See DATA.md.                                              |
+| Spec                       | Guards                                                                                                                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `routes/tree.spec.ts`      | The exact set of route ids (inline snapshot) and one example URL per id; a route without an example fails the suite.                                                    |
+| `routes/legacy.spec.ts`    | Every catalog entry's example lands on its new URL with a single history entry; the config-dependent redirects.                                                         |
+| `routes/render.spec.ts`    | The real tree rendered at every page URL: one secondary nav, the expected item current, no error boundary; per-screen blocks for each tertiary nav and gate.            |
+| `router.spec.ts`           | `createAppRouter` has no side effects and owns the default error/not-found boundaries, the pending defaults and `defaultPreload`.                                       |
+| `lib/testing/urql.spec.ts` | The test client answers by operation name and fails a fixture that no longer covers its document.                                                                       |
+| `routes/<scope>/*.spec.ts` | Per area: what the loaders request, with which variables and policies, that the page reads it from the cache, and where a gate or section check redirects. See DATA.md. |
 
 `renderAtUrl(url, { client })` (`src/lib/testing/router.tsx`) renders the app in a memory history
 with `client` (a `createTestClient`) in router context. Specs that use it mock `@/env/frontend`,
@@ -221,7 +221,6 @@ with `client` (a `createTestClient`) in router context. Specs that use it mock `
 `src/lib/testing/mocks/`, one `vi.mock` line each in the spec, since there is no app-scoped vitest
 project to hold `setupFiles`. Fixtures for the viewer, layout and user-menu queries, each settings
 and members screen, checks, insights, history, apps, the explorer gates and proposals live in
-`src/lib/testing/fixtures/` and are checked against the
-documents they answer, so a query change that they no longer cover fails with the missing paths
-named. The client runs on the app's own graphcache configuration, so fixtures carry `__typename` on
-every object below the root.
+`src/lib/testing/fixtures/` and are checked against the documents they answer, so a query change
+that they no longer cover fails with the missing paths named. The client runs on the app's own
+graphcache configuration, so fixtures carry `__typename` on every object below the root.

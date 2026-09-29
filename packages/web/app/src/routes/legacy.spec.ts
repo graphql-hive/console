@@ -65,9 +65,7 @@ describe('legacy URLs', () => {
         from: example.from,
         to: expected.pathname,
       });
-      expect(router.state.location.search).toMatchObject(
-        Object.fromEntries(expected.searchParams),
-      );
+      expect(router.state.location.search).toMatchObject(Object.fromEntries(expected.searchParams));
       expect(router.history.length).toBe(1);
     }
   });

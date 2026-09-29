@@ -143,7 +143,10 @@ const ProposalsList = (props: {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [query] = useQuery({
     query: ProposalsQuery,
-    variables: proposalsVariables({ organizationSlug, projectSlug, targetSlug }, props.filterStages),
+    variables: proposalsVariables(
+      { organizationSlug, projectSlug, targetSlug },
+      props.filterStages,
+    ),
   });
   const search = useSearch({ strict: false });
   const hasFilter = props.filterStages?.length || props.filterUserIds?.length;

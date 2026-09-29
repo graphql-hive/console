@@ -28,7 +28,10 @@ import { withHeaderRoute } from '../with-header';
 // Billing pages exist only where Stripe is configured; elsewhere they are the organization.
 function requireStripe({ params }: { params: { organizationSlug: string } }) {
   if (!getIsStripeEnabled()) {
-    throw redirect({ to: '/$organizationSlug', params: { organizationSlug: params.organizationSlug } });
+    throw redirect({
+      to: '/$organizationSlug',
+      params: { organizationSlug: params.organizationSlug },
+    });
   }
 }
 

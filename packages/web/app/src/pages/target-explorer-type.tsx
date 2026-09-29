@@ -89,7 +89,9 @@ export function TypeRenderer(props: {
   }
 }
 
-const typeRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename');
+const typeRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename',
+);
 
 export const TargetExplorerTypenamePageQuery = graphql(`
   query TargetExplorerTypenamePageQuery(

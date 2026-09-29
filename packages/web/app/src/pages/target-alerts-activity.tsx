@@ -225,11 +225,7 @@ function ActivityView(props: { retentionInDays: number }) {
       </div>
 
       <div className="mt-6">
-        <AlertActivityChart
-          events={visibleEvents}
-          from={period.from}
-          to={period.to}
-        />
+        <AlertActivityChart events={visibleEvents} from={period.from} to={period.to} />
       </div>
 
       <div className="mt-6">

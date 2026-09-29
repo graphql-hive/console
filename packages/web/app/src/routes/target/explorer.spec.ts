@@ -80,14 +80,18 @@ describe('explorer loaders', () => {
     return { ...SLUGS, period };
   }
 
-  it('All starts the page and the type list with the same period', { timeout: 30_000 }, async () => {
-    const { client } = await loadedAt(`${EXPLORER}?${RANGE}`);
+  it(
+    'All starts the page and the type list with the same period',
+    { timeout: 30_000 },
+    async () => {
+      const { client } = await loadedAt(`${EXPLORER}?${RANGE}`);
 
-    expect(variablesOf(client, 'TargetExplorerPageQuery')).toEqual([expected()]);
-    expectRevalidating(client, 'TargetExplorerPageQuery');
-    expect(variablesOf(client, 'TypeFilter_AllTypes')).toEqual([expected()]);
-    expectReadOnce(client, 'TypeFilter_AllTypes');
-  });
+      expect(variablesOf(client, 'TargetExplorerPageQuery')).toEqual([expected()]);
+      expectRevalidating(client, 'TargetExplorerPageQuery');
+      expect(variablesOf(client, 'TypeFilter_AllTypes')).toEqual([expected()]);
+      expectReadOnce(client, 'TypeFilter_AllTypes');
+    },
+  );
 
   it('a type starts its own page document with the type name', { timeout: 30_000 }, async () => {
     const { client } = await loadedAt(`${EXPLORER}/User?${RANGE}`);
@@ -100,27 +104,42 @@ describe('explorer loaders', () => {
   });
 
   it.each([
-    ['deprecated', 'TargetExplorerDeprecatedSchemaPageQuery', 'DeprecatedSchemaExplorer_DeprecatedSchemaQuery'],
+    [
+      'deprecated',
+      'TargetExplorerDeprecatedSchemaPageQuery',
+      'DeprecatedSchemaExplorer_DeprecatedSchemaQuery',
+    ],
     ['unused', 'TargetExplorerUnusedSchemaPageQuery', 'UnusedSchemaExplorer_UnusedSchemaQuery'],
-  ])('%s starts its gate and its schema together', { timeout: 30_000 }, async (view, gate, schema) => {
-    const { client } = await loadedAt(`${EXPLORER}/${view}?${RANGE}`);
+  ])(
+    '%s starts its gate and its schema together',
+    { timeout: 30_000 },
+    async (view, gate, schema) => {
+      const { client } = await loadedAt(`${EXPLORER}/${view}?${RANGE}`);
 
-    expect(variablesOf(client, gate)).toEqual([SLUGS]);
-    expectReadOnce(client, gate);
-    expect(variablesOf(client, schema)).toEqual([expected()]);
-    expectRevalidating(client, schema);
-  });
+      expect(variablesOf(client, gate)).toEqual([SLUGS]);
+      expectReadOnce(client, gate);
+      expect(variablesOf(client, schema)).toEqual([expected()]);
+      expectRevalidating(client, schema);
+    },
+  );
 
-  it('renders the deprecated view from the cache: one request per document', { timeout: 30_000 }, async () => {
-    vi.useRealTimers();
-    const testClient = client();
-    testClient.fixtures.set('DeprecatedSchemaExplorer_DeprecatedSchemaQuery', new Promise(() => {}));
-    renderAtUrl(`${EXPLORER}/deprecated?${RANGE}`, { client: testClient });
-    await screen.findByRole('button', { name: 'Last 7 days' });
+  it(
+    'renders the deprecated view from the cache: one request per document',
+    { timeout: 30_000 },
+    async () => {
+      vi.useRealTimers();
+      const testClient = client();
+      testClient.fixtures.set(
+        'DeprecatedSchemaExplorer_DeprecatedSchemaQuery',
+        new Promise(() => {}),
+      );
+      renderAtUrl(`${EXPLORER}/deprecated?${RANGE}`, { client: testClient });
+      await screen.findByRole('button', { name: 'Last 7 days' });
 
-    expect(testClient.requests('TargetExplorerDeprecatedSchemaPageQuery')).toHaveLength(1);
-    expect(testClient.requests('DeprecatedSchemaExplorer_DeprecatedSchemaQuery')).toHaveLength(1);
-  });
+      expect(testClient.requests('TargetExplorerDeprecatedSchemaPageQuery')).toHaveLength(1);
+      expect(testClient.requests('DeprecatedSchemaExplorer_DeprecatedSchemaQuery')).toHaveLength(1);
+    },
+  );
 });
 
 describe('explorer period', () => {

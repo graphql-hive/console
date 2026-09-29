@@ -101,19 +101,23 @@ describe('apps route', () => {
 });
 
 describe('app version route', () => {
-  it('starts the documents with the search and coordinate from the URL', { timeout: 30_000 }, async () => {
-    const testClient = await loadedAt(`${VERSION}?search=GetUser&coordinates=Query.me`);
+  it(
+    'starts the documents with the search and coordinate from the URL',
+    { timeout: 30_000 },
+    async () => {
+      const testClient = await loadedAt(`${VERSION}?search=GetUser&coordinates=Query.me`);
 
-    expect(variablesOf(testClient, DOCUMENTS)).toEqual([
-      {
-        ...SLUGS,
-        appName: 'app',
-        appVersion: '1.0.0',
-        first: 20,
-        documentsFilter: { operationName: 'GetUser', schemaCoordinates: ['Query.me'] },
-      },
-    ]);
-  });
+      expect(variablesOf(testClient, DOCUMENTS)).toEqual([
+        {
+          ...SLUGS,
+          appName: 'app',
+          appVersion: '1.0.0',
+          first: 20,
+          documentsFilter: { operationName: 'GetUser', schemaCoordinates: ['Query.me'] },
+        },
+      ]);
+    },
+  );
 
   it('asks for every document of a bare URL', { timeout: 30_000 }, async () => {
     const testClient = await loadedAt(VERSION);
@@ -149,54 +153,52 @@ describe('app version route', () => {
     },
   );
 
-  it('follows a URL change from elsewhere instead of writing its term back', { timeout: 30_000 }, async () => {
-    const testClient = client();
-    const { router } = renderAtUrl(VERSION, { client: testClient });
-    await screen.findByText(DOCUMENT.hash);
-    const input = screen.getByPlaceholderText('Search by operation name...') as HTMLInputElement;
-    fireEvent.change(input, { target: { value: 'Get' } });
-    await waitFor(() => expect(router.state.location.search).toEqual({ search: 'Get' }), {
-      timeout: 3000,
-    });
-
-    // The "Clear filter" link navigates without a search.
-    await router.navigate({
-      to: '/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion',
-      params: { ...SLUGS, appName: 'app', appVersion: '1.0.0' },
-      search: {},
-    });
-
-    await waitFor(() => expect(input.value).toBe(''));
-    await new Promise(resolve => setTimeout(resolve, 700));
-    expect(router.state.location.search).toEqual({});
-  });
-
   it(
-    'keeps the rows, dimmed, while a search loads',
+    'follows a URL change from elsewhere instead of writing its term back',
     { timeout: 30_000 },
     async () => {
       const testClient = client();
       const { router } = renderAtUrl(VERSION, { client: testClient });
       await screen.findByText(DOCUMENT.hash);
-      testClient.fixtures.set(DOCUMENTS, (variables: DocumentsVariables) =>
-        variables.documentsFilter.operationName === 'zzz'
-          ? new Promise(() => {})
-          : appVersionPage(variables),
-      );
-
-      fireEvent.change(screen.getByPlaceholderText('Search by operation name...'), {
-        target: { value: 'zzz' },
-      });
-      await waitFor(() => expect(router.state.location.search).toEqual({ search: 'zzz' }), {
+      const input = screen.getByPlaceholderText('Search by operation name...') as HTMLInputElement;
+      fireEvent.change(input, { target: { value: 'Get' } });
+      await waitFor(() => expect(router.state.location.search).toEqual({ search: 'Get' }), {
         timeout: 3000,
       });
 
-      await waitFor(() =>
-        expect(screen.getByRole('table').getAttribute('aria-busy')).toBe('true'),
-      );
-      expect(screen.getByText(DOCUMENT.hash)).toBeTruthy();
-      expect(screen.queryByText(/No documents/)).toBeNull();
-      expect(screen.queryByRole('status', { name: 'Loading' })).toBeNull();
+      // The "Clear filter" link navigates without a search.
+      await router.navigate({
+        to: '/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion',
+        params: { ...SLUGS, appName: 'app', appVersion: '1.0.0' },
+        search: {},
+      });
+
+      await waitFor(() => expect(input.value).toBe(''));
+      await new Promise(resolve => setTimeout(resolve, 700));
+      expect(router.state.location.search).toEqual({});
     },
   );
+
+  it('keeps the rows, dimmed, while a search loads', { timeout: 30_000 }, async () => {
+    const testClient = client();
+    const { router } = renderAtUrl(VERSION, { client: testClient });
+    await screen.findByText(DOCUMENT.hash);
+    testClient.fixtures.set(DOCUMENTS, (variables: DocumentsVariables) =>
+      variables.documentsFilter.operationName === 'zzz'
+        ? new Promise(() => {})
+        : appVersionPage(variables),
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Search by operation name...'), {
+      target: { value: 'zzz' },
+    });
+    await waitFor(() => expect(router.state.location.search).toEqual({ search: 'zzz' }), {
+      timeout: 3000,
+    });
+
+    await waitFor(() => expect(screen.getByRole('table').getAttribute('aria-busy')).toBe('true'));
+    expect(screen.getByText(DOCUMENT.hash)).toBeTruthy();
+    expect(screen.queryByText(/No documents/)).toBeNull();
+    expect(screen.queryByRole('status', { name: 'Loading' })).toBeNull();
+  });
 });

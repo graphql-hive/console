@@ -25,8 +25,8 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { getRouteApi } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
+import { getRouteApi } from '@tanstack/react-router';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
 
 const DeprecatedSchemaView_DeprecatedSchemaExplorerFragment = graphql(`
@@ -172,7 +172,9 @@ function InternalDeprecatedSchemaView(props: {
 
 const DeprecatedSchemaView = memo(InternalDeprecatedSchemaView);
 
-const deprecatedRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated');
+const deprecatedRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated',
+);
 
 export const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
   query DeprecatedSchemaExplorer_DeprecatedSchemaQuery(

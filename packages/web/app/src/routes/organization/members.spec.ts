@@ -48,15 +48,21 @@ describe('members loaders', () => {
     expect(client.requests('OrganizationLayoutQuery')).toHaveLength(1);
   });
 
-  it("carry the list's search and SCIM filter into the variables", { timeout: 30_000 }, async () => {
-    const { client } = await loadedAt(`${MEMBERS}?search=jo&showPendingSCIMManagementConfirmations=true`);
+  it(
+    "carry the list's search and SCIM filter into the variables",
+    { timeout: 30_000 },
+    async () => {
+      const { client } = await loadedAt(
+        `${MEMBERS}?search=jo&showPendingSCIMManagementConfirmations=true`,
+      );
 
-    expect(client.requests(PAGE).map(o => o.variables)).toContainEqual({
-      ...FIRST_PAGE,
-      searchTerm: 'jo',
-      needsSCIMManagementConfirmation: true,
-    });
-  });
+      expect(client.requests(PAGE).map(o => o.variables)).toContainEqual({
+        ...FIRST_PAGE,
+        searchTerm: 'jo',
+        needsSCIMManagementConfirmation: true,
+      });
+    },
+  );
 
   it("start groups by slug with the URL's search, revalidating", { timeout: 30_000 }, async () => {
     const { client } = await loadedAt(`${MEMBERS}/groups?search=eng`);

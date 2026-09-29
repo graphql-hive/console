@@ -75,7 +75,9 @@ function SchemaView(props: {
   );
 }
 
-const explorerRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer');
+const explorerRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/explorer',
+);
 
 export const TargetExplorerPageQuery = graphql(`
   query TargetExplorerPageQuery(

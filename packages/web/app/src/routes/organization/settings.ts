@@ -96,7 +96,12 @@ export const organizationSettingsAccessTokensRoute = createRoute({
   path: 'access-tokens',
   preloadStaleTime: 0,
   loader: loader => {
-    void loadQuery(loader, AccessTokensSubPage_OrganizationQuery, loader.params, revalidate(loader));
+    void loadQuery(
+      loader,
+      AccessTokensSubPage_OrganizationQuery,
+      loader.params,
+      revalidate(loader),
+    );
     return loadSection(loader, 'access-tokens');
   },
   component: AccessTokensSubPage,

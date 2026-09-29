@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SchemaProposalStage } from '@/gql/graphql';
+import { loadQuery, requireLayoutFlag, revalidate } from '@/lib/route-utils';
 import {
   ProposalQuery,
   ProposalTab,
@@ -8,7 +9,6 @@ import {
 } from '@/pages/target-proposal';
 import { ProposalsQuery, proposalsVariables, TargetProposalsPage } from '@/pages/target-proposals';
 import { ProposalsNewProposalQuery, TargetProposalsNewPage } from '@/pages/target-proposals-new';
-import { loadQuery, requireLayoutFlag, revalidate } from '@/lib/route-utils';
 import { createRoute, useParams } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
