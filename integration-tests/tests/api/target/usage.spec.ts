@@ -21,7 +21,7 @@ import {
   waitForExpectations,
 } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
-import { CollectedOperation } from '../../../testkit/usage';
+import { collect as collectReport, CollectedOperation } from '../../../testkit/usage';
 
 // We don't use differenceInDays from date-fns as it calculates the difference in days
 // based on daylight savings time, which is not what we want here.
@@ -2063,6 +2063,79 @@ test.concurrent('round-trip usage values through ClickHouse', async ({ expect })
       coordinates: expect.arrayContaining(['Query', 'Query.ping']),
     }),
   );
+});
+
+test.concurrent('round-trip operation errors through ClickHouse', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    ProjectType.Single,
+  );
+  const accessToken = await createTargetAccessToken({});
+  const operationMapKey = 'row-binary-error-round-trip';
+
+  const collectResult = await collectReport({
+    accessToken,
+    report: {
+      size: 1,
+      map: {
+        [operationMapKey]: {
+          operation: 'query rowBinaryErrorRoundTrip { ping }',
+          operationName: 'rowBinaryErrorRoundTrip',
+          fields: ['Query', 'Query.ping'],
+        },
+      },
+      operations: [
+        {
+          operationMapKey,
+          timestamp: Date.now(),
+          execution: {
+            ok: false,
+            duration: 12_345,
+            errorsTotal: 1,
+            fetches: [
+              {
+                start: 0,
+                duration: 12_000,
+                fields: { 'Query.ping': 1 },
+                errors: [{ coordinate: 'Query.ping', code: 'UPSTREAM_FAILURE' }],
+                subgraph: 'test-subgraph',
+                paths: 'Query',
+                type: 'ROOT',
+              },
+            ],
+          },
+        },
+      ],
+    },
+  });
+
+  expect(collectResult.status).toEqual(200);
+  await waitForRequestsCollected(1);
+
+  const errorsResult = await clickHouseQuery<{
+    target: string;
+    hash: string;
+    code: string;
+    path: string;
+  }>(`
+    SELECT
+      target,
+      hex(hash) AS hash,
+      tupleElement(error, 1) AS code,
+      tupleElement(error, 2) AS path
+    FROM operation_errors
+    ARRAY JOIN errors AS error
+    WHERE target = '${target.id}'
+  `);
+
+  expect(errorsResult.data).toHaveLength(1);
+  expect(errorsResult.data[0]).toEqual({
+    target: target.id,
+    hash: expect.stringMatching(/^[0-9a-f]{32}$/),
+    code: 'UPSTREAM_FAILURE',
+    path: 'Query.ping',
+  });
 });
 
 test.concurrent(
