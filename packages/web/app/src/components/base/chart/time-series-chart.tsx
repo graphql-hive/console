@@ -49,11 +49,10 @@ export function TimeSeriesChart({
           color,
           stack: stacked ? 'total' : undefined,
           emphasis: { focus: 'series' as const },
-          large: true,
           data: entry.data,
         };
         if (kind === 'bar') {
-          return { ...shared, type: 'bar' };
+          return { ...shared, type: 'bar', large: true };
         }
         return {
           ...shared,
