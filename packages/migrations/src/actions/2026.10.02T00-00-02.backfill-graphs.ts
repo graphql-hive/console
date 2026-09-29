@@ -48,7 +48,6 @@ export default {
         'includeTags', "contracts"."include_tags"
         , 'excludeTags', "contracts"."exclude_tags"
         , 'removeUnreachableTypesFromPublicApiSchema', "contracts"."remove_unreachable_types_from_public_api_schema"
-        , 'isDisabled', false
       )
       , "default_graphs"."id"
       , true
