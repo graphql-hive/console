@@ -1,10 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { differenceInMilliseconds } from 'date-fns';
 import ReactECharts from 'echarts-for-react';
-import { ActivityIcon, BookIcon, GlobeIcon, HistoryIcon, RefreshCw } from 'lucide-react';
+import { ActivityIcon, BookIcon, GlobeIcon, HistoryIcon } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { RefreshButton } from '@/components/base/button/refresh-button';
 import { Card } from '@/components/base/card/card';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
@@ -19,9 +19,13 @@ import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { pick } from '@/lib/object';
 import { useChartStyles } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 
-const ClientView_ClientStatsQuery = graphql(`
+const clientRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name',
+);
+
+export const ClientView_ClientStatsQuery = graphql(`
   query ClientView_ClientStatsQuery(
     $targetSelector: TargetSelectorInput!
     $period: DateRangeInput!
@@ -63,26 +67,18 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
     dataRetentionInDays: props.dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
+  // Resolved by the route loader, so both sides ask for one period.
+  const { period, resolution } = clientRoute.useLoaderData();
 
-  const [query, refetch] = useQuery({
+  const [query] = useQuery({
     query: ClientView_ClientStatsQuery,
     variables: {
-      targetSelector: {
-        organizationSlug,
-        projectSlug,
-        targetSlug,
-      },
-      period: dateRangeController.resolvedRange,
+      targetSelector: { organizationSlug, projectSlug, targetSlug },
+      period,
       clientName: props.clientName,
-      resolution: dateRangeController.resolution,
+      resolution,
     },
   });
-
-  useEffect(() => {
-    if (!query.fetching) {
-      refetch({ requestPolicy: 'network-only' });
-    }
-  }, [dateRangeController.resolvedRange]);
 
   const isLoading = query.fetching;
   const points = query.data?.target?.clientStats?.requestsOverTime;
@@ -123,12 +119,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
-          <Button
-            layout="iconOnly"
-            icon={RefreshCw}
-            aria-label="Refresh"
-            onClick={() => dateRangeController.refreshResolvedRange()}
-          />
+          <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
         </div>
       </div>
       <div className="space-y-4 pb-8">
@@ -149,10 +140,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
                     ? '-'
                     : formatThroughput(
                         totalRequests,
-                        differenceInMilliseconds(
-                          new Date(dateRangeController.resolvedRange.to),
-                          new Date(dateRangeController.resolvedRange.from),
-                        ),
+                        differenceInMilliseconds(new Date(period.to), new Date(period.from)),
                       )
                 }
                 caption={`RPM in ${dateRangeController.selectedPreset.label.toLowerCase()}`}
@@ -320,7 +308,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
   );
 }
 
-const ClientInsightsPageQuery = graphql(`
+export const ClientInsightsPageQuery = graphql(`
   query ClientInsightsPageQuery(
     $organizationSlug: String!
     $projectSlug: String!

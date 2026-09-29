@@ -35,7 +35,7 @@ import { AlertMetricChart } from './alert-metric-chart';
 import { AlertPreview, type AlertPreviewChannelType } from './alert-notification-preview';
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
 
-const AlertForm_ChannelsQuery = graphql(`
+export const AlertForm_ChannelsQuery = graphql(`
   query AlertForm_ChannelsQuery($organizationSlug: String!, $projectSlug: String!) {
     project(
       reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
@@ -50,7 +50,7 @@ const AlertForm_ChannelsQuery = graphql(`
   }
 `);
 
-const AlertForm_SavedFiltersQuery = graphql(`
+export const AlertForm_SavedFiltersQuery = graphql(`
   query AlertForm_SavedFiltersQuery(
     $organizationSlug: String!
     $projectSlug: String!

@@ -72,8 +72,24 @@ export function DataTableHeader({ children }: { children: React.ReactNode }) {
   return <thead className="[&_tr:hover]:bg-transparent">{children}</thead>;
 }
 
-export function DataTableBody({ children }: { children: React.ReactNode }) {
-  return <tbody className="[&>tr:last-child]:border-0">{children}</tbody>;
+export function DataTableBody({
+  children,
+  refreshing = false,
+}: {
+  children: React.ReactNode;
+  /** The rows are the last settled ones while their replacement loads. */
+  refreshing?: boolean;
+}) {
+  return (
+    <tbody
+      className={cn(
+        'transition-opacity [&>tr:last-child]:border-0',
+        refreshing && 'pointer-events-none opacity-50',
+      )}
+    >
+      {children}
+    </tbody>
+  );
 }
 
 export function DataTableRow({

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from 'urql';
 import { Filters } from '@/components/base/floating/filter-menu/filters';
 import { PageLead } from '@/components/base/page-lead';
@@ -14,11 +14,11 @@ import { graphql } from '@/gql';
 import { MetricAlertRuleSeverity, MetricAlertRuleType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { useInterval } from '@/lib/hooks/use-interval';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import { useRollingNow } from '@/lib/hooks/use-rolling-now';
-import { getRouteApi } from '@tanstack/react-router';
+import { getRouteApi, useRouter } from '@tanstack/react-router';
 
-const TargetAlertsActivityPage_RetentionQuery = graphql(`
+export const TargetAlertsActivityPage_RetentionQuery = graphql(`
   query TargetAlertsActivityPage_RetentionQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -39,7 +39,7 @@ const TargetAlertsActivityPage_RetentionQuery = graphql(`
   }
 `);
 
-const TargetAlertsActivityPage_Query = graphql(`
+export const TargetAlertsActivityPage_Query = graphql(`
   query TargetAlertsActivityPage_Query(
     $organizationSlug: String!
     $projectSlug: String!
@@ -102,7 +102,7 @@ const TargetAlertsActivityPage_Query = graphql(`
   }
 `);
 
-const presetLast1Hour: Preset = {
+export const presetLast1Hour: Preset = {
   name: 'last1h',
   label: 'Last 1 hour',
   range: { from: 'now-1h', to: 'now' },
@@ -136,41 +136,21 @@ function ActivityView(props: { retentionInDays: number }) {
   const { retentionInDays } = props;
   const search = activityRoute.useSearch();
   const navigate = activityRoute.useNavigate();
-
-  // Populate URL with the default range on first load so refresh and shared
-  // links stay in sync. Skipped when from/to are already present.
-  useEffect(() => {
-    if (search.from === undefined && search.to === undefined) {
-      void navigate({
-        search: prev => ({
-          ...prev,
-          from: presetLast1Hour.range.from,
-          to: presetLast1Hour.range.to,
-        }),
-        replace: true,
-      });
-    }
-  }, []);
+  const router = useRouter();
+  // Resolved by the route loader, so the chart, the query and the loader share one clock.
+  const { period } = activityRoute.useLoaderData();
 
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: retentionInDays,
     defaultPreset: presetLast1Hour,
   });
 
-  const rollingNow = useRollingNow(ALERTS_POLL_INTERVAL_MS);
-  useEffect(() => {
-    dateRangeController.refreshResolvedRange();
-  }, [rollingNow]);
+  // The loader revalidates within the minute and moves the bounds when it rolls.
+  useInterval(ALERTS_POLL_INTERVAL_MS, () => void router.invalidate());
 
   const [result] = useQuery({
     query: TargetAlertsActivityPage_Query,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-      from: dateRangeController.resolvedRange.from,
-      to: dateRangeController.resolvedRange.to,
-    },
+    variables: { organizationSlug, projectSlug, targetSlug, from: period.from, to: period.to },
   });
 
   const data = useKeepPreviousData(result.data, result.fetching || result.stale);
@@ -245,11 +225,7 @@ function ActivityView(props: { retentionInDays: number }) {
       </div>
 
       <div className="mt-6">
-        <AlertActivityChart
-          events={visibleEvents}
-          from={dateRangeController.resolvedRange.from}
-          to={dateRangeController.resolvedRange.to}
-        />
+        <AlertActivityChart events={visibleEvents} from={period.from} to={period.to} />
       </div>
 
       <div className="mt-6">

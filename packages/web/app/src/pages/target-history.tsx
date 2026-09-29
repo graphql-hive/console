@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement } from 'react';
 import { FileSymlinkIcon, GitCommitVerticalIcon, PackageIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
@@ -12,10 +12,11 @@ import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
+import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import { Link, Outlet, useParams } from '@tanstack/react-router';
 
-const HistoryPage_VersionsPageQuery = graphql(`
+export const HistoryPage_VersionsPageQuery = graphql(`
   query HistoryPage_VersionsPageQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -80,29 +81,29 @@ const HistoryPage_VersionsPageQuery = graphql(`
   }
 `);
 
-// URQL's Infinite scrolling pattern
-// https://formidable.com/open-source/urql/docs/basics/ui-patterns/#infinite-scrolling
-function ListPage(props: {
-  variables: { after: string | null; first: number };
-  isLastPage: boolean;
-  onLoadMore: (after: string) => void;
-  versionId?: string;
-}): ReactElement {
+export function versionsPageVariables(
+  slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
+  after: string | null,
+) {
+  return { ...slugs, first: 10, after };
+}
+
+// One query whose pages the cache merges (Target.schemaVersions in urql-cache.ts).
+function VersionsList(props: { versionId?: string }): ReactElement {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const { variables, isLastPage, onLoadMore, versionId } = props;
+  const { versionId } = props;
+  const [after, setAfter] = useResetState<string | null>(null, [
+    organizationSlug,
+    projectSlug,
+    targetSlug,
+  ]);
   const [versionsQuery] = useQuery({
     query: HistoryPage_VersionsPageQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      targetSlug,
-      ...variables,
-    },
-    requestPolicy: 'cache-and-network',
+    variables: versionsPageVariables({ organizationSlug, projectSlug, targetSlug }, after),
   });
 
   const edges = versionsQuery.data?.target?.schemaVersions.edges;
-  const hasMore = versionsQuery.data?.target?.schemaVersions?.pageInfo?.hasNextPage ?? false;
+  const pageInfo = versionsQuery.data?.target?.schemaVersions.pageInfo;
 
   return (
     <>
@@ -203,13 +204,13 @@ function ListPage(props: {
           </div>
         </Link>
       ))}
-      {isLastPage && hasMore && (
+      {pageInfo?.hasNextPage && (
         <Button
           variant="link"
+          disabled={versionsQuery.stale}
           onClick={() => {
-            const endCursor = versionsQuery.data?.target?.schemaVersions?.pageInfo?.endCursor;
-            if (endCursor) {
-              onLoadMore(endCursor);
+            if (pageInfo.endCursor) {
+              setAfter(pageInfo.endCursor);
             }
           }}
         >
@@ -245,7 +246,7 @@ export const TargetHistoryLatestVersionQuery = graphql(`
   }
 `);
 
-const TargetHistoryPageQuery = graphql(`
+export const TargetHistoryPageQuery = graphql(`
   query TargetHistoryPageQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -282,7 +283,6 @@ function HistoryPageContent() {
       targetSlug,
     },
   });
-  const [pageVariables, setPageVariables] = useState([{ first: 10, after: null as string | null }]);
   const currentTarget = query.data?.target;
   const hasVersions = !!currentTarget?.latestSchemaVersion?.id;
 
@@ -313,17 +313,7 @@ function HistoryPageContent() {
             <div className="border-line-subtle bg-surface-inset flex min-h-0 min-w-[420px] grow flex-col rounded-md border">
               <ScrollArea fill>
                 <div className="flex flex-col gap-2.5 p-2.5">
-                  {pageVariables.map((variables, i) => (
-                    <ListPage
-                      key={variables.after || 'initial'}
-                      variables={variables}
-                      isLastPage={i === pageVariables.length - 1}
-                      onLoadMore={after => {
-                        setPageVariables([...pageVariables, { after, first: 10 }]);
-                      }}
-                      versionId={versionId}
-                    />
-                  ))}
+                  <VersionsList versionId={versionId} />
                 </div>
               </ScrollArea>
             </div>

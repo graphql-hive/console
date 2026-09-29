@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useMemo } from 'react';
+import { ReactElement, useCallback } from 'react';
 import { ArrowBigDownDashIcon, CheckIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
@@ -23,19 +23,12 @@ import { ResourceDetails } from '@/components/ui/resource-details';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
-import { useRedirect } from '@/lib/access/common';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Outlet,
-  useChildMatches,
-  useRouter,
-  type RegisteredRouter,
-  type RouteIds,
-} from '@tanstack/react-router';
+import { Outlet, useRouter } from '@tanstack/react-router';
 
-const GithubIntegration_GithubIntegrationDetailsQuery = graphql(`
+export const GithubIntegration_GithubIntegrationDetailsQuery = graphql(`
   query getGitHubIntegrationDetails($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
@@ -419,67 +412,75 @@ const ProjectSettingsPage_ProjectFragment = graphql(`
   }
 `);
 
-const ProjectSettingsPageQuery = graphql(`
+// The type and the two flags sit beside the fragment so a route loader reads them unmasked.
+export const ProjectSettingsPageQuery = graphql(`
   query ProjectSettingsPageQuery($organizationSlug: String!, $projectSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...ProjectSettingsPage_OrganizationFragment
       project: projectBySlug(projectSlug: $projectSlug) {
         ...ProjectSettingsPage_ProjectFragment
+        type
+        viewerCanModifySettings
+        viewerCanManageProjectAccessTokens
       }
     }
     isGitHubIntegrationFeatureEnabled
   }
 `);
 
-const SETTINGS = '/authenticated/with-header/$organizationSlug/$projectSlug/view/settings';
-
-type SectionId = 'general' | 'policy' | 'composition' | 'access-tokens';
+export type ProjectSettingsSectionId = 'general' | 'policy' | 'composition' | 'access-tokens';
 
 type Section = {
-  id: SectionId;
+  id: ProjectSettingsSectionId;
   label: string;
-  routeId: RouteIds<RegisteredRouter['routeTree']>;
-  to: `/$organizationSlug/$projectSlug/view/settings${'' | `/${Exclude<SectionId, 'general'>}`}`;
+  to: `/$organizationSlug/$projectSlug/view/settings${'' | `/${Exclude<ProjectSettingsSectionId, 'general'>}`}`;
   exact?: boolean;
 };
 
-/**
- * The sections in nav order, with the route each renders under; the permission gate compares the
- * matched child route against the items the viewer may see. The bare URL is General.
- */
+// The sections in nav order. The bare URL is General.
 const sections: readonly Section[] = [
   {
     id: 'general',
     label: 'General',
-    routeId: `${SETTINGS}/`,
     to: '/$organizationSlug/$projectSlug/view/settings',
     exact: true,
   },
-  {
-    id: 'policy',
-    label: 'Policy',
-    routeId: `${SETTINGS}/policy`,
-    to: '/$organizationSlug/$projectSlug/view/settings/policy',
-  },
+  { id: 'policy', label: 'Policy', to: '/$organizationSlug/$projectSlug/view/settings/policy' },
   {
     id: 'composition',
     label: 'Composition',
-    routeId: `${SETTINGS}/composition`,
     to: '/$organizationSlug/$projectSlug/view/settings/composition',
   },
   {
     id: 'access-tokens',
     label: 'Access Tokens',
-    routeId: `${SETTINGS}/access-tokens`,
     to: '/$organizationSlug/$projectSlug/view/settings/access-tokens',
   },
 ];
 
-function useProjectSettings(requestPolicy?: 'cache-and-network') {
+// The sections this viewer may open; the route loaders and the nav both read it.
+export function projectSettingsSections(project: {
+  type: string;
+  viewerCanModifySettings: boolean;
+  viewerCanManageProjectAccessTokens: boolean;
+}) {
+  const ids = new Set<ProjectSettingsSectionId>(['policy']);
+  if (project.viewerCanModifySettings) {
+    ids.add('general');
+  }
+  if (project.type === ProjectType.Federation) {
+    ids.add('composition');
+  }
+  if (project.viewerCanManageProjectAccessTokens) {
+    ids.add('access-tokens');
+  }
+  return sections.filter(section => ids.has(section.id));
+}
+
+function useProjectSettings() {
   const [query] = useQuery({
     query: ProjectSettingsPageQuery,
     variables: useSlugs('project'),
-    requestPolicy,
   });
   const organization = useFragment(
     ProjectSettingsPage_OrganizationFragment,
@@ -495,49 +496,9 @@ function useProjectSettings(requestPolicy?: 'cache-and-network') {
 export function ProjectSettingsPage() {
   const slugs = useSlugs('project');
   const { organizationSlug } = useSlugs('project');
-  // Fresh on entry; the sections read the same document from the cache.
-  const { query, project } = useProjectSettings('cache-and-network');
-
-  useRedirect({
-    canAccess:
-      project?.viewerCanModifySettings === true ||
-      project?.viewerCanManageProjectAccessTokens === true,
-    entity: project,
-    redirectTo: router => {
-      void router.navigate({ to: '/$organizationSlug/$projectSlug', params: slugs });
-    },
-  });
-
-  const visible = useMemo(() => {
-    const ids = new Set<SectionId>(['policy']);
-    if (project?.viewerCanModifySettings) {
-      ids.add('general');
-    }
-    if (project?.type === ProjectType.Federation) {
-      ids.add('composition');
-    }
-    if (project?.viewerCanManageProjectAccessTokens) {
-      ids.add('access-tokens');
-    }
-    return sections.filter(section => ids.has(section.id));
-  }, [project]);
-
-  const sectionRouteId = useChildMatches({ select: matches => matches.at(-1)?.routeId });
-  const allowed = visible.some(section => section.routeId === sectionRouteId);
-
-  // A section the viewer may not open falls back to the first one they may, else the project.
-  useRedirect({
-    canAccess: allowed,
-    entity: project,
-    redirectTo: router => {
-      const fallback = visible.at(0);
-      void router.navigate(
-        fallback
-          ? { to: fallback.to, params: slugs, replace: true }
-          : { to: '/$organizationSlug/$projectSlug', params: slugs, replace: true },
-      );
-    },
-  });
+  const { query, project } = useProjectSettings();
+  const unmasked = query.data?.organization?.project;
+  const visible = unmasked ? projectSettingsSections(unmasked) : [];
 
   if (query.error) {
     return (
@@ -555,7 +516,7 @@ export function ProjectSettingsPage() {
     <>
       <Meta title="Project settings" />
       <LayoutContent className="flex flex-col gap-y-10">
-        {allowed && project ? (
+        {project ? (
           <PageLayout>
             <Navigation
               aria-label="Settings"

@@ -234,7 +234,7 @@ function SchemaView(props: {
   );
 }
 
-const TargetSchemaPageQuery = graphql(`
+export const TargetSchemaPageQuery = graphql(`
   query TargetSchemaPageQuery(
     $organizationSlug: String!
     $projectSlug: String!

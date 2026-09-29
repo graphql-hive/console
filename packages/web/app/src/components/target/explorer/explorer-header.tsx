@@ -22,11 +22,7 @@ export function ExplorerHeader({
 }: ExplorerFilterDimensionsOptions & {
   title: string;
   description: string;
-  /**
-   * Passed in rather than built here: the All and Type views drive the picker
-   * off the provider's period, while Unused and Deprecated own a local
-   * controller.
-   */
+  /** Passed in rather than built here: each view owns the controller the picker drives. */
   dateRangeControl: ReactNode;
   /** Hidden until there is a schema version to filter. */
   showFilters?: boolean;

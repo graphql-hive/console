@@ -2,9 +2,11 @@ import {
   Kind,
   type DocumentNode,
   type FragmentDefinitionNode,
+  type IntrospectionQuery,
   type SelectionSetNode,
 } from 'graphql';
 import { filter, fromPromise, fromValue, mergeMap, pipe } from 'wonka';
+import schema from '@/gql/schema';
 import { cacheOptions } from '@/lib/urql-cache';
 import {
   createClient,
@@ -35,6 +37,15 @@ export function operationName(operation: Operation): string | undefined {
  * documents arrive formatted by graphcache, which selects `__typename` below the root, so fixtures
  * carry it on every object as the server would; without it the cache reads back null.
  */
+// The members of every interface and union, from the same introspection graphcache reads.
+const possibleTypes = new Map<string, Set<string>>(
+  (schema as IntrospectionQuery).__schema.types.flatMap(type =>
+    (type.kind === 'INTERFACE' || type.kind === 'UNION') && type.possibleTypes
+      ? [[type.name, new Set(type.possibleTypes.map(member => member.name))] as const]
+      : [],
+  ),
+);
+
 export function missingSelections(
   document: DocumentNode,
   data: unknown,
@@ -74,6 +85,20 @@ export function missingSelections(
     return false;
   }
 
+  // A fragment applies to the object when its condition is the object's type or one of its members.
+  function isOtherMember(
+    typeCondition: { name: { value: string } } | undefined,
+    object: Record<string, unknown>,
+  ) {
+    if (typeCondition === undefined || typeof object.__typename !== 'string') {
+      return false;
+    }
+    const name = typeCondition.name.value;
+    return (
+      name !== object.__typename && !(possibleTypes.get(name)?.has(object.__typename) ?? false)
+    );
+  }
+
   function walk(selectionSet: SelectionSetNode, value: unknown, path: string) {
     if (value === null || value === undefined) {
       return;
@@ -105,8 +130,13 @@ export function missingSelections(
         }
       } else if (selection.kind === Kind.FRAGMENT_SPREAD) {
         const fragment = fragments.get(selection.name.value);
-        if (fragment) walk(fragment.selectionSet, value, path);
-      } else if (selection.kind === Kind.INLINE_FRAGMENT) {
+        if (fragment && !isOtherMember(fragment.typeCondition, object)) {
+          walk(fragment.selectionSet, value, path);
+        }
+      } else if (
+        selection.kind === Kind.INLINE_FRAGMENT &&
+        !isOtherMember(selection.typeCondition, object)
+      ) {
         walk(selection.selectionSet, value, path);
       }
     }

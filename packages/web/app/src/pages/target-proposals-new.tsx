@@ -59,7 +59,7 @@ const ProposeChangesMutation = graphql(`
   }
 `);
 
-const ProposalsNewProposalQuery = graphql(`
+export const ProposalsNewProposalQuery = graphql(`
   query ProposalsNewProposalQuery($targetReference: TargetReferenceInput!) {
     me {
       id

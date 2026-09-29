@@ -18,7 +18,7 @@ import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 
-const TargetAlertsRulesPage_Query = graphql(`
+export const TargetAlertsRulesPage_Query = graphql(`
   query TargetAlertsRulesPage_Query(
     $organizationSlug: String!
     $projectSlug: String!
@@ -291,7 +291,6 @@ export function TargetAlertsRulesPage() {
   const [result] = useQuery({
     query: TargetAlertsRulesPage_Query,
     variables: { organizationSlug, projectSlug, targetSlug },
-    requestPolicy: 'cache-and-network',
   });
 
   const previousData = useKeepPreviousData(result.data, result.fetching || result.stale);

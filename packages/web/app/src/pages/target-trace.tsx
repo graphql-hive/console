@@ -34,6 +34,7 @@ import { LayoutContent } from '@/components/layouts/layout-content';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { QueryError } from '@/components/ui/query-error';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard, useSlugs } from '@/lib/hooks';
@@ -944,7 +945,7 @@ export function TraceSheet(props: TraceSheetProps) {
   );
 }
 
-const TargetInsightsNewPageContent_TraceQuery = graphql(/* GraphQL */ `
+export const TargetInsightsNewPageContent_TraceQuery = graphql(/* GraphQL */ `
   query TargetInsightsNewPageContent_TraceQuery(
     $targetSelector: TargetSelectorInput!
     $traceId: ID!
@@ -989,6 +990,16 @@ function TargetInsightsNewPageContent(props: {
 
   const isFetching = result.fetching || result.stale;
   const trace = result.data?.target?.trace;
+
+  if (result.error) {
+    return (
+      <QueryError
+        organizationSlug={organizationSlug}
+        error={result.error}
+        showLogoutButton={false}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full flex-col space-y-4 pt-6">

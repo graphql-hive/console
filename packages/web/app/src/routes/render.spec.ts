@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import { CDNAccessTokenCreateMutation } from '@/components/target/settings/cdn-access-tokens';
 import { CHECKS, checksFixtures } from '@/lib/testing/fixtures/checks';
-import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
+import {
+  layoutFixtures,
+  organizationLayout,
+  projectLayout,
+  SLUGS,
+  targetLayout,
+} from '@/lib/testing/fixtures/layouts';
 import { organizationMembers } from '@/lib/testing/fixtures/organization-members';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
 import { projectSettings } from '@/lib/testing/fixtures/project-settings';
@@ -272,9 +278,13 @@ async function sectionNav(name = 'Settings') {
 describe('target settings sections', () => {
   const SETTINGS = `${TARGET}/settings`;
 
-  function renderSettings(url: string, fixture = targetSettings()) {
+  // A permission the layout document also selects is flipped on both, as one entity in the cache.
+  function renderSettings(url: string, fixture = targetSettings(), layout?: unknown) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('TargetSettingsPageQuery', fixture);
+    if (layout) {
+      client.current.fixtures.set('TargetLayoutQuery', layout);
+    }
     return at(url);
   }
 
@@ -357,7 +367,11 @@ describe('target settings sections', () => {
   });
 
   it('sends a viewer without settings access back to the target', { timeout: 30_000 }, async () => {
-    const { router } = renderSettings(SETTINGS, targetSettings({ viewerCanAccessSettings: false }));
+    const { router } = renderSettings(
+      SETTINGS,
+      targetSettings({ viewerCanAccessSettings: false }),
+      targetLayout({ viewerCanAccessSettings: false }),
+    );
     await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
     expect(screen.queryByRole('navigation', { name: 'Settings' })).toBeNull();
     // The page and the section both awaited and redirected; one request, no error boundary.
@@ -471,9 +485,13 @@ describe('target settings sections', () => {
 describe('organization settings sections', () => {
   const SETTINGS = `${ORGANIZATION}/view/settings`;
 
-  function renderSettings(url: string, fixture = organizationSettings()) {
+  // A permission the layout document also selects is flipped on both, as one entity in the cache.
+  function renderSettings(url: string, fixture = organizationSettings(), layout?: unknown) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('OrganizationSettingsPageQuery', fixture);
+    if (layout) {
+      client.current.fixtures.set('OrganizationLayoutQuery', layout);
+    }
     return at(url);
   }
 
@@ -504,6 +522,7 @@ describe('organization settings sections', () => {
         viewerCanManageOIDCIntegration: false,
         viewerCanManagePersonalAccessTokens: false,
       }),
+      organizationLayout({ viewerCanManagePersonalAccessTokens: false }),
     );
     expect((await sectionNav()).labels).toEqual(['General', 'Policy', 'Access Tokens']);
   });
@@ -512,6 +531,7 @@ describe('organization settings sections', () => {
     const { router } = renderSettings(
       SETTINGS,
       organizationSettings({ viewerCanAccessSettings: false }),
+      organizationLayout({ viewerCanAccessSettings: false }),
     );
     await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));
     expect((await sectionNav()).current).toBe('Policy');
@@ -521,9 +541,13 @@ describe('organization settings sections', () => {
 describe('project settings sections', () => {
   const SETTINGS = `${PROJECT}/view/settings`;
 
-  function renderSettings(url: string, fixture = projectSettings()) {
+  // A permission the layout document also selects is flipped on both, as one entity in the cache.
+  function renderSettings(url: string, fixture = projectSettings(), layout?: unknown) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('ProjectSettingsPageQuery', fixture);
+    if (layout) {
+      client.current.fixtures.set('ProjectLayoutQuery', layout);
+    }
     return at(url);
   }
 
@@ -555,6 +579,7 @@ describe('project settings sections', () => {
     const { router } = renderSettings(
       SETTINGS,
       projectSettings({ viewerCanModifySettings: false }),
+      projectLayout({ viewerCanModifySettings: false }),
     );
     await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));
     expect((await sectionNav()).current).toBe('Policy');
@@ -564,13 +589,12 @@ describe('project settings sections', () => {
     'sends a viewer without settings access back to the project',
     { timeout: 30_000 },
     async () => {
-      const { router } = renderSettings(
-        `${SETTINGS}/policy`,
-        projectSettings({
-          viewerCanModifySettings: false,
-          viewerCanManageProjectAccessTokens: false,
-        }),
-      );
+      // The gate reads the layout document; the page document describes the same project.
+      const denied = { viewerCanModifySettings: false, viewerCanManageProjectAccessTokens: false };
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set('ProjectLayoutQuery', projectLayout(denied));
+      client.current.fixtures.set('ProjectSettingsPageQuery', projectSettings(denied));
+      const { router } = at(`${SETTINGS}/policy`);
       await waitFor(() => expect(router.state.location.pathname).toBe(PROJECT));
     },
   );
@@ -622,10 +646,17 @@ describe('members sections', () => {
     'sends a viewer who may not see members back to the organization',
     { timeout: 30_000 },
     async () => {
-      const { router } = renderMembers(
-        MEMBERS,
+      // The gate reads the layout document; the page document describes the same organization.
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set(
+        'OrganizationLayoutQuery',
+        organizationLayout({ viewerCanSeeMembers: false }),
+      );
+      client.current.fixtures.set(
+        'OrganizationMembersPageQuery',
         organizationMembers({ viewerCanSeeMembers: false }),
       );
+      const { router } = at(MEMBERS);
       await waitFor(() => expect(router.state.location.pathname).toBe(ORGANIZATION));
     },
   );
@@ -636,12 +667,10 @@ describe('alerts sections', () => {
 
   function renderAlerts(url: string, viewerCanUseMetricAlertRules = true) {
     client.current = createTestClient(layoutFixtures());
-    const layout = targetLayout();
-    layout.organization.project.target = {
-      ...layout.organization.project.target,
-      viewerCanUseMetricAlertRules,
-    };
-    client.current.fixtures.set('TargetLayoutQuery', layout);
+    client.current.fixtures.set(
+      'TargetLayoutQuery',
+      targetLayout({ viewerCanUseMetricAlertRules }),
+    );
     return at(url);
   }
 
@@ -681,7 +710,80 @@ describe('alerts sections', () => {
       await sectionNav('Alerts');
       const seen = client.current!.seen;
       expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
-      expect(seen).not.toContain('TargetAlertsPageQuery');
+    },
+  );
+});
+
+describe('permission gates', () => {
+  // Each gated URL and the layout flag that opens it. A route may start its page documents beside
+  // the gate, so what a viewer without the flag never gets is the page, not the request.
+  const gates = [
+    [`${TARGET}/alerts/rules`, 'viewerCanUseMetricAlertRules'],
+    [`${TARGET}/apps`, 'viewerCanViewAppDeployments'],
+    [`${TARGET}/apps/app/1.0.0`, 'viewerCanViewAppDeployments'],
+    [`${TARGET}/laboratory`, 'viewerCanViewLaboratory'],
+    [`${TARGET}/proposals`, 'viewerCanViewSchemaProposals'],
+    [`${TARGET}/proposals/new`, 'viewerCanViewSchemaProposals'],
+    [`${TARGET}/proposals/proposal-1`, 'viewerCanViewSchemaProposals'],
+  ] as const;
+
+  beforeEach(() => {
+    localStorage.setItem('hive:laboratory:welcome-dialog-shown', 'true');
+  });
+
+  it.each(gates)(
+    '%s sends a viewer without %s to the target, replacing the entry',
+    { timeout: 30_000 },
+    async (url, flag) => {
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set('TargetLayoutQuery', targetLayout({ [flag]: false }));
+      const { router } = at(url);
+
+      await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
+
+      expect(router.history.length).toBe(1);
+      expect(client.current.requests('TargetLayoutQuery')).toHaveLength(1);
+    },
+  );
+
+  it.each(gates)(
+    '%s reads %s from the layout request, adding none of its own',
+    { timeout: 30_000 },
+    async url => {
+      const client = createTestClient(layoutFixtures());
+      const router = createAppRouter({
+        history: createMemoryHistory({ initialEntries: [url] }),
+        urqlClient: client,
+      });
+      await router.load();
+
+      expect(router.state.location.pathname).toBe(url);
+      expect(client.requests('TargetLayoutQuery')).toHaveLength(1);
+    },
+  );
+});
+
+describe('read-once page loaders', () => {
+  // Loaded but not rendered: the request can only have come from the route.
+  it.each([
+    [TARGET, 'TargetSchemaPageQuery', SLUGS],
+    [
+      `${TARGET}/proposals/new`,
+      'ProposalsNewProposalQuery',
+      { targetReference: { bySelector: SLUGS } },
+    ],
+  ])(
+    '%s starts %s with the page variables before render',
+    { timeout: 30_000 },
+    async (url, name, variables) => {
+      const client = createTestClient(layoutFixtures());
+      const router = createAppRouter({
+        history: createMemoryHistory({ initialEntries: [url] }),
+        urqlClient: client,
+      });
+      await router.load();
+
+      expect(client.requests(name).map(operation => operation.variables)).toEqual([variables]);
     },
   );
 });
@@ -832,7 +934,6 @@ describe('proposals', () => {
       await screen.findByRole('link', { name: 'Proposals', current: 'page' });
       const seen = client.current!.seen;
       expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
-      expect(seen).not.toContain('TargetProposalsQuery');
     },
   );
 });

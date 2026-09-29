@@ -4,6 +4,8 @@ import { LoaderCircle } from 'lucide-react';
 const spinnerVariants = cva('shrink-0 animate-spinner-spin [&>path]:animate-spinner-arc', {
   variants: {
     size: {
+      /** In an icon's slot, such as a sort header's arrow. */
+      xs: 'size-3',
       /** Beside text: a paging bar, a button label. */
       sm: 'size-4',
       default: 'size-6',
@@ -30,12 +32,13 @@ type SpinnerProps = {
 
 /**
  * Placement is the parent's job. The wrapper is inline so `text-center` on a table cell and
- * `items-center` on a flex row both position it.
+ * `items-center` on a flex row both position it. The label is also sr-only text: live regions announce content, not labels.
  */
 export function Spinner({ label = 'Loading', variants }: SpinnerProps) {
   return (
     <span role="status" aria-label={label} className="inline-flex">
       <LoaderCircle aria-hidden className={spinnerVariants({ ...variants })} />
+      <span className="sr-only">{label}</span>
     </span>
   );
 }

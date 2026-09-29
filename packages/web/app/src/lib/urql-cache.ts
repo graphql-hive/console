@@ -552,6 +552,7 @@ export const cacheOptions = {
     Target: {
       appDeployments: relayPagination(),
       schemaChecks: relayPagination(),
+      schemaVersions: relayPagination(),
       traces: relayPagination(),
     },
     AppDeployment: {
@@ -560,8 +561,12 @@ export const cacheOptions = {
     Organization: {
       accessTokens: relayPagination(),
       allAccessTokens: relayPagination(),
+      groups: relayPagination(),
     },
     Project: {
+      accessTokens: relayPagination(),
+    },
+    Member: {
       accessTokens: relayPagination(),
     },
   },

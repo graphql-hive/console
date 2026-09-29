@@ -1,5 +1,4 @@
-import { ChangeEvent, ReactElement, useCallback, useMemo, useRef } from 'react';
-import { endOfDay, formatISO, startOfDay } from 'date-fns';
+import { ChangeEvent, ReactElement, useCallback, useMemo } from 'react';
 import { MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { z } from 'zod';
@@ -14,10 +13,8 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { subDays } from '@/lib/date-time';
 import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-import { UTCDate } from '@date-fns/utc';
 import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 
 const projectIndexRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/');
@@ -75,19 +72,8 @@ type RouteSearchProps = z.infer<typeof ProjectIndexRouteSearch>;
 
 const ProjectsPageContent = (props: RouteSearchProps) => {
   const { organizationSlug, projectSlug } = useSlugs('project');
-  const period = useRef<{
-    from: string;
-    to: string;
-  }>();
-  const days = 14;
-
-  if (!period.current) {
-    const now = new UTCDate();
-    const from = formatISO(startOfDay(subDays(now, days)));
-    const to = formatISO(endOfDay(now));
-
-    period.current = { from, to };
-  }
+  // Resolved by the route loader, so the page and the loader ask for one window.
+  const { period, resolution: days } = projectIndexRoute.useLoaderData();
 
   // Sort by requests by default
   const sortKey = props.sortBy ?? 'requests';
@@ -105,13 +91,7 @@ const ProjectsPageContent = (props: RouteSearchProps) => {
 
   const [query] = useQuery({
     query: ProjectOverviewPageQuery,
-    variables: {
-      organizationSlug,
-      projectSlug,
-      chartResolution: days, // 14 days = 14 data points
-      period: period.current,
-    },
-    requestPolicy: 'cache-and-network',
+    variables: { organizationSlug, projectSlug, chartResolution: days, period },
   });
 
   const targetConnection = query.data?.targets;
@@ -307,7 +287,7 @@ const ProjectsPageContent = (props: RouteSearchProps) => {
   );
 };
 
-const ProjectOverviewPageQuery = graphql(`
+export const ProjectOverviewPageQuery = graphql(`
   query ProjectOverviewPageQuery(
     $organizationSlug: String!
     $projectSlug: String!

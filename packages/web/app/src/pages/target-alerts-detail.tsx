@@ -29,11 +29,9 @@ import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useNavigate } from '@tanstack/react-router';
 
-// Static rule configuration. Fetched once with no polling — the Modify-alert
-// sheet (and everything else in the page chrome) lives under this query, so it
-// is never torn down by a background refetch. The live, time-windowed
-// `stateLog` is fetched separately by `RuleStateLogSection` below.
-const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
+// The rule's configuration, revalidated by the route and updated in place, so the Modify sheet
+// under it is never torn down. The live, time-windowed state log is RuleStateLogSection's own query.
+export const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
   query TargetAlertsDetailPage_RuleConfigQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -205,7 +203,6 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
   const [result] = useQuery({
     query: TargetAlertsDetailPage_RuleConfigQuery,
     variables: { organizationSlug, projectSlug, targetSlug, ruleId },
-    requestPolicy: 'cache-and-network',
   });
 
   const rule = result.data?.target?.metricAlertRule;

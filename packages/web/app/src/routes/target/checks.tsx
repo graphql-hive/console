@@ -5,7 +5,11 @@ import {
   SchemaChecks_NavigationQuery,
   TargetChecksPage,
 } from '@/pages/target-checks';
-import { TargetChecksAffectedDeploymentsPage } from '@/pages/target-checks-affected-deployments';
+import {
+  AffectedDeploymentsQuery,
+  affectedDeploymentsVariables,
+  TargetChecksAffectedDeploymentsPage,
+} from '@/pages/target-checks-affected-deployments';
 import { ActiveSchemaCheckQuery, TargetChecksSinglePage } from '@/pages/target-checks-single';
 import { createRoute } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
@@ -59,7 +63,19 @@ export const targetChecksSingleRoute = createRoute({
 export const targetChecksAffectedDeploymentsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'checks/$schemaCheckId/affected-deployments',
-  validateSearch: () => ({}) as { coordinate?: string },
+  validateSearch: zodValidator(z.object({ coordinate: z.string().optional() })),
+  loader: loader => {
+    const { organizationSlug, projectSlug, targetSlug, schemaCheckId } = loader.params;
+    void loadQuery(
+      loader,
+      AffectedDeploymentsQuery,
+      affectedDeploymentsVariables(
+        { organizationSlug, projectSlug, targetSlug },
+        schemaCheckId,
+        null,
+      ),
+    );
+  },
   component: function TargetChecksAffectedDeploymentsRoute() {
     const { schemaCheckId } = targetChecksAffectedDeploymentsRoute.useParams();
     const { coordinate } = targetChecksAffectedDeploymentsRoute.useSearch();

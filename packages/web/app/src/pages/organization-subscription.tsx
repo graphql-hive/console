@@ -10,7 +10,6 @@ import { LayoutContent } from '@/components/layouts/layout-content';
 import { BillingView } from '@/components/organization/billing/Billing';
 import { CurrencyFormatter } from '@/components/organization/billing/helpers';
 import { InvoicesList } from '@/components/organization/billing/InvoicesList';
-import { RenderIfStripeAvailable } from '@/components/organization/stripe';
 import { OrganizationUsageEstimationView } from '@/components/organization/Usage';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
@@ -59,7 +58,7 @@ const SubscriptionPage_QueryFragment = graphql(`
   }
 `);
 
-const SubscriptionPageQuery = graphql(`
+export const SubscriptionPageQuery = graphql(`
   query SubscriptionPageQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
@@ -257,9 +256,7 @@ export function OrganizationSubscriptionPage(): ReactElement {
   return (
     <>
       <Meta title="Subscription & Usage" />
-      <RenderIfStripeAvailable>
-        <SubscriptionPageContent />
-      </RenderIfStripeAvailable>
+      <SubscriptionPageContent />
     </>
   );
 }

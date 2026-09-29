@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  OrganizationLayoutQuery,
+  ProjectLayoutQuery,
+  TargetLayoutQuery,
+} from '@/components/layouts/queries';
+import { redirect, type AnyRedirect } from '@tanstack/react-router';
 import type {
   AnyVariables,
   Client,
@@ -69,4 +75,75 @@ export function loadQuery<Data, Variables extends AnyVariables>(
   return loader.context.urqlClient
     .query(document, variables, { requestPolicy, preload: loader.preload })
     .toPromise();
+}
+
+// For data that moves: every visit and Refresh revalidate, a hover preload only warms.
+export function revalidate(loader: Pick<LoaderContext, 'preload'>): RequestPolicy {
+  return loader.preload ? 'cache-first' : 'cache-and-network';
+}
+
+type BooleanKeys<T> = { [K in keyof T]-?: T[K] extends boolean ? K : never }[keyof T];
+
+// Only an explicit false redirects: missing data or an error admits, and the page shows it.
+function layoutGate<Data, Slugs extends AnyVariables, Node extends object>(
+  document: DocumentInput<Data, Slugs>,
+  slugsOf: (params: Slugs) => Slugs,
+  nodeOf: (data: Data) => Node | null | undefined,
+  root: (slugs: Slugs) => AnyRedirect,
+) {
+  return async (
+    loader: LoaderContext & { params: Slugs },
+    ...flags: [BooleanKeys<Node>, ...BooleanKeys<Node>[]]
+  ): Promise<void> => {
+    const slugs = slugsOf(loader.params);
+    const result = await loadQuery(loader, document, slugs);
+    const node = result.data ? nodeOf(result.data) : undefined;
+    if (node && flags.every(flag => node[flag] === false)) {
+      throw root(slugs);
+    }
+  };
+}
+
+// A loader's permission gate, read from the layout document the layout above already loaded.
+export const requireLayoutFlag = {
+  organization: layoutGate(
+    OrganizationLayoutQuery,
+    ({ organizationSlug }) => ({ organizationSlug }),
+    data => data.organizationBySlug,
+    params => redirect({ to: '/$organizationSlug', params }),
+  ),
+  project: layoutGate(
+    ProjectLayoutQuery,
+    ({ organizationSlug, projectSlug }) => ({ organizationSlug, projectSlug }),
+    data => data.organization?.project,
+    params => redirect({ to: '/$organizationSlug/$projectSlug', params }),
+  ),
+  target: layoutGate(
+    TargetLayoutQuery,
+    ({ organizationSlug, projectSlug, targetSlug }) => ({
+      organizationSlug,
+      projectSlug,
+      targetSlug,
+    }),
+    data => data.organization?.project?.target,
+    params => redirect({ to: '/$organizationSlug/$projectSlug/$targetSlug', params }),
+  ),
+};
+
+type Range = { from: string; to: string };
+
+// A `beforeLoad` that sends a bare URL to `range`, so a shared link always says what it shows.
+export function defaultRange(range: Range | (() => Range), to: string) {
+  return ({
+    search,
+    params,
+  }: {
+    search: Partial<Range> & Record<string, unknown>;
+    params: Record<string, string>;
+  }) => {
+    if (search.from === undefined && search.to === undefined) {
+      const { from, to: until } = typeof range === 'function' ? range() : range;
+      throw redirect({ to, params, search: { ...search, from, to: until } });
+    }
+  };
 }

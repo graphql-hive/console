@@ -18,6 +18,7 @@ import {
 import { Tooltip } from '../floating/tooltip/tooltip';
 import type { OnSurface } from '../shared-styles';
 import { Skeleton } from '../skeleton/skeleton';
+import { Spinner } from '../spinner/spinner';
 import {
   DataTableBody,
   DataTableCellSlot,
@@ -59,6 +60,8 @@ export type DataTableProps<TData> = {
   emptyMessage?: ReactNode;
   /** Replaces the rows with skeleton rows while the first page loads. */
   loading?: boolean;
+  /** The rows are the last settled ones while their replacement loads: dimmed and inert. */
+  refreshing?: boolean;
   variants?: {
     onSurface?: OnSurface;
     /** Alternate rows take a tint one step off the surface. On by default. */
@@ -73,9 +76,14 @@ export type DataTableProps<TData> = {
   /**
    * Owned sorting, for a page that sorts on the server. Columns opt in with `meta.sortable`.
    * With `manual` the API always sorts, so a header toggles between descending and ascending
-   * instead of cycling through unsorted.
+   * instead of cycling through unsorted. `loading` spins the sorted header and dims the old rows.
    */
-  sorting?: { state: SortingState; onChange: OnChangeFn<SortingState>; manual?: boolean };
+  sorting?: {
+    state: SortingState;
+    onChange: OnChangeFn<SortingState>;
+    manual?: boolean;
+    loading?: boolean;
+  };
   /**
    * The sort a client-sorted table opens with, for rows that arrive in a known order so the
    * header can say so. Ignored when the page passes `sorting` and holds the state itself.
@@ -106,9 +114,11 @@ export type DataTableProps<TData> = {
 function SortHeader<TData>({
   header,
   label,
+  loading = false,
 }: {
   header: Header<TData, unknown>;
   label: ReactNode;
+  loading?: boolean;
 }) {
   const { column } = header;
   const sorted = column.getIsSorted();
@@ -129,13 +139,19 @@ function SortHeader<TData>({
           className="text-fg-secondary hover:text-fg inline-flex items-center gap-1 text-xs font-medium"
         >
           {label}
-          <ArrowDown
-            className={cn(
-              'size-3 transition-transform',
-              sorted ? 'text-success' : 'opacity-30',
-              sorted === 'asc' && 'rotate-180',
-            )}
-          />
+          {sorted && loading ? (
+            <span className="text-success inline-flex">
+              <Spinner label="Sorting" variants={{ size: 'xs', tone: 'current' }} />
+            </span>
+          ) : (
+            <ArrowDown
+              className={cn(
+                'size-3 transition-transform',
+                sorted ? 'text-success' : 'opacity-30',
+                sorted === 'asc' && 'rotate-180',
+              )}
+            />
+          )}
           {sorted && sorting.length > 1 ? (
             <span className="text-success text-2xs tabular-nums" aria-label="Sort priority">
               {column.getSortIndex() + 1}
@@ -155,6 +171,7 @@ export function DataTable<TData>({
   getRowId,
   emptyMessage = 'No rows to display.',
   loading = false,
+  refreshing = false,
   variants,
   pagination = { kind: 'client' },
   sorting,
@@ -207,11 +224,12 @@ export function DataTable<TData>({
 
   const rows = table.getRowModel().rows;
   const totalColumnCount = columns.length + (hasTrailingColumn ? 1 : 0);
+  const busy = !loading && (refreshing || !!sorting?.loading);
 
   return (
     <div className={wrapperClass(onSurface, bordered)}>
       <div className="relative w-full overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm" aria-busy={busy || undefined}>
           {hasHeader ? (
             <DataTableHeader>
               {table.getHeaderGroups().map(headerGroup => (
@@ -224,7 +242,11 @@ export function DataTable<TData>({
                     return (
                       <DataTableHead key={header.id} layout={meta} onSurface={onSurface}>
                         <span className="inline-flex items-center gap-1">
-                          {meta?.sortable ? <SortHeader header={header} label={label} /> : label}
+                          {meta?.sortable ? (
+                            <SortHeader header={header} label={label} loading={sorting?.loading} />
+                          ) : (
+                            label
+                          )}
                           {meta?.tooltip ? (
                             <Tooltip
                               trigger={
@@ -244,7 +266,7 @@ export function DataTable<TData>({
               ))}
             </DataTableHeader>
           ) : null}
-          <DataTableBody>
+          <DataTableBody refreshing={busy}>
             {loading ? (
               Array.from({ length: LOADING_ROWS }, (_, index) => (
                 <DataTableRow

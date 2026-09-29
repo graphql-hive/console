@@ -1,7 +1,7 @@
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import type { Client } from 'urql';
 import { ErrorComponent } from '@/components/error';
-import { PageSkeleton } from '@/components/layouts/page-skeleton';
+import { PagePending } from '@/components/layouts/page-pending';
 import {
   createRouter,
   parseSearchWith,
@@ -30,8 +30,8 @@ export function createAppRouter(options: { history?: RouterHistory; urqlClient: 
     defaultErrorComponent: ErrorComponent,
     defaultNotFoundComponent: RouteNotFound,
     // Only a route that awaits before rendering is ever pending; a load that finishes inside the
-    // delay never shows a skeleton.
-    defaultPendingComponent: PageSkeleton,
+    // delay never shows the spinner.
+    defaultPendingComponent: PagePending,
     defaultPendingMs: 250,
     // Hovering or focusing a link runs its route's loaders, so the click finds the cache warm.
     defaultPreload: 'intent',

@@ -51,7 +51,7 @@ enum Tab {
   EDIT = 'edit',
 }
 
-const ProposalQuery = graphql(/* GraphQL  */ `
+export const ProposalQuery = graphql(/* GraphQL  */ `
   query ProposalQuery(
     $id: ID!
     $projectRef: ProjectReferenceInput!
@@ -168,31 +168,35 @@ export function TargetProposalsSinglePage(props: {
   );
 }
 
+// `timestamp` is not a variable of the document: a new value is a new request key, which is how
+// a mutation forces the proposal to reload.
+export function proposalVariables(
+  slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
+  id: string,
+  version?: string,
+  timestamp?: number,
+) {
+  const { organizationSlug, projectSlug } = slugs;
+  return {
+    projectRef: { bySelector: { organizationSlug, projectSlug } },
+    targetRef: { bySelector: slugs },
+    id,
+    version,
+    timestamp,
+  };
+}
+
 const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]) => {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   // fetch main page details
   const [query, refreshProposal] = useQuery({
     query: ProposalQuery,
-    variables: {
-      projectRef: {
-        bySelector: {
-          organizationSlug,
-          projectSlug,
-        },
-      },
-      targetRef: {
-        bySelector: {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-        },
-      },
-      id: props.proposalId,
-      version: props.version,
-      // pass the timestamp to force a refresh when proposals are updated
-      timestamp: props.timestamp,
-    },
-    requestPolicy: 'cache-and-network',
+    variables: proposalVariables(
+      { organizationSlug, projectSlug, targetSlug },
+      props.proposalId,
+      props.version,
+      props.timestamp,
+    ),
   });
 
   // fetch all proposed changes for the selected version
@@ -468,7 +472,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                         },
                       });
                       // @todo use urqlCache to invalidate the proposal and refresh?
-                      refreshProposal();
+                      refreshProposal({ requestPolicy: 'network-only' });
                     }}
                   />
                 </div>

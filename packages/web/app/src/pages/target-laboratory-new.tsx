@@ -14,8 +14,7 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
-import { useRedirect } from '@/lib/access/common';
-import { useLayoutQuery, useLocalStorage, useSlugs, useToggle } from '@/lib/hooks';
+import { useLocalStorage, useSlugs, useToggle } from '@/lib/hooks';
 import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use-current-operation';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
@@ -731,22 +730,6 @@ function LaboratoryPageContent(props: {
   const laboratoryState = useLaboratoryState();
 
   const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
-
-  const layoutTarget = useLayoutQuery('target').data?.organization?.project?.target;
-  useRedirect({
-    canAccess: layoutTarget?.viewerCanViewLaboratory === true,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug/$targetSlug',
-        params: {
-          organizationSlug,
-          projectSlug,
-          targetSlug,
-        },
-      });
-    },
-    entity: layoutTarget,
-  });
 
   const { resolvedTheme } = useTheme();
 

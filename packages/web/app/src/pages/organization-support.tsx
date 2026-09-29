@@ -263,7 +263,7 @@ function Support(props: {
   );
 }
 
-const SupportPageQuery = graphql(`
+export const SupportPageQuery = graphql(`
   query SupportPageQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...Support_OrganizationFragment

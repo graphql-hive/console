@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
@@ -28,16 +28,9 @@ import { ResourceDetails } from '@/components/ui/resource-details';
 import { TransferOrganizationOwnershipModal } from '@/components/v2/modals';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useRedirect } from '@/lib/access/common';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Outlet,
-  useChildMatches,
-  useRouter,
-  type RegisteredRouter,
-  type RouteIds,
-} from '@tanstack/react-router';
+import { Outlet, useRouter } from '@tanstack/react-router';
 
 const DeleteSlackIntegrationMutation = graphql(`
   mutation Integrations_DeleteSlackIntegration($input: OrganizationSelectorInput!) {
@@ -499,7 +492,7 @@ function OrganizationPolicySettings(props: {
   );
 }
 
-const OrganizationSettingsPageQuery = graphql(`
+export const OrganizationSettingsPageQuery = graphql(`
   query OrganizationSettingsPageQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...SettingsPageRenderer_OrganizationFragment
@@ -512,95 +505,66 @@ const OrganizationSettingsPageQuery = graphql(`
   }
 `);
 
-const SETTINGS = '/authenticated/with-header/$organizationSlug/view/settings';
-
-type SectionId = 'general' | 'policy' | 'sso' | 'access-tokens' | 'personal-access-tokens';
+export type OrganizationSettingsSectionId =
+  | 'general'
+  | 'policy'
+  | 'sso'
+  | 'access-tokens'
+  | 'personal-access-tokens';
 
 type Section = {
-  id: SectionId;
+  id: OrganizationSettingsSectionId;
   label: string;
-  routeId: RouteIds<RegisteredRouter['routeTree']>;
-  to: `/$organizationSlug/view/settings${'' | `/${Exclude<SectionId, 'general'>}`}`;
+  to: `/$organizationSlug/view/settings${'' | `/${Exclude<OrganizationSettingsSectionId, 'general'>}`}`;
   exact?: boolean;
 };
 
-/**
- * The sections in nav order, with the route each renders under; the permission gate compares the
- * matched child route against the items the viewer may see. The bare URL is General.
- */
+// The sections in nav order. The bare URL is General.
 const sections: readonly Section[] = [
-  {
-    id: 'general',
-    label: 'General',
-    routeId: `${SETTINGS}/`,
-    to: '/$organizationSlug/view/settings',
-    exact: true,
-  },
-  {
-    id: 'policy',
-    label: 'Policy',
-    routeId: `${SETTINGS}/policy`,
-    to: '/$organizationSlug/view/settings/policy',
-  },
-  {
-    id: 'sso',
-    label: 'SSO / SCIM',
-    routeId: `${SETTINGS}/sso`,
-    to: '/$organizationSlug/view/settings/sso',
-  },
+  { id: 'general', label: 'General', to: '/$organizationSlug/view/settings', exact: true },
+  { id: 'policy', label: 'Policy', to: '/$organizationSlug/view/settings/policy' },
+  { id: 'sso', label: 'SSO / SCIM', to: '/$organizationSlug/view/settings/sso' },
   {
     id: 'access-tokens',
     label: 'Access Tokens',
-    routeId: `${SETTINGS}/access-tokens`,
     to: '/$organizationSlug/view/settings/access-tokens',
   },
   {
     id: 'personal-access-tokens',
     label: 'Personal Access Tokens',
-    routeId: `${SETTINGS}/personal-access-tokens`,
     to: '/$organizationSlug/view/settings/personal-access-tokens',
   },
 ];
+
+// The sections this viewer may open; the route loaders and the nav both read it.
+export function organizationSettingsSections(organization: {
+  viewerCanAccessSettings: boolean;
+  viewerCanManageOIDCIntegration: boolean;
+  viewerCanManageAccessTokens: boolean;
+  viewerCanManagePersonalAccessTokens: boolean;
+}) {
+  const ids = new Set<OrganizationSettingsSectionId>(['policy']);
+  if (organization.viewerCanAccessSettings) {
+    ids.add('general');
+  }
+  if (organization.viewerCanManageOIDCIntegration) {
+    ids.add('sso');
+  }
+  if (organization.viewerCanManageAccessTokens) {
+    ids.add('access-tokens');
+  }
+  if (organization.viewerCanManagePersonalAccessTokens) {
+    ids.add('personal-access-tokens');
+  }
+  return sections.filter(section => ids.has(section.id));
+}
 
 export function OrganizationSettingsPage() {
   const slugs = useSlugs('organization');
   const { organizationSlug } = slugs;
   const [query] = useQuery({ query: OrganizationSettingsPageQuery, variables: slugs });
   const currentOrganization = query.data?.organization;
-
-  const visible = useMemo(() => {
-    const ids = new Set<SectionId>(['policy']);
-    if (currentOrganization?.viewerCanAccessSettings) {
-      ids.add('general');
-    }
-    if (currentOrganization?.viewerCanManageOIDCIntegration) {
-      ids.add('sso');
-    }
-    if (currentOrganization?.viewerCanManageAccessTokens) {
-      ids.add('access-tokens');
-    }
-    if (currentOrganization?.viewerCanManagePersonalAccessTokens) {
-      ids.add('personal-access-tokens');
-    }
-    return sections.filter(section => ids.has(section.id));
-  }, [currentOrganization]);
-
-  const sectionRouteId = useChildMatches({ select: matches => matches.at(-1)?.routeId });
-  const allowed = visible.some(section => section.routeId === sectionRouteId);
-
-  // A section the viewer may not open falls back to the first one they may, else the organization.
-  useRedirect({
-    canAccess: allowed,
-    entity: currentOrganization,
-    redirectTo: router => {
-      const fallback = visible.at(0);
-      void router.navigate(
-        fallback
-          ? { to: fallback.to, params: slugs, replace: true }
-          : { to: '/$organizationSlug', params: slugs, replace: true },
-      );
-    },
-  });
+  const visible = currentOrganization ? organizationSettingsSections(currentOrganization) : [];
 
   if (query.error) {
     return <QueryError organizationSlug={organizationSlug} error={query.error} />;
@@ -609,7 +573,7 @@ export function OrganizationSettingsPage() {
   return (
     <>
       <Meta title="Organization settings" />
-      {allowed && currentOrganization ? (
+      {currentOrganization ? (
         <LayoutContent className="flex flex-col gap-y-10">
           <PageLayout>
             <Navigation

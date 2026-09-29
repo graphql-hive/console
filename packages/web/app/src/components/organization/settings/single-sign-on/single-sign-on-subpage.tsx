@@ -10,7 +10,7 @@ import { useSlugs } from '@/lib/hooks';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { OIDCIntegrationConfiguration } from './oidc-integration-configuration';
 
-const SingleSignOnSubpageQuery = graphql(`
+export const SingleSignOnSubpageQuery = graphql(`
   query SingleSignOnSubpageQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
@@ -64,7 +64,6 @@ export function SingleSignOnSubpage(): React.ReactNode {
     variables: {
       organizationSlug,
     },
-    requestPolicy: 'network-only',
   });
   const { toast } = useToast();
   const [_, mutate] = useMutation(SingleSignOnSubpage_CreateOIDCIntegrationMutation);
@@ -87,7 +86,7 @@ export function SingleSignOnSubpage(): React.ReactNode {
         }}
       />
       <div className="text-fg-secondary max-w-[800px] space-y-4">
-        {query.fetching ? (
+        {(query.fetching || query.stale) && !oidcIntegration ? (
           <LoadingSkeleton />
         ) : oidcIntegration ? (
           <OIDCIntegrationConfiguration
