@@ -290,3 +290,31 @@ describe('schema:publish', () => {
     expect(result.requests).toHaveLength(0);
   });
 });
+
+describe('schema:push', () => {
+  test('pushing an existing revision with the same schema succeeds', async () => {
+    const result = await runAgainstRegistry(
+      () => ({
+        data: {
+          schemaPush: {
+            ok: {
+              schemaRevision: {
+                service: 'products',
+                revision: 'abc',
+                digest: 'hive-sdl-v1:sha256:123',
+                expiresAt: '2026-10-24T00:00:00.000Z',
+              },
+            },
+            error: null,
+          },
+        },
+      }),
+      ['schema:push', '$SCHEMA', '--target', 'org/project/target', '--revision', 'abc'],
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('Schema revision pushed.');
+    expect(result.stdout).toContain('Expires: 2026-10-24T00:00:00.000Z');
+    expect(result.stderr).not.toContain('Skipping');
+  });
+});

@@ -96,15 +96,16 @@ export class SchemaPusher {
       projectId: selector.projectId,
     });
 
-    if (project.type === ProjectType.SINGLE && service) {
-      return { error: { message: 'Service must not be provided for a single-schema project.' } };
-    }
+    // Like schema publishing, single-schema projects do not use a service name.
+    const revisionService = project.type === ProjectType.SINGLE ? null : service;
 
-    if (project.type !== ProjectType.SINGLE && !service) {
+    if (project.type !== ProjectType.SINGLE) {
       if (!service) {
         return { error: { message: 'Missing service name' } };
       }
 
+      // Unlike schema check and publish, existing services are not exempt from the naming rules,
+      // so that services are migrated to the new name format.
       if (!isValidServiceName(service)) {
         return {
           error: {
@@ -131,7 +132,7 @@ export class SchemaPusher {
 
     return await this.revisions.push({
       projectId: selector.projectId,
-      service,
+      service: revisionService,
       revision: revision.data,
       digest,
       sdl: input.sdl,

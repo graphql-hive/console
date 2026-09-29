@@ -21,6 +21,7 @@ const schemaPushMutation = graphql(/* GraphQL */ `
           service
           revision
           digest
+          expiresAt
         }
       }
       error {
@@ -40,7 +41,8 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
         'The target to push against as "$organizationSlug/$projectSlug/$targetSlug" or a target UUID.',
     }),
     service: Flags.string({
-      description: 'service name (required for distributed schemas)',
+      description:
+        'service name (required for federation and stitching projects, ignored for single-schema projects)',
     }),
     revision: Flags.string({
       required: true,
@@ -131,12 +133,22 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
       }
 
       const revision = result.schemaPush.ok.schemaRevision;
+
+      if (flags.service && !revision.service) {
+        this.warn(
+          `The "--service" flag was ignored, because the project uses a single schema without services.`,
+        );
+      }
+
       this.logSuccess('Schema revision pushed.');
       if (revision.service) {
         this.logInfo(`Service: ${revision.service}`);
       }
       this.logInfo(`Revision: ${revision.revision}`);
       this.logInfo(`Digest: ${revision.digest}`);
+      if (revision.expiresAt) {
+        this.logInfo(`Expires: ${revision.expiresAt} (unless published before then)`);
+      }
     } catch (error) {
       if (error instanceof Errors.CLIError) {
         throw error;
