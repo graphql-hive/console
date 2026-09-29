@@ -19,6 +19,8 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/schema-editor')>()),
   SchemaEditor: () => null,
 }));
+// ECharts draws on a canvas, which jsdom does not implement.
+vi.mock('@/components/base/chart/chart', () => ({ Chart: () => null }));
 vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
 vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
 
