@@ -1,11 +1,7 @@
-import {
-  Kind,
-  type DocumentNode,
-  type FragmentDefinitionNode,
-  type SelectionSetNode,
-} from 'graphql';
+import { Kind, type DocumentNode, type FragmentDefinitionNode, type SelectionSetNode, type IntrospectionQuery } from 'graphql';
 import { filter, fromPromise, fromValue, mergeMap, pipe } from 'wonka';
 import { cacheOptions } from '@/lib/urql-cache';
+import schema from '@/gql/schema';
 import {
   createClient,
   makeErrorResult,
@@ -35,6 +31,15 @@ export function operationName(operation: Operation): string | undefined {
  * documents arrive formatted by graphcache, which selects `__typename` below the root, so fixtures
  * carry it on every object as the server would; without it the cache reads back null.
  */
+// The members of every interface and union, from the same introspection graphcache reads.
+const possibleTypes = new Map<string, Set<string>>(
+  (schema as IntrospectionQuery).__schema.types.flatMap(type =>
+    (type.kind === 'INTERFACE' || type.kind === 'UNION') && type.possibleTypes
+      ? [[type.name, new Set(type.possibleTypes.map(member => member.name))] as const]
+      : [],
+  ),
+);
+
 export function missingSelections(
   document: DocumentNode,
   data: unknown,
@@ -74,17 +79,16 @@ export function missingSelections(
     return false;
   }
 
-  // A fragment on another union member does not apply to this object. An interface condition
-  // would be skipped too; graphcache still reads such a field from the schema and reports it null.
+  // A fragment applies to the object when its condition is the object's type or one of its members.
   function isOtherMember(
     typeCondition: { name: { value: string } } | undefined,
     object: Record<string, unknown>,
   ) {
-    return (
-      typeCondition !== undefined &&
-      typeof object.__typename === 'string' &&
-      object.__typename !== typeCondition.name.value
-    );
+    if (typeCondition === undefined || typeof object.__typename !== 'string') {
+      return false;
+    }
+    const name = typeCondition.name.value;
+    return name !== object.__typename && !(possibleTypes.get(name)?.has(object.__typename) ?? false);
   }
 
   function walk(selectionSet: SelectionSetNode, value: unknown, path: string) {

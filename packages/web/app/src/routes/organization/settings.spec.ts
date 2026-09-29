@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { PersonalAccessTokensTable_MoreAccessTokensQuery } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-table';
-import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
+import { layoutFixtures, organizationLayout, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
 import { createTestClient } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
@@ -27,9 +27,12 @@ const PAGE = 'OrganizationSettingsPageQuery';
 
 type TestClient = ReturnType<typeof createTestClient>;
 
-async function loadedAt(url: string, settings = organizationSettings()) {
+async function loadedAt(url: string, settings = organizationSettings(), layout?: unknown) {
   const client = createTestClient(layoutFixtures());
   client.fixtures.set(PAGE, settings);
+  if (layout) {
+    client.fixtures.set('OrganizationLayoutQuery', layout);
+  }
   const router = createAppRouter({
     history: createMemoryHistory({ initialEntries: [url] }),
     urqlClient: client,
@@ -46,12 +49,14 @@ function expectRevalidating(client: TestClient, name: string) {
   expect(['cache-and-network', 'network-only']).toContain(policies[0]);
 }
 
+const SECTIONS = [
+  ['sso', 'SingleSignOnSubpageQuery'],
+  ['access-tokens', 'AccessTokensSubPage_OrganizationQuery'],
+  ['personal-access-tokens', 'PersonalAccessTokensSubPage_OrganizationQuery'],
+] as const;
+
 describe('organization settings loaders', () => {
-  it.each([
-    ['sso', 'SingleSignOnSubpageQuery'],
-    ['access-tokens', 'AccessTokensSubPage_OrganizationQuery'],
-    ['personal-access-tokens', 'PersonalAccessTokensSubPage_OrganizationQuery'],
-  ])(
+  it.each(SECTIONS)(
     '%s loads the page document once and starts its own, revalidating',
     { timeout: 30_000 },
     async (section, document) => {
@@ -66,9 +71,9 @@ describe('organization settings loaders', () => {
   it('loads General and Policy from the page document alone', { timeout: 30_000 }, async () => {
     const general = await loadedAt(SETTINGS);
     expect(general.client.requests(PAGE)).toHaveLength(1);
-    expect(general.client.seen.filter(name => name !== PAGE && name.includes('Settings'))).toEqual(
-      [],
-    );
+    for (const [, document] of SECTIONS) {
+      expect(general.client.seen).not.toContain(document);
+    }
 
     const policy = await loadedAt(`${SETTINGS}/policy`);
     expect(policy.client.requests(PAGE)).toHaveLength(1);
@@ -81,6 +86,7 @@ describe('organization settings loaders', () => {
       const { router } = await loadedAt(
         `${SETTINGS}/personal-access-tokens`,
         organizationSettings({ viewerCanManagePersonalAccessTokens: false }),
+        organizationLayout({ viewerCanManagePersonalAccessTokens: false }),
       );
 
       await waitFor(() => expect(router.state.location.pathname).toBe(SETTINGS));
@@ -92,6 +98,7 @@ describe('organization settings loaders', () => {
     const { router } = await loadedAt(
       SETTINGS,
       organizationSettings({ viewerCanAccessSettings: false }),
+      organizationLayout({ viewerCanAccessSettings: false }),
     );
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));

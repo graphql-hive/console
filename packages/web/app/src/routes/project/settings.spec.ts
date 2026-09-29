@@ -65,9 +65,12 @@ describe('project settings loaders', () => {
     'sends Composition on a single-schema project to General, replacing the entry',
     { timeout: 30_000 },
     async () => {
+      const fixtures = layoutFixtures();
+      fixtures.set('ProjectLayoutQuery', projectLayout({ type: 'SINGLE' }));
       const { router } = await loadedAt(
         `${SETTINGS}/composition`,
         projectSettings({ projectType: 'SINGLE' }),
+        fixtures,
       );
 
       await waitFor(() => expect(router.state.location.pathname).toBe(SETTINGS));
@@ -76,7 +79,13 @@ describe('project settings loaders', () => {
   );
 
   it('sends a viewer who may not open General to Policy', { timeout: 30_000 }, async () => {
-    const { router } = await loadedAt(SETTINGS, projectSettings({ viewerCanModifySettings: false }));
+    const fixtures = layoutFixtures();
+    fixtures.set('ProjectLayoutQuery', projectLayout({ viewerCanModifySettings: false }));
+    const { router } = await loadedAt(
+      SETTINGS,
+      projectSettings({ viewerCanModifySettings: false }),
+      fixtures,
+    );
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));
   });

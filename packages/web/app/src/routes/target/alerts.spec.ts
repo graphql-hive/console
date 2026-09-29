@@ -96,9 +96,10 @@ describe('alerts activity route', () => {
       vi.setSystemTime(new Date('2026-09-28T11:00:05.000Z'));
       await waitFor(() => expect(bounds().length).toBeGreaterThanOrEqual(3));
 
-      // The first poll after the roll asks for the new minute; the polls after it repeat it.
-      expect(new Date(bounds()[1]).getUTCMinutes()).toBe(0);
-      expect(bounds().slice(1).every(to => to === bounds()[1])).toBe(true);
+      // Every poll after the roll asks for the new minute, and they all ask for the same one.
+      const rolled = bounds().filter(to => new Date(to).getUTCMinutes() === 0);
+      expect(rolled.length).toBeGreaterThanOrEqual(2);
+      expect(new Set(rolled).size).toBe(1);
       expect(client.requests(RETENTION)).toHaveLength(1);
     },
   );

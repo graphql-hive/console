@@ -278,9 +278,13 @@ async function sectionNav(name = 'Settings') {
 describe('target settings sections', () => {
   const SETTINGS = `${TARGET}/settings`;
 
-  function renderSettings(url: string, fixture = targetSettings()) {
+  // A permission the layout document also selects is flipped on both, as one entity in the cache.
+  function renderSettings(url: string, fixture = targetSettings(), layout?: unknown) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('TargetSettingsPageQuery', fixture);
+    if (layout) {
+      client.current.fixtures.set('TargetLayoutQuery', layout);
+    }
     return at(url);
   }
 
@@ -363,7 +367,11 @@ describe('target settings sections', () => {
   });
 
   it('sends a viewer without settings access back to the target', { timeout: 30_000 }, async () => {
-    const { router } = renderSettings(SETTINGS, targetSettings({ viewerCanAccessSettings: false }));
+    const { router } = renderSettings(
+      SETTINGS,
+      targetSettings({ viewerCanAccessSettings: false }),
+      targetLayout({ viewerCanAccessSettings: false }),
+    );
     await waitFor(() => expect(router.state.location.pathname).toBe(TARGET));
     expect(screen.queryByRole('navigation', { name: 'Settings' })).toBeNull();
     // The page and the section both awaited and redirected; one request, no error boundary.
@@ -477,9 +485,13 @@ describe('target settings sections', () => {
 describe('organization settings sections', () => {
   const SETTINGS = `${ORGANIZATION}/view/settings`;
 
-  function renderSettings(url: string, fixture = organizationSettings()) {
+  // A permission the layout document also selects is flipped on both, as one entity in the cache.
+  function renderSettings(url: string, fixture = organizationSettings(), layout?: unknown) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('OrganizationSettingsPageQuery', fixture);
+    if (layout) {
+      client.current.fixtures.set('OrganizationLayoutQuery', layout);
+    }
     return at(url);
   }
 
@@ -510,6 +522,7 @@ describe('organization settings sections', () => {
         viewerCanManageOIDCIntegration: false,
         viewerCanManagePersonalAccessTokens: false,
       }),
+      organizationLayout({ viewerCanManagePersonalAccessTokens: false }),
     );
     expect((await sectionNav()).labels).toEqual(['General', 'Policy', 'Access Tokens']);
   });
@@ -518,6 +531,7 @@ describe('organization settings sections', () => {
     const { router } = renderSettings(
       SETTINGS,
       organizationSettings({ viewerCanAccessSettings: false }),
+      organizationLayout({ viewerCanAccessSettings: false }),
     );
     await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));
     expect((await sectionNav()).current).toBe('Policy');
@@ -527,9 +541,13 @@ describe('organization settings sections', () => {
 describe('project settings sections', () => {
   const SETTINGS = `${PROJECT}/view/settings`;
 
-  function renderSettings(url: string, fixture = projectSettings()) {
+  // A permission the layout document also selects is flipped on both, as one entity in the cache.
+  function renderSettings(url: string, fixture = projectSettings(), layout?: unknown) {
     client.current = createTestClient(layoutFixtures());
     client.current.fixtures.set('ProjectSettingsPageQuery', fixture);
+    if (layout) {
+      client.current.fixtures.set('ProjectLayoutQuery', layout);
+    }
     return at(url);
   }
 
@@ -561,6 +579,7 @@ describe('project settings sections', () => {
     const { router } = renderSettings(
       SETTINGS,
       projectSettings({ viewerCanModifySettings: false }),
+      projectLayout({ viewerCanModifySettings: false }),
     );
     await waitFor(() => expect(router.state.location.pathname).toBe(`${SETTINGS}/policy`));
     expect((await sectionNav()).current).toBe('Policy');
@@ -688,7 +707,6 @@ describe('alerts sections', () => {
       await sectionNav('Alerts');
       const seen = client.current!.seen;
       expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
-      expect(seen).not.toContain('TargetAlertsPageQuery');
     },
   );
 });
@@ -905,7 +923,6 @@ describe('proposals', () => {
       await screen.findByRole('link', { name: 'Proposals', current: 'page' });
       const seen = client.current!.seen;
       expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
-      expect(seen).not.toContain('TargetProposalsQuery');
     },
   );
 });

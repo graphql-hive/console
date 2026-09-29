@@ -27,6 +27,11 @@ if (typeof window !== 'undefined' && typeof window.ResizeObserver !== 'function'
   };
 }
 
+// The router restores scroll on every navigation; jsdom has no scrollTo.
+if (typeof window !== 'undefined') {
+  window.scrollTo = () => {};
+}
+
 // With a ResizeObserver, Base UI's scroll area goes on to ask its viewport for running animations,
 // and jsdom has no Web Animations. With this stub every Base UI popup also waits a frame before
 // `onOpenChangeComplete` and its unmount, as in a browser, so assert a close with `waitFor`.

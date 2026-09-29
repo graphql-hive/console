@@ -57,6 +57,17 @@ describe('missingSelections', () => {
     expect(missingSelections(OrganizationQuery, { me: null }, { minimal: true })).toEqual([]);
   });
 
+  it('demands the fragments of an interface from every type that implements it', () => {
+    const document = parse(`
+      query CheckQuery { check { __typename ...Meta } }
+      fragment Meta on SchemaCheck { createdAt }
+    `);
+    const successful = { check: { __typename: 'SuccessfulSchemaCheck' } };
+    expect(missingSelections(document, successful, {})).toEqual(['check.createdAt']);
+    const unrelated = { check: { __typename: 'Target' } };
+    expect(missingSelections(document, unrelated, {})).toEqual([]);
+  });
+
   it('demands only the fragments of the union member the object is', () => {
     const publish = { version: { origin: { __typename: 'Publish', revision: 'r1' } } };
     expect(missingSelections(OriginQuery, publish, {})).toEqual([]);

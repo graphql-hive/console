@@ -253,11 +253,10 @@ describe('loaderPeriod', () => {
 
   it('is the resolved range in the shape a loader returns, ignoring other deps', () => {
     const deps = { from: 'now-7d', to: 'now', operations: ['abc'] };
-    const { range, resolution } = resolveDateRange(
-      { ...deps, defaultPreset: presetLast7Days },
-      now,
-    );
-    expect(loaderPeriod(deps, presetLast7Days, now)).toEqual({ period: range, resolution });
+    const { period, resolution } = loaderPeriod(deps, presetLast7Days, now);
+    expect(new Date(period.from).toISOString()).toBe('1992-10-15T10:00:00.000Z');
+    expect(new Date(period.to).toISOString()).toBe('1992-10-22T10:59:59.000Z');
+    expect(resolution).toBe(90);
   });
 
   it('takes the default preset for a bare URL', () => {
