@@ -1,13 +1,11 @@
 import { useMemo, type ReactNode } from 'react';
-import * as echarts from 'echarts';
-import ReactECharts from 'echarts-for-react';
 import { Globe, History } from 'lucide-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import { Card } from '@/components/base/card/card';
+import { Sparkline } from '@/components/base/chart/sparkline';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { subDays } from '@/lib/date-time';
 import { useFormattedNumber } from '@/lib/hooks';
-import { pluralize, useChartStyles } from '@/lib/utils';
+import { pluralize } from '@/lib/utils';
 
 export function ResourceCard(props: {
   /** Names the resource in the schema-versions tooltip, and reserves a skeleton line for `subtitle`. */
@@ -23,7 +21,6 @@ export function ResourceCard(props: {
   days: number;
 }) {
   const { highestNumberOfRequests } = props;
-  const { colors } = useChartStyles();
 
   const requests = useMemo(() => {
     if (props.requestsOverTime?.length) {
@@ -54,76 +51,12 @@ export function ResourceCard(props: {
             <div className="flex items-start gap-x-2">
               <div className="grow">
                 <div>
-                  <AutoSizer disableHeight>
-                    {size => (
-                      <ReactECharts
-                        style={{ width: size.width, height: 90 }}
-                        option={{
-                          animation: props.name != null,
-                          color: [colors.primary],
-                          grid: {
-                            left: 0,
-                            top: 10,
-                            right: 0,
-                            bottom: 10,
-                          },
-                          tooltip: {
-                            trigger: 'axis',
-                            axisPointer: {
-                              label: {
-                                formatter({ value }: { value: number }) {
-                                  return new Date(value).toDateString();
-                                },
-                              },
-                            },
-                          },
-                          xAxis: [
-                            {
-                              show: false,
-                              type: 'time',
-                              boundaryGap: false,
-                            },
-                          ],
-                          yAxis: [
-                            {
-                              show: false,
-                              type: 'value',
-                              min: 0,
-                              max: highestNumberOfRequests,
-                            },
-                          ],
-                          series: [
-                            {
-                              name: 'Requests',
-                              type: 'line',
-                              smooth: false,
-                              lineStyle: {
-                                width: 2,
-                              },
-                              showSymbol: false,
-                              areaStyle: {
-                                opacity: 0.8,
-                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                  {
-                                    offset: 0,
-                                    color: colors.primaryAreaFrom,
-                                  },
-                                  {
-                                    offset: 1,
-                                    color: colors.primaryAreaTo,
-                                  },
-                                ]),
-                              },
-                              emphasis: {
-                                focus: 'series',
-                              },
-                              data: requests,
-                            },
-                          ],
-                        }}
-                      />
-                    )}
-                  </AutoSizer>
+                  <Sparkline
+                    name="Requests"
+                    data={requests}
+                    max={highestNumberOfRequests}
+                    animation={props.name != null}
+                  />
                 </div>
                 <div className="flex flex-row items-center justify-between gap-y-3 px-4 pt-4">
                   {props.name != null ? (
