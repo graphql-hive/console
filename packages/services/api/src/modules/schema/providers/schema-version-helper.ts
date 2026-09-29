@@ -516,6 +516,10 @@ export class SchemaVersionHelper {
     }
 
     if (!log) {
+      invariant(
+        schemaVersion.actionId,
+        `Schema version '${schemaVersion.id}' must have an action id if it has no origin.`,
+      );
       log = await this.schemaVersions.getSchemaLogById(schemaVersion.actionId);
     }
 
@@ -600,6 +604,10 @@ export class SchemaVersionHelper {
       } satisfies ResolversUnionTypes<any>['SchemaVersionOrigin'];
     }
 
+    invariant(
+      schemaVersion.actionId,
+      `Schema version '${schemaVersion.id}' must have an action id if it has no origin.`,
+    );
     const log = await this.schemaVersions.getSchemaLogNodeByNodeId(schemaVersion.actionId);
     invariant(log.service_name != null, 'Service name must be defined');
 

@@ -59,12 +59,6 @@ export class SchemaVersionStore {
       };
       meta: SchemaVersionMeta | null;
       conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadata | null;
-      /**
-       * The action ID that caused this version.
-       * This column is a leftover, so we can easily rollback the introduced changes.
-       * In the future we should delete this column fully and instead sorely use the `origin` column.
-       **/
-      actionId: string;
     },
   ) {
     const query = psql`/* insertSchemaVersion */
@@ -89,8 +83,7 @@ export class SchemaVersionStore {
           "schema_metadata",
           "metadata_attributes",
           "origin",
-          "meta",
-          "action_id"
+          "meta"
         )
       VALUES
         (
@@ -113,8 +106,7 @@ export class SchemaVersionStore {
           ${psql.jsonbOrNull(args.schemaMetadata)},
           ${psql.jsonbOrNull(args.metadataAttributes)},
           ${psql.jsonb(SchemaVersionOriginModel.parse(args.origin))},
-          ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))},
-          ${args.actionId}
+          ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))}
         )
       RETURNING
         ${schemaVersionSQLFields()}
@@ -329,7 +321,7 @@ export class SchemaVersionStore {
         }
     ),
   ): Promise<SchemaVersion> {
-    const output = await this.pg.transaction('createSchemaVersion', async trx => {
+    const output = await this.pg.transaction('createPublishSchemaVersion', async trx => {
       const newLog = await this.insertPushSchemaLog(trx, {
         author: args.author,
         commit: args.commit,
@@ -380,7 +372,6 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        actionId: newLog.id,
       });
 
       await trx.query(psql`/* insertSchemaVersionToLog */
@@ -559,7 +550,6 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        actionId: deleteActionResult.id,
       });
 
       // Move all the schema_version_to_log entries of the previous version to the new version
@@ -1182,7 +1172,7 @@ export class SchemaVersionStore {
         node.id,
       );
 
-      // Legacy case: We need to produce the edge by looking at the node adn previous schema version
+      // Legacy case: We need to produce the edge by looking at the node and previous schema version
       // In legacy versions a PUSH and DELETE action can be identified by looking at the `actionId`
 
       invariant(
@@ -1235,6 +1225,12 @@ export class SchemaVersionStore {
         if (node.kind !== 'single') {
           throw new Error(`Invariant: The action can only be a single schema.`);
         }
+
+        invariant(
+          previousSchemaVersion.actionId,
+          `The schema version '${previousSchemaVersion.id}' should have a 'actionId' property.`,
+        );
+
         edgesWithNodes.push({
           type: 'changed',
           subgraphName: null,
@@ -1320,7 +1316,7 @@ export class SchemaVersionStore {
       latestVersion: SchemaVersion | null;
       latestValidVersion: SchemaVersion | null;
     };
-    actionLog: SchemaLog;
+    meta: SchemaVersionMeta | null;
     schemaLogs: SchemaLogDiffInput;
     publicSchemaChanges: Array<SchemaChangeType> | null;
     supergraphSchemaChanges: Array<SchemaChangeType> | null;
@@ -1328,16 +1324,6 @@ export class SchemaVersionStore {
     conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
   }) {
     return await this.pg.transaction('createPromotionSchemaVersion', async trx => {
-      let meta: SchemaVersionMeta | null = args.origin.version.meta;
-      // when the "origin" is null "meta" is null as well (as those properties were introduced in the same update)
-      // in that case we need to retrieve the meta from the action_id
-      if (!meta) {
-        meta = {
-          author: args.actionLog.author,
-          commit: args.actionLog.commit,
-        };
-      }
-
       const schemaVersion = await this.insertSchemaVersion(trx, {
         isComposable: args.origin.version.isComposable,
         targetId: args.target.target.id,
@@ -1356,19 +1342,13 @@ export class SchemaVersionStore {
         supergraphChanges: args.supergraphSchemaChanges,
         schemaCompositionErrors: args.origin.version.schemaCompositionErrors,
         github: args.origin.version.github,
-        meta,
+        meta: args.meta,
         tags: args.origin.version.tags,
         schemaMetadata: args.origin.version.schemaMetadata,
         metadataAttributes: args.origin.version.metadataAttributes,
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        // Note: we re-use the original version action id here to allow rolling back the introduced changes easily.
-        // In the future we will make the actionId column nullable and remove it from being inserted here.
-        // In case we would rollback the schema promotion feature, the users would still see the promoted schema versions
-        // even though the action would be misleading. This is a trade-off to make sure we can quickly rollback the schema promotion feature
-        // in case it causes unexpected issues.
-        actionId: args.origin.version.actionId,
       });
 
       if (args.publicSchemaChanges?.length) {
@@ -1617,19 +1597,17 @@ const SchemaVersionOriginPromotionModel = z.object({
 
 // type SchemaVersionOriginPromotion = z.TypeOf<typeof SchemaVersionOriginPromotionModel>;
 
+const SchemaVersionOriginPublishServiceModel = z.object({
+  name: z.string(),
+  versionId: z.string(),
+  revision: z.string().nullable().optional(),
+});
+
 const SchemaVersionOriginPublishModel = z.object({
   type: z.literal('publish'),
   revision: z.string().nullable().optional(),
   /** This is nullable in case it is a monolith. */
-  services: z
-    .array(
-      z.object({
-        name: z.string(),
-        versionId: z.string(),
-        revision: z.string().nullable().optional(),
-      }),
-    )
-    .nullable(),
+  services: z.tuple([SchemaVersionOriginPublishServiceModel]).nullable(),
 });
 
 const SchemaVersionOriginDeleteModel = z.object({
@@ -1656,7 +1634,7 @@ const SchemaVersionMetaModel = z.object({
   commit: z.string().nullable(),
 });
 
-type SchemaVersionMeta = z.TypeOf<typeof SchemaVersionMetaModel>;
+export type SchemaVersionMeta = z.TypeOf<typeof SchemaVersionMetaModel>;
 
 type SchemaVersionOrigin = z.TypeOf<typeof SchemaVersionOriginModel>;
 
@@ -1684,7 +1662,8 @@ const SchemaVersionModel = z
     conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadataModel.nullable(),
     targetId: z.string(),
     meta: SchemaVersionMetaModel.nullable(),
-    actionId: z.string(),
+    /** This property only exists for legacy backfill behaviour, do not use it unless you know what you are doing. */
+    actionId: z.string().nullable(),
     origin: SchemaVersionOriginModel.nullable(),
   })
   .and(
@@ -1805,22 +1784,13 @@ export type SchemaLogDiffInput = {
     projectId: string;
     type: 'added';
   }>;
-  changed: Array<
-    | {
-        id: string;
-        previousId: string | null;
-        serviceName: string;
-        type: 'changed';
-        changes: Array<SchemaChangeType> | null;
-      }
-    | {
-        id: string;
-        previousId: null;
-        serviceName: null;
-        type: null;
-        changes: null;
-      }
-  >;
+  changed: Array<{
+    id: string;
+    previousId: string | null;
+    serviceName: string | null;
+    type: 'changed';
+    changes: Array<SchemaChangeType> | null;
+  }>;
   unchanged: Array<{ id: string; serviceName: string | null; type: 'unchanged' }>;
 };
 
