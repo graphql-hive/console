@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render } from '@testing-library/react';
 import type { EChartsOption } from 'echarts';
+import { render } from '@testing-library/react';
 import { Sparkline } from './sparkline';
 import { TimeSeriesChart } from './time-series-chart';
 

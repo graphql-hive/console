@@ -2,13 +2,13 @@ import type { EChartsOption } from 'echarts';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Card } from '@/components/base/card/card';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
-import { useChartTheme } from './chart-theme';
 import { Chart } from './chart';
+import { useChartTheme } from './chart-theme';
 import { week } from './preview-data';
 
 export const nav: NavPath = 'Base/Charts/Chart';
 
-const REQUESTS = week(12000);
+const REQUESTS = week(12_000);
 const FAILURES = week(150, 3);
 
 function RequestsAndFailures(props: { legend?: boolean }) {

@@ -10,7 +10,7 @@ import { TimeSeriesChart } from './time-series-chart';
 
 export const nav: NavPath = 'Base/Charts/TimeSeriesChart';
 
-const REQUESTS = week(12000);
+const REQUESTS = week(12_000);
 const FAILURES = week(150, 3);
 const P75 = week(180, 5);
 
@@ -44,7 +44,10 @@ export const Area = createPreview(() => {
   }
   return (
     <div className="w-[48rem]">
-      <ChartCard title="Operations over time" description="Timeline of GraphQL requests and failures">
+      <ChartCard
+        title="Operations over time"
+        description="Timeline of GraphQL requests and failures"
+      >
         <Operations />
       </ChartCard>
     </div>
@@ -102,7 +105,11 @@ export const StackedBars = createPreview(() => {
         height={150}
         valueFormatter={formatNumber}
         series={[
-          { name: 'Ok', data: mapValues(REQUESTS, v => Math.round(v * 0.6)), color: colors.primary },
+          {
+            name: 'Ok',
+            data: mapValues(REQUESTS, v => Math.round(v * 0.6)),
+            color: colors.primary,
+          },
           { name: 'Error', data: FAILURES, color: colors.error },
           {
             name: 'Filtered out',

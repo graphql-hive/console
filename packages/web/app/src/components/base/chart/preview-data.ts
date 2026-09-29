@@ -19,6 +19,9 @@ export function week(peak: number, seed = 0): [string, number][] {
 }
 
 /** The same buckets with every value mapped, for series derived from another (RPM, percentiles). */
-export function mapValues(series: [string, number][], fn: (value: number, index: number) => number) {
+export function mapValues(
+  series: [string, number][],
+  fn: (value: number, index: number) => number,
+) {
   return series.map(([date, value], i): [string, number] => [date, fn(value, i)]);
 }

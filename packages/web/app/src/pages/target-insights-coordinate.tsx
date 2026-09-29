@@ -329,10 +329,10 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
               description={<>GraphQL requests with {props.coordinate} over time</>}
             >
               <TimeSeriesChart
-                  kind="area"
-                  valueFormatter={formatNumber}
-                  series={[{ name: 'Requests', data: requestsOverTime }]}
-                />
+                kind="area"
+                valueFormatter={formatNumber}
+                series={[{ name: 'Requests', data: requestsOverTime }]}
+              />
               <div className={cn('pt-5', showFieldLevelMetrics ? 'show' : 'hidden')}>
                 <p className="text-fg-secondary text-control pb-4">
                   Number of times the coordinate {props.coordinate} has resolved over time

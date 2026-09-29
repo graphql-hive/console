@@ -105,11 +105,7 @@ export default defineConfig({
         },
         {
           label: 'Charts',
-          children: [
-            { label: 'Chart' },
-            { label: 'Sparkline' },
-            { label: 'TimeSeriesChart' },
-          ],
+          children: [{ label: 'Chart' }, { label: 'Sparkline' }, { label: 'TimeSeriesChart' }],
         },
         // Data and layout
         { label: 'DataTable' },

@@ -5,7 +5,7 @@ import { Sparkline } from './sparkline';
 
 export const nav: NavPath = 'Base/Charts/Sparkline';
 
-const BUSY = week(12000);
+const BUSY = week(12_000);
 const QUIET = week(2500, 7);
 
 const HIGHEST = Math.max(...BUSY.map(([, value]) => value));
