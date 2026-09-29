@@ -1,5 +1,68 @@
 # hive
 
+## 11.16.0
+
+### Minor Changes
+
+- [#8556](https://github.com/graphql-hive/console/pull/8556)
+  [`0961843`](https://github.com/graphql-hive/console/commit/0961843fdac3b2f9ae0e25d05bc48d25d2c63d4d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Report schema check results to the Hive CLI when
+  the GitHub integration is used.
+
+  - `GitHubSchemaCheckSuccess` now has a `valid` field and the stored `schemaCheck`, so the CLI can
+    fail a CI job when a schema check fails, and approve it with `--forceSafe`.
+  - When the GitHub check-run can not be updated after a schema check ran, the error now says that
+    the check ran, instead of saying that the check-run could not be created.
+
+- [#8558](https://github.com/graphql-hive/console/pull/8558)
+  [`cc0119f`](https://github.com/graphql-hive/console/commit/cc0119f0396aa483060d1395c964f7d78f41bcc5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix how schema push and publishing a revision
+  handle repeated pushes, service names, concurrent pushes and expired revisions.
+
+  - Pushing a revision that already exists with the same schema succeeds and extends the revision's
+    expiry, so an unpublished revision stays available for 30 days after its most recent push. A
+    revision that has been published never expires.
+  - Concurrent pushes of the same revision no longer fail with an unexpected error.
+  - A publish whose revision expires and is removed while it is being published now reports that the
+    revision was not found, instead of an unexpected error.
+  - Schema push now rejects invalid service names instead of accepting them and failing when the
+    revision is published. Unlike schema check and publish, this also applies to existing services
+    whose names are no longer valid, so that services can be migrated to the new name format.
+  - Schema push now ignores the service name for single-schema projects, like schema publish does.
+  - Publishing a schema revision without a service name in a Federation or schema stitching project
+    now reports the missing service name, instead of reporting that the revision was not found.
+
+- [#8577](https://github.com/graphql-hive/console/pull/8577)
+  [`a9c60cf`](https://github.com/graphql-hive/console/commit/a9c60cf614993f3f9e9a0adf38e8dac0b38c02cf)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Use redis based rate limiting for email
+  verification and organization invite sending instead of in-memory based rate limiting.
+
+### Patch Changes
+
+- [#8573](https://github.com/graphql-hive/console/pull/8573)
+  [`89f83ab`](https://github.com/graphql-hive/console/commit/89f83abd9b61a0cc83e992f4ec5623b74d8f8d1d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix the Docker `HEALTHCHECK` of the service images.
+  The probe command was never baked into the image, so every service reported healthy right after
+  starting. Containers now become healthy only once their `/_readiness` endpoint responds, which
+  makes `depends_on: service_healthy` and `docker compose up --wait` wait for the services to
+  actually be ready. The `org.opencontainers.image.title`, `version` and `description` labels are
+  now populated as well.
+
+- [#8578](https://github.com/graphql-hive/console/pull/8578)
+  [`e2caad6`](https://github.com/graphql-hive/console/commit/e2caad6a07fcf6238929b9c9767cc4b31fc650ad)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-6vj9-mwq6-2f5v](https://github.com/advisories/GHSA-6vj9-mwq6-2f5v).
+
+- [#8565](https://github.com/graphql-hive/console/pull/8565)
+  [`e30136b`](https://github.com/graphql-hive/console/commit/e30136baac429d2d77992e693b5a02eab5147977)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Preserve all executable definitions when
+  normalizing operation documents for usage reporting.
+
+- [#8544](https://github.com/graphql-hive/console/pull/8544)
+  [`e9d2ff8`](https://github.com/graphql-hive/console/commit/e9d2ff83a511ac32a8955edae8722595bda05103)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Allow schema versions without an action ID and
+  exclude those records from the action ID index.
+
 ## 11.15.0
 
 ### Minor Changes

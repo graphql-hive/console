@@ -1,5 +1,21 @@
 # @graphql-hive/core
 
+## 0.23.0
+
+### Minor Changes
+
+- [#8556](https://github.com/graphql-hive/console/pull/8556)
+  [`0961843`](https://github.com/graphql-hive/console/commit/0961843fdac3b2f9ae0e25d05bc48d25d2c63d4d)
+  Thanks [@jdolle](https://github.com/jdolle)! - HTTP requests that fail with an unaccepted status
+  code now throw an `HTTPResponseError`, which exposes the response `status` and `statusText`.
+
+### Patch Changes
+
+- [#8565](https://github.com/graphql-hive/console/pull/8565)
+  [`e30136b`](https://github.com/graphql-hive/console/commit/e30136baac429d2d77992e693b5a02eab5147977)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Preserve all executable definitions when
+  normalizing operation documents for usage reporting.
+
 ## 0.22.5
 
 ### Patch Changes
