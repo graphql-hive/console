@@ -167,12 +167,21 @@ describe('explorer period', () => {
   });
 
   it(
-    'a preset picked on a view lands in the URL beside the filters',
+    'a preset picked on a view lands in the URL beside the filters, and the view re-queries',
     { timeout: 30_000 },
     async () => {
+      const testClient = client();
       const { router } = renderAtUrl(`${EXPLORER}/deprecated?from=now-7d&to=now&subgraph=users`, {
-        client: client(),
+        client: testClient,
       });
+      const periods = () =>
+        testClient
+          .requests('DeprecatedSchemaExplorer_DeprecatedSchemaQuery')
+          .map(o => (o.variables as { period: { from: string } }).period.from);
+      // Unanswered here, so the document is asked again; only the period of the newest ask matters.
+      await waitFor(() => expect(periods().length).toBeGreaterThan(0));
+      const weekAgo = Date.parse(periods()[0]);
+      const asked = periods().length;
 
       fireEvent.click(await screen.findByRole('button', { name: 'Last 7 days' }));
       fireEvent.click(await screen.findByRole('button', { name: 'Last 30 days' }));
@@ -180,6 +189,10 @@ describe('explorer period', () => {
       await waitFor(() =>
         expect(router.state.location.search).toEqual({ ...LAST_MONTH, subgraph: 'users' }),
       );
+      // The page re-renders with the new period and asks for it: the button and the data follow the URL.
+      await screen.findByRole('button', { name: 'Last 30 days' });
+      await waitFor(() => expect(periods().length).toBeGreaterThan(asked));
+      expect(Date.parse(periods().at(-1)!)).toBeLessThan(weekAgo);
     },
   );
 });
