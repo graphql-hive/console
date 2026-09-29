@@ -217,7 +217,7 @@ test.concurrent(
           commit,
           service: 'products',
           url: 'http://products.com',
-          sdl: /* GraphQL */ `
+          sdl: `
             extend schema
               @link(url: "https://specs.apollo.dev/link/v1.0")
               @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -255,7 +255,7 @@ test.concurrent(
           commit,
           service: 'products',
           url: 'http://products.com',
-          sdl: /* GraphQL */ `
+          sdl: `
             extend schema
               @link(url: "https://specs.apollo.dev/link/v1.0")
               @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
