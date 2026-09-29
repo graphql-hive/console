@@ -217,7 +217,7 @@ function FailureRateStats({
   );
 }
 
-const OverTimeStats_OperationsStatsFragment = graphql(`
+export const OverTimeStats_OperationsStatsFragment = graphql(`
   fragment OverTimeStats_OperationsStatsFragment on OperationsStats {
     failuresOverTime(resolution: $resolution) {
       date
@@ -230,7 +230,7 @@ const OverTimeStats_OperationsStatsFragment = graphql(`
   }
 `);
 
-function OverTimeStats({
+export function OverTimeStats({
   operationStats,
 }: {
   operationStats: FragmentType<typeof OverTimeStats_OperationsStatsFragment> | null;
@@ -758,7 +758,7 @@ function ClientsStats(props: {
   );
 }
 
-const LatencyOverTimeStats_OperationStatsFragment = graphql(`
+export const LatencyOverTimeStats_OperationStatsFragment = graphql(`
   fragment LatencyOverTimeStats_OperationStatsFragment on OperationsStats {
     durationOverTime(resolution: $resolution) {
       date
@@ -772,7 +772,7 @@ const LatencyOverTimeStats_OperationStatsFragment = graphql(`
   }
 `);
 
-function LatencyOverTimeStats({
+export function LatencyOverTimeStats({
   operationStats,
 }: {
   operationStats?: FragmentType<typeof LatencyOverTimeStats_OperationStatsFragment> | null;
@@ -894,7 +894,7 @@ function LatencyOverTimeStats({
   );
 }
 
-const RpmOverTimeStats_OperationStatsFragment = graphql(`
+export const RpmOverTimeStats_OperationStatsFragment = graphql(`
   fragment RpmOverTimeStats_OperationStatsFragment on OperationsStats {
     requestsOverTime(resolution: $resolution) {
       date
@@ -903,7 +903,7 @@ const RpmOverTimeStats_OperationStatsFragment = graphql(`
   }
 `);
 
-function RpmOverTimeStats({
+export function RpmOverTimeStats({
   period,
   resolution,
   operationStats,

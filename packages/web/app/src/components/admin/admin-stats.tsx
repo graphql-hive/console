@@ -42,14 +42,14 @@ export type Filters = Partial<{
   'with-collected': boolean;
 }>;
 
-const CollectedOperationsOverTime_OperationFragment = graphql(`
+export const CollectedOperationsOverTime_OperationFragment = graphql(`
   fragment CollectedOperationsOverTime_OperationFragment on AdminOperationPoint {
     count
     date
   }
 `);
 
-function CollectedOperationsOverTime(props: {
+export function CollectedOperationsOverTime(props: {
   operations: FragmentType<typeof CollectedOperationsOverTime_OperationFragment>[];
 }): ReactElement {
   const operations = useFragment(CollectedOperationsOverTime_OperationFragment, props.operations);
