@@ -58,7 +58,6 @@ test.concurrent('creating a contract creates its contract graph', async ({ expec
     config: {
       includeTags: ['public'],
       excludeTags: null,
-      isDisabled: false,
       removeUnreachableTypesFromPublicApiSchema: true,
     },
   });
