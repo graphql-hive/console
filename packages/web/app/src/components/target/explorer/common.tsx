@@ -16,6 +16,7 @@ import AvailabilityBar from './availability-bar';
 import { useDescriptionsVisibleToggle, useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
 import { matchesSubgraphFilter, useExplorerFieldFiltering } from './utils';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 
 export function Description(props: { description: string }) {
   const { isDescriptionsVisible } = useDescriptionsVisibleToggle();
@@ -58,6 +59,7 @@ export function SchemaExplorerUsageStats(props: {
   totalRequests: number;
   kindLabel?: string;
 }) {
+  const router = useRouter();
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const usage = useFragment(SchemaExplorerUsageStats_UsageFragment, props.usage);
   const percentage = props.totalRequests ? (usage.total / props.totalRequests) * 100 : 0;
@@ -91,6 +93,7 @@ export function SchemaExplorerUsageStats(props: {
                 operationName,
                 operationHash: row.original.hash,
               },
+              search: carriedRange(router.latestLocation.search),
             }}
           />
         );
@@ -239,6 +242,7 @@ export function SchemaExplorerUsageStats(props: {
                           targetSlug,
                           name: clientName,
                         }}
+                        search={carriedRange(router.latestLocation.search)}
                       >
                         {clientName}
                       </Link>
@@ -485,7 +489,7 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
                 targetSlug,
                 coordinate: typename,
               }}
-              search={router.latestLocation.search}
+              search={carriedRange(router.latestLocation.search)}
             >
               Visit in <span className="font-medium">Insights</span>
             </Link>
@@ -519,7 +523,7 @@ export const LinkToCoordinatePage = React.forwardRef<
         targetSlug,
         coordinate: props.coordinate,
       }}
-      search={router.latestLocation.search}
+      search={carriedRange(router.latestLocation.search)}
     >
       {props.children}
     </Link>

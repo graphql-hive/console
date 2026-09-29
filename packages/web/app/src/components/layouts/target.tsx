@@ -13,6 +13,8 @@ import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useSlugs, useToggle, useViewer } from '@/lib/hooks';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
+import { useLocation } from '@tanstack/react-router';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { Tabs } from '../ui/primitives/tabs/tabs';
@@ -20,6 +22,8 @@ import { TargetLayoutQuery } from './queries';
 
 export const TargetLayout = ({ children }: { children: ReactNode }): ReactElement | null => {
   const params = useSlugs('target');
+  // The period pages share the range the URL holds; a page without one carries nothing.
+  const range = carriedRange(useLocation().search);
 
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
@@ -69,6 +73,7 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
                       label: 'Explorer',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
                       params,
+                      search: range,
                     },
                     {
                       label: 'History',
@@ -79,13 +84,14 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
                       label: 'Insights',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
                       params,
-                      search: {},
+                      search: range,
                     },
                     {
                       label: 'Traces',
                       visible: currentTarget.viewerCanAccessTraces,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
                       params,
+                      search: range,
                     },
                     {
                       label: 'Apps',
@@ -110,6 +116,7 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
                       visible: currentTarget.viewerCanUseMetricAlertRules,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
                       params,
+                      search: range,
                     },
                     {
                       label: 'Settings',

@@ -119,6 +119,13 @@ export function resolveDateRange(args: DateRangeArgs, now: UTCDate = new UTCDate
   return { selectedPreset, ...resolvePeriod(selectedPreset.range, now) };
 }
 
+// What a link into another period page carries: the URL's own range, or nothing.
+export function carriedRange(search: Record<string, unknown>): { from?: string; to?: string } {
+  return typeof search.from === 'string' && typeof search.to === 'string'
+    ? { from: search.from, to: search.to }
+    : {};
+}
+
 // The URL's range as a loader returns it and its page reads it.
 export function loaderPeriod(
   deps: { from?: string; to?: string },

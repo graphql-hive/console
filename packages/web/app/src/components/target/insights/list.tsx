@@ -10,6 +10,7 @@ import { DateRangeInput, OperationStatsFilterInput } from '@/gql/graphql';
 import { formatDuration, useSlugs } from '@/lib/hooks';
 import type { ColumnDef } from '@tanstack/react-table';
 import { OperationsFallback } from './fallback';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 
 interface Operation {
   id: string;
@@ -56,10 +57,7 @@ function OperationsTable({
               operationName: row.original.name,
               operationHash: row.original.hash,
             },
-            search: {
-              from: selectedPeriod?.from ? encodeURIComponent(selectedPeriod.from) : undefined,
-              to: selectedPeriod?.to ? encodeURIComponent(selectedPeriod.to) : undefined,
-            },
+            search: carriedRange(selectedPeriod ?? {}),
           }}
           trailing={
             row.original.name === 'anonymous' ? (

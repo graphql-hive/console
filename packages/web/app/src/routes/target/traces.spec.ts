@@ -117,6 +117,21 @@ describe('trace route', () => {
     },
   );
 
+  it('carries the range it arrived with back to the list', { timeout: 30_000 }, async () => {
+    const client = createTestClient(layoutFixtures());
+    client.fixtures.set(TRACE_DOCUMENT, {
+      __typename: 'Query',
+      target: { __typename: 'Target', id: 'target-1', trace: null },
+    });
+    renderAtUrl(`${TRACE}?from=now-1d&to=now`, { client });
+
+    const links = await screen.findAllByRole('link', { name: 'Traces' });
+    for (const link of links) {
+      const href = link.getAttribute('href') ?? '';
+      expect(new URL(href, 'http://localhost').searchParams.get('from')).toContain('now-1d');
+    }
+  });
+
   it('shows "not found" for a trace the server does not have', { timeout: 30_000 }, async () => {
     const client = createTestClient(layoutFixtures());
     client.fixtures.set(TRACE_DOCUMENT, {

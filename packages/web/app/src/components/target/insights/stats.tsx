@@ -34,6 +34,7 @@ import { pick } from '@/lib/object';
 import { useRouter } from '@tanstack/react-router';
 import { OperationsFallback } from './fallback';
 import { resolutionToMilliseconds } from './utils';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 
 export const Stats_GeneralOperationsStatsQuery = graphql(`
   query Stats_GeneralOperationsStats(
@@ -494,9 +495,7 @@ function ClientsStats(props: {
             targetSlug,
             name: ev.value,
           },
-          search(searchParams) {
-            return pick(searchParams, ['from', 'to']);
-          },
+          search: carriedRange,
         });
       }
     },

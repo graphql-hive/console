@@ -23,7 +23,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, usePagedConnection, useSlugs } from '@/lib/hooks';
-import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { carriedRange, useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
 import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
@@ -137,6 +137,7 @@ const TracesList = memo(function TracesList(
   const data = useFragment(TracesList_Trace, props.traces);
 
   const { organizationSlug, projectSlug, targetSlug } = tracesRoute.useParams();
+  const { from, to } = tracesRoute.useSearch();
 
   const rows = useMemo(() => [...data], [data]);
 
@@ -158,6 +159,7 @@ const TracesList = memo(function TracesList(
                 targetSlug,
                 traceId: row.original.id,
               },
+              search: carriedRange({ from, to }),
             }}
           />
         ),

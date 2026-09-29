@@ -716,6 +716,39 @@ describe('alerts sections', () => {
   );
 });
 
+describe('the range in the URL', () => {
+  const PERIOD_ITEMS = ['Explorer', 'Traces', 'Alerts', 'Insights'];
+
+  function navRange(name: string) {
+    const nav = screen.getByRole('navigation', { name: 'Secondary' });
+    const href = within(nav).getByRole('link', { name }).getAttribute('href') ?? '';
+    return new URL(href, 'http://localhost').searchParams.get('from');
+  }
+
+  beforeEach(() => {
+    client.current = createTestClient(layoutFixtures());
+  });
+
+  it('travels through the nav from a page that has one', { timeout: 30_000 }, async () => {
+    at(`${TARGET}/insights?from=now-1d&to=now`);
+    await screen.findByRole('link', { name: 'Insights', current: 'page' });
+
+    for (const name of PERIOD_ITEMS) {
+      expect(navRange(name)).toContain('now-1d');
+    }
+    expect(navRange('Checks')).toBeNull();
+  });
+
+  it('is not invented by a page without one', { timeout: 30_000 }, async () => {
+    at(`${TARGET}/checks`);
+    await screen.findByRole('link', { name: 'Checks', current: 'page' });
+
+    for (const name of PERIOD_ITEMS) {
+      expect(navRange(name)).toBeNull();
+    }
+  });
+});
+
 describe('permission gates', () => {
   // Each gated URL and the layout flag that opens it. A route may start its page documents beside
   // the gate, so what a viewer without the flag never gets is the page, not the request.

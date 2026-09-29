@@ -168,6 +168,19 @@ describe('insights route', () => {
 });
 
 describe('operation route', () => {
+  it('receives the range the list row carries', { timeout: 30_000 }, async () => {
+    const client = createTestClient(fixtures());
+    renderAtUrl(INSIGHTS, { client });
+    const links = await screen.findAllByRole('link', { name: OPERATION.name });
+
+    const hrefs = links.map(link => new URL(link.getAttribute('href') ?? '', 'http://localhost'));
+    const row = hrefs.find(
+      url => url.pathname === `${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}`,
+    );
+    expect(row?.searchParams.get('from')).toContain(from);
+    expect(row?.searchParams.get('to')).toContain(to);
+  });
+
   it('is not preloaded when an operations row is hovered', { timeout: 30_000 }, async () => {
     const client = createTestClient(fixtures());
     renderAtUrl(INSIGHTS, { client });

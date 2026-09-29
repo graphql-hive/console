@@ -61,9 +61,12 @@ export const targetTracesRoute = createRoute({
   },
 });
 
+// The list's range rides along, so the breadcrumb back lands on the same range.
 const TargetTraceRouteSearchModel = z.object({
   activeSpanId: z.string().optional(),
   activeSpanTab: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
 });
 
 export const targetTraceRoute = createRoute({
