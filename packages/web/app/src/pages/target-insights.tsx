@@ -30,7 +30,7 @@ const insightsRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights',
 );
 
-function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
+export function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
   return {
     operationIds: state.operations?.length ? state.operations : undefined,
     clientVersionFilters: state.clients?.length
@@ -44,7 +44,7 @@ function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInp
   };
 }
 
-const InsightsFilterPicker_Query = graphql(`
+export const InsightsFilterPicker_Query = graphql(`
   query InsightsFilterPicker($selector: TargetSelectorInput!, $period: DateRangeInput!) {
     target(reference: { bySelector: $selector }) {
       id
@@ -115,31 +115,17 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const search = insightsRoute.useSearch();
   const navigate = insightsRoute.useNavigate();
+  const { period, resolution } = insightsRoute.useLoaderData();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
 
-  // Populate URL with the default date range on initial load so the URL always reflects the active range.
-  // Skipped when from/to are already present (e.g. shared link or saved filter).
-  useEffect(() => {
-    if (search.from === undefined && search.to === undefined) {
-      void navigate({
-        search: prev => ({
-          ...prev,
-          from: presetLast7Days.range.from,
-          to: presetLast7Days.range.to,
-        }),
-        replace: true,
-      });
-    }
-  }, []);
-
   const [pickerQuery, reexecutePickerQuery] = useQuery({
     query: InsightsFilterPicker_Query,
     variables: {
       selector: { organizationSlug, projectSlug, targetSlug },
-      period: dateRangeController.resolvedRange,
+      period,
     },
   });
 
@@ -352,14 +338,14 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
         </div>
       </div>
       <OperationsStats
-        period={dateRangeController.resolvedRange}
+        period={period}
         filter={filter}
         dateRangeText={dateRangeController.selectedPreset.label}
         mode="operation-list"
-        resolution={dateRangeController.resolution}
+        resolution={resolution}
       />
       <OperationsList
-        period={dateRangeController.resolvedRange}
+        period={period}
         filter={filter}
         selectedPeriod={dateRangeController.selectedPreset.range}
       />
@@ -367,7 +353,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
   );
 }
 
-const TargetOperationsPageQuery = graphql(`
+export const TargetOperationsPageQuery = graphql(`
   query TargetOperationsPageQuery(
     $organizationSlug: String!
     $projectSlug: String!

@@ -1,6 +1,7 @@
+import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { UTCDate } from '@date-fns/utc';
 import { parse } from '../date-math';
-import { resolveRangeAndResolution } from './use-date-range-controller';
+import { resolveDateRange, resolveRangeAndResolution } from './use-date-range-controller';
 
 describe('useDateRangeController', () => {
   const testCases = [
@@ -195,4 +196,50 @@ describe('useDateRangeController', () => {
       );
     });
   }
+});
+
+describe('resolveDateRange', () => {
+  const now = new UTCDate('1992-10-22T10:10:00.000Z');
+  const iso = (value: string) => new Date(value).toISOString();
+
+  it('names the preset the URL spells out', () => {
+    const { selectedPreset } = resolveDateRange(
+      { from: 'now-7d', to: 'now', defaultPreset: presetLast7Days },
+      now,
+    );
+    expect(selectedPreset.name).toBe('last7d');
+  });
+
+  it('builds a custom preset for a range that is not one', () => {
+    const from = '1992-10-01T00:00:00.000Z';
+    const to = '1992-10-15T00:00:00.000Z';
+    const { selectedPreset } = resolveDateRange({ from, to, defaultPreset: presetLast7Days }, now);
+    expect(selectedPreset.name).toBe(`${from}_${to}`);
+    expect(selectedPreset.range).toEqual({ from, to });
+  });
+
+  it('falls back to the default preset when the URL has no range or one it cannot read', () => {
+    expect(resolveDateRange({ defaultPreset: presetLast7Days }, now).selectedPreset).toBe(
+      presetLast7Days,
+    );
+    expect(
+      resolveDateRange({ from: 'yesterday-ish', to: 'now', defaultPreset: presetLast7Days }, now)
+        .selectedPreset,
+    ).toBe(presetLast7Days);
+  });
+
+  it('widens a range with equal ends to a day', () => {
+    const at = '1992-10-21T12:00:00.000Z';
+    const { range } = resolveDateRange({ from: at, to: at, defaultPreset: presetLast7Days }, now);
+    expect(iso(range.from)).toBe('1992-10-21T12:00:00.000Z');
+    expect(iso(range.to)).toBe('1992-10-22T11:59:59.000Z');
+  });
+
+  it('gives the same variables for the same input and clock', () => {
+    const args = { from: 'now-7d', to: 'now', defaultPreset: presetLast7Days };
+    const first = resolveDateRange(args, now);
+    expect(resolveDateRange(args, now)).toEqual(first);
+    expect(iso(first.range.from)).toBe('1992-10-15T10:00:00.000Z');
+    expect(iso(first.range.to)).toBe('1992-10-22T10:59:59.000Z');
+  });
 });

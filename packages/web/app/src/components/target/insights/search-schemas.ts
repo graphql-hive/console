@@ -16,3 +16,5 @@ export const InsightsFilterSearch = z.object({
 });
 
 export type InsightsFilterState = z.infer<typeof InsightsFilterSearch>;
+
+export const InsightsDateRangeSearch = InsightsFilterSearch.pick({ from: true, to: true });

@@ -12,8 +12,13 @@ import type { AlertForm_AddMetricAlertRuleMutation } from '@/components/target/a
 import type { CreateOperationMutationType } from '@/components/target/laboratory/create-operation-modal';
 import type { DeleteCollectionMutationType } from '@/components/target/laboratory/delete-collection-modal';
 import type { DeleteOperationMutationType } from '@/components/target/laboratory/delete-operation-modal';
+import type {
+  CDNAccessTokenCreateMutation,
+  CDNAccessTokenDeleteMutation,
+} from '@/components/target/settings/cdn-access-tokens';
 import type { CreateAccessToken_CreateTokenMutation } from '@/components/target/settings/registry-access-token';
 import { graphql } from '@/gql';
+import schema from '@/gql/schema';
 import { CollectionsQuery } from '@/lib/hooks/laboratory/use-collections';
 import type { JoinOrganizationPage_JoinOrganizationMutation } from '@/pages/organization-join';
 import type { CreateOrganizationMutation } from '@/pages/organization-new';
@@ -31,10 +36,12 @@ import {
 import { ResultOf, VariablesOf } from '@graphql-typed-document-node/core';
 import {
   Cache,
+  CacheExchangeOpts,
   OptimisticMutationResolver,
   QueryInput,
   UpdateResolver,
 } from '@urql/exchange-graphcache';
+import { relayPagination } from '@urql/exchange-graphcache/extras';
 
 const TargetsDocument = graphql(`
   query targets($selector: ProjectSelectorInput!) {
@@ -414,6 +421,47 @@ const deleteSavedFilter: TypedDocumentNodeUpdateResolver<
   );
 };
 
+/**
+ * Drops every cached page of `Target.cdnAccessTokens` for the target the mutation named, so the
+ * open page refetches; the pages are keyed by cursor, so a written result could not reach them.
+ */
+function invalidateCdnAccessTokens(
+  cache: Cache,
+  selector: { organizationSlug: string; projectSlug: string; targetSlug: string },
+) {
+  const target = cache.resolve('Query', 'target', { reference: { bySelector: selector } });
+  if (typeof target !== 'string') {
+    return;
+  }
+  for (const field of cache.inspectFields(target)) {
+    if (field.fieldName === 'cdnAccessTokens') {
+      cache.invalidate(target, field.fieldName, field.arguments ?? undefined);
+    }
+  }
+}
+
+const createCdnAccessToken: TypedDocumentNodeUpdateResolver<typeof CDNAccessTokenCreateMutation> = (
+  { createCdnAccessToken },
+  args,
+  cache,
+) => {
+  const selector = args.input.target.bySelector;
+  if (createCdnAccessToken.ok && selector) {
+    invalidateCdnAccessTokens(cache, selector);
+  }
+};
+
+const deleteCdnAccessToken: TypedDocumentNodeUpdateResolver<typeof CDNAccessTokenDeleteMutation> = (
+  { deleteCdnAccessToken },
+  args,
+  cache,
+) => {
+  const selector = args.input.target.bySelector;
+  if (deleteCdnAccessToken.ok && selector) {
+    invalidateCdnAccessTokens(cache, selector);
+  }
+};
+
 const addMetricAlertRule: TypedDocumentNodeUpdateResolver<
   typeof AlertForm_AddMetricAlertRuleMutation
 > = ({ addMetricAlertRule }, _args, cache) => {
@@ -457,6 +505,8 @@ export const Mutation = {
   deleteOperationInDocumentCollection,
   createOperationInDocumentCollection,
   deleteSavedFilter,
+  createCdnAccessToken,
+  deleteCdnAccessToken,
   addMetricAlertRule,
   updateMetricAlertRule,
 };
@@ -488,3 +538,173 @@ const updateMetricAlertRuleOptimistic: OptimisticMutationResolver = args => {
 export const Optimistic = {
   updateMetricAlertRule: updateMetricAlertRuleOptimistic,
 };
+
+const noKey = (): null => null;
+
+/** The graphcache configuration: the app's client and the specs' test client both build their cache from it. */
+export const cacheOptions = {
+  schema,
+  updates: {
+    Mutation,
+  },
+  optimistic: Optimistic,
+  resolvers: {
+    Target: {
+      appDeployments: relayPagination(),
+      schemaChecks: relayPagination(),
+      traces: relayPagination(),
+    },
+    AppDeployment: {
+      documents: relayPagination(),
+    },
+    Organization: {
+      accessTokens: relayPagination(),
+      allAccessTokens: relayPagination(),
+    },
+    Project: {
+      accessTokens: relayPagination(),
+    },
+  },
+  keys: {
+    RequestsOverTime: noKey,
+    FailuresOverTime: noKey,
+    DurationOverTime: noKey,
+    SchemaCoordinateStats: noKey,
+    ClientStats: noKey,
+    ClientStatsValues: noKey,
+    ClientVersionStatsValues: noKey,
+    InsightsDateRange: noKey,
+    OperationsStats: noKey,
+    OperationStatsValues: noKey,
+    DurationValues: noKey,
+    OrganizationPayload: noKey,
+    SchemaChange: noKey,
+    GitHubIntegration: noKey,
+    GitHubRepository: noKey,
+    SchemaExplorer: noKey,
+    UnusedSchemaExplorer: noKey,
+    OrganizationGetStarted: noKey,
+    GraphQLObjectType: noKey,
+    GraphQLInterfaceType: noKey,
+    GraphQLUnionType: noKey,
+    GraphQLEnumType: noKey,
+    GraphQLInputObjectType: noKey,
+    GraphQLScalarType: noKey,
+    GraphQLField: noKey,
+    GraphQLInputField: noKey,
+    GraphQLArgument: noKey,
+    SchemaCoordinateUsage: noKey,
+    SuccessfulSchemaCheck: ({ id }) => `SchemaCheck:${id}`,
+    FailedSchemaCheck: ({ id }) => `SchemaCheck:${id}`,
+    SchemaChangeApproval: ({ schemaCheckId }) => `SchemaChangeApproval:${schemaCheckId}`,
+    SchemaMetadata: noKey,
+    SupergraphMetadata: noKey,
+    MetadataAttribute: noKey,
+    RateLimit: noKey,
+    DeprecatedSchemaExplorer: noKey,
+    TraceStatusBreakdownBucket: noKey,
+    FilterStringOption: noKey,
+    FilterBooleanOption: noKey,
+    TracesFilterOptions: noKey,
+    ResourceAssignment: noKey,
+    TargetServicesResourceAssignment: noKey,
+    TargetAppDeploymentsResourceAssignment: noKey,
+    TargetResouceAssignment: noKey,
+    ProjectTargetsResourceAssignment: noKey,
+    ProjectResourceAssignment: noKey,
+    BillingConfiguration: noKey,
+    InsightsFilterConfiguration: noKey,
+    ClientFilter: noKey,
+    SchemaChangeMeta: noKey,
+    SchemaCheckMeta: noKey,
+    SchemaVersionMeta: noKey,
+    SchemaVersionGithubMetadata: noKey,
+    SchemaVersionPromoteOrigin: noKey,
+    SchemaVersionPublishOrigin: noKey,
+    SchemaVersionSubgraphRemoveOrigin: noKey,
+    SubgraphOriginSubgraphReference: noKey,
+    FieldArgumentDescriptionChanged: noKey,
+    FieldArgumentTypeChanged: noKey,
+    DirectiveRemoved: noKey,
+    DirectiveAdded: noKey,
+    DirectiveDescriptionChanged: noKey,
+    DirectiveLocationAdded: noKey,
+    DirectiveLocationRemoved: noKey,
+    DirectiveArgumentAdded: noKey,
+    DirectiveArgumentRemoved: noKey,
+    DirectiveArgumentDescriptionChanged: noKey,
+    DirectiveArgumentDefaultValueChanged: noKey,
+    DirectiveArgumentTypeChanged: noKey,
+    EnumValueRemoved: noKey,
+    EnumValueAdded: noKey,
+    EnumValueDescriptionChanged: noKey,
+    EnumValueDeprecationReasonChanged: noKey,
+    EnumValueDeprecationReasonAdded: noKey,
+    EnumValueDeprecationReasonRemoved: noKey,
+    FieldRemoved: noKey,
+    FieldAdded: noKey,
+    FieldDescriptionChanged: noKey,
+    FieldDescriptionAdded: noKey,
+    FieldDescriptionRemoved: noKey,
+    FieldDeprecationAdded: noKey,
+    FieldDeprecationRemoved: noKey,
+    FieldDeprecationReasonChanged: noKey,
+    FieldDeprecationReasonAdded: noKey,
+    FieldDeprecationReasonRemoved: noKey,
+    FieldTypeChanged: noKey,
+    DirectiveUsageUnionMemberAdded: noKey,
+    DirectiveUsageUnionMemberRemoved: noKey,
+    FieldArgumentAdded: noKey,
+    FieldArgumentRemoved: noKey,
+    InputFieldRemoved: noKey,
+    InputFieldAdded: noKey,
+    InputFieldDescriptionAdded: noKey,
+    InputFieldDescriptionRemoved: noKey,
+    InputFieldDescriptionChanged: noKey,
+    InputFieldDefaultValueChanged: noKey,
+    InputFieldTypeChanged: noKey,
+    ObjectTypeInterfaceAdded: noKey,
+    ObjectTypeInterfaceRemoved: noKey,
+    SchemaQueryTypeChanged: noKey,
+    SchemaMutationTypeChanged: noKey,
+    SchemaSubscriptionTypeChanged: noKey,
+    TypeRemoved: noKey,
+    TypeAdded: noKey,
+    TypeKindChanged: noKey,
+    TypeDescriptionChanged: noKey,
+    TypeDescriptionAdded: noKey,
+    TypeDescriptionRemoved: noKey,
+    UnionMemberRemoved: noKey,
+    UnionMemberAdded: noKey,
+    DirectiveUsageEnumAdded: noKey,
+    DirectiveUsageEnumRemoved: noKey,
+    DirectiveUsageEnumValueAdded: noKey,
+    DirectiveUsageEnumValueRemoved: noKey,
+    DirectiveUsageInputObjectRemoved: noKey,
+    DirectiveUsageInputObjectAdded: noKey,
+    DirectiveUsageInputFieldDefinitionAdded: noKey,
+    DirectiveUsageInputFieldDefinitionRemoved: noKey,
+    DirectiveUsageFieldAdded: noKey,
+    DirectiveUsageFieldRemoved: noKey,
+    DirectiveUsageScalarAdded: noKey,
+    DirectiveUsageScalarRemoved: noKey,
+    DirectiveUsageObjectAdded: noKey,
+    DirectiveUsageObjectRemoved: noKey,
+    DirectiveUsageInterfaceAdded: noKey,
+    DirectiveUsageSchemaAdded: noKey,
+    DirectiveUsageSchemaRemoved: noKey,
+    DirectiveUsageFieldDefinitionAdded: noKey,
+    DirectiveUsageFieldDefinitionRemoved: noKey,
+    DirectiveUsageArgumentDefinitionRemoved: noKey,
+    DirectiveUsageInterfaceRemoved: noKey,
+    DirectiveUsageArgumentDefinitionAdded: noKey,
+    DirectiveUsageArgumentAdded: noKey,
+    DirectiveUsageArgumentRemoved: noKey,
+    DirectiveRepeatableAdded: noKey,
+    DirectiveRepeatableRemoved: noKey,
+    SchemaCompositionResult: noKey,
+    NativeCompositionVersionStatus: noKey,
+    NativeCompositionCompatibility: noKey,
+  },
+  globalIDs: ['SuccessfulSchemaCheck', 'FailedSchemaCheck'],
+} satisfies Partial<CacheExchangeOpts>;

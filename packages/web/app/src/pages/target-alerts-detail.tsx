@@ -4,6 +4,7 @@ import { useQuery } from 'urql';
 import { Select } from '@/components/base/floating/select/select';
 import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
 import { PageLead } from '@/components/base/page-lead';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { BackLink } from '@/components/navigation/back-link';
 import { AlertConditionsPanel } from '@/components/target/alerts/alert-conditions-panel';
 import {
@@ -13,7 +14,6 @@ import {
 import { AlertMetricChart } from '@/components/target/alerts/alert-metric-chart';
 import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { AlertStateTransitionsBar } from '@/components/target/alerts/alert-state-transitions-bar';
-import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
 import {
   MetricAlertRuleDirection,

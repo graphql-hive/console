@@ -1,4 +1,6 @@
 import { ProjectLayout } from '@/components/layouts/project';
+import { ProjectLayoutQuery } from '@/components/layouts/queries';
+import { loadQuery } from '@/lib/route-utils';
 import { ProjectIndexRouteSearch, ProjectPage } from '@/pages/project';
 import { ProjectAlertsPage } from '@/pages/project-alerts';
 import { createRoute, Outlet } from '@tanstack/react-router';
@@ -7,6 +9,10 @@ import { withHeaderRoute } from '../with-header';
 export const projectRoute = createRoute({
   getParentRoute: () => withHeaderRoute,
   path: '$organizationSlug/$projectSlug',
+  loader: loader => {
+    const { organizationSlug, projectSlug } = loader.params;
+    void loadQuery(loader, ProjectLayoutQuery, { organizationSlug, projectSlug });
+  },
   component: function ProjectRoute() {
     return (
       <ProjectLayout>

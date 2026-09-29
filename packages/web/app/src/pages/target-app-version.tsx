@@ -13,7 +13,6 @@ import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
-import { Spinner } from '@/components/ui/spinner';
 import { graphql, type DocumentType } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
@@ -363,14 +362,9 @@ function TargetAppVersionContent(props: {
           </div>
         ) : null}
         <div className="mt-4" />
-        {data.fetching || data.stale ? (
-          <div className="flex h-fit flex-1 items-center justify-center">
-            <div className="flex flex-col items-center">
-              <Spinner />
-              <div className="mt-2 text-xs">Loading app deployments</div>
-            </div>
-          </div>
-        ) : !data.data?.target?.appDeployment?.documents?.edges.length ? (
+        {!data.data ? (
+          <DataTable loading data={[]} columns={columns} getRowId={document => document.hash} />
+        ) : !data.data.target?.appDeployment?.documents?.edges.length ? (
           <EmptyList
             title={
               coordinates

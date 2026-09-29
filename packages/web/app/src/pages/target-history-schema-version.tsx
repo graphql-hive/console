@@ -37,6 +37,7 @@ import { Select } from '@/components/base/floating/select/select';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Legend } from '@/components/base/legend/legend';
 import { NotFound } from '@/components/base/not-found/not-found';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { TabbedView } from '@/components/base/tabs/tabbed-view';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
@@ -47,7 +48,6 @@ import {
 import { File, MultiFileDiff } from '@/components/ui/diffs';
 import { Link } from '@/components/ui/link';
 import { QueryError } from '@/components/ui/query-error';
-import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
@@ -102,7 +102,9 @@ export function TargetHistorySchemaVersionPage(props: { schemaVersionId: string 
   if (isLoading) {
     return (
       <div className="text-fg-secondary flex size-full flex-col items-center justify-center self-center text-sm">
-        <Spinner className="mb-3 size-8" />
+        <span className="mb-3">
+          <Spinner variants={{ size: 'lg' }} />
+        </span>
         Loading schema version...
       </div>
     );

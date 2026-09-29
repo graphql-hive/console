@@ -20,4 +20,11 @@ describe('Spinner', () => {
     const status = screen.getByLabelText('Loading app deployments');
     expect(status.querySelector('svg')?.classList.contains('size-4')).toBe(true);
   });
+
+  it('takes the text color around it when the tone is current', () => {
+    render(<Spinner variants={{ tone: 'current' }} />);
+    expect(screen.getByRole('status').querySelector('svg')?.classList.contains('text-accent')).toBe(
+      false,
+    );
+  });
 });

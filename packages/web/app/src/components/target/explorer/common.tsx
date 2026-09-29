@@ -5,7 +5,7 @@ import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, toDecimal, useSlugs } from '@/lib/hooks';
@@ -544,11 +544,19 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
       {widths.map((width, index) => (
         <GraphQLTypeCardListItem key={index} index={index} className="w-full">
           <div className="flex w-full flex-row items-center gap-2">
-            <Skeleton className={cn('bg-surface-skeleton my-1 h-4', width)} />
+            <span className={cn('my-1 flex', width)}>
+              <Skeleton variants={{ width: 'full' }} />
+            </span>
             <div className="ml-auto flex flex-row items-center gap-2">
-              <Skeleton className="bg-surface-skeleton my-1 size-4" />
-              <Skeleton className="bg-surface-skeleton my-1 size-4" />
-              <Skeleton className="bg-surface-skeleton my-1 size-4" />
+              <span className="my-1 block size-4">
+                <Skeleton variants={{ shape: 'block' }} />
+              </span>
+              <span className="my-1 block size-4">
+                <Skeleton variants={{ shape: 'block' }} />
+              </span>
+              <span className="my-1 block size-4">
+                <Skeleton variants={{ shape: 'block' }} />
+              </span>
             </div>
           </div>
         </GraphQLTypeCardListItem>
@@ -562,7 +570,9 @@ export const GraphQLTypeCardSkeleton = (props: { children: ReactNode }) => {
     <div className="border-line-subtle rounded-md border-2">
       <div className="flex flex-row justify-between p-4">
         <div className="flex flex-row items-center gap-2">
-          <Skeleton className="bg-surface-skeleton my-1 h-4 w-32" />
+          <span className="my-1 flex w-32">
+            <Skeleton variants={{ width: 'full' }} />
+          </span>
         </div>
       </div>
       <div>{props.children}</div>

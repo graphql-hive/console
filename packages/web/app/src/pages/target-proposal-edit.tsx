@@ -1,12 +1,12 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { SaveIcon } from 'lucide-react';
 import { Button } from '@/components/base/button/button';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { ProposalEditor, ServiceTab } from '@/components/target/proposals/editor';
 import {
   SaveProposalContext,
   SaveProposalModal,
 } from '@/components/target/proposals/save-proposal-modal';
-import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 
@@ -137,7 +137,13 @@ export function TargetProposalEditPage(props: {
               });
             }}
           >
-            {isSaving ? <Spinner className="mr-1 size-4" /> : <SaveIcon className="mr-1 size-4" />}
+            {isSaving ? (
+              <span className="mr-1 inline-flex">
+                <Spinner variants={{ size: 'sm', tone: 'current' }} />
+              </span>
+            ) : (
+              <SaveIcon className="mr-1 size-4" />
+            )}
             Save Changes
           </Button>
         </div>

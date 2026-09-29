@@ -1,4 +1,6 @@
 import { OrganizationLayout } from '@/components/layouts/organization';
+import { OrganizationLayoutQuery } from '@/components/layouts/queries';
+import { loadQuery } from '@/lib/route-utils';
 import { OrganizationIndexRouteSearch, OrganizationPage } from '@/pages/organization';
 import { OrganizationSubscriptionPage } from '@/pages/organization-subscription';
 import { OrganizationSubscriptionManagePage } from '@/pages/organization-subscription-manage';
@@ -10,6 +12,10 @@ import { withHeaderRoute } from '../with-header';
 export const organizationRoute = createRoute({
   getParentRoute: () => withHeaderRoute,
   path: '$organizationSlug',
+  loader: loader => {
+    const { organizationSlug } = loader.params;
+    void loadQuery(loader, OrganizationLayoutQuery, { organizationSlug });
+  },
   component: function OrganizationRoute() {
     return (
       <OrganizationLayout>

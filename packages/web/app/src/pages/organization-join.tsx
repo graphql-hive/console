@@ -4,11 +4,11 @@ import { SessionAuth, useSessionContext } from 'supertokens-auth-react/recipe/se
 import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
 import { Card } from '@/components/base/card/card';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { useToast } from '@/components/base/toast/toast';
 import { HiveLogo } from '@/components/ui/brand-icon';
 import { DottedBackground } from '@/components/ui/dotted-background';
 import { Meta } from '@/components/ui/meta';
-import { Spinner } from '@/components/ui/spinner';
 import { DataWrapper } from '@/components/v2/data-wrapper';
 import { graphql } from '@/gql';
 import { HiveStripeWrapper } from '@/lib/billing/stripe';
@@ -111,7 +111,11 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
   }, [!session.loading && !session.doesSessionExist, toast, router]);
 
   if (session.loading) {
-    return <Spinner className="m-auto mt-6" />;
+    return (
+      <div className="mt-6 flex justify-center">
+        <Spinner />
+      </div>
+    );
   }
 
   if (!session.doesSessionExist) {

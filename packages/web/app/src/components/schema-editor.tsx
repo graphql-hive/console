@@ -1,4 +1,4 @@
-import { lazy } from 'react';
+import { lazy, Suspense } from 'react';
 // Import from `editor.api` rather than the `monaco-editor` main entry to keep
 // the bundle lean — the main entry auto-registers every basic language, which
 // bloats our client sourcemaps. We opt in to the contributions we actually use
@@ -40,7 +40,12 @@ const LazySchemaEditor = lazy(async () => {
 export function SchemaEditor(props: SchemaEditorProps) {
   const monacoTheme = useMonacoTheme();
 
-  return <LazySchemaEditor theme={monacoTheme} {...props} />;
+  // A boundary of its own, so the chunk loading never suspends the route into its pending state.
+  return (
+    <Suspense fallback={null}>
+      <LazySchemaEditor theme={monacoTheme} {...props} />
+    </Suspense>
+  );
 }
 
 export type { SchemaEditorProps };

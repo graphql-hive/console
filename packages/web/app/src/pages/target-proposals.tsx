@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
@@ -9,7 +10,7 @@ import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Spinner } from '@/components/ui/spinner';
+import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
@@ -185,7 +186,24 @@ const ProposalsListPage = (props: {
 
   return (
     <>
-      {query.fetching ? <Spinner /> : null}
+      {query.error && !query.data ? (
+        <QueryError
+          organizationSlug={organizationSlug}
+          error={query.error}
+          showLogoutButton={false}
+        />
+      ) : null}
+      {query.fetching && !query.data ? (
+        <div role="status" aria-label="Loading" className="flex flex-col">
+          <span className="sr-only">Loading</span>
+          {[0, 1, 2, 3].map(index => (
+            <div key={index} className="flex flex-col gap-2 p-2.5">
+              <Skeleton variants={{ size: 'lg', width: 'lg' }} />
+              <Skeleton variants={{ size: 'sm', width: 'md' }} />
+            </div>
+          ))}
+        </div>
+      ) : null}
       {query.data?.schemaProposals?.edges?.length === 0 && (
         <div className="my-8 flex min-h-48 items-center text-center">
           <div className="w-full">
