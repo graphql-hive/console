@@ -7,7 +7,6 @@ const ContractGraphConfigModel = z.object({
   includeTags: z.array(z.string()).nullable(),
   excludeTags: z.array(z.string()).nullable(),
   removeUnreachableTypesFromPublicApiSchema: z.boolean(),
-  isDisabled: z.boolean(),
 });
 
 const GraphSharedModel = z.object({

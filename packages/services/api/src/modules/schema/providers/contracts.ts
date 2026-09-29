@@ -107,7 +107,6 @@ export class Contracts {
               config: {
                 includeTags: validatedContract.data.includeTags,
                 excludeTags: validatedContract.data.excludeTags,
-                isDisabled: false,
                 removeUnreachableTypesFromPublicApiSchema:
                   validatedContract.data.removeUnreachableTypesFromPublicApiSchema,
               },
