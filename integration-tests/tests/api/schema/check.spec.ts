@@ -3,9 +3,7 @@ import {
   ResourceAssignmentModeType,
   RuleInstanceSeverityLevel,
 } from 'testkit/gql/graphql';
-import { GraphStore } from '@hive/api/modules/graph/providers/graph-store';
 import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
-import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { invariant } from '@hive/service-common';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
@@ -2577,7 +2575,8 @@ function connectionString() {
 test.concurrent(
   'checking a valid schema onto a broken schema succeeds (prior schema has deprecated non-nullable input)',
   async () => {
-    const { createOrg } = await initSeed().createOwner();
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
@@ -2599,7 +2598,7 @@ test.concurrent(
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
     const schemaVersions = new SchemaVersionStore(storage.pool);
-    const graphStore = new GraphStore(new NoopLogger(), storage.pool);
+    const graphStore = await seed.getGraphStore();
     const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
     invariant(graph, 'Graph must exist.');
     await schemaVersions.createPublishSchemaVersion({
