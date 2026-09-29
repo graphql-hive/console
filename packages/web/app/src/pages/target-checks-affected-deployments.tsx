@@ -130,7 +130,10 @@ function TargetChecksAffectedDeploymentsContent(props: {
   coordinate?: string;
 }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const [endCursors, setEndCursors] = useResetState<string[]>([], [props.schemaCheckId]);
+  const [endCursors, setEndCursors] = useResetState<string[]>([], [
+    props.schemaCheckId,
+    props.coordinate,
+  ]);
 
   const [data] = useQuery({
     query: AffectedDeploymentsQuery,

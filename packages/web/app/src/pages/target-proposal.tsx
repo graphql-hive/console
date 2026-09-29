@@ -472,7 +472,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                         },
                       });
                       // @todo use urqlCache to invalidate the proposal and refresh?
-                      refreshProposal();
+                      refreshProposal({ requestPolicy: 'network-only' });
                     }}
                   />
                 </div>

@@ -39,7 +39,6 @@ export const OrganizationMembersPageQuery = graphql(`
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...OrganizationMembersPage_OrganizationFragment
-      viewerCanSeeMembers
       viewerCanManageRoles
       viewerCanManageInvitations
     }
@@ -204,9 +203,7 @@ export function OrganizationMembersRolesSection() {
 }
 
 export function OrganizationMembersGroupsSection() {
-  const { organizationSlug } = useSlugs('organization');
-  const { organization } = useMembersOrganization(organizationSlug);
-  return organization ? <Groups /> : null;
+  return <Groups />;
 }
 
 export function OrganizationMembersInvitationsSection() {

@@ -154,7 +154,6 @@ export const ProjectAlertsPageQuery = graphql(`
         ...ChannelsTable_AlertChannelFragment
         ...CreateAlertModal_AlertChannelFragment
       }
-      viewerCanModifyAlerts
     }
   }
 `);

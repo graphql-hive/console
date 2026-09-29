@@ -76,8 +76,7 @@ export type DataTableProps<TData> = {
   /**
    * Owned sorting, for a page that sorts on the server. Columns opt in with `meta.sortable`.
    * With `manual` the API always sorts, so a header toggles between descending and ascending
-   * instead of cycling through unsorted. While `loading`, the new order is in flight: the sorted
-   * column's arrow spins and the rows, still the old order, dim.
+   * instead of cycling through unsorted. `loading` spins the sorted header and dims the old rows.
    */
   sorting?: {
     state: SortingState;
@@ -225,7 +224,7 @@ export function DataTable<TData>({
 
   const rows = table.getRowModel().rows;
   const totalColumnCount = columns.length + (hasTrailingColumn ? 1 : 0);
-  const busy = refreshing || !!sorting?.loading;
+  const busy = !loading && (refreshing || !!sorting?.loading);
 
   return (
     <div className={wrapperClass(onSurface, bordered)}>
