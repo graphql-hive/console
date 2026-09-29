@@ -54,7 +54,6 @@ import type { SchemaModuleConfig } from './config';
 import { SCHEMA_MODULE_CONFIG } from './config';
 import {
   Contracts,
-  type Contract,
   type ContractWithLatestValidVersion,
   type ContractWithLatestVersions,
   type ValidContractVersion,
