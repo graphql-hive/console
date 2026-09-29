@@ -2,7 +2,8 @@ import { Hook } from '@oclif/core';
 import { InvalidCommandError } from '../helpers/errors';
 
 const hook: Hook.CommandNotFound = async function (options) {
-  options.context.error(new InvalidCommandError(options.id));
+  const error = new InvalidCommandError(options.id);
+  options.context.error(error, { exit: error.exitCode });
 };
 
 export default hook;

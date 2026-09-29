@@ -1,19 +1,17 @@
-import { GraphQLError } from 'graphql';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
-  InvalidSDLError,
   InvalidTargetError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
   UnexpectedError,
 } from '../../helpers/errors';
-import { loadSchema, minifySchema } from '../../helpers/schema';
+import { loadSchemaSdl, minifySchema } from '../../helpers/schema';
 import * as TargetInput from '../../helpers/target-input';
-import { invariant } from '../../helpers/validation';
 
 const schemaPushMutation = graphql(/* GraphQL */ `
   mutation CLI_SchemaPushMutation($input: SchemaPushInput!) {
@@ -91,8 +89,7 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
           description: SchemaPush.flags['registry.endpoint'].description!,
         });
       } catch (error) {
-        this.logDebug(error);
-        throw new MissingEndpointError();
+        throw error instanceof MissingArgumentsError ? new MissingEndpointError() : error;
       }
       try {
         accessToken = this.ensure({
@@ -103,8 +100,7 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
           description: SchemaPush.flags['registry.accessToken'].description!,
         });
       } catch (error) {
-        this.logDebug(error);
-        throw new MissingRegistryTokenError();
+        throw error instanceof MissingArgumentsError ? new MissingRegistryTokenError() : error;
       }
 
       const target = TargetInput.parse(flags.target);
@@ -112,19 +108,7 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
         throw new InvalidTargetError();
       }
 
-      let sdl: string;
-      try {
-        const rawSdl = await loadSchema('first-federation-then-graphql-introspection', args.file, {
-          logger: this.logger,
-        });
-        invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
-        sdl = minifySchema(rawSdl);
-      } catch (error) {
-        if (error instanceof GraphQLError) {
-          throw new InvalidSDLError(error);
-        }
-        throw error;
-      }
+      const sdl = minifySchema(await loadSchemaSdl(args.file, { logger: this.logger }));
 
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: schemaPushMutation,
@@ -140,7 +124,7 @@ export default class SchemaPush extends Command<typeof SchemaPush> {
       });
 
       if (result.schemaPush.error) {
-        throw new APIError(result.schemaPush.error.message);
+        throw new APIError(`Revision rejected by the server: ${result.schemaPush.error.message}`);
       }
       if (!result.schemaPush.ok) {
         throw new APIError('Schema push returned no result.');

@@ -6,6 +6,7 @@ import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
   InvalidTargetError,
+  MissingArgumentsError,
   MissingEndpointError,
   MissingRegistryTokenError,
 } from '../../helpers/errors';
@@ -53,8 +54,7 @@ export default class AppRetire extends Command<typeof AppRetire> {
         description: AppRetire.flags['registry.endpoint'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingEndpointError();
+      throw e instanceof MissingArgumentsError ? new MissingEndpointError() : e;
     }
 
     try {
@@ -65,8 +65,7 @@ export default class AppRetire extends Command<typeof AppRetire> {
         description: AppRetire.flags['registry.accessToken'].description!,
       });
     } catch (e) {
-      this.logDebug(e);
-      throw new MissingRegistryTokenError();
+      throw e instanceof MissingArgumentsError ? new MissingRegistryTokenError() : e;
     }
 
     let target: GraphQLSchema.TargetReferenceInput | null = null;

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
+import { InvalidConfigError } from './errors';
 
 const LegacyConfigModel = z.object({
   registry: z.string().optional(),
@@ -75,8 +76,10 @@ export const graphqlEndpoint = 'https://app.graphql-hive.com/graphql';
 export class Config {
   private cache?: ConfigModelType;
   private filepath: string;
+  private isExplicitFilepath: boolean;
 
   constructor({ filepath, rootDir }: { filepath?: string; rootDir: string }) {
+    this.isExplicitFilepath = !!filepath;
     if (filepath) {
       this.filepath = filepath;
     } else {
@@ -102,62 +105,116 @@ export class Config {
     return current as GetZodValueType<TKey, typeof ConfigModel>;
   }
 
-  private readSpace(content: Record<string, any>) {
+  private readSpace(content: unknown): unknown {
     // eslint-disable-next-line no-process-env
     const space = process.env.HIVE_SPACE;
 
+    if (!content || typeof content !== 'object' || Array.isArray(content)) {
+      throw new InvalidConfigError(this.filepath, 'Expected a JSON object.');
+    }
+
     if (space) {
-      return content[space];
+      if (!(space in content)) {
+        throw new InvalidConfigError(
+          this.filepath,
+          `The space "${space}" set with HIVE_SPACE does not exist.`,
+        );
+      }
+      return (content as Record<string, unknown>)[space];
     }
 
     if ('default' in content) {
-      return content['default'];
+      return (content as Record<string, unknown>)['default'];
     }
 
     return content;
   }
 
-  private read() {
-    try {
-      if (!this.cache) {
-        const space: unknown = this.readSpace(JSON.parse(fs.readFileSync(this.filepath, 'utf-8')));
-
-        const legacyConfig = LegacyConfigModel.safeParse(space);
-        if (legacyConfig.success) {
-          this.cache = {
-            registry: {
-              endpoint: legacyConfig.data.registry,
-              accessToken: legacyConfig.data.token,
-              headers: undefined,
-            },
-            cdn: {
-              endpoint: undefined,
-              accessToken: undefined,
-            },
-          };
-        }
-        const config = ConfigModel.safeParse(space);
-        // TODO: we should probably print a warning/error in case of an invalid config.
-        if (config.success) {
-          this.cache = config.data;
-        } else {
-          throw new Error('Invalid config.');
-        }
-      }
-    } catch (_error) {
-      this.cache = {
-        registry: {
-          endpoint: undefined,
-          accessToken: undefined,
-          headers: undefined,
-        },
-        cdn: {
-          endpoint: undefined,
-          accessToken: undefined,
-        },
-      };
+  private read(): ConfigModelType {
+    if (this.cache) {
+      return this.cache;
     }
 
+    let rawContent: string;
+    try {
+      rawContent = fs.readFileSync(this.filepath, 'utf-8');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code === 'ENOENT' && !this.isExplicitFilepath) {
+        this.cache = emptyConfig();
+        return this.cache;
+      }
+      throw new InvalidConfigError(
+        this.filepath,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+
+    let content: unknown;
+    try {
+      content = JSON.parse(rawContent);
+    } catch (error) {
+      throw new InvalidConfigError(
+        this.filepath,
+        `Invalid JSON. ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+
+    const space = this.readSpace(content);
+
+    if (isLegacyConfig(space)) {
+      const legacyConfig = LegacyConfigModel.safeParse(space);
+      if (!legacyConfig.success) {
+        throw new InvalidConfigError(this.filepath, formatConfigIssues(legacyConfig.error));
+      }
+      this.cache = {
+        ...emptyConfig(),
+        registry: {
+          endpoint: legacyConfig.data.registry,
+          accessToken: legacyConfig.data.token,
+          headers: undefined,
+        },
+      };
+      return this.cache;
+    }
+
+    const config = ConfigModel.safeParse(space);
+    if (!config.success) {
+      throw new InvalidConfigError(this.filepath, formatConfigIssues(config.error));
+    }
+
+    this.cache = config.data;
     return this.cache;
   }
+}
+
+function emptyConfig(): ConfigModelType {
+  return {
+    registry: {
+      endpoint: undefined,
+      accessToken: undefined,
+      headers: undefined,
+    },
+    cdn: {
+      endpoint: undefined,
+      accessToken: undefined,
+    },
+  };
+}
+
+/** The legacy format uses top-level "registry" (string) and "token" keys. */
+function isLegacyConfig(content: unknown): boolean {
+  if (!content || typeof content !== 'object') {
+    return false;
+  }
+  const { registry } = content as Record<string, unknown>;
+  return (
+    typeof registry === 'string' ||
+    ('token' in content && (registry === undefined || registry === null))
+  );
+}
+
+function formatConfigIssues(error: z.ZodError): string {
+  return error.issues
+    .map(issue => `${issue.path.length ? `"${issue.path.join('.')}": ` : ''}${issue.message}`)
+    .join('; ');
 }
