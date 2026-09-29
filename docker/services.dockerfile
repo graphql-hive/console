@@ -16,6 +16,12 @@ WORKDIR /usr/src/app/$SERVICE_DIR_NAME
 COPY --from=dist . /usr/src/app/$SERVICE_DIR_NAME/
 COPY --from=shared . /
 
+ARG RELEASE
+ARG IMAGE_TITLE
+ARG IMAGE_DESCRIPTION
+ARG PORT
+ARG HEALTHCHECK_CMD
+
 LABEL org.opencontainers.image.licenses=MIT
 LABEL org.opencontainers.image.title=$IMAGE_TITLE
 LABEL org.opencontainers.image.version=$RELEASE
@@ -25,19 +31,17 @@ LABEL org.opencontainers.image.vendor="Kamil Kisiela"
 LABEL org.opencontainers.image.url="https://github.com/graphql-hive/platform"
 LABEL org.opencontainers.image.source="https://github.com/graphql-hive/platform"
 
-ARG RELEASE
-ARG PORT
-ARG HEALTHCHECK_CMD
-
 ENV ENVIRONMENT=production
 ENV RELEASE=$RELEASE
 ENV PORT=$PORT
 ENV HEALTHCHECK_CMD=$HEALTHCHECK_CMD
 
+# The probe must fail when no command was baked in, and must finish before Docker's 5s kill so
+# a hanging service does not leave wget processes behind.
 HEALTHCHECK --interval=5s \
   --timeout=5s \
   --start-period=30s \
   --retries=12 \
-  CMD sh -c "$HEALTHCHECK_CMD"
+  CMD [ -n "$HEALTHCHECK_CMD" ] && timeout 4 sh -c "$HEALTHCHECK_CMD"
 
 ENTRYPOINT ["/entrypoint.sh"]
