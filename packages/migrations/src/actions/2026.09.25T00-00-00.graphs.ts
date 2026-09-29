@@ -1,16 +1,5 @@
 import { type MigrationExecutor } from '../pg-migrator';
 
-// type graphs__config__contract = {
-//   includeTags: Array<string>;
-//   excludeTargs: Array<string>;
-//   removeUnreachableTypesFromPublicApiSchema: boolean;
-//   isDisabled: boolean;
-// };
-
-// type schema_versions__graph_metadata = {
-//   graphId: string;
-//   graphName: string;
-// };
 
 export default {
   name: '2026.09.25T00-00-00.graphs.ts',
