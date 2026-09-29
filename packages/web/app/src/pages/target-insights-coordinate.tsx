@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { differenceInMilliseconds } from 'date-fns';
-import ReactECharts from 'echarts-for-react';
 import {
   ActivityIcon,
   AlertCircleIcon,
@@ -8,10 +7,11 @@ import {
   GlobeIcon,
   TabletSmartphoneIcon,
 } from 'lucide-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { RefreshButton } from '@/components/base/button/refresh-button';
 import { Card } from '@/components/base/card/card';
+import { useChartTheme } from '@/components/base/chart/chart-theme';
+import { TimeSeriesChart } from '@/components/base/chart/time-series-chart';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -27,7 +27,7 @@ import { graphql } from '@/gql';
 import { FieldLevelMetricsDisplayState } from '@/gql/graphql';
 import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { cn, stringToHiveColor, useChartStyles } from '@/lib/utils';
+import { cn, stringToHiveColor } from '@/lib/utils';
 import { getRouteApi, Link } from '@tanstack/react-router';
 
 const coordinateRoute = getRouteApi(
@@ -116,7 +116,7 @@ export const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
 
 function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: number }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const { styles, colors } = useChartStyles();
+  const { colors } = useChartTheme();
   const errorColors = [colors.error, colors.p99, colors.p95, colors.p90, colors.p75];
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: props.dataRetentionInDays,
@@ -144,7 +144,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
       return [];
     }
 
-    return points.map(node => [node.date, node.value]);
+    return points.map<[string, number]>(node => [node.date, node.value]);
   }, [points]);
 
   const resolutionPoints = query.data?.target?.schemaCoordinateStats?.resolutionsOverTime;
@@ -153,7 +153,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
       return [];
     }
 
-    return resolutionPoints.map(node => [node.date, node.value]);
+    return resolutionPoints.map<[string, number]>(node => [node.date, node.value]);
   }, [resolutionPoints]);
 
   const errorPoints = query.data?.target?.schemaCoordinateStats?.failuresOverTime;
@@ -162,7 +162,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
       return [];
     }
 
-    return errorPoints.map(node => [node.date, node.value]);
+    return errorPoints.map<[string, number]>(node => [node.date, node.value]);
   }, [errorPoints]);
 
   const errorCodesOverTime = useMemo(() => {
@@ -328,145 +328,27 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
               title="Activity"
               description={<>GraphQL requests with {props.coordinate} over time</>}
             >
-              <AutoSizer disableHeight>
-                {size => (
-                  <ReactECharts
-                    style={{ width: size.width, height: 200 }}
-                    option={{
-                      ...styles,
-                      grid: {
-                        left: 20,
-                        top: 5,
-                        right: 5,
-                        bottom: 5,
-                        containLabel: true,
-                      },
-                      tooltip: {
-                        trigger: 'axis',
-                      },
-                      legend: {
-                        show: false,
-                      },
-                      xAxis: [
-                        {
-                          type: 'time',
-                          boundaryGap: false,
-                        },
-                      ],
-                      yAxis: [
-                        {
-                          type: 'value',
-                          min: 0,
-                          splitLine: {
-                            lineStyle: {
-                              color: colors.grid,
-                              type: 'dashed',
-                            },
-                          },
-                          axisLabel: {
-                            formatter: (value: number) => formatNumber(value),
-                          },
-                        },
-                      ],
-                      series: [
-                        {
-                          type: 'line',
-                          name: 'Requests',
-                          showSymbol: false,
-                          smooth: false,
-                          color: colors.primary,
-                          areaStyle: {},
-                          emphasis: {
-                            focus: 'series',
-                          },
-                          large: true,
-                          data: requestsOverTime,
-                        },
-                      ],
-                    }}
-                  />
-                )}
-              </AutoSizer>
+              <TimeSeriesChart
+                  kind="area"
+                  valueFormatter={formatNumber}
+                  series={[{ name: 'Requests', data: requestsOverTime }]}
+                />
               <div className={cn('pt-5', showFieldLevelMetrics ? 'show' : 'hidden')}>
                 <p className="text-fg-secondary text-control pb-4">
                   Number of times the coordinate {props.coordinate} has resolved over time
                 </p>
-                <AutoSizer disableHeight>
-                  {size => (
-                    <ReactECharts
-                      style={{ width: size.width, height: 200 }}
-                      option={{
-                        ...styles,
-                        grid: {
-                          left: 20,
-                          top: 5,
-                          right: 5,
-                          bottom: 5,
-                          containLabel: true,
-                        },
-                        tooltip: {
-                          trigger: 'axis',
-                        },
-                        legend: {
-                          show: false,
-                        },
-                        xAxis: [
-                          {
-                            type: 'time',
-                            boundaryGap: false,
-                          },
-                        ],
-                        yAxis: [
-                          {
-                            type: 'value',
-                            min: 0,
-                            splitLine: {
-                              lineStyle: {
-                                color: colors.grid,
-                                type: 'dashed',
-                              },
-                            },
-                            axisLabel: {
-                              formatter: (value: number) => formatNumber(value),
-                            },
-                          },
-                        ],
-                        series: [
-                          resolutionsOverTime?.length
-                            ? {
-                                type: 'line',
-                                name: 'Resolutions',
-                                showSymbol: false,
-                                smooth: false,
-                                color: colors.primary,
-                                areaStyle: {},
-                                emphasis: {
-                                  focus: 'series',
-                                },
-                                large: true,
-                                data: resolutionsOverTime,
-                              }
-                            : undefined,
-                          errorsOverTime?.length
-                            ? {
-                                type: 'line',
-                                name: 'Errors',
-                                showSymbol: false,
-                                smooth: false,
-                                color: colors.error,
-                                areaStyle: {},
-                                emphasis: {
-                                  focus: 'series',
-                                },
-                                large: true,
-                                data: errorsOverTime,
-                              }
-                            : undefined,
-                        ],
-                      }}
-                    />
-                  )}
-                </AutoSizer>
+                <TimeSeriesChart
+                  kind="area"
+                  valueFormatter={formatNumber}
+                  series={[
+                    ...(resolutionsOverTime.length
+                      ? [{ name: 'Resolutions', data: resolutionsOverTime, color: colors.primary }]
+                      : []),
+                    ...(errorsOverTime.length
+                      ? [{ name: 'Errors', data: errorsOverTime, color: colors.error }]
+                      : []),
+                  ]}
+                />
               </div>
             </Card>
           </div>
@@ -598,63 +480,15 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                   title="Error Activity"
                   description={<>Error codes returned by {props.coordinate} over time</>}
                 >
-                  <AutoSizer disableHeight>
-                    {size => (
-                      <ReactECharts
-                        style={{ width: size.width, height: 200 }}
-                        option={{
-                          ...styles,
-                          grid: {
-                            left: 20,
-                            top: 5,
-                            right: 5,
-                            bottom: 5,
-                            containLabel: true,
-                          },
-                          tooltip: {
-                            trigger: 'axis',
-                          },
-                          legend: {
-                            show: false,
-                          },
-                          xAxis: [
-                            {
-                              type: 'time',
-                              boundaryGap: false,
-                            },
-                          ],
-                          yAxis: [
-                            {
-                              type: 'value',
-                              min: 0,
-                              splitLine: {
-                                lineStyle: {
-                                  color: colors.grid,
-                                  type: 'dashed',
-                                },
-                              },
-                              axisLabel: {
-                                formatter: (value: number) => formatNumber(value),
-                              },
-                            },
-                          ],
-                          series: Object.keys(errorCodesOverTime).map((errorCode, i) => ({
-                            type: 'bar',
-                            name: errorCode ?? 'undefined',
-                            showSymbol: false,
-                            smooth: false,
-                            color: i < 5 ? errorColors[i] : stringToHiveColor(errorCode),
-                            areaStyle: {},
-                            emphasis: {
-                              focus: 'series',
-                            },
-                            large: true,
-                            data: errorCodesOverTime[errorCode],
-                          })),
-                        }}
-                      />
-                    )}
-                  </AutoSizer>
+                  <TimeSeriesChart
+                    kind="bar"
+                    valueFormatter={formatNumber}
+                    series={Object.keys(errorCodesOverTime).map((errorCode, i) => ({
+                      name: errorCode,
+                      data: errorCodesOverTime[errorCode],
+                      color: i < 5 ? errorColors[i] : stringToHiveColor(errorCode),
+                    }))}
+                  />
                 </Card>
               </div>
             </>
