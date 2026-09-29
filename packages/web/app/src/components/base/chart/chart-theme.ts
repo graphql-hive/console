@@ -9,14 +9,12 @@ import type {
 import { createAdaptiveTimeFormatter } from '@/lib/date-time';
 import { useChartStyles } from '@/lib/utils';
 
-export type LegendPosition = 'top' | 'bottom';
-
 /** `formatNumber` returns small counts as numbers, so both are accepted. */
 export type ValueFormatter = (value: number) => string | number;
 
 type ChartColors = ReturnType<typeof useChartStyles>['colors'];
 
-// Room for one legend row plus its gap to the plot or the axis labels.
+// Room under the axis labels for one legend row.
 const LEGEND_SPACE = 32;
 
 function buildChartTheme(colors: ChartColors) {
@@ -27,19 +25,19 @@ function buildChartTheme(colors: ChartColors) {
     colors,
     axisLabel,
 
-    grid(legend?: LegendPosition | false): GridComponentOption {
+    grid(withLegend = false): GridComponentOption {
       return {
         left: 0,
         right: 8,
-        top: legend === 'top' ? LEGEND_SPACE : 16,
-        bottom: legend === 'bottom' ? LEGEND_SPACE : 0,
+        top: 16,
+        bottom: withLegend ? LEGEND_SPACE : 0,
         containLabel: true,
       };
     },
 
-    legend(position: LegendPosition): LegendComponentOption {
+    legend(): LegendComponentOption {
       return {
-        [position]: 0,
+        bottom: 0,
         left: 'center',
         icon: 'roundRect',
         itemWidth: 8,
