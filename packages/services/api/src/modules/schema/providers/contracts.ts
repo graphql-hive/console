@@ -313,9 +313,7 @@ export class Contracts {
       for (const contract of contracts) {
         map.set(contract.id, {
           contract,
-          graph:
-            contractGraphs.get('default/' + contract.contractName) ??
-            fail('Contract graph must exist.'),
+          graph: contractGraphs.get(contract.id) ?? fail('Contract graph must exist.'),
           latestVersion: null,
           latestValidVersion: null,
         });

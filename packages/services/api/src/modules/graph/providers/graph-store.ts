@@ -167,7 +167,11 @@ export class GraphStore {
     await trx.query(query);
   }
 
-  async findContractGraphsForGraph(baseGraph: Graph) {
+  /**
+   * Find all contract graphs for a given base graph.
+   * Returns a map whose keys is the Graphs ID.
+   */
+  async findContractGraphsForGraph(baseGraph: Graph): Promise<Map<string, ContractGraph>> {
     const query = psql`/* findContractGraphsForBaseGraph*/
       SELECT
         ${graphFields}
@@ -179,13 +183,13 @@ export class GraphStore {
     `;
 
     const records = await this.pg.any(query);
-    const graphsByName = new Map<string, ContractGraph>();
+    const graphsById = new Map<string, ContractGraph>();
     for (const record of records) {
       const graph = ContractGraphModel.parse(record);
-      graphsByName.set(graph.name, graph);
+      graphsById.set(graph.id, graph);
     }
 
-    return graphsByName;
+    return graphsById;
   }
 }
 
