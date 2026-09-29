@@ -1,3 +1,4 @@
+import { withTimeout } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { execute, subscribe } from 'testkit/graphql';
@@ -81,6 +82,7 @@ describe('Schema Proposals', () => {
         },
         token: accessKey,
       });
+      await query.connected;
 
       // create the schema check to trigger the composition and subscription event
       const token = await project.createTargetAccessToken({ mode: 'readWrite' });
@@ -108,7 +110,11 @@ describe('Schema Proposals', () => {
         )
         .then(r => r.expectNoGraphQLErrors());
       expect(checkResultErrors.schemaCheck.__typename).toBe(`SchemaCheckSuccess`);
-      const { value } = await query.next();
+      const { value } = await withTimeout(
+        query.next(),
+        30_000,
+        'Did not receive a schemaProposalComposition event within 30s.',
+      );
       expect(value.data.schemaProposalComposition.status).toBe(`SUCCESS`);
       await expect(query.return?.()).resolves.toMatchObject({ done: true });
     },

@@ -328,7 +328,7 @@ describe('dev --remote', () => {
     });
 
     const supergraph = tmpFile('graphql');
-    waitForExpectations(async () => {
+    await waitForExpectations(async () => {
       const cmd = cli.dev({
         remote: true,
         services: [

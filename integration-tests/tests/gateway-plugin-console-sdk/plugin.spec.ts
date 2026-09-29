@@ -898,7 +898,7 @@ describe.each(['js', 'rust'] as const)('GraphQL Hive Plugin (%s)', gatewayType =
         },
       },
     });
-    pollFor(async () => {
+    await pollFor(async () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const period = {

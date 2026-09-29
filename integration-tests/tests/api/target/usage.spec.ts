@@ -48,9 +48,6 @@ function prepareBatch(amount: number, operation: CollectedOperation) {
 
 test.concurrent(
   'collect operation and publish schema using WRITE access but read operations and check schema using READ access',
-  {
-    timeout: 15_000,
-  },
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
@@ -3201,7 +3198,7 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
   await waitForRequestsCollected(9801 + 199);
 
   // wait again to ensure the requests have been processed by the clients_daily table
-  waitForExpectations(async () => {
+  await waitForExpectations(async () => {
     const result = await clickHouseQuery(`
       SELECT
         target

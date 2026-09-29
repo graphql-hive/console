@@ -2951,7 +2951,7 @@ test('activeAppDeployments applies OR logic between lastUsedBefore and neverUsed
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  waitForExpectations(async () => {
+  await waitForExpectations(async () => {
     const result = await execute({
       document: GetActiveAppDeployments,
       variables: {
