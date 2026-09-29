@@ -13,7 +13,7 @@ import { CreateAccessTokenState } from '../../../organization/settings/access-to
 import { CreateProjectAccessTokenSheetContent } from './create-project-access-token-sheet-content';
 import { ProjectAccessTokensTable } from './project-access-tokens-table';
 
-const ProjectAccessTokensSubPage_OrganizationQuery = graphql(`
+export const ProjectAccessTokensSubPage_OrganizationQuery = graphql(`
   query ProjectAccessTokensSubPage_OrganizationQuery(
     $organizationSlug: String!
     $projectSlug: String!
@@ -41,8 +41,9 @@ export function ProjectAccessTokensSubPage(): React.ReactNode {
       organizationSlug,
       projectSlug,
     },
-    requestPolicy: 'network-only',
   });
+  // The route revalidates on a visit; after a mutation here, the page asks the server itself.
+  const refetch = () => refetchQuery({ requestPolicy: 'network-only' });
   const [createAccessTokenState, setCreateAccessTokenState] = useState<CreateAccessTokenState>(
     CreateAccessTokenState.closed,
   );
@@ -92,7 +93,7 @@ export function ProjectAccessTokensSubPage(): React.ReactNode {
               onSuccess={privateAccessKey => {
                 setCreatedKey(privateAccessKey);
                 setCreateAccessTokenState(CreateAccessTokenState.closed);
-                refetchQuery();
+                refetch();
               }}
             />
           </>
@@ -121,8 +122,10 @@ export function ProjectAccessTokensSubPage(): React.ReactNode {
         ) : (
           <ProjectAccessTokensTable
             accessTokens={query.data?.organization?.project?.accessTokens ?? null}
-            loading={query.fetching && !query.data?.organization?.project}
-            refetch={refetchQuery}
+            loading={
+              (query.fetching || query.stale) && !query.data?.organization?.project?.accessTokens
+            }
+            refetch={refetch}
           />
         )}
       </div>

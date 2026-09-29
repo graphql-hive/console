@@ -4,6 +4,7 @@ import { CHECKS, checksFixtures } from '@/lib/testing/fixtures/checks';
 import {
   layoutFixtures,
   organizationLayout,
+  projectLayout,
   SLUGS,
   targetLayout,
 } from '@/lib/testing/fixtures/layouts';
@@ -569,13 +570,12 @@ describe('project settings sections', () => {
     'sends a viewer without settings access back to the project',
     { timeout: 30_000 },
     async () => {
-      const { router } = renderSettings(
-        `${SETTINGS}/policy`,
-        projectSettings({
-          viewerCanModifySettings: false,
-          viewerCanManageProjectAccessTokens: false,
-        }),
-      );
+      // The gate reads the layout document; the page document describes the same project.
+      const denied = { viewerCanModifySettings: false, viewerCanManageProjectAccessTokens: false };
+      client.current = createTestClient(layoutFixtures());
+      client.current.fixtures.set('ProjectLayoutQuery', projectLayout(denied));
+      client.current.fixtures.set('ProjectSettingsPageQuery', projectSettings(denied));
+      const { router } = at(`${SETTINGS}/policy`);
       await waitFor(() => expect(router.state.location.pathname).toBe(PROJECT));
     },
   );
