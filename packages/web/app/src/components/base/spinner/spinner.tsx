@@ -32,8 +32,7 @@ type SpinnerProps = {
 
 /**
  * Placement is the parent's job. The wrapper is inline so `text-center` on a table cell and
- * `items-center` on a flex row both position it. Screen readers announce what a live region gains,
- * not its label, so the label is also its text.
+ * `items-center` on a flex row both position it. The label is also sr-only text: live regions announce content, not labels.
  */
 export function Spinner({ label = 'Loading', variants }: SpinnerProps) {
   return (

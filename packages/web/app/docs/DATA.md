@@ -35,8 +35,8 @@ Anything computed from the URL alone is a pure function both sides call, exporte
 `buildGraphQLFilter` for insights, `tracesPageVariables`, `appsVariables`, `proposalsVariables`,
 `versionsPageVariables`, and the `*Sections` functions of the settings and members pages. Anything
 that also depends on the clock is resolved once, by the loader, and returned as loader data: the
-period pages return `{ period, resolution }` from `loaderPeriod` and the overviews return
-`overviewPeriod()`, and the page reads them with `useLoaderData`, so a filter change after the hour
+period pages return the period from `loaderPeriod`, with the resolution where a query takes one, and
+the overviews return `overviewPeriod()`; the page reads them with `useLoaderData`, so a filter change after the hour
 rolls over cannot leave the two on different buckets. `loaderDeps` names the search params a query
 takes, so a change to one of them re-runs the loader and a change to any other (`viewId` on
 insights) does not. A search param that changes on every keystroke does not belong in the URL
@@ -51,10 +51,12 @@ until it settles: the app version's search box writes the URL 500 ms after typin
   documents, settings pages, checks, apps, project alerts and the read-once target pages live here.
 - **`cache-and-network` in a loader** (`revalidate(loader)`): show the cache, revalidate on every
   visit. For data that moves on its own: usage (insights, traces, the explorer views, the overviews,
-  alert activity) and lists other people change (history, proposals, alert rules, groups, tokens,
-  SSO). The page still reads `cache-first`; a component's own `useQuery` never carries
-  `cache-and-network` under a loader, since whichever of the loader's requests lands first would
-  then be revalidated a second time by the page.
+  alert activity) and lists other people change (history, proposals, alert rules, groups, the
+  organization and project token sections, SSO). The target's CDN and registry tokens stay
+  `cache-first`, since their creates and deletes go through updaters. The page still reads
+  `cache-first`; a component's own `useQuery` never carries `cache-and-network` for a document the
+  loader loads, since whichever request lands first would then be revalidated a second time by the
+  page.
 - **Preloads.** `loader.preload` is true when a hover or focus preload runs the loader
   (`defaultPreload: 'intent'`). `revalidate` switches to `cache-first` for it, so a hover only
   warms. The router keeps a preloaded match fresh for 30 s (`defaultPreloadStaleTime`), so on a
@@ -69,9 +71,9 @@ until it settles: the app version's search box writes the URL 500 ms after typin
   request revalidates, at the roll they change and the page joins the new request.
 - **`network-only`** after a mutation whose result no updater can write, to re-execute a list, and
   always explicit: `reexecuteQuery({ requestPolicy: 'network-only' })`. A bare `reexecuteQuery()`
-  takes the hook's policy, which is `cache-first` under a loader, and reads the cache. The proposal's
-  changes document is the one page-owned `network-only` query, for the partial-result trouble its
-  comment describes.
+  takes the hook's policy, which is `cache-first` under a loader, and reads the cache. A few
+  page-owned `network-only` queries remain where their comments say why: the proposal's changes, a
+  group's detail row, the external composition check, the laboratory's current operation.
 - An error result is never cached. `loadQuery` resolves with it rather than throwing, the page's
   `useQuery` sees it and renders `QueryError` as before, and a loader redirects only on an explicit
   answer, never on missing data.
@@ -88,7 +90,8 @@ until it settles: the app version's search box writes the URL 500 ms after typin
 - Each layout route warms its entity document (`OrganizationLayoutQuery`, `ProjectLayoutQuery`,
   `TargetLayoutQuery`: slugs, `viewerCan*`, `latestSchemaVersion.id`, `usageRetentionInDays`). A
   page under it reads the same document through `useLayoutQuery(scope)` instead of selecting those
-  fields again (the explorer reads its retention there), and a loader under it can rely on the same
+  fields again (the explorer views read their retention there rather than from their own documents),
+  and a loader under it can rely on the same
   cache: the `/history` redirect is a cache read, and every permission gate is.
 - The user menu's own organization document is a cache hit once the layout has answered, because the
   layout document spreads the menu's fragment.
@@ -126,8 +129,9 @@ other token connections), the list holds `after` in `useResetState(null, [...fil
 query for the latest cursor reads every page loaded so far, so "load more" is
 `setAfter(pageInfo.endCursor)` and a filter change resets the cursor. The route warms the first page
 with `after: null` and the filters from `loaderDeps`. The checks side list (`src/pages/target-checks.tsx`)
-and the history list are the examples; the tokens and groups tables page through `usePagedConnection`
-over the same merged connection.
+and the history list are the examples; the token tables page through `usePagedConnection` over the
+same merged connection, and the groups list's "Load more" runs the page query for the next cursor
+and reads the merged result.
 
 Two fields deliberately have no resolver. `Organization.members` pages with previous and next, so
 each page replaces the last. `affectedAppDeployments` is read by the affected deployments page at
@@ -135,8 +139,9 @@ each page replaces the last. `affectedAppDeployments` is read by the affected de
 would merge the two. One more footgun: the resolver merges every use of a field whose non-cursor
 arguments match, so a `first: 1` probe with the same filters reads the merged list, not one item.
 Read only its emptiness, or give the probe arguments of its own: the checks probe carries no
-`filters` while the list always passes them, so the two never merge. And a connection with no cursor
-arguments (`schemaProposals`) is the whole list; a "load more" over it only repeats the request.
+`filters` while the list always passes them, so the two never merge. And a document that passes no
+cursor (the proposals list) gets the API's first page; a "load more" over it only repeats the
+request, so the control is gone until the document pages.
 
 ## Loading states
 
@@ -185,7 +190,8 @@ src/routes/with-header.tsx                the viewer's loader and its freshness 
 src/routes/<scope>/route.tsx              the layout loaders; the overviews (overviewPeriod as loader data, revalidate),
                                           support, subscription (a Stripe beforeLoad), project alerts (warm + gate)
 src/routes/<scope>/settings.ts            await + section checks over the page's *Sections function; section
-                                          documents warmed, tokens and SSO revalidating; project adds a layout gate
+                                          documents warmed, organization and project tokens and SSO revalidating;
+                                          project adds a layout gate
 src/routes/organization/members.ts        the layout gate beside the page document; membersSections; the list's
                                           filter as loaderDeps; groups by slug, revalidating
 src/routes/target/route.tsx               the target layout loader; the schema tab warmed
@@ -194,7 +200,7 @@ src/routes/target/insights.tsx            default range, loaderDeps, period as l
 src/routes/target/checks.tsx              warm, loaderDeps on the filters, a child route's own document
 src/routes/target/history.tsx             warm + revalidate the list, await + redirect from a cache read
 src/routes/target/explorer.tsx            a beforeLoad default from the remembered preset, loaderDeps on the range,
-                                          period as loader data, warm + revalidate, the gates
+                                          period as loader data, warm + revalidate, the usage checks read once
 src/routes/target/traces.tsx              default range, loaderDeps on filter + sort + range, period as loader data,
                                           warm + revalidate; the trace detail warmed
 src/routes/target/alerts.tsx              the gate; activity: default range, loaderDeps, period as loader data,
@@ -292,6 +298,7 @@ line each in the spec, since there is no app-scoped vitest project to hold `setu
 (`src/lib/testing/fixtures/`) carry `__typename` on every object below the root, as the server
 would, and are checked against the document they answer: a missing field, including a typename,
 fails with its path named. Two documents that describe the same entity must agree in their fixtures,
-since the cache normalizes them into one. No fake timers, except the clock alone
+since the cache normalizes them into one. Route specs fake no timers, except the clock alone
 (`vi.useFakeTimers({ toFake: ['Date'] })`) when a case needs time to move: timers, the router and
-`waitFor` stay real; a poll under test gets its interval mocked short instead.
+`waitFor` stay real; a poll under test gets its interval mocked short instead. A spec of a hook
+alone, with no router or DOM waits, may fake timers.

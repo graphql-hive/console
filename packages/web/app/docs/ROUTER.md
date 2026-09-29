@@ -33,8 +33,8 @@ a URL moved is an entry in `src/routes/legacy.ts` (see below). Redirects that de
 the URL alone live in `beforeLoad` (`/auth` → sign-in, `/oidc-request` when the provider is off, a
 bare `/insights` → its default range); one that depends on query data awaits the document in the
 route's loader (`/history` → latest version, a viewer landing on a settings or members section they
-may not open, a permission gate on a layout flag; see [DATA.md](./DATA.md)). No page redirects from
-a render effect any more.
+may not open, a permission gate on a layout flag; see [DATA.md](./DATA.md)). No page under a layout
+redirects from a render effect any more; only the root index (`src/pages/index.tsx`) still does.
 
 ## Where things live
 
@@ -160,7 +160,7 @@ For the rest of the route state:
    route component is the page itself unless the route carries a parameter of its own, like
    `$schemaCheckId`, which it then passes as a prop.
 3. Add the item to the target layout's nav (`src/components/layouts/target.tsx`):
-   `{ id: 'thing', label: 'Thing', to: '/$organizationSlug/$projectSlug/$targetSlug/thing', params }`.
+   `{ label: 'Thing', to: '/$organizationSlug/$projectSlug/$targetSlug/thing', params }`.
    Gate it with `visible` if it needs a permission.
 4. Tests: `tree.spec.ts` needs the new id in its snapshot and an example URL; `render.spec.ts`'s
    `pages` table gets `{ url, current: 'Thing' }`.
@@ -220,7 +220,8 @@ with `client` (a `createTestClient`) in router context. Specs that use it mock `
 `@graphql-hive/laboratory`, the laboratory storage and SuperTokens through the stand-ins in
 `src/lib/testing/mocks/`, one `vi.mock` line each in the spec, since there is no app-scoped vitest
 project to hold `setupFiles`. Fixtures for the viewer, layout and user-menu queries, each settings
-screen, checks and insights live in `src/lib/testing/fixtures/` and are checked against the
+and members screen, checks, insights, history, apps, the explorer gates and proposals live in
+`src/lib/testing/fixtures/` and are checked against the
 documents they answer, so a query change that they no longer cover fails with the missing paths
 named. The client runs on the app's own graphcache configuration, so fixtures carry `__typename` on
 every object below the root.

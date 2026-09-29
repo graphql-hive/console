@@ -65,7 +65,7 @@ export function Groups(): React.ReactElement | null {
   const { organizationSlug } = useSlugs('organization');
   const client = useClient();
   const [searchValue, setSearchValue] = useSearchParamsFilter<string>('search', '');
-  // The pages "Load more" fetches merge into this list (Organization.groups in urql-cache.ts).
+  // A page loaded by "Load more" merges into this list (Organization.groups in urql-cache.ts).
   const [query] = useQuery({
     query: Groups_OrganizationGroupQuery,
     variables: groupsVariables(organizationSlug, searchValue || null, null),

@@ -22,7 +22,7 @@ import { organizationRoute } from './route';
 
 type MembersLoader = LoaderContext & { params: { organizationSlug: string } };
 
-// The gate rides the layout document and the page document starts beside it; neither waits.
+// The page document and the layout gate start together; both are awaited.
 async function loadMembers(loader: MembersLoader) {
   const { organizationSlug } = loader.params;
   const page = loadQuery(loader, OrganizationMembersPageQuery, membersVariables(organizationSlug));

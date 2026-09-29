@@ -27,7 +27,6 @@ type ExplorerLoader = LoaderContext & {
   deps: { from?: string; to?: string };
 };
 
-// Usage moves, so every view's period document revalidates; the rest is read once.
 const range = ({ search }: { search: { from?: string; to?: string } }) => ({
   from: search.from,
   to: search.to,

@@ -88,7 +88,7 @@ export const ProposalsQuery = graphql(`
   }
 `);
 
-export function proposalStages(stages?: string[]) {
+function proposalStages(stages?: string[]) {
   return [
     ...(stages ?? [
       SchemaProposalStage.Draft,
@@ -134,7 +134,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
   );
 }
 
-// The API takes no cursor, so this is the whole list; a "load more" only repeated it.
+// The document passes no cursor, so this is the API's first page; a "load more" only repeated it.
 const ProposalsList = (props: {
   filterUserIds?: string[];
   filterStages?: string[];

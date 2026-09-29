@@ -21,7 +21,7 @@ import { projectRoute } from './route';
 
 type SettingsLoader = LoaderContext & { params: { organizationSlug: string; projectSlug: string } };
 
-// The gate rides the layout document and the page document starts beside it; neither waits.
+// The page document and the layout gate start together; both are awaited.
 async function loadSettings(loader: SettingsLoader) {
   const { organizationSlug, projectSlug } = loader.params;
   const slugs = { organizationSlug, projectSlug };
