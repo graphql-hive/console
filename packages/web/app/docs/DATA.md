@@ -113,9 +113,7 @@ the URL until it settles: the app version's search box writes the URL 500 ms aft
   members pages put a layout-flag gate beside the page document as well.
 - **A period lives in the URL.** `defaultRange(range, to)` is the `beforeLoad` that sends a bare URL
   to its default range, so a shared link always says what it shows: the last week for insights,
-  traces and the explorer, the last hour for alert activity. The explorer's default is a function,
-  the preset last picked on any of its four views (`src/components/target/explorer/period.ts`, over
-  localStorage); the URL is the state and storage only remembers. Client, coordinate and operation
+  traces and the explorer, the last hour for alert activity. Client, coordinate and operation
   insights default in `loaderDeps` without a redirect.
 - **Stripe** decides in `beforeLoad` too: the subscription routes redirect to the organization when
   it is not configured.
@@ -185,7 +183,6 @@ src/lib/hooks/use-date-range-controller.ts  loaderPeriod(deps, preset) for a loa
 src/lib/overview-period.ts                overviewPeriod(now?): the overviews' 14-day window as loader data
 src/lib/hooks/use-interval.ts             useInterval(ms, fn): a poll that never fires on mount
 src/components/layouts/page-pending.tsx   PagePending (the router's pending default) and SectionPending
-src/components/target/explorer/period.ts  the explorer's remembered preset, for its bare URL
 src/components/apps/app-filter.tsx        the app version's search term, written to the URL once it settles
 src/routes/with-header.tsx                the viewer's loader and its freshness stamp
 src/routes/<scope>/route.tsx              the layout loaders; the overviews (overviewPeriod as loader data, revalidate),

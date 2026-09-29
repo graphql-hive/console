@@ -25,7 +25,6 @@ vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'
 vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
 
 const EXPLORER = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}/explorer`;
-const REMEMBERED = 'hive:schema-explorer:period-1';
 const LAST_WEEK = { from: 'now-7d', to: 'now' };
 const LAST_MONTH = { from: 'now-30d', to: 'now' };
 
@@ -143,10 +142,6 @@ describe('explorer loaders', () => {
 });
 
 describe('explorer period', () => {
-  afterEach(() => {
-    localStorage.removeItem(REMEMBERED);
-  });
-
   it.each(['', '/unused', '/deprecated', '/User'])(
     'sends a bare URL%s to the last week, replacing the entry',
     { timeout: 30_000 },
@@ -158,13 +153,6 @@ describe('explorer period', () => {
       expect(router.history.length).toBe(1);
     },
   );
-
-  it('sends a bare URL to the preset last picked on any view', { timeout: 30_000 }, async () => {
-    localStorage.setItem(REMEMBERED, JSON.stringify(LAST_MONTH));
-    const router = await loadedAt(`${EXPLORER}/unused`);
-
-    await waitFor(() => expect(router.state.location.search).toEqual(LAST_MONTH));
-  });
 
   it('keeps the filters a bare URL carries through the redirect', { timeout: 30_000 }, async () => {
     const router = await loadedAt(`${EXPLORER}?subgraph=users&meta=owner:team`);
@@ -179,7 +167,7 @@ describe('explorer period', () => {
   });
 
   it(
-    'a preset picked on a view lands in the URL beside the filters and is remembered',
+    'a preset picked on a view lands in the URL beside the filters',
     { timeout: 30_000 },
     async () => {
       const { router } = renderAtUrl(`${EXPLORER}/deprecated?from=now-7d&to=now&subgraph=users`, {
@@ -192,7 +180,6 @@ describe('explorer period', () => {
       await waitFor(() =>
         expect(router.state.location.search).toEqual({ ...LAST_MONTH, subgraph: 'users' }),
       );
-      expect(JSON.parse(localStorage.getItem(REMEMBERED)!)).toEqual(LAST_MONTH);
     },
   );
 });

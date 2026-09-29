@@ -1,4 +1,3 @@
-import { rememberedExplorerPeriod } from '@/components/target/explorer/period';
 import { ExplorerSearch } from '@/components/target/explorer/search-schemas';
 import { TypeFilter_AllTypes } from '@/components/target/explorer/use-explorer-filter-dimensions';
 import { presetLast7Days } from '@/components/ui/date-range-picker';
@@ -38,13 +37,13 @@ function explorerPeriod(loader: ExplorerLoader) {
   return { slugs: { organizationSlug, projectSlug, targetSlug }, period };
 }
 
-// A bare URL takes the preset last picked on any explorer view, so the views share one period.
+// The four views share the range the URL holds; a bare URL takes the last week.
 export const targetExplorerRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'explorer',
   validateSearch: ExplorerSearch.parse,
   beforeLoad: defaultRange(
-    rememberedExplorerPeriod,
+    presetLast7Days.range,
     '/$organizationSlug/$projectSlug/$targetSlug/explorer',
   ),
   loaderDeps: range,
@@ -63,7 +62,7 @@ export const targetExplorerTypeRoute = createRoute({
   path: 'explorer/$typename',
   validateSearch: ExplorerSearch.parse,
   beforeLoad: defaultRange(
-    rememberedExplorerPeriod,
+    presetLast7Days.range,
     '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename',
   ),
   loaderDeps: range,
@@ -90,7 +89,7 @@ export const targetExplorerDeprecatedRoute = createRoute({
   path: 'explorer/deprecated',
   validateSearch: ExplorerSearch.parse,
   beforeLoad: defaultRange(
-    rememberedExplorerPeriod,
+    presetLast7Days.range,
     '/$organizationSlug/$projectSlug/$targetSlug/explorer/deprecated',
   ),
   loaderDeps: range,
@@ -114,7 +113,7 @@ export const targetExplorerUnusedRoute = createRoute({
   path: 'explorer/unused',
   validateSearch: ExplorerSearch.parse,
   beforeLoad: defaultRange(
-    rememberedExplorerPeriod,
+    presetLast7Days.range,
     '/$organizationSlug/$projectSlug/$targetSlug/explorer/unused',
   ),
   loaderDeps: range,
