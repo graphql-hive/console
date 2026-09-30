@@ -1,8 +1,6 @@
 import { ReactElement, useMemo } from 'react';
 import { AlertCircleIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
-import { Card } from '@/components/ui/primitives/card/card';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { OperationsStats } from '@/components/target/insights/stats';
@@ -12,7 +10,9 @@ import { EmptyList } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Card } from '@/components/ui/primitives/card/card';
 import { QueryError } from '@/components/ui/query-error';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';

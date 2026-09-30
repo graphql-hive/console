@@ -11,14 +11,6 @@ import { formatISO } from 'date-fns';
 import { Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/ui/primitives/button/button';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
-import { Navigation } from '@/components/ui/navigation/navigation';
-import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
-import { Spinner } from '@/components/ui/primitives/spinner/spinner';
-import { Switch } from '@/components/ui/primitives/switch/switch';
-import { useToast } from '@/components/ui/primitives/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { SchemaEditor } from '@/components/schema-editor';
@@ -44,16 +36,24 @@ import {
   type GraphqlEndpointFormValues,
 } from '@/components/target/settings/graphql-endpoint-form';
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
+import { Combobox } from '@/components/ui/combobox';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Meta } from '@/components/ui/meta';
+import { Navigation } from '@/components/ui/navigation/navigation';
 import {
   PageLayout,
   PageLayoutContent,
   SubPageLayout,
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { Switch } from '@/components/ui/primitives/switch/switch';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
-import { Combobox } from '@/components/ui/combobox';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
 import {

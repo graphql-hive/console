@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
 import { useMutation } from 'urql';
+import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { Button as BaseButton } from '@/components/ui/primitives/button/button';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { Select } from '@/components/ui/primitives/floating/select/select';
 import { Input } from '@/components/ui/primitives/input/input';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';

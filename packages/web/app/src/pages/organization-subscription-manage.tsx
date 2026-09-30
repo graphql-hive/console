@@ -1,10 +1,5 @@
 import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/ui/primitives/button/button';
-import { Card } from '@/components/ui/primitives/card/card';
-import { Input } from '@/components/ui/primitives/input/input';
-import { PageLead } from '@/components/ui/page-lead';
-import { Slider } from '@/components/ui/primitives/slider/slider';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   BillingPaymentMethodForm,
@@ -15,6 +10,11 @@ import { formatMillionOrBillion } from '@/components/organization/billing/helper
 import { PlanSummary } from '@/components/organization/billing/PlanSummary';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
+import { PageLead } from '@/components/ui/page-lead';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Slider } from '@/components/ui/primitives/slider/slider';
 import { QueryError } from '@/components/ui/query-error';
 import Stat from '@/components/ui/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';

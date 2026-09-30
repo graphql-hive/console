@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import type { FoundryProvider } from 'react-foundry';
 import { RouterProvider } from '@tanstack/react-router';
 import { previewRouter, PreviewSlotProvider } from './foundry.router';
+import { ThemeProvider, useTheme } from './src/components/theme/theme-provider';
 import { TooltipProvider } from './src/components/ui/primitives/floating/tooltip/tooltip';
 import { ToastProvider } from './src/components/ui/primitives/toast/toast';
-import { ThemeProvider, useTheme } from './src/components/theme/theme-provider';
 import './src/index.css';
 
 /**

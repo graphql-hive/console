@@ -1,10 +1,10 @@
 import { ListFilter, X } from 'lucide-react';
 import { Button } from '../../primitives/button/button';
+import { FloatingSearch } from '../../primitives/floating/floating-search';
+import { Menu, type MenuEntry, type MenuSection } from '../../primitives/floating/menu/menu';
 import { FilterContent } from '../filter-dropdown/filter-content';
 import { FilterDropdown } from '../filter-dropdown/filter-dropdown';
 import { TextFilterChip } from '../filter-dropdown/text-filter-chip';
-import { FloatingSearch } from '../../primitives/floating/floating-search';
-import { Menu, type MenuEntry, type MenuSection } from '../../primitives/floating/menu/menu';
 import type {
   FilterDimension,
   ItemsFilterDimension,

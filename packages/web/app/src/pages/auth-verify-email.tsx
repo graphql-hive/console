@@ -2,9 +2,9 @@ import { useCallback, useEffect } from 'react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation } from 'urql';
 import { AuthCard, AuthCardStack } from '@/components/auth';
+import { Meta } from '@/components/ui/meta';
 import { Button } from '@/components/ui/primitives/button/button';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import { Meta } from '@/components/ui/meta';
 import { graphql } from '@/gql';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 

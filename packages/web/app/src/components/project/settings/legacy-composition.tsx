@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import { RefreshCcwIcon } from 'lucide-react';
 import { CombinedError } from 'urql';
+import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import { Button } from '@/components/ui/primitives/button/button';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 

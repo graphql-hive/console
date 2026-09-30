@@ -20,8 +20,6 @@ import {
   type SignUpFormValues,
 } from '@/components/auth/sign-up-form';
 import { SSOForm, SSOFormSchema, type SSOFormValues } from '@/components/auth/sso-form';
-import { Button } from '@/components/ui/primitives/button/button';
-import { Form } from '@/components/ui/primitives/form/form';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { CallSite, InventoryList } from '@/components/inventory/shared';
 import {
@@ -141,6 +139,8 @@ import {
   RegistryTokenFormSchema,
   type RegistryTokenFormValues,
 } from '@/components/target/settings/registry-token-form';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Form } from '@/components/ui/primitives/form/form';
 import {
   UserSettingsForm,
   UserSettingsFormSchema,

@@ -14,9 +14,9 @@ import {
   type NewPasswordFormValues,
   type ResetPasswordFormValues,
 } from '@/components/auth/reset-password-forms';
+import { Meta } from '@/components/ui/meta';
 import { Button } from '@/components/ui/primitives/button/button';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import { Meta } from '@/components/ui/meta';
 import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';

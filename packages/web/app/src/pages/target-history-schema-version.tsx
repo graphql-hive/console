@@ -29,25 +29,25 @@ import {
 } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
-import { Button } from '@/components/ui/primitives/button/button';
-import { CopyChip } from '@/components/ui/primitives/copy-chip/copy-chip';
-import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
-import { FailureCard, formatCount } from '@/components/ui/failure-card/failure-card';
-import { Select } from '@/components/ui/primitives/floating/select/select';
-import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
-import { Legend } from '@/components/ui/primitives/legend/legend';
-import { NotFound } from '@/components/ui/not-found/not-found';
-import { Spinner } from '@/components/ui/primitives/spinner/spinner';
-import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
-import { TabbedView } from '@/components/ui/tabbed-view/tabbed-view';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
 import { File, MultiFileDiff } from '@/components/ui/diffs';
+import { FailureCard, formatCount } from '@/components/ui/failure-card/failure-card';
 import { Link } from '@/components/ui/link';
+import { NotFound } from '@/components/ui/not-found/not-found';
+import { Button } from '@/components/ui/primitives/button/button';
+import { CopyChip } from '@/components/ui/primitives/copy-chip/copy-chip';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Legend } from '@/components/ui/primitives/legend/legend';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { QueryError } from '@/components/ui/query-error';
+import { TabbedView } from '@/components/ui/tabbed-view/tabbed-view';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';

@@ -1,9 +1,9 @@
 import { Lock } from 'lucide-react';
-import { Button } from '@/components/ui/primitives/button/button';
-import { Card } from '@/components/ui/primitives/card/card';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
 import { useRouter } from '@tanstack/react-router';
 
 export function OrganizationOIDCRequestPage(props: { oidcId: string; redirectToPath: string }) {

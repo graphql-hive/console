@@ -10,9 +10,9 @@ import {
   List,
 } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { FailureCard } from '../failure-card/failure-card';
 import { Badge } from '../primitives/badge/badge';
 import { Button } from '../primitives/button/button';
-import { FailureCard } from '../failure-card/failure-card';
 import { Select } from '../primitives/floating/select/select';
 import { Tooltip } from '../primitives/floating/tooltip/tooltip';
 import { Legend } from '../primitives/legend/legend';

@@ -1,5 +1,5 @@
-import { Navigation, type NavigationItem } from '@/components/ui/navigation/navigation';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Navigation, type NavigationItem } from '@/components/ui/navigation/navigation';
 import { useSlugs } from '@/lib/hooks';
 import type { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useLocation } from '@tanstack/react-router';

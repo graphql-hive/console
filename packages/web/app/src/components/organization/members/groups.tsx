@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
+import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
@@ -17,7 +18,6 @@ import { Input } from '@/components/ui/primitives/input/input';
 import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
 import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';

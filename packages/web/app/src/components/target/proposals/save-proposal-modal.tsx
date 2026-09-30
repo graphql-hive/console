@@ -1,9 +1,9 @@
 import { createContext, ReactNode, useContext, useState } from 'react';
 import { Check, TriangleAlert } from 'lucide-react';
 import { useMutation } from 'urql';
-import { Button } from '@/components/ui/primitives/button/button';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { Button } from '@/components/ui/primitives/button/button';
 import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { graphql } from '@/gql';
 import { useNavigate } from '@tanstack/react-router';

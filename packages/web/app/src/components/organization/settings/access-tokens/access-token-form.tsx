@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
+import { Heading } from '@/components/ui/heading';
 import { Select } from '@/components/ui/primitives/floating/select/select';
 import {
   FormControl,
@@ -11,7 +12,6 @@ import {
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
 import { Textarea } from '@/components/ui/primitives/textarea/textarea';
-import { Heading } from '@/components/ui/heading';
 import * as GraphQLSchema from '@/gql/graphql';
 import { expirationPeriods } from './shared-helpers';
 

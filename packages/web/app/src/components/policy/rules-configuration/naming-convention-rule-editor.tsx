@@ -1,7 +1,7 @@
 import { ReactElement, useEffect } from 'react';
 import type { JSONSchema } from 'json-schema-typed';
-import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { useMonacoTheme } from '@/components/theme/theme-provider';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { cn } from '@/lib/utils';
 import MonacoEditor, { type Monaco } from '@monaco-editor/react';
 import { useConfigurationHelper } from '../form-helper';

@@ -1,7 +1,13 @@
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/primitives/button/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/primitives/form/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
 
 /** The slug rules shared by the organization, project and target settings pages. */

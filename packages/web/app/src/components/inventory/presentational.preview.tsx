@@ -3,9 +3,9 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
-import { Text } from '@/components/ui/text';
 import { InlineCode } from '@/components/ui/inline-code';
 import Stat from '@/components/ui/stat';
+import { Text } from '@/components/ui/text';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Presentational';

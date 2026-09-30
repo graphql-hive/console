@@ -9,11 +9,11 @@ import {
   SignInFormSchema,
   type SignInFormValues,
 } from '@/components/auth/sign-in-form';
+import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
+import { Meta } from '@/components/ui/meta';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
-import { Meta } from '@/components/ui/meta';
 import { Text } from '@/components/ui/text';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
 import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';

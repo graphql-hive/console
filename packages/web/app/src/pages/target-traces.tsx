@@ -5,15 +5,6 @@ import { Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
-import { Badge } from '@/components/ui/primitives/badge/badge';
-import { Button } from '@/components/ui/primitives/button/button';
-import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
-import { DataTable, type DataTablePaginationProp } from '@/components/ui/data-table/data-table';
-import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
-import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
-import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
-import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
-import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ChartConfig,
@@ -22,10 +13,19 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
+import { DataTable, type DataTablePaginationProp } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
 import { QueryError } from '@/components/ui/query-error';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';

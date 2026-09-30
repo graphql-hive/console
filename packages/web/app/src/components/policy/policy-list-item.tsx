@@ -1,9 +1,9 @@
 import { ReactElement } from 'react';
 import type { JSONSchema } from 'json-schema-typed';
 import { InfoIcon } from 'lucide-react';
+import { Markdown } from '@/components/ui/markdown';
 import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
-import { Markdown } from '@/components/ui/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
 import { DocsLink } from '../ui/docs-note';

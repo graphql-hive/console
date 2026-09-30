@@ -1,8 +1,8 @@
 import { useMemo, useRef } from 'react';
 import { useQuery } from 'urql';
+import { LayoutContent } from '@/components/layouts/layout-content';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
-import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';

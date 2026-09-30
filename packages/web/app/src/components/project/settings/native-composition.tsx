@@ -1,13 +1,13 @@
 import { useCallback, useState } from 'react';
 import { FlaskConicalIcon, HeartCrackIcon, PartyPopperIcon, RefreshCcwIcon } from 'lucide-react';
 import { CombinedError, useMutation, useQuery } from 'urql';
+import { Link } from '@/components/ui/link';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { Switch } from '@/components/ui/primitives/switch/switch';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import { Link } from '@/components/ui/link';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   NativeFederationCompatibilityStatusType,

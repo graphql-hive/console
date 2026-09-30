@@ -1,5 +1,6 @@
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
+import { Callout } from '@/components/ui/callout';
 import {
   Form,
   FormControl,
@@ -9,7 +10,6 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
-import { Callout } from '@/components/ui/callout';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
 export const COLLECTION_FORM_ID = 'create-collection-form';

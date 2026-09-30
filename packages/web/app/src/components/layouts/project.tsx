@@ -2,16 +2,16 @@ import { ReactNode } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/ui/primitives/button/button';
-import { NotFound, resourceAccessDescription } from '@/components/ui/not-found/not-found';
-import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
-import { useToast } from '@/components/ui/primitives/toast/toast';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import {
   CreateTargetForm,
   CreateTargetFormSchema,
   type CreateTargetFormValues,
 } from '@/components/target/create-target-form';
+import { NotFound, resourceAccessDescription } from '@/components/ui/not-found/not-found';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';

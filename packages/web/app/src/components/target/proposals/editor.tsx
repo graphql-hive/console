@@ -1,12 +1,12 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { Circle, Settings, TriangleAlertIcon, WandSparkles, XIcon } from 'lucide-react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
+import { DiffEditor } from '@/components/ui/diff-editor';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { Select } from '@/components/ui/primitives/floating/select/select';
 import { Input } from '@/components/ui/primitives/input/input';
 import { Tabs } from '@/components/ui/primitives/tabs/tabs';
-import { DiffEditor } from '@/components/ui/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';

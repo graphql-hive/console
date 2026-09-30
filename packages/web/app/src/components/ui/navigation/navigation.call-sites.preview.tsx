@@ -1,10 +1,10 @@
 import { type ReactNode } from 'react';
 import { ChartPieIcon, FileDiffIcon, LinkIcon, ListIcon, PencilIcon, PlusIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
-import { Button } from '@/components/ui/primitives/button/button';
 import { CallSite, CallSiteGroup, InventoryList } from '@/components/inventory/shared';
 import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
 import { RouterAt } from '../../../../foundry.router';
 import { Navigation, type NavigationItem } from './navigation';
 

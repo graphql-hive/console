@@ -1,12 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/ui/primitives/button/button';
-import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
-import { Navigation } from '@/components/ui/navigation/navigation';
-import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
-import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
-import { useToast } from '@/components/ui/primitives/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
@@ -14,18 +8,24 @@ import {
   AuditLogsFormSchema,
   type AuditLogsFormValues,
 } from '@/components/organization/settings/audit-logs-form';
+import { TransferOrganizationOwnershipModal } from '@/components/organization/settings/transfer-ownership-dialog';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { GitHubIcon, SlackIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
+import { Navigation } from '@/components/ui/navigation/navigation';
 import {
   PageLayout,
   PageLayoutContent,
   SubPageLayout,
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
-import { TransferOrganizationOwnershipModal } from '@/components/organization/settings/transfer-ownership-dialog';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';

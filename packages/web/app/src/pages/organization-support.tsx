@@ -2,11 +2,6 @@ import { useCallback } from 'react';
 import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/ui/primitives/button/button';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
-import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
-import { useToast } from '@/components/ui/primitives/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   NEW_TICKET_FORM_ID,
@@ -15,8 +10,13 @@ import {
   type NewTicketFormValues,
 } from '@/components/organization/new-ticket-form';
 import { priorityDescription } from '@/components/organization/support';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';

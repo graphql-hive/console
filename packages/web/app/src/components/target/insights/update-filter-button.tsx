@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useMutation } from 'urql';
+import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { Button as BaseButton } from '@/components/ui/primitives/button/button';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';

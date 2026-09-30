@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { Accordion } from '@/components/ui/primitives/accordion/accordion';
 import { PermissionTable } from '@/components/organization/permission-table';
+import { Accordion } from '@/components/ui/primitives/accordion/accordion';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { PermissionLevelType } from '@/gql/graphql';
 import { ResultOf } from '@graphql-typed-document-node/core';

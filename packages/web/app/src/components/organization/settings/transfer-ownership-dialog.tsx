@@ -1,15 +1,15 @@
 import { ReactElement } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/ui/primitives/button/button';
-import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
-import { useToast } from '@/components/ui/primitives/toast/toast';
 import {
   TRANSFER_OWNERSHIP_FORM_ID,
   TransferOwnershipForm,
   transferOwnershipFormSchema,
   type TransferOwnershipFormValues,
 } from '@/components/organization/settings/transfer-ownership-form';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
 

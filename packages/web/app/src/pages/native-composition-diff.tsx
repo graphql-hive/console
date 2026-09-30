@@ -1,14 +1,14 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { CheckIcon, CopyIcon, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { DiffEditor } from '@/components/ui/diff-editor';
+import { Heading } from '@/components/ui/heading';
+import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { Button } from '@/components/ui/primitives/button/button';
 import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { Tabs } from '@/components/ui/primitives/tabs/tabs';
-import { Heading } from '@/components/ui/heading';
-import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
-import { DiffEditor } from '@/components/ui/diff-editor';
 import { graphql } from '@/gql';
 import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';

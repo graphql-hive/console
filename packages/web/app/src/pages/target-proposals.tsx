@@ -1,7 +1,4 @@
 import { useQuery } from 'urql';
-import { Button } from '@/components/ui/primitives/button/button';
-import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
-import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
 import { stageToColor } from '@/components/target/proposals/util';
@@ -9,6 +6,9 @@ import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
+import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';

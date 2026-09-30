@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/primitives/button/button';
-import { disabledStyle, segmentButton, segmentSeparator } from '@/components/ui/primitives/shared-styles';
+import {
+  disabledStyle,
+  segmentButton,
+  segmentSeparator,
+} from '@/components/ui/primitives/shared-styles';
 import { pluralize } from '@/lib/utils';
 import { Menu } from '../../primitives/floating/menu/menu';
 import { FilterContent } from './filter-content';

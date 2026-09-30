@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { KeyIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';

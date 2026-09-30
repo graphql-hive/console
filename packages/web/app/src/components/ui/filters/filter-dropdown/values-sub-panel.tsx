@@ -2,7 +2,11 @@ import { useMemo, useState } from 'react';
 import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { FloatingSearch } from '../../primitives/floating/floating-search';
 import { MenuItem } from '../../primitives/floating/menu/menu';
-import { floatingEmptyState, floatingScrollArea, menuPanelInset } from '../../primitives/floating/shared-styles';
+import {
+  floatingEmptyState,
+  floatingScrollArea,
+  menuPanelInset,
+} from '../../primitives/floating/shared-styles';
 import { SEARCH_VISIBILITY_THRESHOLD } from './filter-content';
 
 type ValuesSubPanelProps = {

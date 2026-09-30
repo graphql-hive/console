@@ -1,7 +1,7 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { PageLead } from './page-lead';
 import { Badge } from './primitives/badge/badge';
 import { Button } from './primitives/button/button';
-import { PageLead } from './page-lead';
 
 export const nav: NavPath = 'Components/PageLead';
 

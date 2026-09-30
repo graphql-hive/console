@@ -1,9 +1,9 @@
 import { type ReactElement } from 'react';
-import { Button } from '@/components/ui/primitives/button/button';
-import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { Callout } from '@/components/ui/callout';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link } from '@/components/ui/link';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { getDocsUrl } from '@/lib/docs-url';
 
