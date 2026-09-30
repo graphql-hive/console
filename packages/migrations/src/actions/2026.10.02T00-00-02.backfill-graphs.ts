@@ -12,6 +12,7 @@ export default {
       , "config"
       , "source_graph_id"
       , "is_backfilled"
+      , "created_at"
     )
     SELECT
       "projects"."org_id"
@@ -22,6 +23,7 @@ export default {
       , NULL
       , NULL
       , true
+      , "targets"."created_at"
     FROM "targets"
     INNER JOIN "projects" ON "projects"."id" = "targets"."project_id"
     ON CONFLICT ON CONSTRAINT "graphs_target_id_name_key" DO NOTHING;
@@ -36,6 +38,7 @@ export default {
       , "config"
       , "source_graph_id"
       , "is_backfilled"
+      , "created_at"
     )
     SELECT
       "contracts"."id"
@@ -51,6 +54,7 @@ export default {
       )
       , "default_graphs"."id"
       , true
+      , "contracts"."created_at"
     FROM "contracts"
     INNER JOIN "graphs" AS "default_graphs"
       ON "default_graphs"."target_id" = "contracts"."target_id"
