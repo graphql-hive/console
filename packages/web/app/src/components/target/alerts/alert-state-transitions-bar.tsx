@@ -16,16 +16,6 @@ export const ALERT_STATE_LABEL: Record<MetricAlertRuleState, string> = {
   [MetricAlertRuleState.Recovering]: 'Recovering',
 };
 
-export const ALERT_STATE_DOT_COLOR: Record<
-  MetricAlertRuleState,
-  'red' | 'yellow' | 'green' | 'orange'
-> = {
-  [MetricAlertRuleState.Normal]: 'green',
-  [MetricAlertRuleState.Pending]: 'yellow',
-  [MetricAlertRuleState.Firing]: 'red',
-  [MetricAlertRuleState.Recovering]: 'orange',
-};
-
 type StateChange = {
   id: string;
   fromState: MetricAlertRuleState;
