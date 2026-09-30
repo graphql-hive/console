@@ -161,11 +161,6 @@ export function exhaustiveGuard(_value: never): never {
   );
 }
 
-// Validation
-export function isValidUUID(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
-}
-
 type Truthy<T> = T extends false | '' | 0 | null | undefined ? never : T; // from lodash
 
 export function truthy<T>(value: T): value is Truthy<T> {
