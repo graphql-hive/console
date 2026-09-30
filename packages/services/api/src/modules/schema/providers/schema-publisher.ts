@@ -2123,6 +2123,7 @@ export class SchemaPublisher {
                 contractNames:
                   contracts
                     ?.values()
+                    .filter(contract => contract.latestVersion !== null)
                     .map(contract => contract.contract.contractName)
                     .toArray() ?? null,
               }
