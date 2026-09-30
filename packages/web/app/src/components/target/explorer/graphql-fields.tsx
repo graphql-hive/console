@@ -1,4 +1,4 @@
-import { Popover } from '@/components/base/floating/popover/popover';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   DeprecationNote,

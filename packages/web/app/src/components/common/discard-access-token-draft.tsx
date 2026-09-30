@@ -1,4 +1,4 @@
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
 
 type DiscardAccessTokenDraftProps = {
   open: boolean;

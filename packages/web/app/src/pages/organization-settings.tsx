@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Navigation } from '@/components/base/navigation/navigation';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { useToast } from '@/components/base/toast/toast';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { Navigation } from '@/components/ui/navigation/navigation';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {

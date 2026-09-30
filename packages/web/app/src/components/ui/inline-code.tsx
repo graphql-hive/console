@@ -1,5 +1,5 @@
 import { CopyIcon } from 'lucide-react';
-import { useToast } from '@/components/base/toast/toast';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 
 export const InlineCode = (props: { content: string }) => {
   const { toast } = useToast();

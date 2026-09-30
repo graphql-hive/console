@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { AlertsTable, AlertsTable_AlertFragment } from '@/components/project/alerts/alerts-table';
 import {

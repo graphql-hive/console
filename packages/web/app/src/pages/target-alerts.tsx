@@ -1,4 +1,4 @@
-import { Navigation } from '@/components/base/navigation/navigation';
+import { Navigation } from '@/components/ui/navigation/navigation';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { Meta } from '@/components/ui/meta';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';

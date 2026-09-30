@@ -1,6 +1,6 @@
 import { ReactElement, useEffect } from 'react';
 import { InfoIcon } from 'lucide-react';
-import { Popover } from '@/components/base/floating/popover/popover';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { Combobox } from '@/components/ui/combobox';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';

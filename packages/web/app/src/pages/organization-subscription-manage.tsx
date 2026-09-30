@@ -1,10 +1,10 @@
 import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
-import { Input } from '@/components/base/input/input';
-import { PageLead } from '@/components/base/page-lead';
-import { Slider } from '@/components/base/slider/slider';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { Input } from '@/components/ui/primitives/input/input';
+import { PageLead } from '@/components/ui/page-lead';
+import { Slider } from '@/components/ui/primitives/slider/slider';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   BillingPaymentMethodForm,

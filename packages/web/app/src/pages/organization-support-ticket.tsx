@@ -2,9 +2,9 @@ import { useCallback, useMemo } from 'react';
 import { ChevronRightIcon, UserIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { NotFound } from '@/components/base/not-found/not-found';
-import { useToast } from '@/components/base/toast/toast';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { NotFound } from '@/components/ui/not-found/not-found';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ReplyTicketForm,

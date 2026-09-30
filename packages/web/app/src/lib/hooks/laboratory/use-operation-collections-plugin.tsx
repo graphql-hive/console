@@ -8,12 +8,12 @@ import {
   SquareTerminalIcon,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Accordion } from '@/components/base/accordion/accordion';
-import { Button } from '@/components/base/button/button';
-import { Menu } from '@/components/base/floating/menu/menu';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
-import { useToast } from '@/components/base/toast/toast';
+import { Accordion } from '@/components/ui/primitives/accordion/accordion';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Menu } from '@/components/ui/primitives/floating/menu/menu';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { CreateCollectionModal } from '@/components/target/laboratory/create-collection-modal';
 import { DeleteCollectionModal } from '@/components/target/laboratory/delete-collection-modal';
 import { DeleteOperationModal } from '@/components/target/laboratory/delete-operation-modal';

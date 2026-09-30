@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { CheckIcon, XIcon } from 'lucide-react';
 import { useMutation } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   createResourceSelectionFromResourceAssignment,

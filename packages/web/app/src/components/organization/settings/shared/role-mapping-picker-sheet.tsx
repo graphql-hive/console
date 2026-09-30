@@ -1,5 +1,5 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { Heading } from '@/components/ui/heading';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { MemberRoleSelector } from '../../members/member-role-selector';

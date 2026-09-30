@@ -16,19 +16,19 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { DescriptionList } from '@/components/base/description-list/description-list';
-import { FailureCard, formatCount } from '@/components/base/failure-card/failure-card';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Select } from '@/components/base/floating/select/select';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Label } from '@/components/base/label/label';
-import { Legend } from '@/components/base/legend/legend';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { Spinner } from '@/components/base/spinner/spinner';
-import { Switch } from '@/components/base/switch/switch';
-import { TabbedView, type TabbedViewItem } from '@/components/base/tabs/tabbed-view';
-import { Textarea } from '@/components/base/textarea/textarea';
+import { Button } from '@/components/ui/primitives/button/button';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { FailureCard, formatCount } from '@/components/ui/failure-card/failure-card';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Label } from '@/components/ui/primitives/label/label';
+import { Legend } from '@/components/ui/primitives/legend/legend';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { Switch } from '@/components/ui/primitives/switch/switch';
+import { TabbedView, type TabbedViewItem } from '@/components/ui/tabbed-view/tabbed-view';
+import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import {
   ChangesBlock,
   CompositionErrorsList,

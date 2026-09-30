@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from 'urql';
-import { Filters } from '@/components/base/floating/filter-menu/filters';
-import { PageLead } from '@/components/base/page-lead';
+import { Filters } from '@/components/ui/filters/filter-menu/filters';
+import { PageLead } from '@/components/ui/page-lead';
 import { AlertActivityChart } from '@/components/target/alerts/alert-activity-chart';
 import { useActivityFilterDimensions } from '@/components/target/alerts/alert-activity-filters';
 import {

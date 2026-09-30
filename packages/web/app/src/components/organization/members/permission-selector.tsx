@@ -1,10 +1,10 @@
 import { useMemo, useRef, useState } from 'react';
 import { InfoIcon, TriangleAlert } from 'lucide-react';
-import { Accordion } from '@/components/base/accordion/accordion';
-import { Button } from '@/components/base/button/button';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Select } from '@/components/base/floating/select/select';
-import type { OnSurface } from '@/components/base/shared-styles';
+import { Accordion } from '@/components/ui/primitives/accordion/accordion';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import type { OnSurface } from '@/components/ui/primitives/shared-styles';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { ResultOf } from '@graphql-typed-document-node/core';

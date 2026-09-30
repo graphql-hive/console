@@ -1,11 +1,11 @@
 import React, { ReactElement, ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { ActivityIcon, UsersIcon } from 'lucide-react';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
 import { Markdown } from '@/components/ui/markdown';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, toDecimal, useSlugs } from '@/lib/hooks';

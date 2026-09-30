@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Navigation, type NavigationItem } from '../base/navigation/navigation';
+import { Navigation, type NavigationItem } from '../ui/navigation/navigation';
 
 /** The bar under the organization, project and target headers: base Navigation in the app's chrome. */
 export function SecondaryNavigation({

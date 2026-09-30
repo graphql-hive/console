@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import type * as Urql from 'urql';
-import { ToastProvider } from '@/components/base/toast/toast';
+import { ToastProvider } from '@/components/ui/primitives/toast/toast';
 import { makeFragmentData } from '@/gql';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import {

@@ -1,5 +1,5 @@
-import { Accordion } from '@/components/base/accordion/accordion';
-import { Badge } from '@/components/base/badge/badge';
+import { Accordion } from '@/components/ui/primitives/accordion/accordion';
+import { Badge } from '@/components/ui/primitives/badge/badge';
 import { PermissionTable } from '@/components/organization/permission-table';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { permissionLevelToResourceName } from './shared-helpers';

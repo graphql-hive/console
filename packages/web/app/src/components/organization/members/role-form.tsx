@@ -8,10 +8,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { Textarea } from '@/components/base/textarea/textarea';
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
+import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 
 export const RoleFormSchema = z.object({
   name: z

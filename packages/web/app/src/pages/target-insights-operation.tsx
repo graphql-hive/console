@@ -1,8 +1,8 @@
 import { ReactElement, useMemo } from 'react';
 import { AlertCircleIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { RefreshButton } from '@/components/base/button/refresh-button';
-import { Card } from '@/components/base/card/card';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
+import { Card } from '@/components/ui/primitives/card/card';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { OperationsStats } from '@/components/target/insights/stats';

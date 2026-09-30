@@ -1,7 +1,7 @@
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
-import { StatusDot } from '@/components/base/status-dot/status-dot';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
+import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
 import { stageToColor } from '@/components/target/proposals/util';

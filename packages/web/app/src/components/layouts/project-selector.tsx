@@ -1,4 +1,4 @@
-import { Select } from '@/components/base/floating/select/select';
+import { Select } from '@/components/ui/primitives/floating/select/select';
 import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
 import { graphql, useFragment } from '@/gql';
 import { useViewer } from '@/lib/hooks';

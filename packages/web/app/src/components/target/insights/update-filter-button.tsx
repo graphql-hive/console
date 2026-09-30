@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useMutation } from 'urql';
-import { Button as BaseButton } from '@/components/base/button/button';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { useToast } from '@/components/base/toast/toast';
+import { Button as BaseButton } from '@/components/ui/primitives/button/button';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import type { SavedFilterView } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';

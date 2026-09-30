@@ -1,6 +1,6 @@
 import { CircleAlert } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import {
   AlertForm,
   DEFAULT_ALERT_FORM_VALUES,

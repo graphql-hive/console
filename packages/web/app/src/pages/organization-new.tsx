@@ -2,8 +2,8 @@ import { ReactElement } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { useToast } from '@/components/base/toast/toast';
+import { Button } from '@/components/ui/primitives/button/button';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import {
   CreateOrganizationForm,
   CreateOrganizationFormSchema,

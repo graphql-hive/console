@@ -3,8 +3,8 @@ import type {
   FilterDimension,
   FilterItem,
   FilterSelection,
-} from '@/components/base/floating/filter-menu/types';
-import { urlFilterDimension } from '@/components/base/floating/filter-menu/url-filter';
+} from '@/components/ui/filters/filter-menu/types';
+import { urlFilterDimension } from '@/components/ui/filters/filter-menu/url-filter';
 import {
   selectionsToClients,
   selectionsToOperations,

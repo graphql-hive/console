@@ -1,11 +1,11 @@
 import { format } from 'date-fns';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/app-filter';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { NotFound } from '@/components/base/not-found/not-found';
-import { PageLead } from '@/components/base/page-lead';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { NotFound } from '@/components/ui/not-found/not-found';
+import { PageLead } from '@/components/ui/page-lead';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { BackLink } from '@/components/navigation/back-link';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';

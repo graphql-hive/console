@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery } from 'urql';
-import { Navigation } from '@/components/base/navigation/navigation';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Navigation } from '@/components/ui/navigation/navigation';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { Groups } from '@/components/organization/members/groups';
 import { OrganizationInvitations } from '@/components/organization/members/invitations';

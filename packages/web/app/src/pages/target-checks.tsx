@@ -1,12 +1,12 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Label } from '@/components/base/label/label';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { Spinner } from '@/components/base/spinner/spinner';
-import { StatusDot } from '@/components/base/status-dot/status-dot';
-import { Switch } from '@/components/base/switch/switch';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Label } from '@/components/ui/primitives/label/label';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
+import { Switch } from '@/components/ui/primitives/switch/switch';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';

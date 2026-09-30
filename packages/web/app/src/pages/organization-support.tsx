@@ -2,11 +2,11 @@ import { useCallback } from 'react';
 import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { useToast } from '@/components/base/toast/toast';
+import { Button } from '@/components/ui/primitives/button/button';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   NEW_TICKET_FORM_ID,

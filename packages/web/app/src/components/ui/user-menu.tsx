@@ -13,10 +13,10 @@ import {
   UserRoundMinus,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Avatar } from '@/components/base/avatar/avatar';
-import { Menu } from '@/components/base/floating/menu/menu';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { useToast } from '@/components/base/toast/toast';
+import { Avatar } from '@/components/ui/primitives/avatar/avatar';
+import { Menu } from '@/components/ui/primitives/floating/menu/menu';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { useThemeMenuEntry } from '@/components/theme/theme-switcher';
 import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { LAST_VISITED_ORG_KEY } from '@/constants';

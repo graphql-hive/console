@@ -3,8 +3,16 @@ import { join, relative } from 'node:path';
 
 const SRC = join(__dirname, '..');
 
-// Base components keep the neutral scale for their internal step ladders.
-const ALLOWED = ['components/base/', 'lib/color-tokens.spec.ts'];
+// Primitives, and the composites that came out of the old `base/`, keep the neutral scale for
+// their internal step ladders.
+const ALLOWED = [
+  'components/ui/primitives/',
+  'components/ui/data-table/',
+  'components/ui/filters/',
+  'components/ui/navigation/',
+  'components/ui/tabbed-view/',
+  'lib/color-tokens.spec.ts',
+];
 
 const PALETTES =
   'red|yellow|green|orange|blue|emerald|amber|zinc|indigo|lime|pink|purple|rose|teal|slate|gray|stone|sky|cyan|violet|fuchsia';
@@ -54,7 +62,7 @@ describe('findRawColors', () => {
 });
 
 describe('app source', () => {
-  it('uses semantic color roles outside components/base', () => {
+  it('uses semantic color roles outside components/ui/primitives', () => {
     const files = readdirSync(SRC, { recursive: true, encoding: 'utf8' })
       .filter(file => /\.tsx?$/.test(file))
       .filter(file => !ALLOWED.some(prefix => file.startsWith(prefix)));

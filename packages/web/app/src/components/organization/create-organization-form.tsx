@@ -1,10 +1,10 @@
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 
 export const CreateOrganizationFormSchema = z.object({
   slug: z

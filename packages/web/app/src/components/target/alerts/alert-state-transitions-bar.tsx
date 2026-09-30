@@ -1,4 +1,4 @@
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { MetricAlertRuleState } from '@/gql/graphql';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
 

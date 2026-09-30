@@ -1,5 +1,5 @@
 import { ReactElement, ReactNode } from 'react';
-import { Card } from '@/components/base/card/card';
+import { Card } from '@/components/ui/primitives/card/card';
 import { SchemaEditor, SchemaEditorProps } from '@/components/schema-editor';
 import { usePrettify } from '@/lib/hooks';
 import { Heading } from './heading';

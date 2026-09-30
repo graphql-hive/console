@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { ChartPie, CheckIcon, FileDiffIcon, List, PencilIcon, XIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Navigation, type NavigationItem } from '@/components/ui/navigation/navigation';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {

@@ -1,6 +1,6 @@
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Select } from '@/components/base/floating/select/select';
+import { Select } from '@/components/ui/primitives/floating/select/select';
 import {
   Form,
   FormControl,
@@ -8,8 +8,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
 import type { DocumentCollectionOperation } from '@/lib/hooks/laboratory/use-collections';
 
 export const OperationFormSchema = z.object({

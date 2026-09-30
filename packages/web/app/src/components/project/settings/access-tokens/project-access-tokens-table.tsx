@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useClient } from 'urql';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DeleteAccessTokenConfirmationDialog } from '@/components/organization/settings/access-tokens/delete-access-token-confirmation-dialog';
 import { TokenExpiration } from '@/components/organization/settings/access-tokens/token-expiration';
 import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';

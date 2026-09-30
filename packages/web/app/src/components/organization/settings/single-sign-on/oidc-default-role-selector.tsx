@@ -1,5 +1,5 @@
 import { useMutation } from 'urql';
-import { useToast } from '@/components/base/toast/toast';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RoleSelector } from '../../members/common';
 

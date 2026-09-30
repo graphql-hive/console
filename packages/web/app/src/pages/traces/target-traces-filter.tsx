@@ -10,14 +10,14 @@ import {
 } from 'react';
 import debounce from 'lodash.debounce';
 import { CircleXIcon, PlusIcon } from 'lucide-react';
-import { Badge } from '@/components/base/badge/badge';
-import { Button } from '@/components/base/button/button';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Collapsible } from '@/components/base/collapsible/collapsible';
-import { Input } from '@/components/base/input/input';
-import { Separator } from '@/components/base/separator/separator';
-import { focusRing } from '@/components/base/shared-styles';
-import { Slider } from '@/components/base/slider/slider';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { Collapsible } from '@/components/ui/primitives/collapsible/collapsible';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Separator } from '@/components/ui/primitives/separator/separator';
+import { focusRing } from '@/components/ui/primitives/shared-styles';
+import { Slider } from '@/components/ui/primitives/slider/slider';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 

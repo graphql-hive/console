@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { subMinutes } from 'date-fns';
 import { useQuery } from 'urql';
-import { Select } from '@/components/base/floating/select/select';
-import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
-import { PageLead } from '@/components/base/page-lead';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { NotFound, resourceAccessDescription } from '@/components/ui/not-found/not-found';
+import { PageLead } from '@/components/ui/page-lead';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { BackLink } from '@/components/navigation/back-link';
 import { AlertConditionsPanel } from '@/components/target/alerts/alert-conditions-panel';
 import {

@@ -28,8 +28,8 @@ const previewEnv: Plugin = {
 };
 
 export default defineConfig({
-  // Widened past `base/` so real app components can be previewed too, not just design-system
-  // primitives. Previews of app components render inside the stand-in router in
+  // Widened past `ui/primitives/` so real app components can be previewed too, not just
+  // design-system primitives. Previews of app components render inside the stand-in router in
   // `foundry.router.tsx` and stand in for query data with `makeFragmentData`.
   previews: 'src/components/**/*.preview.tsx',
   title: 'Hive Console Components',
@@ -108,8 +108,8 @@ export default defineConfig({
         { label: 'DescriptionList' },
       ],
     },
-    // The `ui/` primitives (some formerly in `v2/`) queued for migration to `base/`, as they ship
-    // today. Each entry transcribes every real call site, so a replacement can be judged
+    // The legacy `ui/` primitives (some formerly in `v2/`) queued for migration to `ui/primitives/`,
+    // as they ship today. Each entry transcribes every real call site, so a replacement can be judged
     // against the current thing rather than against invented examples, and so there is a
     // coverage checklist to migrate through. Entries are deleted as their component lands.
     {

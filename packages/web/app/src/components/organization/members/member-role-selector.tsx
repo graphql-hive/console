@@ -1,4 +1,4 @@
-import type { OnSurface } from '@/components/base/shared-styles';
+import type { OnSurface } from '@/components/ui/primitives/shared-styles';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RoleSelector } from './common';
 

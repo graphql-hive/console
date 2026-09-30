@@ -2,7 +2,7 @@ import { ReactElement } from 'react';
 import cookies from 'js-cookie';
 import { LogOutIcon } from 'lucide-react';
 import { CombinedError } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import { commonErrorStrings } from '@/components/error';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { cn } from '@/lib/utils';

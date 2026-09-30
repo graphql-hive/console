@@ -1,8 +1,8 @@
 import { Fragment, useMemo } from 'react';
 import { Layers as MetadataIcon, PackageIcon } from 'lucide-react';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { useTheme } from '@/components/theme/theme-provider';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';

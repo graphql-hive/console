@@ -9,9 +9,9 @@ import {
   SignInFormSchema,
   type SignInFormValues,
 } from '@/components/auth/sign-in-form';
-import { Button } from '@/components/base/button/button';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { useToast } from '@/components/base/toast/toast';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { Text } from '@/components/ui/text';

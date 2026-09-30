@@ -1,8 +1,8 @@
 import { memo, ReactElement, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { focusRingQuiet } from '@/components/base/shared-styles';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { focusRingQuiet } from '@/components/ui/primitives/shared-styles';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ExplorerFilteredEmptyState,

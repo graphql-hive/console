@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
 import { Diamond, Info, TriangleAlert } from 'lucide-react';
-import { Accordion } from '@/components/base/accordion/accordion';
-import { Button } from '@/components/base/button/button';
-import { Popover } from '@/components/base/floating/popover/popover';
+import { Accordion } from '@/components/ui/primitives/accordion/accordion';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { MergeStatus } from '@/pages/target-proposal-details';
 import type { Change } from '@graphql-inspector/core';
 import { labelize } from '../history/errors-and-changes';

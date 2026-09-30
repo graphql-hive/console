@@ -1,8 +1,8 @@
 import { ReactElement, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useMutation } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
 import { Section } from '@/components/common';
 import { Heading } from '@/components/ui/heading';
 import { Link } from '@/components/ui/link';

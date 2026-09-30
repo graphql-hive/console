@@ -10,8 +10,8 @@ import {
   SignUpFormSchema,
   type SignUpFormValues,
 } from '@/components/auth/sign-up-form';
-import { Button } from '@/components/base/button/button';
-import { useToast } from '@/components/base/toast/toast';
+import { Button } from '@/components/ui/primitives/button/button';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { env } from '@/env/frontend';

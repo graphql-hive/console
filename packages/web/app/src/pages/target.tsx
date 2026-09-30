@@ -1,10 +1,10 @@
 import { ReactElement } from 'react';
 import { XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Accordion } from '@/components/base/accordion/accordion';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
-import { Select } from '@/components/base/floating/select/select';
+import { Accordion } from '@/components/ui/primitives/accordion/accordion';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { Select } from '@/components/ui/primitives/floating/select/select';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList, noSchema, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';

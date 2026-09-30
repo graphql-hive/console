@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CheckIcon, CopyIcon } from 'lucide-react';
-import { Button } from '@/components/base/button/button';
-import { Input } from '@/components/base/input/input';
-import type { OnSurface } from '@/components/base/shared-styles';
-import { Textarea } from '@/components/base/textarea/textarea';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Input } from '@/components/ui/primitives/input/input';
+import type { OnSurface } from '@/components/ui/primitives/shared-styles';
+import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import { useClipboard } from '@/lib/hooks';
 
 export function InputCopy(props: {

@@ -7,8 +7,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
 import { Callout } from '@/components/ui/callout';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */

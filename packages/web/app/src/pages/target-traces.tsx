@@ -5,15 +5,15 @@ import { Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
-import { Badge } from '@/components/base/badge/badge';
-import { Button } from '@/components/base/button/button';
-import { RefreshButton } from '@/components/base/button/refresh-button';
-import { DataTable, type DataTablePaginationProp } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { DescriptionList } from '@/components/base/description-list/description-list';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
+import { DataTable, type DataTablePaginationProp } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ChartConfig,

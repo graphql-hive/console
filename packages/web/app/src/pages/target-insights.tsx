@@ -1,8 +1,8 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
 import { useMutation, useQuery } from 'urql';
-import { RefreshButton } from '@/components/base/button/refresh-button';
-import { Filters } from '@/components/base/floating/filter-menu/filters';
-import type { FilterItem } from '@/components/base/floating/filter-menu/types';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
+import { Filters } from '@/components/ui/filters/filter-menu/filters';
+import type { FilterItem } from '@/components/ui/filters/filter-menu/types';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';

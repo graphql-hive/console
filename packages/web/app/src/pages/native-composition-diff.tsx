@@ -1,11 +1,11 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { CheckIcon, CopyIcon, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { DescriptionList } from '@/components/base/description-list/description-list';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { StatusDot } from '@/components/base/status-dot/status-dot';
-import { Tabs } from '@/components/base/tabs/tabs';
+import { Button } from '@/components/ui/primitives/button/button';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
+import { Tabs } from '@/components/ui/primitives/tabs/tabs';
 import { Heading } from '@/components/ui/heading';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { DiffEditor } from '@/components/ui/diff-editor';

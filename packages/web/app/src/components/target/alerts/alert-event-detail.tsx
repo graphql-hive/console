@@ -6,8 +6,8 @@ import {
   CircleX,
   ExternalLink,
 } from 'lucide-react';
-import { buttonVariants } from '@/components/base/button/button';
-import { DescriptionList } from '@/components/base/description-list/description-list';
+import { buttonVariants } from '@/components/ui/primitives/button/button';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import {
   MetricAlertRuleDirection,

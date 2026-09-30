@@ -1,6 +1,6 @@
 import { buildSchema } from 'graphql';
 import { useQuery } from 'urql';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { Proposal_ChangeFragment, toUpperSnakeCase } from '@/components/target/proposals';
 import { SchemaDiff } from '@/components/target/proposals/schema-diff/core';
 import { FragmentType, graphql, useFragment } from '@/gql';

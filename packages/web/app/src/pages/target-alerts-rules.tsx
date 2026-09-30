@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { Info } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Badge } from '@/components/base/badge/badge';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { PageLead } from '@/components/base/page-lead';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { PageLead } from '@/components/ui/page-lead';
 import { graphql } from '@/gql';
 import {
   AlertChannelType,

@@ -10,10 +10,10 @@ import {
 } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
-import { RefreshButton } from '@/components/base/button/refresh-button';
-import { Card } from '@/components/base/card/card';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { StatCard } from '@/components/base/stat-card/stat-card';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
+import { StatCard } from '@/components/ui/stat-card/stat-card';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

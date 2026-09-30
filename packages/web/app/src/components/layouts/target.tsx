@@ -1,11 +1,11 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Select } from '@/components/base/floating/select/select';
-import { Label } from '@/components/base/label/label';
-import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Label } from '@/components/ui/primitives/label/label';
+import { NotFound, resourceAccessDescription } from '@/components/ui/not-found/not-found';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link as UiLink } from '@/components/ui/link';
@@ -15,7 +15,7 @@ import { getDocsUrl } from '@/lib/docs-url';
 import { useSlugs, useToggle, useViewer } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
-import { Tabs } from '../base/tabs/tabs';
+import { Tabs } from '../ui/primitives/tabs/tabs';
 import { TargetLayoutQuery } from './queries';
 
 export const TargetLayout = ({ children }: { children: ReactNode }): ReactElement | null => {

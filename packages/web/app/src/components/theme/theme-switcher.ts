@@ -1,5 +1,5 @@
 import { Monitor, Moon, Sun } from 'lucide-react';
-import type { MenuEntry } from '@/components/base/floating/menu/menu';
+import type { MenuEntry } from '@/components/ui/primitives/floating/menu/menu';
 import { useTheme, type Theme } from './theme-provider';
 
 const themes: Array<{ value: Theme; label: string; icon: typeof Sun }> = [

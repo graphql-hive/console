@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import { isChunkLoadError, reloadOnChunkError } from '@/lib/chunk-error';
 import { captureException, flush } from '@sentry/react';
 import { useRouter } from '@tanstack/react-router';

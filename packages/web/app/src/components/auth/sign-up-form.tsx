@@ -8,8 +8,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
 
 export const PasswordStringModel = z
   .string({

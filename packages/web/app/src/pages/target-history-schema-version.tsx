@@ -29,17 +29,17 @@ import {
 } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { CopyChip } from '@/components/base/copy-chip/copy-chip';
-import { DescriptionList } from '@/components/base/description-list/description-list';
-import { FailureCard, formatCount } from '@/components/base/failure-card/failure-card';
-import { Select } from '@/components/base/floating/select/select';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Legend } from '@/components/base/legend/legend';
-import { NotFound } from '@/components/base/not-found/not-found';
-import { Spinner } from '@/components/base/spinner/spinner';
-import { StatusDot } from '@/components/base/status-dot/status-dot';
-import { TabbedView } from '@/components/base/tabs/tabbed-view';
+import { Button } from '@/components/ui/primitives/button/button';
+import { CopyChip } from '@/components/ui/primitives/copy-chip/copy-chip';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { FailureCard, formatCount } from '@/components/ui/failure-card/failure-card';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Legend } from '@/components/ui/primitives/legend/legend';
+import { NotFound } from '@/components/ui/not-found/not-found';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
+import { TabbedView } from '@/components/ui/tabbed-view/tabbed-view';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import {
   ChangesBlock,

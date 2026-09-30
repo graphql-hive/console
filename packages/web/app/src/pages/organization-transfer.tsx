@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { LoaderCircleIcon, LogOutIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { useToast } from '@/components/base/toast/toast';
+import { Button } from '@/components/ui/primitives/button/button';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { HiveLogo } from '@/components/ui/brand-icon';
 import { DottedBackground } from '@/components/ui/dotted-background';
 import { Meta } from '@/components/ui/meta';
