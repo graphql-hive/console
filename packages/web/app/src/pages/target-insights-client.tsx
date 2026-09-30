@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
 import { differenceInMilliseconds } from 'date-fns';
-import ReactECharts from 'echarts-for-react';
 import { ActivityIcon, BookIcon, GlobeIcon, HistoryIcon } from 'lucide-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { RefreshButton } from '@/components/base/button/refresh-button';
 import { Card } from '@/components/base/card/card';
+import { TimeSeriesChart } from '@/components/base/chart/time-series-chart';
 import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
 import { StatCard } from '@/components/base/stat-card/stat-card';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -18,7 +17,6 @@ import { graphql } from '@/gql';
 import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { pick } from '@/lib/object';
-import { useChartStyles } from '@/lib/utils';
 import { getRouteApi, Link } from '@tanstack/react-router';
 
 const clientRoute = getRouteApi(
@@ -62,7 +60,6 @@ export const ClientView_ClientStatsQuery = graphql(`
 
 function ClientView(props: { clientName: string; dataRetentionInDays: number }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const { styles, colors } = useChartStyles();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: props.dataRetentionInDays,
     defaultPreset: presetLast7Days,
@@ -87,7 +84,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
       return [];
     }
 
-    return points.map(node => [node.date, node.value]);
+    return points.map<[string, number]>(node => [node.date, node.value]);
   }, [points]);
 
   const totalRequests = query.data?.target?.clientStats?.totalRequests ?? 0;
@@ -165,65 +162,11 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
               title="Activity"
               description={`GraphQL requests from ${props.clientName} over time`}
             >
-              <AutoSizer disableHeight>
-                {size => (
-                  <ReactECharts
-                    style={{ width: size.width, height: 200 }}
-                    option={{
-                      ...styles,
-                      grid: {
-                        left: 20,
-                        top: 5,
-                        right: 5,
-                        bottom: 5,
-                        containLabel: true,
-                      },
-                      tooltip: {
-                        trigger: 'axis',
-                      },
-                      legend: {
-                        show: false,
-                      },
-                      xAxis: [
-                        {
-                          type: 'time',
-                          boundaryGap: false,
-                        },
-                      ],
-                      yAxis: [
-                        {
-                          type: 'value',
-                          min: 0,
-                          splitLine: {
-                            lineStyle: {
-                              color: colors.grid,
-                              type: 'dashed',
-                            },
-                          },
-                          axisLabel: {
-                            formatter: (value: number) => formatNumber(value),
-                          },
-                        },
-                      ],
-                      series: [
-                        {
-                          type: 'line',
-                          name: 'Requests',
-                          showSymbol: false,
-                          smooth: false,
-                          color: colors.primary,
-                          areaStyle: {},
-                          emphasis: {
-                            focus: 'series',
-                          },
-                          large: true,
-                          data: requestsOverTime,
-                        },
-                      ],
-                    }}
-                  />
-                )}
-              </AutoSizer>
+              <TimeSeriesChart
+                kind="area"
+                valueFormatter={formatNumber}
+                series={[{ name: 'Requests', data: requestsOverTime }]}
+              />
             </Card>
           </div>
         </div>

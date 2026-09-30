@@ -1,13 +1,12 @@
 import { useMemo } from 'react';
 import * as echarts from 'echarts';
 import type { MarkAreaComponentOption, MarkLineComponentOption } from 'echarts';
-import ReactECharts from 'echarts-for-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
+import { Chart } from '@/components/base/chart/chart';
+import { useChartTheme } from '@/components/base/chart/chart-theme';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { MetricAlertRuleMetric, MetricAlertRuleType } from '@/gql/graphql';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
-import { useChartStyles } from '@/lib/utils';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
 import {
   applyThresholdSign,
@@ -111,7 +110,8 @@ export function AlertMetricChart({
   clipToCurrentWindow = false,
   evaluatedAt,
 }: AlertMetricChartProps) {
-  const { colors } = useChartStyles();
+  const theme = useChartTheme();
+  const { colors } = theme;
 
   const {
     requestsOverTime = [],
@@ -328,93 +328,63 @@ export function AlertMetricChart({
     range < dayMs ? { hour: 'numeric', minute: '2-digit' } : { month: 'long', day: 'numeric' },
   );
 
-  const axisLabel = { fontSize: 11, color: colors.axisLabel };
-
   const chart = (
-    <AutoSizer disableHeight>
-      {size => (
-        <ReactECharts
-          style={{ width: size.width, height: 200 }}
-          option={{
-            backgroundColor: 'transparent',
-            // Fixed insets (not `containLabel`) so the status-transitions bar can
-            // mirror the exact plot region.
-            grid: {
-              left: ALERT_CHART_INSET_LEFT,
-              top: 16,
-              right: ALERT_CHART_INSET_RIGHT,
-              bottom: 24,
-              containLabel: false,
+    <Chart
+      height={200}
+      option={{
+        // Fixed insets (not `containLabel`) so the status-transitions bar can
+        // mirror the exact plot region.
+        grid: {
+          left: ALERT_CHART_INSET_LEFT,
+          top: 16,
+          right: ALERT_CHART_INSET_RIGHT,
+          bottom: 24,
+          containLabel: false,
+        },
+        // The y-axis formatter, so the hovered value carries its unit (e.g.
+        // "1.86s" for latency, "2%" for error rate) instead of a bare number.
+        tooltip: theme.tooltip(yAxisFormatter),
+        xAxis: [
+          {
+            type: 'time',
+            axisLine: { show: false },
+            axisTick: { show: false },
+            splitLine: { show: false },
+            axisLabel: {
+              ...theme.axisLabel,
+              // Drop labels that would otherwise overlap. Without this,
+              // narrow ranges (e.g. 30m) cram every bucket's tick label
+              // edge-to-edge ("6:42 PM6:44 PM..."). echarts still picks
+              // a sensible subset on its own once we opt in.
+              hideOverlap: true,
+              formatter: (value: number) => timeFormatter.format(value),
             },
-            tooltip: {
-              trigger: 'axis',
-              backgroundColor: colors.overlayBg,
-              borderColor: colors.overlayBorder,
-              textStyle: { color: colors.overlayText, fontSize: 12 },
-              // Reuse the y-axis formatter so the hovered value carries its unit
-              // (e.g. "1.86s" for latency, "2%" for error rate) instead of a
-              // bare number like "1,862".
-              valueFormatter: (value: number) => yAxisFormatter(value),
+          },
+        ],
+        yAxis: [theme.valueAxis(yAxisFormatter)],
+        series: [
+          {
+            name: seriesName,
+            type: 'line',
+            smooth: false,
+            showSymbol: false,
+            lineStyle: { color: colors.line, width: 1.5 },
+            itemStyle: { color: colors.line },
+            areaStyle: {
+              opacity: 1,
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0.146, color: colors.areaFillFrom },
+                { offset: 0.963, color: colors.areaFillTo },
+              ]),
             },
-            xAxis: [
-              {
-                type: 'time',
-                boundaryGap: false,
-                axisLine: { show: false },
-                axisTick: { show: false },
-                splitLine: { show: false },
-                axisLabel: {
-                  ...axisLabel,
-                  // Drop labels that would otherwise overlap. Without this,
-                  // narrow ranges (e.g. 30m) cram every bucket's tick label
-                  // edge-to-edge ("6:42 PM6:44 PM..."). echarts still picks
-                  // a sensible subset on its own once we opt in.
-                  hideOverlap: true,
-                  formatter: (value: number) => timeFormatter.format(value),
-                },
-              },
-            ],
-            yAxis: [
-              {
-                type: 'value',
-                min: 0,
-                axisLine: { show: false },
-                axisTick: { show: false },
-                splitLine: {
-                  lineStyle: { color: colors.gridSubtle },
-                },
-                axisLabel: {
-                  ...axisLabel,
-                  formatter: (value: number) => yAxisFormatter(value),
-                },
-              },
-            ],
-            series: [
-              {
-                name: seriesName,
-                type: 'line',
-                smooth: false,
-                showSymbol: false,
-                lineStyle: { color: colors.line, width: 1.5 },
-                itemStyle: { color: colors.line },
-                areaStyle: {
-                  opacity: 1,
-                  color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    { offset: 0.146, color: colors.areaFillFrom },
-                    { offset: 0.963, color: colors.areaFillTo },
-                  ]),
-                },
-                emphasis: { disabled: true },
-                large: true,
-                data: displayData,
-                markLine,
-                markArea,
-              },
-            ],
-          }}
-        />
-      )}
-    </AutoSizer>
+            emphasis: { disabled: true },
+            data: [...displayData],
+            markLine,
+            markArea,
+          },
+        ],
+      }}
+    />
   );
 
   if (!isPercentageChange) {
