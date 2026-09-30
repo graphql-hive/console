@@ -80,7 +80,7 @@ function AuthCallback(props: { provider: Provider; redirectToPath: string }) {
   return (
     <AuthCard
       title={providerDetails.success}
-      description="Your are being redirected to Hive Console."
+      description="You are being redirected to Hive Console."
     />
   );
 }
