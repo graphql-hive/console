@@ -82,7 +82,7 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
                 {props.changes.map((change, index) => (
                   <li
                     className={cn(
-                      'border-l-2 pl-4',
+                      'border-l-2 px-4',
                       readChanges.includes(change.href)
                         ? 'border-transparent'
                         : 'border-accent-muted',
@@ -112,7 +112,7 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
                 ))}
               </ol>
             </div>
-            <div className="flex flex-row items-center justify-center">
+            <div className="flex flex-row items-center justify-center pb-5 pt-2">
               <Button
                 variant="link"
                 anchor={{
