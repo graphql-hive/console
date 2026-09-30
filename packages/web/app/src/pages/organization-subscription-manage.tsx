@@ -16,7 +16,7 @@ import { PlanSummary } from '@/components/organization/billing/PlanSummary';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
-import Stat from '@/components/v2/stat';
+import Stat from '@/components/ui/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';

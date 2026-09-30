@@ -11,7 +11,7 @@ import { PageLead } from '@/components/base/page-lead';
 import { useToast } from '@/components/base/toast/toast';
 import { Callout } from '@/components/ui/callout';
 import { SubPageLayout } from '@/components/ui/page-content-layout';
-import { InlineCode } from '@/components/v2/inline-code';
+import { InlineCode } from '@/components/ui/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';

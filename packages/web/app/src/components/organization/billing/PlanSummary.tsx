@@ -1,7 +1,7 @@
 import { ReactElement, ReactNode } from 'react';
 import { DataTable } from '@/components/base/data-table/data-table';
 import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Stat } from '@/components/v2';
+import Stat from '@/components/ui/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 import type { ColumnDef } from '@tanstack/react-table';

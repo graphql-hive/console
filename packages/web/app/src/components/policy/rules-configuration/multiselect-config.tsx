@@ -1,7 +1,7 @@
 import { ReactElement, useEffect } from 'react';
 import { InfoIcon } from 'lucide-react';
 import { Popover } from '@/components/base/floating/popover/popover';
-import { Combobox } from '@/components/v2/combobox';
+import { Combobox } from '@/components/ui/combobox';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 

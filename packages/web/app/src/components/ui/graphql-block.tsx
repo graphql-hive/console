@@ -2,7 +2,7 @@ import { ReactElement, ReactNode } from 'react';
 import { Card } from '@/components/base/card/card';
 import { SchemaEditor, SchemaEditorProps } from '@/components/schema-editor';
 import { usePrettify } from '@/lib/hooks';
-import { Heading } from '../ui/heading';
+import { Heading } from './heading';
 
 export function GraphQLHighlight({
   code,

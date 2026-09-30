@@ -12,7 +12,7 @@ import {
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Callout } from '../ui/callout';
-import { DataWrapper } from '../v2';
+import { DataWrapper } from '@/components/ui/data-wrapper';
 import { PolicyListItem } from './policy-list-item';
 import { PolicyFormSchema, type PolicyFormValues } from './rules-configuration';
 

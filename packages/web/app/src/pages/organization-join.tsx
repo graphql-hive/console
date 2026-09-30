@@ -9,7 +9,7 @@ import { useToast } from '@/components/base/toast/toast';
 import { HiveLogo } from '@/components/ui/brand-icon';
 import { DottedBackground } from '@/components/ui/dotted-background';
 import { Meta } from '@/components/ui/meta';
-import { DataWrapper } from '@/components/v2/data-wrapper';
+import { DataWrapper } from '@/components/ui/data-wrapper';
 import { graphql } from '@/gql';
 import { HiveStripeWrapper } from '@/lib/billing/stripe';
 import { Link, useRouter } from '@tanstack/react-router';

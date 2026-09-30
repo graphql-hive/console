@@ -8,7 +8,7 @@ import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { Tabs } from '@/components/base/tabs/tabs';
 import { Heading } from '@/components/ui/heading';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
-import { DiffEditor } from '@/components/v2';
+import { DiffEditor } from '@/components/ui/diff-editor';
 import { graphql } from '@/gql';
 import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';

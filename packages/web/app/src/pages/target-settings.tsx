@@ -53,7 +53,7 @@ import {
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
-import { Combobox } from '@/components/v2/combobox';
+import { Combobox } from '@/components/ui/combobox';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
 import {

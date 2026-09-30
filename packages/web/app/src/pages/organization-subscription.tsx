@@ -14,7 +14,7 @@ import { OrganizationUsageEstimationView } from '@/components/organization/Usage
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
-import Stat from '@/components/v2/stat';
+import Stat from '@/components/ui/stat';
 import { graphql, useFragment } from '@/gql';
 import { formatNumber, useSlugs } from '@/lib/hooks';
 import { useChartStyles } from '@/lib/utils';

@@ -108,7 +108,7 @@ export default defineConfig({
         { label: 'DescriptionList' },
       ],
     },
-    // The `ui/` and `v2/` primitives queued for migration to `base/`, rendered as they ship
+    // The `ui/` primitives (some formerly in `v2/`) queued for migration to `base/`, as they ship
     // today. Each entry transcribes every real call site, so a replacement can be judged
     // against the current thing rather than against invented examples, and so there is a
     // coverage checklist to migrate through. Entries are deleted as their component lands.

@@ -6,7 +6,7 @@ import { DataTableCell } from '@/components/base/data-table/data-table-cell';
 import { Popover } from '@/components/base/floating/popover/popover';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Skeleton } from '@/components/base/skeleton/skeleton';
-import { Markdown } from '@/components/v2/markdown';
+import { Markdown } from '@/components/ui/markdown';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, toDecimal, useSlugs } from '@/lib/hooks';
 import { capitalize, cn } from '@/lib/utils';

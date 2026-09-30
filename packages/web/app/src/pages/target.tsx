@@ -10,7 +10,7 @@ import { EmptyList, noSchema, NoSchemaVersion } from '@/components/ui/empty-list
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
-import { GraphQLBlock, GraphQLHighlight } from '@/components/v2/graphql-block';
+import { GraphQLBlock, GraphQLHighlight } from '@/components/ui/graphql-block';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';

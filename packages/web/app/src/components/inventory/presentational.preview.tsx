@@ -4,8 +4,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
-import { InlineCode } from '@/components/v2/inline-code';
-import Stat from '@/components/v2/stat';
+import { InlineCode } from '@/components/ui/inline-code';
+import Stat from '@/components/ui/stat';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Presentational';

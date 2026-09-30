@@ -6,7 +6,7 @@ import { Popover } from '@/components/base/floating/popover/popover';
 import { Select } from '@/components/base/floating/select/select';
 import { Input } from '@/components/base/input/input';
 import { Tabs } from '@/components/base/tabs/tabs';
-import { DiffEditor } from '@/components/v2';
+import { DiffEditor } from '@/components/ui/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
