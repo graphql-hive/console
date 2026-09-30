@@ -17,13 +17,8 @@ catalog:
   '@apollo/federation': 0.38.1
   '@aws-sdk/client-s3': 3.1035.0
   '@aws-sdk/credential-providers': 3.1035.0
-  '@base-ui/react': '^1.1.0'
   '@cloudflare/workers-types': 4.20250913.0
   '@date-fns/utc': 2.1.1
-  '@dnd-kit/core': '^6.3.1'
-  '@dnd-kit/modifiers': '^9.0.0'
-  '@dnd-kit/sortable': '^10.0.0'
-  '@dnd-kit/utilities': '^3.2.2'
   '@envelop/types': 5.2.1
   '@faker-js/faker': 10.6.0
   '@fastify/cors': 11.3.0
@@ -32,7 +27,6 @@ catalog:
   '@graphql-inspector/patch': 1.0.0
   '@graphql-tools/merge': 9.2.3
   '@graphql-tools/schema': 10.1.0
-  '@graphql-tools/url-loader': '^9.1.7'
   '@graphql-typed-document-node/core': 3.2.0
   '@graphql-yoga/plugin-response-cache': 3.24.0
   '@graphql-yoga/redis-event-target': 3.0.3
@@ -42,14 +36,11 @@ catalog:
   '@sentry/types': 7.120.2
   '@slack/web-api': 7.10.0
   '@swc/core': 1.13.5
-  '@tanstack/react-router': 1.170.38
-  '@tanstack/react-router-devtools': 1.167.2
   '@theguild/federation-composition': 0.27.0
   '@trpc/client': 10.45.3
   '@trpc/server': 10.45.3
   '@types/async-retry': 1.4.8
   '@types/bcryptjs': 2.4.6
-  '@types/crypto-js': '^4.2.2'
   '@types/ioredis-mock': 8.2.5
   '@types/node': 24.13.3
   '@types/pg': 8.11.10
@@ -85,7 +76,6 @@ catalog:
   react-dom: 18.3.1
   react-foundry: 0.0.16
   reflect-metadata: 0.2.2
-  rimraf: 6.1.3
   snarkdown: 2.0.0
   sonner: '^2.0.7'
   stripe: 17.5.0

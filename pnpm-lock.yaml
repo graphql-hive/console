@@ -18,27 +18,12 @@ catalogs:
     '@aws-sdk/credential-providers':
       specifier: 3.1035.0
       version: 3.1035.0
-    '@base-ui/react':
-      specifier: ^1.1.0
-      version: 1.1.0
     '@cloudflare/workers-types':
       specifier: 4.20250913.0
       version: 4.20250913.0
     '@date-fns/utc':
       specifier: 2.1.1
       version: 2.1.1
-    '@dnd-kit/core':
-      specifier: ^6.3.1
-      version: 6.3.1
-    '@dnd-kit/modifiers':
-      specifier: ^9.0.0
-      version: 9.0.0
-    '@dnd-kit/sortable':
-      specifier: ^10.0.0
-      version: 10.0.0
-    '@dnd-kit/utilities':
-      specifier: ^3.2.2
-      version: 3.2.2
     '@envelop/types':
       specifier: 5.2.1
       version: 5.2.1
@@ -63,9 +48,6 @@ catalogs:
     '@graphql-tools/schema':
       specifier: 10.1.0
       version: 10.1.0
-    '@graphql-tools/url-loader':
-      specifier: ^9.1.7
-      version: 9.1.7
     '@graphql-typed-document-node/core':
       specifier: 3.2.0
       version: 3.2.0
@@ -93,12 +75,6 @@ catalogs:
     '@swc/core':
       specifier: 1.13.5
       version: 1.13.5
-    '@tanstack/react-router':
-      specifier: 1.170.38
-      version: 1.170.38
-    '@tanstack/react-router-devtools':
-      specifier: 1.167.2
-      version: 1.167.2
     '@theguild/federation-composition':
       specifier: 0.27.0
       version: 0.27.0
@@ -114,9 +90,6 @@ catalogs:
     '@types/bcryptjs':
       specifier: 2.4.6
       version: 2.4.6
-    '@types/crypto-js':
-      specifier: ^4.2.2
-      version: 4.2.2
     '@types/ioredis-mock':
       specifier: 8.2.5
       version: 8.2.5
@@ -219,9 +192,6 @@ catalogs:
     reflect-metadata:
       specifier: 0.2.2
       version: 0.2.2
-    rimraf:
-      specifier: 6.1.3
-      version: 6.1.3
     snarkdown:
       specifier: 2.0.0
       version: 2.0.0
@@ -473,7 +443,7 @@ importers:
         specifier: 0.6.9
         version: 0.6.9(@ianvs/prettier-plugin-sort-imports@4.3.1(prettier@3.4.2))(prettier@3.4.2)
       rimraf:
-        specifier: 'catalog:'
+        specifier: 6.1.3
         version: 6.1.3
       tailwindcss:
         specifier: 3.4.17
@@ -949,7 +919,7 @@ importers:
   packages/libraries/laboratory:
     dependencies:
       '@graphql-tools/url-loader':
-        specifier: 'catalog:'
+        specifier: ^9.1.7
         version: 9.1.7(@types/node@24.13.3)(graphql@16.14.2)
       dompurify:
         specifier: 'catalog:'
@@ -971,16 +941,16 @@ importers:
         specifier: ^2.0.4
         version: 2.0.4
       '@dnd-kit/core':
-        specifier: 'catalog:'
+        specifier: ^6.3.1
         version: 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@dnd-kit/modifiers':
-        specifier: 'catalog:'
+        specifier: ^9.0.0
         version: 9.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@dnd-kit/sortable':
-        specifier: 'catalog:'
+        specifier: ^10.0.0
         version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@dnd-kit/utilities':
-        specifier: 'catalog:'
+        specifier: ^3.2.2
         version: 3.2.2(react@18.3.1)
       '@monaco-editor/react':
         specifier: 'catalog:'
@@ -1107,7 +1077,7 @@ importers:
         version: 0.52.2
       monaco-graphql:
         specifier: ^1.7.3
-        version: 1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.4.2)
+        version: 1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.8.1)
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -2221,7 +2191,7 @@ importers:
   packages/web/app:
     devDependencies:
       '@base-ui/react':
-        specifier: 'catalog:'
+        specifier: ^1.1.0
         version: 1.1.0(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@date-fns/utc':
         specifier: 'catalog:'
@@ -2299,10 +2269,10 @@ importers:
         specifier: 5.63.0
         version: 5.63.0(react@18.3.1)
       '@tanstack/react-router':
-        specifier: 'catalog:'
+        specifier: 1.170.38
         version: 1.170.38(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-router-devtools':
-        specifier: 'catalog:'
+        specifier: 1.167.2
         version: 1.167.2(@tanstack/react-router@1.170.38(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tanstack/router-core@1.171.32)(csstype@3.1.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-table':
         specifier: 8.20.6
@@ -2323,7 +2293,7 @@ importers:
         specifier: 1.2.5
         version: 1.2.5(patch_hash=a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7)(@monaco-editor/react@4.8.0-rc.2(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/crypto-js':
-        specifier: 'catalog:'
+        specifier: ^4.2.2
         version: 4.2.2
       '@types/js-cookie':
         specifier: 3.0.6
@@ -2426,7 +2396,7 @@ importers:
         version: 0.52.2
       monaco-graphql:
         specifier: ^1.7.2
-        version: 1.7.3(graphql@16.9.0)(monaco-editor@0.52.2)(prettier@3.4.2)
+        version: 1.7.3(graphql@16.9.0)(monaco-editor@0.52.2)(prettier@3.8.1)
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -34391,21 +34361,21 @@ snapshots:
 
   monaco-editor@0.52.2: {}
 
-  monaco-graphql@1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.4.2):
+  monaco-graphql@1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.8.1):
     dependencies:
       graphql: 16.14.2
       graphql-language-service: 5.5.0(graphql@16.14.2)
       monaco-editor: 0.52.2
       picomatch-browser: 2.2.6
-      prettier: 3.4.2
+      prettier: 3.8.1
 
-  monaco-graphql@1.7.3(graphql@16.9.0)(monaco-editor@0.52.2)(prettier@3.4.2):
+  monaco-graphql@1.7.3(graphql@16.9.0)(monaco-editor@0.52.2)(prettier@3.8.1):
     dependencies:
       graphql: 16.9.0
       graphql-language-service: 5.5.0(graphql@16.9.0)
       monaco-editor: 0.52.2
       picomatch-browser: 2.2.6
-      prettier: 3.4.2
+      prettier: 3.8.1
 
   moo@0.5.2: {}
 
