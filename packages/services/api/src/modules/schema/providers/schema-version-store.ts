@@ -124,7 +124,7 @@ export class SchemaVersionStore {
         )
       VALUES
         (
-          ${args.id ?? psql`uuidv4()`},
+          ${args.id ?? psql`uuid_generate_v4()`},
           '2024-01-10',
           ${args.isComposable},
           ${args.targetId},
