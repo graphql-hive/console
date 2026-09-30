@@ -1,4 +1,4 @@
-import { createStore, del, get, set } from 'idb-keyval';
+import { createStore, get, set } from 'idb-keyval';
 import type { LaboratoryHistory } from '@graphql-hive/laboratory';
 
 const STORE = createStore('hive-laboratory-db', 'history-store');
@@ -41,13 +41,5 @@ export async function saveHistory(history: LaboratoryHistory[]): Promise<void> {
     await set(HISTORY_KEY, history, STORE);
   } catch (err) {
     console.error('[Laboratory] Failed to save history to IndexedDB:', err);
-  }
-}
-
-export async function clearHistory(): Promise<void> {
-  try {
-    await del(HISTORY_KEY, STORE);
-  } catch (err) {
-    console.error('[Laboratory] Failed to clear history from IndexedDB:', err);
   }
 }
