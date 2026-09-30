@@ -2,6 +2,15 @@
 
 Use the commands from `commands.md`. This file maps GitLab's variables onto them.
 
+## Contents
+
+- Secrets and variables
+- Install
+- Flow A: check merge requests, publish on merge
+- Flow B: merge trains
+- Flow C: push on merge, publish at deploy time
+- Flow D: preview target per merge request
+
 ## Secrets and variables
 
 - Store tokens as masked CI/CD variables in the project or group settings. Protected variables are
@@ -19,8 +28,8 @@ Use the commands from `commands.md`. This file maps GitLab's variables onto them
 
 ## Install
 
-Use the CLI image at a pinned version. GitLab runs the job script in a shell, so override the
-image's `hive` entrypoint:
+Use the CLI image at a pinned version (see Install in `commands.md`). GitLab runs the job script in
+a shell, so override the image's `hive` entrypoint:
 
 ```yaml
 .hive:
@@ -67,6 +76,9 @@ hive-publish:
       "$CI_COMMIT_AUTHOR" --fail-on-composition-error
 ```
 
+Without `stage:`, `hive-publish` runs in the first stage. When the pipeline has a deploy job, set
+`stage: deploy` and `needs: [deploy]` so the schema is published only after a successful deploy.
+
 ## Flow B: merge trains
 
 GitLab merge trains (Premium and Ultimate) run each merge request's pipeline on the target branch
@@ -98,8 +110,9 @@ In the deploy job, after the service is live, run the "publish at deploy time" c
 ## Flow D: preview target per merge request
 
 Use a review environment. With merge request pipelines, GitLab runs the environment's `on_stop` job
-automatically when the merge request is merged or closed, which deletes the target. Save the helpers
-from `commands.md` as `scripts/hive-preview.sh`. The CLI image has no curl, so install it:
+automatically when the merge request is merged or closed, which deletes the target. Copy
+`scripts/hive-preview.sh` from this skill into the repository. The CLI image has no curl, so install
+it:
 
 ```yaml
 hive-preview:
@@ -119,7 +132,7 @@ hive-preview:
     - export COMMIT="${CI_MERGE_REQUEST_SOURCE_BRANCH_SHA:-$CI_COMMIT_SHA}"
       AUTHOR="$CI_COMMIT_AUTHOR"
     - . scripts/hive-preview.sh
-    # create if missing, promote, then publish: see "Preview target per pull request" in commands.md
+    - hive_preview_publish
 
 hive-preview-cleanup:
   extends: .hive

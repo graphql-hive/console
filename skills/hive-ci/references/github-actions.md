@@ -3,15 +3,24 @@
 Use the commands from `commands.md`. This file maps GitHub's variables onto them. The workflows in
 the CI/CD guide are the reference: https://the-guild.dev/graphql/hive/docs/other-integrations/ci-cd
 
+## Contents
+
+- Secrets and variables
+- Install
+- Flow A: check pull requests, publish on merge
+- Flow B: merge queue
+- Flow C: push on merge, publish at deploy time
+- Flow D: preview target per pull request
+
 ## Secrets and variables
 
 - Store tokens as repository or organization secrets, and expose them per step:
   `env: HIVE_TOKEN: ${{ secrets.HIVE_CHECK_TOKEN }}`. Use separate tokens for checking and
   publishing.
 - **With the Hive GitHub integration** (`--github`): the CLI reads the commit, the author and the
-  pull request from the event, including `merge_group` events, and reports the result as a
-  check-run. Do not pass `--commit`, `--author` or `--contextId`. The integration must be connected
-  to the organization and the project must be linked to the repository:
+  pull request from the event, including `merge_group` events, and reports the result as a check
+  run. Do not pass `--commit`, `--author` or `--contextId`. The integration must be connected to the
+  organization and the project must be linked to the repository:
   https://the-guild.dev/graphql/hive/docs/schema-registry/management/organizations#github
 - **Without `--github`**, pass them explicitly:
 
@@ -26,7 +35,8 @@ commit instead.
 
 ## Install
 
-Pin the version, as the guide recommends. The guide installs and runs the CLI in the same step:
+GitHub-hosted runners have curl and passwordless sudo, so the install script (see Install in
+`commands.md`) runs in the same step as the CLI, as the CI/CD guide does:
 
 ```yaml
 run: |
@@ -34,8 +44,9 @@ run: |
   hive schema:check ...
 ```
 
-Node.js projects can instead add `@graphql-hive/cli` to `devDependencies` and run `npx hive` after
-installing dependencies.
+Node.js projects: add `@graphql-hive/cli` to `devDependencies` instead (see Install in
+`commands.md`), install dependencies in the job, and replace the install line with the package
+manager, for example `pnpm hive schema:check ...` or `npx hive schema:check ...`.
 
 ## Flow A: check pull requests, publish on merge
 
@@ -81,7 +92,7 @@ jobs:
         env:
           HIVE_TOKEN: ${{ secrets.HIVE_PUBLISH_TOKEN }}
           COMMIT: ${{ github.sha }}
-          AUTHOR:
+          AUTHOR: >-
             ${{ github.event.head_commit.author.name }} <${{ github.event.head_commit.author.email
             }}>
         run: |
@@ -97,13 +108,13 @@ jobs:
 
 Without the Hive GitHub integration, replace `--github` in the check with `--commit`, `--author` and
 `--contextId`, set from the `pull_request` row of the table above. The publish step leaves out
-`--github` on purpose: with CLI 0.66.0 a rejected publish with `--github` still exits with 0.
+`--github` on purpose (SKILL.md, Exit codes and gating).
 
 ## Flow B: merge queue
 
 GitHub's merge queue runs workflows on the `merge_group` event. Add it to the workflow that holds
 the required check, check out the full history, and pass the queue's base commit as the baseline.
-This is the guide's merge queue workflow (CLI 0.62.0 or later):
+This is the CI/CD guide's merge queue workflow:
 
 ```yaml
 on:
@@ -158,7 +169,7 @@ needs the commit SHA that was pushed; the schema file is not needed.
 
 ## Flow D: preview target per pull request
 
-Extend flow A. Save the helpers from `commands.md` as `scripts/hive-preview.sh`, add the `closed`
+Extend flow A. Copy `scripts/hive-preview.sh` from this skill into the repository, add the `closed`
 event, and add a preview job that only runs after the check passes, and a cleanup job for merged
 pull requests:
 
@@ -192,7 +203,7 @@ jobs:
         run: |
           curl -sSL https://graphql-hive.com/install.sh | sh -s "$HIVE_CLI_VERSION"
           . scripts/hive-preview.sh
-          # create if missing, promote, then publish: see "Preview target per pull request" in commands.md
+          hive_preview_publish
 
   cleanup:
     if: github.event.action == 'closed' && github.event.pull_request.merged == true

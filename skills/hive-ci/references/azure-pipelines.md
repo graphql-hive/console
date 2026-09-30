@@ -2,6 +2,15 @@
 
 Use the commands from `commands.md`. This file maps Azure Pipelines' variables onto them.
 
+## Contents
+
+- Secrets and variables
+- Install
+- Flow A: check pull requests, publish on merge
+- Flow B: merge queue
+- Flow C: push on merge, publish at deploy time
+- Flow D: preview target per pull request
+
 ## Secrets and variables
 
 - Store tokens as secret pipeline variables or in a variable group (optionally linked to Azure Key
@@ -29,8 +38,8 @@ Use the commands from `commands.md`. This file maps Azure Pipelines' variables o
 
 ## Install
 
-Microsoft-hosted agents have curl, so use the install script at a pinned version inside the step
-that runs the CLI, or add `@graphql-hive/cli` to `devDependencies` in Node.js projects.
+Microsoft-hosted agents have curl and passwordless sudo, so the install script (see Install in
+`commands.md`) works inside the step that runs the CLI.
 
 ## Flow A: check pull requests, publish on merge
 
@@ -97,9 +106,9 @@ jobs:
 
 ## Flow B: merge queue
 
-Azure Repos has no merge queue. For GitHub repositories that use GitHub's merge queue, run the queue
-check with GitHub Actions (see `github-actions.md`), because Azure Pipelines does not receive the
-queue's base commit or pull request. Otherwise use flow A or C.
+Azure Repos has no merge queue, and Azure Pipelines does not receive the queue's base commit or the
+pull request, so use flow A or C. For GitHub repositories that use GitHub's merge queue, run the
+queue check with GitHub Actions (see `github-actions.md`).
 
 ## Flow C: push on merge, publish at deploy time
 
@@ -110,9 +119,9 @@ into each step with `env:`.
 
 ## Flow D: preview target per pull request
 
-Add a job that runs after `hive_check` in pull request builds (`dependsOn: hive_check`), sources the
-helpers from `commands.md` (saved as `scripts/hive-preview.sh`), and creates, promotes and publishes
-with `PR_NUMBER` from the table above.
+Add a job that runs after `hive_check` in pull request builds (`dependsOn: hive_check`), sources
+`scripts/hive-preview.sh` (copied from this skill into the repository) and runs
+`hive_preview_publish` with `PR_NUMBER` from the table above.
 
 Azure Pipelines has no "pull request merged" trigger. Clean up in the `main` build that runs after
 the merge. Azure Repos' default merge commit message starts with `Merged PR <id>:`:

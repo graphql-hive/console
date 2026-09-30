@@ -2,6 +2,15 @@
 
 Use the commands from `commands.md`. This file maps CircleCI's variables onto them.
 
+## Contents
+
+- Secrets and variables
+- Install
+- Flow A: check pull requests, publish on merge
+- Flow B: merge queue
+- Flow C: push on merge, publish at deploy time
+- Flow D: preview target per pull request
+
 ## Secrets and variables
 
 - Store tokens as project environment variables or in a context, and attach the context to the jobs
@@ -20,8 +29,8 @@ Use the commands from `commands.md`. This file maps CircleCI's variables onto th
 
 ## Install
 
-Use an image with curl and git, such as `cimg/base:current`, and the install script at a pinned
-version. Node.js projects can use `@graphql-hive/cli` from `devDependencies` instead.
+Use an image with curl and git, such as `cimg/base:current`. The `cimg` images have passwordless
+sudo, so the install script (see Install in `commands.md`) works in the step that runs the CLI.
 
 ## Flow A: check pull requests, publish on merge
 
@@ -97,9 +106,9 @@ workflows:
 
 ## Flow B: merge queue
 
-CircleCI has no merge queue of its own. For GitHub repositories that use GitHub's merge queue, run
-the queue check with GitHub Actions (see `github-actions.md`), because CircleCI does not receive the
-queue's base commit or pull request. Otherwise use flow A or C.
+CircleCI does not receive the queue's base commit or the pull request, so use flow A or C. For
+GitHub repositories that use GitHub's merge queue, run the queue check with GitHub Actions (see
+`github-actions.md`).
 
 ## Flow C: push on merge, publish at deploy time
 
@@ -109,9 +118,9 @@ commit and the author from `git log`.
 
 ## Flow D: preview target per pull request
 
-Add a job that `requires: [hive-check]`, runs on the same branches, sources the helpers from
-`commands.md` (saved as `scripts/hive-preview.sh`), and creates, promotes and publishes with
-`PR_NUMBER` from the table above.
+Add a job that `requires: [hive-check]`, runs on the same branches, sources
+`scripts/hive-preview.sh` (copied from this skill into the repository) and runs
+`hive_preview_publish` with `PR_NUMBER` from the table above.
 
 CircleCI has no "pull request merged" trigger. For GitHub repositories, run the cleanup as a GitHub
 Actions workflow on `pull_request: closed` (see `github-actions.md`). Otherwise, clean up in the

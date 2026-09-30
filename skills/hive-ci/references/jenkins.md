@@ -3,6 +3,15 @@
 Use the commands from `commands.md`. This file maps Jenkins' variables onto them. The examples use a
 declarative multibranch pipeline.
 
+## Contents
+
+- Secrets and variables
+- Install
+- Flow A: check pull requests, publish on merge
+- Flow B: merge queue
+- Flow C: push on merge, publish at deploy time
+- Flow D: preview target per pull request
+
 ## Secrets and variables
 
 - Store tokens as "Secret text" credentials, and bind them in the stage that needs them with
@@ -21,19 +30,16 @@ declarative multibranch pipeline.
 
 ## Install
 
-Run on an agent with curl and git, and use the install script at a pinned version. Node.js projects
-can use `@graphql-hive/cli` from `devDependencies` instead.
-
-The install script needs root or passwordless sudo, which many Jenkins agents do not have. On those
-agents, run each Hive stage in the CLI image instead, and drop the install line from the stage. The
-`--entrypoint=` argument clears the image's `hive` entrypoint, so Jenkins can keep the container
-running:
+Run on an agent with curl and git, and use the install script (see Install in `commands.md`). It
+needs root or passwordless sudo, which many Jenkins agents do not have. On those agents, run each
+Hive stage in the CLI image instead, and drop the install line from the stage. The `--entrypoint=`
+argument clears the image's `hive` entrypoint, so Jenkins can keep the container running:
 
 ```groovy
 stage('Hive schema check') {
   agent {
     docker {
-      image 'ghcr.io/graphql-hive/cli:<version>' // pin to the current release
+      image 'ghcr.io/graphql-hive/cli:0.66.0' // pin to the current release
       args '--entrypoint='
     }
   }
@@ -104,9 +110,9 @@ pipeline {
 
 ## Flow B: merge queue
 
-Jenkins has no merge queue of its own. For GitHub repositories that use GitHub's merge queue, run
-the queue check with GitHub Actions (see `github-actions.md`), because Jenkins does not receive the
-queue's base commit or pull request. Otherwise use flow A or C.
+Jenkins does not receive the queue's base commit or the pull request, so use flow A or C. For GitHub
+repositories that use GitHub's merge queue, run the queue check with GitHub Actions (see
+`github-actions.md`).
 
 ## Flow C: push on merge, publish at deploy time
 
@@ -116,8 +122,8 @@ at deploy time" command with the same commit and the author from `git log`.
 
 ## Flow D: preview target per pull request
 
-Add a stage after the check with `when { changeRequest() }` that sources the helpers from
-`commands.md` (saved as `scripts/hive-preview.sh`), and creates, promotes and publishes with
+Add a stage after the check with `when { changeRequest() }` that sources `scripts/hive-preview.sh`
+(copied from this skill into the repository) and runs `hive_preview_publish` with
 `PR_NUMBER=$CHANGE_ID`. Add `options { disableConcurrentBuilds() }` so builds of the same pull
 request run one at a time.
 

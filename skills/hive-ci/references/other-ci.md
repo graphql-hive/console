@@ -3,12 +3,18 @@
 Use the commands from `commands.md`. This file maps the variables of Bitbucket Pipelines and
 Buildkite onto them, and gives a recipe for any other CI system.
 
+## Contents
+
+- Bitbucket Pipelines
+- Buildkite
+- Any other CI system
+
 ## Bitbucket Pipelines
 
 - Store tokens as secured repository or workspace variables. Bitbucket masks them in logs.
 - Pull request pipelines (the `pull-requests:` section) set `BITBUCKET_PR_ID`.
-- Use an image with curl and git, such as `atlassian/default-image:5`, and the install script at a
-  pinned version.
+- Use an image with curl and git, such as `atlassian/default-image:5`, and the install script (see
+  Install in `commands.md`). Bitbucket Pipelines jobs usually run as root in their container.
 
 | Hive variable | Bitbucket Pipelines value                                          |
 | ------------- | ------------------------------------------------------------------ |
@@ -57,10 +63,11 @@ pipelines:
   up reliably there. Use flow A or C.
 - **Flow C:** push in the `main` branch pipeline with `--revision "$BITBUCKET_COMMIT"`, and publish
   by revision in the deployment step.
-- **Flow D:** add a step to the pull request pipeline after the check that creates, promotes and
-  publishes with `PR_NUMBER=$BITBUCKET_PR_ID`. Bitbucket has no "pull request merged" trigger, so
-  clean up in the `main` pipeline if the merge commit message contains the pull request number, and
-  delete stale `pr-*` targets with a scheduled pipeline.
+- **Flow D:** add a step to the pull request pipeline after the check that sources
+  `scripts/hive-preview.sh` (copied from this skill into the repository) and runs
+  `hive_preview_publish` with `PR_NUMBER=$BITBUCKET_PR_ID`. Bitbucket has no "pull request merged"
+  trigger, so clean up in the `main` pipeline if the merge commit message contains the pull request
+  number, and delete stale `pr-*` targets with a scheduled pipeline.
 
 ## Buildkite
 
@@ -71,8 +78,8 @@ pipelines:
 - Before checkout, `BUILDKITE_COMMIT` can be a symbolic name such as `HEAD`, so read the commit from
   git.
 - The install script needs root or passwordless sudo, which self-hosted agents often do not have. On
-  those agents, run the Hive steps in the CLI image (for example with the Docker plugin), overriding
-  the image's `hive` entrypoint.
+  those agents, run the Hive steps in the CLI image (see Install in `commands.md`), for example with
+  the Docker plugin, overriding the image's `hive` entrypoint.
 
 | Hive variable | Buildkite value                                           |
 | ------------- | --------------------------------------------------------- |
@@ -83,14 +90,14 @@ pipelines:
 
 Run the check only when `BUILDKITE_PULL_REQUEST` is not `false`, and the publish in a step limited
 to the default branch (`branches: main`). Merge queues come from the Git host: for GitHub
-repositories, run the queue check with GitHub Actions. Clean up flow D targets the same way as for
-Bitbucket Pipelines, or with GitHub Actions for GitHub repositories.
+repositories, run the queue check with GitHub Actions. For flow D, source `scripts/hive-preview.sh`
+and run `hive_preview_publish` after the check; clean up targets the same way as for Bitbucket
+Pipelines, or with GitHub Actions for GitHub repositories.
 
 ## Any other CI system
 
-1. **Install** the CLI at a pinned version (install script, container image, or `devDependencies`).
-   The install script needs root or passwordless sudo. Where the job has neither, use the container
-   image.
+1. **Install** the CLI at a pinned version (install script, CLI image, or `devDependencies`). The
+   install script needs root or passwordless sudo. Where the job has neither, use the CLI image.
 2. **Token:** keep it in the CI system's secret store and expose it as `HIVE_TOKEN` only to the
    steps that need it. For self-hosted Hive, set `HIVE_REGISTRY`.
 3. **Map the variables:** find the CI system's predefined variables for the commit SHA, the commit
@@ -98,7 +105,8 @@ Bitbucket Pipelines, or with GitHub Actions for GitHub repositories.
    `git log -1 --format='%an <%ae>'`), `CONTEXT_ID` (`<repository>#<pull request number>`) and
    `PR_NUMBER`.
 4. **Wire the flow** with the commands from `commands.md`: the check in pull request builds, and
-   publish (or push and publish by revision) on the default branch.
+   publish (or push and publish by revision) on the default branch. For flow D, copy
+   `scripts/hive-preview.sh` into the repository and run `hive_preview_publish` after the check.
 5. **Gate:** make sure a non-zero exit code of any Hive step fails the build.
 6. **Merge queue:** set up flow B only if the CI system provides the queue entry's base commit and
    the pull request's identity. Otherwise use flow A or C.

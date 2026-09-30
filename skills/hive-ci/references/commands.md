@@ -1,8 +1,18 @@
 # Hive CLI commands for every CI system
 
-The provider references map their own variables onto the environment variables below, so the
-commands are the same everywhere. Confirm every flag in the CLI command reference before using it:
-https://github.com/graphql-hive/console/blob/main/packages/libraries/cli/README.md#commands
+The reference file of each CI system maps its own variables onto the environment variables below, so
+the commands are the same everywhere. Confirm every flag in the CLI command reference before using
+it: https://github.com/graphql-hive/console/blob/main/packages/libraries/cli/README.md#commands
+
+## Contents
+
+- Environment variables used in these commands
+- Install a pinned CLI
+- Check a pull request
+- Publish on merge (flow A)
+- Check in a merge queue (flow B)
+- Push, then publish at deploy time (flow C)
+- Preview target per pull request (flow D)
 
 ## Environment variables used in these commands
 
@@ -16,29 +26,39 @@ https://github.com/graphql-hive/console/blob/main/packages/libraries/cli/README.
 | `SCHEMA_PATH`       | Schema file, glob or URL, as supported by the CLI.                                            |
 | `SERVICE_NAME`      | Federation and stitching only: the service (subgraph) name.                                   |
 | `SERVICE_URL`       | Federation and stitching only: the service URL, for publishing.                               |
-| `COMMIT`, `AUTHOR`  | Commit SHA and author. Set from the provider's variables. Not needed with `--github`.         |
+| `COMMIT`, `AUTHOR`  | Commit SHA and author. Set from the CI system's variables. Not needed with `--github`.        |
 | `CONTEXT_ID`        | `<repository>#<pull request number>` on pull request checks. Not needed with `--github`.      |
 | `PR_NUMBER`         | Pull request number, for flow D.                                                              |
 
-Leave out `--service` and `--url` on single-schema projects. `--fail-on-composition-error` applies
-to Federation projects.
+The commands here and the examples in the reference files show the Federation form. Leave out
+`--service` and `--url` on single-schema projects, and `--fail-on-composition-error` on projects
+that are not Federation.
 
 ## Install a pinned CLI
 
-Follow the installation section of the CI/CD guide and the CLI reference, and pin the version:
+Pin the version, as the CI/CD guide describes; `npm view @graphql-hive/cli version` prints the
+current release. Confirm that the version exists for the chosen install method, because the CLI
+image and the install script can lag the npm release (for example
+`docker manifest inspect ghcr.io/graphql-hive/cli:<version>`). Default: the install script, in the
+step that runs the CLI:
 
-- Node.js projects: add `@graphql-hive/cli` at a fixed version to `devDependencies`, and run it with
-  the project's package manager (`npx hive ...`, `pnpm hive ...`, `yarn hive ...`).
-- Other projects: `curl -sSL https://graphql-hive.com/install.sh | sh -s "<version>"`.
-- Container jobs: the image `ghcr.io/graphql-hive/cli:<version>`. Its entrypoint is `hive` and it
-  includes git, but not curl. CI systems that run a shell script inside the image must override the
-  entrypoint.
+```sh
+curl -sSL https://graphql-hive.com/install.sh | sh -s "$HIVE_CLI_VERSION"
+```
 
 The install script installs into `/usr/local` and runs `sudo` when it is not running as root, so the
 job needs root or passwordless sudo. GitHub-hosted runners, Microsoft-hosted agents and CircleCI's
 `cimg` images have passwordless sudo, and GitLab and Bitbucket Pipelines jobs usually run as root in
-their container. Self-hosted agents, such as many Jenkins and Buildkite agents, often have neither.
-There, run the Hive steps in the CLI image instead.
+their container.
+
+Use one of these instead when:
+
+- **The project uses Node.js**: add `@graphql-hive/cli` at a fixed version to `devDependencies`, and
+  run it with the project's package manager (`npx hive ...`, `pnpm hive ...`, `yarn hive ...`).
+- **The job has neither root nor passwordless sudo**, as on many self-hosted Jenkins and Buildkite
+  agents: run the Hive steps in the CLI image `ghcr.io/graphql-hive/cli:<version>`. Its entrypoint
+  is `hive` and it includes git, but not curl. CI systems that run a shell script inside the image
+  must override the entrypoint.
 
 ## Check a pull request
 
@@ -68,7 +88,8 @@ hive schema:publish "$SCHEMA_PATH" \
   --fail-on-composition-error
 ```
 
-Do not add `--github` here: with CLI 0.66.0 a rejected publish then still exits with 0.
+Do not add `--github` here: a rejected publish would still exit with 0 (SKILL.md, Exit codes and
+gating).
 
 ## Check in a merge queue (flow B)
 
@@ -120,65 +141,27 @@ branch name. The token needs `target:create`, and on all targets of the project 
 `schemaVersion:promote`, `schemaCheck:create` and `schemaVersion:publish`.
 
 Creating and deleting targets uses the public GraphQL API
-(https://the-guild.dev/graphql/hive/docs/api-reference/graphql-api). These helpers need `curl` and a
-POSIX shell:
+(https://the-guild.dev/graphql/hive/docs/api-reference/graphql-api). The skill's
+`scripts/hive-preview.sh` wraps those calls. Copy it into the repository as
+`scripts/hive-preview.sh` and source it in the CI step, with the variables from the table above set
+(`PR_NUMBER` names the target). It needs `curl` and a POSIX shell.
 
-```sh
-PREVIEW_TARGET="pr-$PR_NUMBER"
-# Hive Cloud's API endpoint. Self-hosted Hive serves the API at its registry endpoint.
-HIVE_API="${HIVE_REGISTRY:-https://api.graphql-hive.com/graphql}"
-
-hive_api() {
-  curl -sS "$HIVE_API" \
-    -H 'Content-Type: application/json' \
-    -H "Authorization: Bearer $HIVE_TOKEN" \
-    --data "$1"
-}
-
-preview_target_exists() {
-  hive_api "$(printf '{"query":"query HiveCiPreviewTarget($target: TargetReferenceInput!) { target(reference: $target) { id } }","variables":{"target":{"bySelector":{"organizationSlug":"%s","projectSlug":"%s","targetSlug":"%s"}}}}' \
-    "$HIVE_ORGANIZATION" "$HIVE_PROJECT" "$PREVIEW_TARGET")" | grep -q '"id"'
-}
-
-create_preview_target() {
-  response=$(hive_api "$(printf '{"query":"mutation HiveCiCreatePreviewTarget($input: CreateTargetInput!) { createTarget(input: $input) { ok { createdTarget { id } } error { message } } }","variables":{"input":{"project":{"bySelector":{"organizationSlug":"%s","projectSlug":"%s"}},"slug":"%s"}}}' \
-    "$HIVE_ORGANIZATION" "$HIVE_PROJECT" "$PREVIEW_TARGET")")
-  echo "$response" | grep -q '"createdTarget"' || {
-    echo "Could not create target $PREVIEW_TARGET: $response" >&2
-    return 1
-  }
-}
-
-delete_preview_target() {
-  response=$(hive_api "$(printf '{"query":"mutation HiveCiDeletePreviewTarget($input: DeleteTargetInput!) { deleteTarget(input: $input) { ok { deletedTargetId } error { message } } }","variables":{"input":{"target":{"bySelector":{"organizationSlug":"%s","projectSlug":"%s","targetSlug":"%s"}}}}}' \
-    "$HIVE_ORGANIZATION" "$HIVE_PROJECT" "$PREVIEW_TARGET")")
-  echo "$response" | grep -q '"deletedTargetId"' || {
-    echo "Could not delete target $PREVIEW_TARGET: $response" >&2
-    return 1
-  }
-}
-```
+| Function                          | What it does                                                                                                                                                                | Token permission                                                  |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `preview_target_exists`           | Succeeds if the pull request's target exists.                                                                                                                               |                                                                   |
+| `create_preview_target`           | Creates the target.                                                                                                                                                         | `target:create`                                                   |
+| `delete_preview_target`           | Deletes the target, and with it its CDN tokens.                                                                                                                             | `target:delete`                                                   |
+| `hive_preview_publish`            | Creates the target if it is missing, promotes the base target's latest version into it, then publishes the pull request's schema to it. Fails on the first step that fails. | `target:create`, `schemaVersion:promote`, `schemaVersion:publish` |
+| `create_preview_cdn_token <file>` | Creates a CDN access token for the target and writes `HIVE_CDN_ENDPOINT` and `HIVE_CDN_ACCESS_TOKEN` to the file.                                                           | `cdnAccessToken:modify`                                           |
 
 On every push to the pull request, run the check first. It fails the job before anything is created
 if the schema is invalid:
 
 ```sh
-set -e
 # 1. Check against the base target (the "Check a pull request" command above).
-# 2. Create the pull request's target if it does not exist yet.
-preview_target_exists || create_preview_target
-# 3. Promote the base target's latest version into it.
-hive schema:promote \
-  --from "$HIVE_ORGANIZATION/$HIVE_PROJECT/$HIVE_TARGET" \
-  --to "$HIVE_ORGANIZATION/$HIVE_PROJECT/$PREVIEW_TARGET"
-# 4. Publish the pull request's schema to it.
-hive schema:publish "$SCHEMA_PATH" \
-  --target "$HIVE_ORGANIZATION/$HIVE_PROJECT/$PREVIEW_TARGET" \
-  --service "$SERVICE_NAME" \
-  --url "$SERVICE_URL" \
-  --commit "$COMMIT" \
-  --author "$AUTHOR" \
-  --fail-on-composition-error
+# 2. Create the target if it is missing, promote, then publish.
+. scripts/hive-preview.sh
+hive_preview_publish
 ```
 
 Promoting on every push keeps the preview in step with the base target. `schema:promote` fails if
@@ -188,6 +171,7 @@ When the pull request is merged, delete its target. Running the same cleanup whe
 closed without merging stops abandoned pull requests from leaving targets behind:
 
 ```sh
+. scripts/hive-preview.sh
 if preview_target_exists; then delete_preview_target; fi
 ```
 
@@ -197,24 +181,8 @@ concurrency group), so a late preview job cannot recreate a deleted target.
 If the preview environment reads its schema from the Hive CDN, it also needs the target's CDN
 endpoint and a CDN access token (see
 https://the-guild.dev/graphql/hive/docs/schema-registry/high-availability-cdn). Creating one needs
-`cdnAccessToken:modify` on all targets. This helper writes both to the file given as its argument,
+`cdnAccessToken:modify` on all targets. `create_preview_cdn_token <file>` writes both to the file,
 as `HIVE_CDN_ENDPOINT` and `HIVE_CDN_ACCESS_TOKEN` (the names `hive artifact:fetch` reads), and
-never prints the secret:
-
-```sh
-create_preview_cdn_token() {
-  response=$(hive_api "$(printf '{"query":"mutation HiveCiCreatePreviewCdnToken($input: CreateCdnAccessTokenInput!) { createCdnAccessToken(input: $input) { ok { secretAccessToken cdnUrl } error { message } } }","variables":{"input":{"target":{"bySelector":{"organizationSlug":"%s","projectSlug":"%s","targetSlug":"%s"}},"alias":"CI preview %s"}}}' \
-    "$HIVE_ORGANIZATION" "$HIVE_PROJECT" "$PREVIEW_TARGET" "$PREVIEW_TARGET")")
-  secret=$(echo "$response" | sed -n 's/.*"secretAccessToken":"\([^"]*\)".*/\1/p')
-  cdn_url=$(echo "$response" | sed -n 's/.*"cdnUrl":"\([^"]*\)".*/\1/p')
-  if [ -z "$secret" ] || [ -z "$cdn_url" ]; then
-    echo "Could not create a CDN access token for $PREVIEW_TARGET: $(echo "$response" | sed -n 's/.*"message":"\([^"]*\)".*/\1/p')" >&2
-    return 1
-  fi
-  printf 'HIVE_CDN_ENDPOINT=%s\nHIVE_CDN_ACCESS_TOKEN=%s\n' "$cdn_url" "$secret" > "$1"
-}
-```
-
-Each call creates a new token, and deleting the target deletes its tokens. Hand the file to the
-preview deployment through the CI system's secret mechanism: a file saved as a job artifact can be
-read by anyone who can download the job's artifacts.
+never prints the secret. Each call creates a new token, and deleting the target deletes its tokens.
+Hand the file to the preview deployment through the CI system's secret mechanism: a file saved as a
+job artifact can be read by anyone who can download the job's artifacts.
