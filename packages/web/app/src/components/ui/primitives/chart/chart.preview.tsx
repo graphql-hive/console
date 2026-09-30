@@ -1,12 +1,12 @@
 import type { EChartsOption } from 'echarts';
 import { createPreview, type NavPath } from 'react-foundry';
-import { Card } from '@/components/base/card/card';
+import { Card } from '@/components/ui/primitives/card/card';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
 import { Chart } from './chart';
 import { useChartTheme } from './chart-theme';
 import { week } from './preview-data';
 
-export const nav: NavPath = 'Base/Charts/Chart';
+export const nav: NavPath = 'Primitives/Charts/Chart';
 
 const REQUESTS = week(12_000);
 const FAILURES = week(150, 3);

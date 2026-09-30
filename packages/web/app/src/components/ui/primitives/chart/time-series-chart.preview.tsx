@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
-import { Card } from '@/components/base/card/card';
+import { Card } from '@/components/ui/primitives/card/card';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
 import { formatRpm } from '@/lib/hooks/use-formatted-throughput';
@@ -8,7 +8,7 @@ import { useChartTheme } from './chart-theme';
 import { mapValues, week } from './preview-data';
 import { TimeSeriesChart } from './time-series-chart';
 
-export const nav: NavPath = 'Base/Charts/TimeSeriesChart';
+export const nav: NavPath = 'Primitives/Charts/TimeSeriesChart';
 
 const REQUESTS = week(12_000);
 const FAILURES = week(150, 3);

@@ -1,9 +1,9 @@
 import { createPreview, type NavPath } from 'react-foundry';
-import { Card } from '@/components/base/card/card';
+import { Card } from '@/components/ui/primitives/card/card';
 import { week } from './preview-data';
 import { Sparkline } from './sparkline';
 
-export const nav: NavPath = 'Base/Charts/Sparkline';
+export const nav: NavPath = 'Primitives/Charts/Sparkline';
 
 const BUSY = week(12_000);
 const QUIET = week(2500, 7);

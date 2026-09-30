@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import * as echarts from 'echarts';
 import type { MarkAreaComponentOption, MarkLineComponentOption } from 'echarts';
-import { Chart } from '@/components/base/chart/chart';
-import { useChartTheme } from '@/components/base/chart/chart-theme';
+import { Chart } from '@/components/ui/primitives/chart/chart';
+import { useChartTheme } from '@/components/ui/primitives/chart/chart-theme';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { MetricAlertRuleMetric, MetricAlertRuleType } from '@/gql/graphql';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
