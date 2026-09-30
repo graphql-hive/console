@@ -29,7 +29,8 @@
     "dev": "vite",
     "foundry": "foundry dev",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc -b"
   },
   "peerDependencies": {
     "@tanstack/react-form": "^1.23.8",

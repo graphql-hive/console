@@ -24,5 +24,12 @@
   "include": ["vite.config.ts", "vite.lib.config.ts", "vite.umd.config.ts", "dev/**/*.ts"],
   /* Fixtures the browser app imports belong to the app program: they pull in JSX,
      the @/* alias and the DOM lib, none of which this node config has. */
-  "exclude": ["dev/collections.ts", "dev/legacy-ws-shim.ts"]
+  "exclude": [
+    "dev/collections.ts",
+    "dev/legacy-ws-shim.ts",
+    "dev/operations.ts",
+    "dev/operations.spec.ts",
+    "dev/preflight.ts",
+    "dev/preflight.spec.ts"
+  ]
 }

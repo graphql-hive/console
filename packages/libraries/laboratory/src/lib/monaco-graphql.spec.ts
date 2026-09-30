@@ -5,7 +5,7 @@ const setSchemaConfig = vi.fn();
 const setDiagnosticSettings = vi.fn();
 const setCompletionSettings = vi.fn();
 const setModeConfiguration = vi.fn();
-const initializeMode = vi.fn(() => ({
+const initializeMode = vi.fn((_config?: unknown) => ({
   setSchemaConfig,
   setDiagnosticSettings,
   setCompletionSettings,
@@ -14,7 +14,7 @@ const initializeMode = vi.fn(() => ({
 }));
 
 vi.mock('monaco-graphql/initializeMode', () => ({
-  initializeMode: (...args: unknown[]) => initializeMode(...(args as [])),
+  initializeMode: (config?: unknown) => initializeMode(config),
 }));
 
 const introspection = { __schema: {} } as unknown as IntrospectionQuery;
