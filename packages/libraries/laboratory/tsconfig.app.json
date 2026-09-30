@@ -28,6 +28,6 @@
       "@/*": ["./src/*"]
     }
   },
-  /* Previews are browser code (JSX, the @ alias) even though they live under dev/. */
-  "include": ["src", "dev/previews"]
+  /* Previews and seed fixtures are browser code (JSX, the @ alias) even though they live under dev/. */
+  "include": ["src", "dev/previews", "dev/operations.spec.ts", "dev/preflight.spec.ts"]
 }
