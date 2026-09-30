@@ -738,7 +738,7 @@ function TransferOwnershipExample() {
   });
   return (
     <CallSite
-      source="components/v2/modals/transfer-organization-ownership.tsx"
+      source="components/organization/settings/transfer-ownership-dialog.tsx"
       origin="base"
       note="In a dialog. The confirmation must match the organization slug, which the label's tooltip names."
     >

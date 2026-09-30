@@ -6,7 +6,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import {
   TransferOrganizationOwnershipModal,
   TransferOrganizationOwnershipModal_OrganizationFragment,
-} from './transfer-organization-ownership';
+} from './transfer-ownership-dialog';
 
 /** The stubs the mocked urql hooks read from; each test resets them. */
 const urql = vi.hoisted(() => ({

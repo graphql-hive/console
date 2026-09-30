@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
-import { TransferOrganizationOwnershipModal } from '@/components/v2/modals';
+import { TransferOrganizationOwnershipModal } from '@/components/organization/settings/transfer-ownership-dialog';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
