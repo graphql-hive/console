@@ -38,34 +38,29 @@ export default defineConfig({
   // a preview's `nav` export into a type error instead of a stray top-level group.
   nav: [
     {
-      label: 'Base',
+      label: 'Primitives',
       children: [
         {
           label: 'Foundations',
           children: [{ label: 'Focus' }, { label: 'SemanticColors' }, { label: 'TypeScale' }],
         },
-        {
-          label: 'Primitives',
-          children: [
-            { label: 'Accordion' },
-            { label: 'Avatar' },
-            { label: 'Badge' },
-            { label: 'Button' },
-            { label: 'Card' },
-            { label: 'Collapsible' },
-            { label: 'CopyChip' },
-            { label: 'Input' },
-            { label: 'Legend' },
-            { label: 'ScrollArea' },
-            { label: 'Separator' },
-            { label: 'Skeleton' },
-            { label: 'Spinner' },
-            { label: 'StatCard' },
-            { label: 'StatusDot' },
-            { label: 'Tabs' },
-            { label: 'Textarea' },
-          ],
-        },
+        { label: 'Accordion' },
+        { label: 'Avatar' },
+        { label: 'Badge' },
+        { label: 'Button' },
+        { label: 'Card' },
+        { label: 'Collapsible' },
+        { label: 'CopyChip' },
+        { label: 'DescriptionList' },
+        { label: 'Input' },
+        { label: 'Legend' },
+        { label: 'ScrollArea' },
+        { label: 'Separator' },
+        { label: 'Skeleton' },
+        { label: 'Spinner' },
+        { label: 'StatusDot' },
+        { label: 'Tabs' },
+        { label: 'Textarea' },
         {
           label: 'FormControls',
           children: [
@@ -81,8 +76,6 @@ export default defineConfig({
         {
           label: 'Floating',
           children: [
-            { label: 'FilterDropdown' },
-            { label: 'FilterMenu' },
             { label: 'Menu' },
             { label: 'Popover' },
             { label: 'PortalContainer' },
@@ -99,13 +92,6 @@ export default defineConfig({
           label: 'Feedback',
           children: [{ label: 'Toast' }],
         },
-        {
-          label: 'Navigation',
-          children: [{ label: 'Navigation', children: [{ label: 'Component Examples' }] }],
-        },
-        // Data and layout
-        { label: 'DataTable' },
-        { label: 'DescriptionList' },
       ],
     },
     // The legacy `ui/` primitives (some formerly in `v2/`) queued for migration to `ui/primitives/`,
@@ -116,17 +102,21 @@ export default defineConfig({
       label: 'Inventory',
       children: [{ label: 'Presentational' }, { label: 'V2Leftovers' }],
     },
-    // App components, as opposed to the design-system primitives above. Each preview
-    // reproduces a real call site so a base-component change can be judged against the
-    // compositions that actually ship.
+    // Composites and app components, built from the primitives above. Each preview reproduces
+    // real call sites so a primitive change can be judged against the compositions that ship.
     {
       label: 'Components',
       children: [
         { label: 'BillingPlanPicker' },
+        { label: 'DataTable' },
         { label: 'FailureCard' },
+        { label: 'Filters', children: [{ label: 'FilterDropdown' }, { label: 'FilterMenu' }] },
+        { label: 'Navigation', children: [{ label: 'Component Examples' }] },
         { label: 'NotFound' },
         { label: 'PageLead' },
         { label: 'PagePending' },
+        { label: 'RefreshButton' },
+        { label: 'StatCard' },
         { label: 'SupportForms' },
         { label: 'TabbedView' },
       ],

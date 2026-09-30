@@ -1,17 +1,16 @@
 import { useState, type ReactNode } from 'react';
-import { Box, Check, FileCode2, GitCompare, Layers, List } from 'lucide-react';
+import { Box, Check, FileCode2, Layers, List } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '../badge/badge';
-import { Select } from '../floating/select/select';
-import { TabbedView, type TabbedViewItem } from '../../tabbed-view/tabbed-view';
 import { Tabs, type TabItem } from './tabs';
 
-export const nav: NavPath = 'Base/Primitives/Tabs';
+export const nav: NavPath = 'Primitives/Tabs';
 
 /**
  * Items in, a tab strip out, with a sliding indicator and panels when the items carry content.
- * For navigation use `Navigation`; for a view switch over a page, `TabbedView`. Each look below is
- * drawn with the call sites it ships at, real copy included.
+ * For navigation use `Navigation`; for a view switch over a page, `TabbedView`, which is where the
+ * `header` look ships (see Components/TabbedView). Each look below is drawn with the call sites
+ * it ships at, real copy included.
  */
 
 // ---------------------------------------------------------------------------
@@ -134,31 +133,6 @@ const SPAN_VIEWS: TabItem[] = [
   { value: 'operation', label: 'GraphQL Operation' },
 ];
 
-/** pages/target-checks-single.tsx: the check views, which TabbedView carries. */
-const checkViews = (contract: string): TabbedViewItem[] => [
-  { value: 'details', label: 'Details', icon: List, content: <Copy>Details of {contract}.</Copy> },
-  {
-    value: 'schema',
-    label: 'Public Schema',
-    icon: GitCompare,
-    content: <Copy>The public schema of {contract}.</Copy>,
-  },
-  {
-    value: 'supergraph',
-    label: 'Supergraph',
-    icon: GitCompare,
-    disabled: true,
-    tooltip: 'Composition did not succeed. No Supergraph available.',
-    content: null,
-  },
-];
-
-const CONTRACTS = [
-  { value: 'default', label: 'Default Graph' },
-  { value: 'public-api', label: 'public-api' },
-  { value: 'partner-api', label: 'partner-api' },
-];
-
 // ---------------------------------------------------------------------------
 // The looks, each on its own call sites
 // ---------------------------------------------------------------------------
@@ -211,14 +185,13 @@ const SERVICES = [
 
 /**
  * A strip scrolls sideways once its tabs outgrow it, scrollbar hidden: swipe, drag, or walk the
- * tabs with the arrow keys and the focused one scrolls into view. Both frames below are flex
- * columns, the layout that used to stretch to fit every tab and push the page sideways, since a
+ * tabs with the arrow keys and the focused one scrolls into view. The frame below is a flex
+ * column, the layout that used to stretch to fit every tab and push the page sideways, since a
  * flex item is at least as wide as its content unless told otherwise. The strip now keeps its
  * tabs out of that measurement, so the column stays the width it was given.
  */
 export const ManyTabs = createPreview(() => {
   const [service, setService] = useState(SERVICES[0]);
-  const [view, setView] = useState(SERVICES[0]);
   return (
     <div className="flex flex-col gap-10">
       <Labelled label="proposals/editor.tsx, the service strip, in a two-column layout at 40rem">
@@ -236,54 +209,7 @@ export const ManyTabs = createPreview(() => {
           </div>
         </div>
       </Labelled>
-      <Labelled label="The band, with the picker leading the strip, in a flex column at 32rem">
-        <div className="flex w-[32rem] flex-col">
-          <TabbedView
-            value={view}
-            onValueChange={setView}
-            action={
-              <Select
-                aria-label="Contract"
-                options={[{ value: 'default', label: 'Default Graph' }]}
-                value="default"
-                size="compact"
-                onSurface="raised"
-                width="sm"
-              />
-            }
-            items={SERVICES.slice(0, 8).map(name => ({
-              value: name,
-              label: name,
-              content: <Copy>The {name} view.</Copy>,
-            }))}
-          />
-        </div>
-      </Labelled>
     </div>
-  );
-});
-
-/** `header`: the strip TabbedView puts in its band. The checks and version pages. */
-export const Header = createPreview(() => {
-  const [contract, setContract] = useState('default');
-  return (
-    <Labelled label="pages/target-checks-single.tsx, through TabbedView; see Components/TabbedView for the page">
-      <TabbedView
-        items={checkViews(contract)}
-        defaultValue="details"
-        action={
-          <Select
-            aria-label="Contract"
-            options={CONTRACTS}
-            value={contract}
-            onValueChange={setContract}
-            size="compact"
-            onSurface="raised"
-            width="md"
-          />
-        }
-      />
-    </Labelled>
   );
 });
 

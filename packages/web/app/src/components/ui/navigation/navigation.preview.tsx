@@ -4,7 +4,7 @@ import { RouterAt } from '../../../../foundry.router';
 import { Button } from '../primitives/button/button';
 import { Navigation, type NavigationItem } from './navigation';
 
-export const nav: NavPath = 'Base/Navigation/Navigation';
+export const nav: NavPath = 'Components/Navigation';
 
 /**
  * Links between the pages of one area. The router decides which link is current from the URL, so

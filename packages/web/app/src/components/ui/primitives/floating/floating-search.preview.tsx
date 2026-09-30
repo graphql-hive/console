@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { FloatingSearch } from './floating-search';
 
-export const nav: NavPath = 'Base/Floating/Search';
+export const nav: NavPath = 'Primitives/Floating/Search';
 
 const ITEMS = ['production', 'staging', 'development', 'preview', 'canary'];
 

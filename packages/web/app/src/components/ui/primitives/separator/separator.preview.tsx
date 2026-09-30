@@ -4,7 +4,7 @@ import { Select } from '../floating/select/select';
 import { Input } from '../input/input';
 import { Separator } from './separator';
 
-export const nav: NavPath = 'Base/Primitives/Separator';
+export const nav: NavPath = 'Primitives/Separator';
 
 export const Horizontal = createPreview(() => (
   <div className="text-fg-default flex w-80 flex-col gap-3 text-sm">

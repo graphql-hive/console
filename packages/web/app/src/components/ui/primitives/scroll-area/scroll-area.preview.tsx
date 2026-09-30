@@ -1,7 +1,7 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { ScrollArea } from './scroll-area';
 
-export const nav: NavPath = 'Base/Primitives/ScrollArea';
+export const nav: NavPath = 'Primitives/ScrollArea';
 
 const OPERATIONS = [
   'MemberRoleAssignmentAuditLogByOrganizationSlug',

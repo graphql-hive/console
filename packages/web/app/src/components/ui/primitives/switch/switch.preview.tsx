@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Switch } from './switch';
 
-export const nav: NavPath = 'Base/FormControls/Switch';
+export const nav: NavPath = 'Primitives/FormControls/Switch';
 
 export const Sizes = createPreview(() => (
   <div className="flex items-center gap-6">

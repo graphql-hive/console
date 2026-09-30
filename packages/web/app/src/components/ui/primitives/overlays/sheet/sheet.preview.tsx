@@ -5,7 +5,7 @@ import { Input } from '../../input/input';
 import { ScrollArea } from '../../scroll-area/scroll-area';
 import { Sheet } from './sheet';
 
-export const nav: NavPath = 'Base/Overlays/Sheet';
+export const nav: NavPath = 'Primitives/Overlays/Sheet';
 
 /**
  * A panel from the right edge, for a task with more to it than a dialog holds: the token and SSO

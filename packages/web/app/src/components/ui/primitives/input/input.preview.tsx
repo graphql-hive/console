@@ -3,7 +3,7 @@ import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../button/button';
 import { Input } from './input';
 
-export const nav: NavPath = 'Base/Primitives/Input';
+export const nav: NavPath = 'Primitives/Input';
 
 export const Default = createPreview(() => <Input placeholder="Enter alert name" />);
 

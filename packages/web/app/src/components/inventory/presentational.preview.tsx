@@ -72,7 +72,7 @@ export const Inventory = createPreview({
           <strong>Two pairs do the same job twice.</strong> Alert and Callout are both banners.
           Heading and Text are both typography, and Text has one call site. Each pair disagrees on
           scale, palette and API. Badge, BadgeRounded and Tag were here too until round 5 moved them
-          onto base Badge, StatusDot and Callout; see Base/Primitives/Badge.
+          onto base Badge, StatusDot and Callout; see Primitives/Badge.
           <br />
           <br />
           <strong>Unreachable variants, delete rather than port:</strong> Heading <code>2xl</code>;

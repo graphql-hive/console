@@ -4,7 +4,7 @@ import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../../button/button';
 import { Select, type SelectOption } from './select';
 
-export const nav: NavPath = 'Base/Floating/Select';
+export const nav: NavPath = 'Primitives/Floating/Select';
 
 const METRICS: SelectOption[] = [
   { value: 'TRAFFIC', label: 'Total requests' },

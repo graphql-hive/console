@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Checkbox } from './checkbox';
 
-export const nav: NavPath = 'Base/FormControls/Checkbox';
+export const nav: NavPath = 'Primitives/FormControls/Checkbox';
 
 const TARGETS = ['production', 'staging', 'development'];
 

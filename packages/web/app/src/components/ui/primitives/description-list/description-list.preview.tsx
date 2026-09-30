@@ -2,7 +2,7 @@ import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Badge } from '../badge/badge';
 import { DescriptionList } from './description-list';
 
-export const nav: NavPath = 'Base/DescriptionList';
+export const nav: NavPath = 'Primitives/DescriptionList';
 
 export const Default = createPreview(() => (
   <div className="w-[36rem]">

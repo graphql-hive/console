@@ -3,7 +3,7 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { StatusDot } from '../status-dot/status-dot';
 import { Legend } from './legend';
 
-export const nav: NavPath = 'Base/Primitives/Legend';
+export const nav: NavPath = 'Primitives/Legend';
 
 /** The contract picker's three icons on the check page, which show without their text until hovered. */
 export const Default = createPreview(() => (

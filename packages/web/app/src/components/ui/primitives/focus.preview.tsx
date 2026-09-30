@@ -8,7 +8,7 @@ import { Input } from './input/input';
 import { Switch } from './switch/switch';
 import { Tabs } from './tabs/tabs';
 
-export const nav: NavPath = 'Base/Foundations/Focus';
+export const nav: NavPath = 'Primitives/Foundations/Focus';
 
 /**
  * Keyboard focus, two treatments by shape. A control with an edge gets a 2px accent outline, 2px

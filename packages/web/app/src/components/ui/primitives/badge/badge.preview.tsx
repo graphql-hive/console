@@ -1,7 +1,7 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Badge } from './badge';
 
-export const nav: NavPath = 'Base/Primitives/Badge';
+export const nav: NavPath = 'Primitives/Badge';
 
 /**
  * Three neutral variants and four semantic ones. The semantic pills are tinted, a 10% fill of the

@@ -5,7 +5,7 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { DataTable } from './data-table';
 import { DataTableCell } from './data-table-cell';
 
-export const nav: NavPath = 'Base/DataTable';
+export const nav: NavPath = 'Components/DataTable';
 
 type Check = {
   id: string;

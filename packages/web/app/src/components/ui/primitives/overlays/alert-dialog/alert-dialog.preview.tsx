@@ -4,7 +4,7 @@ import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { AlertDialog } from './alert-dialog';
 
-export const nav: NavPath = 'Base/Overlays/AlertDialog';
+export const nav: NavPath = 'Primitives/Overlays/AlertDialog';
 
 /**
  * A question with a confirm and a cancel. No × and no backdrop dismissal, so it can only be

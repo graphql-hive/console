@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Slider } from './slider';
 
-export const nav: NavPath = 'Base/FormControls/Slider';
+export const nav: NavPath = 'Primitives/FormControls/Slider';
 
 /** One thumb, one value. The filled range is accent so the position reads at a glance. */
 export const Controlled = createPreview(() => {

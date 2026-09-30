@@ -1,7 +1,7 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Card } from './card';
 
-export const nav: NavPath = 'Base/Primitives/Card';
+export const nav: NavPath = 'Primitives/Card';
 
 export const Default = createPreview(() => (
   <Card title="Alert rule" description="Notify the team when p99 latency crosses the threshold.">

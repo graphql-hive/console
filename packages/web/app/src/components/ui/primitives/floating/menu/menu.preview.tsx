@@ -15,7 +15,7 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../../button/button';
 import { Menu, type MenuSection } from './menu';
 
-export const nav: NavPath = 'Base/Floating/Menu';
+export const nav: NavPath = 'Primitives/Floating/Menu';
 
 /**
  * A menu is described, not composed. `sections` takes data, and `Menu` renders the rows, the

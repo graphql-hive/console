@@ -3,7 +3,7 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { FilterDropdown } from './filter-dropdown';
 import type { FilterItem, FilterSelection } from './types';
 
-export const nav: NavPath = 'Base/Floating/FilterDropdown';
+export const nav: NavPath = 'Components/Filters/FilterDropdown';
 
 const CLIENTS: FilterItem[] = [
   { name: 'Hive CLI', values: Array.from({ length: 18 }, (_, i) => `0.12.${i}`) },

@@ -4,7 +4,7 @@ import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { Dialog } from './dialog';
 
-export const nav: NavPath = 'Base/Overlays/Dialog';
+export const nav: NavPath = 'Primitives/Overlays/Dialog';
 
 /**
  * A centred modal with a title, an optional description, a body that scrolls once the dialog

@@ -211,6 +211,48 @@ export const NoAction = createPreview(() => (
   <TabbedView items={checkViews('the default graph')} defaultValue="details" />
 ));
 
+const SERVICES = [
+  'users',
+  'products',
+  'reviews',
+  'inventory',
+  'orders',
+  'billing',
+  'search',
+  'notifications',
+];
+
+/**
+ * The band in a flex column at 32rem, with more tabs than fit: the strip scrolls sideways behind
+ * the picker instead of stretching the column. See Primitives/Tabs ManyTabs for the strip alone.
+ */
+export const ManyTabs = createPreview(() => {
+  const [view, setView] = useState(SERVICES[0]);
+  return (
+    <div className="flex w-[32rem] flex-col">
+      <TabbedView
+        value={view}
+        onValueChange={setView}
+        action={
+          <Select
+            aria-label="Contract"
+            options={[{ value: 'default', label: 'Default Graph' }]}
+            value="default"
+            size="compact"
+            onSurface="raised"
+            width="sm"
+          />
+        }
+        items={SERVICES.map(name => ({
+          value: name,
+          label: name,
+          content: <p className="text-fg-default text-sm">The {name} view.</p>,
+        }))}
+      />
+    </div>
+  );
+});
+
 export const Playground = createPreview({
   controls: controlsFor(TabbedView, {
     bodyPadding: { type: 'radio', options: ['default', 'none'], default: 'default' },

@@ -6,7 +6,7 @@ import { Input } from '../input/input';
 import { Switch } from '../switch/switch';
 import { Label } from './label';
 
-export const nav: NavPath = 'Base/FormControls/Label';
+export const nav: NavPath = 'Primitives/FormControls/Label';
 
 /**
  * A label on its own, for a control that is not inside a Form. Text only; small caps over a

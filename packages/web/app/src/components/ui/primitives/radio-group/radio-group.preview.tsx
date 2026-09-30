@@ -3,7 +3,7 @@ import { Check } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { RadioGroup } from './radio-group';
 
-export const nav: NavPath = 'Base/FormControls/RadioGroup';
+export const nav: NavPath = 'Primitives/FormControls/RadioGroup';
 
 export const Default = createPreview(() => {
   const [value, setValue] = useState('7d');

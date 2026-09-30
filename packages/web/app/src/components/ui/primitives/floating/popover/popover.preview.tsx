@@ -5,7 +5,7 @@ import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { Popover } from './popover';
 
-export const nav: NavPath = 'Base/Floating/Popover';
+export const nav: NavPath = 'Primitives/Floating/Popover';
 
 /** Structured mode: pass `title` and the header with close button is rendered for you. */
 export const Structured = createPreview(() => (

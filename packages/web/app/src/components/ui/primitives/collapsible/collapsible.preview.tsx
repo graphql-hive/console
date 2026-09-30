@@ -7,7 +7,7 @@ import { ScrollArea } from '../scroll-area/scroll-area';
 import { Separator } from '../separator/separator';
 import { Collapsible } from './collapsible';
 
-export const nav: NavPath = 'Base/Primitives/Collapsible';
+export const nav: NavPath = 'Primitives/Collapsible';
 
 const STATUS = [
   { label: 'ok', count: 1204 },

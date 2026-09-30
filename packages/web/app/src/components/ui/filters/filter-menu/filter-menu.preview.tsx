@@ -3,7 +3,7 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { FilterChips, FilterMenu } from './filter-menu';
 import type { FilterDimension, FilterItem, FilterSelection } from './types';
 
-export const nav: NavPath = 'Base/Floating/FilterMenu';
+export const nav: NavPath = 'Components/Filters/FilterMenu';
 
 const CLIENTS: FilterItem[] = [
   { name: 'Hive CLI', values: ['0.12.0', '0.12.1', '0.12.2', '0.12.3'] },

@@ -3,7 +3,7 @@ import { CircleMinus, CircleX, TriangleAlert } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { ToggleGroup } from './toggle-group';
 
-export const nav: NavPath = 'Base/FormControls/ToggleGroup';
+export const nav: NavPath = 'Primitives/FormControls/ToggleGroup';
 
 const ENDPOINTS = [
   { value: 'mockApi', label: 'Mock', tooltip: 'Use Mock Schema' },

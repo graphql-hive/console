@@ -1,7 +1,7 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Skeleton } from './skeleton';
 
-export const nav: NavPath = 'Base/Primitives/Skeleton';
+export const nav: NavPath = 'Primitives/Skeleton';
 
 export const Shapes = createPreview(() => (
   <div className="text-fg-secondary flex items-end gap-8 text-xs">

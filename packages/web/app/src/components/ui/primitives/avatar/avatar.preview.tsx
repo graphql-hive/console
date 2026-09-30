@@ -1,7 +1,7 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Avatar } from './avatar';
 
-export const nav: NavPath = 'Base/Primitives/Avatar';
+export const nav: NavPath = 'Primitives/Avatar';
 
 /** A stand-in photo, inline so the preview needs no network. */
 const PHOTO = `data:image/svg+xml,${encodeURIComponent(

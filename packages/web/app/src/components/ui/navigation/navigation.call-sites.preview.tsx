@@ -8,7 +8,7 @@ import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layo
 import { RouterAt } from '../../../../foundry.router';
 import { Navigation, type NavigationItem } from './navigation';
 
-export const nav: NavPath = 'Base/Navigation/Navigation/Component Examples';
+export const nav: NavPath = 'Components/Navigation/Component Examples';
 
 /**
  * Every mount of the router-inferred nav, drawn with its real labels, at a real URL, with the

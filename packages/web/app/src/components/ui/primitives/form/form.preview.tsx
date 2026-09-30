@@ -9,7 +9,7 @@ import { Input } from '../input/input';
 import { RadioGroup } from '../radio-group/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './form';
 
-export const nav: NavPath = 'Base/FormControls/Form';
+export const nav: NavPath = 'Primitives/FormControls/Form';
 
 /**
  * The field parts over react-hook-form: a small-caps label, the control wired to it, and a message

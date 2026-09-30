@@ -1,7 +1,7 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { StatusDot } from './status-dot';
 
-export const nav: NavPath = 'Base/Primitives/StatusDot';
+export const nav: NavPath = 'Primitives/StatusDot';
 
 /** One solid dot per state, on the semantic tokens. */
 export const Colors = createPreview(() => (

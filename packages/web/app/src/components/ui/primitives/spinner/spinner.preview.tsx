@@ -2,7 +2,7 @@ import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../button/button';
 import { Spinner } from './spinner';
 
-export const nav: NavPath = 'Base/Primitives/Spinner';
+export const nav: NavPath = 'Primitives/Spinner';
 
 export const Sizes = createPreview(() => (
   <div className="text-fg-secondary flex items-end gap-8 text-xs">

@@ -10,7 +10,7 @@ import { Dialog } from './overlays/dialog/dialog';
 import { StatusDot } from './status-dot/status-dot';
 import { ToggleGroup } from './toggle-group/toggle-group';
 
-export const nav: NavPath = 'Base/Foundations/SemanticColors';
+export const nav: NavPath = 'Primitives/Foundations/SemanticColors';
 
 /** A tinted pill is `bg-<state>-tint text-<state>`, a dot is `bg-<state>`, a hover is `-muted`. */
 const STATES = [

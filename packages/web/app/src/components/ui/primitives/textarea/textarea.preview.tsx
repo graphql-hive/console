@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Textarea } from './textarea';
 
-export const nav: NavPath = 'Base/Primitives/Textarea';
+export const nav: NavPath = 'Primitives/Textarea';
 
 /** Same field as Input: fill, border, hover, focus and error states, at a minimum of 80px. */
 export const Default = createPreview(() => (

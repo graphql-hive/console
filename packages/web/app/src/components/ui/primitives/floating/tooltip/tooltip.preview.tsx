@@ -5,7 +5,7 @@ import { Button } from '../../button/button';
 import { Popover } from '../popover/popover';
 import { Tooltip } from './tooltip';
 
-export const nav: NavPath = 'Base/Floating/Tooltip';
+export const nav: NavPath = 'Primitives/Floating/Tooltip';
 
 /**
  * A hover and focus hint on an element that already does something. `trigger` is that element

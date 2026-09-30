@@ -10,7 +10,7 @@ import { Menu } from './menu/menu';
 import { Popover } from './popover/popover';
 import { Select } from './select/select';
 
-export const nav: NavPath = 'Base/Floating/PortalContainer';
+export const nav: NavPath = 'Primitives/Floating/PortalContainer';
 
 /**
  * The contract every base floating component honours: if a `FloatingPortalContainerProvider` is

@@ -157,7 +157,7 @@ import {
 import type { DocumentCollectionOperation } from '@/lib/hooks/laboratory/use-collections';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-export const nav: NavPath = 'Base/FormControls/Form/Component Examples';
+export const nav: NavPath = 'Primitives/FormControls/Form/Component Examples';
 
 /**
  * Every form of the app on base Form, mounted from its own file with the `useForm` its page

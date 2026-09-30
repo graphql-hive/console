@@ -5,7 +5,7 @@ import { Badge } from '../badge/badge';
 import { Menu } from '../floating/menu/menu';
 import { Accordion } from './accordion';
 
-export const nav: NavPath = 'Base/Primitives/Accordion';
+export const nav: NavPath = 'Primitives/Accordion';
 
 /**
  * Items in, an accordion out, on Base UI. One trigger look: medium text, the chevron at the end,

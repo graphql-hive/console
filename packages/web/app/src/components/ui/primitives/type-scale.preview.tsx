@@ -1,6 +1,6 @@
 import { createPreview, type NavPath } from 'react-foundry';
 
-export const nav: NavPath = 'Base/Foundations/TypeScale';
+export const nav: NavPath = 'Primitives/Foundations/TypeScale';
 
 /**
  * The type scale: Tailwind's steps plus the two the app kept typing by hand. `control` (13px) is

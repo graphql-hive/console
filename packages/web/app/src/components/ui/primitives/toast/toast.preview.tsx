@@ -2,7 +2,7 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { Button } from '../button/button';
 import { useToast, type ToastVariant } from './toast';
 
-export const nav: NavPath = 'Base/Feedback/Toast';
+export const nav: NavPath = 'Primitives/Feedback/Toast';
 
 /**
  * One call shape, `toast({ title, description, variant })`, drawn on the neutral-3 surface with a

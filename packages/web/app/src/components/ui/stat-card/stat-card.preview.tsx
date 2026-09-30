@@ -10,7 +10,7 @@ import {
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { StatCard } from './stat-card';
 
-export const nav: NavPath = 'Base/Primitives/StatCard';
+export const nav: NavPath = 'Components/StatCard';
 
 const ICONS = {
   globe: GlobeIcon,
