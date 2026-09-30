@@ -724,22 +724,6 @@ export class Contracts {
   }
 }
 
-function toNullableTextArray<T extends PrimitiveValueExpression>(value: T[] | null) {
-  if (value === null) {
-    return null;
-  }
-
-  return psql.array(value, 'text');
-}
-
-const contractFields = psql`
-  "id"
-`;
-
-const ContractModel = z.object({
-  id: z.string().uuid(),
-});
-
 const CreateContractInputModel = z
   .object({
     targetId: z.string().uuid(),
