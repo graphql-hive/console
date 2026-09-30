@@ -13,6 +13,23 @@ on:
       publishLatest:
         default: false
         type: boolean
+  # Builds the image of a CLI version that is on npm but was missed by the release workflow.
+  workflow_dispatch:
+    inputs:
+      registry:
+        default: ghcr.io
+        type: string
+      imageName:
+        default: graphql-hive
+        type: string
+      cliVersion:
+        description: Version of @graphql-hive/cli on npm, e.g. 0.66.0
+        required: true
+        type: string
+      publishLatest:
+        description: Also tag the image as latest
+        default: false
+        type: boolean
 
 jobs:
   build-cli-docker-image:
