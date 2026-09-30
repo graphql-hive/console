@@ -70,9 +70,7 @@ export class GraphStore {
   }
 
   async createGraph(
-    args:
-      | (Pick<BaseGraph, CreateGraphFields> & { id?: never })
-      | (Pick<ContractGraph, CreateGraphFields> & { id: string }),
+    args: Pick<BaseGraph, CreateGraphFields> | Pick<ContractGraph, CreateGraphFields>,
     trx: CommonQueryMethods = this.pg,
   ): Promise<Graph> {
     this.logger.debug(
@@ -87,8 +85,7 @@ export class GraphStore {
       .one(
         psql`/* createGraph */
         INSERT INTO "graphs" (
-          "id"
-          , "organization_id"
+          "organization_id"
           , "project_id"
           , "target_id"
           , "name"
@@ -97,8 +94,7 @@ export class GraphStore {
           , "source_graph_id"
         )
         VALUES (
-          ${args.id ?? psql`uuid_generate_v4()`}
-          , ${args.organizationId}
+          ${args.organizationId}
           , ${args.projectId}
           , ${args.targetId}
           , ${args.name}

@@ -70,32 +70,9 @@ export class Contracts {
     let graph: ContractGraph;
     try {
       graph = await this.pool.transaction('create contract', async trx => {
-        const contract = await trx
-          .maybeOne(
-            psql`
-          INSERT INTO "contracts" (
-            "target_id"
-            , "contract_name"
-            , "include_tags"
-            , "exclude_tags"
-            , "remove_unreachable_types_from_public_api_schema"
-          ) VALUES (
-            ${validatedContract.data.targetId}
-            , ${validatedContract.data.contractName}
-            , ${toNullableTextArray(validatedContract.data.includeTags)}
-            , ${toNullableTextArray(validatedContract.data.excludeTags)}
-            , ${validatedContract.data.removeUnreachableTypesFromPublicApiSchema}
-          )
-          RETURNING
-            ${contractFields}
-        `,
-          )
-          .then(ContractModel.parse);
-
         const graph = await this.graphStore.createGraph(
           {
             type: 'CONTRACT',
-            id: contract.id,
             name: `default/${validatedContract.data.contractName}`,
             organizationId: args.organizationId,
             projectId: args.projectId,
@@ -148,16 +125,6 @@ export class Contracts {
     this.logger.debug('Delete contract (graphId=%s)', graph.id);
 
     await this.pool.transaction('disable contract', async trx => {
-      await trx.maybeOne(
-        psql`
-          DELETE
-          FROM
-            "contracts"
-          WHERE
-            "id" = ${graph.id}
-        `,
-      );
-
       await this.graphStore.deleteGraph(graph, trx);
     });
 
@@ -283,7 +250,7 @@ export class Contracts {
         , "contract_checks"."compared_contract_version_id" as "comparedContractVersionId"
         , "contract_checks"."is_success" as "isSuccess"
         , "contract_checks"."contract_id" as "contractId"
-        , "contracts"."contract_name" as "contractName"
+        , "graphs"."name" as "contractName"
         , "contract_checks"."schema_composition_errors" as "schemaCompositionErrors"
         , "contract_checks"."breaking_schema_changes" as "breakingSchemaChanges"
         , "contract_checks"."safe_schema_changes" as "safeSchemaChanges"
@@ -295,7 +262,7 @@ export class Contracts {
       FROM
         "contract_checks"
       LEFT JOIN
-        "contracts" ON "contracts"."id" = "contract_checks"."contract_id"
+        "graphs" ON "graphs"."id" = "contract_checks"."contract_id"
       LEFT JOIN
         "sdl_store" as "s_composite" ON "s_composite"."id" = "contract_checks"."composite_schema_sdl_store_id"
       LEFT JOIN
