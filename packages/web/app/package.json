@@ -75,7 +75,6 @@
     "echarts": "6.1.0",
     "echarts-for-react": "3.0.6",
     "fastify": "5.12.3",
-    "framer-motion": "11.18.2",
     "graphiql": "4.0.0-alpha.5",
     "graphql": "16.9.0",
     "graphql-sse": "2.5.3",
