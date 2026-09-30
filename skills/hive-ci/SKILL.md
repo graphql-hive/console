@@ -169,10 +169,12 @@ then write the pipeline from them:
 - **ALWAYS** pass `--target`, and on Federation and stitching projects `--service` (plus `--url`
   when publishing).
 - **NEVER** use the flags or variables listed under Old patterns.
-- **NEVER** set `HIVE_REGISTRY` to an empty value, for example from an unset CI variable. The CLI
-  then uses the empty value instead of the Hive Cloud default. Set it only for self-hosted Hive.
-- **NEVER** run `schema:delete` without `--confirm` or `--dryRun` in CI. Without them it waits for
-  interactive confirmation.
+- **NEVER** set `HIVE_REGISTRY` to an empty value, for example from an unset CI variable. The
+  command then fails with `[105]` instead of using the Hive Cloud default. Set it only for
+  self-hosted Hive.
+- **NEVER** run `schema:delete` without `--confirm` or `--dryRun` in CI. Without them it prompts for
+  confirmation, and when stdin is not interactive it aborts with exit code 0 and deletes nothing, so
+  the job passes without doing anything.
 - **NEVER** print full schemas into CI logs. `schema:fetch` writes files with `--write`.
 - **PREFER** `--experimentalJsonFile <path>` on `schema:check` when a later step needs the result as
   JSON.
