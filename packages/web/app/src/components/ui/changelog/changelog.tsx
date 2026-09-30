@@ -112,7 +112,7 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
                 ))}
               </ol>
             </div>
-            <div className="flex flex-row items-center justify-center">
+            <div className="flex flex-row items-center justify-center pb-5 pt-2">
               <Button
                 variant="link"
                 anchor={{
