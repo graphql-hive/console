@@ -76,14 +76,8 @@ function readResolvedColors() {
 
 function readChartStyles() {
   const s = getComputedStyle(document.documentElement);
-  const textColor = s.getPropertyValue('--color-fg').trim();
 
   return {
-    styles: {
-      backgroundColor: 'transparent' as const,
-      textStyle: { color: textColor },
-      legend: { textStyle: { color: textColor } },
-    },
     colors: {
       ...readResolvedColors(),
       primary: cssVarHex(s, '--chart-1'),

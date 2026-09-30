@@ -49,7 +49,7 @@ const ENTRIES = [
     coveredBy: 'Typography',
   },
   {
-    source: 'PlanSummary.tsx ×4, organization-subscription.tsx, -manage.tsx, AdminStats.tsx',
+    source: 'PlanSummary.tsx ×4, organization-subscription.tsx, -manage.tsx, admin-stats.tsx',
     origin: 'v2',
     what: 'Stat — a dl/dt/dd compound. A page-local Stat of the same name shadows it elsewhere',
     coveredBy: 'Stat',
