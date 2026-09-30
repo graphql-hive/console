@@ -2,32 +2,27 @@ import { memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
-import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
-import { LayoutContent } from '@/components/layouts/layout-content';
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
-import { CopyIconButton } from '@/components/ui/copy-icon-button';
-import { DataTable, type DataTablePaginationProp } from '@/components/ui/data-table/data-table';
-import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
-import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
-import { Meta } from '@/components/ui/meta';
-import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Button } from '@/components/ui/primitives/button/button';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
+import { useChartTheme } from '@/components/ui/primitives/chart/chart-theme';
+import { TimeSeriesChart } from '@/components/ui/primitives/chart/time-series-chart';
+import { DataTable, type DataTablePaginationProp } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
+import { LayoutContent } from '@/components/layouts/layout-content';
+import { CopyIconButton } from '@/components/ui/copy-icon-button';
+import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
+import { Meta } from '@/components/ui/meta';
+import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
-import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
-import { usePagedConnection, useSlugs } from '@/lib/hooks';
+import { formatNumber, usePagedConnection, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
@@ -40,21 +35,6 @@ import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/ta
 const tracesRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces',
 );
-
-const chartConfig = {
-  ok: {
-    label: 'Successful',
-    color: 'hsl(var(--chart-1))',
-  },
-  error: {
-    label: 'Failed',
-    color: 'hsl(var(--chart-2))',
-  },
-  remaining: {
-    label: 'Remaining',
-    color: 'hsl(var(--chart-3))',
-  },
-} satisfies ChartConfig;
 
 const Traffic_TracesStatusBreakdownBucketFragment = graphql(`
   fragment Traffic_TracesStatusBreakdownBucketFragment on TraceStatusBreakdownBucket {
@@ -73,133 +53,31 @@ type TrafficProps = {
 
 const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
   const buckets = useFragment(Traffic_TracesStatusBreakdownBucketFragment, props.buckets);
-  const data = buckets.map(b => ({
-    ok: b.okCountFiltered,
-    error: b.errorCountFiltered,
-    remaining: b.okCountTotal + b.errorCountTotal - b.okCountFiltered - b.errorCountFiltered,
-    timeBucketStart: b.timeBucketStart,
-    timeBucketEnd: b.timeBucketEnd,
-  }));
-  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
-  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-
-  // Handle mouse down event to start selection
-  const handleMouseDown = useCallback((e: any) => {
-    if (!e?.activeLabel) return;
-
-    // Check if the click is within the chart area and not on the Y-axis
-    // e.chartX is the x-coordinate of the click relative to the chart
-    if (e.chartX < 40) return; // Prevent selection when clicking on Y-axis area
-
-    setRefAreaLeft(e.activeLabel);
-    setRefAreaRight(null);
-    setIsSelecting(true);
-  }, []);
-
-  // Handle mouse move event during selection
-  const handleMouseMove = useCallback(
-    (e: any) => {
-      if (!isSelecting || !e?.activeLabel) return;
-      setRefAreaRight(e.activeLabel);
-    },
-    [isSelecting],
-  );
-
-  const navigate = tracesRoute.useNavigate();
-
-  // Handle mouse up event to end selection
-  const handleMouseUp = useCallback(() => {
-    if (!refAreaLeft || !refAreaRight) {
-      setIsSelecting(false);
-      return;
-    }
-
-    // Ensure left is always before right
-    let left = refAreaLeft;
-    let right = refAreaRight;
-
-    if (new Date(left).getTime() > new Date(right).getTime()) {
-      [left, right] = [right, left];
-    }
-
-    void navigate({
-      search: (prev: any) => ({ ...prev, from: left, to: right }),
-    });
-
-    setRefAreaLeft(null);
-    setRefAreaRight(null);
-    setIsSelecting(false);
-  }, [refAreaLeft, refAreaRight, navigate]);
-
-  function formatDate(str: string) {
-    return new Date(str).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short', // e.g., "Sep"
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false, // 24-hour format; set true for AM/PM
-    });
-  }
+  const { colors } = useChartTheme();
+  const series = useMemo(() => {
+    const at = (value: (b: (typeof buckets)[number]) => number) =>
+      buckets.map((b): [string, number] => [b.timeBucketStart, value(b)]);
+    return [
+      { name: 'Ok', data: at(b => b.okCountFiltered), color: colors.primary },
+      { name: 'Error', data: at(b => b.errorCountFiltered), color: colors.error },
+      {
+        name: 'Filtered out',
+        data: at(
+          b => b.okCountTotal + b.errorCountTotal - b.okCountFiltered - b.errorCountFiltered,
+        ),
+        color: 'rgba(170,175,180,0.1)',
+      },
+    ];
+  }, [buckets, colors]);
 
   return (
-    <ChartContainer
-      config={chartConfig}
-      className="aspect-auto h-[150px] w-full select-none"
-      ref={chartContainerRef}
-      onMouseLeave={isSelecting ? handleMouseUp : undefined}
-    >
-      <BarChart
-        accessibilityLayer
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        data={data}
-      >
-        <XAxis
-          dataKey="timeBucketStart"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          minTickGap={32}
-          tickFormatter={date => {
-            return formatDate(date);
-          }}
-        />
-        <ChartTooltip
-          content={
-            <ChartTooltipContent
-              className="w-[150px]"
-              labelFormatter={(_, data) => {
-                const payload = data[0]?.payload;
-
-                if (!payload) {
-                  return null;
-                }
-
-                return (
-                  formatDate(payload.timeBucketStart) + ' - ' + formatDate(payload.timeBucketEnd)
-                );
-              }}
-            />
-          }
-        />
-        <Bar stackId="all" dataKey="ok" fill="var(--color-ok)" name="Ok" />
-        <Bar stackId="all" dataKey="error" fill="var(--color-error)" name="Error" />
-        {/*TODO: hide this if there is no filter declared */}
-        <Bar stackId="all" dataKey="remaining" fill="rgba(170,175,180,0.1)" name="Filtered out" />
-        {refAreaLeft && refAreaRight && (
-          <ReferenceArea
-            x1={refAreaLeft}
-            x2={refAreaRight}
-            fill="var(--color-fg)"
-            fillOpacity={0.1}
-          />
-        )}
-      </BarChart>
-    </ChartContainer>
+    <TimeSeriesChart
+      kind="bar"
+      stacked
+      height={150}
+      valueFormatter={formatNumber}
+      series={series}
+    />
   );
 });
 

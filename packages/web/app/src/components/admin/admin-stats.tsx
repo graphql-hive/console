@@ -1,13 +1,11 @@
 import { ReactElement, useMemo, useRef } from 'react';
-import ReactECharts from 'echarts-for-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { TimeSeriesChart } from '@/components/ui/primitives/chart/time-series-chart';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DataWrapper } from '@/components/ui/data-wrapper';
 import Stat from '@/components/ui/stat';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
-import { useChartStyles } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 
 interface Organization {
@@ -57,65 +55,13 @@ function CollectedOperationsOverTime(props: {
   const dataRef = useRef<[string, number][]>();
   dataRef.current ||= operations.map(node => [node.date, node.count]);
   const data = dataRef.current;
-  const { styles: chartStyles, colors } = useChartStyles();
 
   return (
-    <AutoSizer disableHeight>
-      {size => (
-        <ReactECharts
-          style={{ width: size.width, height: 200 }}
-          option={{
-            ...chartStyles,
-            grid: {
-              left: 50,
-              top: 50,
-              right: 20,
-              bottom: 20,
-            },
-            tooltip: {
-              trigger: 'axis',
-            },
-            legend: {},
-            xAxis: [
-              {
-                type: 'time',
-                boundaryGap: false,
-              },
-            ],
-            yAxis: [
-              {
-                type: 'value',
-                min: 0,
-                splitLine: {
-                  lineStyle: {
-                    color: colors.grid,
-                    type: 'dashed',
-                  },
-                },
-                axisLabel: {
-                  formatter: (value: number) => formatNumber(value),
-                },
-              },
-            ],
-            series: [
-              {
-                type: 'line',
-                name: 'Collected operations',
-                showSymbol: false,
-                smooth: true,
-                color: colors.primary,
-                areaStyle: {},
-                emphasis: {
-                  focus: 'series',
-                },
-                large: true,
-                data,
-              },
-            ],
-          }}
-        />
-      )}
-    </AutoSizer>
+    <TimeSeriesChart
+      kind="area"
+      valueFormatter={formatNumber}
+      series={[{ name: 'Collected operations', data }]}
+    />
   );
 }
 

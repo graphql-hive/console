@@ -92,6 +92,10 @@ export default defineConfig({
           label: 'Feedback',
           children: [{ label: 'Toast' }],
         },
+        {
+          label: 'Charts',
+          children: [{ label: 'Chart' }, { label: 'Sparkline' }, { label: 'TimeSeriesChart' }],
+        },
       ],
     },
     // The legacy `ui/` primitives (some formerly in `v2/`) queued for migration to `ui/primitives/`,

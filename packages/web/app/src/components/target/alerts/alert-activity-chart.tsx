@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import ReactECharts from 'echarts-for-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
+import { Chart } from '@/components/base/chart/chart';
+import { useChartTheme } from '@/components/base/chart/chart-theme';
 import { MetricAlertRuleSeverity, MetricAlertRuleState } from '@/gql/graphql';
-import { useChartStyles } from '@/lib/utils';
 
 type ActivityEvent = {
   toState: MetricAlertRuleState;
@@ -43,7 +43,8 @@ function pickBucketMs(rangeMs: number): number {
 }
 
 export function AlertActivityChart({ events, from, to }: ChartProps) {
-  const { colors } = useChartStyles();
+  const theme = useChartTheme();
+  const { colors, axisLabel } = theme;
 
   const { buckets, bucketStartMs, bucketMs } = useMemo(() => {
     const fromMs = new Date(from).getTime();
@@ -109,8 +110,6 @@ export function AlertActivityChart({ events, from, to }: ChartProps) {
     minute: '2-digit',
   });
 
-  const axisLabel = { fontSize: 11, color: colors.axisLabel };
-
   const SEVERITY_COLOR: Record<MetricAlertRuleSeverity, string> = {
     [MetricAlertRuleSeverity.Critical]: colors.critical,
     [MetricAlertRuleSeverity.Warning]: colors.warning,
@@ -137,25 +136,21 @@ export function AlertActivityChart({ events, from, to }: ChartProps) {
         const targetLabelCount = Math.max(2, Math.min(12, Math.floor(size.width / 100)));
         const labelInterval = Math.max(0, Math.ceil(xAxisData.length / targetLabelCount) - 1);
         return (
-          <ReactECharts
-            style={{ width: size.width, height: 200 }}
+          <Chart
+            height={200}
             option={{
-              backgroundColor: 'transparent',
               grid: { left: 10, top: 16, right: 10, bottom: 4, containLabel: true },
               tooltip: {
-                trigger: 'axis',
+                ...theme.tooltip(),
                 axisPointer: { type: 'shadow' },
-                backgroundColor: colors.overlayBg,
-                borderColor: colors.overlayBorder,
-                textStyle: { color: colors.overlayText, fontSize: 12 },
-                formatter: (
-                  params: Array<{
+                formatter: raw => {
+                  // An axis-triggered tooltip always gets one entry per series.
+                  const params = raw as unknown as Array<{
                     seriesName: string;
                     value: number;
                     color: string;
                     axisValue: string | number;
-                  }>,
-                ) => {
+                  }>;
                   const total = params.reduce((sum, p) => sum + (p.value || 0), 0);
                   if (total === 0) return '';
                   const bucketStart = Number(params[0]?.axisValue);

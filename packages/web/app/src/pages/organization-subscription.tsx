@@ -1,8 +1,11 @@
 import { ReactElement, useMemo } from 'react';
 import { endOfMonth, startOfDay, startOfMonth } from 'date-fns';
-import ReactECharts from 'echarts-for-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { useChartTheme } from '@/components/ui/primitives/chart/chart-theme';
+import { TimeSeriesChart } from '@/components/ui/primitives/chart/time-series-chart';
+import { PageLead } from '@/components/ui/page-lead';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { BillingView } from '@/components/organization/billing/Billing';
 import { CurrencyFormatter } from '@/components/organization/billing/helpers';
@@ -10,14 +13,10 @@ import { InvoicesList } from '@/components/organization/billing/InvoicesList';
 import { OrganizationUsageEstimationView } from '@/components/organization/Usage';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
-import { PageLead } from '@/components/ui/page-lead';
-import { Button } from '@/components/ui/primitives/button/button';
-import { Card } from '@/components/ui/primitives/card/card';
 import { QueryError } from '@/components/ui/query-error';
 import Stat from '@/components/ui/stat';
 import { graphql, useFragment } from '@/gql';
 import { formatNumber, useSlugs } from '@/lib/hooks';
-import { useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
 const DateFormatter = Intl.DateTimeFormat('en-US', {
@@ -25,8 +24,6 @@ const DateFormatter = Intl.DateTimeFormat('en-US', {
   day: 'numeric',
   year: 'numeric',
 });
-
-const numberFormatter = Intl.NumberFormat('en-US');
 
 const SubscriptionPage_OrganizationFragment = graphql(`
   fragment SubscriptionPage_OrganizationFragment on Organization {
@@ -86,7 +83,7 @@ function SubscriptionPageContent() {
 
   const organization = useFragment(SubscriptionPage_OrganizationFragment, currentOrganization);
   const queryForBilling = useFragment(SubscriptionPage_QueryFragment, query.data);
-  const { styles, colors } = useChartStyles();
+  const { colors } = useChartTheme();
 
   const monthlyUsage = query.data?.monthlyUsage ?? [];
   const monthlyUsagePoints: [string, number][] = useMemo(
@@ -166,72 +163,12 @@ function SubscriptionPageContent() {
             <div className="mt-8">
               <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Historical Usage">
                 <div className="mt-4">
-                  <AutoSizer disableHeight>
-                    {size => (
-                      <ReactECharts
-                        style={{ width: size.width, height: 400 }}
-                        option={{
-                          ...styles,
-                          grid: {
-                            left: 20,
-                            top: 50,
-                            right: 20,
-                            bottom: 20,
-                            containLabel: true,
-                          },
-                          legend: {
-                            show: false,
-                          },
-                          tooltip: {
-                            trigger: 'axis',
-                            valueFormatter: (value: number) => formatNumber(value),
-                            formatter(params: any[]) {
-                              const param = params[0];
-                              const value = param.data[1];
-
-                              return `<strong>${numberFormatter.format(value)}</strong>`;
-                            },
-                          },
-                          xAxis: [
-                            {
-                              type: 'time',
-                              splitNumber: 12,
-                            },
-                          ],
-                          yAxis: [
-                            {
-                              type: 'value',
-                              boundaryGap: false,
-                              min: 0,
-                              axisLabel: {
-                                formatter: (value: number) => formatNumber(value),
-                              },
-                              splitLine: {
-                                lineStyle: {
-                                  color: colors.gridSubtle,
-                                  type: 'dashed',
-                                },
-                              },
-                            },
-                          ],
-                          series: [
-                            {
-                              type: 'bar',
-                              name: 'Events',
-                              showSymbol: false,
-                              boundaryGap: false,
-                              color: colors.line,
-                              areaStyle: {},
-                              emphasis: {
-                                focus: 'series',
-                              },
-                              data: monthlyUsagePoints,
-                            },
-                          ],
-                        }}
-                      />
-                    )}
-                  </AutoSizer>
+                  <TimeSeriesChart
+                    kind="bar"
+                    height={400}
+                    valueFormatter={formatNumber}
+                    series={[{ name: 'Events', data: monthlyUsagePoints, color: colors.line }]}
+                  />
                 </div>
               </Card>
             </div>
