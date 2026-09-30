@@ -15,16 +15,6 @@ export function stageToColor(stage: SchemaProposalStage | string) {
   }
 }
 
-export function userText(
-  user?: {
-    email: string;
-    displayName?: string | null;
-    fullName?: string | null;
-  } | null,
-) {
-  return user?.displayName || user?.fullName || user?.email || 'Unknown';
-}
-
 export function schemaTitle(
   schema:
     | {
