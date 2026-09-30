@@ -184,7 +184,7 @@ async function waitForTraceInNormalized(traceId: string, maxAttempts = 30) {
 
 async function dumpNormalizedTraces(traceIds: string[]) {
   const result = await clickHouseQuery<Record<string, unknown>>(
-    `SELECT target_id, trace_id, span_id, toString(timestamp) AS timestamp, graphql_operation_name, graphql_operation_type, http_status_code, graphql_error_count FROM otel_traces_normalized WHERE trace_id IN (${traceIds.map(traceId => `'${traceId}'`).join(', ')}) ORDER BY timestamp, trace_id`,
+    `SELECT _part AS part, target_id, trace_id, span_id, toString(timestamp) AS timestamp, graphql_operation_name, graphql_operation_type, http_status_code, graphql_error_count FROM otel_traces_normalized WHERE trace_id IN (${traceIds.map(traceId => `'${traceId}'`).join(', ')}) ORDER BY timestamp, trace_id`,
   );
   return JSON.stringify(result.data, null, 2);
 }
