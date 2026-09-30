@@ -3902,7 +3902,7 @@ export function changesToMarkdown(
 
   if (printListOfChanges) {
     writeChanges('Breaking', breakingChanges, lines);
-    writeChanges('Dangrous', dangerousChanges, lines);
+    writeChanges('Dangerous', dangerousChanges, lines);
     writeChanges('Safe', safeChanges, lines);
   }
 
