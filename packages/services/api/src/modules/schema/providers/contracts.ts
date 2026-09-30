@@ -360,17 +360,14 @@ export class Contracts {
           ${contractVersionsFields}
         FROM
           "contract_versions"
-        JOIN (
-          VALUES
-          ${psql.unnest(
-            contractIdsWhereWeNeedToGetTheLatestValidVersion.map(version => [
-              version.contractId,
-              version.createdAt,
-            ]),
-            ['uuid', 'timestamptz'],
-          )}
-        ) AS "filters" ("ccontract_id", "cutoff_date")
-          ON "ccontract_id" = "filters"."ccontract_id"
+        JOIN ${psql.unnest(
+          contractIdsWhereWeNeedToGetTheLatestValidVersion.map(version => [
+            version.contractId,
+            version.createdAt,
+          ]),
+          ['uuid', 'timestamptz'],
+        )} AS "filters" ("ccontract_id", "cutoff_date")
+          ON "contract_versions"."contract_id" = "filters"."ccontract_id"
         WHERE
           "created_at" < filters."cutoff_date"
           AND "schema_composition_errors" IS NULL
@@ -390,9 +387,7 @@ export class Contracts {
     for (const contract of contracts) {
       map.set(contract.id, {
         contract,
-        graph:
-          contractGraphs.get('default/' + contract.contractName) ??
-          fail('Contract graph must exist.'),
+        graph: contractGraphs.get(contract.id) ?? fail('Contract graph must exist.'),
         latestVersion: latestContractVersionsByContractId.get(contract.id) ?? null,
         latestValidVersion: latestValidContractVersionByContractId.get(contract.id) ?? null,
       } as ContractWithLatestVersions);
