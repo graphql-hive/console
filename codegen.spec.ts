@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { generate } from '@graphql-codegen/cli';
-import config from './codegen.mts';
+import config from './codegen.mjs';
 
-const schemaTarget = config.generates['./schema.graphql'];
-if (Array.isArray(schemaTarget)) {
-  throw new Error('expected ./schema.graphql to be a configured output');
-}
+const schemaTarget = (() => {
+  const target = config.generates['./schema.graphql'];
+  if (Array.isArray(target)) {
+    throw new Error('expected ./schema.graphql to be a configured output');
+  }
+  return target;
+})();
 
 async function print(schema: string, plugins: typeof schemaTarget.plugins) {
   const [file] = await generate(

@@ -113,6 +113,18 @@ describe('createPostgresDatabasePool', () => {
       await expect(options.password()).resolves.toBe(token);
     });
 
+    it('rejects at startup when the provider returns a password that is not percent-encoded', async () => {
+      const { createPostgresDatabasePool } = await import('./postgres-database-pool');
+      const callsBefore = mockCreatePool.mock.calls.length;
+
+      await expect(
+        createPostgresDatabasePool({
+          connectionParameters: async () => 'postgres://iam:ab%zz@aurora:5432/db?sslmode=require',
+        }),
+      ).rejects.toThrow(/not percent-encoded/);
+      expect(mockCreatePool.mock.calls.length).toBe(callsBefore);
+    });
+
     it('passes no password callback for a static connection string', async () => {
       const { createPostgresDatabasePool } = await import('./postgres-database-pool');
 

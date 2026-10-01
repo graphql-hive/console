@@ -19,10 +19,10 @@ Retire when Federation v1 support is dropped. The package is frozen at 0.38.1 up
 
 The old GraphiQL laboratory, still reachable through the GraphiQL / Hive Laboratory switch on the
 Laboratory page. The patches add `addTab(state)`, `setTabState`,
-`updateActiveTabValues({ id, title })`, reset-instead-of-vanish when the last tab is closed, and an
-`isMacOs` export; they are used by `use-operation-collections-plugin.tsx`,
-`edit-operation-modal.tsx` and `target-laboratory.tsx`. The `onModifyHeaders` hook in the same
-patches is unused.
+`updateActiveTabValues({ id, title })`, and reset-instead-of-vanish when the last tab is closed;
+those are used by `use-operation-collections-plugin.tsx`, `edit-operation-modal.tsx` and
+`target-laboratory.tsx`. The `isMacOs` export exists for the patched `graphiql` bundle itself, and
+the `onModifyHeaders` hook in the same patches is unused.
 
 Retire together with the old laboratory.
 

@@ -22,7 +22,14 @@ const tracer = trace.getTracer('storage');
 
 // createConnectionString percent-encodes the password; slonik wants the raw value.
 function passwordOf(connectionString: string) {
-  return decodeURIComponent(new URL(connectionString).password);
+  try {
+    return decodeURIComponent(new URL(connectionString).password);
+  } catch (error) {
+    throw new Error(
+      'The ConnectionStringProvider returned a connection string whose password is not percent-encoded (see createConnectionString).',
+      { cause: error },
+    );
+  }
 }
 
 export interface CommonQueryMethods {
@@ -237,6 +244,11 @@ export async function createPostgresDatabasePool(args: {
       ? args.connectionParameters
       : createConnectionString(args.connectionParameters as PostgresConnectionParamaters);
 
+  if (provider) {
+    // Surface an unusable provider at startup instead of on the first connection.
+    passwordOf(connectionString);
+  }
+
   const pool = await createPool(connectionString, {
     interceptors: dbInterceptors.concat(args.additionalInterceptors ?? []),
     typeParsers,
@@ -244,6 +256,8 @@ export async function createPostgresDatabasePool(args: {
     maximumPoolSize: args.maximumPoolSize,
     idleTimeout: 30000,
     statementTimeout: args.statementTimeout,
+    // Already the default in slonik 48.19; pinned so the spans the old slonik.patch stripped
+    // cannot come back with a default flip.
     tracing: false,
     // Slonik asks for the password on every new connection, so a rotated IAM token is picked up
     // without recreating the pool.
