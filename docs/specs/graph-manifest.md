@@ -30,6 +30,7 @@ Routers periodically poll this endpoint.
 {
   "graphs": {
     "default": {
+      "id": "<uuid>",
       "currentVersion": {
         "id": "781cf01b-305d-4890-a78b-1be204b42ee5",
         "artifactPath": "/my-target/versions/781cf01b-305d-4890-a78b-1be204b42ee5",
@@ -37,6 +38,7 @@ Routers periodically poll this endpoint.
       }
     },
     "default/contract-a": {
+      "id": "<uuid>",
       "currentVersion": {
         "id": "344d8d0c-d414-4727-a7d8-8cee2dc11182",
         "artifactPath": "/my-target/versions/344d8d0c-d414-4727-a7d8-8cee2dc11182",
@@ -44,6 +46,7 @@ Routers periodically poll this endpoint.
       }
     },
     "graph-b": {
+      "id": "<uuid>",
       "currentVersion": {
         "id": "89780103-7ea3-490f-99ba-c60e90eed41b",
         "artifactPath": "/my-target/versions/89780103-7ea3-490f-99ba-c60e90eed41b"
@@ -74,6 +77,19 @@ opaque identifiers. In particular, consumers should not infer special behavior f
 
 The router could use these names in order to route traffic based on a header or cookie.
 
+### `id`
+
+An id that uniquely identifies a graph.
+
+Routers can expose it through logs, metrics or traces. For example:
+
+```
+graph.name=default
+graph.id=781cf01b-305d-4890-a78b-1be204b42ee5
+```
+
+This SHOULD be reported as part of usage reporting to correlate usage data with a specific graph.
+
 ### `currentVersion`
 
 `currentVersion` is required and describes the immutable schema version currently assigned to a
@@ -89,8 +105,11 @@ Routers can expose it through logs, metrics or traces. For example:
 
 ```
 graph.name=default
-graph.version_id=781cf01b-305d-4890-a78b-1be204b42ee5
+graph.version.id=781cf01b-305d-4890-a78b-1be204b42ee5
 ```
+
+This SHOULD be reported as part of usage reporting to correlate usage data with a specific graph
+version.
 
 #### `artifactPath`
 
