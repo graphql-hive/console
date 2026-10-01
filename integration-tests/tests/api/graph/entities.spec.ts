@@ -4,7 +4,8 @@ import { initSeed } from 'testkit/seed';
 import { assertNonNullish } from 'testkit/utils';
 
 test.concurrent('creating a target creates its default graph', async ({ expect }) => {
-  const { createOrg, getGraphStore } = await initSeed().createOwner();
+  const seed = initSeed();
+  const { createOrg } = await seed.createOwner();
   const { createProject } = await createOrg();
   const { createTarget } = await createProject(ProjectType.Federation);
 
@@ -12,9 +13,8 @@ test.concurrent('creating a target creates its default graph', async ({ expect }
   const target = result.createTarget.ok?.createdTarget;
   assertNonNullish(target);
 
-  const graph = await getGraphStore().then(store =>
-    store.findGraphForTargetIdByName(target.id, 'default'),
-  );
+  const graphStore = await seed.getGraphStore();
+  const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
 
   expect(graph).toMatchObject({
     targetId: target.id,
@@ -26,7 +26,8 @@ test.concurrent('creating a target creates its default graph', async ({ expect }
 });
 
 test.concurrent('creating a contract creates its contract graph', async ({ expect }) => {
-  const { createOrg, getGraphStore, ownerToken } = await initSeed().createOwner();
+  const seed = initSeed();
+  const { createOrg, ownerToken } = await seed.createOwner();
   const { createProject } = await createOrg();
   const { target } = await createProject(ProjectType.Federation);
 
@@ -42,7 +43,7 @@ test.concurrent('creating a contract creates its contract graph', async ({ expec
 
   expect(result.createContract.error).toBeNull();
 
-  const graphStore = await getGraphStore();
+  const graphStore = await seed.getGraphStore();
   const sourceGraph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
   const contractGraph = await graphStore.findGraphForTargetIdByName(
     target.id,
@@ -64,7 +65,8 @@ test.concurrent('creating a contract creates its contract graph', async ({ expec
 });
 
 test.concurrent('disabling a contract deletes its contract graph', async ({ expect }) => {
-  const { createOrg, getGraphStore, ownerToken } = await initSeed().createOwner();
+  const seed = initSeed();
+  const { createOrg, ownerToken } = await seed.createOwner();
   const { createProject } = await createOrg();
   const { target } = await createProject(ProjectType.Federation);
 
@@ -80,7 +82,7 @@ test.concurrent('disabling a contract deletes its contract graph', async ({ expe
   const contract = createResult.createContract.ok?.createdContract;
   assertNonNullish(contract);
 
-  const graphStore = await getGraphStore();
+  const graphStore = await seed.getGraphStore();
   expect(
     await graphStore.findGraphForTargetIdByName(target.id, 'default/my-contract'),
   ).not.toBeNull();
