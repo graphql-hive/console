@@ -63,7 +63,6 @@ function DeleteContractDialog(props: {
   /** Null while closed. */
   contractId: string | null;
   onClose: () => void;
-  onDeleteContract: () => void;
 }) {
   const [state, mutate] = useMutation(DeleteContractDialog_DeleteContractMutation);
   const { toast } = useToast();
@@ -82,7 +81,6 @@ function DeleteContractDialog(props: {
           title: 'Contract deleted',
           description: 'The contract was successfully deleted.',
         });
-        props.onDeleteContract();
         props.onClose();
         return;
       }
