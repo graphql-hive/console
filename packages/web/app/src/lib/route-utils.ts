@@ -23,7 +23,7 @@ declare module '@urql/core' {
 
 declare module '@tanstack/history' {
   interface HistoryState {
-    /** Set by a range reset; the page's picker announces it once. */
+    // Set by a range reset; the page's picker announces it once.
     rangeReset?: true;
   }
 }

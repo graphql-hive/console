@@ -529,7 +529,7 @@ function SpanNode(props: SpanNodeProps) {
                     targetSlug,
                     traceId: props.traceId,
                   }}
-                  search={previous => ({ ...previous, activeSpanId: span.id })}
+                  search={previous => ({ ...carriedRange(previous), activeSpanId: span.id })}
                 >
                   <NodeElement
                     color={props.color}
@@ -630,7 +630,7 @@ function SpanNode(props: SpanNodeProps) {
                         traceId: props.traceId,
                       }}
                       search={previous => ({
-                        ...previous,
+                        ...carriedRange(previous),
                         activeSpanId: span.id,
                         activeSpanTab: 'events',
                       })}
@@ -882,7 +882,11 @@ export function TraceSheet(props: TraceSheetProps) {
                                 targetSlug,
                                 traceId: trace.id,
                               }}
-                              search={{ activeSpanId: event.spanId, activeSpanTab: 'events' }}
+                              search={previous => ({
+                                ...carriedRange(previous),
+                                activeSpanId: event.spanId,
+                                activeSpanTab: 'events',
+                              })}
                               onMouseOver={() =>
                                 setHighlightedEvent({
                                   spanId: event.spanId,
@@ -940,11 +944,7 @@ export function TraceSheet(props: TraceSheetProps) {
         onClose={() =>
           navigate({
             to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
-            search: previous => ({
-              ...previous,
-              activeSpanId: undefined,
-              activeSpanTab: undefined,
-            }),
+            search: previous => carriedRange(previous),
           })
         }
         traceId={trace.id}
@@ -1453,7 +1453,10 @@ function SpanSheet(props: SpanSheetProps) {
                     targetSlug,
                     traceId: props.traceId,
                   }}
-                  search={{ activeSpanId: span.parentId }}
+                  search={previous => ({
+                    ...carriedRange(previous),
+                    activeSpanId: span.parentId ?? undefined,
+                  })}
                 />
               }
             >

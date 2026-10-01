@@ -11,7 +11,7 @@ import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, toDecimal, useSlugs } from '@/lib/hooks';
 import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { capitalize, cn } from '@/lib/utils';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import AvailabilityBar from './availability-bar';
 import { useDescriptionsVisibleToggle, useSchemaExplorerContext } from './provider';
@@ -59,7 +59,7 @@ export function SchemaExplorerUsageStats(props: {
   totalRequests: number;
   kindLabel?: string;
 }) {
-  const router = useRouter();
+  const { search } = useLocation();
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const usage = useFragment(SchemaExplorerUsageStats_UsageFragment, props.usage);
   const percentage = props.totalRequests ? (usage.total / props.totalRequests) * 100 : 0;
@@ -93,7 +93,7 @@ export function SchemaExplorerUsageStats(props: {
                 operationName,
                 operationHash: row.original.hash,
               },
-              search: carriedRange(router.latestLocation.search),
+              search: carriedRange(search),
             }}
           />
         );
@@ -242,7 +242,7 @@ export function SchemaExplorerUsageStats(props: {
                           targetSlug,
                           name: clientName,
                         }}
-                        search={carriedRange(router.latestLocation.search)}
+                        search={carriedRange(search)}
                       >
                         {clientName}
                       </Link>
@@ -446,7 +446,7 @@ export function GraphQLInputFields(props: {
 
 export function GraphQLTypeAsLink(props: { type: string; className?: string }): ReactElement {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const router = useRouter();
+  const { search } = useLocation();
   const typename = props.type.replace(/[[\]!]+/g, '');
 
   return (
@@ -473,7 +473,7 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
                 targetSlug,
                 typename,
               }}
-              search={router.latestLocation.search}
+              search={search}
             >
               Visit in <span className="font-medium">Explorer</span>
             </Link>
@@ -489,7 +489,7 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
                 targetSlug,
                 coordinate: typename,
               }}
-              search={carriedRange(router.latestLocation.search)}
+              search={carriedRange(search)}
             >
               Visit in <span className="font-medium">Insights</span>
             </Link>
@@ -510,7 +510,7 @@ export const LinkToCoordinatePage = React.forwardRef<
   }
 >((props, ref) => {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const router = useRouter();
+  const { search } = useLocation();
 
   return (
     <Link
@@ -523,7 +523,7 @@ export const LinkToCoordinatePage = React.forwardRef<
         targetSlug,
         coordinate: props.coordinate,
       }}
-      search={carriedRange(router.latestLocation.search)}
+      search={carriedRange(search)}
     >
       {props.children}
     </Link>

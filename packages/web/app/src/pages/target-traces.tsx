@@ -357,7 +357,7 @@ const TracesList = memo(function TracesList(
         cell: ({ row }) => <DataTableCell kind="text" mono value={row.original.httpStatusCode} />,
       },
     ],
-    [organizationSlug, projectSlug, targetSlug],
+    [organizationSlug, projectSlug, targetSlug, from, to],
   );
 
   return (

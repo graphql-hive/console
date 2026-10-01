@@ -2,13 +2,14 @@
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
+import { tracesFixtures } from '@/lib/testing/fixtures/traces';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
 import { defaultTracesFilter, defaultTracesSort, tracesPageVariables } from '@/pages/target-traces';
 import { createAppRouter } from '@/router';
 import { UTCDate } from '@date-fns/utc';
 import { createMemoryHistory } from '@tanstack/react-router';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
@@ -71,6 +72,20 @@ describe('traces route', () => {
     },
   );
 
+  it('a row link follows the picker', { timeout: 30_000 }, async () => {
+    const client = createTestClient(new Map([...layoutFixtures(), ...tracesFixtures()]));
+    const { router } = renderAtUrl(`${TRACES}?from=now-1d&to=now`, { client });
+    const rowHref = () => screen.getByRole('link', { name: 'trace-1' }).getAttribute('href') ?? '';
+    await screen.findByRole('link', { name: 'trace-1' });
+    expect(rowHref()).toContain('now-1d');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Last 24 hours' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Last 7 days' }));
+
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ from: 'now-7d' }));
+    await waitFor(() => expect(rowHref()).toContain('now-7d'));
+  });
+
   it('carries the filter and sort from the URL into the list', { timeout: 30_000 }, async () => {
     const filter = { ...defaultTracesFilter, 'graphql.operation': ['GetUser'], duration: [10, 20] };
     const sort = { id: 'duration', desc: false };
@@ -125,7 +140,9 @@ describe('trace route', () => {
     });
     renderAtUrl(`${TRACE}?from=now-1d&to=now`, { client });
 
+    // The nav item and the breadcrumb; both carry it.
     const links = await screen.findAllByRole('link', { name: 'Traces' });
+    expect(links).toHaveLength(2);
     for (const link of links) {
       const href = link.getAttribute('href') ?? '';
       expect(new URL(href, 'http://localhost').searchParams.get('from')).toContain('now-1d');
