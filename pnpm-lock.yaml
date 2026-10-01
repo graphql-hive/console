@@ -297,9 +297,6 @@ patchedDependencies:
   '@slonik/pg-driver':
     hash: c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488
     path: patches/@slonik__pg-driver.patch
-  '@theguild/editor@1.2.5':
-    hash: a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7
-    path: patches/@theguild__editor@1.2.5.patch
   eslint@8.57.1:
     hash: 08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0
     path: patches/eslint@8.57.1.patch
@@ -2283,7 +2280,7 @@ importers:
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@theguild/editor':
         specifier: 1.2.5
-        version: 1.2.5(patch_hash=a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7)(@monaco-editor/react@4.8.0-rc.2(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.5(@monaco-editor/react@4.8.0-rc.2(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
@@ -28168,7 +28165,7 @@ snapshots:
       typescript: 5.7.3
       yargs: 16.2.0
 
-  '@theguild/editor@1.2.5(patch_hash=a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7)(@monaco-editor/react@4.8.0-rc.2(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@theguild/editor@1.2.5(@monaco-editor/react@4.8.0-rc.2(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@monaco-editor/react': 4.8.0-rc.2(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphql-language-service: 3.2.5(@types/node@25.5.0)(cosmiconfig-toml-loader@1.0.0)(encoding@0.1.13)(graphql@16.9.0)
