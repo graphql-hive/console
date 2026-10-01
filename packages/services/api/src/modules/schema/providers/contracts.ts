@@ -173,7 +173,7 @@ export class Contracts {
     this.logger.debug('Delete contract (contractId=%s)', args.contract.id);
 
     const record = await this.pool.transaction('delete contract', async trx => {
-      const record = await this.pool.maybeOne(psql`
+      const record = await trx.maybeOne(psql`
         DELETE FROM
           "contracts"
         WHERE
