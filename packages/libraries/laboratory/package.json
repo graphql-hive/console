@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@graphql-tools/url-loader": "^9.1.7",
-    "dompurify": "3.4.13",
+    "dompurify": "3.4.16",
     "graphql-language-service": "^5.5.0",
     "radix-ui": "^1.4.3",
     "snarkdown": "2.0.0",

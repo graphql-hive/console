@@ -59,7 +59,7 @@
     "crypto-js": "^4.2.0",
     "date-fns": "4.1.0",
     "date-fns-tz": "3.2.0",
-    "dompurify": "3.4.13",
+    "dompurify": "3.4.16",
     "dotenv": "16.4.7",
     "echarts": "6.1.0",
     "fastify": "5.12.3",
