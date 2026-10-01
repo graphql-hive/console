@@ -139,10 +139,17 @@ export function projectLayout(overrides: Partial<typeof project> = {}) {
   };
 }
 
-export function targetLayout(overrides: Partial<typeof target> = {}) {
+export function targetLayout(
+  overrides: Partial<typeof target> = {},
+  organizationOverrides: Partial<typeof organization> = {},
+) {
   return {
     __typename: 'Query' as const,
-    organization: { ...organization, project: { ...project, target: { ...target, ...overrides } } },
+    organization: {
+      ...organization,
+      ...organizationOverrides,
+      project: { ...project, target: { ...target, ...overrides } },
+    },
   };
 }
 

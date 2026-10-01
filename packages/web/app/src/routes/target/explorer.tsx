@@ -6,6 +6,7 @@ import {
   defaultRange,
   loadQuery,
   requireRange,
+  requireRetention,
   revalidate,
   type LoaderContext,
   type RangeBounds,
@@ -57,10 +58,11 @@ export const targetExplorerRoute = createRoute({
   beforeLoad: defaultRange(explorerAll),
   loaderDeps: range,
   preloadStaleTime: 0,
-  loader: loader => {
+  loader: async loader => {
     const { slugs, period } = explorerPeriod(loader, explorerAll);
     void loadQuery(loader, TargetExplorerPageQuery, { ...slugs, period }, revalidate(loader));
     void loadQuery(loader, TypeFilter_AllTypes, { ...slugs, period });
+    await requireRetention(loader, explorerAll);
     return { period };
   },
   component: TargetExplorerPage,
@@ -73,7 +75,7 @@ export const targetExplorerTypeRoute = createRoute({
   beforeLoad: defaultRange(explorerType),
   loaderDeps: range,
   preloadStaleTime: 0,
-  loader: loader => {
+  loader: async loader => {
     const { slugs, period } = explorerPeriod(loader, explorerType);
     void loadQuery(
       loader,
@@ -82,6 +84,7 @@ export const targetExplorerTypeRoute = createRoute({
       revalidate(loader),
     );
     void loadQuery(loader, TypeFilter_AllTypes, { ...slugs, period });
+    await requireRetention(loader, explorerType);
     return { period };
   },
   component: function TargetExplorerTypeRoute() {
@@ -97,7 +100,7 @@ export const targetExplorerDeprecatedRoute = createRoute({
   beforeLoad: defaultRange(explorerDeprecated),
   loaderDeps: range,
   preloadStaleTime: 0,
-  loader: loader => {
+  loader: async loader => {
     const { slugs, period } = explorerPeriod(loader, explorerDeprecated);
     void loadQuery(loader, TargetExplorerDeprecatedSchemaPageQuery, slugs);
     void loadQuery(
@@ -106,6 +109,7 @@ export const targetExplorerDeprecatedRoute = createRoute({
       { ...slugs, period },
       revalidate(loader),
     );
+    await requireRetention(loader, explorerDeprecated);
     return { period };
   },
   component: TargetExplorerDeprecatedPage,
@@ -119,7 +123,7 @@ export const targetExplorerUnusedRoute = createRoute({
   loaderDeps: range,
   preloadStaleTime: 0,
   // Warmed even for a target without usage, whose page pauses its query: one wasted request there.
-  loader: loader => {
+  loader: async loader => {
     const { slugs, period } = explorerPeriod(loader, explorerUnused);
     void loadQuery(loader, TargetExplorerUnusedSchemaPageQuery, slugs);
     void loadQuery(
@@ -128,6 +132,7 @@ export const targetExplorerUnusedRoute = createRoute({
       { ...slugs, period },
       revalidate(loader),
     );
+    await requireRetention(loader, explorerUnused);
     return { period };
   },
   component: TargetExplorerUnusedPage,

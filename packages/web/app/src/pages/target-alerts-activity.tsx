@@ -143,6 +143,7 @@ function ActivityView(props: { retentionInDays: number }) {
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: retentionInDays,
     defaultPreset: presetLast1Hour,
+    subject: 'alert activity',
   });
 
   // The loader revalidates within the minute and moves the bounds when it rolls.

@@ -18,6 +18,7 @@ import {
   redirectToPathSchema,
   requireLayoutFlag,
   requireRange,
+  requireRetention,
   revalidate,
 } from './route-utils';
 
@@ -278,13 +279,16 @@ describe('requireRange', () => {
       to: bounds.to,
       params: SLUGS,
       search: { operations: ['abc'], from: 'now-7d', to: 'now' },
-      state: { rangeReset: true },
+      state: { rangeReset: 'unreadable' },
     });
     expect(resetOf({ from: 'now-1d', to: 'later' }).search).toMatchObject(bounds.preset.range);
   });
 
-  it('resets a range older than the rollups keep, at either bound', () => {
-    expect(resetOf({ from: 'now-2y', to: 'now' }).search).toMatchObject(bounds.preset.range);
+  it('resets a range older than the rollups keep, at either bound, as a retention reset', () => {
+    expect(resetOf({ from: 'now-2y', to: 'now' })).toMatchObject({
+      search: bounds.preset.range,
+      state: { rangeReset: 'retention' },
+    });
     expect(resetOf({ from: 'now-2y', to: 'now-1y-1d' }).search).toMatchObject(bounds.preset.range);
   });
 
@@ -294,5 +298,57 @@ describe('requireRange', () => {
     expect(requireRange(loader({ from: 'now-6M', to: 'now' }), bounds)).toBeUndefined();
     expect(requireRange(loader({ from: lastWeek, to: 'now' }), bounds)).toBeUndefined();
     expect(requireRange(loader({}), bounds)).toBeUndefined();
+  });
+});
+
+describe('requireRetention', () => {
+  const bounds = {
+    preset: presetLast7Days,
+    to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
+  };
+
+  function loader(client: ReturnType<typeof createTestClient>, deps: { from?: string; to?: string }) {
+    return { context: { urqlClient: client }, preload: false, params: SLUGS, deps, location: { search: deps } };
+  }
+
+  function layoutWith(usageRetentionInDays: number) {
+    return createTestClient(
+      new Map([['TargetLayoutQuery', targetLayout({}, { usageRetentionInDays })]]),
+    );
+  }
+
+  it('reads the retention from the layout document and admits a start on its boundary', async () => {
+    const client = layoutWith(7);
+
+    await requireRetention(loader(client, { from: 'now-7d', to: 'now' }), bounds);
+    await requireRetention(loader(client, { from: 'now-1h', to: 'now' }), bounds);
+
+    expect(client.requests('TargetLayoutQuery').map(o => o.variables)).toEqual([SLUGS]);
+  });
+
+  it('resets a start before what the plan keeps, as a retention reset', async () => {
+    const error = await rejection(
+      requireRetention(loader(layoutWith(7), { from: 'now-8d', to: 'now' }), bounds),
+    );
+
+    expect(redirectOf(error)).toMatchObject({
+      to: bounds.to,
+      params: SLUGS,
+      search: bounds.preset.range,
+    });
+    expect((redirectOf(error) as { state?: unknown }).state).toEqual({ rangeReset: 'retention' });
+  });
+
+  it('takes a retention of its own, and admits when none is known', async () => {
+    const client = layoutWith(7);
+    const eightDays = { from: 'now-8d', to: 'now' };
+
+    await requireRetention(loader(client, eightDays), bounds, Promise.resolve(30));
+    await requireRetention(loader(client, eightDays), bounds, Promise.resolve(undefined));
+    const empty = createTestClient(
+      new Map([['TargetLayoutQuery', { __typename: 'Query', organization: null }]]),
+    );
+    await requireRetention(loader(empty, eightDays), bounds);
+    await requireRetention(loader(client, {}), bounds);
   });
 });

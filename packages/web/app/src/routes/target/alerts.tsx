@@ -10,6 +10,7 @@ import {
   loadQuery,
   requireLayoutFlag,
   requireRange,
+  requireRetention,
   revalidate,
   type RangeBounds,
 } from '@/lib/route-utils';
@@ -58,17 +59,22 @@ export const targetAlertsIndexRoute = createRoute({
   beforeLoad: defaultRange(activity),
   loaderDeps: ({ search }) => ({ from: search.from, to: search.to }),
   preloadStaleTime: 0,
-  loader: loader => {
+  loader: async loader => {
     requireRange(loader, activity);
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const slugs = { organizationSlug, projectSlug, targetSlug };
     const { period } = loaderPeriod(loader.deps, presetLast1Hour);
-    void loadQuery(loader, TargetAlertsActivityPage_RetentionQuery, slugs);
+    const retention = loadQuery(loader, TargetAlertsActivityPage_RetentionQuery, slugs);
     void loadQuery(
       loader,
       TargetAlertsActivityPage_Query,
       { ...slugs, from: period.from, to: period.to },
       revalidate(loader),
+    );
+    await requireRetention(
+      loader,
+      activity,
+      retention.then(result => result.data?.target?.metricAlertStateLogRetentionDays ?? undefined),
     );
     return { period };
   },

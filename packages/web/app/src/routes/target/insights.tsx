@@ -10,6 +10,7 @@ import {
   defaultRange,
   loadQuery,
   requireRange,
+  requireRetention,
   revalidate,
   type RangeBounds,
 } from '@/lib/route-utils';
@@ -69,7 +70,7 @@ export const targetInsightsRoute = createRoute({
   loaderDeps: ({ search: { viewId: _viewId, ...deps } }) => deps,
   // A preload only warms, so the visit that follows it still runs the loader.
   preloadStaleTime: 0,
-  loader: loader => {
+  loader: async loader => {
     requireRange(loader, operationsBounds);
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
@@ -90,6 +91,7 @@ export const targetInsightsRoute = createRoute({
       revalidate(loader),
     );
     // The page reads the period from here, so both sides resolve "now" once.
+    await requireRetention(loader, operationsBounds);
     return { period, resolution };
   },
   component: TargetInsightsPage,
@@ -120,7 +122,7 @@ export const targetInsightsCoordinateRoute = createRoute({
   validateSearch: InsightsDateRangeSearch.parse,
   loaderDeps: lastWeek,
   preloadStaleTime: 0,
-  loader: loader => {
+  loader: async loader => {
     requireRange(loader, coordinateBounds);
     const { organizationSlug, projectSlug, targetSlug, coordinate } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
@@ -138,6 +140,7 @@ export const targetInsightsCoordinateRoute = createRoute({
       },
       revalidate(loader),
     );
+    await requireRetention(loader, coordinateBounds);
     return { period, resolution };
   },
   component: function TargetInsightsRoute() {
@@ -152,7 +155,7 @@ export const targetInsightsClientRoute = createRoute({
   validateSearch: InsightsDateRangeSearch.parse,
   loaderDeps: lastWeek,
   preloadStaleTime: 0,
-  loader: loader => {
+  loader: async loader => {
     requireRange(loader, clientBounds);
     const { organizationSlug, projectSlug, targetSlug, name } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
@@ -164,6 +167,7 @@ export const targetInsightsClientRoute = createRoute({
       { targetSelector: selector, period, clientName: name, resolution },
       revalidate(loader),
     );
+    await requireRetention(loader, clientBounds);
     return { period, resolution };
   },
   component: function TargetInsightsRoute() {
@@ -181,7 +185,7 @@ export const targetInsightsOperationsRoute = createRoute({
     to: search.to ?? presetLast1Day.range.to,
   }),
   preloadStaleTime: 0,
-  loader: loader => {
+  loader: async loader => {
     requireRange(loader, operationBounds);
     const { organizationSlug, projectSlug, targetSlug, operationHash } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
@@ -194,6 +198,7 @@ export const targetInsightsOperationsRoute = createRoute({
       { targetSelector: selector, period, filter: { operationIds: [operationHash] }, resolution },
       revalidate(loader),
     );
+    await requireRetention(loader, operationBounds);
     return { period, resolution };
   },
   component: function TargetInsightsRoute() {

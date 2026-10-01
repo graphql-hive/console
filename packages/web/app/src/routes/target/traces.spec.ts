@@ -72,6 +72,13 @@ describe('traces route', () => {
     },
   );
 
+  it('resets a range older than the rollups keep, as a retention reset', { timeout: 30_000 }, async () => {
+    const { router } = await loadedAt(`${TRACES}?from=now-2y&to=now`);
+
+    await waitFor(() => expect(router.state.location.search).toEqual(presetLast7Days.range));
+    expect(router.state.location.state.rangeReset).toBe('retention');
+  });
+
   it('a row link follows the picker', { timeout: 30_000 }, async () => {
     const client = createTestClient(new Map([...layoutFixtures(), ...tracesFixtures()]));
     const { router } = renderAtUrl(`${TRACES}?from=now-1d&to=now`, { client });

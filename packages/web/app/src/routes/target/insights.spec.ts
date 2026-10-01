@@ -242,7 +242,7 @@ describe('a range the route cannot read', () => {
     await waitFor(() =>
       expect(router.state.location.search).toEqual({ from: 'now-1d', to: 'now' }),
     );
-    expect(router.state.location.state.rangeReset).toBe(true);
+    expect(router.state.location.state.rangeReset).toBe('unreadable');
     expect(router.history.length).toBe(1);
   });
 });

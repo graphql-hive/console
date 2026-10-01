@@ -30,15 +30,22 @@ const ACTIVITY = 'TargetAlertsActivityPage_Query';
 const RETENTION = 'TargetAlertsActivityPage_RetentionQuery';
 const TARGET_NODE = { __typename: 'Target', id: 'target-1' };
 
-function activityFixtures() {
+function activityFixtures(metricAlertStateLogRetentionDays = 30) {
   return new Map<string, unknown>([
     ...layoutFixtures(),
-    [
-      RETENTION,
-      { __typename: 'Query', target: { ...TARGET_NODE, metricAlertStateLogRetentionDays: 30 } },
-    ],
+    [RETENTION, { __typename: 'Query', target: { ...TARGET_NODE, metricAlertStateLogRetentionDays } }],
     [ACTIVITY, { __typename: 'Query', target: { ...TARGET_NODE, metricAlertRuleStateLog: [] } }],
   ]);
+}
+
+async function loadedWith(fixtures: Map<string, unknown>, url: string) {
+  const client = createTestClient(fixtures);
+  const router = createAppRouter({
+    history: createMemoryHistory({ initialEntries: [url] }),
+    urqlClient: client,
+  });
+  await router.load();
+  return { client, router };
 }
 
 async function loadedAt(url: string) {
@@ -83,17 +90,26 @@ describe('alerts activity route', () => {
     },
   );
 
-  it('keeps a range in months: every preset is on every screen', { timeout: 30_000 }, async () => {
-    const client = createTestClient(activityFixtures());
-    const router = createAppRouter({
-      history: createMemoryHistory({ initialEntries: [`${ALERTS}?from=now-6M&to=now&types=["x"]`] }),
-      urqlClient: client,
-    });
-    await router.load();
+  it('keeps a range within the log retention and resets one past it', { timeout: 30_000 }, async () => {
+    const kept = await loadedWith(activityFixtures(30), `${ALERTS}?from=now-14d&to=now`);
+    expect(kept.router.state.location.search).toEqual({ from: 'now-14d', to: 'now' });
+    expect(kept.router.state.location.state.rangeReset).toBeUndefined();
 
-    expect(router.state.location.search).toEqual({ from: 'now-6M', to: 'now', types: ['x'] });
-    expect(router.state.location.state.rangeReset).toBeUndefined();
-    expect(client.requests(ACTIVITY)).toHaveLength(1);
+    const reset = await loadedWith(activityFixtures(7), `${ALERTS}?from=now-14d&to=now&types=["x"]`);
+    await waitFor(() =>
+      expect(reset.router.state.location.search).toEqual({ ...presetLast1Hour.range, types: ['x'] }),
+    );
+    expect(reset.router.history.length).toBe(1);
+    expect(reset.router.state.location.state.rangeReset).toBe('retention');
+  });
+
+  it('a range in months is a unit the screen allows; the log retention is what resets it', { timeout: 30_000 }, async () => {
+    const { router } = await loadedWith(activityFixtures(30), `${ALERTS}?from=now-6M&to=now&types=["x"]`);
+
+    await waitFor(() =>
+      expect(router.state.location.search).toEqual({ ...presetLast1Hour.range, types: ['x'] }),
+    );
+    expect(router.state.location.state.rangeReset).toBe('retention');
   });
 
   it(

@@ -6,7 +6,7 @@ import {
 } from '@/components/layouts/queries';
 import type { Preset } from '@/components/ui/date-range-picker';
 import { parse } from '@/lib/date-math';
-import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
+import { loaderPeriod, retentionBoundary } from '@/lib/hooks/use-date-range-controller';
 import { redirect, type AnyRedirect } from '@tanstack/react-router';
 import type {
   AnyVariables,
@@ -26,7 +26,7 @@ declare module '@urql/core' {
 declare module '@tanstack/history' {
   interface HistoryState {
     // Set by a range reset; the page's picker announces it once.
-    rangeReset?: true;
+    rangeReset?: RangeResetReason;
   }
 }
 
@@ -161,13 +161,15 @@ export type RangeLoader = {
   location: { search: RangeSearch };
 };
 
+export type RangeResetReason = 'unreadable' | 'retention';
+
 // Back to the default; the note in history state is what the page's toast reads.
-function resetRange(loader: RangeLoader, { preset, to }: RangeBounds) {
+function resetRange(loader: RangeLoader, { preset, to }: RangeBounds, reason: RangeResetReason) {
   return redirect({
     to,
     params: loader.params,
     search: { ...loader.location.search, ...preset.range },
-    state: { rangeReset: true },
+    state: { rangeReset: reason },
   });
 }
 
@@ -175,13 +177,34 @@ function resetRange(loader: RangeLoader, { preset, to }: RangeBounds) {
 export function requireRange(loader: RangeLoader, bounds: RangeBounds): void {
   for (const bound of [loader.deps.from, loader.deps.to]) {
     if (bound !== undefined && !parse(bound)) {
-      throw resetRange(loader, bounds);
+      throw resetRange(loader, bounds, 'unreadable');
     }
   }
   try {
     loaderPeriod(loader.deps, bounds.preset);
   } catch {
     // Older than the rollups keep.
-    throw resetRange(loader, bounds);
+    throw resetRange(loader, bounds, 'retention');
+  }
+}
+
+// The organization's usage retention, from the layout document the layout above already loaded.
+function usageRetention(loader: LoaderContext & RangeLoader): Promise<number | undefined> {
+  const { organizationSlug, projectSlug, targetSlug } = loader.params;
+  return loadQuery(loader, TargetLayoutQuery, { organizationSlug, projectSlug, targetSlug }).then(
+    result => result.data?.organization?.usageRetentionInDays ?? undefined,
+  );
+}
+
+// After the loader warmed its documents: a start before what the plan keeps resets. Missing data admits.
+export async function requireRetention(
+  loader: LoaderContext & RangeLoader,
+  bounds: RangeBounds,
+  retention: Promise<number | undefined> = usageRetention(loader),
+): Promise<void> {
+  const days = await retention;
+  const from = loader.deps.from === undefined ? undefined : parse(loader.deps.from);
+  if (days !== undefined && from && from.getTime() < retentionBoundary(days).getTime()) {
+    throw resetRange(loader, bounds, 'retention');
   }
 }

@@ -24,8 +24,11 @@ export function useDateRangeController(args: {
   defaultPreset: Preset;
   /** controlled input range */
   range?: Preset['range'];
+  /** what the retention keeps, for the toast; "usage data" unless a page says otherwise. */
+  subject?: string;
 }) {
   const router = useRouter();
+  const subject = args.subject ?? 'usage data';
 
   const [startDate] = useResetState(
     () => retentionBoundary(args.dataRetentionInDays),
@@ -56,9 +59,12 @@ export function useDateRangeController(args: {
     }
     toast({
       title: `Date range reset to ${args.defaultPreset.label}`,
-      description: 'This page cannot show the range the URL carried.',
+      description:
+        state.rangeReset === 'retention'
+          ? `Your plan keeps the last ${args.dataRetentionInDays} days of ${subject}.`
+          : 'This page cannot show the range the URL carried.',
     });
-  }, [state, toast, args.defaultPreset.label]);
+  }, [state, toast, args.defaultPreset.label, args.dataRetentionInDays, subject]);
 
   return {
     startDate,

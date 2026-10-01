@@ -2,7 +2,7 @@
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
 import { explorerFixtures } from '@/lib/testing/fixtures/explorer';
-import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
+import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
@@ -32,8 +32,7 @@ function client() {
   return createTestClient(new Map([...layoutFixtures(), ...explorerFixtures()]));
 }
 
-async function loadedAt(url: string) {
-  const testClient = client();
+async function loadedAt(url: string, testClient = client()) {
   const router = createAppRouter({
     history: createMemoryHistory({ initialEntries: [url] }),
     urqlClient: testClient,
@@ -188,7 +187,7 @@ describe('explorer period', () => {
       );
       expect(router.state.location.pathname).toBe(`${EXPLORER}/unused`);
       expect(router.history.length).toBe(1);
-      expect(router.state.location.state.rangeReset).toBe(true);
+      expect(router.state.location.state.rangeReset).toBe('unreadable');
       // Nothing asked for the range it could not read.
       const periods = router.client
         .requests('UnusedSchemaExplorer_UnusedSchemaQuery')
@@ -197,6 +196,42 @@ describe('explorer period', () => {
       expect(Date.now() - Date.parse(periods[0])).toBeGreaterThan(6 * 24 * 60 * 60 * 1000);
     },
   );
+
+  // Every document about the organization must agree on its retention: graphcache normalizes it.
+  function hobbyClient() {
+    const fixtures = new Map([...layoutFixtures(), ...explorerFixtures(7)]);
+    fixtures.set('TargetLayoutQuery', targetLayout({}, { usageRetentionInDays: 7 }));
+    return createTestClient(fixtures);
+  }
+
+  it(
+    "resets a range past the plan's retention to the last week, after the warms, and notes it",
+    { timeout: 30_000 },
+    async () => {
+      const router = await loadedAt(
+        `${EXPLORER}/unused?from=now-30d&to=now&subgraph=users`,
+        hobbyClient(),
+      );
+
+      await waitFor(() =>
+        expect(router.state.location.search).toEqual({ ...LAST_WEEK, subgraph: 'users' }),
+      );
+      expect(router.history.length).toBe(1);
+      expect(router.state.location.state.rangeReset).toBe('retention');
+      // The warms asked for the month once; the request that stands is for the week.
+      const periods = router.client
+        .requests('UnusedSchemaExplorer_UnusedSchemaQuery')
+        .map(o => (o.variables as { period: { from: string } }).period.from);
+      expect(Date.now() - Date.parse(periods.at(-1)!)).toBeLessThan(8 * 24 * 60 * 60 * 1000);
+    },
+  );
+
+  it('the page says what the plan keeps after a retention reset', { timeout: 30_000 }, async () => {
+    renderAtUrl(`${EXPLORER}/deprecated?from=now-30d&to=now`, { client: hobbyClient() });
+
+    await screen.findByRole('button', { name: 'Last 7 days' });
+    expect(await screen.findByText('Your plan keeps the last 7 days of usage data.')).toBeTruthy();
+  });
 
   it('the page says the range was reset, once', { timeout: 30_000 }, async () => {
     vi.useRealTimers();
