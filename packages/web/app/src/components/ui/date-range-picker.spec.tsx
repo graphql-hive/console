@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { formatDateToString } from '@/lib/date-math';
+import { UTCDate } from '@date-fns/utc';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { DateRangePicker, presetLast7Days } from './date-range-picker';
 
@@ -49,5 +51,40 @@ describe('DateRangePicker', () => {
     expect(preset('Last 7 days').disabled).toBe(false);
     expect(preset('Last 14 days').disabled).toBe(true);
     expect(preset('Last 1 year').disabled).toBe(true);
+  });
+
+  describe('the custom range against a start date', () => {
+    const DAY = 24 * 60 * 60 * 1000;
+    // The UTC start of a day eight days ago, as the controller computes it.
+    const startDate = new Date(Math.floor((Date.now() - 8 * DAY) / DAY) * DAY);
+    const apply = () =>
+      screen.getByRole('button', { name: 'Apply date range' }) as HTMLButtonElement;
+
+    async function openWith(props: Partial<React.ComponentProps<typeof DateRangePicker>> = {}) {
+      render(<DateRangePicker selectedRange={presetLast7Days.range} startDate={startDate} {...props} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
+      return screen.findByLabelText('From');
+    }
+
+    it('refuses a start before it and disables Apply', async () => {
+      const from = await openWith();
+      fireEvent.change(from, { target: { value: '2020-01-01 00:00' } });
+      expect(screen.getByText(/Must start on or after/)).toBeTruthy();
+      expect(apply().disabled).toBe(true);
+    });
+
+    it('accepts the boundary day itself', async () => {
+      const from = await openWith();
+      fireEvent.change(from, { target: { value: formatDateToString(new UTCDate(startDate)) } });
+      expect(screen.queryByText(/Must start on or after/)).toBeNull();
+      expect(apply().disabled).toBe(false);
+    });
+
+    it('disables Apply on a unit the picker excludes', async () => {
+      const from = await openWith({ validUnits: ['d'] });
+      fireEvent.change(from, { target: { value: 'now-3h' } });
+      expect(screen.getByText(/Only allowed units/)).toBeTruthy();
+      expect(apply().disabled).toBe(true);
+    });
   });
 });

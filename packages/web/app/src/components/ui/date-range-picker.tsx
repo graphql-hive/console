@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { type ControlSize } from '@/components/ui/primitives/shared-styles';
 import { DurationUnit, formatDateToString, parse, units, withinUnits } from '@/lib/date-math';
 import { useResetState } from '@/lib/hooks/use-reset-state';
+import { UTCDate } from '@date-fns/utc';
 import { Calendar } from './calendar';
 
 export interface DateRangePickerProps {
@@ -216,8 +217,10 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
   ];
 
   if (props.startDate) {
+    // The calendar works in local days; the boundary is a UTC day, so disable up to that day's local date.
+    const day = props.startDate;
     disabledDays.push({
-      before: props.startDate,
+      before: new Date(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()),
     });
   }
 
@@ -285,6 +288,21 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
 
   const fromParsed = parse(fromValue);
   const toParsed = parse(toValue);
+  // Typed values parse as UTC, so the boundary shows as a UTC date too.
+  const fromError = !withinUnits(fromValue, validUnits)
+    ? `Only allowed units are ${validUnits.join(', ')}`
+    : !fromParsed
+      ? 'Invalid date string'
+      : props.startDate && fromParsed.getTime() < props.startDate.getTime()
+        ? `Must start on or after ${formatDateToString(new UTCDate(props.startDate))}`
+        : null;
+  const toError = !withinUnits(toValue, validUnits)
+    ? `Only allowed units are ${validUnits.join(', ')}`
+    : !toParsed
+      ? 'Invalid date string'
+      : fromParsed && fromParsed.getTime() > toParsed.getTime()
+        ? 'To cannot be before from.'
+        : null;
 
   const PresetButton = useMemo(
     () =>
@@ -364,6 +382,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                   <Input
                     type="text"
                     id="from"
+                    autoComplete="off"
                     value={fromValue}
                     onChange={ev => {
                       setFromValue(ev.target.value);
@@ -381,13 +400,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                     }
                   />
                 </div>
-                <div className="text-critical">
-                  {!withinUnits(fromValue, validUnits) ? (
-                    <>Only allowed units are {validUnits.join(', ')}</>
-                  ) : !fromParsed ? (
-                    <>Invalid date string</>
-                  ) : null}
-                </div>
+                <div className="text-critical w-0 min-w-full">{fromError}</div>
               </div>
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor="to" label="To" />
@@ -395,6 +408,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                   <Input
                     type="text"
                     id="to"
+                    autoComplete="off"
                     value={toValue}
                     onChange={ev => {
                       setToValue(ev.target.value);
@@ -412,15 +426,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                     }
                   />
                 </div>
-                <div className="text-critical">
-                  {!withinUnits(toValue, validUnits) ? (
-                    <>Only allowed units are {validUnits.join(', ')}</>
-                  ) : !toParsed ? (
-                    <>Invalid date string</>
-                  ) : fromParsed && toParsed && fromParsed.getTime() > toParsed.getTime() ? (
-                    <div className="text-critical">To cannot be before from.</div>
-                  ) : null}
-                </div>
+                <div className="text-critical w-0 min-w-full">{toError}</div>
               </div>
 
               <Button
@@ -450,8 +456,8 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                   }
                 }}
                 disabled={
-                  !toParsed ||
-                  !fromParsed ||
+                  !!fromError ||
+                  !!toError ||
                   (activePreset?.range.from === fromValue.trim() &&
                     activePreset.range.to === toValue.trim())
                 }

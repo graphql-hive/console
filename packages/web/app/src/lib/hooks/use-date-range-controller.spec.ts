@@ -5,6 +5,7 @@ import {
   loaderPeriod,
   resolveDateRange,
   resolveRangeAndResolution,
+  retentionBoundary,
 } from './use-date-range-controller';
 
 describe('useDateRangeController', () => {
@@ -263,5 +264,21 @@ describe('loaderPeriod', () => {
     expect(loaderPeriod({}, presetLast7Days, now)).toEqual(
       loaderPeriod(presetLast7Days.range, presetLast7Days, now),
     );
+  });
+});
+
+describe('retentionBoundary', () => {
+  const now = new Date('2026-09-29T15:30:00.000Z');
+  const boundary = retentionBoundary(7, now);
+
+  it('is the UTC start of the day the retention reaches back to', () => {
+    expect(boundary.toISOString()).toBe('2026-09-22T00:00:00.000Z');
+  });
+
+  it('admits the edge preset whether exact or rounded to the hour, and refuses the day before', () => {
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    expect(sevenDaysAgo.getTime()).toBeGreaterThanOrEqual(boundary.getTime());
+    expect(Date.parse('2026-09-22T15:00:00.000Z')).toBeGreaterThanOrEqual(boundary.getTime());
+    expect(Date.parse('2026-09-21T23:59:59.999Z')).toBeLessThan(boundary.getTime());
   });
 });

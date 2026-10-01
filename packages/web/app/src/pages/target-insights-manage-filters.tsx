@@ -1,5 +1,5 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
-import { formatISO, subDays } from 'date-fns';
+import { formatISO } from 'date-fns';
 import { BellRing, Lock, Users } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -24,6 +24,7 @@ import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';
 import { useSlugs } from '@/lib/hooks';
+import { retentionBoundary } from '@/lib/hooks/use-date-range-controller';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
@@ -329,7 +330,7 @@ function SavedFilterRowFilters({
   const savedDateRange = filter.filters.dateRange ?? DEFAULT_DATE_RANGE;
   const [dateRange, setDateRange] = useState(savedDateRange);
 
-  const startDate = useMemo(() => subDays(new Date(), dataRetentionInDays), [dataRetentionInDays]);
+  const startDate = useMemo(() => retentionBoundary(dataRetentionInDays), [dataRetentionInDays]);
 
   const resolvedPeriod = useMemo(() => {
     const from = parse(dateRange.from);

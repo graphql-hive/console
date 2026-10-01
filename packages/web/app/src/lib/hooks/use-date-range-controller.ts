@@ -28,7 +28,7 @@ export function useDateRangeController(args: {
   const router = useRouter();
 
   const [startDate] = useResetState(
-    () => subDays(new Date(), args.dataRetentionInDays),
+    () => retentionBoundary(args.dataRetentionInDays),
     [args.dataRetentionInDays],
   );
   const searchParams = router.latestLocation.search;
@@ -215,6 +215,12 @@ function endOfHour(date: Date): Date {
       999,
     ),
   );
+}
+
+// The earliest start a plan allows: the UTC start of the day `retentionInDays` days before now. The
+// picker, the loaders and the API all compare against that day, never the exact instant.
+export function retentionBoundary(retentionInDays: number, now = new Date()): Date {
+  return getUTCStartOfDay(subDays(now, retentionInDays));
 }
 
 export function resolveRangeAndResolution(range: { from: Date; to: Date }, now = new Date()) {
