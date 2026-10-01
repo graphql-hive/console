@@ -472,19 +472,6 @@ const addMetricAlertRule: TypedDocumentNodeUpdateResolver<
   });
 };
 
-const updateMetricAlertRule: UpdateResolver = (_result, args, cache) => {
-  const input = (args as { input?: Record<string, unknown> } | null)?.input;
-  const ruleId = input?.ruleId as string | undefined;
-  if (!input || !ruleId) return;
-  // Skip for a pure enable/disable toggle: the mutation returns the new `enabled`
-  // so graphcache merges it in place; invalidating would evict the entity and flash a refetch.
-  const isEnabledOnlyToggle = Object.keys(input).every(
-    key => key === 'project' || key === 'ruleId' || key === 'enabled',
-  );
-  if (isEnabledOnlyToggle) return;
-  cache.invalidate({ __typename: 'MetricAlertRule', id: ruleId });
-};
-
 // UpdateResolver
 export const Mutation = {
   createOrganization,
@@ -508,7 +495,6 @@ export const Mutation = {
   createCdnAccessToken,
   deleteCdnAccessToken,
   addMetricAlertRule,
-  updateMetricAlertRule,
 };
 
 const updateMetricAlertRuleOptimistic: OptimisticMutationResolver = args => {
