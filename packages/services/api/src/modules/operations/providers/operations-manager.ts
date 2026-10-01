@@ -1,11 +1,18 @@
 import DataLoader from 'dataloader';
-import { Injectable, Scope } from 'graphql-modules';
+import { Inject, Injectable, Scope } from 'graphql-modules';
 import { LRUCache } from 'lru-cache';
 import { traceFn } from '@hive/service-common';
+import type { DateRangeInput } from '../../../__generated__/types';
 import type { DateRange } from '../../../shared/entities';
+import { PeriodOutsideRetentionError } from '../../../shared/errors';
 import type { Listify, Optional } from '../../../shared/helpers';
-import { cache } from '../../../shared/helpers';
+import { cache, createPeriod, parseDateRangeInput } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
+import {
+  COMMERCE_CONFIG,
+  type CommerceConfig,
+} from '../../commerce/providers/commerce-client';
+import { defaultUsagePeriodDays, retentionBoundary } from '../lib/usage-retention';
 import { Logger } from '../../shared/providers/logger';
 import type {
   OrganizationSelector,
@@ -84,6 +91,7 @@ export class OperationsManager {
     private reader: OperationsReader,
     private storage: Storage,
     private targetStore: TargetStore,
+    @Inject(COMMERCE_CONFIG) private commerceConfig: CommerceConfig,
   ) {
     this.logger = logger.child({ source: 'OperationsManager' });
 
@@ -133,6 +141,45 @@ export class OperationsManager {
     return this.reader.readMonthlyUsage({ organization: organizationId });
   }
 
+  // One organization read per request, and one "now" for every check in it.
+  @cache<OrganizationSelector>(({ organizationId }) => organizationId)
+  private async getUsageRetentionWindow({ organizationId }: OrganizationSelector) {
+    const organization = await this.storage.getOrganization({ organizationId });
+    const retentionInDays = organization.monthlyRateLimit.retentionInDays;
+    return { retentionInDays, earliestFrom: retentionBoundary({ now: new Date(), retentionInDays }) };
+  }
+
+  // Fails a usage read that starts before the plan keeps data; without billing nothing expires.
+  async assertPeriodWithinRetention({
+    organizationId,
+    period,
+  }: OrganizationSelector & { period: DateRange }): Promise<void> {
+    if (!this.commerceConfig.billingEnabled) {
+      return;
+    }
+    const { retentionInDays, earliestFrom } = await this.getUsageRetentionWindow({ organizationId });
+    if (period.from.getTime() < earliestFrom.getTime()) {
+      throw new PeriodOutsideRetentionError(retentionInDays);
+    }
+  }
+
+  // The caller's period, checked, or the explorer's default: a month, capped at the retention.
+  async usagePeriod(
+    { organizationId }: OrganizationSelector,
+    input: DateRangeInput | null | undefined,
+  ): Promise<DateRange> {
+    if (input) {
+      const period = parseDateRangeInput(input);
+      await this.assertPeriodWithinRetention({ organizationId, period });
+      return period;
+    }
+    if (!this.commerceConfig.billingEnabled) {
+      return createPeriod('30d');
+    }
+    const { retentionInDays } = await this.getUsageRetentionWindow({ organizationId });
+    return createPeriod(`${defaultUsagePeriodDays(retentionInDays)}d`);
+  }
+
   async countUniqueOperations({
     organizationId: organization,
     projectId: project,
@@ -160,6 +207,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return await this.reader.countUniqueDocuments({
       target,
@@ -238,6 +286,7 @@ export class OperationsManager {
         projectId,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId, period });
     return this.reader
       .countCoordinateResolutions({
         targetIds: Array.isArray(targetId) ? targetId : [targetId],
@@ -271,6 +320,7 @@ export class OperationsManager {
         projectId,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId, period });
 
     return this.reader
       .countCoordinate({
@@ -299,6 +349,7 @@ export class OperationsManager {
         projectId,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId, period });
     return this.reader
       .countCoordinateFailure({
         targetIds: Array.isArray(targetId) ? targetId : [targetId],
@@ -335,6 +386,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader
       .countRequests({
@@ -366,6 +418,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.countOperationsWithoutDetails({
       target,
@@ -420,6 +473,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.countFailures({
       target,
@@ -455,6 +509,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     const [totalField, total] = await Promise.all([
       this.reader.countField({
@@ -508,6 +563,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.readFieldListStats({
       fields,
@@ -546,6 +602,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     // Maybe it needs less data
     return this.reader.readUniqueDocuments({
@@ -593,6 +650,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     const groups = await this.requestsOverTimeOfTargetsLoader.load({
       targets,
@@ -653,6 +711,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.requestsOverTimeOfTargetsLoader.load({
       targets,
@@ -697,6 +756,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.requestsOverTime({
       target,
@@ -745,6 +805,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.failuresOverTime({
       target,
@@ -804,6 +865,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.errorCodesOverTimeAtSchemaCoordinate({
       target,
@@ -847,6 +909,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.durationOverTime({
       target,
@@ -880,6 +943,7 @@ export class OperationsManager {
         projectId,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId, period });
 
     return this.reader.getCoordinatesOverTime({
       period,
@@ -909,6 +973,7 @@ export class OperationsManager {
         projectId,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId, period });
 
     return this.reader.getCoordinateFailuresOverTime({
       period,
@@ -945,6 +1010,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.generalDurationPercentiles({
       target,
@@ -992,6 +1058,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.durationMetrics({
       target,
@@ -1034,6 +1101,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.countUniqueClients({
       target,
@@ -1063,6 +1131,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.readUniqueClientNames({
       target,
@@ -1092,6 +1161,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.readClientVersions({
       target,
@@ -1125,6 +1195,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.countClientVersions({
       target,
@@ -1173,6 +1244,10 @@ export class OperationsManager {
       schemaCoordinate: string;
     } & TargetSelector,
   ) {
+    await this.assertPeriodWithinRetention({
+      organizationId: args.organizationId,
+      period: args.period,
+    });
     const loader = this.getClientNamesPerCoordinateLoader({
       target: args.targetId,
       period: args.period,
@@ -1251,6 +1326,7 @@ export class OperationsManager {
         projectId: args.projectId,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: args.organizationId, period: args.period });
 
     const loader = this.getTopOperationForTypeLoader({
       target: args.targetId,
@@ -1275,6 +1351,7 @@ export class OperationsManager {
         projectId: args.projectId,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: args.organizationId, period: args.period });
 
     return this.reader.getReportedSchemaCoordinates({
       target: args.targetId,
@@ -1333,6 +1410,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
     const [rows, errorRows] = await Promise.all([
       this.reader.countCoordinatesOfType({
         target,
@@ -1413,6 +1491,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     const rows = await this.reader.countCoordinatesOfTarget({
       target,
@@ -1475,6 +1554,7 @@ export class OperationsManager {
         projectId: project,
       },
     });
+    await this.assertPeriodWithinRetention({ organizationId: organization, period });
 
     return this.reader.errorCodesAtSchemaCoordinate({
       period,

@@ -146,7 +146,7 @@ type RangeSearch = Partial<Range> & Record<string, unknown>;
 // What a screen shows by default, and its own path.
 export type RangeBounds = { preset: Preset; to: string };
 
-// A `beforeLoad` that sends a bare URL to the default range, so a shared link always says what it shows.
+// A beforeLoad that fills a bare URL with the default range, so a shared link says what it shows.
 export function defaultRange({ preset, to }: RangeBounds) {
   return ({ search, params }: { search: RangeSearch; params: Record<string, string> }) => {
     if (search.from === undefined && search.to === undefined) {
@@ -196,7 +196,7 @@ function usageRetention(loader: LoaderContext & RangeLoader): Promise<number | u
   );
 }
 
-// After the loader warmed its documents: a start before what the plan keeps resets. Missing data admits.
+// After the warms: a start before what the plan keeps resets; missing data admits.
 export async function requireRetention(
   loader: LoaderContext & RangeLoader,
   bounds: RangeBounds,

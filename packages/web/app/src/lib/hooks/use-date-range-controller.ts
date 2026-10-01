@@ -90,7 +90,7 @@ export function useDateRangeController(args: {
   } as const;
 }
 
-// The note stays in the entry (a reload keeps it, so does going back to it): remember the one announced.
+// The note survives a reload and a return to the entry; remember which one was announced.
 const ANNOUNCED = 'hive:range-reset:announced';
 function announced(entryKey: string): boolean {
   try {
@@ -223,8 +223,7 @@ function endOfHour(date: Date): Date {
   );
 }
 
-// The earliest start a plan allows: the UTC start of the day `retentionInDays` days before now. The
-// picker, the loaders and the API all compare against that day, never the exact instant.
+// The UTC day the retention reaches back to; every check compares against it, not the instant.
 export function retentionBoundary(retentionInDays: number, now = new Date()): Date {
   return getUTCStartOfDay(subDays(now, retentionInDays));
 }

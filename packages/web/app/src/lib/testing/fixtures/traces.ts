@@ -17,7 +17,7 @@ export const TRACE = {
   httpUrl: 'https://api.example.com/graphql',
 };
 
-/** One trace in the list, no filter options and no traffic buckets. */
+// One trace in the list, no filter options and no traffic buckets.
 export function tracesPage() {
   return {
     __typename: 'Query' as const,

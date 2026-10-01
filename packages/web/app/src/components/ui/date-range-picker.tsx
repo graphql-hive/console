@@ -217,7 +217,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
   ];
 
   if (props.startDate) {
-    // The calendar works in local days; the boundary is a UTC day, so disable up to that day's local date.
+    // The boundary is a UTC day; the calendar counts local days.
     const day = props.startDate;
     disabledDays.push({
       before: new Date(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()),

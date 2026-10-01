@@ -60,3 +60,15 @@ export class MissingTargetError extends HiveError {
     });
   }
 }
+
+// A usage read whose period starts before the plan keeps data.
+export class PeriodOutsideRetentionError extends HiveError {
+  constructor(retentionInDays: number) {
+    super(`This range starts before your plan's retention of ${retentionInDays} days.`, {
+      extensions: {
+        code: 'PERIOD_OUTSIDE_RETENTION',
+        retentionInDays,
+      },
+    });
+  }
+}
