@@ -61,8 +61,8 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
     }
 
-    const { pool } = await seed.createDbConnection();
-    await pool.query(psql`
+    await using db = await seed.createDbConnection();
+    await db.pool.query(psql`
       UPDATE "schema_versions"
       SET "graph_id" = NULL
       WHERE "target_id" = ${target.id}
@@ -105,7 +105,6 @@ test.concurrent(
 
     expect(commits).toEqual(['linked-2', 'linked-1']);
     expect(new Set(commits).size).toBe(commits.length);
-    await pool.end();
   },
 );
 
@@ -117,9 +116,9 @@ test.concurrent(
     const { createProject } = await createOrg();
     const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
-    const { pool } = await seed.createDbConnection();
+    await using db = await seed.createDbConnection();
 
-    await pool.query(psql`
+    await db.pool.query(psql`
       UPDATE "graphs"
       SET "is_backfilled" = TRUE
       WHERE "target_id" = ${target.id}
@@ -134,7 +133,7 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
     }
 
-    await pool.query(psql`
+    await db.pool.query(psql`
     UPDATE "schema_versions"
     SET "graph_id" = NULL
     WHERE "target_id" = ${target.id}
@@ -177,7 +176,70 @@ test.concurrent(
 
     expect(commits).toEqual(['linked-2', 'linked-1', 'legacy-2', 'legacy-1']);
     expect(new Set(commits).size).toBe(commits.length);
-    await pool.end();
+  },
+);
+
+test.concurrent(
+  'schema version pagination orders legacy versions by creation date among linked versions for backfilled graph',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+    await using db = await seed.createDbConnection();
+
+    await db.pool.query(psql`
+      UPDATE "graphs"
+      SET "is_backfilled" = TRUE
+      WHERE "target_id" = ${target.id}
+    `);
+
+    const publish = (commit: string) =>
+      token
+        .publishSchema({
+          commit,
+          sdl: `type Query { ${commit.replace('-', '_')}: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+    await publish('linked-1');
+    await publish('legacy-1');
+    await db.pool.query(psql`
+      UPDATE "schema_versions"
+      SET "graph_id" = NULL
+      WHERE "target_id" = ${target.id} AND "meta"->>'commit' = 'legacy-1'
+    `);
+    await publish('linked-2');
+
+    const commits: Array<string | null> = [];
+    let after: string | null = null;
+    let result: DocumentType<typeof PaginatedSchemaVersionsQuery>;
+
+    do {
+      result = await execute({
+        document: PaginatedSchemaVersionsQuery,
+        authToken: token.secret,
+        variables: {
+          targetRef: { byId: target.id },
+          first: 1,
+          after,
+        },
+      }).then(r => r.expectNoGraphQLErrors());
+
+      const connection = result.target?.schemaVersions;
+      assertNonNullish(connection);
+      expect(connection.edges).toHaveLength(1);
+
+      commits.push(connection.edges[0].node.meta?.commit ?? null);
+      after = connection.pageInfo.endCursor;
+      if (!connection.pageInfo.hasNextPage) {
+        break;
+      }
+    } while (after);
+
+    expect(commits).toEqual(['linked-2', 'legacy-1', 'linked-1']);
+    expect(new Set(commits).size).toBe(commits.length);
   },
 );
 

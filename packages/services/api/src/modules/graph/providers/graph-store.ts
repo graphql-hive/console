@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
+import { invariant } from '@hive/service-common';
 import { batch } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
 
@@ -142,6 +143,16 @@ export class GraphStore {
 
   findGraphForTargetIdByName(targetId: string, graphName: string): Promise<Graph | null> {
     return this.findGraphForTargetIdByNameBatched({ targetId, graphName });
+  }
+
+  /**
+   * Every target owns a `default` graph (created with the target, backfilled for older ones),
+   * so a missing one is a data-integrity error rather than a lookup miss.
+   */
+  async getDefaultGraphForTargetId(targetId: string): Promise<Graph> {
+    const graph = await this.findGraphForTargetIdByNameBatched({ targetId, graphName: 'default' });
+    invariant(graph, `No graph with name 'default' exists. (targetId=${targetId})`);
+    return graph;
   }
 
   async deleteGraphByTargetIdAndName(

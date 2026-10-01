@@ -334,7 +334,7 @@ export class AppDeployments {
         ...latestSchemaVersion,
         organizationId: args.graph.organizationId,
         projectId: args.graph.projectId,
-        targetId: args.graph.id,
+        targetId: args.graph.targetId,
       });
 
       if (compositeSchemaSdl === null) {
