@@ -2,7 +2,6 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Fastify, { type FastifyReply } from 'fastify';
-import { describe, expect, it, vi } from 'vitest';
 import { preflightWorkerEmbed, registerPreflightWorkerEmbedRoute } from './preflight-embed';
 
 describe('preflight worker embed route', () => {

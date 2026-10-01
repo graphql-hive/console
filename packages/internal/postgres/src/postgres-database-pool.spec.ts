@@ -191,14 +191,38 @@ describe('createPostgresDatabasePool', () => {
             throw new TypeError('connection method called unbound');
           }
         }
-        exists() { this.assertBound(); return Promise.resolve(true); }
-        any() { this.assertBound(); return Promise.resolve([]); }
-        maybeOne() { this.assertBound(); return Promise.resolve(null); }
-        query() { this.assertBound(); return Promise.resolve({}); }
-        oneFirst() { this.assertBound(); return Promise.resolve(1); }
-        maybeOneFirst() { this.assertBound(); return Promise.resolve(null); }
-        anyFirst() { this.assertBound(); return Promise.resolve([]); }
-        one() { this.assertBound(); return Promise.resolve({}); }
+        exists() {
+          this.assertBound();
+          return Promise.resolve(true);
+        }
+        any() {
+          this.assertBound();
+          return Promise.resolve([]);
+        }
+        maybeOne() {
+          this.assertBound();
+          return Promise.resolve(null);
+        }
+        query() {
+          this.assertBound();
+          return Promise.resolve({});
+        }
+        oneFirst() {
+          this.assertBound();
+          return Promise.resolve(1);
+        }
+        maybeOneFirst() {
+          this.assertBound();
+          return Promise.resolve(null);
+        }
+        anyFirst() {
+          this.assertBound();
+          return Promise.resolve([]);
+        }
+        one() {
+          this.assertBound();
+          return Promise.resolve({});
+        }
       }
       mockCreatePool.mockResolvedValueOnce({
         transaction: (handler: (connection: SlonikTransactionConnection) => unknown) =>

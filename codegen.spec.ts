@@ -1,5 +1,5 @@
-import { generate } from '@graphql-codegen/cli';
 import { describe, expect, it } from 'vitest';
+import { generate } from '@graphql-codegen/cli';
 import config from './codegen.mts';
 
 const schemaTarget = config.generates['./schema.graphql'];

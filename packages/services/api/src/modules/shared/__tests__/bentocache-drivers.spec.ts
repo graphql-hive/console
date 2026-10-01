@@ -1,7 +1,7 @@
-import Redis from 'ioredis-mock';
 import { BentoCache, bentostore } from 'bentocache';
 import { memoryDriver } from 'bentocache/drivers/memory';
 import { redisDriver } from 'bentocache/drivers/redis';
+import Redis from 'ioredis-mock';
 
 // The cache providers import the drivers from these public sub-paths. The package-internal
 // paths they replaced only fail at runtime inside a bundled service, so pin the public ones here.
