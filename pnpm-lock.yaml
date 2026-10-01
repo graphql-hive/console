@@ -294,12 +294,6 @@ patchedDependencies:
   '@graphql-eslint/eslint-plugin@3.20.1':
     hash: 92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb
     path: patches/@graphql-eslint__eslint-plugin@3.20.1.patch
-  '@oclif/core@3.26.6':
-    hash: 7432c7b46bd5e3276faff9af4fc733575417c17a0ec31df3c7a229f766e3cffc
-    path: patches/@oclif__core@3.26.6.patch
-  '@oclif/core@4.0.6':
-    hash: d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46
-    path: patches/@oclif__core@4.0.6.patch
   '@slonik/pg-driver':
     hash: c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488
     path: patches/@slonik__pg-driver.patch
@@ -754,7 +748,7 @@ importers:
         version: 3.2.0(graphql@16.9.0)
       '@oclif/core':
         specifier: 3.26.6
-        version: 3.26.6(patch_hash=7432c7b46bd5e3276faff9af4fc733575417c17a0ec31df3c7a229f766e3cffc)
+        version: 3.26.6
       '@oclif/plugin-help':
         specifier: 6.2.36
         version: 6.2.36
@@ -23970,7 +23964,7 @@ snapshots:
       - bluebird
       - supports-color
 
-  '@oclif/core@3.26.6(patch_hash=7432c7b46bd5e3276faff9af4fc733575417c17a0ec31df3c7a229f766e3cffc)':
+  '@oclif/core@3.26.6':
     dependencies:
       '@types/cli-progress': 3.11.5
       ansi-escapes: 4.3.2
@@ -24001,7 +23995,7 @@ snapshots:
       wordwrap: 1.0.0
       wrap-ansi: 7.0.0
 
-  '@oclif/core@4.0.6(patch_hash=d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46)':
+  '@oclif/core@4.0.6':
     dependencies:
       ansi-escapes: 4.3.2
       ansis: 3.2.0
@@ -24044,7 +24038,7 @@ snapshots:
 
   '@oclif/plugin-help@6.2.36':
     dependencies:
-      '@oclif/core': 4.0.6(patch_hash=d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46)
+      '@oclif/core': 4.0.6
 
   '@oclif/plugin-not-found@3.2.73(@types/node@25.5.0)':
     dependencies:
@@ -24058,7 +24052,7 @@ snapshots:
   '@oclif/plugin-update@4.7.16':
     dependencies:
       '@inquirer/select': 2.5.0
-      '@oclif/core': 4.0.6(patch_hash=d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46)
+      '@oclif/core': 4.0.6
       '@oclif/table': 0.5.1
       ansis: 3.17.0
       debug: 4.4.3(supports-color@8.1.1)
