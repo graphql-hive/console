@@ -573,7 +573,6 @@ function SavedFilterRowFilters({
           selectedRange={dateRange}
           onUpdate={({ preset }) => setDateRange(preset.range)}
           startDate={startDate}
-          validUnits={['y', 'M', 'w', 'd', 'h']}
           align="start"
         />
         {showOperationFilter && operationItems.length > 0 && (

@@ -8,7 +8,7 @@ import {
   targetLayout,
 } from '@/lib/testing/fixtures/layouts';
 import { createTestClient } from '@/lib/testing/urql';
-import type { DurationUnit } from '@/lib/date-math';
+import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { isRedirect } from '@tanstack/react-router';
 import { createClient, makeResult, type Exchange, type Operation } from '@urql/core';
 import {
@@ -17,7 +17,7 @@ import {
   loadQuery,
   redirectToPathSchema,
   requireLayoutFlag,
-  requireUnits,
+  requireRange,
   revalidate,
 } from './route-utils';
 
@@ -217,8 +217,7 @@ describe('requireLayoutFlag', () => {
 
 describe('defaultRange', () => {
   const bounds = {
-    range: { from: 'now-7d', to: 'now' },
-    units: ['y', 'M', 'w', 'd', 'h'] as DurationUnit[],
+    preset: presetLast7Days,
     to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
   };
 
@@ -248,12 +247,12 @@ describe('defaultRange', () => {
   });
 });
 
-describe('requireUnits', () => {
+describe('requireRange', () => {
   const bounds = {
-    range: { from: 'now-7d', to: 'now' },
-    units: ['y', 'M', 'w', 'd', 'h'] as DurationUnit[],
+    preset: presetLast7Days,
     to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
   };
+  const DAY = 24 * 60 * 60 * 1000;
 
   function loader(deps: { from?: string; to?: string }, search: Record<string, unknown> = deps) {
     return { params: SLUGS, deps, location: { search } };
@@ -261,16 +260,16 @@ describe('requireUnits', () => {
 
   function resetOf(deps: { from?: string; to?: string }, search?: Record<string, unknown>) {
     try {
-      requireUnits(loader(deps, search), bounds);
+      requireRange(loader(deps, search), bounds);
     } catch (caught) {
       return redirectOf(caught) as ReturnType<typeof redirectOf> & { state?: unknown };
     }
     throw new Error('expected a reset');
   }
 
-  it('resets a range in a unit the picker does not offer, keeping the rest of the search', () => {
-    const reset = resetOf({ from: 'now-30m', to: 'now' }, {
-      from: 'now-30m',
+  it('resets a bound it cannot read, keeping the rest of the search', () => {
+    const reset = resetOf({ from: 'garbage', to: 'now' }, {
+      from: 'garbage',
       to: 'now',
       operations: ['abc'],
     });
@@ -281,18 +280,19 @@ describe('requireUnits', () => {
       search: { operations: ['abc'], from: 'now-7d', to: 'now' },
       state: { rangeReset: true },
     });
+    expect(resetOf({ from: 'now-1d', to: 'later' }).search).toMatchObject(bounds.preset.range);
   });
 
-  it('looks at both bounds', () => {
-    expect(resetOf({ from: 'now-1d', to: 'now-5m' }).search).toMatchObject(bounds.range);
+  it('resets a range older than the rollups keep, at either bound', () => {
+    expect(resetOf({ from: 'now-2y', to: 'now' }).search).toMatchObject(bounds.preset.range);
+    expect(resetOf({ from: 'now-2y', to: 'now-1y-1d' }).search).toMatchObject(bounds.preset.range);
   });
 
-  it('admits the units the picker offers, absolute dates, and a bare URL', () => {
-    expect(requireUnits(loader({ from: 'now-1h', to: 'now' }), bounds)).toBeUndefined();
-    expect(requireUnits(loader({ from: 'now-6M', to: 'now' }), bounds)).toBeUndefined();
-    expect(
-      requireUnits(loader({ from: '2026-09-01T10:00:00.000Z', to: 'now' }), bounds),
-    ).toBeUndefined();
-    expect(requireUnits(loader({}), bounds)).toBeUndefined();
+  it('admits any unit, an absolute date within the rollups, and a bare URL', () => {
+    const lastWeek = new Date(Date.now() - 7 * DAY).toISOString();
+    expect(requireRange(loader({ from: 'now-30m', to: 'now' }), bounds)).toBeUndefined();
+    expect(requireRange(loader({ from: 'now-6M', to: 'now' }), bounds)).toBeUndefined();
+    expect(requireRange(loader({ from: lastWeek, to: 'now' }), bounds)).toBeUndefined();
+    expect(requireRange(loader({}), bounds)).toBeUndefined();
   });
 });

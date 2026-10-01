@@ -11,7 +11,7 @@ import { useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { DateRangePicker, presetLast7Days, usageUnits } from '@/components/ui/date-range-picker';
+import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Link as LegacyLink } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
@@ -213,7 +213,6 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
         </div>
         <div className="flex justify-end gap-x-2">
           <DateRangePicker
-            validUnits={usageUnits}
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
             align="end"

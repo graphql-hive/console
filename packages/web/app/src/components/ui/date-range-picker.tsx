@@ -82,10 +82,6 @@ function resolveRange(rawFrom: string, rawTo: string): ResolvedDateRange | null 
   return null;
 }
 
-// The units each kind of screen offers; its routes reset a range outside them.
-export const usageUnits: DurationUnit[] = ['y', 'M', 'w', 'd', 'h'];
-export const activityUnits: DurationUnit[] = ['d', 'h', 'm'];
-
 export const presetLast7Days: Preset = {
   name: 'last7d',
   label: 'Last 7 days',

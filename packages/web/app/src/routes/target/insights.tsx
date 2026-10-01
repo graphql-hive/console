@@ -4,12 +4,12 @@ import {
   InsightsFilterSearch,
 } from '@/components/target/insights/search-schemas';
 import { Stats_GeneralOperationsStatsQuery } from '@/components/target/insights/stats';
-import { presetLast1Day, presetLast7Days, usageUnits } from '@/components/ui/date-range-picker';
+import { presetLast1Day, presetLast7Days, type Preset } from '@/components/ui/date-range-picker';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
 import {
   defaultRange,
   loadQuery,
-  requireUnits,
+  requireRange,
   revalidate,
   type RangeBounds,
 } from '@/lib/route-utils';
@@ -42,25 +42,21 @@ import {
 import { createRoute } from '@tanstack/react-router';
 import { targetRoute } from './route';
 
-const insights = (range: RangeBounds['range'], to: string): RangeBounds => ({
-  range,
-  units: usageUnits,
-  to,
-});
+const insights = (preset: Preset, to: string): RangeBounds => ({ preset, to });
 const operationsBounds = insights(
-  presetLast7Days.range,
+  presetLast7Days,
   '/$organizationSlug/$projectSlug/$targetSlug/insights',
 );
 const coordinateBounds = insights(
-  presetLast7Days.range,
+  presetLast7Days,
   '/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate',
 );
 const clientBounds = insights(
-  presetLast7Days.range,
+  presetLast7Days,
   '/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name',
 );
 const operationBounds = insights(
-  presetLast1Day.range,
+  presetLast1Day,
   '/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
 );
 
@@ -74,7 +70,7 @@ export const targetInsightsRoute = createRoute({
   // A preload only warms, so the visit that follows it still runs the loader.
   preloadStaleTime: 0,
   loader: loader => {
-    requireUnits(loader, operationsBounds);
+    requireRange(loader, operationsBounds);
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
     const { period, resolution } = loaderPeriod(loader.deps, presetLast7Days);
@@ -125,7 +121,7 @@ export const targetInsightsCoordinateRoute = createRoute({
   loaderDeps: lastWeek,
   preloadStaleTime: 0,
   loader: loader => {
-    requireUnits(loader, coordinateBounds);
+    requireRange(loader, coordinateBounds);
     const { organizationSlug, projectSlug, targetSlug, coordinate } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
     const { period, resolution } = loaderPeriod(loader.deps, presetLast7Days);
@@ -157,7 +153,7 @@ export const targetInsightsClientRoute = createRoute({
   loaderDeps: lastWeek,
   preloadStaleTime: 0,
   loader: loader => {
-    requireUnits(loader, clientBounds);
+    requireRange(loader, clientBounds);
     const { organizationSlug, projectSlug, targetSlug, name } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
     const { period, resolution } = loaderPeriod(loader.deps, presetLast7Days);
@@ -186,7 +182,7 @@ export const targetInsightsOperationsRoute = createRoute({
   }),
   preloadStaleTime: 0,
   loader: loader => {
-    requireUnits(loader, operationBounds);
+    requireRange(loader, operationBounds);
     const { organizationSlug, projectSlug, targetSlug, operationHash } = loader.params;
     const selector = { organizationSlug, projectSlug, targetSlug };
     const { period, resolution } = loaderPeriod(loader.deps, presetLast1Day);

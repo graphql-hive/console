@@ -31,4 +31,23 @@ describe('DateRangePicker', () => {
     });
     await waitFor(() => expect(screen.queryByPlaceholderText('Filter quick ranges')).toBeNull());
   });
+
+  it('lists every preset, greying out those that start before the start date', async () => {
+    const DAY = 24 * 60 * 60 * 1000;
+    render(
+      <DateRangePicker
+        selectedRange={presetLast7Days.range}
+        startDate={new Date(Date.now() - 8 * DAY)}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
+
+    const preset = (name: string) =>
+      screen.getAllByRole('button', { name }).at(-1) as HTMLButtonElement;
+    await screen.findByRole('button', { name: 'Last 15 minutes' });
+    expect(preset('Last 15 minutes').disabled).toBe(false);
+    expect(preset('Last 7 days').disabled).toBe(false);
+    expect(preset('Last 14 days').disabled).toBe(true);
+    expect(preset('Last 1 year').disabled).toBe(true);
+  });
 });

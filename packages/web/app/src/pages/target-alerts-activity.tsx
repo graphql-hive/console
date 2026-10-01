@@ -7,7 +7,7 @@ import {
   type ActivityEventRow,
 } from '@/components/target/alerts/alert-activity-table';
 import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
-import { activityUnits, DateRangePicker, type Preset } from '@/components/ui/date-range-picker';
+import { DateRangePicker, type Preset } from '@/components/ui/date-range-picker';
 import { Filters } from '@/components/ui/filters/filter-menu/filters';
 import { PageLead } from '@/components/ui/page-lead';
 import { graphql } from '@/gql';
@@ -217,7 +217,6 @@ function ActivityView(props: { retentionInDays: number }) {
               selectedRange={dateRangeController.selectedPreset.range}
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
               startDate={dateRangeController.startDate}
-              validUnits={activityUnits}
               align="start"
             />
           }

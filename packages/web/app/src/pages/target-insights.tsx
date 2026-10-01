@@ -11,7 +11,7 @@ import {
   useInsightsFilterExtraSections,
   type SavedFilterView,
 } from '@/components/target/insights/use-insights-filter-extra-sections';
-import { DateRangePicker, presetLast7Days, usageUnits } from '@/components/ui/date-range-picker';
+import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Filters } from '@/components/ui/filters/filter-menu/filters';
 import type { FilterItem } from '@/components/ui/filters/filter-menu/types';
@@ -289,7 +289,6 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
                 selectedRange={dateRangeController.selectedPreset.range}
                 onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
                 startDate={dateRangeController.startDate}
-                validUnits={usageUnits}
                 align="start"
               />
             }

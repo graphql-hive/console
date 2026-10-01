@@ -83,7 +83,7 @@ describe('alerts activity route', () => {
     },
   );
 
-  it('resets a range in months to the last hour and notes it', { timeout: 30_000 }, async () => {
+  it('keeps a range in months: every preset is on every screen', { timeout: 30_000 }, async () => {
     const client = createTestClient(activityFixtures());
     const router = createAppRouter({
       history: createMemoryHistory({ initialEntries: [`${ALERTS}?from=now-6M&to=now&types=["x"]`] }),
@@ -91,11 +91,8 @@ describe('alerts activity route', () => {
     });
     await router.load();
 
-    await waitFor(() =>
-      expect(router.state.location.search).toEqual({ ...presetLast1Hour.range, types: ['x'] }),
-    );
-    expect(router.history.length).toBe(1);
-    expect(router.state.location.state.rangeReset).toBe(true);
+    expect(router.state.location.search).toEqual({ from: 'now-6M', to: 'now', types: ['x'] });
+    expect(router.state.location.state.rangeReset).toBeUndefined();
     expect(client.requests(ACTIVITY)).toHaveLength(1);
   });
 

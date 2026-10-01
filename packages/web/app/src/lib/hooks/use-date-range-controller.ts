@@ -226,8 +226,8 @@ export function resolveRangeAndResolution(range: { from: Date; to: Date }, now =
   };
 
   if (
-    range.to.getTime() <= tableOldestDateTimePoint.daily.getTime() ||
-    range.from.getTime() <= tableOldestDateTimePoint.daily.getTime()
+    range.to.getTime() < tableOldestDateTimePoint.daily.getTime() ||
+    range.from.getTime() < tableOldestDateTimePoint.daily.getTime()
   ) {
     throw new Error('This range can never be resolved.');
   }

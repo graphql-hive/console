@@ -1,11 +1,11 @@
 import { ExplorerSearch } from '@/components/target/explorer/search-schemas';
 import { TypeFilter_AllTypes } from '@/components/target/explorer/use-explorer-filter-dimensions';
-import { presetLast7Days, usageUnits } from '@/components/ui/date-range-picker';
+import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
 import {
   defaultRange,
   loadQuery,
-  requireUnits,
+  requireRange,
   revalidate,
   type LoaderContext,
   type RangeBounds,
@@ -35,11 +35,7 @@ const range = ({ search }: { search: { from?: string; to?: string } }) => ({
 });
 
 // The four views share the range the URL holds; a bare URL takes the last week.
-const explorer = (to: string): RangeBounds => ({
-  range: presetLast7Days.range,
-  units: usageUnits,
-  to,
-});
+const explorer = (to: string): RangeBounds => ({ preset: presetLast7Days, to });
 const explorerAll = explorer('/$organizationSlug/$projectSlug/$targetSlug/explorer');
 const explorerType = explorer('/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename');
 const explorerDeprecated = explorer(
@@ -48,9 +44,9 @@ const explorerDeprecated = explorer(
 const explorerUnused = explorer('/$organizationSlug/$projectSlug/$targetSlug/explorer/unused');
 
 function explorerPeriod(loader: LoaderContext & RangeLoader, bounds: RangeBounds) {
-  requireUnits(loader, bounds);
+  requireRange(loader, bounds);
   const { organizationSlug, projectSlug, targetSlug } = loader.params;
-  const { period } = loaderPeriod(loader.deps, presetLast7Days);
+  const { period } = loaderPeriod(loader.deps, bounds.preset);
   return { slugs: { organizationSlug, projectSlug, targetSlug }, period };
 }
 

@@ -4,7 +4,9 @@ import {
   ProjectLayoutQuery,
   TargetLayoutQuery,
 } from '@/components/layouts/queries';
-import { withinUnits, type DurationUnit } from '@/lib/date-math';
+import type { Preset } from '@/components/ui/date-range-picker';
+import { parse } from '@/lib/date-math';
+import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
 import { redirect, type AnyRedirect } from '@tanstack/react-router';
 import type {
   AnyVariables,
@@ -141,14 +143,14 @@ export const requireLayoutFlag = {
 type Range = { from: string; to: string };
 type RangeSearch = Partial<Range> & Record<string, unknown>;
 
-// What a screen can show: its default range, the units its picker offers, and its own path.
-export type RangeBounds = { range: Range; units: DurationUnit[]; to: string };
+// What a screen shows by default, and its own path.
+export type RangeBounds = { preset: Preset; to: string };
 
 // A `beforeLoad` that sends a bare URL to the default range, so a shared link always says what it shows.
-export function defaultRange({ range, to }: Pick<RangeBounds, 'range' | 'to'>) {
+export function defaultRange({ preset, to }: RangeBounds) {
   return ({ search, params }: { search: RangeSearch; params: Record<string, string> }) => {
     if (search.from === undefined && search.to === undefined) {
-      throw redirect({ to, params, search: { ...search, ...range } });
+      throw redirect({ to, params, search: { ...search, ...preset.range } });
     }
   };
 }
@@ -160,20 +162,26 @@ export type RangeLoader = {
 };
 
 // Back to the default; the note in history state is what the page's toast reads.
-function resetRange(loader: RangeLoader, { range, to }: RangeBounds) {
+function resetRange(loader: RangeLoader, { preset, to }: RangeBounds) {
   return redirect({
     to,
     params: loader.params,
-    search: { ...loader.location.search, ...range },
+    search: { ...loader.location.search, ...preset.range },
     state: { rangeReset: true },
   });
 }
 
-// Before a loader warms anything: a range in a unit this screen's picker does not offer resets.
-export function requireUnits(loader: RangeLoader, bounds: RangeBounds): void {
+// Before a loader warms anything: a range no screen can show resets, so the URL never carries one.
+export function requireRange(loader: RangeLoader, bounds: RangeBounds): void {
   for (const bound of [loader.deps.from, loader.deps.to]) {
-    if (bound !== undefined && !withinUnits(bound, bounds.units)) {
+    if (bound !== undefined && !parse(bound)) {
       throw resetRange(loader, bounds);
     }
+  }
+  try {
+    loaderPeriod(loader.deps, bounds.preset);
+  } catch {
+    // Older than the rollups keep.
+    throw resetRange(loader, bounds);
   }
 }

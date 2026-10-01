@@ -5,7 +5,7 @@ import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { OperationsStats } from '@/components/target/insights/stats';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { DateRangePicker, presetLast1Day, usageUnits } from '@/components/ui/date-range-picker';
+import { DateRangePicker, presetLast1Day } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
@@ -95,7 +95,6 @@ function OperationView({
         {!result.fetching && isNotNoQueryOrMutation === false && (
           <div className="flex justify-end gap-x-2">
             <DateRangePicker
-              validUnits={usageUnits}
               selectedRange={dateRangeController.selectedPreset.range}
               startDate={dateRangeController.startDate}
               align="end"

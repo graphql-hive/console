@@ -228,12 +228,12 @@ describe('operation route', () => {
   });
 });
 
-describe('a range the pickers cannot show', () => {
+describe('a range the route cannot read', () => {
   it('resets to the last day on an operation, noting it', { timeout: 30_000 }, async () => {
     const client = createTestClient(layoutFixtures());
     const router = createAppRouter({
       history: createMemoryHistory({
-        initialEntries: [`${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}?from=now-15m&to=now`],
+        initialEntries: [`${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}?from=garbage&to=now`],
       }),
       urqlClient: client,
     });

@@ -166,11 +166,22 @@ describe('explorer period', () => {
     );
   });
 
+  it('keeps a range in minutes: every preset is on every screen', { timeout: 30_000 }, async () => {
+    const router = await loadedAt(`${EXPLORER}/unused?from=now-30m&to=now&subgraph=users`);
+
+    expect(router.state.location.search).toEqual({ from: 'now-30m', to: 'now', subgraph: 'users' });
+    expect(router.state.location.state.rangeReset).toBeUndefined();
+    const periods = router.client
+      .requests('UnusedSchemaExplorer_UnusedSchemaQuery')
+      .map(o => (o.variables as { period: { from: string } }).period.from);
+    expect(Date.now() - Date.parse(periods[0])).toBeLessThan(60 * 60 * 1000);
+  });
+
   it(
-    'resets a range in minutes to the last week, keeping the filters and noting it',
+    'resets a range it cannot read to the last week, keeping the filters and noting it',
     { timeout: 30_000 },
     async () => {
-      const router = await loadedAt(`${EXPLORER}/unused?from=now-30m&to=now&subgraph=users`);
+      const router = await loadedAt(`${EXPLORER}/unused?from=garbage&to=now&subgraph=users`);
 
       await waitFor(() =>
         expect(router.state.location.search).toEqual({ ...LAST_WEEK, subgraph: 'users' }),
@@ -178,7 +189,7 @@ describe('explorer period', () => {
       expect(router.state.location.pathname).toBe(`${EXPLORER}/unused`);
       expect(router.history.length).toBe(1);
       expect(router.state.location.state.rangeReset).toBe(true);
-      // Nothing asked for the range the picker cannot show.
+      // Nothing asked for the range it could not read.
       const periods = router.client
         .requests('UnusedSchemaExplorer_UnusedSchemaQuery')
         .map(o => (o.variables as { period: { from: string } }).period.from);
@@ -189,7 +200,7 @@ describe('explorer period', () => {
 
   it('the page says the range was reset, once', { timeout: 30_000 }, async () => {
     vi.useRealTimers();
-    renderAtUrl(`${EXPLORER}/deprecated?from=now-30m&to=now`, { client: client() });
+    renderAtUrl(`${EXPLORER}/deprecated?from=garbage&to=now`, { client: client() });
 
     await screen.findByRole('button', { name: 'Last 7 days' });
     expect(await screen.findAllByText('Date range reset to Last 7 days')).toHaveLength(1);

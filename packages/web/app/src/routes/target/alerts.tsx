@@ -4,13 +4,12 @@ import {
   AlertForm_SavedFiltersQuery,
 } from '@/components/target/alerts/alert-form';
 import { AlertActivitySearch } from '@/components/target/alerts/search-schemas';
-import { activityUnits } from '@/components/ui/date-range-picker';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
 import {
   defaultRange,
   loadQuery,
   requireLayoutFlag,
-  requireUnits,
+  requireRange,
   revalidate,
   type RangeBounds,
 } from '@/lib/route-utils';
@@ -48,8 +47,7 @@ export const targetAlertsWithNavRoute = createRoute({
 });
 
 const activity: RangeBounds = {
-  range: presetLast1Hour.range,
-  units: activityUnits,
+  preset: presetLast1Hour,
   to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
 };
 
@@ -61,7 +59,7 @@ export const targetAlertsIndexRoute = createRoute({
   loaderDeps: ({ search }) => ({ from: search.from, to: search.to }),
   preloadStaleTime: 0,
   loader: loader => {
-    requireUnits(loader, activity);
+    requireRange(loader, activity);
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const slugs = { organizationSlug, projectSlug, targetSlug };
     const { period } = loaderPeriod(loader.deps, presetLast1Hour);
