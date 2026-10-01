@@ -9,6 +9,7 @@ const CreateContractMutation = graphql(`
       ok {
         createdContract {
           id
+          contractName
           target {
             id
           }
@@ -332,5 +333,54 @@ test.concurrent('contractName must be at most 64 characters long', async ({ expe
           ok: null,
         },
       }
-    `);
+  `);
+});
+
+test.concurrent('contractName must not contain non-alphanumeric characters', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target } = await createProject(ProjectType.Federation);
+
+  const result = await execute({
+    document: CreateContractMutation,
+    variables: {
+      input: {
+        target: { byId: target.id },
+        contractName: 'invalid name!',
+        includeTags: ['foo'],
+        removeUnreachableTypesFromPublicApiSchema: true,
+      },
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createContract).toMatchObject({
+    error: {
+      details: {
+        contractName: "Can only contain letters, numbers, '_', and '-'",
+      },
+    },
+    ok: null,
+  });
+});
+
+test.concurrent('contractName is lowercased', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target } = await createProject(ProjectType.Federation);
+
+  const result = await execute({
+    document: CreateContractMutation,
+    variables: {
+      input: {
+        target: { byId: target.id },
+        contractName: 'My_CONTRACT-1',
+        includeTags: ['foo'],
+        removeUnreachableTypesFromPublicApiSchema: true,
+      },
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createContract.ok?.createdContract.contractName).toBe('my_contract-1');
 });

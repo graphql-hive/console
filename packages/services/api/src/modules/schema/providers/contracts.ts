@@ -924,7 +924,12 @@ export type Contract = z.TypeOf<typeof ContractModel>;
 const CreateContractInputModel = z
   .object({
     targetId: z.string().uuid(),
-    contractName: z.string().max(64).min(2),
+    contractName: z
+      .string()
+      .max(64)
+      .min(2)
+      .toLowerCase()
+      .regex(/^[a-zA-Z0-9_-]+$/, "Can only contain letters, numbers, '_', and '-'"),
     includeTags: z.array(z.string()).nullable(),
     excludeTags: z.array(z.string()).nullable(),
     removeUnreachableTypesFromPublicApiSchema: z.boolean(),
