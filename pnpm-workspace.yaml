@@ -57,7 +57,7 @@ catalog:
   dotenv: 16.4.7
   esbuild: 0.28.1
   fast-json-stable-stringify: 2.1.0
-  fastify: 5.12.3
+  fastify: 5.12.5
   got: 14.4.7
   graphql-yoga: 5.22.0
   ioredis-mock: 8.9.0
