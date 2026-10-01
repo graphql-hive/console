@@ -70,7 +70,12 @@ export const watchEntryPlugin = () => {
         .replace('.ts', '.js');
       const inspectFlag = process.env.INSPECT ? '--inspect ' : ' ';
       const nodeOptions = process.env.NODE_OPTIONS || '';
-      this.options.onSuccess = `node --enable-source-maps ${inspectFlag} ${nodeOptions} ${outFile} | pino-pretty --translateTime HH:MM:ss TT --ignore pid,hostname`;
+      const run = `node --enable-source-maps ${inspectFlag} ${nodeOptions} ${outFile}`;
+      // A pipe reports pino-pretty's exit status, not node's; the test entry must surface failures.
+      this.options.onSuccess =
+        entry === 'src/dev.ts'
+          ? `${run} | pino-pretty --translateTime HH:MM:ss TT --ignore pid,hostname`
+          : run;
     },
   };
 };
