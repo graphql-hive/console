@@ -1,5 +1,34 @@
 # hive
 
+## 12.0.0
+
+### Major Changes
+
+- [#8603](https://github.com/graphql-hive/console/pull/8603)
+  [`79631e2`](https://github.com/graphql-hive/console/commit/79631e2326443960cd2ff9824fbe521e482a530b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Replace `Mutation.disableContract` mutation with
+  `Mutation.deleteContract`, which permanently deletes contracts instead of soft-deleting them.
+  Historical contract versions are retained and remain available from their schema versions.
+
+  Remove `Contract.isDisabled` and `Target.activeContracts`. Use `Target.contracts` as the single
+  source of truth for existing contracts; legacy disabled contracts are excluded from this
+  connection.
+
+- [#8601](https://github.com/graphql-hive/console/pull/8601)
+  [`762334e`](https://github.com/graphql-hive/console/commit/762334ed80bfa94ccbdf6ee07a9fe6f6ec9583f9)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Creating a contract now requires alphanumeric
+  names.
+
+### Patch Changes
+
+- [#8597](https://github.com/graphql-hive/console/pull/8597)
+  [`b94f2d2`](https://github.com/graphql-hive/console/commit/b94f2d2a6407b72ded8615a2acd29b7059bdf336)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix the trace list and trace filter options
+  occasionally omitting recently ingested traces of a target after a filtered request. ClickHouse's
+  query condition cache keyed the verdicts of these queries by their PREWHERE only while a separate
+  WHERE dropped granules through skip indexes; the queries now carry every condition in a single
+  PREWHERE.
+
 ## 11.16.1
 
 ### Patch Changes
