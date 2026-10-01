@@ -7,9 +7,9 @@
   },
   "dependencies": {
     "@apollo/subgraph": "2.13.2",
-    "@theguild/federation-composition": "0.27.0",
+    "@theguild/federation-composition": "catalog:",
     "graphql": "16.9.0",
-    "graphql-yoga": "5.22.0"
+    "graphql-yoga": "catalog:"
   },
   "devDependencies": {
     "wrangler": "3.114.17"
