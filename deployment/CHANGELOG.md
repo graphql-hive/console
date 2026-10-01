@@ -1,5 +1,27 @@
 # hive
 
+## 11.16.1
+
+### Patch Changes
+
+- [#8590](https://github.com/graphql-hive/console/pull/8590)
+  [`914d28d`](https://github.com/graphql-hive/console/commit/914d28d48a2cca5a7050f7595e9ecbea657a9cdb)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-jvvf-x445-j334](https://github.com/advisories/GHSA-jvvf-x445-j334) and
+  [GHSA-hrr3-gc8f-f4qj](https://github.com/advisories/GHSA-hrr3-gc8f-f4qj).
+
+- [#8491](https://github.com/graphql-hive/console/pull/8491)
+  [`94032da`](https://github.com/graphql-hive/console/commit/94032dad6e9eb8bf88e39b366c2f6929e7df17b1)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix subscription operations' client version parsing
+  so they can populate app deployment "last used" tracking. Subscription operations were splitting
+  `persistedDocumentHash` on `/` instead of `~` (the actual `appName~appVersion~hash` format used
+  everywhere else).
+
+- [#8590](https://github.com/graphql-hive/console/pull/8590)
+  [`914d28d`](https://github.com/graphql-hive/console/commit/914d28d48a2cca5a7050f7595e9ecbea657a9cdb)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-253c-mchw-3w2r](https://github.com/advisories/GHSA-253c-mchw-3w2r).
+
 ## 11.16.0
 
 ### Minor Changes

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { AdminStats, Filters } from '@/components/admin/AdminStats';
+import { AdminStats, Filters } from '@/components/admin/admin-stats';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
 import { Page } from '@/components/common';
