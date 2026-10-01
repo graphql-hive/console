@@ -2344,7 +2344,7 @@ importers:
         specifier: 6.1.0
         version: 6.1.0
       fastify:
-        specifier: 'catalog:'
+        specifier: 5.12.3
         version: 5.12.3
       graphiql:
         specifier: 4.0.0-alpha.5
