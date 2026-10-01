@@ -2,4 +2,4 @@
 'hive': patch
 ---
 
-Fixes an issue with graphcache after modifying a Metric Alert
+Fixes a long-standing client crash (graphcache) after modifying a Metric Alert
