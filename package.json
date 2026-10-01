@@ -131,7 +131,9 @@
     "overrides.ajv@8.x.x": "address https://github.com/graphql-hive/console/security/dependabot/507",
     "overrides.yauzl@2.x.x": "address https://github.com/graphql-hive/console/security/dependabot/542",
     "overrides.path-to-regexp@0.x.x": "address https://github.com/graphql-hive/console/security/dependabot/619",
+    "overrides.graphile-worker>@types/pg": "Keep graphile-worker on the catalog @types/pg version; a newer transitive @types/pg makes the pg Pool passed in services/workflows/src/kit.ts type-incompatible",
     "overrides": {
+      "graphile-worker>@types/pg": "8.11.10",
       "esbuild": "0.28.1",
       "csstype": "3.1.2",
       "mjml-core@4.14.0>html-minifier": "-",

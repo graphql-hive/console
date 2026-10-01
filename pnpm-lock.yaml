@@ -224,6 +224,7 @@ catalogs:
       version: 3.4.0
 
 overrides:
+  graphile-worker>@types/pg: 8.11.10
   esbuild: 0.28.1
   csstype: 3.1.2
   mjml-core@4.14.0>html-minifier: '-'
@@ -31716,7 +31717,7 @@ snapshots:
     dependencies:
       '@graphile/logger': 0.2.0
       '@types/debug': 4.1.12
-      '@types/pg': 8.15.6
+      '@types/pg': 8.11.10
       cosmiconfig: 8.3.6(typescript@5.7.3)
       graphile-config: 0.0.1-beta.18
       json5: 2.2.3
