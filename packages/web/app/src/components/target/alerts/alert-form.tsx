@@ -135,7 +135,7 @@ export const AlertForm_AddMetricAlertRuleMutation = graphql(`
   }
 `);
 
-const AlertForm_UpdateMetricAlertRuleMutation = graphql(`
+export const AlertForm_UpdateMetricAlertRuleMutation = graphql(`
   mutation AlertForm_UpdateMetricAlertRule($input: UpdateMetricAlertRuleInput!) {
     updateMetricAlertRule(input: $input) {
       ok {
