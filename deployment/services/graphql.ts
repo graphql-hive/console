@@ -128,6 +128,7 @@ export function deployGraphQL({
           COMMERCE_ENDPOINT: serviceLocalEndpoint(commerce.service),
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
           SCHEMA_POLICY_ENDPOINT: serviceLocalEndpoint(schemaPolicy.service),
+          SCHEMA_VERSION_ORIGIN_CUTOFF: '2026-06-01T10:04:34.971994+02:00',
           WEB_APP_URL: `https://${environment.appDns}`,
           GRAPHQL_PUBLIC_ORIGIN: `https://${environment.appDns}`,
           CDN_CF: '1',
