@@ -1,7 +1,7 @@
 import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
-  name: '2026.09.25T00-00-00.graphs.ts',
+  name: '2026.10.02T00-00-00.graphs',
   run: ({ psql }) => psql`
     CREATE TYPE "hive_graph_type"
       AS ENUM('BASE', 'CONTRACT')
