@@ -86,7 +86,6 @@ await describe('migration: backfill-graphs', async () => {
           includeTags: ['public'],
           excludeTags: ['internal'],
           removeUnreachableTypesFromPublicApiSchema: true,
-          isDisabled: false,
         },
         source_graph_id: defaultGraph.id,
         is_backfilled: true,
