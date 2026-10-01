@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { Chart } from '@/components/base/chart/chart';
-import { useChartTheme } from '@/components/base/chart/chart-theme';
+import { Chart } from '@/components/ui/primitives/chart/chart';
+import { useChartTheme } from '@/components/ui/primitives/chart/chart-theme';
 import { MetricAlertRuleSeverity, MetricAlertRuleState } from '@/gql/graphql';
 
 type ActivityEvent = {

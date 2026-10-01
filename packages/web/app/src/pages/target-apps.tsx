@@ -1,12 +1,12 @@
 import { format } from 'date-fns';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { PageLead } from '@/components/base/page-lead';
 import { LayoutContent } from '@/components/layouts/layout-content';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
+import { PageLead } from '@/components/ui/page-lead';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql, useFragment, type DocumentType } from '@/gql';
 import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';

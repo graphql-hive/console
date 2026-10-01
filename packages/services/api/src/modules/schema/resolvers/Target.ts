@@ -9,7 +9,6 @@ import type { TargetResolvers } from './../../../__generated__/types';
 
 export const Target: Pick<
   TargetResolvers,
-  | 'activeContracts'
   | 'baseSchema'
   | 'contracts'
   | 'fieldLevelMetricsDisplayState'
@@ -108,13 +107,6 @@ export const Target: Pick<
   },
   contracts: async (target, args, { injector }) => {
     return await injector.get(ContractsManager).getPaginatedContractsForTarget({
-      target,
-      cursor: args.after ?? null,
-      first: args.first ?? null,
-    });
-  },
-  activeContracts: async (target, args, { injector }) => {
-    return await injector.get(ContractsManager).getPaginatedActiveContractsForTarget({
       target,
       cursor: args.after ?? null,
       first: args.first ?? null,

@@ -2,10 +2,6 @@ import { useMemo } from 'react';
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { ChartPie, CheckIcon, FileDiffIcon, List, PencilIcon, XIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
-import { Spinner } from '@/components/base/spinner/spinner';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -17,8 +13,12 @@ import { SaveProposalProvider } from '@/components/target/proposals/save-proposa
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
 import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
+import { Navigation, type NavigationItem } from '@/components/ui/navigation/navigation';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';

@@ -1,7 +1,7 @@
 import { BlocksIcon, BoxIcon, FoldVerticalIcon } from 'lucide-react';
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import {
   Form,
   FormControl,
@@ -9,9 +9,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
-import { RadioGroup } from '@/components/base/radio-group/radio-group';
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
+import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 

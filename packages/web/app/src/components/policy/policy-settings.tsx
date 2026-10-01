@@ -1,8 +1,9 @@
 import { ReactElement, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Form } from '@/components/base/form/form';
+import { DataWrapper } from '@/components/ui/data-wrapper';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Form } from '@/components/ui/primitives/form/form';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   PolicySettings_SchemaPolicyFragmentFragment,
@@ -12,7 +13,6 @@ import {
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Callout } from '../ui/callout';
-import { DataWrapper } from '../v2';
 import { PolicyListItem } from './policy-list-item';
 import { PolicyFormSchema, type PolicyFormValues } from './rules-configuration';
 

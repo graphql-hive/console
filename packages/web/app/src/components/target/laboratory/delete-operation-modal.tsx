@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import { useMutation } from 'urql';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { useToast } from '@/components/base/toast/toast';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 

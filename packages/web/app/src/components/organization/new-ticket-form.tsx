@@ -7,10 +7,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
-import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { Textarea } from '@/components/base/textarea/textarea';
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
+import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
+import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import { SupportTicketPriority } from '@/gql/graphql';
 import { priorityDescription } from './support';
 

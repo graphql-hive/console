@@ -1,4 +1,4 @@
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { LayoutContent } from './layout-content';
 
 // The route is still deciding what the page is, so nothing here promises a shape.

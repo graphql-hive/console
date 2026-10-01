@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button } from '@/components/base/button/button';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { Tabs } from '@/components/base/tabs/tabs';
-import { useToast } from '@/components/base/toast/toast';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
+import { Tabs } from '@/components/ui/primitives/tabs/tabs';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation as useRQMutation } from '@tanstack/react-query';
 import {

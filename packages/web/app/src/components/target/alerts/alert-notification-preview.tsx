@@ -5,8 +5,8 @@
  */
 
 import { Copy } from 'lucide-react';
-import { Button } from '@/components/base/button/button';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { Button } from '@/components/ui/primitives/button/button';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { useClipboard } from '@/lib/hooks/use-clipboard';
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
 

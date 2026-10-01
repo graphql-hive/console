@@ -2,22 +2,22 @@ import { ReactElement, useCallback } from 'react';
 import { ArrowBigDownDashIcon, CheckIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Navigation } from '@/components/base/navigation/navigation';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { HiveLogo } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
+import { Navigation } from '@/components/ui/navigation/navigation';
 import {
   PageLayout,
   PageLayoutContent,
   SubPageLayout,
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { env } from '@/env/frontend';

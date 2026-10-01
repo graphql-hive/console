@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import clsx from 'clsx';
 import { CircleMinus, CircleX, TriangleAlert } from 'lucide-react';
-import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
+import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-group';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';

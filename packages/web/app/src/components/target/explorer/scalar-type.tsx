@@ -1,4 +1,4 @@
-import { Markdown } from '@/components/v2/markdown';
+import { Markdown } from '@/components/ui/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { GraphQLTypeCard, SchemaExplorerUsageStats } from './common';
 

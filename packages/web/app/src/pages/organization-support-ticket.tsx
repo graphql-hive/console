@@ -2,9 +2,6 @@ import { useCallback, useMemo } from 'react';
 import { ChevronRightIcon, UserIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { NotFound } from '@/components/base/not-found/not-found';
-import { useToast } from '@/components/base/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ReplyTicketForm,
@@ -13,7 +10,10 @@ import {
 } from '@/components/organization/reply-ticket-form';
 import { priorityDescription, statusDescription } from '@/components/organization/support';
 import { Meta } from '@/components/ui/meta';
+import { NotFound } from '@/components/ui/not-found/not-found';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';

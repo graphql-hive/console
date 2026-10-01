@@ -1,6 +1,6 @@
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import {
   Form,
   FormControl,
@@ -8,8 +8,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
 
 /** The endpoints a discovery document must carry, and the only client-side validated fields. */
 export const OIDCMetadataSchema = z.object({

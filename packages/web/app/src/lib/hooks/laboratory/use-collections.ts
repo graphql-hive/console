@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQuery } from 'urql';
-import { useToast } from '@/components/base/toast/toast';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { CollectionsQuery as _CollectionsQuery } from '@/gql/graphql';
 

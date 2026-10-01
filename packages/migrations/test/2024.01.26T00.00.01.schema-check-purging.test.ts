@@ -77,6 +77,11 @@ describe('schema check purging', async () => {
         schemaCompositionErrors: null,
         meta: null,
         contracts: null,
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -112,8 +117,8 @@ describe('schema check purging', async () => {
         .then(z.number().parse);
       assert.equal(sdlStoreCount, 0, 'SDL store count after purge');
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 
@@ -166,6 +171,11 @@ describe('schema check purging', async () => {
         schemaCompositionErrors: null,
         meta: null,
         contracts: null,
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -194,6 +204,11 @@ describe('schema check purging', async () => {
         schemaCompositionErrors: null,
         meta: null,
         contracts: null,
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -229,8 +244,8 @@ describe('schema check purging', async () => {
         .then(z.number().parse);
       assert.equal(sdlStoreCount, 1, 'SDL store count after purge');
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 
@@ -283,6 +298,11 @@ describe('schema check purging', async () => {
         schemaCompositionErrors: null,
         meta: null,
         contracts: null,
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -311,6 +331,11 @@ describe('schema check purging', async () => {
         schemaCompositionErrors: null,
         meta: null,
         contracts: null,
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -346,8 +371,8 @@ describe('schema check purging', async () => {
         .then(z.number().parse);
       assert.equal(sdlStoreCount, 1, 'SDL store count after purge');
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 
@@ -410,6 +435,11 @@ describe('schema check purging', async () => {
         schemaCompositionErrors: null,
         meta: null,
         contracts: null,
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -438,6 +468,11 @@ describe('schema check purging', async () => {
         schemaCompositionErrors: null,
         meta: null,
         contracts: null,
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -528,8 +563,8 @@ describe('schema check purging', async () => {
         .then(z.number().parse);
       assert.equal(schemaChangeApprovalCount, 0, 'schema change approval count after second purge');
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 
@@ -597,6 +632,11 @@ describe('schema check purging', async () => {
         schemaCompositionErrors: null,
         meta: null,
         contracts: null,
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -625,6 +665,11 @@ describe('schema check purging', async () => {
         schemaCompositionErrors: null,
         meta: null,
         contracts: null,
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -688,8 +733,8 @@ describe('schema check purging', async () => {
       );
       assert.equal(schemaChangeApprovalCount, 0, 'schema change approval count after purge');
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 
@@ -765,6 +810,9 @@ describe('schema check purging', async () => {
         meta: null,
         contracts: [
           {
+            baselineCompositeSchemaSdl: null,
+            baselineSupergraphSchemaSdl: null,
+            baselineCompositionErrors: null,
             breakingSchemaChanges: null,
             safeSchemaChanges: null,
             contractId,
@@ -775,6 +823,11 @@ describe('schema check purging', async () => {
             supergraphSchemaSdl: '{ __typename3 }',
           },
         ],
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -796,8 +849,8 @@ describe('schema check purging', async () => {
       sdlStoreCount = await db.oneFirst(psql`SELECT count(*) as total FROM sdl_store`);
       assert.equal(sdlStoreCount, 0, 'SDL store count after purge');
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 
@@ -874,6 +927,9 @@ describe('schema check purging', async () => {
         meta: null,
         contracts: [
           {
+            baselineCompositeSchemaSdl: null,
+            baselineSupergraphSchemaSdl: null,
+            baselineCompositionErrors: null,
             breakingSchemaChanges: [
               HiveSchemaChangeModel.parse({
                 type: 'TYPE_REMOVED',
@@ -892,6 +948,11 @@ describe('schema check purging', async () => {
             supergraphSchemaSdl: '{ __typename3 }',
           },
         ],
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -957,8 +1018,8 @@ describe('schema check purging', async () => {
         'contract schema change approval count after purge',
       );
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 
@@ -1036,6 +1097,9 @@ describe('schema check purging', async () => {
         meta: null,
         contracts: [
           {
+            baselineCompositeSchemaSdl: null,
+            baselineSupergraphSchemaSdl: null,
+            baselineCompositionErrors: null,
             breakingSchemaChanges: [
               HiveSchemaChangeModel.parse({
                 type: 'TYPE_REMOVED',
@@ -1054,6 +1118,11 @@ describe('schema check purging', async () => {
             supergraphSchemaSdl: '{ __typename3 }',
           },
         ],
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -1083,6 +1152,9 @@ describe('schema check purging', async () => {
         meta: null,
         contracts: [
           {
+            baselineCompositeSchemaSdl: null,
+            baselineSupergraphSchemaSdl: null,
+            baselineCompositionErrors: null,
             breakingSchemaChanges: [
               HiveSchemaChangeModel.parse({
                 type: 'TYPE_REMOVED',
@@ -1101,6 +1173,11 @@ describe('schema check purging', async () => {
             supergraphSchemaSdl: '{ __typename3 }',
           },
         ],
+        baselineSchemaSdl: null,
+        baselineSchemaHash: null,
+        baselinePublicSdl: null,
+        baselineSupergraphSdl: null,
+        baselineSchemaCompositionErrors: null,
         githubCheckRunId: null,
         githubRepository: null,
         githubSha: null,
@@ -1166,8 +1243,8 @@ describe('schema check purging', async () => {
         'contract schema change approval count after purge',
       );
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 });

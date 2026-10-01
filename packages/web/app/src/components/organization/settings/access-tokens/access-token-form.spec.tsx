@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { useForm } from 'react-hook-form';
-import { Form } from '@/components/base/form/form';
+import { Form } from '@/components/ui/primitives/form/form';
 import { TokenExpirationPeriod } from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { act, fireEvent, render, screen } from '@testing-library/react';

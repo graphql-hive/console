@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import type * as Urql from 'urql';
-import { ToastProvider } from '@/components/base/toast/toast';
+import { ToastProvider } from '@/components/ui/primitives/toast/toast';
 import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { NativeCompositionDiff } from './native-composition-diff';
@@ -15,7 +15,7 @@ vi.mock('urql', async importOriginal => ({
 }));
 
 // The diff editor is Monaco; both targets below compose identically, so the text branch renders.
-vi.mock('@/components/v2', () => ({ DiffEditor: () => null }));
+vi.mock('@/components/ui/diff-editor', () => ({ DiffEditor: () => null }));
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
 
 function result(slug: string, services: number) {

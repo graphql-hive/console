@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { focusRing } from '@/components/base/shared-styles';
+import { focusRing } from '@/components/ui/primitives/shared-styles';
 import { cn } from '@/lib/utils';
 import * as Stepperize from '@stepperize/react';
 

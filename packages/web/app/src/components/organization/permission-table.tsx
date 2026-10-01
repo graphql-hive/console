@@ -1,6 +1,6 @@
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import type { ColumnDef } from '@tanstack/react-table';
 
 export type PermissionRow = {

@@ -1,7 +1,7 @@
 import { ReactNode, useRef } from 'react';
 import { CopyIcon } from 'lucide-react';
-import { Button } from '@/components/base/button/button';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { useClipboard } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 

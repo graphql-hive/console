@@ -1,8 +1,14 @@
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@/components/base/button/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
-import { Textarea } from '@/components/base/textarea/textarea';
+import { Button } from '@/components/ui/primitives/button/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/components/ui/primitives/form/form';
+import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 
 export const ReplyTicketFormSchema = z.object({
   body: z.string().min(2, {

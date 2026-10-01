@@ -1,7 +1,7 @@
 import { ReactElement, ReactNode } from 'react';
 import { Check } from 'lucide-react';
-import { RadioGroup } from '@/components/base/radio-group/radio-group';
 import { Label, Section } from '@/components/common';
+import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 

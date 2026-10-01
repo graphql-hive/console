@@ -1,5 +1,5 @@
 import { InfoIcon } from 'lucide-react';
-import { Popover } from '@/components/base/floating/popover/popover';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 
 export function CompositionErrorsPopover() {
   return (

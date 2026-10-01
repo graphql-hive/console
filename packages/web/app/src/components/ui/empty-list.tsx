@@ -1,6 +1,6 @@
 import { ReactElement, ReactNode } from 'react';
 import magnifier from '../../../public/images/figures/magnifier.svg?url';
-import { Card } from '@/components/base/card/card';
+import { Card } from '@/components/ui/primitives/card/card';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { Code } from './code';

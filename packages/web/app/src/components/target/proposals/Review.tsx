@@ -1,6 +1,6 @@
 import { Fragment, ReactElement, useContext } from 'react';
 import { CheckIcon, PlusIcon } from 'lucide-react';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';

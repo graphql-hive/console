@@ -1,9 +1,9 @@
 import { ReactElement } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { useToast } from '@/components/base/toast/toast';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {

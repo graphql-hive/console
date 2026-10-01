@@ -4,11 +4,11 @@ import { type ReactNode } from 'react';
  * Shared furniture for the inventory previews in this folder.
  *
  * Each preview here transcribes every real call site of a `ui/` or `v2/` component queued for
- * migration to `base/`, rendering the **old** component as it ships today. That gives a "before"
+ * migration to `primitives/`, rendering the **old** component as it ships today. That gives a "before"
  * to judge a replacement against, and a coverage checklist to migrate through.
  *
- * These live outside `base/` on purpose: they import the old components, and `base/` should not
- * grow edges into `ui/`/`v2/` even in preview files.
+ * These live outside `primitives/` on purpose: they import the old components, and `primitives/`
+ * should not grow edges into the legacy `ui/` components even in preview files.
  *
  * Not named `*.preview.tsx`, so foundry does not mount it as a preview of its own.
  */

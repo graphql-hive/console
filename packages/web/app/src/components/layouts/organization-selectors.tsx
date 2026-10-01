@@ -1,4 +1,4 @@
-import { Select } from '@/components/base/floating/select/select';
+import { Select } from '@/components/ui/primitives/floating/select/select';
 import { graphql, useFragment } from '@/gql';
 import { useViewer } from '@/lib/hooks';
 import { useRouter } from '@tanstack/react-router';

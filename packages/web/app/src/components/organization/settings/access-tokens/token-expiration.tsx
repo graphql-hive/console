@@ -1,4 +1,4 @@
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { timeRelative } from './shared-helpers';
 
 const EXPIRED_TEXT = 'EXPIRED';

@@ -170,7 +170,7 @@ describe('changesToMarkdown', () => {
        - Field **Query.old** was removed (safe based on usage)
        - Field **Query.approved** was removed (approved)
 
-      ### Dangrous changes
+      ### Dangerous changes
        - Enum value **ACTIVE** was added
 
       ### Safe changes

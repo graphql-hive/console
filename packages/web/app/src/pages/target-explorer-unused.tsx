@@ -1,8 +1,6 @@
 import { memo, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { focusRingQuiet } from '@/components/base/shared-styles';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ExplorerFilteredEmptyState,
@@ -21,6 +19,8 @@ import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { focusRingQuiet } from '@/components/ui/primitives/shared-styles';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';

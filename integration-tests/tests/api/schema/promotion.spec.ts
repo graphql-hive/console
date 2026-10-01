@@ -1,7 +1,7 @@
 import {
   createContract,
+  deleteContract,
   deleteSchema,
-  disableContract,
   getSchemaVersionWithAllDetails,
   publishSchema,
   schemaVersionPromote,
@@ -718,7 +718,7 @@ test.concurrent(
 );
 
 test.concurrent(
-  'promote schema version within target does not move along disabled contracts',
+  'promote schema version within target ignores deleted contracts',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, createOrganizationAccessToken } = await createOrg();
@@ -781,7 +781,7 @@ test.concurrent(
       privateAccessKey,
     ).then(r => r.expectNoGraphQLErrors());
 
-    await disableContract(
+    await deleteContract(
       {
         contract: {
           byId: contractId,

@@ -70,7 +70,7 @@ export class ContractsManager {
     });
   }
 
-  public async disableContract(args: { contractId: string }) {
+  public async deleteContract(args: { contractId: string }) {
     const contract = await this.contracts.getContractById({ contractId: args.contractId });
     if (contract === null) {
       return {
@@ -105,16 +105,12 @@ export class ContractsManager {
       },
     });
 
-    return await this.contracts.disableContract({
+    return await this.contracts.deleteContract({
       contract,
     });
   }
 
-  async getViewerCanDisableContractForContract(contract: Contract): Promise<boolean> {
-    if (contract.isDisabled) {
-      return false;
-    }
-
+  async getViewerCanDeleteContractForContract(contract: Contract): Promise<boolean> {
     const breadcrumb = await this.targetStore.getTargetBreadcrumbForTargetId({
       targetId: contract.targetId,
     });
@@ -146,29 +142,6 @@ export class ContractsManager {
     first: number | null;
   }) {
     await this.session.assertPerformAction({
-      action: 'target:modifySettings',
-      organizationId: args.target.orgId,
-      params: {
-        organizationId: args.target.orgId,
-        projectId: args.target.projectId,
-        targetId: args.target.id,
-      },
-    });
-
-    return this.contracts.getPaginatedContractsByTargetId({
-      targetId: args.target.id,
-      cursor: args.cursor,
-      first: args.first,
-      onlyActive: false,
-    });
-  }
-
-  public async getPaginatedActiveContractsForTarget(args: {
-    target: Target;
-    cursor: string | null;
-    first: number | null;
-  }) {
-    await this.session.assertPerformAction({
       action: 'project:describe',
       organizationId: args.target.orgId,
       params: {
@@ -181,7 +154,6 @@ export class ContractsManager {
       targetId: args.target.id,
       cursor: args.cursor,
       first: args.first,
-      onlyActive: false,
     });
   }
 

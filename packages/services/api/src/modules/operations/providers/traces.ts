@@ -176,14 +176,17 @@ export class Traces {
       , "trace_id" DESC
     `;
 
-    let paginationSQLFragmentPart = sql``;
+    // Every condition lives in PREWHERE. ClickHouse writes its query condition cache verdicts under
+    // the PREWHERE column's hash while read-time skip indexes also drop granules for WHERE
+    // conditions, so a separate WHERE poisons the cache for every other query on the target.
+    const conditions: SqlValue[] = [sql`target_id = ${targetId}`];
 
     if (cursor) {
       if (sort?.sort === 'DURATION') {
         const operator = sort.direction === 'ASC' ? sql`>` : sql`<`;
         const durationStr = String(cursor.duration);
-        paginationSQLFragmentPart = sql`
-          AND (
+        conditions.push(sql`
+          (
             "duration" ${operator} ${durationStr}
             OR (
               "duration" = ${durationStr}
@@ -195,41 +198,22 @@ export class Traces {
               AND "trace_id" < ${cursor.traceId}
             )
           )
-        `;
+        `);
       } /* TIMESTAMP */ else {
         const operator = sort?.direction === 'ASC' ? sql`>` : sql`<`;
-        paginationSQLFragmentPart = sql`
-          AND (
+        conditions.push(sql`
+          (
             "timestamp" ${operator} ${cursor.timestamp}
             OR (
               "timestamp" = ${cursor.timestamp}
               AND "trace_id" < ${cursor.traceId}
             )
           )
-        `;
+        `);
       }
     }
 
-    const sqlConditions = buildTraceFilterSQLConditions(filter, false);
-
-    const timestampPrewhereConditions: SqlValue[] = [];
-    const otherFilterConditions: SqlValue[] = [];
-
-    for (const condition of sqlConditions) {
-      if (condition.sql.includes('"otel_traces_normalized"."timestamp"')) {
-        timestampPrewhereConditions.push(condition);
-      } else {
-        otherFilterConditions.push(condition);
-      }
-    }
-
-    const filterSQLFragment = otherFilterConditions.length
-      ? sql`AND ${sql.join(otherFilterConditions, ' AND ')}`
-      : sql``;
-
-    const prewhereTimestampFragment = timestampPrewhereConditions.length
-      ? sql`AND ${sql.join(timestampPrewhereConditions, ' AND ')}`
-      : sql``;
+    conditions.push(...buildTraceFilterSQLConditions(filter, false));
 
     const query = sql`
       SELECT
@@ -237,12 +221,7 @@ export class Traces {
       FROM
         "otel_traces_normalized"
       PREWHERE
-        target_id = ${targetId}
-        ${prewhereTimestampFragment}
-      WHERE
-        true
-        ${paginationSQLFragmentPart}
-        ${filterSQLFragment}
+        ${sql.join(conditions, ' AND ')}
       ORDER BY
         ${orderByFragment}
       LIMIT ${sql.raw(String(limit + 1))}
@@ -392,17 +371,7 @@ export class TraceBreakdownLoader {
       const arrJoinColumnAlias = 'arr_join_column_value';
 
       for (const { key, columnExpression, limit, arrayJoinColumn } of inputs) {
-        const prewhereConditions: SqlValue[] = [];
-        const whereConditions: SqlValue[] = [];
-
-        for (const condition of this.conditions) {
-          if (condition.sql.includes('target_id') || condition.sql.includes('"timestamp"')) {
-            prewhereConditions.push(condition);
-          } else {
-            whereConditions.push(condition);
-          }
-        }
-
+        // Single PREWHERE, no WHERE, for the same query condition cache reason as findTracesForTargetId.
         statements.push(sql`
           SELECT
             '${sql.raw(key)}' AS "key"
@@ -410,8 +379,7 @@ export class TraceBreakdownLoader {
             , count(*) AS "count"
           FROM "otel_traces_normalized"
             ${sql.raw(arrayJoinColumn ? `ARRAY JOIN ${arrayJoinColumn} AS "${arrJoinColumnAlias}"` : '')}
-          ${prewhereConditions.length ? sql`PREWHERE ${sql.join(prewhereConditions, ' AND ')}` : sql``}
-          ${whereConditions.length ? sql`WHERE ${sql.join(whereConditions, ' AND ')}` : sql``}
+          PREWHERE ${sql.join(this.conditions, ' AND ')}
           GROUP BY
             "value"
           ORDER BY

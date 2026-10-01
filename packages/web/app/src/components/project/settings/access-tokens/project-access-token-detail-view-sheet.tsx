@@ -1,6 +1,6 @@
 import { useQuery } from 'urql';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
 import { TokenExpiration } from '@/components/organization/settings/access-tokens/token-expiration';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
