@@ -1,19 +1,19 @@
 import { ContractsManager } from '../../providers/contracts-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
-export const disableContract: NonNullable<MutationResolvers['disableContract']> = async (
+export const deleteContract: NonNullable<MutationResolvers['deleteContract']> = async (
   _,
   args,
   context,
 ) => {
-  const result = await context.injector.get(ContractsManager).disableContract({
+  const result = await context.injector.get(ContractsManager).deleteContract({
     contractId: args.input.contract.byId,
   });
 
   if (result.type === 'success') {
     return {
       ok: {
-        disabledContract: result.contract,
+        deletedContractId: result.contractId,
       },
     };
   }

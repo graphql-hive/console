@@ -1,4 +1,5 @@
 import { ProjectType } from 'testkit/gql/graphql';
+import { assertNonNullish } from 'testkit/utils';
 import { GetObjectCommand, NoSuchKey, S3Client } from '@aws-sdk/client-s3';
 import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
@@ -940,14 +941,11 @@ test.concurrent(
   },
 );
 
-const DisabledContractMutation = graphql(`
-  mutation DisableContractMutation($input: DisableContractInput!) {
-    disableContract(input: $input) {
+const DeleteContractMutation = graphql(`
+  mutation DeleteContractMutation($input: DeleteContractInput!) {
+    deleteContract(input: $input) {
       ok {
-        disabledContract {
-          id
-          isDisabled
-        }
+        deletedContractId
       }
       error {
         message
@@ -956,7 +954,24 @@ const DisabledContractMutation = graphql(`
   }
 `);
 
-test.concurrent('disable contract results in CDN artifacts being removed', async ({ expect }) => {
+const LatestSchemaVersionContractVersionsQuery = graphql(`
+  query LatestSchemaVersionContractVersionsQuery($target: TargetReferenceInput!) {
+    target(reference: $target) {
+      latestSchemaVersion {
+        contractVersions {
+          edges {
+            node {
+              id
+              contractName
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+test.concurrent('delete contract results in CDN artifacts being removed', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject } = await createOrg();
   const { createTargetAccessToken, createCdnAccess, target } = await createProject(
@@ -1022,7 +1037,7 @@ test.concurrent('disable contract results in CDN artifacts being removed', async
   `);
 
   const result = await execute({
-    document: DisabledContractMutation,
+    document: DeleteContractMutation,
     variables: {
       input: {
         contract: { byId: contractId },
@@ -1031,7 +1046,18 @@ test.concurrent('disable contract results in CDN artifacts being removed', async
     authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
 
-  expect(result?.disableContract.ok?.disabledContract.isDisabled).toEqual(true);
+  expect(result?.deleteContract.ok?.deletedContractId).toEqual(contractId);
+
+  const latestVersion = await execute({
+    document: LatestSchemaVersionContractVersionsQuery,
+    variables: { target: { byId: target.id } },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
+  expect(latestVersion.target?.latestSchemaVersion?.contractVersions?.edges).toEqual([
+    {
+      node: expect.objectContaining({ contractName: 'my-contract' }),
+    },
+  ]);
 
   response = await fetch(cdnAccessToken.cdnUrl + '/contracts/my-contract/sdl', {
     method: 'GET',
@@ -1043,7 +1069,7 @@ test.concurrent('disable contract results in CDN artifacts being removed', async
 });
 
 test.concurrent(
-  'disable contract delete succeeds if no version/CDN artifacts have been published yet',
+  'delete contract succeeds if no version/CDN artifacts have been published yet',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject } = await createOrg();
@@ -1078,7 +1104,7 @@ test.concurrent(
     const cdnAccessToken = await createCdnAccess();
 
     const result = await execute({
-      document: DisabledContractMutation,
+      document: DeleteContractMutation,
       variables: {
         input: {
           contract: { byId: contractId },
@@ -1087,7 +1113,7 @@ test.concurrent(
       authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
-    expect(result?.disableContract.ok?.disabledContract.isDisabled).toEqual(true);
+    expect(result?.deleteContract.ok?.deletedContractId).toEqual(contractId);
 
     const response = await fetch(cdnAccessToken.cdnUrl + '/contracts/my-contract/sdl', {
       method: 'GET',
@@ -1099,56 +1125,50 @@ test.concurrent(
   },
 );
 
-test.concurrent(
-  'disable contract delete succeeds if no version/CDN artifacts have been published yet',
-  async ({ expect }) => {
-    const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject } = await createOrg();
-    const { target } = await createProject(ProjectType.Federation);
+test.concurrent('deleting a missing contract returns an error', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target } = await createProject(ProjectType.Federation);
 
-    const createContractResult = await execute({
-      document: CreateContractMutation,
-      variables: {
-        input: {
-          target: { byId: target.id },
-          contractName: 'my-contract',
-          removeUnreachableTypesFromPublicApiSchema: true,
-          excludeTags: ['toyota'],
-        },
+  const createContractResult = await execute({
+    document: CreateContractMutation,
+    variables: {
+      input: {
+        target: { byId: target.id },
+        contractName: 'my-contract',
+        removeUnreachableTypesFromPublicApiSchema: true,
+        excludeTags: ['toyota'],
       },
-      authToken: ownerToken,
-    }).then(r => r.expectNoGraphQLErrors());
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
 
-    expect(createContractResult.createContract.error).toBeNull();
+  expect(createContractResult.createContract.error).toBeNull();
 
-    const contractId = createContractResult.createContract.ok?.createdContract.id;
+  const contractId = createContractResult.createContract.ok?.createdContract.id;
+  assertNonNullish(contractId, 'Missing contract id.');
 
-    if (!contractId) {
-      throw new Error('Missing contract id.');
-    }
-
-    let result = await execute({
-      document: DisabledContractMutation,
-      variables: {
-        input: {
-          contract: { byId: contractId },
-        },
+  let result = await execute({
+    document: DeleteContractMutation,
+    variables: {
+      input: {
+        contract: { byId: contractId },
       },
-      authToken: ownerToken,
-    }).then(r => r.expectNoGraphQLErrors());
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
 
-    expect(result?.disableContract.ok?.disabledContract.isDisabled).toEqual(true);
+  expect(result?.deleteContract.ok?.deletedContractId).toEqual(contractId);
 
-    result = await execute({
-      document: DisabledContractMutation,
-      variables: {
-        input: {
-          contract: { byId: contractId },
-        },
+  result = await execute({
+    document: DeleteContractMutation,
+    variables: {
+      input: {
+        contract: { byId: contractId },
       },
-      authToken: ownerToken,
-    }).then(r => r.expectNoGraphQLErrors());
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
 
-    expect(result?.disableContract.error?.message).toEqual('Contract already disabled found.');
-  },
-);
+  expect(result?.deleteContract.error?.message).toEqual('Contract not found.');
+});

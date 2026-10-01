@@ -6,6 +6,7 @@ import {
   UniqueIntegrityConstraintViolationError,
   type PrimitiveValueExpression,
 } from '@hive/postgres';
+import { invariant } from '@hive/service-common';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -111,10 +112,7 @@ export class Contracts {
   }
 
   async getContractById(args: { contractId: string }) {
-    this.logger.debug(
-      'Contract can not be disabled as it was nto found. (contractId=%s)',
-      args.contractId,
-    );
+    this.logger.debug('Load contract by id. (contractId=%s)', args.contractId);
 
     if (!isUUID(args.contractId)) {
       this.logger.debug('Invalid id provided, must be UUID. (contractId=%s)', args.contractId);
@@ -137,31 +135,21 @@ export class Contracts {
     return ContractModel.parse(record);
   }
 
-  async disableContract(args: { contract: Contract }) {
-    this.logger.debug('Disable contract (contractId=%s)', args.contract.id);
-
-    if (args.contract.isDisabled) {
-      this.logger.debug('Contract is already disabled. (contractId=%s)', args.contract.id);
-      return {
-        type: 'error' as const,
-        message: 'Contract already disabled found.',
-      };
-    }
+  async deleteContract(args: { contract: Contract }) {
+    this.logger.debug('Delete contract (contractId=%s)', args.contract.id);
 
     const record = await this.pool.maybeOne(psql`
-      UPDATE
+      DELETE FROM
         "contracts"
-      SET
-        "is_disabled" = true
       WHERE
         "id" = ${args.contract.id}
       RETURNING
-        ${contractFields}
+        "id"
     `);
 
     if (!record) {
       this.logger.debug(
-        'Contract can not be disabled as it was not found. (contractId=%s)',
+        'Contract can not be deleted as it was not found. (contractId=%s)',
         args.contract.id,
       );
       return {
@@ -170,7 +158,7 @@ export class Contracts {
       };
     }
 
-    this.logger.debug('Updated contract. (contractId=%s)', args.contract.id);
+    this.logger.debug('Deleted contract. (contractId=%s)', args.contract.id);
 
     this.logger.debug(
       'Delete contract artifacts sdl and supergraph from CDN. (contractId=%s)',
@@ -192,7 +180,7 @@ export class Contracts {
 
     return {
       type: 'success' as const,
-      contract: ContractModel.parse(record),
+      contractId: z.object({ id: z.string().uuid() }).parse(record).id,
     };
   }
 
@@ -318,6 +306,8 @@ export class Contracts {
 
     for (const raw of latestContractVersionQueryResult) {
       const record = ContractVersionModel.parse(raw);
+      // If we looked of the version via the contract id it must be non-null :)
+      invariant(record.contractId, 'Contract id must exist.');
       latestContractVersionsByContractId.set(record.contractId, record);
       if (record.isComposable === false) {
         contractIdsWhereWeNeedToGetTheLatestValidVersion.push(record);
@@ -353,6 +343,8 @@ export class Contracts {
 
       for (const raw of latestValidContractVersionQueryResult) {
         const record = ValidContractVersionModel.parse(raw);
+        // If we looked of the version via the contract id it must be non-null :)
+        invariant(record.contractId, 'Contract id must exist.');
         latestValidContractVersionByContractId.set(record.contractId, record);
       }
     }
@@ -371,7 +363,6 @@ export class Contracts {
     targetId: string;
     first: null | number;
     cursor: null | string;
-    onlyActive: boolean;
   }): Promise<PaginatedContractConnection> {
     this.logger.debug('Load paginated contracts for target. (targetId=%s)', args.targetId);
 
@@ -393,7 +384,7 @@ export class Contracts {
         "contracts"
       WHERE
         "target_id" = ${args.targetId}
-        ${args.onlyActive ? psql`AND "is_disabled" = false` : psql``}
+        AND "is_disabled" = false
         ${
           cursor
             ? psql`
@@ -909,7 +900,6 @@ const contractFields = psql`
   , "include_tags" as "includeTags"
   , "exclude_tags" as "excludeTags"
   , "remove_unreachable_types_from_public_api_schema" as "removeUnreachableTypesFromPublicApiSchema"
-  , "is_disabled" as "isDisabled"
   , to_json("created_at") as "createdAt"
 `;
 
@@ -926,7 +916,6 @@ const ContractModel = z.object({
     .nullable()
     .transform(tags => (tags?.length === 0 ? null : tags)),
   removeUnreachableTypesFromPublicApiSchema: z.boolean(),
-  isDisabled: z.boolean(),
   createdAt: z.string(),
 });
 
@@ -989,7 +978,7 @@ const ValidContractVersionModel = z
   .object({
     id: z.string().uuid(),
     schemaVersionId: z.string().uuid(),
-    contractId: z.string(),
+    contractId: z.string().nullable(),
     contractName: z.string(),
     schemaCompositionErrors: z.null(),
     compositeSchemaSdl: z.string().nullable(),
@@ -1005,7 +994,7 @@ const InvalidContractVersionModel = z
   .object({
     id: z.string().uuid(),
     schemaVersionId: z.string().uuid(),
-    contractId: z.string(),
+    contractId: z.string().nullable(),
     contractName: z.string(),
     schemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
     compositeSchemaSdl: z.string().nullable(),

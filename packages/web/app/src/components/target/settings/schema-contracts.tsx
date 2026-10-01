@@ -1,5 +1,4 @@
 import { ReactElement, useState } from 'react';
-import { Info } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/base/button/button';
@@ -34,8 +33,7 @@ export const SchemaContractsQuery = graphql(`
             excludeTags
             removeUnreachableTypesFromPublicApiSchema
             createdAt
-            isDisabled
-            viewerCanDisableContract
+            viewerCanDeleteContract
           }
         }
         pageInfo {
@@ -47,15 +45,11 @@ export const SchemaContractsQuery = graphql(`
   }
 `);
 
-const DisableContractDialog_DisableContractMutation = graphql(`
-  mutation DisableContractDialog_DisableContractMutation($input: DisableContractInput!) {
-    disableContract(input: $input) {
+const DeleteContractDialog_DeleteContractMutation = graphql(`
+  mutation DeleteContractDialog_DeleteContractMutation($input: DeleteContractInput!) {
+    deleteContract(input: $input) {
       ok {
-        disabledContract {
-          id
-          isDisabled
-          viewerCanDisableContract
-        }
+        deletedContractId
       }
       error {
         message
@@ -64,13 +58,14 @@ const DisableContractDialog_DisableContractMutation = graphql(`
   }
 `);
 
-function DisableContractDialog(props: {
+function DeleteContractDialog(props: {
   open: boolean;
   /** Null while closed. */
   contractId: string | null;
   onClose: () => void;
+  onDeleteContract: () => void;
 }) {
-  const [state, mutate] = useMutation(DisableContractDialog_DisableContractMutation);
+  const [state, mutate] = useMutation(DeleteContractDialog_DeleteContractMutation);
   const { toast } = useToast();
 
   function submit() {
@@ -82,18 +77,19 @@ function DisableContractDialog(props: {
         contract: { byId: props.contractId },
       },
     }).then(result => {
-      if (result.data?.disableContract.ok) {
+      if (result.data?.deleteContract.ok) {
         toast({
-          title: 'Contract disabled',
-          description: 'The Contract was successfully disabled.',
+          title: 'Contract deleted',
+          description: 'The contract was successfully deleted.',
         });
+        props.onDeleteContract();
         props.onClose();
         return;
       }
       toast({
         variant: 'destructive',
-        title: 'Failed to disable contract',
-        description: result.error?.message ?? result.data?.disableContract.error?.message,
+        title: 'Failed to delete contract',
+        description: result.error?.message ?? result.data?.deleteContract.error?.message,
       });
     });
   }
@@ -106,10 +102,10 @@ function DisableContractDialog(props: {
           props.onClose();
         }
       }}
-      title="Disable Contract"
-      description="A disabled contract is retired and can not be activated again. When disabling a contract the corresponding CDN artifacts (schema, supergraph) will be irreversibly deleted."
+      title="Delete Contract"
+      description="This permanently deletes the contract, its history, checks, approvals, and corresponding CDN artifacts (schema and supergraph). This action cannot be undone."
       confirm={{
-        label: 'Disable Contract',
+        label: 'Delete Contract',
         variant: 'destructive',
         disabled: state.fetching || !props.contractId,
         onClick: submit,
@@ -132,7 +128,7 @@ const tagsCell = (tags: readonly string[] | null | undefined) =>
 
 export function SchemaContracts() {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const [disabledContractId, setDisabledContractId] = useState<string | null>(null);
+  const [contractIdToDelete, setContractIdToDelete] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [overlaySession, setOverlaySession] = useState(0);
   const resetOnClose = (isOpen: boolean) => {
@@ -154,8 +150,8 @@ export function SchemaContracts() {
 
   const contracts = schemaContractsQuery.data?.target?.contracts.edges;
 
-  function onDisable(nodeId: string) {
-    setDisabledContractId(nodeId);
+  function onDelete(nodeId: string) {
+    setContractIdToDelete(nodeId);
   }
 
   function refetchQuery() {
@@ -170,27 +166,6 @@ export function SchemaContracts() {
       cell: ({ row }) => (
         <DataTableCell kind="text" value={row.original.contractName} weight="medium" />
       ),
-    },
-    {
-      id: 'status',
-      header: 'Status',
-      cell: ({ row }) =>
-        row.original.isDisabled ? (
-          <DataTableCell
-            kind="status"
-            label="Inactive"
-            icon={Info}
-            iconTone="warning"
-            tooltip="This Contract is no longer active and no more contract versions or contract checks will be published for it. It is not possible to enable a contract again. Please create a new contract instead."
-          />
-        ) : (
-          <DataTableCell
-            kind="status"
-            label="Active"
-            icon={Info}
-            tooltip="This Contract is active. Schema publishes and checks will attempt to also build the contract schema."
-          />
-        ),
     },
     {
       id: 'includeTags',
@@ -223,16 +198,16 @@ export function SchemaContracts() {
       id: 'actions',
       meta: { width: 'xs' },
       cell: ({ row }) =>
-        row.original.viewerCanDisableContract ? (
+        row.original.viewerCanDeleteContract ? (
           <DataTableCell
             kind="actions"
             label={`Actions for ${row.original.contractName}`}
             sections={[
               [
                 {
-                  label: 'Disable',
+                  label: 'Delete',
                   variant: 'destructiveAction',
-                  onClick: () => onDisable(row.original.id),
+                  onClick: () => onDelete(row.original.id),
                 },
               ],
             ]}
@@ -266,13 +241,13 @@ export function SchemaContracts() {
         pagination={{ kind: 'none' }}
         loading={schemaContractsQuery.fetching && !schemaContractsQuery.data}
         emptyMessage="No contracts yet."
-        rowState={contract => (contract.isDisabled ? { disabled: true } : undefined)}
       />
-      <DisableContractDialog
-        open={disabledContractId !== null}
-        contractId={disabledContractId}
+      <DeleteContractDialog
+        open={contractIdToDelete !== null}
+        contractId={contractIdToDelete}
         onClose={() => {
-          setDisabledContractId(null);
+          setContractIdToDelete(null);
+          refetchQuery();
         }}
       />
     </SubPageLayout>

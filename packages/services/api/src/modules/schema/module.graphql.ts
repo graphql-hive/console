@@ -30,9 +30,9 @@ export default gql`
     createContract(input: CreateContractInput! @tag(name: "public")): CreateContractResult!
       @tag(name: "public")
     """
-    Disable a contract.
+    Permanently delete a contract.
     """
-    disableContract(input: DisableContractInput! @tag(name: "public")): DisableContractResult!
+    deleteContract(input: DeleteContractInput! @tag(name: "public")): DeleteContractResult!
       @tag(name: "public")
   }
 
@@ -242,14 +242,6 @@ export default gql`
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
     ): ContractConnection! @tag(name: "public")
-    """
-    Get a list of paginated schema contracts that are active for the target.
-    """
-    activeContracts(
-      first: Int @tag(name: "public")
-      after: String @tag(name: "public")
-    ): ContractConnection! @tag(name: "public")
-
     """
     Whether any subscription operations were reported for this target.
     """
@@ -1999,20 +1991,20 @@ export default gql`
     excludeTags: String @tag(name: "public")
   }
 
-  input DisableContractInput {
+  input DeleteContractInput {
     contract: ContractReferenceInput! @tag(name: "public")
   }
 
-  type DisableContractResult {
-    ok: DisableContractResultOk @tag(name: "public")
-    error: DisableContractResultError @tag(name: "public")
+  type DeleteContractResult {
+    ok: DeleteContractResultOk @tag(name: "public")
+    error: DeleteContractResultError @tag(name: "public")
   }
 
-  type DisableContractResultOk {
-    disabledContract: Contract! @tag(name: "public")
+  type DeleteContractResultOk {
+    deletedContractId: ID! @tag(name: "public")
   }
 
-  type DisableContractResultError {
+  type DeleteContractResultError {
     message: String! @tag(name: "public")
   }
 
@@ -2024,8 +2016,7 @@ export default gql`
     excludeTags: [String!] @tag(name: "public")
     removeUnreachableTypesFromPublicApiSchema: Boolean! @tag(name: "public")
     createdAt: DateTime! @tag(name: "public")
-    isDisabled: Boolean! @tag(name: "public")
-    viewerCanDisableContract: Boolean!
+    viewerCanDeleteContract: Boolean!
   }
 
   type SubgraphVersion {

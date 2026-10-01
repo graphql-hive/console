@@ -10,7 +10,7 @@ import lodash from 'lodash';
 import promClient from 'prom-client';
 import { z } from 'zod';
 import { CriticalityLevel } from '@graphql-inspector/core';
-import { invariant, trace, traceFn } from '@hive/service-common';
+import { fail, invariant, trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -976,7 +976,7 @@ export class SchemaPublisher {
         contracts: latestSchemaVersionContracts
           ? await Promise.all(
               latestSchemaVersionContracts?.edges.map(async edge => ({
-                contractId: edge.node.contractId,
+                contractId: edge.node.contractId ?? fail('contract id must exist.'),
                 contractName: edge.node.contractName,
                 comparedContractVersionId:
                   edge.node.schemaCompositionErrors === null

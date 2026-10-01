@@ -152,7 +152,7 @@ const ConnectSchemaModalQuery = graphql(`
         type
       }
       cdnUrl
-      activeContracts(first: 20) {
+      contracts(first: 20) {
         edges {
           node {
             id
@@ -206,7 +206,7 @@ export function ConnectSchemaModal(props: { isOpen: boolean; toggleModalOpen: ()
     if (selectedGraph === 'DEFAULT_GRAPH') {
       return null;
     }
-    return query.data?.target?.activeContracts.edges.find(
+    return query.data?.target?.contracts.edges.find(
       ({ node }) => node.contractName === selectedGraph,
     )?.node;
   }, [selectedGraph]);
@@ -249,7 +249,7 @@ export function ConnectSchemaModal(props: { isOpen: boolean; toggleModalOpen: ()
                   id="cdn-graph"
                   options={[
                     { value: 'DEFAULT_GRAPH', label: 'Default Graph' },
-                    ...target.activeContracts.edges.map(({ node }) => ({
+                    ...target.contracts.edges.map(({ node }) => ({
                       value: node.contractName,
                       label: node.contractName,
                     })),

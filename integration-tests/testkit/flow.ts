@@ -14,11 +14,11 @@ import type {
   CreateProjectInput,
   CreateTargetInput,
   CreateTokenInput,
+  DeleteContractInput,
   DeleteMemberRoleInput,
   DeleteMetricAlertRulesInput,
   DeleteTargetInput,
   DeleteTokensInput,
-  DisableContractInput,
   Experimental__UpdateTargetSchemaCompositionInput,
   InviteToOrganizationByEmailInput,
   OrganizationMemberInput,
@@ -1124,16 +1124,13 @@ export function createContract(input: CreateContractInput, accessToken: string) 
   });
 }
 
-export function disableContract(input: DisableContractInput, accessToken: string) {
+export function deleteContract(input: DeleteContractInput, accessToken: string) {
   return execute({
     document: graphql(`
-      mutation TestKit_DisableContract($input: DisableContractInput!) {
-        disableContract(input: $input) {
+      mutation TestKit_DeleteContract($input: DeleteContractInput!) {
+        deleteContract(input: $input) {
           ok {
-            disabledContract {
-              id
-              isDisabled
-            }
+            deletedContractId
           }
           error {
             message
