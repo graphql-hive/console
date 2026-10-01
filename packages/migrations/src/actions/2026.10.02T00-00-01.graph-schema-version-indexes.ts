@@ -1,7 +1,7 @@
 import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
-  name: '2026.09.25T00-00-01.graph-schema-version-indexes.ts',
+  name: '2026.10.02T00-00-01.graph-schema-version-indexes.ts',
   noTransaction: true,
   run: ({ psql }) => [
     {
