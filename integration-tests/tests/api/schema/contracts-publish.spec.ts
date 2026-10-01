@@ -1125,7 +1125,7 @@ test.concurrent(
   },
 );
 
-test.concurrent.only('deleting a missing contract returns an error', async ({ expect }) => {
+test.concurrent('deleting a missing contract returns an error', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject } = await createOrg();
   const { target } = await createProject(ProjectType.Federation);
