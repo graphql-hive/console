@@ -236,8 +236,8 @@ await describe('migration: legacy-member-socpes', async () => {
         contributorRole.id,
       );
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 });
