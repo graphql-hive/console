@@ -1,7 +1,8 @@
-import { createContract, disableContract } from 'testkit/flow';
-import { ProjectType } from 'testkit/gql/graphql';
+import { createContract, disableContract, schemaVersionPromote } from 'testkit/flow';
+import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { assertNonNullish } from 'testkit/utils';
+import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
 
 test.concurrent('creating a target creates its default graph', async ({ expect }) => {
   const seed = initSeed();
@@ -24,6 +25,60 @@ test.concurrent('creating a target creates its default graph', async ({ expect }
     sourceGraphId: null,
   });
 });
+
+test.concurrent(
+  'schema version creation paths (publish; delete; promote) reference the default graph',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject, createOrganizationAccessToken } = await createOrg();
+    const { target, createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const token = await createTargetAccessToken({});
+    const graphStore = await seed.getGraphStore();
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    assertNonNullish(graph);
+
+    const db = await seed.createDbConnection();
+    const schemaVersions = new SchemaVersionStore(db.pool);
+
+    await token
+      .publishSchema({
+        sdl: 'type Query { ping: String }',
+        service: 'service',
+        url: 'http://service',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id)).toMatchObject({
+      graphId: graph.id,
+    });
+
+    const deleteResult = await token.deleteSchema('service').then(r => r.expectNoGraphQLErrors());
+    expect(deleteResult.schemaDelete.__typename).toEqual('SchemaDeleteSuccess');
+
+    expect(await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id)).toMatchObject({
+      graphId: graph.id,
+    });
+
+    const { privateAccessKey } = await createOrganizationAccessToken({
+      resources: { mode: ResourceAssignmentModeType.All },
+      permissions: ['schemaVersion:promote'],
+    });
+
+    const promoteResult = await schemaVersionPromote(
+      {
+        source: { fromTarget: { byId: target.id } },
+        target: { toTarget: { byId: target.id } },
+      },
+      privateAccessKey,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(promoteResult.schemaVersionPromote.error).toEqual(null);
+
+    expect(await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id)).toMatchObject({
+      graphId: graph.id,
+    });
+  },
+);
 
 test.concurrent('creating a contract creates its contract graph', async ({ expect }) => {
   const seed = initSeed();
