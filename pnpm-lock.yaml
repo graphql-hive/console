@@ -282,9 +282,9 @@ patchedDependencies:
   '@apollo/federation@0.38.1':
     hash: cb592719b35ac58f48c97dd557e19223b45b2c5544bec4f6f2e741c58b7f1de9
     path: patches/@apollo__federation@0.38.1.patch
-  '@graphiql/react':
+  '@graphiql/react@1.0.0-alpha.4':
     hash: 1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0
-    path: patches/@graphiql__react.patch
+    path: patches/@graphiql__react@1.0.0-alpha.4.patch
   '@graphql-eslint/eslint-plugin@3.20.1':
     hash: 92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb
     path: patches/@graphql-eslint__eslint-plugin@3.20.1.patch
@@ -297,15 +297,15 @@ patchedDependencies:
   got@14.4.7:
     hash: f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299
     path: patches/got@14.4.7.patch
-  graphiql:
+  graphiql@4.0.0-alpha.5:
     hash: 87dedd0023d07eef741569477f4a97265c634e9c37040d4b435268abbd435b6d
-    path: patches/graphiql.patch
+    path: patches/graphiql@4.0.0-alpha.5.patch
   mjml-core@4.14.0:
     hash: 52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f
     path: patches/mjml-core@4.14.0.patch
-  oclif:
+  oclif@4.22.65:
     hash: 14bfe62909a48d0f0115f257cc517dbaa3caac858fc059ddeaa614af424b626b
-    path: patches/oclif.patch
+    path: patches/oclif@4.22.65.patch
   p-cancelable@4.0.1:
     hash: 195ae63d47810ca4c987421948f15869356e598dccde9e8c9a4ff4efd3e88322
     path: patches/p-cancelable@4.0.1.patch
