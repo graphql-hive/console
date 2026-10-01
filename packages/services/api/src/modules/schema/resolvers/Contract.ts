@@ -9,17 +9,16 @@ export const Contract: Pick<
   | 'excludeTags'
   | 'id'
   | 'includeTags'
-  | 'isDisabled'
   | 'removeUnreachableTypesFromPublicApiSchema'
   | 'target'
-  | 'viewerCanDisableContract'
+  | 'viewerCanDeleteContract'
 > = {
   target: (contract, _, context) => {
     return context.injector.get(TargetManager).getTargetById({
       targetId: contract.targetId,
     });
   },
-  viewerCanDisableContract: (contract, _, context) => {
-    return context.injector.get(ContractsManager).getViewerCanDisableContractForContract(contract);
+  viewerCanDeleteContract: (contract, _, context) => {
+    return context.injector.get(ContractsManager).getViewerCanDeleteContractForContract(contract);
   },
 };

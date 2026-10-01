@@ -96,7 +96,7 @@ export interface contract_version_changes {
 
 export interface contract_versions {
   composite_schema_sdl: string | null;
-  contract_id: string;
+  contract_id: string | null;
   contract_name: string;
   created_at: Date;
   id: string;
