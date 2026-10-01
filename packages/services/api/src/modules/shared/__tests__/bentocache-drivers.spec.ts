@@ -1,17 +1,16 @@
 import { BentoCache, bentostore } from 'bentocache';
 import { memoryDriver } from 'bentocache/drivers/memory';
 import { redisDriver } from 'bentocache/drivers/redis';
-import Redis from 'ioredis-mock';
 
-// The cache providers import the drivers from these public sub-paths. The package-internal
-// paths they replaced only fail at runtime inside a bundled service, so pin the public ones here.
-it('builds a memory + redis store from the public driver sub-paths', async ({ expect }) => {
+// The cache providers import the drivers from these public sub-paths. The package-internal paths
+// they replaced only fail at runtime inside a bundled service, so pin the public ones here.
+it('round-trips through a store built from the public memory sub-path', async ({ expect }) => {
   const cache = new BentoCache({
     default: 'spec',
     stores: {
-      spec: bentostore({ prefix: 'bentocache-drivers-spec' })
-        .useL1Layer(memoryDriver({ maxItems: 10 }))
-        .useL2Layer(redisDriver({ connection: new Redis({ data: {} }) })),
+      spec: bentostore({ prefix: 'bentocache-drivers-spec' }).useL1Layer(
+        memoryDriver({ maxItems: 10 }),
+      ),
     },
   });
 
@@ -22,4 +21,14 @@ it('builds a memory + redis store from the public driver sub-paths', async ({ ex
   await expect(cache.get({ key: 'token' })).resolves.toBeUndefined();
 
   await cache.disconnectAll();
+});
+
+// bentocache opens a real connection for any `connection` that is not an ioredis instance, and
+// ioredis-mock instances do not pass its instanceof check, so the redis sub-path is resolved
+// here but not exercised.
+it('exposes the redis driver factory from the public redis sub-path', ({ expect }) => {
+  const driver = redisDriver({ connection: { host: '127.0.0.1', port: 6379, lazyConnect: true } });
+
+  expect(typeof driver.factory).toBe('function');
+  expect(driver.options).toMatchObject({ connection: { lazyConnect: true } });
 });
