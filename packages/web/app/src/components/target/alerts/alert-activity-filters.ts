@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import type { FilterDimension, FilterItem } from '@/components/base/floating/filter-menu/types';
+import type { FilterDimension, FilterItem } from '@/components/ui/filters/filter-menu/types';
 import {
   decodeIdSelections,
   encodeIdSelections,
   urlFilterDimension,
-} from '@/components/base/floating/filter-menu/url-filter';
+} from '@/components/ui/filters/filter-menu/url-filter';
 import { MetricAlertRuleSeverity, MetricAlertRuleType } from '@/gql/graphql';
 import type { useNavigate } from '@tanstack/react-router';
 import type { AlertActivitySearchState } from './search-schemas';

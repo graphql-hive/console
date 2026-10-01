@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { ExternalLink, Info } from 'lucide-react';
-import { Avatar } from '@/components/base/avatar/avatar';
-import { Button } from '@/components/base/button/button';
-import { DescriptionList } from '@/components/base/description-list/description-list';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
+import { Avatar } from '@/components/ui/primitives/avatar/avatar';
+import { Button } from '@/components/ui/primitives/button/button';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
+import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { TimeAgo } from '@/components/ui/time-ago';
 import {
   AlertChannelType,

@@ -1,14 +1,14 @@
 import { useId, type ReactNode } from 'react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Badge } from '@/components/base/badge/badge';
-import { Button } from '@/components/base/button/button';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Form, FormField, FormItem, FormMessage } from '@/components/base/form/form';
-import { numberInput } from '@/components/base/form/number-input';
-import { Input } from '@/components/base/input/input';
-import { Label } from '@/components/base/label/label';
-import { RadioGroup } from '@/components/base/radio-group/radio-group';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { Form, FormField, FormItem, FormMessage } from '@/components/ui/primitives/form/form';
+import { numberInput } from '@/components/ui/primitives/form/number-input';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Label } from '@/components/ui/primitives/label/label';
+import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
 import { BreakingChangeFormulaType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 

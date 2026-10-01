@@ -1,4 +1,4 @@
-import { Card } from '@/components/base/card/card';
+import { Card } from '@/components/ui/primitives/card/card';
 
 export function AuthCardStack(props: { children: React.ReactNode }) {
   return <div className="grid gap-y-4">{props.children}</div>;

@@ -31,7 +31,7 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   SchemaEditor: () => null,
 }));
 // ECharts draws on a canvas, which jsdom does not implement.
-vi.mock('@/components/base/chart/chart', () => ({ Chart: () => null }));
+vi.mock('@/components/ui/primitives/chart/chart', () => ({ Chart: () => null }));
 
 // A signed-in session without SuperTokens: the wrappers pass through and the session exists.
 vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));

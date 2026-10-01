@@ -1,6 +1,6 @@
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Select } from '@/components/base/floating/select/select';
+import { Select } from '@/components/ui/primitives/floating/select/select';
 import {
   Form,
   FormControl,
@@ -8,7 +8,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
+} from '@/components/ui/primitives/form/form';
 import { AlertType } from '@/gql/graphql';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
-import { Combobox } from '@/components/v2/combobox';
-import { Markdown } from '@/components/v2/markdown';
+import { Combobox } from '@/components/ui/combobox';
+import { Markdown } from '@/components/ui/markdown';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/V2Leftovers';

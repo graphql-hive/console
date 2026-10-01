@@ -1,8 +1,8 @@
 import { useMemo, type ReactNode } from 'react';
 import { Globe, History } from 'lucide-react';
-import { Card } from '@/components/base/card/card';
-import { Sparkline } from '@/components/base/chart/sparkline';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Card } from '@/components/ui/primitives/card/card';
+import { Sparkline } from '@/components/ui/primitives/chart/sparkline';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { subDays } from '@/lib/date-time';
 import { useFormattedNumber } from '@/lib/hooks';
 import { pluralize } from '@/lib/utils';

@@ -1,13 +1,13 @@
 import { ReactElement } from 'react';
 import { FileSymlinkIcon, GitCommitVerticalIcon, PackageIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { StatusDot } from '@/components/base/status-dot/status-dot';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/primitives/button/button';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
+import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';

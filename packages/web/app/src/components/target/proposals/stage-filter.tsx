@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronsUpDown } from 'lucide-react';
-import { Button } from '@/components/base/button/button';
-import { Menu } from '@/components/base/floating/menu/menu';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Menu } from '@/components/ui/primitives/floating/menu/menu';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useRouter, useSearch } from '@tanstack/react-router';
 

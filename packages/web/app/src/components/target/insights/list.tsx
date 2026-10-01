@@ -1,10 +1,10 @@
 import { ReactElement, useMemo, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Card } from '@/components/base/card/card';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Popover } from '@/components/base/floating/popover/popover';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { Card } from '@/components/ui/primitives/card/card';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { DateRangeInput, OperationStatsFilterInput } from '@/gql/graphql';
 import { formatDuration, useSlugs } from '@/lib/hooks';

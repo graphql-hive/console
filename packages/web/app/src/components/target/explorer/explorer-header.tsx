@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Filters } from '@/components/base/floating/filter-menu/filters';
-import { PageLead } from '@/components/base/page-lead';
+import { Filters } from '@/components/ui/filters/filter-menu/filters';
+import { PageLead } from '@/components/ui/page-lead';
 import { SchemaVariantFilter } from './filter';
 import {
   useExplorerFilterDimensions,

@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 import { CheckIcon, TriangleAlert, XIcon } from 'lucide-react';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { SeverityLevelType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { ChangeRowContext } from './context';

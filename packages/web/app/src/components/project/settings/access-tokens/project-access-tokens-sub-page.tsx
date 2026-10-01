@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { PageLead } from '@/components/base/page-lead';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { SubPageLayout } from '@/components/ui/page-content-layout';
+import { PageLead } from '@/components/ui/page-lead';
+import { Button } from '@/components/ui/primitives/button/button';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';

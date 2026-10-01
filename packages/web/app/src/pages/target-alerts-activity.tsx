@@ -1,7 +1,5 @@
 import { useMemo } from 'react';
 import { useQuery } from 'urql';
-import { Filters } from '@/components/base/floating/filter-menu/filters';
-import { PageLead } from '@/components/base/page-lead';
 import { AlertActivityChart } from '@/components/target/alerts/alert-activity-chart';
 import { useActivityFilterDimensions } from '@/components/target/alerts/alert-activity-filters';
 import {
@@ -10,6 +8,8 @@ import {
 } from '@/components/target/alerts/alert-activity-table';
 import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { DateRangePicker, type Preset } from '@/components/ui/date-range-picker';
+import { Filters } from '@/components/ui/filters/filter-menu/filters';
+import { PageLead } from '@/components/ui/page-lead';
 import { graphql } from '@/gql';
 import { MetricAlertRuleSeverity, MetricAlertRuleType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';

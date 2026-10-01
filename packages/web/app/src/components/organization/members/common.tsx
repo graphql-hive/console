@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Select } from '@/components/base/floating/select/select';
-import type { OnSurface } from '@/components/base/shared-styles';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import type { OnSurface } from '@/components/ui/primitives/shared-styles';
 
 type Role<T> = {
   id: string;

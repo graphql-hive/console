@@ -1,17 +1,17 @@
 import { type ReactNode } from 'react';
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Select } from '@/components/base/floating/select/select';
+import { Heading } from '@/components/ui/heading';
+import { Select } from '@/components/ui/primitives/floating/select/select';
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
-import { Textarea } from '@/components/base/textarea/textarea';
-import { Heading } from '@/components/ui/heading';
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import * as GraphQLSchema from '@/gql/graphql';
 import { expirationPeriods } from './shared-helpers';
 

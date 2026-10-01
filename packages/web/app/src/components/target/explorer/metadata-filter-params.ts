@@ -1,7 +1,4 @@
-import type {
-  FilterItem,
-  FilterSelection,
-} from '@/components/base/floating/filter-menu/filter-menu';
+import type { FilterItem, FilterSelection } from '@/components/ui/filters/filter-menu/filter-menu';
 
 export type MetadataAttribute = { name: string; values: string[] };
 

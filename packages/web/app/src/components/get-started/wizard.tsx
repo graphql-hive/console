@@ -1,6 +1,6 @@
 import { ReactElement } from 'react';
 import { Circle, CircleCheck } from 'lucide-react';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { cn } from '@/lib/utils';
 
 export function GetStartedWizard({

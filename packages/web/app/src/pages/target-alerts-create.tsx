@@ -1,11 +1,11 @@
 import { CircleAlert } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
 import {
   AlertForm,
   DEFAULT_ALERT_FORM_VALUES,
   type AlertFormValues,
 } from '@/components/target/alerts/alert-form';
+import { Button } from '@/components/ui/primitives/button/button';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useNavigate } from '@tanstack/react-router';

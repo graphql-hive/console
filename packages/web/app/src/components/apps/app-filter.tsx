@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { SearchIcon } from 'lucide-react';
-import { Input } from '@/components/base/input/input';
+import { Input } from '@/components/ui/primitives/input/input';
 import { useRouter } from '@tanstack/react-router';
 
 // The URL carries the settled term, so the route loader runs once per pause, not per keystroke.

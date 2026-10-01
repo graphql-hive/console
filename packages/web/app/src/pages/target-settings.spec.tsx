@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { ReactNode } from 'react';
 import type * as Urql from 'urql';
-import { ToastProvider } from '@/components/base/toast/toast';
+import { ToastProvider } from '@/components/ui/primitives/toast/toast';
 import { DangerousChangeType } from '@/gql/graphql';
 import type * as Router from '@tanstack/react-router';
 import { act, fireEvent, render, screen } from '@testing-library/react';

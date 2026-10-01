@@ -1,7 +1,7 @@
 import { useState, type ReactElement } from 'react';
 import { useMutation } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { useToast } from '@/components/base/toast/toast';
+import { Button } from '@/components/ui/primitives/button/button';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RoleMappingPickerSheet } from '../settings/shared/role-mapping-picker-sheet';
 import {

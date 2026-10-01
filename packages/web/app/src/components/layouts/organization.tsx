@@ -2,10 +2,6 @@ import { ReactElement, ReactNode } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { NotFound } from '@/components/base/not-found/not-found';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { useToast } from '@/components/base/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import {
@@ -13,6 +9,10 @@ import {
   CreateProjectFormSchema,
   type CreateProjectFormValues,
 } from '@/components/project/create-project-form';
+import { NotFound } from '@/components/ui/not-found/not-found';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';

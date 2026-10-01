@@ -1,8 +1,8 @@
 import { ReactElement } from 'react';
 import { useQuery } from 'urql';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { DataWrapper } from '@/components/v2';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { DataWrapper } from '@/components/ui/data-wrapper';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import type { ColumnDef } from '@tanstack/react-table';
 

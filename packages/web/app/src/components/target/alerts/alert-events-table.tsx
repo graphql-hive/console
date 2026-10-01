@@ -1,5 +1,5 @@
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { type MetricAlertRuleState, type MetricAlertRuleType } from '@/gql/graphql';
 import { createColumnHelper } from '@tanstack/react-table';
 import {

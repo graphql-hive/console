@@ -12,12 +12,12 @@ import {
   SmileIcon,
 } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
-import { Chart } from '@/components/base/chart/chart';
-import { useChartTheme, type ChartTheme } from '@/components/base/chart/chart-theme';
-import { TimeSeriesChart } from '@/components/base/chart/time-series-chart';
-import { StatCard } from '@/components/base/stat-card/stat-card';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { Chart } from '@/components/ui/primitives/chart/chart';
+import { useChartTheme, type ChartTheme } from '@/components/ui/primitives/chart/chart-theme';
+import { TimeSeriesChart } from '@/components/ui/primitives/chart/time-series-chart';
+import { StatCard } from '@/components/ui/stat-card/stat-card';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { OperationStatsFilterInput } from '@/gql/graphql';
 import {

@@ -1,14 +1,14 @@
 import { useCallback } from 'react';
 import { useQuery } from 'urql';
-import { Navigation } from '@/components/base/navigation/navigation';
-import { Spinner } from '@/components/base/spinner/spinner';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { Groups } from '@/components/organization/members/groups';
 import { OrganizationInvitations } from '@/components/organization/members/invitations';
 import { OrganizationMembers } from '@/components/organization/members/list';
 import { OrganizationMemberRoles } from '@/components/organization/members/roles';
 import { Meta } from '@/components/ui/meta';
+import { Navigation } from '@/components/ui/navigation/navigation';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';

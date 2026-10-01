@@ -3,15 +3,15 @@ import { buildSchema, introspectionFromSchema, Kind, parse, print } from 'graphq
 import { throttle } from 'lodash';
 import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { useTheme } from '@/components/theme/theme-provider';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-group';
 import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useLocalStorage, useSlugs, useToggle } from '@/lib/hooks';

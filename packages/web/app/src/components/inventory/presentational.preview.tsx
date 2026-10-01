@@ -3,9 +3,9 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
+import { InlineCode } from '@/components/ui/inline-code';
+import Stat from '@/components/ui/stat';
 import { Text } from '@/components/ui/text';
-import { InlineCode } from '@/components/v2/inline-code';
-import Stat from '@/components/v2/stat';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Presentational';
@@ -72,7 +72,7 @@ export const Inventory = createPreview({
           <strong>Two pairs do the same job twice.</strong> Alert and Callout are both banners.
           Heading and Text are both typography, and Text has one call site. Each pair disagrees on
           scale, palette and API. Badge, BadgeRounded and Tag were here too until round 5 moved them
-          onto base Badge, StatusDot and Callout; see Base/Primitives/Badge.
+          onto base Badge, StatusDot and Callout; see Primitives/Badge.
           <br />
           <br />
           <strong>Unreachable variants, delete rather than port:</strong> Heading <code>2xl</code>;

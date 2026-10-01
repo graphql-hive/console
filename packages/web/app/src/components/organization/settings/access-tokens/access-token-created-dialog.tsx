@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Callout } from '@/components/ui/callout';
 import { InputCopy } from '@/components/ui/input-copy';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
 
 /** Shows a freshly created token once, and only lets go once the user says they stored it. */
 export function AccessTokenCreatedDialog(props: {

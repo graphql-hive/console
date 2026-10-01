@@ -14,7 +14,7 @@ sections nav around an outlet, and each section is a child route. Chrome mounts 
 mounted while you move between siblings; a page is just its content, wrapped in `<LayoutContent>`.
 
 **2. A nav is a list of `Link`s; the router decides which one is current.** `Navigation`
-(`src/components/base/navigation/navigation.tsx`) takes items
+(`src/components/ui/navigation/navigation.tsx`) takes items
 `{ label, to, params, search?, exact?, visible?, attrs? }` (the label is also the key, so unique
 within one nav) and marks the current one from the URL through the router's own active-link rules.
 There is no `page` prop, no `value`, no route metadata and no pathname parsing. The item whose `to`

@@ -8,12 +8,6 @@ import {
   TabletSmartphoneIcon,
 } from 'lucide-react';
 import { useQuery } from 'urql';
-import { RefreshButton } from '@/components/base/button/refresh-button';
-import { Card } from '@/components/base/card/card';
-import { useChartTheme } from '@/components/base/chart/chart-theme';
-import { TimeSeriesChart } from '@/components/base/chart/time-series-chart';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { StatCard } from '@/components/base/stat-card/stat-card';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -22,7 +16,13 @@ import { EmptyList } from '@/components/ui/empty-list';
 import { Link as LegacyLink } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Card } from '@/components/ui/primitives/card/card';
+import { useChartTheme } from '@/components/ui/primitives/chart/chart-theme';
+import { TimeSeriesChart } from '@/components/ui/primitives/chart/time-series-chart';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { QueryError } from '@/components/ui/query-error';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
+import { StatCard } from '@/components/ui/stat-card/stat-card';
 import { graphql } from '@/gql';
 import { FieldLevelMetricsDisplayState } from '@/gql/graphql';
 import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks';

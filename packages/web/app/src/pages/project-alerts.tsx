@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { AlertsTable, AlertsTable_AlertFragment } from '@/components/project/alerts/alerts-table';
 import {
@@ -19,6 +17,8 @@ import { DeleteChannelsButton } from '@/components/project/alerts/delete-channel
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
