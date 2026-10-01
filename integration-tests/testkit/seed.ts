@@ -292,7 +292,6 @@ export function initSeed() {
         ownerEmail,
         ownerToken,
         ownerRefreshToken,
-        getGraphStore: async () => new GraphStore(new NoopLogger(), await getPool()),
         async createOrg() {
           const orgSlug = generateUnique();
           const orgResult = await createOrganization({ slug: orgSlug }, ownerToken).then(r =>
