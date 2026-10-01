@@ -13,7 +13,7 @@ If you are resolving/closing/fixing an issue, please mention it in this section.
 ### Description
 
 <!---
-Please share here a technical description of your changes. This should include what packages/components are effects: CLI, client/agent, services, APIs.
+Please share here a technical description of your changes. This should include what packages/components are effected: CLI, client/agent, services, APIs.
 --->
 
 ### Checklist
