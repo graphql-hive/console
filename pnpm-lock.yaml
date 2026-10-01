@@ -300,9 +300,6 @@ patchedDependencies:
   '@theguild/editor@1.2.5':
     hash: a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7
     path: patches/@theguild__editor@1.2.5.patch
-  bentocache:
-    hash: 98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af
-    path: patches/bentocache.patch
   eslint@8.57.1:
     hash: 08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0
     path: patches/eslint@8.57.1.patch
@@ -1276,7 +1273,7 @@ importers:
         version: 3.1035.0
       '@bentocache/plugin-prometheus':
         specifier: 0.2.0
-        version: 0.2.0(bentocache@1.5.1(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.10.1))(prom-client@15.1.3)
+        version: 0.2.0(bentocache@1.5.1(ioredis@5.10.1))(prom-client@15.1.3)
       '@date-fns/utc':
         specifier: 'catalog:'
         version: 2.1.1
@@ -1375,7 +1372,7 @@ importers:
         version: 2.4.3
       bentocache:
         specifier: 'catalog:'
-        version: 1.5.1(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.10.1)
+        version: 1.5.1(ioredis@5.10.1)
       csv-stringify:
         specifier: 6.5.2
         version: 6.5.2
@@ -2154,7 +2151,7 @@ importers:
         version: 1.4.7
       bentocache:
         specifier: 'catalog:'
-        version: 1.5.1(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.10.1)
+        version: 1.5.1(ioredis@5.10.1)
       dotenv:
         specifier: 'catalog:'
         version: 16.4.7
@@ -19173,9 +19170,9 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.18
 
-  '@bentocache/plugin-prometheus@0.2.0(bentocache@1.5.1(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.10.1))(prom-client@15.1.3)':
+  '@bentocache/plugin-prometheus@0.2.0(bentocache@1.5.1(ioredis@5.10.1))(prom-client@15.1.3)':
     dependencies:
-      bentocache: 1.5.1(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.10.1)
+      bentocache: 1.5.1(ioredis@5.10.1)
       prom-client: 15.1.3
 
   '@boringnode/bus@0.9.0(ioredis@5.10.1)':
@@ -29372,7 +29369,7 @@ snapshots:
 
   before-after-hook@3.0.2: {}
 
-  bentocache@1.5.1(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.10.1):
+  bentocache@1.5.1(ioredis@5.10.1):
     dependencies:
       '@boringnode/bus': 0.9.0(ioredis@5.10.1)
       '@julr/utils': 1.9.0
