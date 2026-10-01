@@ -53,7 +53,7 @@ catalog:
   bcryptjs: 2.4.3
   bentocache: 1.5.1
   crypto-js: '^4.2.0'
-  dompurify: 3.4.13
+  dompurify: 3.4.16
   dotenv: 16.4.7
   esbuild: 0.28.1
   fast-json-stable-stringify: 2.1.0
