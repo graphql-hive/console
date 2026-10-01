@@ -1,4 +1,4 @@
-import { createContract, disableContract, schemaVersionPromote } from 'testkit/flow';
+import { createContract, deleteContract, schemaVersionPromote } from 'testkit/flow';
 import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { assertNonNullish } from 'testkit/utils';
@@ -119,7 +119,7 @@ test.concurrent('creating a contract creates its contract graph', async ({ expec
   });
 });
 
-test.concurrent('disabling a contract deletes its contract graph', async ({ expect }) => {
+test.concurrent('deleting a contract deletes its contract graph', async ({ expect }) => {
   const seed = initSeed();
   const { createOrg, ownerToken } = await seed.createOwner();
   const { createProject } = await createOrg();
@@ -142,7 +142,7 @@ test.concurrent('disabling a contract deletes its contract graph', async ({ expe
     await graphStore.findGraphForTargetIdByName(target.id, 'default/my-contract'),
   ).not.toBeNull();
 
-  const disableResult = await disableContract(
+  const disableResult = await deleteContract(
     {
       contract: {
         byId: contract.id,
@@ -151,7 +151,7 @@ test.concurrent('disabling a contract deletes its contract graph', async ({ expe
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
 
-  expect(disableResult.disableContract.error).toBeNull();
-  expect(disableResult.disableContract.ok?.disabledContract.isDisabled).toBe(true);
+  expect(disableResult.deleteContract.error).toBeNull();
+  expect(disableResult.deleteContract.ok?.deletedContractId).to.not.toBeNull();
   expect(await graphStore.findGraphForTargetIdByName(target.id, 'default/my-contract')).toBeNull();
 });
