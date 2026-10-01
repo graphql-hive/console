@@ -100,8 +100,7 @@ await describe('migration: schema-cleanup-tracker', async () => {
             github_sha,
             tags,
             has_contract_composition_errors,
-            conditional_breaking_change_metadata,
-            schema_metadata
+            conditional_breaking_change_metadata
           )
           VALUES
           (
@@ -120,7 +119,6 @@ await describe('migration: schema-cleanup-tracker', async () => {
             ${null},
             ${null},
             ${false},
-            ${null},
             ${null}
           )
           RETURNING id

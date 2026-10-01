@@ -133,8 +133,9 @@ await describe('migration: organization-member-roles', async () => {
         adminScopes,
       );
 
-      // Run the remaining migrations
-      await complete();
+      // Run up to and including the migration under test. Later migrations
+      // (2025.01.09 legacy-member-scopes) assign the no-role user an Auto Role.
+      await runTo('2023.11.20T10-00-00.organization-member-roles.ts');
 
       // assert scopes are still in place and identical
       assert.deepStrictEqual(
@@ -280,6 +281,9 @@ await describe('migration: organization-member-roles', async () => {
         `),
         ['Viewer'],
       );
+
+      // the remaining migrations must still run cleanly on this data
+      await complete();
     } finally {
       await storage.destroy();
       await done();
