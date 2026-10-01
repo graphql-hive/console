@@ -262,8 +262,8 @@ await describe('migration: schema-cleanup-tracker', async () => {
       // removed in the sixth
       assert.ok(!goodbyeField, 'Query.goodbye field should not be found');
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 });

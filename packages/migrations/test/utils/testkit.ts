@@ -114,10 +114,14 @@ export async function initMigrationTestingEnvironment() {
       await runPGMigrations({ slonik });
     },
     async done(deleteDb = true) {
-      if (deleteDb) {
-        await db.query(`DROP DATABASE ${dbName};`);
+      try {
+        await slonik.end();
+        if (deleteDb) {
+          await db.query(`DROP DATABASE ${dbName};`);
+        }
+      } finally {
+        await db.$pool.end().catch(() => {});
       }
-      await db.$pool.end().catch();
     },
   };
 }

@@ -281,8 +281,8 @@ await describe('migration: organization-member-roles', async () => {
         ['Viewer'],
       );
     } finally {
-      await done();
       await storage.destroy();
+      await done();
     }
   });
 });

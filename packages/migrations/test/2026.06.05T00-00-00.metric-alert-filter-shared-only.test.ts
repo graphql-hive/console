@@ -65,9 +65,6 @@ await describe('migration: metric-alert-filter-shared-only', async () => {
       await db.query(psql`DELETE FROM metric_alert_rules WHERE id = ${rule.id}`);
       await db.query(psql`DELETE FROM saved_filters WHERE id = ${filter.id}`);
     } finally {
-      // Close the test-db pool before done() drops the database, otherwise the
-      // lingering session makes DROP DATABASE fail with "session in use".
-      await db.end().catch(() => {});
       await done();
     }
   });
@@ -133,7 +130,6 @@ await describe('migration: metric-alert-filter-shared-only', async () => {
         .then(countRow.parse);
       assert.equal(rules.c, 0);
     } finally {
-      await db.end().catch(() => {});
       await done();
     }
   });
