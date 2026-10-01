@@ -199,8 +199,7 @@
       "@graphiql/react": "patches/@graphiql__react.patch",
       "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch",
       "@fastify/vite": "patches/@fastify__vite.patch",
-      "@slonik/pg-driver": "patches/@slonik__pg-driver.patch",
-      "slonik": "patches/slonik.patch"
+      "@slonik/pg-driver@48.19.0": "patches/@slonik__pg-driver@48.19.0.patch"
     },
     "onlyBuiltDependencies": [
       "msw"

@@ -291,9 +291,9 @@ patchedDependencies:
   '@graphql-eslint/eslint-plugin@3.20.1':
     hash: 92716d09c5dd6166f88ca95d28b39ad4491682d48574a36c391e9875dd5060bb
     path: patches/@graphql-eslint__eslint-plugin@3.20.1.patch
-  '@slonik/pg-driver':
-    hash: c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488
-    path: patches/@slonik__pg-driver.patch
+  '@slonik/pg-driver@48.19.0':
+    hash: e12360d0c0740724e0317b8f5e2e4b4ab6cca28dd48bf04eef7ce550e8f08519
+    path: patches/@slonik__pg-driver@48.19.0.patch
   eslint@8.57.1:
     hash: 08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0
     path: patches/eslint@8.57.1.patch
@@ -312,9 +312,6 @@ patchedDependencies:
   p-cancelable@4.0.1:
     hash: 195ae63d47810ca4c987421948f15869356e598dccde9e8c9a4ff4efd3e88322
     path: patches/p-cancelable@4.0.1.patch
-  slonik:
-    hash: f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa
-    path: patches/slonik.patch
 
 importers:
 
@@ -648,14 +645,14 @@ importers:
         specifier: 1.0.0
         version: 1.0.0
       slonik:
-        specifier: 48.13.2
-        version: 48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)
+        specifier: 48.19.0
+        version: 48.19.0
       slonik-interceptor-query-logging:
-        specifier: 48.13.2
-        version: 48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa))
+        specifier: 48.19.0
+        version: 48.19.0(slonik@48.19.0)
       slonik-sql-tag-raw:
-        specifier: 48.13.2
-        version: 48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa))
+        specifier: 48.19.0
+        version: 48.19.0(slonik@48.19.0)
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -8776,34 +8773,34 @@ packages:
     resolution: {integrity: sha512-kT+07JvOqpYH3b/ttVo3iqKIFiHV2NKmD6QUc/F7HrjCgSdSA10zxqi0euXEF2prB49OU7SfjadzQ0WhNc7tiw==}
     engines: {node: '>= 18', npm: '>= 8.6.0'}
 
-  '@slonik/driver@48.13.2':
-    resolution: {integrity: sha512-vNywhgnCvaHejW/bGsZglUXGf7LXxin6aZ+iIefuf6p1NWcT/nuyb38QrpB+cveLoho1iVaPdECnk5ksnFbKCw==}
+  '@slonik/driver@48.19.0':
+    resolution: {integrity: sha512-C8LqSFzSaiiVoW7Bgw9MtcOFl2IpIHj2K5sNRLiIekGA3rlE6zDZxiVipxZzwAGEvVmqEyBLaOaWlnPHleokCg==}
     engines: {node: '>=24'}
     peerDependencies:
       zod: ^3.25 || ^4
 
-  '@slonik/errors@48.13.2':
-    resolution: {integrity: sha512-rUeL6pMVRCK6TzYku0QxFvSmzk4bkbpg3348A7qaTzFEUtX9pmaD0aGXBpc1si9+cVscckRl/ezy9TTRDODPCw==}
+  '@slonik/errors@48.19.0':
+    resolution: {integrity: sha512-un2XZcp3AuEVtbKYin57bL3STNQh25miVpKs1/BWhkU37UlMBaK0P/Nf8FHyxMkEL9qPlErLZKsxS+/bJhhsmQ==}
     engines: {node: '>=24'}
 
-  '@slonik/pg-driver@48.13.2':
-    resolution: {integrity: sha512-ULEWssW52X4sxxqBWtKYw0T1sSPgPm58wDmYo8xocZC5JuXFHvMzHpUk3X0lMUUXdOXKGcIL/G5sWG74PWi1Hg==}
-    engines: {node: '>=24'}
-    peerDependencies:
-      zod: ^3.25 || ^4
-
-  '@slonik/sql-tag@48.13.2':
-    resolution: {integrity: sha512-PWHIOTV5r7QZB8E7LNPCPOH+gTocAKne6P/JpPbSa16xynsABTcWLaa3yF4Z6oAbwCgzAkQdJ1TIubd4hawQ1A==}
-    engines: {node: '>=24'}
-
-  '@slonik/types@48.13.2':
-    resolution: {integrity: sha512-04iyM4iz68WoYN/9IcQdlwam2vF7QG1QuKfXYJLWTY6sIFMMQgTdlfPpOE7Q5N2UNy7twQXvjoyYJMGYNu/sCA==}
+  '@slonik/pg-driver@48.19.0':
+    resolution: {integrity: sha512-/FCnQxNV3pLo+IAOqZhPRhA9F65teMUZ6ypJxNv/2fsrtf65QWzXz2vr5+ZIba2PeaoEXO7TkDF63wINNxzVgg==}
     engines: {node: '>=24'}
     peerDependencies:
       zod: ^3.25 || ^4
 
-  '@slonik/utilities@48.13.2':
-    resolution: {integrity: sha512-KfAKm5P6dsQoTaq3GbJD6ybFS9H18zrwZ3FpNbs4u63NrpIMNas6ZWqdeEz+Pqy+OKpQWxiy1x06S/PBVNJSFA==}
+  '@slonik/sql-tag@48.19.0':
+    resolution: {integrity: sha512-Rzhi2JyVCCAJZnkK2AbutbawA2GpafNdqpacEw4QLKbrNAIUefvGoI2UbI1NPxHpPAdGgQ6KlbSyoV0+OCOrVA==}
+    engines: {node: '>=24'}
+
+  '@slonik/types@48.19.0':
+    resolution: {integrity: sha512-w6PbjfeVxJt32ZS3aZromLmdTpsTxv3UiBBMywAc/daDe8SbQB7DgiM80xzaavIqEb53IS1dP7cWX1ahdhY3rg==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      zod: ^3.25 || ^4
+
+  '@slonik/utilities@48.19.0':
+    resolution: {integrity: sha512-kL5HtrDzYRYbAznrHmdj8G/0LXECLcVJqIC2hkBqv/HELzzb/u04j+yvmNTd6JNaS7UZh6u6K8Nye5lzPy/Psw==}
     engines: {node: '>=24'}
     peerDependencies:
       zod: ^3.25 || ^4
@@ -14797,6 +14794,10 @@ packages:
     resolution: {integrity: sha512-NXzu9aQJTAzbBqOt2hwsR63ea7yvxJc0PwN/zobNAudYfb1B7R08SzB4TsLeSbUCuG467NhnoT0oO6w1qRO+BA==}
     engines: {node: '>=18'}
 
+  p-queue@9.3.3:
+    resolution: {integrity: sha512-NXAOdnEe5FsZJfT4oK84lE1Y5cFFdWlRuOo5tww8DyNMxyRXwn39fIkUtNLKppcPC+UYU/bXujNCUGDv01y7CA==}
+    engines: {node: '>=20'}
+
   p-retry@4.6.2:
     resolution: {integrity: sha512-312Id396EbJdvRONlngUx0NydfrIQ5lsYu0znKVUzVvArzEIt08V1qhtyESbGVd1FGX7UKtiFp5uwKZdM8wIuQ==}
     engines: {node: '>=8'}
@@ -14986,11 +14987,6 @@ packages:
 
   pg-connection-string@2.9.1:
     resolution: {integrity: sha512-nkc6NpDcvPVpZXxrreI/FOtX3XemeLl8E0qFr6F2Lrm/I8WOnaWNhIPK2Z7OHpw7gh5XJThi6j6ppgNoaT1w4w==}
-
-  pg-cursor@2.19.0:
-    resolution: {integrity: sha512-J5cF1MUz7LRJ9emOqF/06QjabMHMZy587rSPF0UuA8rCwKeeYl2co8Pp+6k5UU9YrAYHMzWkLxilfZB0hqsWWw==}
-    peerDependencies:
-      pg: ^8
 
   pg-cursor@2.22.0:
     resolution: {integrity: sha512-knzXLKqarTjOvb3qDSW0JiGsazmxwEKXrqHfWRte7XUsOYccQRafn3BLnQobWwInkzFJSyOej8y8cQRh2z3kGw==}
@@ -15878,8 +15874,8 @@ packages:
     engines: {node: 20 || >=22}
     hasBin: true
 
-  roarr@7.21.4:
-    resolution: {integrity: sha512-qvfUKCrpPzhWmQ4NxRYnuwhkI5lwmObhBU06BCK/lpj6PID9nL4Hk6XDwek2foKI+TMaV+Yw//XZshGF2Lox/Q==}
+  roarr@7.21.7:
+    resolution: {integrity: sha512-6X9ID9jb83kPkDxm5xLb9rZdGm6ksdDjpeL0iW5weKelJFi+NVBSowRpEuH8CdpX2x+7RW0TZaezibE7yQB7pg==}
     engines: {node: '>=18.0'}
 
   rolldown-vite@7.1.14:
@@ -16188,20 +16184,20 @@ packages:
   slick@1.12.2:
     resolution: {integrity: sha512-4qdtOGcBjral6YIBCWJ0ljFSKNLz9KkhbWtuGvUyRowl1kxfuE1x/Z/aJcaiilpb3do9bl5K7/1h9XC5wWpY/A==}
 
-  slonik-interceptor-query-logging@48.13.2:
-    resolution: {integrity: sha512-/Ib0eIj7pIki+czELuMFvP6z5FWH4m5pCkhWR1QbiCxDB7Zmf705bSkWcux2iChTu2WcWVcAnBdcdk/iZS9fpw==}
+  slonik-interceptor-query-logging@48.19.0:
+    resolution: {integrity: sha512-+EeBjNP340+Ezb70QhFLIs4SCtkSlNI7UFBRYNs3lqjPgJkVmsQn1ZLDsr6TpneY08xVkGG9KUOiaGjr+WDPBA==}
     engines: {node: '>=24'}
     peerDependencies:
       slonik: '>=45.0.0'
 
-  slonik-sql-tag-raw@48.13.2:
-    resolution: {integrity: sha512-1bMik7cU7usGIiOtn3Yjzw8p+enS/mAAjzwDyYoeoIUiEivUJytMBBZMP0V7JaeI5BeE89jRCx5LLDUFk3Tqhg==}
+  slonik-sql-tag-raw@48.19.0:
+    resolution: {integrity: sha512-+JL+vMTrIv/B9qkds7j8v3GhaUXt1zCNF2N31EYqt1bSrzoYdZUFri8KkQOCACFlmY14Os8tu+Z8Buc3Eukdyw==}
     engines: {node: '>=24'}
     peerDependencies:
       slonik: '>=45.0.0'
 
-  slonik@48.13.2:
-    resolution: {integrity: sha512-NU+pTfVJAIPTMcWlMYhFobuAQHM0orXlEWcDxrUVvCLEf+NvzB4nrlih7w6XHIf5RLRDq2zghzWuGSGagBe7HQ==}
+  slonik@48.19.0:
+    resolution: {integrity: sha512-N9nKOMOrzpji+zqrrS94mBkurVnmyKnvPiUdkgrGrA+D8Fyb7pyNcuviFxWmrlQ5z8XVATLxyeltDIv/bL6cDQ==}
     engines: {node: '>=24'}
 
   slugify@1.6.9:
@@ -27489,28 +27485,28 @@ snapshots:
       - debug
       - supports-color
 
-  '@slonik/driver@48.13.2(zod@4.3.6)':
+  '@slonik/driver@48.19.0(zod@4.3.6)':
     dependencies:
-      '@slonik/types': 48.13.2(zod@4.3.6)
-      '@slonik/utilities': 48.13.2(zod@4.3.6)
-      roarr: 7.21.4
+      '@slonik/types': 48.19.0(zod@4.3.6)
+      '@slonik/utilities': 48.19.0(zod@4.3.6)
+      roarr: 7.21.7
       serialize-error: 12.0.0
       strict-event-emitter-types: 2.0.0
       zod: 4.3.6
 
-  '@slonik/errors@48.13.2(zod@4.3.6)':
+  '@slonik/errors@48.19.0(zod@4.3.6)':
     dependencies:
-      '@slonik/types': 48.13.2(zod@4.3.6)
+      '@slonik/types': 48.19.0(zod@4.3.6)
     transitivePeerDependencies:
       - zod
 
-  '@slonik/pg-driver@48.13.2(patch_hash=c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488)(zod@4.3.6)':
+  '@slonik/pg-driver@48.19.0(patch_hash=e12360d0c0740724e0317b8f5e2e4b4ab6cca28dd48bf04eef7ce550e8f08519)(zod@4.3.6)':
     dependencies:
-      '@slonik/driver': 48.13.2(zod@4.3.6)
-      '@slonik/errors': 48.13.2(zod@4.3.6)
-      '@slonik/sql-tag': 48.13.2
-      '@slonik/types': 48.13.2(zod@4.3.6)
-      '@slonik/utilities': 48.13.2(zod@4.3.6)
+      '@slonik/driver': 48.19.0(zod@4.3.6)
+      '@slonik/errors': 48.19.0(zod@4.3.6)
+      '@slonik/sql-tag': 48.19.0
+      '@slonik/types': 48.19.0(zod@4.3.6)
+      '@slonik/utilities': 48.19.0(zod@4.3.6)
       pg: 8.20.0
       pg-query-stream: 4.14.0(pg@8.20.0)
       pg-types: 4.1.0
@@ -27519,23 +27515,23 @@ snapshots:
     transitivePeerDependencies:
       - pg-native
 
-  '@slonik/sql-tag@48.13.2':
+  '@slonik/sql-tag@48.19.0':
     dependencies:
-      '@slonik/errors': 48.13.2(zod@4.3.6)
-      '@slonik/types': 48.13.2(zod@4.3.6)
-      roarr: 7.21.4
+      '@slonik/errors': 48.19.0(zod@4.3.6)
+      '@slonik/types': 48.19.0(zod@4.3.6)
+      roarr: 7.21.7
       safe-stable-stringify: 2.5.0
       serialize-error: 12.0.0
       zod: 4.3.6
 
-  '@slonik/types@48.13.2(zod@4.3.6)':
+  '@slonik/types@48.19.0(zod@4.3.6)':
     dependencies:
       zod: 4.3.6
 
-  '@slonik/utilities@48.13.2(zod@4.3.6)':
+  '@slonik/utilities@48.19.0(zod@4.3.6)':
     dependencies:
-      '@slonik/errors': 48.13.2(zod@4.3.6)
-      '@slonik/types': 48.13.2(zod@4.3.6)
+      '@slonik/errors': 48.19.0(zod@4.3.6)
+      '@slonik/types': 48.19.0(zod@4.3.6)
       zod: 4.3.6
 
   '@smithy/chunked-blob-reader-native@4.2.3':
@@ -34711,6 +34707,11 @@ snapshots:
       eventemitter3: 5.0.1
       p-timeout: 6.1.3
 
+  p-queue@9.3.3:
+    dependencies:
+      eventemitter3: 5.0.4
+      p-timeout: 7.0.1
+
   p-retry@4.6.2:
     dependencies:
       '@types/retry': 0.12.0
@@ -34928,10 +34929,6 @@ snapshots:
 
   pg-connection-string@2.9.1: {}
 
-  pg-cursor@2.19.0(pg@8.20.0):
-    dependencies:
-      pg: 8.20.0
-
   pg-cursor@2.22.0(pg@8.20.0):
     dependencies:
       pg: 8.20.0
@@ -34967,7 +34964,7 @@ snapshots:
   pg-query-stream@4.14.0(pg@8.20.0):
     dependencies:
       pg: 8.20.0
-      pg-cursor: 2.19.0(pg@8.20.0)
+      pg-cursor: 2.22.0(pg@8.20.0)
 
   pg-query-stream@4.7.1(pg@8.20.0):
     dependencies:
@@ -35851,7 +35848,7 @@ snapshots:
       glob: 13.0.6
       package-json-from-dist: 1.0.1
 
-  roarr@7.21.4:
+  roarr@7.21.7:
     dependencies:
       fast-printf: 1.6.9
       safe-stable-stringify: 2.5.0
@@ -36263,32 +36260,32 @@ snapshots:
 
   slick@1.12.2: {}
 
-  slonik-interceptor-query-logging@48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)):
+  slonik-interceptor-query-logging@48.19.0(slonik@48.19.0):
     dependencies:
       crack-json: 1.3.0
       pretty-ms: 9.3.0
       serialize-error: 12.0.0
-      slonik: 48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)
+      slonik: 48.19.0
 
-  slonik-sql-tag-raw@48.13.2(slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)):
+  slonik-sql-tag-raw@48.19.0(slonik@48.19.0):
     dependencies:
-      '@slonik/sql-tag': 48.13.2
-      roarr: 7.21.4
-      slonik: 48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa)
+      '@slonik/sql-tag': 48.19.0
+      roarr: 7.21.7
+      slonik: 48.19.0
 
-  slonik@48.13.2(patch_hash=f3bf6d4d34249f6f9a4647d24fa4af00163597e4c8a5e94e20eca7959f1f2caa):
+  slonik@48.19.0:
     dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@slonik/driver': 48.13.2(zod@4.3.6)
-      '@slonik/errors': 48.13.2(zod@4.3.6)
-      '@slonik/pg-driver': 48.13.2(patch_hash=c9e1450b7d73280ac4a32ed554a05495054e82c2d65086f19d80c90bbf80d488)(zod@4.3.6)
-      '@slonik/sql-tag': 48.13.2
-      '@slonik/utilities': 48.13.2(zod@4.3.6)
+      '@opentelemetry/api': 1.9.1
+      '@slonik/driver': 48.19.0(zod@4.3.6)
+      '@slonik/errors': 48.19.0(zod@4.3.6)
+      '@slonik/pg-driver': 48.19.0(patch_hash=e12360d0c0740724e0317b8f5e2e4b4ab6cca28dd48bf04eef7ce550e8f08519)(zod@4.3.6)
+      '@slonik/sql-tag': 48.19.0
+      '@slonik/utilities': 48.19.0(zod@4.3.6)
       '@standard-schema/spec': 1.0.0
       iso8601-duration: 2.1.3
-      p-limit: 6.2.0
+      p-queue: 9.3.3
       postgres-interval: 4.0.2
-      roarr: 7.21.4
+      roarr: 7.21.7
       serialize-error: 12.0.0
       strict-event-emitter-types: 2.0.0
       zod: 4.3.6
