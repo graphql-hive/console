@@ -1,4 +1,3 @@
-import { invariant } from '@hive/service-common';
 import type { QueryResolvers } from '../../../../__generated__/types';
 import { GraphStore } from '../../../graph/providers/graph-store';
 import { TargetManager } from '../../../target/providers/target-manager';
@@ -10,7 +9,6 @@ export const latestVersion: NonNullable<QueryResolvers['latestVersion']> = async
   { injector },
 ) => {
   const target = await injector.get(TargetManager).getTargetFromToken();
-  const graph = await injector.get(GraphStore).findGraphForTargetIdByName(target.id, 'default');
-  invariant(graph, "No graph with name 'default' exists.");
+  const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
   return injector.get(SchemaManager).getMaybeLatestVersionForGraph(graph);
 };

@@ -1,4 +1,3 @@
-import { invariant } from '@hive/service-common';
 import { Session } from '../../../auth/lib/authz';
 import { GraphStore } from '../../../graph/providers/graph-store';
 import { SchemaManager } from '../../../schema/providers/schema-manager';
@@ -29,8 +28,7 @@ export const lab: NonNullable<QueryResolvers['lab']> = async (_, { selector }, {
 
   const schemaManager = injector.get(SchemaManager);
 
-  const graph = await injector.get(GraphStore).findGraphForTargetIdByName(target.id, 'default');
-  invariant(graph, "No graph with name 'default' exists.");
+  const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
 
   const latestSchema = await schemaManager.getMaybeLatestValidVersionForGraph(graph);
 

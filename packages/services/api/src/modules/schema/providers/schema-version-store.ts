@@ -545,7 +545,7 @@ export class SchemaVersionStore {
         }
     ),
   ) {
-    return this.pg.transaction('deleteSubgraphFromTarget', async trx => {
+    return this.pg.transaction('deleteSubgraphFromGraph', async trx => {
       // fetch the latest version
       const latestVersion = await trx
         .maybeOne(
@@ -1030,150 +1030,6 @@ export class SchemaVersionStore {
   }
 
   /**
-   * Note: This is an implementation detail of `SchemaVersionStore.getPaginatedSchemaVersionsForGraph`.
-   * Do not use this method directly for pagination unless you know what you are doing.
-   */
-  private async getPaginatedSchemaVersionsForGraphId(
-    graphId: string,
-    args: {
-      first: number;
-      cursor: { createdAt: string; id: string } | null;
-    },
-  ) {
-    const limit = args.first;
-
-    const query = psql`/* getPaginatedSchemaVersionsForTargetId */
-      SELECT
-        ${schemaVersionSQLFields()}
-      FROM
-        "schema_versions"
-      WHERE
-        "graph_id" = ${graphId}
-        ${
-          args.cursor
-            ? psql`
-              AND (
-                (
-                  "created_at" = ${args.cursor.createdAt}
-                  AND "id" < ${args.cursor.id}
-                )
-                OR "created_at" < ${args.cursor.createdAt}
-              )
-            `
-            : psql``
-        }
-      ORDER BY
-        "created_at" DESC
-        , "id" DESC
-      LIMIT ${limit + 1}
-    `;
-
-    const result = await this.pg.any(query);
-
-    let nodes = z.array(SchemaVersionModel).parse(result);
-
-    const hasNextPage = nodes.length > limit;
-    nodes = nodes.slice(0, limit);
-
-    return {
-      nodes,
-      pageInfo: {
-        hasNextPage,
-        hasPreviousPage: args.cursor !== null,
-      },
-    };
-  }
-
-  /**
-   * Note: This is an implementation detail of `SchemaVersionStore.getPaginatedSchemaVersionsForGraph`.
-   * Do not use this method directly for pagination unless you know what you are doing.
-   */
-  private async getPaginatedSchemaVersionsForTargetId(
-    targetId: string,
-    args: {
-      first: number;
-      cursor: { createdAt: string; id: string } | null;
-    },
-  ) {
-    let cursor: null | {
-      createdAt: string;
-      id: string;
-    } = null;
-
-    const limit = args.first;
-
-    const query = psql`/* getPaginatedSchemaVersionsForTargetId */
-      SELECT
-        ${schemaVersionSQLFields()}
-      FROM
-        "schema_versions"
-      WHERE
-        "target_id" = ${targetId}
-        ${
-          args.cursor
-            ? psql`
-              AND (
-                (
-                  "created_at" = ${args.cursor.createdAt}
-                  AND "id" < ${args.cursor.id}
-                )
-                OR "created_at" < ${args.cursor.createdAt}
-              )
-            `
-            : psql``
-        }
-        AND "graph_id" IS NULL
-      ORDER BY
-        "created_at" DESC
-        , "id" DESC
-      LIMIT ${limit + 1}
-    `;
-
-    const result = await this.pg.any(query);
-
-    let nodes = z.array(SchemaVersionModel).parse(result);
-
-    const hasNextPage = nodes.length > limit;
-    nodes = nodes.slice(0, limit);
-
-    return {
-      nodes,
-      pageInfo: {
-        hasNextPage,
-        hasPreviousPage: cursor !== null,
-      },
-    };
-  }
-
-  private buildSchemaVersionConnection(
-    nodes: Array<SchemaVersion>,
-    pageInfo: {
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-    },
-  ) {
-    const edges = nodes.map(node => ({
-      node,
-      get cursor() {
-        return encodeCreatedAtAndUUIDIdBasedCursor(node);
-      },
-    }));
-
-    return {
-      edges,
-      pageInfo: {
-        ...pageInfo,
-        get endCursor() {
-          return edges[edges.length - 1]?.cursor ?? '';
-        },
-        get startCursor() {
-          return edges[0]?.cursor ?? '';
-        },
-      },
-    };
-  }
-
-  /**
    * Retrieve the paginated schema versions for a graph.
    * Handles legacy schema version records that do not have a `graph_id` populated.
    */
@@ -1184,36 +1040,95 @@ export class SchemaVersionStore {
       cursor: null | string;
     },
   ) {
-    const first = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
-
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
     const cursor = args.cursor ? decodeCreatedAtAndUUIDIdBasedCursor(args.cursor) : null;
 
-    const connection = await this.getPaginatedSchemaVersionsForGraphId(graph.id, {
-      first,
-      cursor,
-    });
+    const cursorCondition = cursor
+      ? psql`
+        AND (
+          (
+            "created_at" = ${cursor.createdAt}
+            AND "id" < ${cursor.id}
+          )
+          OR "created_at" < ${cursor.createdAt}
+        )
+      `
+      : psql``;
 
-    // in case we have a graph that is not backfilled or still have a next page we don't need to
-    // look for legacy schema version records.
-    if (graph.isBackfilled === false || connection.pageInfo.hasNextPage) {
-      return this.buildSchemaVersionConnection(connection.nodes, connection.pageInfo);
-    }
+    const graphVersions = psql`
+      SELECT
+        *
+      FROM
+        "schema_versions"
+      WHERE
+        "graph_id" = ${graph.id}
+        ${cursorCondition}
+      ORDER BY
+        "created_at" DESC
+        , "id" DESC
+      LIMIT ${limit + 1}
+    `;
 
-    // if there is no next page, we need to lookup in the old db to make sure we did not miss any records without `graph_id` populated
-    // then we need to merge those two connections.
+    // Each branch is served by its own (graph_id | target_id, created_at, id) index, so the union
+    // reads at most 2 * (limit + 1) rows instead of sorting every version of the target.
+    const result = await this.pg.any(psql`/* getPaginatedSchemaVersionsForGraph */
+      SELECT
+        ${schemaVersionSQLFields()}
+      FROM (
+        ${
+          graph.isBackfilled
+            ? psql`
+              (${graphVersions})
+              UNION ALL
+              (
+                SELECT
+                  *
+                FROM
+                  "schema_versions"
+                WHERE
+                  "target_id" = ${graph.targetId}
+                  AND "graph_id" IS NULL
+                  ${cursorCondition}
+                ORDER BY
+                  "created_at" DESC
+                  , "id" DESC
+                LIMIT ${limit + 1}
+              )
+            `
+            : graphVersions
+        }
+      ) AS "schema_versions"
+      ORDER BY
+        "created_at" DESC
+        , "id" DESC
+      LIMIT ${limit + 1}
+    `);
 
-    const nonGraphIdConnection = await this.getPaginatedSchemaVersionsForTargetId(graph.targetId, {
-      // we only need to fetch
-      first: first - connection.nodes.length,
-      // in case a end cursor already exists we will use that one to find previous records
-      // if it is empty, we need to assume that no schema version records with `graph_id` exists
-      cursor: connection.nodes[connection.nodes.length - 1] || cursor,
-    });
+    let nodes = z.array(SchemaVersionModel).parse(result);
 
-    return this.buildSchemaVersionConnection([...connection.nodes, ...nonGraphIdConnection.nodes], {
-      hasNextPage: nonGraphIdConnection.pageInfo.hasNextPage,
-      hasPreviousPage: args.cursor !== null,
-    });
+    const hasNextPage = nodes.length > limit;
+    nodes = nodes.slice(0, limit);
+
+    const edges = nodes.map(node => ({
+      node,
+      get cursor() {
+        return encodeCreatedAtAndUUIDIdBasedCursor(node);
+      },
+    }));
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        get endCursor() {
+          return edges[edges.length - 1]?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges[0]?.cursor ?? '';
+        },
+      },
+    };
   }
 
   async getSchemaSchangesForSchemaVersion(schemaVersion: SchemaVersion) {
