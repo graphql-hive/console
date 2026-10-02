@@ -608,7 +608,7 @@ export class SchemaPublisher {
 
     const contracts =
       project.type === ProjectType.FEDERATION
-        ? await this.contracts.loadActiveContractsWithLatestVersionsForGraphSchemaVersion(
+        ? await this.contracts.loadActiveContractGraphsWithLatestVersionsForGraphSchemaVersion(
             graph,
             latestVersion?.version ?? null,
           )
@@ -770,8 +770,9 @@ export class SchemaPublisher {
             contracts
               ?.values()
               .map(contract => ({
-                ...contract,
-                approvedChanges: approvedContractChanges?.get(contract.contract.id) ?? null,
+                graph: contract.graph,
+                latestValidVersion: contract.latestValidVersion,
+                approvedChanges: approvedContractChanges?.get(contract.graph.id) ?? null,
               }))
               .toArray() ?? null,
           conditionalBreakingChangeDiffConfig:
@@ -1424,7 +1425,7 @@ export class SchemaPublisher {
     };
 
     const [contracts, latestVersion] = await Promise.all([
-      this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
+      this.graphStore.findContractGraphsForGraph(graph),
       this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
         graph,
       }),
@@ -1464,9 +1465,9 @@ export class SchemaPublisher {
           project: selector.projectId,
           target: selector.targetId,
           service: input.service?.toLowerCase(),
-          contracts: contracts?.map(contract => ({
+          contracts: contracts.values().map(contract => ({
             contractId: contract.id,
-            contractName: contract.contractName,
+            contractName: contract.name,
           })),
           // We include the latest version ID to avoid caching a schema publication that targets different versions.
           // When deleting a schema, and publishing it again, the latest version ID will be different.
@@ -1708,7 +1709,7 @@ export class SchemaPublisher {
 
           const contracts =
             project.type === ProjectType.FEDERATION
-              ? await this.contracts.loadActiveContractsWithLatestVersionsForGraphSchemaVersion(
+              ? await this.contracts.loadActiveContractGraphsWithLatestVersionsForGraphSchemaVersion(
                   graph,
                   latestVersion.version,
                 )
@@ -1743,7 +1744,7 @@ export class SchemaPublisher {
             },
             conditionalBreakingChangeDiffConfig:
               conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
-            contracts: contracts?.size ? Array.from(contracts.values()) : null,
+            contracts: contracts?.size ? contracts.values().toArray() : null,
             failDiffOnDangerousChange,
             failAllDangerousChanges,
             failDangerousChangeTypes,
@@ -2058,7 +2059,7 @@ export class SchemaPublisher {
 
     const contracts =
       project.type === ProjectType.FEDERATION
-        ? await this.contracts.loadActiveContractsWithLatestVersionsForGraphSchemaVersion(
+        ? await this.contracts.loadActiveContractGraphsWithLatestVersionsForGraphSchemaVersion(
             graph,
             latestVersion?.version ?? null,
           )
@@ -2132,7 +2133,7 @@ export class SchemaPublisher {
                   contracts
                     ?.values()
                     .filter(contract => contract.latestVersion !== null)
-                    .map(contract => contract.contract.contractName)
+                    .map(contract => contract.graph.name)
                     .toArray() ?? null,
               }
             : null,
@@ -2932,7 +2933,7 @@ export class SchemaPublisher {
       }
 
       targetLatestValidContractVersionByContractId.set(
-        contract.contract.id,
+        contract.graph.id,
         contract.latestValidVersion,
       );
     }
@@ -2950,7 +2951,7 @@ export class SchemaPublisher {
         this.registryChecks
           .diff({
             existingSdl:
-              targetLatestValidContractVersionByContractId.get(targetContract.contract.id)
+              targetLatestValidContractVersionByContractId.get(targetContract.graph.id)
                 ?.compositeSchemaSdl ?? null,
             incomingSdl: targetContract.latestVersion?.compositeSchemaSdl ?? null,
             conditionalBreakingChangeConfig: null,
@@ -2967,7 +2968,7 @@ export class SchemaPublisher {
         this.registryChecks
           .diff({
             existingSdl:
-              targetLatestValidContractVersionByContractId.get(targetContract.contract.id)
+              targetLatestValidContractVersionByContractId.get(targetContract.graph.id)
                 ?.supergraphSdl ?? null,
             incomingSdl: targetContract.latestVersion?.supergraphSdl ?? null,
             conditionalBreakingChangeConfig: null,
@@ -2984,9 +2985,9 @@ export class SchemaPublisher {
       ]);
 
       contracts.push({
-        contractId: targetContract.contract.id,
+        contractId: targetContract.graph.id,
         graph: targetContract.graph,
-        contractName: targetContract.contract.contractName,
+        contractName: targetContract.graph.name,
         compositeSchemaSDL: targetContract.latestVersion.compositeSchemaSdl,
         schemaCompositionErrors: targetContract.latestVersion.schemaCompositionErrors,
         supergraphSDL: targetContract.latestVersion.supergraphSdl,
@@ -3025,12 +3026,12 @@ export class SchemaPublisher {
         targetId: args.target.id,
         schemas,
         contracts: contractsThatNeedComposition.map(contract => ({
-          id: contract.contract.id,
+          id: contract.graph.id,
           filter: {
             removeUnreachableTypesFromPublicApiSchema:
-              contract.contract.removeUnreachableTypesFromPublicApiSchema,
-            exclude: contract.contract.excludeTags,
-            include: contract.contract.includeTags,
+              contract.graph.config.removeUnreachableTypesFromPublicApiSchema,
+            exclude: contract.graph.config.excludeTags,
+            include: contract.graph.config.includeTags,
           },
         })),
       });
@@ -3043,8 +3044,8 @@ export class SchemaPublisher {
             compositeSchemaSDL: null,
             supergraphSDL: null,
             schemaCompositionErrors: result.reason.errors,
-            contractId: contract.contract.id,
-            contractName: contract.contract.contractName,
+            contractId: contract.graph.id,
+            contractName: contract.graph.name,
             graph: contract.graph,
             diffSchemaVersionId: contract.latestValidVersion?.id ?? null,
             previousSchemaVersionId: contract.latestVersion?.id ?? null,
@@ -3063,8 +3064,8 @@ export class SchemaPublisher {
             compositeSchemaSDL: null,
             supergraphSDL: null,
             schemaCompositionErrors: contractResult.reason.errors,
-            contractId: contract.contract.id,
-            contractName: contract.contract.contractName,
+            contractId: contract.graph.id,
+            contractName: contract.graph.name,
             graph: contract.graph,
             diffSchemaVersionId: contract.latestValidVersion?.id ?? null,
             previousSchemaVersionId: contract.latestVersion?.id ?? null,
@@ -3111,8 +3112,8 @@ export class SchemaPublisher {
           compositeSchemaSDL: contractResult.result.fullSchemaSdl,
           supergraphSDL: contractResult.result.supergraph,
           schemaCompositionErrors: null,
-          contractId: contract.contract.id,
-          contractName: contract.contract.contractName,
+          contractId: contract.graph.id,
+          contractName: contract.graph.name,
           graph: contract.graph,
           diffSchemaVersionId: contract.latestValidVersion?.id ?? null,
           previousSchemaVersionId: contract.latestVersion?.id ?? null,
@@ -3289,7 +3290,7 @@ export class SchemaPublisher {
       this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(originSchemaVersion),
       // Contracts only exist for Federation projects, so we attempt to load these conditionally as a small optimization :)
       project.type === ProjectType.FEDERATION
-        ? this.contracts.loadActiveContractsWithLatestVersionsForGraphSchemaVersion(
+        ? this.contracts.loadActiveContractGraphsWithLatestVersionsForGraphSchemaVersion(
             originGraph,
             originSchemaVersion,
           )
@@ -3307,7 +3308,7 @@ export class SchemaPublisher {
 
     const [contractsWithLatestTargetVersions, targetLogEdges] = await Promise.all([
       project.type === ProjectType.FEDERATION
-        ? this.contracts.loadActiveContractsWithLatestVersionsForGraphSchemaVersion(
+        ? this.contracts.loadActiveContractGraphsWithLatestVersionsForGraphSchemaVersion(
             targetGraph,
             targetLatestSchemaVersion,
           )
