@@ -342,7 +342,18 @@ export class SchemaManager {
 
     if (target.projectId !== project.id) {
       this.logger.debug(
-        'The found schema version does not belong to the specified target. (expectedProjectId=%s, actualProjectId=%s)',
+        'The found schema version does not belong to the specified project. (expectedProjectId=%s, actualProjectId=%s)',
+        project.id,
+        target.projectId,
+      );
+      return null;
+    }
+
+    const graph = await this.graphs.findGraphForSchemaVersion(schemaVersion);
+
+    if (!graph) {
+      this.logger.debug(
+        'The graph the schema version belongs to was deleted.',
         project.id,
         target.projectId,
       );
@@ -350,12 +361,11 @@ export class SchemaManager {
     }
 
     this.logger.debug(
-      'The schema version and its target were found.. (targetId=%s, schemaVersionId=%s)',
+      'The schema version, target and graph were found. (targetId=%s, schemaVersionId=%s, graphId=%s)',
       schemaVersion.targetId,
       schemaVersion.id,
+      graph.id,
     );
-
-    const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
 
     return {
       target,
