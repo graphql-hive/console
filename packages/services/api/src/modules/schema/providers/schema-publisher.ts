@@ -397,7 +397,7 @@ export class SchemaPublisher {
       this.storage.getOrganization({
         organizationId: selector.organizationId,
       }),
-      this.graphStore.findGraphForTargetIdByName(selector.targetId, 'default'),
+      this.graphStore.getDefaultGraphForTargetId(selector.targetId),
       input.schemaProposalId
         ? this.schemaProposals.getProposal({
             id: input.schemaProposalId,
@@ -419,8 +419,6 @@ export class SchemaPublisher {
         ],
       } as const;
     }
-
-    invariant(graph, "No graph with name 'default' exists.");
 
     const [latestVersion, latestComposableVersion] = await Promise.all([
       this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
@@ -1368,7 +1366,7 @@ export class SchemaPublisher {
     );
 
     const [graph, project] = await Promise.all([
-      this.graphStore.findGraphForTargetIdByName(selector.targetId, 'default'),
+      this.graphStore.getDefaultGraphForTargetId(selector.targetId),
       this.projectStore.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
@@ -1380,8 +1378,6 @@ export class SchemaPublisher {
         "Provide exactly one schema source: 'PublishInput.sdl' or 'PublishInput.schema'.",
       );
     }
-
-    invariant(graph, "No graph with name 'default' exists.");
 
     if (project.type !== Types.ProjectType.SINGLE && !input.service) {
       return {
@@ -1619,10 +1615,8 @@ export class SchemaPublisher {
               projectId: selector.projectId,
               targetId: selector.targetId,
             }),
-            this.graphStore.findGraphForTargetIdByName(selector.targetId, 'default'),
+            this.graphStore.getDefaultGraphForTargetId(selector.targetId),
           ]);
-
-          invariant(graph, "No graph with name 'default' exists.");
 
           schemaDeleteCount.inc({ model: 'modern', projectType: project.type });
 
@@ -1926,10 +1920,8 @@ export class SchemaPublisher {
         projectId: projectId,
         targetId: targetId,
       }),
-      this.graphStore.findGraphForTargetIdByName(targetId, 'default'),
+      this.graphStore.getDefaultGraphForTargetId(targetId),
     ]);
-
-    invariant(graph, "No graph with name 'default' exists.");
 
     const [latestVersion, latestComposable] = await Promise.all([
       this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
@@ -3079,11 +3071,10 @@ export class SchemaPublisher {
         };
   }) {
     this.logger.debug('start schema version promotion process');
-    const [organization, project, target, graph] = await Promise.all([
+    const [organization, project, target] = await Promise.all([
       this.storage.getOrganization({ organizationId: args.target.organizationId }),
       this.projectStore.getProjectById(args.target.projectId),
       this.targetStore.getTargetById(args.target.targetId),
-      this.graphStore.findGraphForTargetIdByName(args.target.targetId, 'default'),
     ]);
 
     if (!organization || !target || !project) {
@@ -3096,7 +3087,7 @@ export class SchemaPublisher {
       };
     }
 
-    invariant(graph, "No graph with name 'default' exists.");
+    const graph = await this.graphStore.getDefaultGraphForTargetId(target.id);
 
     let originSchemaVersionLookup: {
       target: Target;
@@ -3151,13 +3142,7 @@ export class SchemaPublisher {
         };
       }
 
-      const sourceGraph = await this.graphStore.findGraphForTargetIdByName(
-        sourceTarget.id,
-        'default',
-      );
-      if (!sourceGraph) {
-        throw new HiveError("No graph with name 'default' exists.");
-      }
+      const sourceGraph = await this.graphStore.getDefaultGraphForTargetId(sourceTarget.id);
 
       const schemaVersion = await this.schemaManager.getMaybeLatestVersionForGraph(sourceGraph);
 
@@ -3201,7 +3186,6 @@ export class SchemaPublisher {
     const [
       targetLatestSchemaVersion,
       targetLatestValidSchemaVersion,
-      targetGraph,
       originPublicSchemaSdl,
       originSupergraphSdl,
       originLogEdges,
@@ -3212,8 +3196,6 @@ export class SchemaPublisher {
       // The latest versions within the target we promote to
       this.schemaManager.getMaybeLatestVersionForGraph(graph),
       this.schemaManager.getMaybeLatestValidVersionForGraph(graph),
-      // the default graph in the target we promote to
-      this.graphStore.findGraphForTargetIdByName(target.id, 'default'),
       // We have some old schema versions that do not store the SDLs on the record
       // we need to use the helpers to ensure the SDL is produced for these
       this.schemaVersionHelper.getCompositeSchemaSdl(originSchemaVersion),
@@ -3240,8 +3222,6 @@ export class SchemaPublisher {
         },
       }),
     ]);
-
-    invariant(targetGraph, "No graph with name 'default' exists.");
 
     const targetLogEdges = await (targetLatestSchemaVersion
       ? this.schemaVersions.getSchemaLogEdgesWithNodesForSchemaVersion(targetLatestSchemaVersion)
@@ -3355,7 +3335,7 @@ export class SchemaPublisher {
     const schemaVersion = await this.schemaVersions.createPromotionSchemaVersion({
       target: {
         target,
-        graph: targetGraph,
+        graph,
         latestVersion: targetLatestSchemaVersion,
         latestValidVersion: targetLatestValidSchemaVersion,
       },

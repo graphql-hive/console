@@ -1,4 +1,3 @@
-import { invariant } from '@hive/service-common';
 import type { QueryResolvers } from '../../../../__generated__/types';
 import { GraphStore } from '../../../graph/providers/graph-store';
 import { IdTranslator } from '../../../shared/providers/id-translator';
@@ -27,8 +26,7 @@ export const latestValidVersion: NonNullable<QueryResolvers['latestValidVersion'
     });
 
     const target = await injector.get(TargetManager).getTargetById({ targetId: selector.targetId });
-    const graph = await injector.get(GraphStore).findGraphForTargetIdByName(target.id, 'default');
-    invariant(graph, "No graph with name 'default' exists.");
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
     return injector.get(SchemaManager).getMaybeLatestValidVersionForGraph(graph);
   }
 };
