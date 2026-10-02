@@ -1,7 +1,7 @@
 import { ProjectType } from 'testkit/gql/graphql';
 import { assertNonNullish } from 'testkit/utils';
 import { psql } from '@hive/postgres';
-import { createContract } from '../../../testkit/flow';
+import { createContract, getSchemaVersionWithAllDetails } from '../../../testkit/flow';
 import { DocumentType, graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
@@ -43,6 +43,98 @@ const PaginatedSchemaVersionsQuery = graphql(/* GraphQL */ `
     }
   }
 `);
+
+const SchemaVersionGraphScopeQuery = graphql(/* GraphQL */ `
+  query SchemaVersionGraphScopeQuery(
+    $projectRef: ProjectReferenceInput!
+    $targetRef: TargetReferenceInput!
+    $baseVersionId: ID!
+    $contractVersionId: ID!
+    $period: DateRangeInput
+  ) {
+    project(reference: $projectRef) {
+      schemaVersionsCount(period: $period)
+    }
+    target(reference: $targetRef) {
+      baseVersion: schemaVersion(id: $baseVersionId) {
+        id
+      }
+      contractVersion: schemaVersion(id: $contractVersionId) {
+        id
+      }
+      schemaVersionsCount(period: $period)
+    }
+  }
+`);
+
+test.concurrent(
+  'schema version lookup and counts only include default graph versions',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { project, target, createTargetAccessToken, fetchVersions } = await createProject(
+      ProjectType.Federation,
+    );
+    const token = await createTargetAccessToken({});
+
+    await createContract(
+      {
+        target: { byId: target.id },
+        contractName: 'public',
+        removeUnreachableTypesFromPublicApiSchema: true,
+        includeTags: ['public'],
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    const period = {
+      from: new Date(Date.now() - 60_000).toISOString(),
+      to: new Date(Date.now() + 60_000).toISOString(),
+    };
+
+    await token
+      .publishSchema({
+        commit: 'base-version',
+        service: 'products',
+        url: 'http://products.com',
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+          type Query {
+            product: String @tag(name: "public")
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const [baseVersion] = await fetchVersions(1);
+    assertNonNullish(baseVersion);
+    const details = await getSchemaVersionWithAllDetails(target.id, baseVersion.id, ownerToken);
+    const contractVersion = details?.contractVersions?.edges.at(0)?.node;
+    assertNonNullish(contractVersion);
+
+    for (const countPeriod of [null, period]) {
+      const result = await execute({
+        document: SchemaVersionGraphScopeQuery,
+        authToken: ownerToken,
+        variables: {
+          projectRef: { byId: project.id },
+          targetRef: { byId: target.id },
+          baseVersionId: baseVersion.id,
+          contractVersionId: contractVersion.id,
+          period: countPeriod,
+        },
+      }).then(r => r.expectNoGraphQLErrors());
+
+      expect(result.target?.baseVersion?.id).toBe(baseVersion.id);
+      expect(result.target?.contractVersion).toBeNull();
+      expect(result.target?.schemaVersionsCount).toBe(1);
+      expect(result.project?.schemaVersionsCount).toBe(1);
+    }
+  },
+);
 
 test.concurrent(
   'schema version pagination excludes contract versions from the default graph',
