@@ -306,7 +306,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
     : !toParsed
       ? 'Invalid date string'
       : fromParsed && fromParsed.getTime() > toParsed.getTime()
-        ? 'To cannot be before from.'
+        ? 'The end must come after the start.'
         : null;
 
   const PresetButton = useMemo(
