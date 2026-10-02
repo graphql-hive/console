@@ -1,5 +1,14 @@
 # @graphql-hive/external-composition
 
+## 0.0.7
+
+### Patch Changes
+
+- [#8607](https://github.com/graphql-hive/console/pull/8607)
+  [`b936b9a`](https://github.com/graphql-hive/console/commit/b936b9a23f7193fcfb17f85bb38f7cf26f148819)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-4mh8-r7rc-xpvc](https://github.com/advisories/GHSA-4mh8-r7rc-xpvc).
+
 ## 0.0.6
 
 ### Patch Changes
