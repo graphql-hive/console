@@ -22,6 +22,7 @@ export const OrganizationLayoutQuery = graphql(`
     organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
+      usageRetentionInDays
       viewerCanCreateProject
       viewerCanManageSupportTickets
       viewerCanDescribeBilling
@@ -41,6 +42,7 @@ export const ProjectLayoutQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
+      usageRetentionInDays
       project: projectBySlug(projectSlug: $projectSlug) {
         id
         slug
@@ -62,6 +64,8 @@ export const TargetLayoutQuery = graphql(`
       id
       slug
       usageRetentionInDays
+      plan
+      viewerCanDescribeBilling
       project: projectBySlug(projectSlug: $projectSlug) {
         id
         slug

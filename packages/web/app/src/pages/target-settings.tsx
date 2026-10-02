@@ -335,6 +335,7 @@ function ClientExclusion(
     {
       selectedTargetIds: string[];
       clientsFromSettings: string[];
+      retentionInDays: number;
       value: string[];
     } & Pick<ComponentProps<typeof Combobox>, 'name' | 'disabled' | 'onBlur' | 'onChange'>
   >,
@@ -348,8 +349,9 @@ function ClientExclusion(
         organizationSlug,
         projectSlug,
         targetIds: props.selectedTargetIds,
+        // Clients seen in the last 90 days, or as far back as the plan keeps.
         period: {
-          from: formatISO(subDays(now, 90)),
+          from: formatISO(subDays(now, Math.min(90, props.retentionInDays))),
           to: formatISO(now),
         },
       },
@@ -797,6 +799,7 @@ export const BreakingChanges = () => {
             <ClientExclusion
               selectedTargetIds={targetIds}
               clientsFromSettings={configuration?.excludedClients ?? []}
+              retentionInDays={maxPeriod}
               name={field.name}
               value={field.value}
               onBlur={field.onBlur}
