@@ -6,6 +6,7 @@ import {
   resolveDateRange,
   resolveRangeAndResolution,
   retentionBoundary,
+  startsWithin,
 } from './use-date-range-controller';
 
 describe('useDateRangeController', () => {
@@ -264,6 +265,18 @@ describe('loaderPeriod', () => {
     expect(loaderPeriod({}, presetLast7Days, now)).toEqual(
       loaderPeriod(presetLast7Days.range, presetLast7Days, now),
     );
+  });
+});
+
+describe('startsWithin', () => {
+  const now = new UTCDate('2026-09-29T15:30:00.000Z');
+  const boundary = retentionBoundary(7, now);
+
+  it('keeps a saved range inside the retention and drops one before it or unreadable', () => {
+    expect(startsWithin({ from: 'now-7d' }, boundary, now)).toBe(true);
+    expect(startsWithin({ from: '2026-09-22T00:00:00.000Z' }, boundary, now)).toBe(true);
+    expect(startsWithin({ from: 'now-30d' }, boundary, now)).toBe(false);
+    expect(startsWithin({ from: 'garbage' }, boundary, now)).toBe(false);
   });
 });
 

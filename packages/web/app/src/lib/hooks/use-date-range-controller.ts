@@ -230,6 +230,12 @@ export function retentionBoundary(retentionInDays: number, now = new Date()): Da
   return getUTCStartOfDay(subDays(now, retentionInDays));
 }
 
+// Whether a saved range still starts inside what the plan keeps; an unreadable one does not.
+export function startsWithin(range: { from: string }, boundary: Date, now?: UTCDate): boolean {
+  const from = parse(range.from, now);
+  return from !== undefined && from.getTime() >= boundary.getTime();
+}
+
 export function resolveRangeAndResolution(range: { from: Date; to: Date }, now = new Date()) {
   const tableOldestDateTimePoint = {
     /** Because ClickHouse uses UTC and we aggregate to UTC start fo day, we need to get the UTC day here */
