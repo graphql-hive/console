@@ -13,7 +13,11 @@ import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useSlugs, useToggle, useViewer } from '@/lib/hooks';
-import { carriedRange } from '@/lib/hooks/use-date-range-controller';
+import {
+  carriedRange,
+  retentionBoundary,
+  startsWithin,
+} from '@/lib/hooks/use-date-range-controller';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { useLocation } from '@tanstack/react-router';
@@ -34,6 +38,14 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
 
   const viewer = useViewer();
   const currentOrganization = query.data?.organization;
+  // Usage pages reset a range the retention does not cover; carrying one there would only earn a toast.
+  const retention = currentOrganization?.usageRetentionInDays;
+  const usageRange =
+    range.from !== undefined &&
+    retention !== undefined &&
+    !startsWithin({ from: range.from }, retentionBoundary(retention))
+      ? {}
+      : range;
   const currentProject = query.data?.organization?.project;
   const currentTarget = query.data?.organization?.project?.target;
 
@@ -73,7 +85,7 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
                       label: 'Explorer',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
                       params,
-                      search: range,
+                      search: usageRange,
                     },
                     {
                       label: 'History',
@@ -84,7 +96,7 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
                       label: 'Insights',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
                       params,
-                      search: range,
+                      search: usageRange,
                     },
                     {
                       label: 'Traces',

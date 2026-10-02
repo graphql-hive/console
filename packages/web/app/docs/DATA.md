@@ -118,9 +118,10 @@ the URL until it settles: the app version's search box writes the URL 500 ms aft
   from a page that has one into another period page carries it (`carriedRange(search)`, spread into
   the link's `search` by the target nav, the insights and explorer links, and the trace rows, span
   links and breadcrumb), and a link from a page without one carries nothing, so the destination
-  defaults. The nav's Alerts item is left out: the activity log has its own default and retention,
-  so a usage range would mostly reset. Links that mean a range of their own, such as an alert's view
-  of its saved filter, set it.
+  defaults. The nav carries a range into Insights and the Explorer only when the usage retention
+  covers it (traces keep a year), and never into Alerts, whose log has its own default and
+  retention. Links that mean a range of their own, such as an alert's view of its saved filter, set
+  it.
 - **A range stays inside the organization's retention.** The picker greys out presets and refuses a
   custom start before `retentionBoundary`. The loader resets a link it cannot honor to the screen's
   default: `requireRange(loader, bounds)` before the warms, for a bound it cannot read or older than

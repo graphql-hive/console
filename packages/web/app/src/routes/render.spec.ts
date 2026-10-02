@@ -741,6 +741,16 @@ describe('the range in the URL', () => {
     expect(navRange('Checks')).toBeNull();
   });
 
+  it('is kept from Insights and Explorer when the retention does not cover it', async () => {
+    // Traces keeps data for a year; the fixture organization keeps usage for 30 days.
+    at(`${TARGET}/traces?from=now-90d&to=now`);
+    await screen.findByRole('link', { name: 'Traces', current: 'page' });
+
+    expect(navRange('Traces')).toContain('now-90d');
+    expect(navRange('Insights')).toBeNull();
+    expect(navRange('Explorer')).toBeNull();
+  });
+
   it('is not invented by a page without one', { timeout: 30_000 }, async () => {
     at(`${TARGET}/checks`);
     await screen.findByRole('link', { name: 'Checks', current: 'page' });
