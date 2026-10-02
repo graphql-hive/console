@@ -22,6 +22,18 @@ describe('retentionBoundary', () => {
       '2026-09-22T00:00:00.000Z',
     );
   });
+
+  test('answers in UTC days whatever zone the instant was written in', () => {
+    const sameInstant = new Date('2026-09-29T17:30:00.000+02:00');
+    expect(retentionBoundary({ now: sameInstant, retentionInDays: 7 }).toISOString()).toBe(
+      '2026-09-22T00:00:00.000Z',
+    );
+    // 01:30 on the 29th in Athens is still the 28th in UTC, so the boundary is a day earlier.
+    const lateEvening = new Date('2026-09-29T01:30:00.000+03:00');
+    expect(retentionBoundary({ now: lateEvening, retentionInDays: 7 }).toISOString()).toBe(
+      '2026-09-21T00:00:00.000Z',
+    );
+  });
 });
 
 describe('isPeriodWithinRetention', () => {
