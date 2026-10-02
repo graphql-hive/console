@@ -211,7 +211,8 @@ export function getDateRangeDisplayLabel(
 export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
   const validUnits = props.validUnits ?? units;
   const staticPresets = (props.presets ?? availablePresets).filter(
-    preset => withinUnits(preset.range.from, validUnits) && withinUnits(preset.range.to, validUnits),
+    preset =>
+      withinUnits(preset.range.from, validUnits) && withinUnits(preset.range.to, validUnits),
   );
 
   const disabledDays: Matcher[] = [
@@ -547,7 +548,8 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
 
   const validUnits = props.validUnits ?? units;
   const staticPresets = (props.presets ?? availablePresets).filter(
-    preset => withinUnits(preset.range.from, validUnits) && withinUnits(preset.range.to, validUnits),
+    preset =>
+      withinUnits(preset.range.from, validUnits) && withinUnits(preset.range.to, validUnits),
   );
 
   const label = getDateRangeDisplayLabel(props.selectedRange, staticPresets, validUnits);

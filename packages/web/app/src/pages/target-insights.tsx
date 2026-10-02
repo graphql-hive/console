@@ -1,6 +1,7 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
 import { useMutation, useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
@@ -11,7 +12,6 @@ import {
   useInsightsFilterExtraSections,
   type SavedFilterView,
 } from '@/components/target/insights/use-insights-filter-extra-sections';
-import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Filters } from '@/components/ui/filters/filter-menu/filters';

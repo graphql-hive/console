@@ -63,7 +63,11 @@ describe('RetentionNoteView', () => {
 
   it('is the sentence alone without an upgrade', async () => {
     renderInRouter(
-      <RetentionNoteView plan={BillingPlanType.Hobby} retentionInDays={7} subject="alert activity" />,
+      <RetentionNoteView
+        plan={BillingPlanType.Hobby}
+        retentionInDays={7}
+        subject="alert activity"
+      />,
     );
 
     expect(

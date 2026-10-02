@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
-import { defaultRange, loadQuery, requireRange, revalidate, type RangeBounds } from '@/lib/route-utils';
+import {
+  defaultRange,
+  loadQuery,
+  requireRange,
+  revalidate,
+  type RangeBounds,
+} from '@/lib/route-utils';
 import { TargetInsightsNewPageContent_TraceQuery, TargetTracePage } from '@/pages/target-trace';
 import {
   defaultTracesFilter,

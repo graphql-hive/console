@@ -138,7 +138,11 @@ export function projectLayout(
 ) {
   return {
     __typename: 'Query' as const,
-    organization: { ...organization, ...organizationOverrides, project: { ...project, ...overrides } },
+    organization: {
+      ...organization,
+      ...organizationOverrides,
+      project: { ...project, ...overrides },
+    },
   };
 }
 

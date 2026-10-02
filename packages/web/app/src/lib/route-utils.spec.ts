@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { parse } from 'graphql';
 import { filter, map, pipe } from 'wonka';
+import { presetLast7Days } from '@/components/ui/date-range-picker';
 import {
   organizationLayout,
   projectLayout,
@@ -8,7 +9,6 @@ import {
   targetLayout,
 } from '@/lib/testing/fixtures/layouts';
 import { createTestClient } from '@/lib/testing/urql';
-import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { isRedirect } from '@tanstack/react-router';
 import { createClient, makeResult, type Exchange, type Operation } from '@urql/core';
 import {
@@ -269,11 +269,14 @@ describe('requireRange', () => {
   }
 
   it('resets a bound it cannot read, keeping the rest of the search', () => {
-    const reset = resetOf({ from: 'garbage', to: 'now' }, {
-      from: 'garbage',
-      to: 'now',
-      operations: ['abc'],
-    });
+    const reset = resetOf(
+      { from: 'garbage', to: 'now' },
+      {
+        from: 'garbage',
+        to: 'now',
+        operations: ['abc'],
+      },
+    );
 
     expect(reset).toMatchObject({
       to: bounds.to,
@@ -307,8 +310,17 @@ describe('requireRetention', () => {
     to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
   };
 
-  function loader(client: ReturnType<typeof createTestClient>, deps: { from?: string; to?: string }) {
-    return { context: { urqlClient: client }, preload: false, params: SLUGS, deps, location: { search: deps } };
+  function loader(
+    client: ReturnType<typeof createTestClient>,
+    deps: { from?: string; to?: string },
+  ) {
+    return {
+      context: { urqlClient: client },
+      preload: false,
+      params: SLUGS,
+      deps,
+      location: { search: deps },
+    };
   }
 
   function layoutWith(usageRetentionInDays: number) {

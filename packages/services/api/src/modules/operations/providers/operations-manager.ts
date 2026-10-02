@@ -8,11 +8,7 @@ import { PeriodOutsideRetentionError } from '../../../shared/errors';
 import type { Listify, Optional } from '../../../shared/helpers';
 import { cache, createPeriod, parseDateRangeInput } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
-import {
-  COMMERCE_CONFIG,
-  type CommerceConfig,
-} from '../../commerce/providers/commerce-client';
-import { defaultUsagePeriodDays, retentionBoundary } from '../lib/usage-retention';
+import { COMMERCE_CONFIG, type CommerceConfig } from '../../commerce/providers/commerce-client';
 import { Logger } from '../../shared/providers/logger';
 import type {
   OrganizationSelector,
@@ -21,6 +17,7 @@ import type {
 } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
+import { defaultUsagePeriodDays, retentionBoundary } from '../lib/usage-retention';
 import { FieldMetricsState, OperationsReader } from './operations-reader';
 
 const DAY_IN_MS = 86_400_000;
@@ -146,7 +143,10 @@ export class OperationsManager {
   private async getUsageRetentionWindow({ organizationId }: OrganizationSelector) {
     const organization = await this.storage.getOrganization({ organizationId });
     const retentionInDays = organization.monthlyRateLimit.retentionInDays;
-    return { retentionInDays, earliestFrom: retentionBoundary({ now: new Date(), retentionInDays }) };
+    return {
+      retentionInDays,
+      earliestFrom: retentionBoundary({ now: new Date(), retentionInDays }),
+    };
   }
 
   // Fails a usage read that starts before the plan keeps data; without billing nothing expires.
@@ -157,7 +157,9 @@ export class OperationsManager {
     if (!this.commerceConfig.billingEnabled) {
       return;
     }
-    const { retentionInDays, earliestFrom } = await this.getUsageRetentionWindow({ organizationId });
+    const { retentionInDays, earliestFrom } = await this.getUsageRetentionWindow({
+      organizationId,
+    });
     if (period.from.getTime() < earliestFrom.getTime()) {
       throw new PeriodOutsideRetentionError(retentionInDays);
     }
@@ -1326,7 +1328,10 @@ export class OperationsManager {
         projectId: args.projectId,
       },
     });
-    await this.assertPeriodWithinRetention({ organizationId: args.organizationId, period: args.period });
+    await this.assertPeriodWithinRetention({
+      organizationId: args.organizationId,
+      period: args.period,
+    });
 
     const loader = this.getTopOperationForTypeLoader({
       target: args.targetId,
@@ -1351,7 +1356,10 @@ export class OperationsManager {
         projectId: args.projectId,
       },
     });
-    await this.assertPeriodWithinRetention({ organizationId: args.organizationId, period: args.period });
+    await this.assertPeriodWithinRetention({
+      organizationId: args.organizationId,
+      period: args.period,
+    });
 
     return this.reader.getReportedSchemaCoordinates({
       target: args.targetId,

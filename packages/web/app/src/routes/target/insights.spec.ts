@@ -233,7 +233,9 @@ describe('a range the route cannot read', () => {
     const client = createTestClient(layoutFixtures());
     const router = createAppRouter({
       history: createMemoryHistory({
-        initialEntries: [`${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}?from=garbage&to=now`],
+        initialEntries: [
+          `${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}?from=garbage&to=now`,
+        ],
       }),
       urqlClient: client,
     });

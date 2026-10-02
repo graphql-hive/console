@@ -118,12 +118,13 @@ the URL until it settles: the app version's search box writes the URL 500 ms aft
   from a page that has one into another period page carries it (`carriedRange(search)`, spread into
   the link's `search` by the target nav, the insights and explorer links, and the trace rows, span
   links and breadcrumb), and a link from a page without one carries nothing, so the destination
-  defaults. Links that mean a range of their own, such as an alert's view of its saved filter, set it.
+  defaults. Links that mean a range of their own, such as an alert's view of its saved filter, set
+  it.
 - **A range stays inside what the plan keeps.** The picker greys out presets and refuses a custom
-  start before `retentionBoundary`. The loader resets a link it cannot honor to the screen's default:
-  `requireRange(loader, bounds)` before the warms, for a bound it cannot read or older than the
-  rollups; `requireRetention(loader, bounds)` after them, for a start before the retention on the
-  layout document (`usageRetention.<scope>`; alert activity passes its log's). The reset notes a
+  start before `retentionBoundary`. The loader resets a link it cannot honor to the screen's
+  default: `requireRange(loader, bounds)` before the warms, for a bound it cannot read or older than
+  the rollups; `requireRetention(loader, bounds)` after them, for a start before the retention on
+  the layout document (`usageRetention.<scope>`; alert activity passes its log's). The reset notes a
   `rangeReset` reason in history state and the controller shows the toast once. The API rejects what
   slips through, so the console's fixed windows follow the plan too (`overviewPeriod`).
 - **Stripe** decides in `beforeLoad` too: the subscription routes redirect to the organization when
@@ -251,8 +252,8 @@ src/lib/testing/urql.ts                   createTestClient on cacheOptions; fixt
 
 `beforeLoad: defaultRange(bounds)` with `bounds = { preset, to: '/the/route' }`, `loaderDeps` on
 `from` and `to`, the loader calls `requireRange(loader, bounds)` first, resolves
-`loaderPeriod(loader.deps, preset)`, warms, awaits `requireRetention(loader, bounds)` and returns the
-period; the page reads it with `useLoaderData()` for its query and any figure derived from the
+`loaderPeriod(loader.deps, preset)`, warms, awaits `requireRetention(loader, bounds)` and returns
+the period; the page reads it with `useLoaderData()` for its query and any figure derived from the
 bounds, and keeps a `useDateRangeController` only for the picker. Never build the period in the
 page: the loader and the page would read the clock at different moments.
 
@@ -275,13 +276,13 @@ Run from the repo root: `pnpm vitest run packages/web/app/src`.
 
 | Spec                                   | Guards                                                                                                                     |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `lib/route-utils.spec.ts`              | `loadQuery`, `revalidate`, the gate's admit and redirect rules, `defaultRange`, `requireRange`, `requireRetention`.         |
+| `lib/route-utils.spec.ts`              | `loadQuery`, `revalidate`, the gate's admit and redirect rules, `defaultRange`, `requireRange`, `requireRetention`.        |
 | `routes/target/insights.spec.ts`       | Loader variables and policies, one request per document, Refresh, the period once, rows carry the range, bad ranges reset. |
 | `routes/target/checks.spec.ts`         | Load more merges, a filter resets the cursor and keeps the selection, no row preload.                                      |
 | `routes/target/history.spec.ts`        | Load more merges, a revisit revalidates the list alone, error before not-found.                                            |
 | `routes/target/apps.spec.ts`           | Sort and search from the URL, one URL write per pause, rows kept while loading.                                            |
-| `routes/target/alerts.spec.ts`         | The default range, a range past the log retention resets, the note names the log, the poll across a minute roll.          |
-| `routes/target/traces.spec.ts`         | The default range, filter and sort in the variables, row links and the breadcrumb carry the range, old ranges reset.      |
+| `routes/target/alerts.spec.ts`         | The default range, a range past the log retention resets, the note names the log, the poll across a minute roll.           |
+| `routes/target/traces.spec.ts`         | The default range, filter and sort in the variables, row links and the breadcrumb carry the range, old ranges reset.       |
 | `routes/target/explorer.spec.ts`       | Each view's documents, filters surviving a redirect, unreadable and old ranges resetting with the toast, the plan note.    |
 | `routes/target/proposals.spec.ts`      | Stages from the URL, a new timestamp is a new request, no load-more control.                                               |
 | `routes/organization/route.spec.ts`    | The overview window, shrunk to the plan, support warmed, the Stripe redirect and the warms with it.                        |

@@ -67,7 +67,9 @@ describe('DateRangePicker', () => {
       screen.getByRole('button', { name: 'Apply date range' }) as HTMLButtonElement;
 
     async function openWith(props: Partial<React.ComponentProps<typeof DateRangePicker>> = {}) {
-      render(<DateRangePicker selectedRange={presetLast7Days.range} startDate={startDate} {...props} />);
+      render(
+        <DateRangePicker selectedRange={presetLast7Days.range} startDate={startDate} {...props} />,
+      );
       fireEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
       return screen.findByLabelText('From');
     }

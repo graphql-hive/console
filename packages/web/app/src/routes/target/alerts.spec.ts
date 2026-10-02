@@ -39,7 +39,10 @@ const TARGET_NODE = { __typename: 'Target', id: 'target-1' };
 function activityFixtures(metricAlertStateLogRetentionDays = 30) {
   return new Map<string, unknown>([
     ...layoutFixtures(),
-    [RETENTION, { __typename: 'Query', target: { ...TARGET_NODE, metricAlertStateLogRetentionDays } }],
+    [
+      RETENTION,
+      { __typename: 'Query', target: { ...TARGET_NODE, metricAlertStateLogRetentionDays } },
+    ],
     [ACTIVITY, { __typename: 'Query', target: { ...TARGET_NODE, metricAlertRuleStateLog: [] } }],
   ]);
 }
@@ -108,27 +111,44 @@ describe('alerts activity route', () => {
     }
   });
 
-  it('keeps a range within the log retention and resets one past it', { timeout: 30_000 }, async () => {
-    const kept = await loadedWith(activityFixtures(30), `${ALERTS}?from=now-14d&to=now`);
-    expect(kept.router.state.location.search).toEqual({ from: 'now-14d', to: 'now' });
-    expect(kept.router.state.location.state.rangeReset).toBeUndefined();
+  it(
+    'keeps a range within the log retention and resets one past it',
+    { timeout: 30_000 },
+    async () => {
+      const kept = await loadedWith(activityFixtures(30), `${ALERTS}?from=now-14d&to=now`);
+      expect(kept.router.state.location.search).toEqual({ from: 'now-14d', to: 'now' });
+      expect(kept.router.state.location.state.rangeReset).toBeUndefined();
 
-    const reset = await loadedWith(activityFixtures(7), `${ALERTS}?from=now-14d&to=now&types=["x"]`);
-    await waitFor(() =>
-      expect(reset.router.state.location.search).toEqual({ ...presetLast1Hour.range, types: ['x'] }),
-    );
-    expect(reset.router.history.length).toBe(1);
-    expect(reset.router.state.location.state.rangeReset).toBe('retention');
-  });
+      const reset = await loadedWith(
+        activityFixtures(7),
+        `${ALERTS}?from=now-14d&to=now&types=["x"]`,
+      );
+      await waitFor(() =>
+        expect(reset.router.state.location.search).toEqual({
+          ...presetLast1Hour.range,
+          types: ['x'],
+        }),
+      );
+      expect(reset.router.history.length).toBe(1);
+      expect(reset.router.state.location.state.rangeReset).toBe('retention');
+    },
+  );
 
-  it('a range in months is a unit the screen allows; the log retention is what resets it', { timeout: 30_000 }, async () => {
-    const { router } = await loadedWith(activityFixtures(30), `${ALERTS}?from=now-6M&to=now&types=["x"]`);
+  it(
+    'a range in months is a unit the screen allows; the log retention is what resets it',
+    { timeout: 30_000 },
+    async () => {
+      const { router } = await loadedWith(
+        activityFixtures(30),
+        `${ALERTS}?from=now-6M&to=now&types=["x"]`,
+      );
 
-    await waitFor(() =>
-      expect(router.state.location.search).toEqual({ ...presetLast1Hour.range, types: ['x'] }),
-    );
-    expect(router.state.location.state.rangeReset).toBe('retention');
-  });
+      await waitFor(() =>
+        expect(router.state.location.search).toEqual({ ...presetLast1Hour.range, types: ['x'] }),
+      );
+      expect(router.state.location.state.rangeReset).toBe('retention');
+    },
+  );
 
   it(
     'polls through the router: the same bounds within the minute, new ones when it rolls',
