@@ -411,6 +411,84 @@ test.concurrent('promote non-existing schema version yields error', async ({ exp
   });
 });
 
+test.concurrent('promote contract schema version yields error', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, createOrganizationAccessToken } = await createOrg();
+  const { target, fetchVersions } = await createProject(ProjectType.Federation);
+  const { privateAccessKey } = await createOrganizationAccessToken({
+    resources: {
+      mode: ResourceAssignmentModeType.All,
+    },
+    permissions: [
+      'schemaVersion:publish',
+      'target:modifySettings',
+      'project:describe',
+      'schemaVersion:promote',
+    ],
+  });
+
+  await createContract(
+    {
+      contractName: 'public',
+      target: {
+        byId: target.id,
+      },
+      includeTags: ['public'],
+      removeUnreachableTypesFromPublicApiSchema: true,
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  await publishSchema(
+    {
+      author: 'a',
+      commit: 'a',
+      sdl: /* GraphQL */ `
+        type Query {
+          public: String! @tag(name: "public")
+        }
+      `,
+      service: 'a',
+      url: 'http://a',
+      target: {
+        byId: target.id,
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  const [publishedVersion] = await fetchVersions(1);
+  assertNonNullish(publishedVersion);
+  const version = await getSchemaVersionWithAllDetails(
+    target.id,
+    publishedVersion.id,
+    privateAccessKey,
+  );
+  const contractVersion = version?.contractVersions?.edges.at(0)?.node;
+  assertNonNullish(contractVersion);
+
+  const promoteResult = await schemaVersionPromote(
+    {
+      source: {
+        fromSchemaVersionById: contractVersion.id,
+      },
+      target: {
+        toTarget: {
+          byId: target.id,
+        },
+      },
+    },
+    privateAccessKey,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(promoteResult.schemaVersionPromote).toMatchObject({
+    ok: {},
+    error: {
+      message: 'A contract schema version can not be promoted.',
+    },
+  });
+});
+
 test.concurrent(
   'promote schema version from different project yields error',
   async ({ expect }) => {
