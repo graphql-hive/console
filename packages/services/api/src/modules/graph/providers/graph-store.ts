@@ -159,13 +159,13 @@ export class GraphStore {
             : /** If `graphId` is null we can find the relevant graph by a legacy lookup. */
               psql`
                 "target_id" = ${schemaVersion.targetId}
-                AND "type" = 'BASIC'
+                AND "type" = 'BASE'
                 AND "is_backfilled" = TRUE
               `
         }
     `;
 
-    return await this.pg.maybeOne(query).then(GraphModel.parse);
+    return await this.pg.maybeOne(query).then(GraphModel.nullable().parse);
   }
 
   /**
