@@ -3,12 +3,12 @@ import { clsx } from 'clsx';
 import { format } from 'date-fns';
 import { ActivityIcon, BoxIcon, CheckIcon, CircleCheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
-import { Label, Label as LegacyLabel } from '@/components/common';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Heading } from '@/components/ui/heading';
 import { Accordion } from '@/components/ui/primitives/accordion/accordion';
+import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
@@ -19,10 +19,13 @@ import { useSlugs } from '@/lib/hooks';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
+function ChangeBadge({ content }: { content: string }) {
+  return <Badge content={content} variants={{ padding: 'tight', variant: 'warning' }} />;
+}
+
 export function labelize(message: string) {
-  // Replace '...' and "..." with <Label>...</Label>
   return reactStringReplace(message.replace(/"/g, "'"), /'((?:[^'\\]|\\.)+?)'/g, (match, i) => (
-    <Label key={i}>{match.replace(/\\'/g, "'")}</Label>
+    <ChangeBadge key={i + match} content={match.replace(/\\'/g, "'")} />
   ));
 }
 
@@ -705,18 +708,18 @@ function CompositionError(props: { message: string }) {
   return reactStringReplace(
     reactStringReplace(
       reactStringReplace(props.message, /"([^"]+)"/g, (match, index) => {
-        return <LegacyLabel key={match + index}>{match}</LegacyLabel>;
+        return <ChangeBadge key={index + match} content={match} />;
       }),
       /(@[^. ]+)/g,
       (match, index) => {
-        return <LegacyLabel key={match + index}>{match}</LegacyLabel>;
+        return <ChangeBadge key={index + match} content={match} />;
       },
     ),
     /Unknown type ([A-Za-z_0-9]+)/g,
     (match, index) => {
       return (
         <span key={match + index}>
-          Unknown type <LegacyLabel>{match}</LegacyLabel>
+          Unknown type <ChangeBadge content={match} />
         </span>
       );
     },
