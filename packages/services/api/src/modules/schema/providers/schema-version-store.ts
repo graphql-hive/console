@@ -63,6 +63,7 @@ export class SchemaVersionStore {
     trx: CommonQueryMethods,
     args: {
       id?: string;
+      createdAt?: string;
       isComposable: boolean;
       targetId: string;
       origin: SchemaVersionOrigin;
@@ -98,6 +99,7 @@ export class SchemaVersionStore {
       INSERT INTO schema_versions
         (
           "id",
+          "created_at",
           "record_version",
           "is_composable",
           "target_id",
@@ -125,6 +127,7 @@ export class SchemaVersionStore {
       VALUES
         (
           ${args.id ?? psql`uuid_generate_v4()`},
+          ${args.createdAt ?? psql`NOW()`},
           '2024-01-10',
           ${args.isComposable},
           ${args.targetId},
@@ -257,8 +260,8 @@ export class SchemaVersionStore {
     },
   ): Promise<void> {
     // write to "contract_versions" for rollback capabilities
-    const schemaVersionContractId = await trx
-      .oneFirst(
+    const contractVersion = await trx
+      .one(
         psql`/* insertSchemaVersionContract */
       INSERT INTO "contract_versions" (
         "schema_version_id"
@@ -278,12 +281,13 @@ export class SchemaVersionStore {
       )
       RETURNING
         "id"
+        , to_json("created_at") AS "createdAt"
     `,
       )
-      .then(z.string().parse);
+      .then(z.object({ id: z.string().uuid(), createdAt: z.string() }).parse);
 
     await this.insertSchemaVersionContractChanges(trx, {
-      schemaVersionContractId,
+      schemaVersionContractId: contractVersion.id,
       changes: args.changes,
     });
 
@@ -294,7 +298,9 @@ export class SchemaVersionStore {
       'previousSchemaVersionId' | 'diffSchemaVersionId'
     > = {
       // make sure they have the same id
-      id: schemaVersionContractId,
+      id: contractVersion.id,
+      // and same created at date
+      createdAt: contractVersion.createdAt,
       sourceSchemaVersionId: args.schemaVersionId,
       graphMetadata: {
         id: args.graph.id,
