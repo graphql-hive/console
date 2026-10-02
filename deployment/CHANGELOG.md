@@ -1,5 +1,43 @@
 # hive
 
+## 13.0.0
+
+### Major Changes
+
+- [#8534](https://github.com/graphql-hive/console/pull/8534)
+  [`2d5d278`](https://github.com/graphql-hive/console/commit/2d5d27887371d7617f3d659dc801339ac0724dbe)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **BREAKING CHANGE**: Before upgrading to this
+  version, you must first upgrade to hive@12.1.0. Do not upgrade directly from an earlier version
+  while the system is serving traffic.
+
+  To perform a rolling upgrade:
+
+  1. Upgrade all running services to `hive@12.1.0`.
+  2. Wait until all database migrations for `hive@12.1.0` have completed successfully.
+  3. Upgrade all services to this major version.
+
+  If downtime is acceptable, you can instead stop all traffic and running services, then upgrade
+  directly to this version and run the migrations before bringing the system back online.
+
+  ***
+
+  Backfill `graphs` table for existing `targets` and `contracts` to bring the database into a
+  consistent state.
+
+### Patch Changes
+
+- [#8619](https://github.com/graphql-hive/console/pull/8619)
+  [`8d4903c`](https://github.com/graphql-hive/console/commit/8d4903c9eff5b3e50964d3650ddaab7d0b12ab60)
+  Thanks [@jdolle](https://github.com/jdolle)! - Restore the documented 60 second budget for
+  external schema composition. `SCHEMA_COMPOSITION_TIMEOUT_MS` now defaults to 60 seconds, and
+  `SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS` defaults to 5 seconds less than it. The external timeout
+  is now one budget for the whole external composition call, shared by retries and contract
+  compositions, instead of a per-attempt limit: a fast failure (connection refused, reset, 5xx) is
+  retried with the time that is left, a slow service gets the whole budget on its first attempt, and
+  a spent budget is not retried. The GraphQL API and the workflows service no longer cap schema
+  service requests at 30 seconds, which silently limited any schema service setting; the cap is now
+  60 seconds.
+
 ## 12.1.0
 
 ### Minor Changes
