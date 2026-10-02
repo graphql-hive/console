@@ -29,13 +29,9 @@ export const Target: Pick<
       first: args.first ?? null,
     });
   },
-  schemaVersion: async (target, args, { injector }) => {
-    return await injector.get(SchemaManager).getSchemaVersionBySelector({
-      organizationId: target.orgId,
-      projectId: target.projectId,
-      targetId: target.id,
-      versionId: args.id,
-    });
+  async schemaVersion(target, args, { injector }) {
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
+    return await injector.get(SchemaManager).getSchemaVersionForGraphById(graph, args.id);
   },
   async latestSchemaVersion(target, _, { injector }) {
     const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
@@ -103,10 +99,11 @@ export const Target: Pick<
       pageInfo: result.pageInfo,
     };
   },
-  schemaVersionsCount: (target, { period }, { injector }) => {
+  async schemaVersionsCount(target, { period }, { injector }) {
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
     return injector
       .get(SchemaManager)
-      .countSchemaVersionsOfTarget(target, period ? parseDateRangeInput(period) : null);
+      .countSchemaVersionsOfGraph(graph, period ? parseDateRangeInput(period) : null);
   },
   contracts: async (target, args, { injector }) => {
     return await injector.get(ContractsManager).getPaginatedContractsForTarget({
