@@ -4,7 +4,7 @@ import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
-import { Encryptor, invariant, trace, traceFn } from '@hive/service-common';
+import { Encryptor, trace, traceFn } from '@hive/service-common';
 import type { SchemaCheck } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
 import { SchemaChecksFilter } from '../../../__generated__/types';
@@ -92,8 +92,7 @@ export class SchemaManager {
       selectors => {
         return Promise.all(
           selectors.map(async selector => {
-            const graph = await graphs.findGraphForTargetIdByName(selector.targetId, 'default');
-            invariant(graph, "No graph with name 'default' exists.");
+            const graph = await graphs.getDefaultGraphForTargetId(selector.targetId);
 
             return {
               ...(await this.schemaVersions.getLatestValidSchemaVersionForGraph(graph)),
@@ -114,8 +113,7 @@ export class SchemaManager {
 
   async hasPublishedSchemaVersionInDefaultGraph(target: Target) {
     this.logger.debug('Checking if schema is available (targetId=%s)', target.id);
-    const graph = await this.graphs.findGraphForTargetIdByName(target.id, 'default');
-    invariant(graph, "No graph with name 'default' exists.");
+    const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
     return this.schemaVersions.anyVersionExistsForGraph(graph);
   }
 
@@ -172,7 +170,7 @@ export class SchemaManager {
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
-      this.graphs.findGraphForTargetIdByName(selector.targetId, 'default'),
+      this.graphs.getDefaultGraphForTargetId(selector.targetId),
     ]);
 
     if (project.type !== ProjectType.FEDERATION) {
@@ -181,8 +179,6 @@ export class SchemaManager {
         message: 'Only Federation projects are supported',
       };
     }
-
-    invariant(graph, "No graph with name 'default' exists.");
 
     const latestSchemas = await this.getLatestSchemaVersionWithSchemaLogsForGraph({
       graph,
@@ -359,8 +355,7 @@ export class SchemaManager {
       schemaVersion.id,
     );
 
-    const graph = await this.graphs.findGraphForTargetIdByName(target.id, 'default');
-    invariant(graph, "No graph with name 'default' exists.");
+    const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
 
     return {
       target,
@@ -1084,8 +1079,7 @@ export class SchemaManager {
     });
 
     const target = await this.targetManager.getTargetById({ targetId: selector.targetId });
-    const graph = await this.graphs.findGraphForTargetIdByName(target.id, 'default');
-    invariant(graph, "No graph with name 'default' exists.");
+    const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
 
     const record = await this.schemaVersions.getSchemaVersionForGraphByCommit(graph, args.commit);
 
@@ -1202,8 +1196,7 @@ export class SchemaManager {
 
     const results = await Promise.all(
       targets.map(async target => {
-        const graph = await this.graphs.findGraphForTargetIdByName(target.id, 'default');
-        invariant(graph, "No graph with name 'default' exists.");
+        const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
         const schemaVersion = await this.getMaybeLatestValidVersionForGraph(graph);
 
         if (schemaVersion === null) {

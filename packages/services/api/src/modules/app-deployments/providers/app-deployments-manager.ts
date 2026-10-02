@@ -1,5 +1,4 @@
 import { Injectable, Scope } from 'graphql-modules';
-import { invariant } from '@hive/service-common';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Target } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
@@ -208,9 +207,7 @@ export class AppDeploymentsManager {
     });
 
     const target = await this.targetManager.getTargetById(selector);
-    const graph = await this.graphs.findGraphForTargetIdByName(target.id, 'default');
-
-    invariant(graph, "No graph with name 'default' exists.");
+    const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
 
     return await this.appDeployments.addDocumentsToAppDeployment({
       graph,

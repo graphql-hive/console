@@ -1,4 +1,3 @@
-import { invariant } from '@hive/service-common';
 import { parseDateRangeInput } from '../../../shared/helpers';
 import { GraphStore } from '../../graph/providers/graph-store';
 import { OperationsManager } from '../../operations/providers/operations-manager';
@@ -24,8 +23,7 @@ export const Target: Pick<
   | 'schemaVersionsCount'
 > = {
   schemaVersions: async (target, args, { injector }) => {
-    const graph = await injector.get(GraphStore).findGraphForTargetIdByName(target.id, 'default');
-    invariant(graph, "No graph with name 'default' exists.");
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
     return injector.get(SchemaManager).getPaginatedSchemaVersionsForGraph(graph, {
       cursor: args.after ?? null,
       first: args.first ?? null,
@@ -40,13 +38,11 @@ export const Target: Pick<
     });
   },
   async latestSchemaVersion(target, _, { injector }) {
-    const graph = await injector.get(GraphStore).findGraphForTargetIdByName(target.id, 'default');
-    invariant(graph, "No graph with name 'default' exists.");
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
     return injector.get(SchemaManager).getMaybeLatestVersionForGraph(graph);
   },
   async latestValidSchemaVersion(target, __, { injector }) {
-    const graph = await injector.get(GraphStore).findGraphForTargetIdByName(target.id, 'default');
-    invariant(graph, "No graph with name 'default' exists.");
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
     return injector.get(SchemaManager).getMaybeLatestValidVersionForGraph(graph);
   },
   baseSchema: (target, _, { injector }) => {

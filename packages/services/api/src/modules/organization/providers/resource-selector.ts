@@ -1,7 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import z from 'zod';
 import { psql } from '@hive/postgres';
-import { invariant } from '@hive/service-common';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization, ProjectType } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
@@ -173,8 +172,7 @@ export class ResourceSelector {
       return null;
     }
 
-    const graph = await this.graphs.findGraphForTargetIdByName(target.targetId, 'default');
-    invariant(graph, "No graph with name 'default' exists.");
+    const graph = await this.graphs.getDefaultGraphForTargetId(target.targetId);
 
     const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
     if (latest) {

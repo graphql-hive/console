@@ -61,8 +61,8 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
     }
 
-    const { pool } = await seed.createDbConnection();
-    await pool.query(psql`
+    await using db = await seed.createDbConnection();
+    await db.pool.query(psql`
       UPDATE "schema_versions"
       SET "graph_id" = NULL
       WHERE "target_id" = ${target.id}
@@ -105,7 +105,6 @@ test.concurrent(
 
     expect(commits).toEqual(['linked-2', 'linked-1']);
     expect(new Set(commits).size).toBe(commits.length);
-    await pool.end();
   },
 );
 
@@ -117,9 +116,9 @@ test.concurrent(
     const { createProject } = await createOrg();
     const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
-    const { pool } = await seed.createDbConnection();
+    await using db = await seed.createDbConnection();
 
-    await pool.query(psql`
+    await db.pool.query(psql`
       UPDATE "graphs"
       SET "is_backfilled" = TRUE
       WHERE "target_id" = ${target.id}
@@ -134,7 +133,7 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
     }
 
-    await pool.query(psql`
+    await db.pool.query(psql`
     UPDATE "schema_versions"
     SET "graph_id" = NULL
     WHERE "target_id" = ${target.id}
@@ -177,7 +176,6 @@ test.concurrent(
 
     expect(commits).toEqual(['linked-2', 'linked-1', 'legacy-2', 'legacy-1']);
     expect(new Set(commits).size).toBe(commits.length);
-    await pool.end();
   },
 );
 
