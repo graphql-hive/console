@@ -111,12 +111,12 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
                       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
                       params,
                     },
+                    // Alert activity has its own default and a shorter retention; a usage range would mostly reset.
                     {
                       label: 'Alerts',
                       visible: currentTarget.viewerCanUseMetricAlertRules,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
                       params,
-                      search: range,
                     },
                     {
                       label: 'Settings',

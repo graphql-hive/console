@@ -717,7 +717,8 @@ describe('alerts sections', () => {
 });
 
 describe('the range in the URL', () => {
-  const PERIOD_ITEMS = ['Explorer', 'Traces', 'Alerts', 'Insights'];
+  // Alerts is a period page too, but its activity log has its own default and retention.
+  const PERIOD_ITEMS = ['Explorer', 'Traces', 'Insights'];
 
   function navRange(name: string) {
     const nav = screen.getByRole('navigation', { name: 'Secondary' });
@@ -736,6 +737,7 @@ describe('the range in the URL', () => {
     for (const name of PERIOD_ITEMS) {
       expect(navRange(name)).toContain('now-1d');
     }
+    expect(navRange('Alerts')).toBeNull();
     expect(navRange('Checks')).toBeNull();
   });
 
