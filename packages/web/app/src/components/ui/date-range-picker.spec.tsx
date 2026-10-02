@@ -53,6 +53,12 @@ describe('DateRangePicker', () => {
     expect(preset('Last 1 year').disabled).toBe(true);
   });
 
+  it('shows a footer under the custom range', async () => {
+    render(<DateRangePicker selectedRange={presetLast7Days.range} footer={<span>a note</span>} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
+    expect(await screen.findByText('a note')).toBeTruthy();
+  });
+
   describe('the custom range against a start date', () => {
     const DAY = 24 * 60 * 60 * 1000;
     // The UTC start of a day eight days ago, as the controller computes it.

@@ -33,6 +33,8 @@ export interface DateRangePickerProps {
   size?: ControlSize;
   /** Custom trigger element. Must forward ref. Replaces the default segmented Button trigger. */
   trigger?: React.ReactElement;
+  /** Shown under the custom range, for a note about what can be picked. */
+  footer?: React.ReactNode;
 }
 
 export interface DateRangePickerPanelProps {
@@ -47,6 +49,8 @@ export interface DateRangePickerPanelProps {
   validUnits?: DurationUnit[];
   /** Called when a selection is made. Parent should close the container (popover, submenu, etc). */
   onClose?: () => void;
+  /** Shown under the custom range, for a note about what can be picked. */
+  footer?: React.ReactNode;
 }
 
 interface ResolvedDateRange {
@@ -467,6 +471,9 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
             </div>
           </div>
         </div>
+        {props.footer ? (
+          <div className="mt-auto w-0 min-w-full px-3 pb-1">{props.footer}</div>
+        ) : null}
       </div>
       <Popover
         modal
@@ -573,6 +580,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
           startDate={props.startDate}
           validUnits={props.validUnits}
           onClose={() => setIsOpen(false)}
+          footer={props.footer}
         />
       }
     />
