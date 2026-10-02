@@ -3120,6 +3120,13 @@ export class SchemaPublisher {
         };
       }
 
+      if (lookup.graph.type === 'CONTRACT') {
+        return {
+          type: 'error' as const,
+          message: 'A contract schema version can not be promoted.',
+        };
+      }
+
       originSchemaVersionLookup = lookup;
     } else if (args.source.type === 'target') {
       this.logger.debug('use a target as the source. (targetId=%s)', args.target.targetId);
