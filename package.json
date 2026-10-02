@@ -131,6 +131,7 @@
     "overrides.ajv@8.x.x": "address https://github.com/graphql-hive/console/security/dependabot/507",
     "overrides.yauzl@2.x.x": "address https://github.com/graphql-hive/console/security/dependabot/542",
     "overrides.path-to-regexp@0.x.x": "address https://github.com/graphql-hive/console/security/dependabot/619",
+    "overrides.basic-ftp@<6.2.1": "address https://github.com/graphql-hive/console/security/dependabot/1014",
     "overrides.graphile-worker>@types/pg": "Keep graphile-worker on the catalog @types/pg version; a newer transitive @types/pg makes the pg Pool passed in services/workflows/src/kit.ts type-incompatible",
     "overrides": {
       "graphile-worker>@types/pg": "8.11.10",
@@ -185,7 +186,8 @@
       "body-parser@1.x.x": "1.20.6",
       "prettier-plugin-sh": "0.19.0",
       "pacote@<21.5.1": "^21.5.1",
-      "miniflare@3>undici": "7.30.0"
+      "miniflare@3>undici": "7.30.0",
+      "basic-ftp@<6.2.1": "6.2.1"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
