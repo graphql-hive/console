@@ -111,7 +111,7 @@ test.concurrent('the check follows a changed retention', async ({ expect }) => {
 });
 
 test.concurrent(
-  'the explorer defaults to what the plan keeps, and rejects a period past it once',
+  'the explorer defaults to what the plan keeps; a period past it fails once at the explorer, not per field',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
