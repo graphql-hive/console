@@ -151,7 +151,7 @@ export class CompositeModel {
           supergraphChanges: supergraphDiffCheck?.result ?? supergraphDiffCheck?.reason ?? null,
         };
 
-        if (diffCheck?.status === 'failed' || supergraphDiffCheck?.status === 'failed') {
+        if (diffCheck?.status === 'failed') {
           return {
             ...state,
             isSuccessful: false as const,
