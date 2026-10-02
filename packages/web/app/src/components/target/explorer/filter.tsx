@@ -1,3 +1,4 @@
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Navigation, type NavigationItem } from '@/components/ui/navigation/navigation';
 import { useSlugs } from '@/lib/hooks';
@@ -14,6 +15,9 @@ export function DateRangeFilter(props: { controller: ReturnType<typeof useDateRa
       startDate={controller.startDate}
       align="start"
       onUpdate={({ preset }) => controller.setSelectedPreset(preset)}
+      footer={
+        <RetentionNote retentionInDays={controller.retentionInDays} subject={controller.subject} />
+      }
     />
   );
 }

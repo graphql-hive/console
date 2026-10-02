@@ -5,6 +5,7 @@ import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { OperationsStats } from '@/components/target/insights/stats';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { DateRangePicker, presetLast1Day } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
@@ -99,6 +100,12 @@ function OperationView({
               startDate={dateRangeController.startDate}
               align="end"
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+              footer={
+                <RetentionNote
+                  retentionInDays={dateRangeController.retentionInDays}
+                  subject={dateRangeController.subject}
+                />
+              }
             />
             <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
           </div>

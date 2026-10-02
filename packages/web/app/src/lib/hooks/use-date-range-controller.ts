@@ -68,6 +68,8 @@ export function useDateRangeController(args: {
 
   return {
     startDate,
+    retentionInDays: args.dataRetentionInDays,
+    subject,
     selectedPreset,
     setSelectedPreset(preset: Preset) {
       void router.navigate({

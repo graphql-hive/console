@@ -11,6 +11,7 @@ import { useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Link as LegacyLink } from '@/components/ui/link';
@@ -217,6 +218,12 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
             startDate={dateRangeController.startDate}
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+            footer={
+              <RetentionNote
+                retentionInDays={dateRangeController.retentionInDays}
+                subject={dateRangeController.subject}
+              />
+            }
           />
           <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
         </div>

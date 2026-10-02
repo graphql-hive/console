@@ -23,6 +23,12 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
 }));
 vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
 vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
+// Stripe is off unless a case turns it on; the picker's retention note needs it.
+const stripe = vi.hoisted(() => ({ enabled: false }));
+vi.mock('@/lib/billing/stripe-public-key', () => ({
+  getStripePublicKey: () => (stripe.enabled ? 'pk_test' : null),
+  getIsStripeEnabled: () => stripe.enabled,
+}));
 
 const EXPLORER = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}/explorer`;
 const LAST_WEEK = { from: 'now-7d', to: 'now' };
@@ -231,6 +237,21 @@ describe('explorer period', () => {
 
     await screen.findByRole('button', { name: 'Last 7 days' });
     expect(await screen.findByText('Your plan keeps the last 7 days of usage data.')).toBeTruthy();
+  });
+
+  it('the picker says what the plan keeps and where to upgrade', { timeout: 30_000 }, async () => {
+    stripe.enabled = true;
+    try {
+      renderAtUrl(`${EXPLORER}/deprecated?from=now-7d&to=now`, { client: client() });
+      fireEvent.click(await screen.findByRole('button', { name: 'Last 7 days' }));
+
+      await screen.findByText(/Your Hobby plan keeps the last 30 days of usage data\./);
+      expect(
+        screen.getByRole('link', { name: 'Upgrade for longer retention' }).getAttribute('href'),
+      ).toBe(`/${SLUGS.organizationSlug}/view/subscription/manage`);
+    } finally {
+      stripe.enabled = false;
+    }
   });
 
   it('the page says the range was reset, once', { timeout: 30_000 }, async () => {

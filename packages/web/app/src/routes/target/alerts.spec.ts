@@ -7,7 +7,7 @@ import { presetLast1Hour } from '@/pages/target-alerts-activity';
 import { createAppRouter } from '@/router';
 import { UTCDate } from '@date-fns/utc';
 import { createMemoryHistory } from '@tanstack/react-router';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
@@ -24,6 +24,12 @@ vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'
 vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
 // Polls every 200 ms here, so a spec sees a few ticks with real timers.
 vi.mock('@/components/target/alerts/alert-polling', () => ({ ALERTS_POLL_INTERVAL_MS: 200 }));
+// Stripe is off unless a case turns it on; the picker's retention note needs it.
+const stripe = vi.hoisted(() => ({ enabled: false }));
+vi.mock('@/lib/billing/stripe-public-key', () => ({
+  getStripePublicKey: () => (stripe.enabled ? 'pk_test' : null),
+  getIsStripeEnabled: () => stripe.enabled,
+}));
 
 const ALERTS = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}/alerts`;
 const ACTIVITY = 'TargetAlertsActivityPage_Query';
@@ -89,6 +95,18 @@ describe('alerts activity route', () => {
       ]);
     },
   );
+
+  it('the picker names the log retention, not the usage one', { timeout: 30_000 }, async () => {
+    stripe.enabled = true;
+    try {
+      renderAtUrl(`${ALERTS}?from=now-1h&to=now`, { client: createTestClient(activityFixtures()) });
+      fireEvent.click(await screen.findByRole('button', { name: 'Last 1 hour' }));
+
+      await screen.findByText(/Your Hobby plan keeps the last 30 days of alert activity\./);
+    } finally {
+      stripe.enabled = false;
+    }
+  });
 
   it('keeps a range within the log retention and resets one past it', { timeout: 30_000 }, async () => {
     const kept = await loadedWith(activityFixtures(30), `${ALERTS}?from=now-14d&to=now`);

@@ -11,6 +11,7 @@ import {
   useInsightsFilterExtraSections,
   type SavedFilterView,
 } from '@/components/target/insights/use-insights-filter-extra-sections';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Filters } from '@/components/ui/filters/filter-menu/filters';
@@ -290,6 +291,12 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
                 onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
                 startDate={dateRangeController.startDate}
                 align="start"
+                footer={
+                  <RetentionNote
+                    retentionInDays={dateRangeController.retentionInDays}
+                    subject={dateRangeController.subject}
+                  />
+                }
               />
             }
             afterChips={

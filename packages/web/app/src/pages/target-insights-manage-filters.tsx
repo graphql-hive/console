@@ -7,6 +7,7 @@ import { BackLink } from '@/components/navigation/back-link';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { FilterDropdown } from '@/components/ui/filters/filter-dropdown/filter-dropdown';
@@ -575,6 +576,7 @@ function SavedFilterRowFilters({
           onUpdate={({ preset }) => setDateRange(preset.range)}
           startDate={startDate}
           align="start"
+          footer={<RetentionNote retentionInDays={dataRetentionInDays} subject="usage data" />}
         />
         {showOperationFilter && operationItems.length > 0 && (
           <FilterDropdown
