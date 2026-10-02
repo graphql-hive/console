@@ -71,6 +71,39 @@ export const Weights = createPreview(() => (
   </div>
 ));
 
+function CompositionErrorText(props: { padding: 'default' | 'tight' }) {
+  const badge = (content: string) => (
+    <Badge content={content} variants={{ variant: 'warning', padding: props.padding }} />
+  );
+  return (
+    <ul className="w-80 text-sm">
+      <li className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
+        [orders] Field {badge('Product.sku')} is marked {badge('@external')} but is not used in
+        any federation directive ({badge('@key,')} {badge('@provides,')} {badge('@requires)')} or
+        to satisfy an interface; the field declaration has no use and should be removed (or the
+        field should not be {badge('@external)')}.
+      </li>
+    </ul>
+  );
+}
+
+/**
+ * `tight` drops the vertical padding for a badge inside running text, so a wrapped line of
+ * badges doesn't touch the one above. Shown with a composition error from a schema check.
+ */
+export const Padding = createPreview(() => (
+  <div className="flex gap-8">
+    <div className="flex flex-col gap-2">
+      <span className="text-fg-secondary text-xs">default</span>
+      <CompositionErrorText padding="default" />
+    </div>
+    <div className="flex flex-col gap-2">
+      <span className="text-fg-secondary text-xs">tight</span>
+      <CompositionErrorText padding="tight" />
+    </div>
+  </div>
+));
+
 export const Truncation = createPreview(() => (
   <div className="w-48">
     <Badge content="a-very-long-badge-label-that-overflows" variants={{ variant: 'secondary' }} />
@@ -87,6 +120,7 @@ export const Playground = createPreview({
         default: 'default',
       },
       size: { type: 'radio', options: ['default', 'sm'], default: 'default' },
+      padding: { type: 'radio', options: ['default', 'tight'], default: 'default' },
       mono: { type: 'boolean', default: false },
     },
   }),
