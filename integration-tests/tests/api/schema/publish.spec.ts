@@ -4641,6 +4641,7 @@ test.concurrent(
       previousSchemaLogId: null,
       serviceChanges: null,
       supergraphChanges: null,
+      graph: null,
     });
     await storage.destroy();
 
