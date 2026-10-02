@@ -175,7 +175,8 @@ export async function composeExternalFederation(args: {
   subgraphs: Array<SubgraphInput>;
   decrypt: (value: string) => string;
   external: Exclude<ExternalComposition, null>;
-  requestTimeoutMs: number;
+  /** Epoch milliseconds by which the external composition service must have responded. */
+  deadline: number;
   requestId: string;
 
   /**
@@ -228,10 +229,10 @@ export async function composeExternalFederation(args: {
           ...request,
         },
         args.logger,
-        args.requestTimeoutMs,
+        args.deadline,
         args.requestId,
       )
-    : callExternalService(request, args.logger, args.requestTimeoutMs));
+    : callExternalService(request, args.logger, args.deadline));
 
   args.logger?.debug('Got response from external composition service, trying to safe parse');
 
@@ -347,7 +348,7 @@ async function callExternalServiceViaBroker(
   },
   payload: BrokerPayload,
   logger: ServiceLogger | undefined,
-  timeoutMs: number,
+  deadline: number,
   requestId: string,
 ) {
   return callExternalService(
@@ -362,14 +363,14 @@ async function callExternalServiceViaBroker(
       body: JSON.stringify(payload),
     },
     logger,
-    timeoutMs,
+    deadline,
   );
 }
 
 async function callExternalService(
   input: { url: string; headers: Record<string, string>; body: string },
   logger: ServiceLogger | undefined,
-  timeoutMs: number,
+  deadline: number,
 ): Promise<
   /** external service got called and response body was delivered */
   | { type: 'success'; data: unknown }
@@ -389,26 +390,68 @@ async function callExternalService(
     },
   });
 
+  // One deadline covers the request and all of its retries: a fast failure (connection refused,
+  // reset, 5xx) is retried with the time that is left, while a slow service gets the whole budget
+  // for its first attempt and is not called again once the budget is spent.
+  const startedAt = Date.now();
+  const remainingMs = deadline - startedAt;
+  const controller = new AbortController();
+  let abortTimer: NodeJS.Timeout | undefined;
+
+  const timedOut = () => {
+    const elapsedMs = Date.now() - startedAt;
+    const reason =
+      remainingMs <= 0
+        ? 'the time budget for external composition was already spent'
+        : `no response from the external composition service after ${elapsedMs}ms`;
+    span.setAttribute('error.type', 'timeout');
+    span.setAttribute('error.message', reason);
+    logger?.error('External composition timed out. (url=%s, reason=%s)', input.url, reason);
+
+    return {
+      type: 'error' as const,
+      data: {
+        type: 'failure' as const,
+        result: {
+          sdl: null,
+          supergraph: null,
+          errors: [
+            {
+              message: `External composition timed out: ${reason}`,
+              source: 'composition' as const,
+            },
+          ],
+        },
+        includesNetworkError: true,
+        includesException: false,
+      },
+    };
+  };
+
   try {
     logger?.debug(
-      'Calling external composition service (url=%s, timeout=%s)',
+      'Calling external composition service (url=%s, remainingMs=%s)',
       input.url,
-      timeoutMs,
+      remainingMs,
     );
+
+    if (remainingMs <= 0) {
+      return timedOut();
+    }
+
+    abortTimer = setTimeout(() => controller.abort(), remainingMs);
 
     const response = await got(input.url, {
       method: 'POST',
       headers: input.headers,
       body: input.body,
       responseType: 'text',
+      signal: controller.signal,
       retry: {
         limit: 3,
         methods: ['POST', ...(got.defaults.options.retry.methods ?? [])],
         statusCodes: [404].concat(got.defaults.options.retry.statusCodes ?? []),
         backoffLimit: 500,
-      },
-      timeout: {
-        request: timeoutMs,
       },
     });
 
@@ -419,6 +462,10 @@ async function callExternalService(
     return { type: 'success', data: JSON.parse(response.body) as unknown };
   } catch (error) {
     if (error instanceof RequestError) {
+      if (controller.signal.aborted) {
+        return timedOut();
+      }
+
       if (!error.response) {
         let message = error.message;
 
@@ -527,6 +574,7 @@ async function callExternalService(
 
     throw error;
   } finally {
+    clearTimeout(abortTimer);
     span.end();
   }
 }
