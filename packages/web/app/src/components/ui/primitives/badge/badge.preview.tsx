@@ -78,10 +78,10 @@ function CompositionErrorText(props: { padding: 'default' | 'tight' }) {
   return (
     <ul className="w-80 text-sm">
       <li className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
-        [orders] Field {badge('Product.sku')} is marked {badge('@external')} but is not used in
-        any federation directive ({badge('@key,')} {badge('@provides,')} {badge('@requires)')} or
-        to satisfy an interface; the field declaration has no use and should be removed (or the
-        field should not be {badge('@external)')}.
+        [orders] Field {badge('Product.sku')} is marked {badge('@external')} but is not used in any
+        federation directive ({badge('@key,')} {badge('@provides,')} {badge('@requires)')} or to
+        satisfy an interface; the field declaration has no use and should be removed (or the field
+        should not be {badge('@external)')}.
       </li>
     </ul>
   );
