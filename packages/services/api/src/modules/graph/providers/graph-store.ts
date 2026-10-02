@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
 import { invariant } from '@hive/service-common';
 import { batch } from '../../../shared/helpers';
+import { SchemaVersion } from '../../schema/providers/schema-version-store';
 import { Logger } from '../../shared/providers/logger';
 
 const ContractGraphConfigModel = z.object({
@@ -143,6 +144,28 @@ export class GraphStore {
 
   findGraphForTargetIdByName(targetId: string, graphName: string): Promise<Graph | null> {
     return this.findGraphForTargetIdByNameBatched({ targetId, graphName });
+  }
+
+  async findGraphForSchemaVersion(schemaVersion: SchemaVersion): Promise<Graph | null> {
+    const query = psql`/* findGraphForSchemaVersion */
+      SELECT
+        ${graphFields}
+      FROM
+        "graphs"
+      WHERE
+        ${
+          schemaVersion.graphId
+            ? psql`"id" = ${schemaVersion.graphId}`
+            : /** If `graphId` is null we can find the relevant graph by a legacy lookup. */
+              psql`
+                "target_id" = ${schemaVersion.targetId}
+                AND "type" = 'BASIC'
+                AND "is_backfilled" = TRUE
+              `
+        }
+    `;
+
+    return await this.pg.maybeOne(query).then(GraphModel.parse);
   }
 
   /**
