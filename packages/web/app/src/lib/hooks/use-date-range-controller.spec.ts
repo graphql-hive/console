@@ -2,6 +2,7 @@ import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { UTCDate } from '@date-fns/utc';
 import { parse } from '../date-math';
 import {
+  announced,
   loaderPeriod,
   resolveDateRange,
   resolveRangeAndResolution,
@@ -265,6 +266,42 @@ describe('loaderPeriod', () => {
     expect(loaderPeriod({}, presetLast7Days, now)).toEqual(
       loaderPeriod(presetLast7Days.range, presetLast7Days, now),
     );
+  });
+});
+
+describe('announced', () => {
+  // A Map standing in for sessionStorage, which a node spec has none of.
+  beforeEach(() => {
+    const store = new Map<string, string>();
+    vi.stubGlobal('sessionStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('remembers every entry announced, not just the last one', () => {
+    expect(announced('a')).toBe(false);
+    expect(announced('a')).toBe(true);
+    expect(announced('b')).toBe(false);
+    // Back to the first entry: still announced.
+    expect(announced('a')).toBe(true);
+  });
+
+  it('forgets the oldest entries past twenty', () => {
+    for (let i = 0; i < 21; i++) {
+      announced(`entry-${i}`);
+    }
+    expect(announced('entry-1')).toBe(true);
+    expect(announced('entry-0')).toBe(false);
+  });
+
+  it('announces every time when storage is unavailable', () => {
+    vi.stubGlobal('sessionStorage', undefined);
+    expect(announced('a')).toBe(false);
+    expect(announced('a')).toBe(false);
   });
 });
 

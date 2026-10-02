@@ -94,12 +94,17 @@ export function useDateRangeController(args: {
 
 // The note survives a reload and a return to the entry; remember which one was announced.
 const ANNOUNCED = 'hive:range-reset:announced';
-function announced(entryKey: string): boolean {
+const REMEMBERED_ENTRIES = 20;
+export function announced(entryKey: string): boolean {
   try {
-    if (sessionStorage.getItem(ANNOUNCED) === entryKey) {
+    const keys: string[] = JSON.parse(sessionStorage.getItem(ANNOUNCED) ?? '[]');
+    if (keys.includes(entryKey)) {
       return true;
     }
-    sessionStorage.setItem(ANNOUNCED, entryKey);
+    sessionStorage.setItem(
+      ANNOUNCED,
+      JSON.stringify([...keys, entryKey].slice(-REMEMBERED_ENTRIES)),
+    );
   } catch {
     // Without storage the toast repeats on a reload, nothing worse.
   }
