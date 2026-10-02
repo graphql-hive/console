@@ -33,7 +33,7 @@ export function invariant(
   throw new Error(value);
 }
 
-export function fail(message: string): never {
+export function fail(message = prefix): never {
   throw new Error(message);
 }
 
