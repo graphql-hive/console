@@ -58,13 +58,13 @@ export function useDateRangeController(args: {
       return;
     }
     toast({
-      title: `Date range reset to ${args.defaultPreset.label}`,
+      title: `Date range reset to ${selectedPreset.label}`,
       description:
         state.rangeReset === 'retention'
           ? `This organization keeps the last ${args.dataRetentionInDays} days of ${subject}.`
           : 'This page cannot show the range the URL carried.',
     });
-  }, [state, toast, args.defaultPreset.label, args.dataRetentionInDays, subject]);
+  }, [state, toast, selectedPreset.label, args.dataRetentionInDays, subject]);
 
   return {
     startDate,
@@ -239,6 +239,15 @@ export function retentionBoundary(retentionInDays: number, now = new Date()): Da
 export function startsWithin(range: { from: string }, boundary: Date, now?: UTCDate): boolean {
   const from = parse(range.from, now);
   return from !== undefined && from.getTime() >= boundary.getTime();
+}
+
+// The longest preset a retention covers: what a screen falls back to when its default is older.
+export function longestPresetWithin(retentionInDays: number, now = new Date()): Preset {
+  const boundary = retentionBoundary(retentionInDays, now);
+  const fitting = availablePresets.filter(preset =>
+    startsWithin(preset.range, boundary, new UTCDate(now)),
+  );
+  return fitting[fitting.length - 1] ?? availablePresets[0];
 }
 
 export function resolveRangeAndResolution(range: { from: Date; to: Date }, now = new Date()) {

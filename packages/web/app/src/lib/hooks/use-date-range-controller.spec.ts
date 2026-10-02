@@ -4,6 +4,7 @@ import { parse } from '../date-math';
 import {
   announced,
   loaderPeriod,
+  longestPresetWithin,
   resolveDateRange,
   resolveRangeAndResolution,
   retentionBoundary,
@@ -314,6 +315,17 @@ describe('startsWithin', () => {
     expect(startsWithin({ from: '2026-09-22T00:00:00.000Z' }, boundary, now)).toBe(true);
     expect(startsWithin({ from: 'now-30d' }, boundary, now)).toBe(false);
     expect(startsWithin({ from: 'garbage' }, boundary, now)).toBe(false);
+  });
+});
+
+describe('longestPresetWithin', () => {
+  const now = new Date('2026-09-29T15:30:00.000Z');
+
+  it('is the longest preset the retention covers', () => {
+    expect(longestPresetWithin(7, now).label).toBe('Last 7 days');
+    expect(longestPresetWithin(3, now).label).toBe('Last 24 hours');
+    expect(longestPresetWithin(90, now).label).toBe('Last 90 days');
+    expect(longestPresetWithin(365, now).label).toBe('Last 1 year');
   });
 });
 

@@ -124,9 +124,10 @@ the URL until it settles: the app version's search box writes the URL 500 ms aft
   it.
 - **A range stays inside the organization's retention.** The picker greys out presets and refuses a
   custom start before `retentionBoundary`. The loader resets a link it cannot honor to the screen's
-  default: `requireRange(loader, bounds)` before the warms, for a bound it cannot read or older than
-  the rollups; `requireRetention(loader, bounds)` after them, for a start before the retention on
-  the layout document (`usageRetention.<scope>`; alert activity passes its log's). The reset notes a
+  default, or to the longest preset the retention covers when the default is older:
+  `requireRange(loader, bounds)` before the warms, for a bound it cannot read or older than the
+  rollups; `requireRetention(loader, bounds)` after them, for a start before the retention on the
+  layout document (`usageRetention.<scope>`; alert activity passes its log's). The reset notes a
   `rangeReset` reason in history state and the controller shows the toast once. The API rejects what
   slips through, so the console's fixed windows follow it too (`overviewPeriod`).
 - **Stripe** decides in `beforeLoad` too: the subscription routes redirect to the organization when

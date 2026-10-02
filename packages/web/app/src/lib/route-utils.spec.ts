@@ -363,4 +363,25 @@ describe('requireRetention', () => {
     await requireRetention(loader(empty, eightDays), bounds);
     await requireRetention(loader(client, {}), bounds);
   });
+
+  it('lands inside a retention shorter than the default, so a reset cannot loop', async () => {
+    const client = layoutWith(3);
+
+    // The default itself, as a bare URL arrives: moved quietly to the longest fitting preset.
+    const bare = redirectOf(
+      await rejection(requireRetention(loader(client, presetLast7Days.range), bounds)),
+    ) as { search?: unknown; state?: unknown };
+    expect(bare.search).toEqual({ from: 'now-1d', to: 'now' });
+    expect(bare.state).toBeUndefined();
+
+    // A chosen range past the retention: the same target, with the toast's note.
+    const chosen = redirectOf(
+      await rejection(requireRetention(loader(client, { from: 'now-30d', to: 'now' }), bounds)),
+    ) as { search?: unknown; state?: unknown };
+    expect(chosen.search).toEqual({ from: 'now-1d', to: 'now' });
+    expect(chosen.state).toEqual({ rangeReset: 'retention' });
+
+    // And the target passes the same check, which is what keeps it from looping.
+    await requireRetention(loader(client, { from: 'now-1d', to: 'now' }), bounds);
+  });
 });

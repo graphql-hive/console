@@ -204,11 +204,25 @@ describe('explorer period', () => {
   );
 
   // Every document about the organization must agree on its retention: graphcache normalizes it.
-  function hobbyClient() {
-    const fixtures = new Map([...layoutFixtures(), ...explorerFixtures(7)]);
-    fixtures.set('TargetLayoutQuery', targetLayout({}, { usageRetentionInDays: 7 }));
+  function hobbyClient(usageRetentionInDays = 7) {
+    const fixtures = new Map([...layoutFixtures(), ...explorerFixtures(usageRetentionInDays)]);
+    fixtures.set('TargetLayoutQuery', targetLayout({}, { usageRetentionInDays }));
     return createTestClient(fixtures);
   }
+
+  it(
+    'a bare URL on a retention shorter than the default lands on the longest fitting preset, quietly',
+    { timeout: 30_000 },
+    async () => {
+      const router = await loadedAt(`${EXPLORER}/unused`, hobbyClient(3));
+
+      await waitFor(() =>
+        expect(router.state.location.search).toEqual({ from: 'now-1d', to: 'now' }),
+      );
+      expect(router.history.length).toBe(1);
+      expect(router.state.location.state.rangeReset).toBeUndefined();
+    },
+  );
 
   it(
     "resets a range past the organization's retention to the last week, after the warms, and notes it",

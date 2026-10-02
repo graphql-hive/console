@@ -6,7 +6,12 @@ import {
 } from '@/components/layouts/queries';
 import type { Preset } from '@/components/ui/date-range-picker';
 import { parse } from '@/lib/date-math';
-import { loaderPeriod, retentionBoundary } from '@/lib/hooks/use-date-range-controller';
+import {
+  loaderPeriod,
+  longestPresetWithin,
+  retentionBoundary,
+  startsWithin,
+} from '@/lib/hooks/use-date-range-controller';
 import { redirect, type AnyRedirect } from '@tanstack/react-router';
 import type {
   AnyVariables,
@@ -163,13 +168,13 @@ export type RangeLoader = {
 
 export type RangeResetReason = 'unreadable' | 'retention';
 
-// Back to the default; the note in history state is what the page's toast reads.
-function resetRange(loader: RangeLoader, { preset, to }: RangeBounds, reason: RangeResetReason) {
+// Back to the default; the note in history state is what the page's toast reads. No reason, no note.
+function resetRange(loader: RangeLoader, { preset, to }: RangeBounds, reason?: RangeResetReason) {
   return redirect({
     to,
     params: loader.params,
     search: { ...loader.location.search, ...preset.range },
-    state: { rangeReset: reason },
+    state: reason ? { rangeReset: reason } : undefined,
   });
 }
 
@@ -226,7 +231,17 @@ export async function requireRetention(
 ): Promise<void> {
   const days = await retention;
   const from = loader.deps.from === undefined ? undefined : parse(loader.deps.from);
-  if (days !== undefined && from && from.getTime() < retentionBoundary(days).getTime()) {
-    throw resetRange(loader, bounds, 'retention');
+  if (days === undefined || !from || from.getTime() >= retentionBoundary(days).getTime()) {
+    return;
   }
+  // A retention shorter than the default would reset to a range that fails again; land inside it.
+  const boundary = retentionBoundary(days);
+  const preset = startsWithin(bounds.preset.range, boundary)
+    ? bounds.preset
+    : longestPresetWithin(days);
+  // A bare URL arrives as the default; nobody chose it, so moving it earns no toast.
+  const { from: carriedFrom, to: carriedTo } = loader.deps;
+  const carriedTheDefault =
+    carriedFrom === bounds.preset.range.from && carriedTo === bounds.preset.range.to;
+  throw resetRange(loader, { ...bounds, preset }, carriedTheDefault ? undefined : 'retention');
 }
